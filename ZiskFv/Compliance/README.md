@@ -16,8 +16,8 @@ in `ZiskFv/Compliance.lean` (one level up) case-splits on.
 
 The uber theorem `zisk_riscv_compliant_program_bus` lives in
 `ZiskFv/Compliance.lean` (the file at the level above this folder)
-and uses an `OpEnvelope` sum type (35 arms, indexed by
-`mainOpKind`) to dispatch each opcode to its `Wrappers/<Op>` wrapper.
+and uses an `OpEnvelope` sum type (63 arms, one per RV64IM opcode)
+to dispatch each opcode to its `Wrappers/<Op>` wrapper.
 
 To audit a single opcode's trust closure, read
 `Compliance/Wrappers/<Op>.lean` together with the canonical

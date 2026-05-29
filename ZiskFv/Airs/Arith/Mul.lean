@@ -1,8 +1,6 @@
 import Mathlib
 
-import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
-import Extraction.Arith
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Arith.CarryChain
 
@@ -14,16 +12,21 @@ The Arith state machine is the multiplier behind the RV64 MUL/MULH family
 constraints spanning 8-chunk carry chains for full 64×64 multiply-divide,
 sign-extension witnesses, and the arith_table / arith_range_table lookups.
 
-This file exposes named columns for the cells the bus-emission uses, plus
-`constraint_N_of_extraction` bridges for the MUL-subset constraints
-(`main_mul * main_div = 0`, the binary selectors, and the carry-chain
-equations).
+After the OpenVM Circuit retirement (Phase F3), `Valid_ArithMul` is a
+plain named-column record. The previous `circuit` and `_def` fields
+that tied the named accessors to the extraction's `Circuit.main` form
+have been removed; structural-unpacking added 10 new named accessors
+(`cy_0..cy_6` for carry witnesses + `fab`, `na_fb`, `nb_fa` for sign
+products). Constraint predicates (`mul_constraint_N_named`) are
+algebraic identities over the named accessors that mirror the
+extraction's `Arith.extraction.constraint_N_every_row`. The canonical
+AIR view is the Clean `Air.Flat.Component` at
+`ZiskFv/AirsClean/ArithMul/`.
 -/
 
 namespace ZiskFv.Airs.ArithMul
 
 open Goldilocks
-open Arith.extraction
 
 /-- Named accessors for one row of ZisK's `Arith` AIR, restricted to the
     MUL-relevant columns.
@@ -41,12 +44,26 @@ open Arith.extraction
       operand/result signs.
     * `main_mul`, `main_div` — stage-1 cols 33–34 — dual-use selectors. On
       MUL rows `main_mul = 1` and `main_div = 0`; on DIV rows the opposite.
+    * `signed`, `div_by_zero`, `div_overflow`, `range_ab`, `range_cd` —
+      stage-1 cols 35–37 and 42–43 — remaining `arith_table_assumes`
+      lookup columns. They are structural fields for the full 15-column
+      Clean ArithTable lookup tuple; adding them does not assert any table
+      membership or value pin.
     * `op` — stage-1 col 39 — the 8-bit opcode literal (0xb0..0xb6 for MUL).
     * `multiplicity` — stage-1 col 41 — operation-bus consume multiplicity
       (the `mul` argument of `proves_operation` in the PIL). -/
-structure Valid_ArithMul (C : Type → Type → Type) (F ExtF : Type)
-    [Field F] [Field ExtF] [Circuit F ExtF C] where
-  circuit : C F ExtF
+structure Valid_ArithMul (F ExtF : Type)
+    [Field F] [Field ExtF] where
+  /-- Carry-chain witnesses (Arith cols 0..6). The 7 carry columns
+      of the 8-chunk MUL carry-chain, in `[-0xEFFFF..0xF0000]`
+      (signed) or `[0, 2^17)` (unsigned). -/
+  cy_0 : ℕ → F
+  cy_1 : ℕ → F
+  cy_2 : ℕ → F
+  cy_3 : ℕ → F
+  cy_4 : ℕ → F
+  cy_5 : ℕ → F
+  cy_6 : ℕ → F
   a_0 : ℕ → F
   a_1 : ℕ → F
   a_2 : ℕ → F
@@ -70,112 +87,72 @@ structure Valid_ArithMul (C : Type → Type → Type) (F ExtF : Type)
   sext : ℕ → F
   m32 : ℕ → F
   div : ℕ → F
+  /-- `fab = (1 - 2·na) - 2·nb + 4·na·nb` (Arith col 30, constraint 6).
+      PIL: `zisk/state-machines/arith/pil/arith.pil:58`. Structural-
+      unpacking accessor added in Phase F3 to close the schema gap
+      where the carry-chain proofs accessed col 30 positionally. -/
+  fab : ℕ → F
+  /-- `na_fb = na · (1 - 2·nb)` (Arith col 31, constraint 7).
+      PIL: `zisk/state-machines/arith/pil/arith.pil:59`. Structural-
+      unpacking accessor added in Phase F3. -/
+  na_fb : ℕ → F
+  /-- `nb_fa = nb · (1 - 2·na)` (Arith col 32, constraint 8).
+      PIL: `zisk/state-machines/arith/pil/arith.pil:60`. Structural-
+      unpacking accessor added in Phase F3. -/
+  nb_fa : ℕ → F
   main_div : ℕ → F
   main_mul : ℕ → F
+  signed : ℕ → F
+  div_by_zero : ℕ → F
+  div_overflow : ℕ → F
   op : ℕ → F
   bus_res1 : ℕ → F
   multiplicity : ℕ → F
-  a_0_def : ∀ row,
-    a_0 row = Circuit.main circuit (id := 1) (column := 7) (row := row) (rotation := 0)
-  a_1_def : ∀ row,
-    a_1 row = Circuit.main circuit (id := 1) (column := 8) (row := row) (rotation := 0)
-  a_2_def : ∀ row,
-    a_2 row = Circuit.main circuit (id := 1) (column := 9) (row := row) (rotation := 0)
-  a_3_def : ∀ row,
-    a_3 row = Circuit.main circuit (id := 1) (column := 10) (row := row) (rotation := 0)
-  b_0_def : ∀ row,
-    b_0 row = Circuit.main circuit (id := 1) (column := 11) (row := row) (rotation := 0)
-  b_1_def : ∀ row,
-    b_1 row = Circuit.main circuit (id := 1) (column := 12) (row := row) (rotation := 0)
-  b_2_def : ∀ row,
-    b_2 row = Circuit.main circuit (id := 1) (column := 13) (row := row) (rotation := 0)
-  b_3_def : ∀ row,
-    b_3 row = Circuit.main circuit (id := 1) (column := 14) (row := row) (rotation := 0)
-  c_0_def : ∀ row,
-    c_0 row = Circuit.main circuit (id := 1) (column := 15) (row := row) (rotation := 0)
-  c_1_def : ∀ row,
-    c_1 row = Circuit.main circuit (id := 1) (column := 16) (row := row) (rotation := 0)
-  c_2_def : ∀ row,
-    c_2 row = Circuit.main circuit (id := 1) (column := 17) (row := row) (rotation := 0)
-  c_3_def : ∀ row,
-    c_3 row = Circuit.main circuit (id := 1) (column := 18) (row := row) (rotation := 0)
-  d_0_def : ∀ row,
-    d_0 row = Circuit.main circuit (id := 1) (column := 19) (row := row) (rotation := 0)
-  d_1_def : ∀ row,
-    d_1 row = Circuit.main circuit (id := 1) (column := 20) (row := row) (rotation := 0)
-  d_2_def : ∀ row,
-    d_2 row = Circuit.main circuit (id := 1) (column := 21) (row := row) (rotation := 0)
-  d_3_def : ∀ row,
-    d_3 row = Circuit.main circuit (id := 1) (column := 22) (row := row) (rotation := 0)
-  na_def : ∀ row,
-    na row = Circuit.main circuit (id := 1) (column := 23) (row := row) (rotation := 0)
-  nb_def : ∀ row,
-    nb row = Circuit.main circuit (id := 1) (column := 24) (row := row) (rotation := 0)
-  nr_def : ∀ row,
-    nr row = Circuit.main circuit (id := 1) (column := 25) (row := row) (rotation := 0)
-  np_def : ∀ row,
-    np row = Circuit.main circuit (id := 1) (column := 26) (row := row) (rotation := 0)
-  sext_def : ∀ row,
-    sext row = Circuit.main circuit (id := 1) (column := 27) (row := row) (rotation := 0)
-  m32_def : ∀ row,
-    m32 row = Circuit.main circuit (id := 1) (column := 28) (row := row) (rotation := 0)
-  div_def : ∀ row,
-    div row = Circuit.main circuit (id := 1) (column := 29) (row := row) (rotation := 0)
-  main_div_def : ∀ row,
-    main_div row = Circuit.main circuit (id := 1) (column := 33) (row := row) (rotation := 0)
-  main_mul_def : ∀ row,
-    main_mul row = Circuit.main circuit (id := 1) (column := 34) (row := row) (rotation := 0)
-  op_def : ∀ row,
-    op row = Circuit.main circuit (id := 1) (column := 39) (row := row) (rotation := 0)
-  bus_res1_def : ∀ row,
-    bus_res1 row = Circuit.main circuit (id := 1) (column := 40) (row := row) (rotation := 0)
-  multiplicity_def : ∀ row,
-    multiplicity row = Circuit.main circuit (id := 1) (column := 41) (row := row) (rotation := 0)
+  range_ab : ℕ → F
+  range_cd : ℕ → F
 
-variable {C : Type → Type → Type} {F ExtF : Type}
-  [Field F] [Field ExtF] [Circuit F ExtF C]
+variable {F ExtF : Type} [Field F] [Field ExtF]
 
 /-- `main_mul` and `main_div` are mutually exclusive: `main_mul * main_div = 0`.
-    Rewrites `constraint_2_every_row`. -/
+    Named-form mirror of extraction's `constraint_2_every_row`. -/
 @[simp]
-def main_mul_div_disjoint (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+def main_mul_div_disjoint (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
   v.main_mul row * v.main_div row = 0
 
-/-- `m32` is boolean — rewrites `constraint_40_every_row`. -/
+/-- `m32` is boolean — named-form mirror of `constraint_40_every_row`. -/
 @[simp]
-def boolean_m32 (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+def boolean_m32 (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
   v.m32 row * (1 - v.m32 row) = 0
 
-/-- `na` is boolean — rewrites `constraint_41_every_row`. -/
+/-- `na` is boolean — named-form mirror of `constraint_41_every_row`. -/
 @[simp]
-def boolean_na (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+def boolean_na (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
   v.na row * (1 - v.na row) = 0
 
-/-- `nb` is boolean — rewrites `constraint_42_every_row`. -/
+/-- `nb` is boolean — named-form mirror of `constraint_42_every_row`. -/
 @[simp]
-def boolean_nb (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+def boolean_nb (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
   v.nb row * (1 - v.nb row) = 0
 
-/-- `nr` is boolean — rewrites `constraint_43_every_row`. -/
+/-- `nr` is boolean — named-form mirror of `constraint_43_every_row`. -/
 @[simp]
-def boolean_nr (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+def boolean_nr (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
   v.nr row * (1 - v.nr row) = 0
 
-/-- `np` is boolean — rewrites `constraint_44_every_row`. -/
+/-- `np` is boolean — named-form mirror of `constraint_44_every_row`. -/
 @[simp]
-def boolean_np (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+def boolean_np (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
   v.np row * (1 - v.np row) = 0
 
-/-- `sext` is boolean — rewrites `constraint_45_every_row`. -/
+/-- `sext` is boolean — named-form mirror of `constraint_45_every_row`. -/
 @[simp]
-def boolean_sext (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+def boolean_sext (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
   v.sext row * (1 - v.sext row) = 0
 
 /-- **MUL-subset mode predicates bundled.** The boolean-selector subset
-    the compositional MUL proof relies on. The carry-chain constraints
-    (31–38) remain reachable via the raw extraction bridges below. -/
+    the compositional MUL proof relies on. -/
 @[simp]
-def mul_mode_booleans (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+def mul_mode_booleans (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
   main_mul_div_disjoint v row
   ∧ boolean_m32 v row
   ∧ boolean_na v row
@@ -183,59 +160,6 @@ def mul_mode_booleans (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
   ∧ boolean_nr v row
   ∧ boolean_np v row
   ∧ boolean_sext v row
-
-section extraction_bridge
-
-@[simp]
-lemma constraint_2_of_extraction
-    (v : Valid_ArithMul C F ExtF) (row : ℕ) :
-    constraint_2_every_row v.circuit row ↔ main_mul_div_disjoint v row := by
-  unfold constraint_2_every_row main_mul_div_disjoint
-  rw [v.main_mul_def, v.main_div_def]
-
-@[simp]
-lemma constraint_40_of_extraction
-    (v : Valid_ArithMul C F ExtF) (row : ℕ) :
-    constraint_40_every_row v.circuit row ↔ boolean_m32 v row := by
-  unfold constraint_40_every_row boolean_m32
-  rw [v.m32_def]
-
-@[simp]
-lemma constraint_41_of_extraction
-    (v : Valid_ArithMul C F ExtF) (row : ℕ) :
-    constraint_41_every_row v.circuit row ↔ boolean_na v row := by
-  unfold constraint_41_every_row boolean_na
-  rw [v.na_def]
-
-@[simp]
-lemma constraint_42_of_extraction
-    (v : Valid_ArithMul C F ExtF) (row : ℕ) :
-    constraint_42_every_row v.circuit row ↔ boolean_nb v row := by
-  unfold constraint_42_every_row boolean_nb
-  rw [v.nb_def]
-
-@[simp]
-lemma constraint_43_of_extraction
-    (v : Valid_ArithMul C F ExtF) (row : ℕ) :
-    constraint_43_every_row v.circuit row ↔ boolean_nr v row := by
-  unfold constraint_43_every_row boolean_nr
-  rw [v.nr_def]
-
-@[simp]
-lemma constraint_44_of_extraction
-    (v : Valid_ArithMul C F ExtF) (row : ℕ) :
-    constraint_44_every_row v.circuit row ↔ boolean_np v row := by
-  unfold constraint_44_every_row boolean_np
-  rw [v.np_def]
-
-@[simp]
-lemma constraint_45_of_extraction
-    (v : Valid_ArithMul C F ExtF) (row : ℕ) :
-    constraint_45_every_row v.circuit row ↔ boolean_sext v row := by
-  unfold constraint_45_every_row boolean_sext
-  rw [v.sext_def]
-
-end extraction_bridge
 
 section BusEmission
 
@@ -272,9 +196,8 @@ open ZiskFv.Airs.OperationBus
     directly (Arith's `bus_res0` is an `expr`, not a witness column,
     so we recompute it from `c_0` / `c_1` here rather than aliasing). -/
 @[simp]
-def opBus_row_Arith {C : Type → Type → Type} {F ExtF : Type}
-    [Field F] [Field ExtF] [Circuit F ExtF C]
-    (v : Valid_ArithMul C F ExtF) (row : ℕ) : OperationBusEntry F :=
+def opBus_row_Arith {F ExtF : Type} [Field F] [Field ExtF]
+    (v : Valid_ArithMul F ExtF) (row : ℕ) : OperationBusEntry F :=
   { multiplicity := v.multiplicity row
     op := v.op row
     a_lo := v.a_0 row + v.a_1 row * 65536
@@ -302,9 +225,8 @@ def opBus_row_Arith {C : Type → Type → Type} {F ExtF : Type}
     Mirrors the structure of `opBus_row_ArithDivSecondary`
     (`Airs/Arith/Div.lean:344`). -/
 @[simp]
-def opBus_row_ArithMulSecondary {C : Type → Type → Type} {F ExtF : Type}
-    [Field F] [Field ExtF] [Circuit F ExtF C]
-    (v : Valid_ArithMul C F ExtF) (row : ℕ) : OperationBusEntry F :=
+def opBus_row_ArithMulSecondary {F ExtF : Type} [Field F] [Field ExtF]
+    (v : Valid_ArithMul F ExtF) (row : ℕ) : OperationBusEntry F :=
   { multiplicity := v.multiplicity row
     op := v.op row
     a_lo := v.a_0 row + v.a_1 row * 65536
@@ -324,97 +246,237 @@ end BusEmission
 /-!
 ## Carry-chain specialization (MUL-unsigned)
 
-Connects the raw extraction constraints 31-38 at `v.circuit` to the
-pure-field carry-chain identity in `Airs/Arith/CarryChain.lean`,
-yielding the packed 128-bit product identity
+Connects the named-form constraints 31-38 to the pure-field carry-chain
+identity in `Airs/Arith/CarryChain.lean`, yielding the packed 128-bit
+product identity
 
     a_packed * b_packed = c_packed + d_packed * 2^64
 
 for the MUL-unsigned mode (`fab = 1`,
 `na = nb = np = nr = sext = m32 = div = 0`).
 
-The theorem extracts the seven carry witnesses directly from the
-circuit projection at columns 0-6, unfolds the raw constraints, and
-applies `ZiskFv.Airs.ArithCarryChain.arith_mul_unsigned_carry_identity`.
-
 Unsigned mode covers MUL/MULHU/MULW (which use `m32 = 1` but
 `na = nb = 0` for the truncation case). Signed-MUL modes (`na` or
 `nb` = 1) require a case-split on `(na, nb) ∈ {0,1}²` that sign-adjusts
-the operands through the `np`/`nr` selectors and are out of scope here.
+the operands through the `np`/`nr` selectors via `arith_mul_signed_packed_correct`.
 -/
 
 section CarryChain
 
-open Arith.extraction
 open ZiskFv.Airs.ArithCarryChain
 
+/-! ## Named-form carry-chain constraints
+
+The named-form predicates below mirror `Arith.extraction.constraint_N_every_row`
+for N ∈ {6, 7, 8, 31..38, 46} expressed entirely over the `Valid_ArithMul`
+named accessors. They are syntactic literal copies of the extracted
+constraint definitions with `Circuit.main circuit (column := N)` rewritten
+to the corresponding named field. Used by `arith_mul_*_packed_correct`
+and `Bridge/Arith.lean` chain-witness lemmas.
+
+Mappings (per `build/extraction/Extraction/Arith.lean`):
+  * col 0..6  → cy_0..cy_6 (carry witnesses)
+  * col 7..10 → a_0..a_3 (operand A chunks)
+  * col 11..14 → b_0..b_3 (operand B chunks)
+  * col 15..18 → c_0..c_3 (low-half result chunks)
+  * col 19..22 → d_0..d_3 (high-half result chunks)
+  * col 23..29 → na, nb, nr, np, sext, m32, div
+  * col 30..32 → fab, na_fb, nb_fa (sign products — F3 additions)
+  * col 33..34 → main_div, main_mul
+  * col 39 → op, col 40 → bus_res1
+-/
+
+/-- Named-form mirror of `constraint_6_every_row`. PIL `arith.pil:58`. -/
+@[simp]
+def mul_constraint_6_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.fab row - (((1 - 2 * v.na row) - 2 * v.nb row)
+    + 4 * v.na row * v.nb row) = 0
+
+/-- Named-form mirror of `constraint_7_every_row`. PIL `arith.pil:59`. -/
+@[simp]
+def mul_constraint_7_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.na_fb row - v.na row * (1 - 2 * v.nb row) = 0
+
+/-- Named-form mirror of `constraint_8_every_row`. PIL `arith.pil:60`. -/
+@[simp]
+def mul_constraint_8_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.nb_fa row - v.nb row * (1 - 2 * v.na row) = 0
+
+/-- Named-form mirror of `constraint_31_every_row`. PIL `arith.pil:205`. -/
+@[simp]
+def mul_constraint_31_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_0 row * v.b_0 row
+    - v.c_0 row
+    + 2 * v.np row * v.c_0 row
+    + v.div row * v.d_0 row
+    - 2 * v.nr row * v.d_0 row
+    - v.cy_0 row * 65536 = 0
+
+/-- Named-form mirror of `constraint_32_every_row`. PIL `arith.pil:207`. -/
+@[simp]
+def mul_constraint_32_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_1 row * v.b_0 row + v.fab row * v.a_0 row * v.b_1 row
+    - v.c_1 row
+    + 2 * v.np row * v.c_1 row
+    + v.div row * v.d_1 row
+    - 2 * v.nr row * v.d_1 row
+    + v.cy_0 row
+    - v.cy_1 row * 65536 = 0
+
+/-- Named-form mirror of `constraint_33_every_row`. PIL `arith.pil:209`. -/
+@[simp]
+def mul_constraint_33_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_2 row * v.b_0 row + v.fab row * v.a_1 row * v.b_1 row
+    + v.fab row * v.a_0 row * v.b_2 row
+    + v.a_0 row * v.nb_fa row * v.m32 row
+    + v.b_0 row * v.na_fb row * v.m32 row
+    - v.c_2 row
+    + 2 * v.np row * v.c_2 row
+    + v.div row * v.d_2 row
+    - 2 * v.nr row * v.d_2 row
+    - v.np row * v.div row * v.m32 row
+    + v.nr row * v.m32 row
+    + v.cy_1 row
+    - v.cy_2 row * 65536 = 0
+
+/-- Named-form mirror of `constraint_34_every_row`. PIL `arith.pil:211`. -/
+@[simp]
+def mul_constraint_34_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_3 row * v.b_0 row + v.fab row * v.a_2 row * v.b_1 row
+    + v.fab row * v.a_1 row * v.b_2 row + v.fab row * v.a_0 row * v.b_3 row
+    + v.a_1 row * v.nb_fa row * v.m32 row
+    + v.b_1 row * v.na_fb row * v.m32 row
+    - v.c_3 row
+    + 2 * v.np row * v.c_3 row
+    + v.div row * v.d_3 row
+    - 2 * v.nr row * v.d_3 row
+    + v.cy_2 row
+    - v.cy_3 row * 65536 = 0
+
+/-- Named-form mirror of `constraint_35_every_row`. PIL `arith.pil:213`. -/
+@[simp]
+def mul_constraint_35_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_3 row * v.b_1 row + v.fab row * v.a_2 row * v.b_2 row
+    + v.fab row * v.a_1 row * v.b_3 row
+    + v.na row * v.nb row * v.m32 row
+    + v.b_0 row * v.na_fb row * (1 - v.m32 row)
+    + v.a_0 row * v.nb_fa row * (1 - v.m32 row)
+    - v.np row * v.m32 row * (1 - v.div row)
+    - v.np row * (1 - v.m32 row) * v.div row
+    + v.nr row * (1 - v.m32 row)
+    - v.d_0 row * (1 - v.div row)
+    + 2 * v.np row * v.d_0 row * (1 - v.div row)
+    + v.cy_3 row
+    - v.cy_4 row * 65536 = 0
+
+/-- Named-form mirror of `constraint_36_every_row`. PIL `arith.pil:215`. -/
+@[simp]
+def mul_constraint_36_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_3 row * v.b_2 row + v.fab row * v.a_2 row * v.b_3 row
+    + v.b_1 row * v.na_fb row * (1 - v.m32 row)
+    + v.a_1 row * v.nb_fa row * (1 - v.m32 row)
+    - v.d_1 row * (1 - v.div row)
+    + v.d_1 row * 2 * v.np row * (1 - v.div row)
+    + v.cy_4 row
+    - v.cy_5 row * 65536 = 0
+
+/-- Named-form mirror of `constraint_37_every_row`. PIL `arith.pil:217`. -/
+@[simp]
+def mul_constraint_37_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_3 row * v.b_3 row
+    + v.a_2 row * v.nb_fa row * (1 - v.m32 row)
+    + v.b_2 row * v.na_fb row * (1 - v.m32 row)
+    - v.d_2 row * (1 - v.div row)
+    + 2 * v.np row * v.d_2 row * (1 - v.div row)
+    + v.cy_5 row
+    - v.cy_6 row * 65536 = 0
+
+/-- Named-form mirror of `constraint_38_every_row`. PIL `arith.pil:219`. -/
+@[simp]
+def mul_constraint_38_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  65536 * v.na row * v.nb row * (1 - v.m32 row)
+    + v.a_3 row * v.nb_fa row * (1 - v.m32 row)
+    + v.b_3 row * v.na_fb row * (1 - v.m32 row)
+    - 65536 * v.np row * (1 - v.div row) * (1 - v.m32 row)
+    - v.d_3 row * (1 - v.div row)
+    + 2 * v.np row * v.d_3 row * (1 - v.div row)
+    + v.cy_6 row = 0
+
+/-- Named-form mirror of `constraint_46_every_row`. PIL `arith.pil:263`.
+    Pins `bus_res1` to its mode-specialized value. -/
+@[simp]
+def mul_constraint_46_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  v.bus_res1 row
+    - (v.sext row * 4294967295
+      + (1 - v.m32 row) * (
+          (1 - v.main_mul row - v.main_div row) * (v.d_2 row + v.d_3 row * 65536)
+          + v.main_mul row * (v.c_2 row + v.c_3 row * 65536)
+          + v.main_div row * (v.a_2 row + v.a_3 row * 65536))) = 0
+
 /-- **Bundled Arith MUL-mode carry-chain constraints.** Packs the 11
-    extraction constraints the `arith_mul_unsigned_packed_correct`
+    named-form constraints the `arith_mul_unsigned_packed_correct`
     theorem consumes: constraints 6-8 (fab / na_fb / nb_fa closures) plus
     constraints 31-38 (the 8-chunk carry chain). -/
 @[simp]
-def mul_carry_chain_holds (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
-  constraint_6_every_row v.circuit row
-  ∧ constraint_7_every_row v.circuit row
-  ∧ constraint_8_every_row v.circuit row
-  ∧ constraint_31_every_row v.circuit row
-  ∧ constraint_32_every_row v.circuit row
-  ∧ constraint_33_every_row v.circuit row
-  ∧ constraint_34_every_row v.circuit row
-  ∧ constraint_35_every_row v.circuit row
-  ∧ constraint_36_every_row v.circuit row
-  ∧ constraint_37_every_row v.circuit row
-  ∧ constraint_38_every_row v.circuit row
+def mul_carry_chain_holds (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
+  mul_constraint_6_named v row
+  ∧ mul_constraint_7_named v row
+  ∧ mul_constraint_8_named v row
+  ∧ mul_constraint_31_named v row
+  ∧ mul_constraint_32_named v row
+  ∧ mul_constraint_33_named v row
+  ∧ mul_constraint_34_named v row
+  ∧ mul_constraint_35_named v row
+  ∧ mul_constraint_36_named v row
+  ∧ mul_constraint_37_named v row
+  ∧ mul_constraint_38_named v row
 
 /-- **Extended Arith MUL-mode row constraints — includes constraint 46.**
-    Same shape as `mul_carry_chain_holds` but additionally pins
-    `constraint_46_every_row` (the `bus_res1` normalization at
-    `arith.pil:263`). Required by `equiv_MUL` to discharge
-    the hi-lane byte-pack equation via `mul_bus_res1_eq_c_hi`
-    (`Airs/Arith/BusRes1.lean`). Mirrors `div_row_constraints_with_c46`
-    on the Div view. Compliance.lean's downstream caller will collapse
-    this into a universal `∀ r, arith_mul_row_well_formed` parameter. -/
+    Same shape as `mul_carry_chain_holds` but additionally pins the
+    named-form `mul_constraint_46_named` (the `bus_res1` normalization at
+    `arith.pil:263`). Required by `equiv_MUL` to discharge the hi-lane
+    byte-pack equation via `mul_bus_res1_eq_c_hi`. -/
 @[simp]
-def mul_row_constraints_with_c46 (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+def mul_row_constraints_with_c46 (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=
   mul_carry_chain_holds v row
-  ∧ constraint_46_every_row v.circuit row
+  ∧ mul_constraint_46_named v row
 
 /-- Project out the carry-chain bundle from the extended bundle. -/
 lemma mul_carry_chain_holds_of_extended
-    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (v : Valid_ArithMul F ExtF) (row : ℕ)
     (h : mul_row_constraints_with_c46 v row) :
     mul_carry_chain_holds v row := h.1
 
 /-- Project out constraint 46 from the extended bundle. -/
 lemma mul_constraint_46_of_extended
-    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (v : Valid_ArithMul F ExtF) (row : ℕ)
     (h : mul_row_constraints_with_c46 v row) :
-    constraint_46_every_row v.circuit row := h.2
+    mul_constraint_46_named v row := h.2
 
 /-- Packed low-64 value `c_packed := c[0] + c[1] * 2^16 + c[2] * 2^32 + c[3] * 2^48`
     expressed over the named `Valid_ArithMul` columns. For MUL this is the
     low 64 bits of the product. -/
 @[simp]
-def c_chunks_packed (v : Valid_ArithMul C F ExtF) (r : ℕ) : F :=
+def c_chunks_packed (v : Valid_ArithMul F ExtF) (r : ℕ) : F :=
   v.c_0 r + v.c_1 r * 65536 + v.c_2 r * (65536 * 65536)
     + v.c_3 r * (65536 * 65536 * 65536)
 
 /-- Packed high-64 value `d_packed := d[0] + d[1] * 2^16 + d[2] * 2^32 + d[3] * 2^48`
     over the named `Valid_ArithMul` columns. For MUL this is the high 64 bits. -/
 @[simp]
-def d_chunks_packed (v : Valid_ArithMul C F ExtF) (r : ℕ) : F :=
+def d_chunks_packed (v : Valid_ArithMul F ExtF) (r : ℕ) : F :=
   v.d_0 r + v.d_1 r * 65536 + v.d_2 r * (65536 * 65536)
     + v.d_3 r * (65536 * 65536 * 65536)
 
 /-- Packed a: `a[0] + a[1] * 2^16 + a[2] * 2^32 + a[3] * 2^48`. -/
 @[simp]
-def a_chunks_packed (v : Valid_ArithMul C F ExtF) (r : ℕ) : F :=
+def a_chunks_packed (v : Valid_ArithMul F ExtF) (r : ℕ) : F :=
   v.a_0 r + v.a_1 r * 65536 + v.a_2 r * (65536 * 65536)
     + v.a_3 r * (65536 * 65536 * 65536)
 
 /-- Packed b: `b[0] + b[1] * 2^16 + b[2] * 2^32 + b[3] * 2^48`. -/
 @[simp]
-def b_chunks_packed (v : Valid_ArithMul C F ExtF) (r : ℕ) : F :=
+def b_chunks_packed (v : Valid_ArithMul F ExtF) (r : ℕ) : F :=
   v.b_0 r + v.b_1 r * 65536 + v.b_2 r * (65536 * 65536)
     + v.b_3 r * (65536 * 65536 * 65536)
 
@@ -434,18 +496,18 @@ def b_chunks_packed (v : Valid_ArithMul C F ExtF) (r : ℕ) : F :=
     pin `fab = 1, na_fb = 0, nb_fa = 0`, and the carry equations reduce
     to exactly the 8-chunk pure-field form the carry-chain lemma closes. -/
 lemma arith_mul_unsigned_packed_correct
-    (v : Valid_ArithMul C F ExtF) (row : ℕ)
-    (h6 : constraint_6_every_row v.circuit row)
-    (h7 : constraint_7_every_row v.circuit row)
-    (h8 : constraint_8_every_row v.circuit row)
-    (h31 : constraint_31_every_row v.circuit row)
-    (h32 : constraint_32_every_row v.circuit row)
-    (h33 : constraint_33_every_row v.circuit row)
-    (h34 : constraint_34_every_row v.circuit row)
-    (h35 : constraint_35_every_row v.circuit row)
-    (h36 : constraint_36_every_row v.circuit row)
-    (h37 : constraint_37_every_row v.circuit row)
-    (h38 : constraint_38_every_row v.circuit row)
+    (v : Valid_ArithMul F ExtF) (row : ℕ)
+    (h6 : mul_constraint_6_named v row)
+    (h7 : mul_constraint_7_named v row)
+    (h8 : mul_constraint_8_named v row)
+    (h31 : mul_constraint_31_named v row)
+    (h32 : mul_constraint_32_named v row)
+    (h33 : mul_constraint_33_named v row)
+    (h34 : mul_constraint_34_named v row)
+    (h35 : mul_constraint_35_named v row)
+    (h36 : mul_constraint_36_named v row)
+    (h37 : mul_constraint_37_named v row)
+    (h38 : mul_constraint_38_named v row)
     (h_na : v.na row = 0) (h_nb : v.nb row = 0)
     (h_np : v.np row = 0) (h_nr : v.nr row = 0)
     (_h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
@@ -453,41 +515,25 @@ lemma arith_mul_unsigned_packed_correct
     a_chunks_packed v row * b_chunks_packed v row
       = c_chunks_packed v row
         + d_chunks_packed v row * (65536 * 65536 * 65536 * 65536) := by
-  -- Rewrite the constraints to named-column form and substitute the mode.
-  -- Unfold named columns via their *_def equations, which rewrite back to
-  -- Circuit.main. After ring_nf, each selector column becomes a free symbol;
-  -- with the 7 mode zeros, the `fab` / `na_fb` / `nb_fa` columns are the
-  -- only remaining mode atoms. Constraints 6/7/8 give us
-  --   fab = 1,  na_fb = 0,  nb_fa = 0
-  -- after substituting na = nb = 0 via h_na / h_nb.
-  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
-             ← v.na_def, ← v.nb_def] at h6 h7 h8
-  simp only [h_na, h_nb] at h6 h7 h8
-  -- Extract the `fab = 1`, `na_fb = 0`, `nb_fa = 0` equalities in linear form.
-  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := row) (rotation := 0)
-    = (1 : F) := by linear_combination h6
-  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := row) (rotation := 0)
-    = (0 : F) := by linear_combination h7
-  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := row) (rotation := 0)
-    = (0 : F) := by linear_combination h8
-  -- Unfold the carry constraints and rewrite named columns back.
-  simp only [constraint_31_every_row, constraint_32_every_row,
-             constraint_33_every_row, constraint_34_every_row,
-             constraint_35_every_row, constraint_36_every_row,
-             constraint_37_every_row, constraint_38_every_row,
-             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
-             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
-             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
-             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
-             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
-             ← v.m32_def, ← v.div_def]
-    at h31 h32 h33 h34 h35 h36 h37 h38
-  -- Use simp to apply the (possibly-missing) mode witnesses.
-  simp only [h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+  -- Substitute mode witnesses in named-form constraints; constraints 6/7/8
+  -- pin `fab = 1, na_fb = 0, nb_fa = 0`.
+  simp only [mul_constraint_6_named, mul_constraint_7_named,
+             mul_constraint_8_named, h_na, h_nb,
+             mul_zero, add_zero, sub_zero,
+             mul_one] at h6 h7 h8
+  have h_fab : v.fab row = (1 : F) := by linear_combination h6
+  have h_nafb : v.na_fb row = (0 : F) := by linear_combination h7
+  have h_nbfa : v.nb_fa row = (0 : F) := by linear_combination h8
+  -- Substitute mode + fab/na_fb/nb_fa identities into the carry constraints.
+  simp only [mul_constraint_31_named, mul_constraint_32_named,
+             mul_constraint_33_named, mul_constraint_34_named,
+             mul_constraint_35_named, mul_constraint_36_named,
+             mul_constraint_37_named, mul_constraint_38_named,
+             h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
              mul_zero, zero_mul, add_zero, sub_zero, zero_sub,
              mul_one, one_mul]
     at h31 h32 h33 h34 h35 h36 h37 h38
-  -- The carry-chain identity now applies at (a_i, b_i, c_i, d_i, carry_i).
+  -- Close via linear combination over the 8 simplified carry equations.
   unfold a_chunks_packed b_chunks_packed c_chunks_packed d_chunks_packed
   linear_combination
     h31
@@ -530,18 +576,18 @@ lemma arith_mul_unsigned_packed_correct
     witnesses as explicit hypotheses; callers derive them from the
     table via `Airs/Arith/ArithTable.lean`. -/
 lemma arith_mul_signed_packed_correct
-    (v : Valid_ArithMul C F ExtF) (row : ℕ)
-    (h6 : constraint_6_every_row v.circuit row)
-    (h7 : constraint_7_every_row v.circuit row)
-    (h8 : constraint_8_every_row v.circuit row)
-    (h31 : constraint_31_every_row v.circuit row)
-    (h32 : constraint_32_every_row v.circuit row)
-    (h33 : constraint_33_every_row v.circuit row)
-    (h34 : constraint_34_every_row v.circuit row)
-    (h35 : constraint_35_every_row v.circuit row)
-    (h36 : constraint_36_every_row v.circuit row)
-    (h37 : constraint_37_every_row v.circuit row)
-    (h38 : constraint_38_every_row v.circuit row)
+    (v : Valid_ArithMul F ExtF) (row : ℕ)
+    (h6 : mul_constraint_6_named v row)
+    (h7 : mul_constraint_7_named v row)
+    (h8 : mul_constraint_8_named v row)
+    (h31 : mul_constraint_31_named v row)
+    (h32 : mul_constraint_32_named v row)
+    (h33 : mul_constraint_33_named v row)
+    (h34 : mul_constraint_34_named v row)
+    (h35 : mul_constraint_35_named v row)
+    (h36 : mul_constraint_36_named v row)
+    (h37 : mul_constraint_37_named v row)
+    (h38 : mul_constraint_38_named v row)
     (h_nr : v.nr row = 0)
     (_h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
     (h_div : v.div row = 0) :
@@ -555,30 +601,24 @@ lemma arith_mul_signed_packed_correct
       = (1 - 2 * v.np row)
           * (c_chunks_packed v row
             + d_chunks_packed v row * (65536 * 65536 * 65536 * 65536)) := by
-  -- Derive fab / na_fb / nb_fa from constraints 6/7/8.
-  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
-             ← v.na_def, ← v.nb_def] at h6 h7 h8
-  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := row) (rotation := 0)
-    = 1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row := by linear_combination h6
-  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := row) (rotation := 0)
-    = v.na row * (1 - 2 * v.nb row) := by linear_combination h7
-  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := row) (rotation := 0)
-    = v.nb row * (1 - 2 * v.na row) := by linear_combination h8
-  -- Unfold the carry constraints and rewrite named columns back.
-  simp only [constraint_31_every_row, constraint_32_every_row,
-             constraint_33_every_row, constraint_34_every_row,
-             constraint_35_every_row, constraint_36_every_row,
-             constraint_37_every_row, constraint_38_every_row,
-             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
-             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
-             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
-             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
-             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
-             ← v.m32_def, ← v.div_def]
-    at h31 h32 h33 h34 h35 h36 h37 h38
+  -- Derive fab / na_fb / nb_fa equalities from named-form constraints 6/7/8.
+  have h_fab : v.fab row = 1 - 2 * v.na row - 2 * v.nb row
+      + 4 * v.na row * v.nb row := by
+    simp only [mul_constraint_6_named] at h6
+    linear_combination h6
+  have h_nafb : v.na_fb row = v.na row * (1 - 2 * v.nb row) := by
+    simp only [mul_constraint_7_named] at h7
+    linear_combination h7
+  have h_nbfa : v.nb_fa row = v.nb row * (1 - 2 * v.na row) := by
+    simp only [mul_constraint_8_named] at h8
+    linear_combination h8
   -- Substitute mode witnesses (m32 = 0, nr = 0, div = 0) and the fab / na_fb / nb_fa
   -- identities.
-  simp only [h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+  simp only [mul_constraint_31_named, mul_constraint_32_named,
+             mul_constraint_33_named, mul_constraint_34_named,
+             mul_constraint_35_named, mul_constraint_36_named,
+             mul_constraint_37_named, mul_constraint_38_named,
+             h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
              mul_zero, zero_mul, add_zero, sub_zero,
              mul_one]
     at h31 h32 h33 h34 h35 h36 h37 h38
@@ -599,7 +639,7 @@ lemma arith_mul_signed_packed_correct
     `mul_carry_chain_holds` predicate — more ergonomic for downstream
     consumers. -/
 lemma arith_mul_unsigned_packed_correct_bundled
-    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (v : Valid_ArithMul F ExtF) (row : ℕ)
     (h_chain : mul_carry_chain_holds v row)
     (h_na : v.na row = 0) (h_nb : v.nb row = 0)
     (h_np : v.np row = 0) (h_nr : v.nr row = 0)
@@ -619,7 +659,7 @@ lemma arith_mul_unsigned_packed_correct_bundled
     named columns for downstream consumption by the signed ℤ
     aggregator. -/
 lemma arith_mul_signed_packed_correct_bundled
-    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (v : Valid_ArithMul F ExtF) (row : ℕ)
     (h_chain : mul_carry_chain_holds v row)
     (h_nr : v.nr row = 0)
     (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)

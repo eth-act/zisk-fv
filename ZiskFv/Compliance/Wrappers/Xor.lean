@@ -1,22 +1,20 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Xor
-import ZiskFv.Equivalence.Promises.RType
-import ZiskFv.Equivalence.Promises.BinaryHelpers
+import ZiskFv.EquivCore.Xor
+import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryRanges
+import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_XOR` Compliance wrapper — Binary mode-pin shape
 
-Refactored to consume per-AIR helpers from
-`Equivalence/Promises/BinaryHelpers.lean`. Trust footprint unchanged.
+Canonical wrapper delegates to the Clean/static provider core. Trust footprint is tracked by the regenerated caller-burden and axiom-closure ledgers.
 -/
 
 namespace ZiskFv.Compliance
@@ -26,20 +24,30 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence.Promises
+open ZiskFv.EquivCore.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_XOR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xor_input : PureSpec.XorInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state xor_input.r1_val xor_input.r2_val xor_input.rd xor_input.PC
         (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -49,19 +57,20 @@ theorem equiv_XOR
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.XOR))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op_xor⟩ := pins
-  have h_op_disj := binary_op_disj_of_eq m r_main 16 h_main_op_xor (by tauto)
-  obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
-  have h_bop_or_sext :=
-    binary_h_bop_or_sext_via_axiom h_match h_main_op_xor
-      (binary_b_op_or_sext_eq_OP_XOR v r_binary)
-  exact ZiskFv.Equivalence.Xor.equiv_XOR
-    state xor_input r1 r2 rd m v r_main r_binary
-    ⟨exec_row, e0, e1, e2⟩
-    promises
-    ⟨h_main_active, h_main_op_xor⟩
-    h_match h_bop_or_sext h_lane_rd
+  let row :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  obtain ⟨h_core, h_facts⟩ :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (providerTable.environment providerRow) := by
+    simpa [h_component] using h_table_spec providerRow h_provider_row
+  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
+  obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
+  exact ZiskFv.EquivCore.Xor.equiv_XOR_of_static_row
+    state xor_input r1 r2 rd m row r_main bus promises pins
+    h_match h_row_spec h_core h_static_specs h_facts h_lane_rd
 
 end ZiskFv.Compliance

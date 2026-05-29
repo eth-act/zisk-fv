@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.SailSpec.BusEffect
@@ -44,6 +45,7 @@ namespace ZiskFv.Airs.Bus.BusEmission
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 /-- **Register-write commutation (state level).** Two successive
     `write_reg_state` calls on distinct registers commute.
@@ -207,8 +209,8 @@ lemma bus_effect_matches_sail_alu_rrw
           (if h : Transpiler.wrap_to_regidx e2.ptr = 0 then
             pure ()
           else
-            let val := U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                                    e2.x4, e2.x5, e2.x6, e2.x7]
+            let val := U64.toBV #v[(byteAt e2 0), (byteAt e2 1), (byteAt e2 2), (byteAt e2 3),
+                                    (byteAt e2 4), (byteAt e2 5), (byteAt e2 6), (byteAt e2 7)]
             let reg_idx : Finset.Icc 1 31 :=
               ⟨ (Transpiler.wrap_to_regidx e2.ptr).val, by simp; omega ⟩
             write_xreg reg_idx val)
@@ -270,8 +272,8 @@ lemma bus_effect_matches_sail_jump_rrw
           (if h : Transpiler.wrap_to_regidx e_rd.ptr = 0 then
             pure ()
           else
-            let val := U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
-                                    e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+            let val := U64.toBV #v[(byteAt e_rd 0), (byteAt e_rd 1), (byteAt e_rd 2), (byteAt e_rd 3),
+                                    (byteAt e_rd 4), (byteAt e_rd 5), (byteAt e_rd 6), (byteAt e_rd 7)]
             let reg_idx : Finset.Icc 1 31 :=
               ⟨ (Transpiler.wrap_to_regidx e_rd.ptr).val, by simp; omega ⟩
             write_xreg reg_idx val)
@@ -355,8 +357,8 @@ lemma bus_effect_matches_sail_load_rrrw
           (if h : Transpiler.wrap_to_regidx e2.ptr = 0 then
             pure ()
           else
-            let val := U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                                    e2.x4, e2.x5, e2.x6, e2.x7]
+            let val := U64.toBV #v[(byteAt e2 0), (byteAt e2 1), (byteAt e2 2), (byteAt e2 3),
+                                    (byteAt e2 4), (byteAt e2 5), (byteAt e2 6), (byteAt e2 7)]
             let reg_idx : Finset.Icc 1 31 :=
               ⟨ (Transpiler.wrap_to_regidx e2.ptr).val, by simp; omega ⟩
             write_xreg reg_idx val)
@@ -431,14 +433,14 @@ lemma bus_effect_matches_sail_store_rrrw
           modify (fun s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource =>
             { s with
               mem :=
-                (((((((s.mem.insert e2.ptr.toNat e2.x0
-                ).insert (e2.ptr.toNat + 1) e2.x1
-                ).insert (e2.ptr.toNat + 2) e2.x2
-                ).insert (e2.ptr.toNat + 3) e2.x3
-                ).insert (e2.ptr.toNat + 4) e2.x4
-                ).insert (e2.ptr.toNat + 5) e2.x5
-                ).insert (e2.ptr.toNat + 6) e2.x6
-                ).insert (e2.ptr.toNat + 7) e2.x7 })
+                (((((((s.mem.insert e2.ptr.toNat (byteAt e2 0)
+                ).insert (e2.ptr.toNat + 1) (byteAt e2 1)
+                ).insert (e2.ptr.toNat + 2) (byteAt e2 2)
+                ).insert (e2.ptr.toNat + 3) (byteAt e2 3)
+                ).insert (e2.ptr.toNat + 4) (byteAt e2 4)
+                ).insert (e2.ptr.toNat + 5) (byteAt e2 5)
+                ).insert (e2.ptr.toNat + 6) (byteAt e2 6)
+                ).insert (e2.ptr.toNat + 7) (byteAt e2 7) })
           pure (ExecutionResult.Retire_Success ())) state := by
   -- Unfold bus_effect and reduce the foldl over the concrete 3-list.
   unfold bus_effect
@@ -508,8 +510,8 @@ witnesses. -/
     bridging hypothesis `h_rd_val_match` translates the `U64.toBV`
     of the eight rd-write bytes into the LW-pure-spec's
     `BitVec.signExtend 64 (data3 ++ data2 ++ data1 ++ data0)` form.
-    The caller discharges this by witnessing `e2.x4..x7` as the
-    sign-extension of `e2.x3` (i.e., `0` if `e2.x3.msb = false`,
+    The caller discharges this by witnessing `(byteAt e2 4)..x7` as the
+    sign-extension of `(byteAt e2 3)` (i.e., `0` if `(byteAt e2 3).msb = false`,
     `0xff` if `true`). -/
 lemma bus_effect_matches_sail_load_4byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -530,8 +532,8 @@ lemma bus_effect_matches_sail_load_4byte_rrrw
     (h_m2_mult : e2.multiplicity = 1)
     (h_m2_as   : e2.as.val = 1)
     (h_rd_val_match :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                   e2.x4, e2.x5, e2.x6, e2.x7] = rd_val) :
+      U64.toBV #v[(byteAt e2 0), (byteAt e2 1), (byteAt e2 2), (byteAt e2 3),
+                   (byteAt e2 4), (byteAt e2 5), (byteAt e2 6), (byteAt e2 7)] = rd_val) :
     (bus_effect exec_row [e0, e1, e2] state).2
       = (do
           Sail.writeReg Register.nextPC nextPC_val
@@ -551,7 +553,7 @@ lemma bus_effect_matches_sail_load_4byte_rrrw
 
     Same bus shape as LW; bridging hypothesis selects the
     zero-extend form (`BitVec.zeroExtend 64 (data3 ++ ... ++ data0)`).
-    Caller discharges via `e2.x4 = e2.x5 = e2.x6 = e2.x7 = 0`. -/
+    Caller discharges via `(byteAt e2 4) = (byteAt e2 5) = (byteAt e2 6) = (byteAt e2 7) = 0`. -/
 lemma bus_effect_matches_sail_loadu_4byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
@@ -571,8 +573,8 @@ lemma bus_effect_matches_sail_loadu_4byte_rrrw
     (h_m2_mult : e2.multiplicity = 1)
     (h_m2_as   : e2.as.val = 1)
     (h_rd_val_match :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                   e2.x4, e2.x5, e2.x6, e2.x7] = rd_val) :
+      U64.toBV #v[(byteAt e2 0), (byteAt e2 1), (byteAt e2 2), (byteAt e2 3),
+                   (byteAt e2 4), (byteAt e2 5), (byteAt e2 6), (byteAt e2 7)] = rd_val) :
     (bus_effect exec_row [e0, e1, e2] state).2
       = (do
           Sail.writeReg Register.nextPC nextPC_val
@@ -608,8 +610,8 @@ lemma bus_effect_matches_sail_load_2byte_rrrw
     (h_m2_mult : e2.multiplicity = 1)
     (h_m2_as   : e2.as.val = 1)
     (h_rd_val_match :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                   e2.x4, e2.x5, e2.x6, e2.x7] = rd_val) :
+      U64.toBV #v[(byteAt e2 0), (byteAt e2 1), (byteAt e2 2), (byteAt e2 3),
+                   (byteAt e2 4), (byteAt e2 5), (byteAt e2 6), (byteAt e2 7)] = rd_val) :
     (bus_effect exec_row [e0, e1, e2] state).2
       = (do
           Sail.writeReg Register.nextPC nextPC_val
@@ -645,8 +647,8 @@ lemma bus_effect_matches_sail_loadu_2byte_rrrw
     (h_m2_mult : e2.multiplicity = 1)
     (h_m2_as   : e2.as.val = 1)
     (h_rd_val_match :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                   e2.x4, e2.x5, e2.x6, e2.x7] = rd_val) :
+      U64.toBV #v[(byteAt e2 0), (byteAt e2 1), (byteAt e2 2), (byteAt e2 3),
+                   (byteAt e2 4), (byteAt e2 5), (byteAt e2 6), (byteAt e2 7)] = rd_val) :
     (bus_effect exec_row [e0, e1, e2] state).2
       = (do
           Sail.writeReg Register.nextPC nextPC_val
@@ -682,8 +684,8 @@ lemma bus_effect_matches_sail_load_1byte_rrrw
     (h_m2_mult : e2.multiplicity = 1)
     (h_m2_as   : e2.as.val = 1)
     (h_rd_val_match :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                   e2.x4, e2.x5, e2.x6, e2.x7] = rd_val) :
+      U64.toBV #v[(byteAt e2 0), (byteAt e2 1), (byteAt e2 2), (byteAt e2 3),
+                   (byteAt e2 4), (byteAt e2 5), (byteAt e2 6), (byteAt e2 7)] = rd_val) :
     (bus_effect exec_row [e0, e1, e2] state).2
       = (do
           Sail.writeReg Register.nextPC nextPC_val
@@ -719,8 +721,8 @@ lemma bus_effect_matches_sail_loadu_1byte_rrrw
     (h_m2_mult : e2.multiplicity = 1)
     (h_m2_as   : e2.as.val = 1)
     (h_rd_val_match :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                   e2.x4, e2.x5, e2.x6, e2.x7] = rd_val) :
+      U64.toBV #v[(byteAt e2 0), (byteAt e2 1), (byteAt e2 2), (byteAt e2 3),
+                   (byteAt e2 4), (byteAt e2 5), (byteAt e2 6), (byteAt e2 7)] = rd_val) :
     (bus_effect exec_row [e0, e1, e2] state).2
       = (do
           Sail.writeReg Register.nextPC nextPC_val
@@ -788,14 +790,14 @@ lemma bus_effect_matches_sail_store_4byte_rrrw
           modify (fun s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource =>
             { s with
               mem :=
-                (((((((s.mem.insert e2.ptr.toNat e2.x0
-                ).insert (e2.ptr.toNat + 1) e2.x1
-                ).insert (e2.ptr.toNat + 2) e2.x2
-                ).insert (e2.ptr.toNat + 3) e2.x3
-                ).insert (e2.ptr.toNat + 4) e2.x4
-                ).insert (e2.ptr.toNat + 5) e2.x5
-                ).insert (e2.ptr.toNat + 6) e2.x6
-                ).insert (e2.ptr.toNat + 7) e2.x7 })
+                (((((((s.mem.insert e2.ptr.toNat (byteAt e2 0)
+                ).insert (e2.ptr.toNat + 1) (byteAt e2 1)
+                ).insert (e2.ptr.toNat + 2) (byteAt e2 2)
+                ).insert (e2.ptr.toNat + 3) (byteAt e2 3)
+                ).insert (e2.ptr.toNat + 4) (byteAt e2 4)
+                ).insert (e2.ptr.toNat + 5) (byteAt e2 5)
+                ).insert (e2.ptr.toNat + 6) (byteAt e2 6)
+                ).insert (e2.ptr.toNat + 7) (byteAt e2 7) })
           pure (ExecutionResult.Retire_Success ())) state :=
   bus_effect_matches_sail_store_rrrw state exec_row e0 e1 e2 nextPC_val
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -826,14 +828,14 @@ lemma bus_effect_matches_sail_store_2byte_rrrw
           modify (fun s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource =>
             { s with
               mem :=
-                (((((((s.mem.insert e2.ptr.toNat e2.x0
-                ).insert (e2.ptr.toNat + 1) e2.x1
-                ).insert (e2.ptr.toNat + 2) e2.x2
-                ).insert (e2.ptr.toNat + 3) e2.x3
-                ).insert (e2.ptr.toNat + 4) e2.x4
-                ).insert (e2.ptr.toNat + 5) e2.x5
-                ).insert (e2.ptr.toNat + 6) e2.x6
-                ).insert (e2.ptr.toNat + 7) e2.x7 })
+                (((((((s.mem.insert e2.ptr.toNat (byteAt e2 0)
+                ).insert (e2.ptr.toNat + 1) (byteAt e2 1)
+                ).insert (e2.ptr.toNat + 2) (byteAt e2 2)
+                ).insert (e2.ptr.toNat + 3) (byteAt e2 3)
+                ).insert (e2.ptr.toNat + 4) (byteAt e2 4)
+                ).insert (e2.ptr.toNat + 5) (byteAt e2 5)
+                ).insert (e2.ptr.toNat + 6) (byteAt e2 6)
+                ).insert (e2.ptr.toNat + 7) (byteAt e2 7) })
           pure (ExecutionResult.Retire_Success ())) state :=
   bus_effect_matches_sail_store_rrrw state exec_row e0 e1 e2 nextPC_val
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -864,14 +866,14 @@ lemma bus_effect_matches_sail_store_1byte_rrrw
           modify (fun s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource =>
             { s with
               mem :=
-                (((((((s.mem.insert e2.ptr.toNat e2.x0
-                ).insert (e2.ptr.toNat + 1) e2.x1
-                ).insert (e2.ptr.toNat + 2) e2.x2
-                ).insert (e2.ptr.toNat + 3) e2.x3
-                ).insert (e2.ptr.toNat + 4) e2.x4
-                ).insert (e2.ptr.toNat + 5) e2.x5
-                ).insert (e2.ptr.toNat + 6) e2.x6
-                ).insert (e2.ptr.toNat + 7) e2.x7 })
+                (((((((s.mem.insert e2.ptr.toNat (byteAt e2 0)
+                ).insert (e2.ptr.toNat + 1) (byteAt e2 1)
+                ).insert (e2.ptr.toNat + 2) (byteAt e2 2)
+                ).insert (e2.ptr.toNat + 3) (byteAt e2 3)
+                ).insert (e2.ptr.toNat + 4) (byteAt e2 4)
+                ).insert (e2.ptr.toNat + 5) (byteAt e2 5)
+                ).insert (e2.ptr.toNat + 6) (byteAt e2 6)
+                ).insert (e2.ptr.toNat + 7) (byteAt e2 7) })
           pure (ExecutionResult.Retire_Success ())) state :=
   bus_effect_matches_sail_store_rrrw state exec_row e0 e1 e2 nextPC_val
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

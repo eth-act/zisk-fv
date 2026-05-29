@@ -32,7 +32,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.RTypeWArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- ADDIW's mode predicate: specialization of
     `RTypeWArchetype.main_row_in_rtypew_mode` at
@@ -40,14 +39,14 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     the transpiler's source-b routing (imm vs. reg), not the row
     shape. -/
 @[simp]
-def main_row_in_addiw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_addiw_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   main_row_in_rtypew_mode m r_main OP_ADD_W
 
 /-- ADDIW's circuit-holds predicate: specialization of
     `rtypew_archetype_circuit_holds` at `OP_ADD_W`. -/
 @[simp]
 def addiw_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   rtypew_archetype_circuit_holds m r_main bus_entry OP_ADD_W
 
@@ -57,7 +56,7 @@ def addiw_circuit_holds
     populated the Main row's `b` lanes (here: the sign-extended
     12-bit immediate). -/
 lemma addiw_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : addiw_circuit_holds m r_main bus_entry) :
     main_c_packed m r_main

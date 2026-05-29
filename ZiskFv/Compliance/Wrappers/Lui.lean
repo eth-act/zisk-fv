@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Lui
-import ZiskFv.Equivalence.Promises.UType
-import ZiskFv.Equivalence.Promises.UTypeHelpers
+import ZiskFv.EquivCore.Lui
+import ZiskFv.EquivCore.Promises.UType
+import ZiskFv.EquivCore.Promises.UTypeHelpers
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -26,7 +26,6 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Tactics.UTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Trust-discharged wrapper for `equiv_LUI`.** Derives `h_circuit`
     from `lui_h_circuit_of_main_constraints` (consuming `transpile_LUI`)
@@ -36,25 +35,26 @@ theorem equiv_LUI
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
     (rd : regidx)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     -- Activation / opcode pins on Main + per-row subset constraint
     -- (consumed by the UTypeHelpers helper that fires `transpile_LUI`).
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     -- Structural `UTypePromises` bundle.
-    (promises : ZiskFv.Equivalence.Promises.UTypePromises
+    (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state lui_input.imm lui_input.rd lui_input.PC
         (PureSpec.execute_LUI_pure lui_input).nextPC
         imm rd exec_row e_rd (lui_input.PC + 4#64)) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
-    ZiskFv.Equivalence.Promises.lui_h_circuit_of_main_constraints
+    ZiskFv.EquivCore.Promises.lui_h_circuit_of_main_constraints
       m r_main next_pc pins.main_active pins.main_op h_lui_subset
-  ZiskFv.Equivalence.Lui.equiv_LUI state lui_input imm rd
-    m r_main next_pc exec_row e_rd (lui_input.PC + 4#64)
+  ZiskFv.EquivCore.Lui.equiv_LUI state lui_input imm rd
+    m r_main next_pc exec_row e_rd store_pc_mem (lui_input.PC + 4#64)
     promises h_circuit
 
 end ZiskFv.Compliance

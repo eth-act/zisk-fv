@@ -1,12 +1,13 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Sllw
-import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
+import ZiskFv.EquivCore.Sllw
+import ZiskFv.EquivCore.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Compliance.SharedBundles
 
 /-! `equiv_SLLW` Compliance wrapper — BinaryExtension W-shift,
@@ -19,15 +20,16 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence.Promises
+open ZiskFv.EquivCore.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SLLW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sllw_input : PureSpec.SllwInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
@@ -47,16 +49,26 @@ theorem equiv_SLLW
     (h_m2_mult : bus.e2.multiplicity = 1) (h_m2_as : bus.e2.as.val = 1)
     (h_rd_idx : sllw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL_W)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SLLW)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op⟩ := pins
-  obtain ⟨r_binary, h_match⟩ :=
-    binexec_op_bus_handshake_SLL_W m v r_main h_main_active h_main_op
-  exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
-    m v r_main r_binary
-    ⟨exec_row, e0, e1, e2⟩
+  let row :=
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_shift_facts :=
+    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+      h_component h_table_spec h_provider_row
+  exact ZiskFv.EquivCore.Sllw.equiv_SLLW_of_static_row state sllw_input r1 r2 rd
+    m row r_main bus
     { input_r1_eq := h_input_r1_sail
       input_r2_eq := h_input_r2_sail
       input_rd_eq := h_input_rd
@@ -72,7 +84,8 @@ theorem equiv_SLLW
       m2_mult := h_m2_mult
       m2_as := h_m2_as
       rd_idx := h_rd_idx }
-    ⟨h_main_active, h_main_op⟩
-    h_match h_lane_rd
+    pins h_match h_shift_facts.1 h_shift_facts.2 h_lane_rd
+
+-- equiv_<OP>_of_static_lookup (alt route, op_bus_perm_sound) deleted in T4-purge P3.2.
 
 end ZiskFv.Compliance

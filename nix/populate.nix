@@ -1,4 +1,4 @@
-{ writeShellApplication, sail-lean-tree, zisk-pilout, extracted-lean }:
+{ writeShellApplication, sail-lean-tree, zisk-pilout, extracted-lean, clean-source }:
 
 # Replaces docker/build-{sail-lean,zisk-lean}.sh. Copies the
 # Nix-built derivation outputs into the repo paths `lake build`
@@ -6,7 +6,8 @@
 #
 #   build/sail-lean/                       ← sail-lean-tree
 #   build/zisk.pilout                      ← zisk-pilout
-#   build/extraction/Extraction/*.lean     ← extracted-lean.
+#   build/extraction/Extraction/*.lean     ← extracted-lean
+#   build/clean-lean/                      ← clean-source.
 #
 # After this, `lake build` and `nix run .#test` work the same as they
 # did under the old Docker pipeline.
@@ -60,6 +61,11 @@ EOF
       cp --no-preserve=mode "$f" "build/extraction/Extraction/$base"
       chmod u+w "build/extraction/Extraction/$base"
     done
+
+    echo "▶ build/clean-lean/ ← ${clean-source}"
+    rm -rf build/clean-lean
+    cp -rL --no-preserve=mode "${clean-source}" build/clean-lean
+    chmod -R u+w build/clean-lean
 
     echo "✅ build/ populated"
   '';

@@ -4,8 +4,8 @@
 # under ZiskFv/ should be `lemma` (kernel-identical in Lean 4 /
 # Mathlib but communicates "internal helper").
 #
-# Three groups, 128 names total:
-#   1. 2 global compliance theorems (ZiskFv/Compliance.lean)
+# Three groups, 127 names total:
+#   1. 1 global compliance theorem (ZiskFv/Compliance.lean)
 #   2. 63 canonical per-opcode equivalences (ZiskFv/Equivalence/<Op>.lean)
 #   3. 63 trust-wrapper theorems (ZiskFv/Compliance/Wrappers/<Op>.lean)
 #
@@ -13,9 +13,8 @@
 # require group-2 names to be `theorem`; flipping them would fail
 # the build and trust gate.
 
-# ---- Group 1: global compliance (2) ----
+# ---- Group 1: global compliance (1) ----
 zisk_riscv_compliant_program_bus
-decode_main_row_correct
 
 # ---- Group 2: 63 canonical equiv_<OP> ----
 equiv_ADD

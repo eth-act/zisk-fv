@@ -12,11 +12,6 @@ name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.28.0"
 
-[[require]]
-name = "LeanZKCircuit"
-git = "https://github.com/codygunton/LeanZKCircuit.git"
-rev = "v4.28.0"
-
 # Sail-Lean RV64D spec is built locally from primary source via
 # the Nix flake (`nix run .#populate`). Lake reads from the local
 # build/sail-lean/ tree — the spec is NOT pulled pre-built. Run
@@ -27,10 +22,18 @@ path = "build/sail-lean"
 
 # Auto-generated PIL2 extraction (per-AIR Lean files emitted by
 # `tools/pil-extract` from `build/zisk.pilout`). Populated by
-# `nix run .#populate` — never committed.
+# `nix run .#populate` — never committed. ORPHANED (Phase F7): the
+# extraction files reference the now-deleted `ZiskFv.Circuit` typeclass
+# and the v1 Valid_<AIR> shape; they remain on disk for the audit
+# trail (PIL ↔ Lean diff) but are no longer a Lake dep. Re-introducing
+# requires re-extracting against a Clean-Components-aware emitter.
+
+# Clean DSL (Verified-zkEVM/clean) source tree. Populated by
+# `nix run .#populate` from the pinned `clean-src` flake input.
+# Mathlib v4.28.0 is shared (Clean and zisk-fv pin the same rev).
 [[require]]
-name = "Extraction"
-path = "build/extraction"
+name = "Clean"
+path = "build/clean-lean"
 
 [[lean_lib]]
 name = "ZiskFv"

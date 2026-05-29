@@ -14,38 +14,17 @@
 # platform assumptions (P1-P4), and store_pc=1 PC bridges (TP-*).
 ZiskFv/Trusted/Transpiler.lean
 
-# Bus-protocol soundness for bus_id=10 (memory bus).
-ZiskFv/Airs/MemoryBus/LaneMatch.lean
-ZiskFv/Airs/MemoryBus/MemBridge.lean
-ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
-ZiskFv/Airs/MemoryBus/EntryRanges.lean
-
-# Lookup-table content for bus_id=125 / 124.
-ZiskFv/Airs/Tables/BinaryTable.lean
-ZiskFv/Airs/Tables/BinaryExtensionTable.lean
-
-# Bus-protocol soundness for bus_id=5000 (operation bus).
-ZiskFv/Airs/OperationBus/Bridge.lean
-
-# Range-checker bus lookup soundness on Main's bits(N)-annotated columns.
-ZiskFv/Airs/Main/Ranges.lean
-
-# Range-checker bus lookup soundness on BinaryAdd's bits(N)-annotated columns.
-ZiskFv/Airs/Binary/BinaryAddRanges.lean
-
-# Range-checker bus lookup soundness on Binary's bits(N)-annotated columns.
-ZiskFv/Airs/Binary/BinaryRanges.lean
-
-# Range-checker bus lookup soundness on BinaryExtension's bits(N)-annotated columns.
-ZiskFv/Airs/Binary/BinaryExtensionRanges.lean
-
-# Range-checker bus lookup soundness on Arith's bits(N)-annotated columns
-# (covers ArithMul and ArithDiv views).
-ZiskFv/Airs/Arith/Ranges.lean
-
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
 ZiskFv/ZiskCircuit/MemModel.lean
 
 # Small Sail-side simp helpers (locally proven; mirrors openvm-fv's
 # RV32D/Auxiliaries.lean pattern).
 ZiskFv/SailSpec/Auxiliaries.lean
+
+# Clean-Component completeness axioms (plan decision D-COMPLETE). One axiom
+# per AIR. NON-SECURITY-CRITICAL, completeness-direction: a falsehood in any
+# of these cannot make a wrong execution verify — the verification's
+# soundness does not depend on them. zisk-fv is a soundness-only
+# verification; Clean's `GeneralFormalCircuit` makes `completeness` a
+# mandatory field, so it is filled by a declared axiom.
+ZiskFv/AirsClean/Completeness.lean

@@ -11,11 +11,15 @@ Reproducible-build flake replacing the previous `docker/` pipeline.
 | `pil2-compiler.nix` | pil2-compiler with vendored npm deps                     |
 | `zisk-pilout.nix`   | ZisK pilout build (cargo + Node)                         |
 | `extracted-lean.nix`| Per-AIR extracted Lean files                             |
+| `clean.nix`         | Clean DSL source tree (Verified-zkEVM/clean), pinned     |
 | `populate.nix`      | `apps.populate`; copies derivation outputs into repo paths |
 
 The flake at the repo root composes these. Run `nix run .#populate`
 after cloning to produce `build/sail-lean/`, `build/zisk.pilout`,
-and `ZiskFv/Extraction/*.lean`. Then `lake build` works as usual.
+`ZiskFv/Extraction/*.lean`, and `build/clean-lean/`. Then `lake build`
+works as usual. The Clean dep is pulled as a *source* tree (no
+pre-built oleans inside Nix — Lake compiles it as part of the main
+build using the shared Mathlib v4.28.0 pin).
 
 ## Why Nix and not Docker
 

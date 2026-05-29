@@ -20,13 +20,12 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.ShiftArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in SRLI-execution mode. Same as
     `Circuit.Srl.main_row_in_srl_mode` — SRL and SRLI map to the same
     Zisk opcode (`OP_SRL = 34`, `m32 = 0`). -/
 @[simp]
-def main_row_in_srli_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_srli_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (34 : FGL)
   ∧ m.m32 r_main = 0
@@ -36,7 +35,7 @@ def main_row_in_srli_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
 /-- Main-side hypotheses for the SRLI archetype. -/
 @[simp]
 def srli_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   flag_boolean m r_main
   ∧ is_external_op_boolean m r_main
@@ -47,7 +46,7 @@ def srli_circuit_holds
 /-- **Compositional SRLI theorem.** Instantiation of the
     `ShiftArchetype` m32=0 archetype macro at `opcode_lit = OP_SRL`. -/
 lemma srli_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : srli_circuit_holds m r_main bus_entry) :
     bus_entry.a_hi = m.a_1 r_main ∧ bus_entry.b_hi = m.b_1 r_main := by

@@ -20,20 +20,19 @@ open ZiskFv.Trusted
 open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 @[simp]
-def main_row_in_xori_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_xori_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   main_row_in_alu_itype_mode m r_main OP_XOR
 
 @[simp]
 def xori_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   alu_itype_archetype_circuit_holds m r_main bus_entry OP_XOR
 
 lemma xori_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : xori_circuit_holds m r_main bus_entry) :
     main_c_packed m r_main

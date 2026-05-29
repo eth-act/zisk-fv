@@ -1,8 +1,9 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Ld
-import ZiskFv.Equivalence.Promises.Load
-import ZiskFv.Equivalence.Bridge.Mem
+import ZiskFv.EquivCore.Ld
+import ZiskFv.EquivCore.Bridge.MemClean
+import ZiskFv.EquivCore.Bridge.MemCleanFullEnsemble
+import ZiskFv.EquivCore.Promises.Load
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
@@ -22,22 +23,19 @@ sub-doubleword width-pin coupling.
 
 The shape's narrower zero-extended opcodes (LBU / LHU / LWU) will
 reuse LD's discharge machinery plus the `memalign_subdoubleword_load_high_bytes_zero`
-derived theorem (in `Airs/MemoryBus/MemAlignBridge.lean`, already a
-pure-Lean derivation atop `memalign_load_perm_sound` + the MemAlignRom
-zero-pin axiom) closing the high byte lanes to zero. The signed
+derived theorem (in `Airs/MemoryBus/MemAlignBridge.lean`, over the
+structural MemAlign provider witness) closing the high byte lanes to zero. The signed
 narrow loads (LB / LH / LW) take a different path through the
 BinaryExtension AIR (`Circuit/SextLoadBridge.lean`) and are a separate
 sub-pattern.
 
 ## 5-category discharge applied
 
-* **Lane-match.** Pre-discharged on the canonical surface.
-  `equiv_LD`'s proof already invokes
-  `Bridge.Mem.ld_discharge_full` (consuming `main_load_emission_bundle`,
-  class #4) to deliver the seven-tuple of load-side promise hypotheses
+* **Lane-match.** Discharged through the Clean Main/Mem load witness.
+  The wrapper delivers the seven-tuple of load-side facts
   (`h_main_emit_b`, `h_main_emit_c`, `h_ptr_match`, `h_rd_zero_iff`,
-  `h_rd_idx`, `h_copy0`, `h_copy1`) from the activation + opcode pin +
-  bus-shape pins. The wrapper inherits this; nothing to add.
+  `h_rd_idx`, `h_copy0`, `h_copy1`) from concrete PIL-shaped memory-bus
+  messages and explicit legacy adapters.
 * **Mode pins.** N/A on the provider side (Mem core has no mode
   columns; the activation pins `is_external_op = 0`, `op = OP_COPYB`
   are caller-supplied at the Compliance level from the ROM-handshake
@@ -61,15 +59,11 @@ sub-pattern.
 
 ## Anti-laundering report
 
-* **Zero new axioms.** This wrapper consumes only existing
-  trust-ledger axioms transitively via `equiv_LD`. The Mem-loads
-  load-side bundle (`main_load_emission_bundle`, class #4) was
-  already in place before this pilot; LD's discharge needs were
-  fully covered. Trust ledger unchanged — matches the per-AIR
-  per-AIR axioms map's 0-2 prediction for Mem (lower bound).
-* **No new bridges.** The existing `Bridge.Mem.ld_discharge_full`
-  is consumed verbatim by `equiv_LD`; no wrapper-level helper is
-  needed.
+* **Zero new axioms.** This wrapper consumes the Clean memory bridge
+  route; the former load-side bundle and provider permutation axioms are
+  absent from canonical/global closure.
+* **Bridge route.** `Bridge.MemClean.ld_discharge_full_clean_provider`
+  supplies the legacy facts from PIL-shaped Clean messages.
 * **Caller-burden shrinks.** See the count below.
 
 ## Caller-burden
@@ -110,20 +104,11 @@ further:
 
 ## Cross-shape lessons
 
-* **Mem-loads is heavily pre-discharged on the canonical surface.**
-  Unlike DIV / OR / ADD where the wrapper has substantial discharge
-  work (mode pins, lane-match assembly, byte-range unpacking), the
-  LD canonical theorem already internalizes lane-match, byte-range,
-  and operand-bridge discharges via the pre-existing
-  `Bridge.Mem.ld_discharge_full` and `mem_load_correct` /
-  `load_copyb_e1_e2_bytes_eq_bv` chains. The wrapper's per-opcode
-  surface is therefore mostly canonical naming.
-* The Mem-loads load-side **emission bundle**
-  (`main_load_emission_bundle`, class #4, `MemBridge.lean:374`) is
-  shape-uniform: LD / LBU / LHU / LWU all consume it identically.
-  The width difference is encoded downstream on the memory-bus
-  entry (`ind_width` selector pinned by the MemAlign* path for
-  sub-doubleword loads), not on the Main row.
+* **Mem-loads now use the Clean memory channel.** LD / LBU / LHU / LWU
+  share the same Main `b` consumer and Mem provider adapter shape. The
+  width difference is encoded downstream on the memory-bus entry
+  (`ind_width` selector pinned by the MemAlign* path for sub-doubleword
+  loads), not on the Main row.
 * **Zero-extended narrow loads (LBU / LHU / LWU)** generalize from
   LD mechanically: swap `transpile_LD` for `transpile_<LBU,LHU,LWU>`
   and consume `memalign_subdoubleword_load_high_bytes_zero` (a pure
@@ -149,7 +134,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Trust-discharged wrapper for `equiv_LD`.**
 
@@ -174,35 +158,32 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     * `equiv_LD`'s internal `ld_discharge_full` invocation already
       derives `h_main_emit_b`, `h_main_emit_c`, `h_ptr_match`,
       `h_rd_zero_iff`, `h_rd_idx`, `h_copy0`, `h_copy1` from
-      `main_load_emission_bundle` (class #4); this wrapper inherits
-      that discharge transparently.
+      the Clean memory witness and adapters.
 
-    Trust footprint: `equiv_LD`'s existing closure (which
-    transitively consumes `main_load_emission_bundle` (class #4),
-    `memory_bus_entry_byte_range_perm_sound` (class #5b),
-    `lookup_consumer_matches_provider_load` (class #4),
-    `row_models_sail_state_load` (class #2), `transpile_LD` (class #1)
-    and the load-output derivation chain). Zero new axioms — matches
-    `docs/fv/per-air-axiom-map.md`'s 0-2 prediction for Mem
-    (lower-bound endpoint, like LUI/ADD/SLL among the prior pilots). -/
+    Trust footprint: canonical LD no longer reaches the retired
+    load-side Main/provider memory axioms. Its remaining closure is the
+    platform scope, range-bus, Sail-state load bridge, and transpiler
+    trust already tracked in the regenerated baselines. -/
 theorem equiv_LD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index. Compliance.lean shares
     -- `(main, mem)` across all Mem opcodes.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     -- Structural bus rows.
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins. Compliance.lean derives these
     -- from Main's ROM handshake on the row hosting LD.
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     -- Structural promise bundle (12 fields, see Promises/Load.lean).
-    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LdCleanWitness
+        main mem r_main bus ld_input) :
     execute_instruction (instruction.LOAD (
       ld_input.imm,
       regidx.Regidx ld_input.r1,
@@ -210,11 +191,87 @@ theorem equiv_LD
       false,
       8
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  -- Delegate to canonical `equiv_LD`. `pins`'s opKind `OP_COPYB` is
-  -- definitionally `(1 : FGL)` (see `Trusted/Transpiler.lean:147`).
-  exact ZiskFv.Equivalence.Ld.equiv_LD
+  exact ZiskFv.EquivCore.Ld.equiv_LD_clean_provider_witness
     state ld_input regs bus
     promises
-    main mem r_main pins
+    main mem r_main pins w
+
+/-- LD wrapper rooted at selected full-ensemble Main/Mem memory rows.
+
+This is the migration target for the LD `OpEnvelope` arm: callers expose the
+selected full-ensemble row evaluations and same-message evidence, while the
+Mem provider payload match inside `LdCleanWitness` is derived by the
+reducible full-ensemble constructor. The row-equality, ROM/transpile, and
+legacy Main-side bus-entry pins remain explicit structural facts. -/
+theorem ld_eq_of_full_ensemble_mem_provider
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (ld_input : PureSpec.LdInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
+    (r_main r_mem : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.ld_state_assumptions ld_input state)
+        (PureSpec.execute_LOADD_pure ld_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    {memRowVar : Var ZiskFv.AirsClean.Mem.MemRow FGL}
+    {mainEnv memEnv : Environment FGL}
+    {mainMult providerMult : Expression FGL}
+    {mainInteraction providerInteraction : Interaction FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult
+          (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).toRaw).eval
+          mainEnv)
+    (h_providerEval :
+      providerInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr memRowVar)).toRaw).eval
+          memEnv)
+    (h_msg : providerInteraction.msg = mainInteraction.msg)
+    (h_main_row :
+      (eval mainEnv mainRowVar).core =
+        ZiskFv.AirsClean.Main.rowAt main r_main)
+    (h_mem_row :
+      eval memEnv memRowVar = ZiskFv.AirsClean.Mem.rowAt mem r_mem)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec (eval mainEnv mainRowVar).core)
+    (h_store_pc : (eval mainEnv mainRowVar).core.store_pc = 0)
+    (h_main_b_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRowVar)) (-1) 2))
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 1))
+    (h_addr1 :
+      (eval mainEnv mainRowVar).rom.addr1.toNat =
+        ld_input.r1_val.toNat + (BitVec.signExtend 64 ld_input.imm).toNat)
+    (h_addr2_zero_iff :
+      Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2 = 0 ↔
+        ld_input.rd = 0)
+    (h_addr2_idx :
+      ld_input.rd.toNat =
+        (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
+    (h_mem_sel : mem.sel r_mem = 1)
+    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
+    (h_mem_wr : mem.wr r_mem = 0) :
+    execute_instruction (instruction.LOAD (
+      ld_input.imm,
+      regidx.Regidx ld_input.r1,
+      regidx.Regidx ld_input.rd,
+      false,
+      8
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  let w :=
+    ZiskFv.EquivCore.Bridge.MemClean.ldCleanWitness_of_full_ensemble_main_b_mem_provider
+      main mem r_main r_mem bus ld_input
+      h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+      h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+      h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+  exact equiv_LD state ld_input regs main mem r_main bus pins promises w
 
 end ZiskFv.Compliance

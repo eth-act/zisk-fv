@@ -46,7 +46,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in SLLW-execution mode: external op
     with opcode literal 36 (`OP_SLL_W`), 32-bit width (`m32 = 1`),
@@ -54,7 +53,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `Circuit.Add.main_row_in_add_mode`, with the key difference that
     `m32 = 1` here (vs. 0 for ADD/BEQ/JAL/MUL/LD). -/
 @[simp]
-def main_row_in_sllw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_sllw_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (36 : FGL)
   ∧ m.m32 r_main = 1
@@ -69,7 +68,7 @@ def main_row_in_sllw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     `Valid_BinaryExtension` AIR. -/
 @[simp]
 def sllw_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   flag_boolean m r_main
   ∧ is_external_op_boolean m r_main
@@ -85,7 +84,7 @@ def sllw_circuit_holds
     The `(1 - m32) * x ↦ 0` collapse fires via `one_sub_one_mul`
     (the @[simp] lemma added alongside this module). -/
 lemma sllw_bus_high_lanes_zero
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (h_mode : main_row_in_sllw_mode m r_main) :
     (opBus_row_Main m r_main).a_hi = 0
     ∧ (opBus_row_Main m r_main).b_hi = 0 := by
@@ -103,7 +102,7 @@ lemma sllw_bus_high_lanes_zero
     it remains a parameterized statement that the `m32 = 1` path
     zeroes the high lanes end-to-end. -/
 lemma sllw_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sllw_circuit_holds m r_main bus_entry) :
     bus_entry.a_hi = 0 ∧ bus_entry.b_hi = 0 := by

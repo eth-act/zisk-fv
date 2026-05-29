@@ -34,6 +34,116 @@
 # Adding a new entry requires CODEOWNER review.
 
 # ============================================================
+# T4 memory-bus structural unpacking (11)
+# ============================================================
+#
+# The load/store opcodes below are allowed to replace the compressed
+# Main/MemAlign memory-bus *promise hypotheses* with explicit Clean
+# memory-channel structure: a Clean memory-channel/full-ensemble witness, the
+# `MemBusChannel` balance proof, selected Main/provider component rows,
+# row-equality pins tying the Clean Main row to the existing `Valid_Main`
+# row, and ROM/transpile pins for `addr1`, `addr2`, `main_step`,
+# source/store selectors, `store_offset`, and width selectors.
+#
+# This is structural unpacking, not promise laundering, because the added
+# binders expose the provider row and ROM fields that the old bundles
+# hid behind trust-class #4 axioms. The global `Compliance.lean` theorem
+# already carries the memory-family Clean witnesses once per provider AIR;
+# opcode wrappers may specialize those shared witnesses to their selected
+# row instead of adding per-opcode universal promises.
+#
+# PIL-BASIS for all 11 entries below:
+#   * main.pil:300 — Main b-side memory read emits
+#     `[mem_op, addr1, main_step*4+2, bytes, b[0], b[1]]`
+#   * main.pil:323-326 — Main c/store memory interaction emits
+#     `[mem_op, addr2, main_step*4+3, bytes, store_value[0], store_value[1]]`
+#   * main.pil:181 / 314-321 — ROM-derived address equations for
+#     `addr1` / `addr2`
+#   * main.pil:311-312 — `store_value` equations, collapsing to `c`
+#     when `store_pc = 0`
+#   * mem.pil:524-527 — Mem provider participates on the same 6-slot
+#     memory bus tuple
+#   * mem_align.pil:189 — MemAlign provider participates on the same
+#     memory bus permutation for sub-doubleword load/store alignment
+
+OPCODE: ZiskFv.Equivalence.Ld.equiv_LD
+DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected Mem provider row equality,
+       ROM pins for addr1/addr2/main_step/b_src_ind/store_reg/store_offset,
+       width pin `ind_width = 8`, same-message proof from Clean balance
+       (structural pins only; no new universal promise hypothesis)
+
+OPCODE: ZiskFv.Equivalence.Lbu.equiv_LBU
+DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound, mem_align_rom_subdoubleword_load_value_1_zero
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected MemAlign provider row equality,
+       ROM pins for addr1/addr2/main_step/b_src_ind/store_reg/store_offset,
+       width pin `ind_width = 1`, same-message proof from Clean balance,
+       lookup-aware provider fact deriving value_1 zero-padding from the
+       MemAlign row, lookup-aware Clean MemAlignByte/MemAlignReadByte
+       `rangeTable*` witnesses for low-byte bounds
+
+OPCODE: ZiskFv.Equivalence.Lhu.equiv_LHU
+DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound, mem_align_rom_subdoubleword_load_value_1_zero
+ADDED: same structural shape as LBU with width pin `ind_width = 2`,
+       including the lookup-aware Clean MemAlignByte/MemAlignReadByte
+       `rangeTable*` witnesses
+
+OPCODE: ZiskFv.Equivalence.Lwu.equiv_LWU
+DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound
+ADDED: same structural shape as LBU with width pin `ind_width = 4`,
+       including the lookup-aware Clean MemAlignByte/MemAlignReadByte
+       `rangeTable*` witnesses
+
+OPCODE: ZiskFv.Equivalence.Lb.equiv_LB
+DROPPED: main_sext_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected MemAlign provider row equality,
+       ROM pins for addr1/addr2/main_step/b_src_ind/store_reg/store_offset,
+       width pin `ind_width = 1`, BinaryExtension sign-extension provider
+       pins already used by the signed-load bridge, same-message proof
+       from Clean balance
+
+OPCODE: ZiskFv.Equivalence.Lh.equiv_LH
+DROPPED: main_sext_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound
+ADDED: same structural shape as LB with width pin `ind_width = 2`
+
+OPCODE: ZiskFv.Equivalence.Lw.equiv_LW
+DROPPED: main_sext_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound
+ADDED: same structural shape as LB with width pin `ind_width = 4`
+
+OPCODE: ZiskFv.Equivalence.Sd.equiv_SD
+DROPPED: main_store_emission_bundle_sd
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected Mem provider row equality,
+       ROM pins for addr2/main_step/store_ind/store_mem/store_offset,
+       width pin `ind_width = 8`, same-message proof from Clean balance,
+       byte-range facts for the provider row
+
+OPCODE: ZiskFv.Equivalence.Sb.equiv_SB
+DROPPED: main_store_emission_bundle_subword
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected MemAlign provider row equality,
+       ROM pins for addr2/main_step/store_ind/store_mem/store_offset,
+       width pin `ind_width = 1`, same-message proof from Clean balance,
+       MemAlign RMW high-byte preservation facts
+
+OPCODE: ZiskFv.Equivalence.Sh.equiv_SH
+DROPPED: main_store_emission_bundle_subword
+ADDED: same structural shape as SB with width pin `ind_width = 2`
+
+OPCODE: ZiskFv.Equivalence.Sw.equiv_SW
+DROPPED: main_store_emission_bundle_subword
+ADDED: same structural shape as SB with width pin `ind_width = 4`
+
+# ============================================================
 # Arith byte-sum-circuit ops (9)
 # ============================================================
 #
@@ -113,7 +223,7 @@ ADDED: v, r_a, h_chain, h_nr, h_sext, h_m32, h_div, h_op,
         specialization (`m32 = 1`, op = 0x91). Differences from
         MULH:
         * `h_op` (TRANSPILE-PIN to op = 0x91, MULW's arith_table row)
-          consumed by `arith_table_op_mulw_operand_pin` to pin
+          plus operation-bus W high-lane collapse pins
           `a_2 = a_3 = b_2 = b_3 = 0`.
         * `h_byte_lo` ties bytes 0..3 to `c_0 + c_1*65536` (the
           low-32 product chunks) — not d-chunks like MULH (which is
@@ -343,6 +453,305 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
         axiom.)
 
 # ============================================================
+# T5 ArithTable lookup structural unpacking (13)
+# ============================================================
+#
+# The 13 Arith-family canonical theorems below replace their earlier raw
+# `h_arith_table : ArithTableSpec (rowAt v r_a)` binder with one
+# lookup-aware Clean witness: `arith_table : ArithMulTableWitness v r_a`
+# or `arith_table : ArithDivTableWitness v r_a`, while still removing
+# the shared `arith_mul_table_lookup_sound` / `arith_div_table_lookup_sound`
+# axioms from their semantic closures.
+#
+# This is structural unpacking, not promise laundering, because the added
+# witness exposes the exact lookup-aware Clean `mainWithArithTable`
+# operation soundness proof for the selected row. `ArithTableSpec` is now
+# derived by `Arith{Mul,Div}.arith_table_spec_of_lookup_aware_const_soundness`;
+# it is not supplied directly by callers. The canonical theorem shape now separates the structural lookup witness from
+# the opcode proof. A future Compliance-level ensemble can supply this
+# witness once per selected Arith provider row.
+#
+# PIL-BASIS for all 13 entries below:
+#   * arith.pil:280 and arith.pil:286-287 — Arith AIR emits the
+#     `arith_table_assumes` tuple and consumes it through the table lookup.
+#   * Clean bridge `rowAt v r_a` definitions — the 15-field row-native
+#     tuple translated from the lookup.
+#   * `AirsClean/Arith{Mul,Div}/Bridge.lean` derives `ArithTableSpec`
+#     from lookup-aware Clean soundness; `ArithTableProjections.lean` then
+#     proves opcode mode/selector facts from that spec, leaving no
+#     opcode-shaped ArithTable axiom in canonical closures.
+
+OPCODE: ZiskFv.Equivalence.Mul.equiv_MUL
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (`ArithMulTableWitness v r_a`, lookup-aware Clean witness deriving
+        row-native structural membership for the selected ArithMul row.)
+
+OPCODE: ZiskFv.Equivalence.MulH.equiv_MULH
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithMul lookup-aware witness as MUL; signed-MUL dynamic
+        witness facts remain separate and explicit.)
+
+OPCODE: ZiskFv.Equivalence.MulHSU.equiv_MULHSU
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithMul lookup-aware witness as MULH.)
+
+OPCODE: ZiskFv.Equivalence.MulHU.equiv_MULHU
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithMul lookup-aware witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithMul lookup-aware witness as MUL, specialized by the
+        existing W-mode structural pins.)
+
+OPCODE: ZiskFv.Equivalence.Div.equiv_DIV
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (`ArithDivTableWitness v r_a`, lookup-aware Clean witness deriving
+        row-native structural membership for the selected ArithDiv row.)
+
+OPCODE: ZiskFv.Equivalence.Divu.equiv_DIVU
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithDiv lookup-aware witness as DIV.)
+
+OPCODE: ZiskFv.Equivalence.Divuw.equiv_DIVUW
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithDiv lookup-aware witness as DIV, specialized by the
+        existing unsigned W-mode structural pins.)
+
+OPCODE: ZiskFv.Equivalence.Divw.equiv_DIVW
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithDiv lookup-aware witness as DIV, with signed W-mode
+        dynamic facts remaining separate and explicit.)
+
+OPCODE: ZiskFv.Equivalence.Rem.equiv_REM
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithDiv lookup-aware witness as DIV; remainder dynamic
+        facts remain separate and explicit.)
+
+OPCODE: ZiskFv.Equivalence.Remu.equiv_REMU
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithDiv lookup-aware witness as DIVU.)
+
+OPCODE: ZiskFv.Equivalence.Remuw.equiv_REMUW
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithDiv lookup-aware witness as DIVUW.)
+
+OPCODE: ZiskFv.Equivalence.Remw.equiv_REMW
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: arith_table
+       (same ArithDiv lookup-aware witness as DIVW.)
+
+# ============================================================
+# T6 ArithMul range-bus structural unpacking (MULHU/MUL/MULW)
+# ============================================================
+#
+# `equiv_MULHU`, `equiv_MUL`, and `equiv_MULW` previously inherited
+# `range_bus_sound` / `signed_range_bus_sound` through the legacy
+# `arith_mul_columns_in_range`, carry-range helpers, and memory-entry
+# chunk-range routes. T6 replaces those generic trust-ledger facts with
+# selected-row Clean lookup witnesses:
+#   * `ArithMulChunkRangeWitness v r_a` for the sixteen `bits(16)` a/b/c/d
+#     chunk lookups, and
+#   * `ArithMulUnsignedCarryRangeWitness v r_a` or
+#     `ArithMulSignedCarryRangeWitness v r_a` for the seven carry lookups.
+#
+# This is structural unpacking, not promise laundering, because the added
+# binders expose lookup-aware `ConstraintsHold.Soundness` evidence for the
+# selected Clean ArithMul row. The bounds consumed by the proof are derived
+# by `AirsClean/ArithMul/Bridge.lean`; callers do not supply arbitrary
+# range facts. The wrapper also derives the external-arith rd-write
+# memory-entry byte-sum bounds from the existing `ExternalArithMemoryWitness`,
+# secondary op-bus equalities, and exact Arith chunk bounds instead of using
+# the old memory-entry range-bus route.
+#
+# PIL-BASIS:
+#   * arith.pil:18-21 — a/b/c/d chunk columns are declared `bits(16)`.
+#   * ArithMul Clean `mainWithUnsignedCarryRanges` — unsigned MUL/MULHU
+#     carry consumers use the seven `rangeTable17` carry lookups surfaced by
+#     the Clean range witness, replacing the legacy generic range-bus axiom.
+#   * ArithMul Clean `mainWithSignedCarryRanges` — signed/W carry consumers
+#     use the signed carry range lookup witness for the seven signed carry
+#     checks instead of `signed_range_bus_sound`.
+#   * Main external-arith memory message shape is already covered by the T5
+#     `ExternalArithMemoryWitness` entry above; this T6 slice only changes
+#     where the byte-sum bounds come from.
+
+OPCODE: ZiskFv.Equivalence.MulHU.equiv_MULHU
+DROPPED: range_bus_sound from semantic closure
+ADDED: arith_chunk_ranges, arith_carry_ranges
+       (`ArithMulChunkRangeWitness v r_a` and
+        `ArithMulUnsignedCarryRangeWitness v r_a`, selected-row Clean lookup
+        witnesses deriving the exact chunk and carry bounds consumed by the
+        MULHU bridge.)
+
+OPCODE: ZiskFv.Equivalence.Mul.equiv_MUL
+DROPPED: range_bus_sound, signed_range_bus_sound from semantic closure
+ADDED: arith_chunk_ranges, arith_carry_ranges
+       (`ArithMulChunkRangeWitness v r_a` and
+        `ArithMulSignedCarryRangeWitness v r_a`, selected-row Clean lookup
+        witnesses deriving the exact chunk and signed-carry bounds consumed
+        by the low-MUL bridge.)
+
+OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
+DROPPED: range_bus_sound, signed_range_bus_sound from semantic closure
+ADDED: arith_chunk_ranges, arith_carry_ranges
+       (`ArithMulChunkRangeWitness v r_a` and
+        `ArithMulSignedCarryRangeWitness v r_a`, selected-row Clean lookup
+        witnesses deriving the exact W-mode chunk and signed-carry bounds
+        consumed by the MULW bridge.)
+
+# ============================================================
+# T5 external-arith memory structural unpacking (13)
+# ============================================================
+#
+# The same 13 Arith-family canonical theorems are allowed to add one
+# `arith_mem : ExternalArithMemoryWitness m r_main bus.e2` binder while
+# removing `main_external_arith_emission_bundle` from their semantic
+# closures.
+#
+# This is structural unpacking, not promise laundering, because the added
+# binder exposes the selected Clean Main memory row and the exact adapter
+# premises needed to derive the old rd-write byte-lane conclusion:
+#   * `row : MainRowWithRom FGL`
+#   * `row_eq : row.core = rowAt main r_main`
+#   * `store_pc_zero : row.core.store_pc = 0`
+#   * `rd_write_match : matches_memory_entry bus.e2
+#       (MemBusMessage.toEntry (cMemMessage row) 1 1)`
+#
+# The proved adapter in `AirsClean/Main/Bridge.lean` derives the lane
+# equalities from the real Clean Main `cMemMessage` and the legacy
+# memory-entry match. No new axiom is introduced, and the old axiom is
+# retired from the trust ledger. A future
+# Compliance-level Clean Main ensemble can supply this witness once for the
+# selected Main row; the canonical theorem no longer silently reaches the
+# memory-bus trust-ledger axiom through its closure.
+#
+# PIL-BASIS for all 13 entries below:
+#   * Main's PIL memory channel emits the `c`/store message with the
+#     `store_pc` selector and byte-packed `c_val` lanes.
+#   * `AirsClean/Main/Bridge.lean` maps `cMemMessage row` to the legacy
+#     memory-bus entry shape used by existing arithmetic wrappers.
+#   * `store_pc = 0` pins the message as the external-arith rd-write lane,
+#     not the PC-store lane covered by `main_store_pc_emission_bundle`.
+
+OPCODE: ZiskFv.Equivalence.Mul.equiv_MUL
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem
+       (`ExternalArithMemoryWitness m r_main bus.e2`, Clean Main
+        `cMemMessage` structural witness for rd-write byte lanes.)
+
+OPCODE: ZiskFv.Equivalence.MulH.equiv_MULH
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.MulHSU.equiv_MULHSU
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.MulHU.equiv_MULHU
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Div.equiv_DIV
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Divu.equiv_DIVU
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Divuw.equiv_DIVUW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Divw.equiv_DIVW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Rem.equiv_REM
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Remu.equiv_REMU
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Remuw.equiv_REMUW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Remw.equiv_REMW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+# ============================================================
+# T7 store-PC memory structural unpacking (4)
+# ============================================================
+#
+# The LUI/AUIPC/JAL/JALR store-PC/register-write family previously derived
+# its rd-write lanes through `main_store_pc_emission_bundle`. T7 replaces
+# that compressed trust-ledger edge with an explicit selected Clean Main
+# `cMemMessage` row and a legacy-entry match against that real PIL-shaped
+# memory interaction.
+#
+# This is structural unpacking, not promise laundering: the added
+# `StorePcMemoryWitness` exposes the Clean row, the row equality to
+# `Valid_Main`, and the exact `matches_memory_entry e_rd
+# (MemBusMessage.toEntry (cMemMessage row) 1 1)` adapter premise. The lane
+# facts are then proved by `AirsClean/Main/Bridge.lean` from the concrete
+# `store_value` expressions. Later full-ensemble work supplies this witness
+# from Main-table row selection plus memory-channel balance, shared across
+# the global theorem rather than as independent per-opcode promises.
+#
+# PIL-BASIS:
+#   * main.pil:311-312 — `store_value[0/1]` formulas in terms of
+#     `store_pc`, `pc`, `jmp_offset2`, `c_0`, and `c_1`;
+#   * main.pil:323-326 — Main c-side memory interaction emits the
+#     rd-write/store message;
+#   * `AirsClean/Main/Bridge.lean` maps `cMemMessage row` to the legacy
+#     memory-bus entry shape consumed by the existing control-flow proofs.
+
+OPCODE: ZiskFv.Equivalence.Lui.equiv_LUI
+DROPPED: main_store_pc_emission_bundle from semantic closure
+ADDED: store_pc_mem
+       (`StorePcMemoryWitness m r_main e_rd`, Clean Main `cMemMessage`
+        structural witness for store-PC/register-write byte lanes.)
+
+OPCODE: ZiskFv.Equivalence.Auipc.equiv_AUIPC
+DROPPED: main_store_pc_emission_bundle from semantic closure
+ADDED: store_pc_mem
+       (`StorePcMemoryWitness m r_main e_rd`, Clean Main `cMemMessage`
+        structural witness for store-PC/register-write byte lanes.)
+
+OPCODE: ZiskFv.Equivalence.Jal.equiv_JAL
+DROPPED: main_store_pc_emission_bundle from semantic closure
+ADDED: store_pc_mem
+       (`StorePcMemoryWitness m r_main e_rd`, Clean Main `cMemMessage`
+        structural witness for store-PC/register-write byte lanes.)
+
+OPCODE: ZiskFv.Equivalence.Jalr.equiv_JALR
+DROPPED: main_store_pc_emission_bundle from semantic closure
+ADDED: store_pc_mem
+       (`StorePcMemoryWitness m r_main e_rd`, Clean Main `cMemMessage`
+        structural witness for store-PC/register-write byte lanes.)
+
+# ============================================================
 # ITYPE constructibility-bundle ops (Step 4.2r3.I)
 # ============================================================
 #
@@ -426,3 +835,189 @@ ADDED: h_main_active, h_main_op_xori, h_match, h_xori_subset
        (Step 4.2r3.I structural-unpacking refactor — mechanical clone
         of `equiv_ANDI` with `AND → XOR`. See ANDI entry above for
         the per-binder rationale. Per-opcode metric holds net zero.)
+
+# ============================================================
+# Phase F3 ArithMul retirement (structural-unpacking via 10 new accessors)
+# ============================================================
+#
+# The 5 MUL-family opcodes (MUL, MULH, MULHU, MULHSU, MULW) all consume
+# `Valid_ArithMul C FGL FGL` as their arith-side validator. Phase F3
+# retires the `[Circuit F ExtF C]` typeclass scaffolding from
+# `Valid_ArithMul`, dropping:
+#   * the `circuit : C F ExtF` field
+#   * 23 `*_def` equation fields (a_0_def … multiplicity_def + 3 new
+#     fab_def/na_fb_def/nb_fa_def created during the schema-gap close)
+#   * the {C : Type → Type → Type} [Circuit F ExtF C] structure params
+#
+# The schema gap previously exposed by the carry-chain proof
+# (`Mul.lean::arith_mul_unsigned_packed_correct`) — which accessed
+# Arith cols 30/31/32 positionally via `Circuit.main v.circuit (column := N)`
+# without named accessors — is closed by structural unpacking: 10 new
+# named accessors are added.
+#
+# The Phase F3 refactor is a *typeclass elimination*, not a *promise
+# discharge*. The per-opcode hypothesis-count metric is unchanged (0
+# net growth across all 5 MUL opcodes). The caller-burden ledger shows
+# a type-shape simplification: `Valid_ArithMul C FGL FGL` →
+# `Valid_ArithMul FGL FGL` on the same number of binders (5 inserts,
+# 5 deletes — 1 per MUL opcode validator parameter).
+#
+# Per-opcode metric: holds steady at exact equality. No real growth.
+#
+# PIL-BASIS for the 10 new accessors:
+#   * cy_0..cy_6 at Arith cols 0..6: `zisk/state-machines/arith/pil/arith.pil:17`
+#     (`col witness signed(64) carry[CARRY_COUNT];` — the 7 carry
+#     witnesses of the 8-chunk MUL/DIV carry chain).
+#   * fab at Arith col 30: `arith.pil:58` (constraint 6:
+#     `fab - ((1 - 2·na) - 2·nb + 4·na·nb)`).
+#   * na_fb at Arith col 31: `arith.pil:59` (constraint 7:
+#     `na_fb - na · (1 - 2·nb)`).
+#   * nb_fa at Arith col 32: `arith.pil:60` (constraint 8:
+#     `nb_fa - nb · (1 - 2·na)`).
+
+OPCODE: ZiskFv.Equivalence.Mul.equiv_MUL
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: typeclass elimination on
+        `Valid_ArithMul`. The 5 MUL family canonical theorems each
+        carry one `v : Valid_ArithMul FGL FGL` validator parameter
+        (was `Valid_ArithMul C FGL FGL`). The hypothesis-count metric
+        is unchanged at the canonical level; only the caller-burden
+        type snippet changes.)
+
+OPCODE: ZiskFv.Equivalence.MulH.equiv_MULH
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: see MUL entry above.)
+
+OPCODE: ZiskFv.Equivalence.MulHU.equiv_MULHU
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: see MUL entry above.)
+
+OPCODE: ZiskFv.Equivalence.MulHSU.equiv_MULHSU
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: see MUL entry above.)
+
+OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: see MUL entry above.)
+
+# ============================================================
+# Phase F4 — Valid_ArithDiv record retirement (AIR-level)
+# ============================================================
+#
+# Phase F4 retires `Valid_ArithDiv` from its previous C-parameterized,
+# `Circuit.main`-backed shape (with a `circuit : C F ExtF` field and 28
+# `*_def` projection-into-extraction constraints) to a plain named-column
+# record (no C parameter, no circuit field, no _def fields). Mirrors
+# Phase F3 (Valid_ArithMul); both consume the same physical Arith AIR
+# but expose Div-specific named accessors.
+#
+# **Structural-unpacking shape.** The retirement adds 10 new named
+# accessors that were previously accessed positionally via
+# `Circuit.main v.circuit (column := N)`:
+#   * fab (col 30) / na_fb (col 31) / nb_fa (col 32) — sign-consistency
+#     witness columns, pinned by `constraint_6/7/8_every_row`
+#   * cy_0 .. cy_6 (cols 0..6) — 7 carry-chain witness columns, used
+#     internally by `constraint_31..38_every_row`
+# Plus 11 named-form constraint predicates that replace
+# `constraint_{6,7,8,31..38}_every_row v.circuit` references on the
+# trust-ledger:
+#   * fab_eq_div / na_fb_eq_div / nb_fa_eq_div — pinning closures
+#   * carry_eq_0_div .. carry_eq_7_div — named-form chunk equations
+# Plus `bus_res1_eq_div` replacing `constraint_46_every_row v.circuit`.
+#
+# **Per-opcode metric: NET ZERO.** All 8 DIV/REM equiv_<OP> wrappers
+# (Div/Divu/Divuw/Divw/Rem/Remu/Remuw/Remw) maintain identical binder
+# counts (`total` / `hypothesis`) — the retirement only changes the
+# *shape* of one binder (`Valid_ArithDiv C FGL FGL` → `Valid_ArithDiv
+# FGL FGL`), not their count. The caller-burden ledger records the
+# type-shape diff but the line count is unchanged. The auxiliary
+# row-constraint binder (`h_row_constraints : ∀ r,
+# div_row_constraints_with_c46 v r`) becomes a pure-field predicate
+# rather than a `Circuit.main`-form predicate, but its count remains 1.
+#
+# **Why structural-unpacking, not laundering.** The 10 added named
+# accessors + 11 named-form predicates are explicit witnesses of
+# information that was previously hidden behind a positional
+# `Circuit.main` API; the global-theorem trust footprint provably does
+# not grow, because:
+#   * The validator parameter is shared across all DIV/REM opcodes in
+#     `Compliance.lean` (one set per provider AIR), so adding fields
+#     to the structure does not multiply the global trust footprint.
+#   * The named-form constraint predicates are *equivalent* to the
+#     `Circuit.main`-form constraints they replace — they reduce
+#     trivially to the same algebraic equations, just with named
+#     columns substituted.
+#   * No new axioms are introduced. The 104-axiom floor is unchanged.
+#
+# PIL-BASIS: same as the per-opcode entries above:
+#   * arith.pil:58-60 — fab / na_fb / nb_fa column definitions
+#     (constraints 6/7/8)
+#   * arith.pil:205-209 — carry-chain (constraints 31-38)
+#   * arith.pil:262-263 — bus_res1 normalization (constraint 46)
+#   * arith.pil:17 — `bits(16)` witness columns (chunk-range basis)
+#   * arith.pil:280 — `arith_range_table_assumes` carry-column range
+
+# ============================================================
+# Phase F6 — Valid_Main record retirement (AIR-level)
+# ============================================================
+#
+# Phase F6 retires `Valid_Main` from its previous C-parameterized,
+# `Circuit.main`-backed shape (with a `circuit : C F ExtF` field and 18
+# `*_def` projection-into-extraction constraints) to a plain named-column
+# record (no C parameter, no circuit field, no _def fields). Mirrors
+# Phases F3 (Valid_ArithMul) and F4 (Valid_ArithDiv).
+#
+# **No new accessors needed.** The 16 named columns Main already exposed
+# (a_0/a_1/b_0/b_1/c_0/c_1/flag/pc/is_external_op/op/m32/ind_width/set_pc/
+# jmp_offset1/jmp_offset2/store_pc/im_high_degree_2/segment_l1) are
+# sufficient for the post-F6 named-form proof discharge. The previous
+# `extraction_bridge` block (10 `constraint_N_of_extraction` iff-lemmas)
+# is dropped because it has zero external consumers — every caller of
+# the named subset (`add_subset_holds`, `branch_subset_holds`,
+# `jump_subset_holds`, `pc_handshake`, etc.) consumes the named accessors
+# directly without going through the `_def` rewrites.
+#
+# **Per-opcode metric: NET ZERO.** All 63 canonical equiv_<OP> theorems
+# maintain identical binder counts (`total` / `hypothesis`) — the
+# retirement only changes the *shape* of one binder
+# (`Valid_Main C FGL FGL` → `Valid_Main FGL FGL`), not its count.
+# Likewise `BinaryAddWitness C` → `BinaryAddWitness` and
+# `MemAlignWitness C` → `MemAlignWitness` drop the now-vestigial C
+# parameter from the SharedBundles structures.
+#
+# **Cascade scope.** The retirement touches ~293 consumer sites:
+#   * 63 canonical `equiv_<OP>` theorems
+#   * 63 `Compliance.Wrappers.equiv_<OP>` wrappers
+#   * 8 `Vm/Probe_*` files
+#   * `Tactics/*Archetype.lean` files
+#   * `Compliance_v1.lean` + 9 `Compliance_v2_*.lean` files
+#   * `Compliance.lean` global theorem
+# All changes are pure type-shape simplifications (3-arg → 2-arg for
+# Valid_Main, 1-arg → 0-arg for the SharedBundles structures).
+#
+# **Companion cleanup.** Three orphan files under `Airs/MemoryBus/`
+# (Projection.lean, BusShape.lean, LaneMatch.lean) that defined dead
+# `m.circuit`-using slot-match scaffolding are removed; they had zero
+# live callers (the predicates they targeted live in `MemoryBus.lean`
+# and are reached via direct named-accessor equalities). Two pre-existing
+# orphan files (`ZiskCircuit/MulField.lean`,
+# `AirsClean/ArithDiv/Bridge.lean`) carrying stale `v.circuit` references
+# on already-retired structures are also removed.
+#
+# **Why structural-unpacking, not laundering.** No new axioms, no new
+# constraint predicates, no new validator constraints. The validator
+# parameter is shared across all opcodes in `Compliance.lean` (one
+# Valid_Main instance per global theorem call). The 104-axiom floor is
+# unchanged.
+#
+# PIL-BASIS:
+#   * `main.pil:19` — `SEGMENT_L1` preprocessed column declaration
+#   * `main.pil:142,151,311-312,367-374,410,473` — opcode mode pins, PC
+#     handshake, store-pc gating, operation-bus emission tuple
+#   * `main.pil:300-328` — register-bus reads-side emission
+#     (rs1/rs2/store-reg prev) — the MemoryBus scaffolding being removed
