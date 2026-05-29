@@ -7,8 +7,8 @@
 # completeness for non-trivial circuits is declared as a documented
 # axiom rather than proved.
 #
-# These axioms are in the project's user-sanctioned D-COMPLETE class
-# (see `docs/fv/clean-integration-plan.md` Risk Register R-4). The V2
+# These axioms are in the project's documented class C
+# (see `docs/fv/trusted-base.md`). The V2
 # `check-closure-vs-baseline` gate treats their absence from the
 # global theorem's transitive axiom closure as expected, rather than
 # as dead trust — proper handling requires either retiring the entire

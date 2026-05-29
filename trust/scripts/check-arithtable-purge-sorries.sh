@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Temporary C3.2-P gate: allow only explicitly marked ArithTable purge
 # sorries. This script does not replace check-no-sorry.sh; it exists only
-# for the controlled purge phase documented in docs/fv/clean-integration-plan.md.
+# for the controlled purge phase documented in docs/fv/arith-table-axiom-audit.md.
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 

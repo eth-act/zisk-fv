@@ -84,9 +84,8 @@ claim weakening lives in the defect ledger, not in hidden proof holes. New
 opcode-specific ArithTable axioms are not permitted.
 
 Known defects that weaken or block the public compliance claim are tracked
-separately from the trust ledger in [`defects.md`](defects.md), following
-[`defect-ledger-design.md`](defect-ledger-design.md). A defect entry is not
-a trusted fact and must not be used to justify a new axiom.
+separately from the trust ledger in [`defects.md`](defects.md). A defect
+entry is not a trusted fact and must not be used to justify a new axiom.
 
 Per-class spot check (53 axioms total):
 

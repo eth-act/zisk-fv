@@ -12,9 +12,8 @@ shift_amount)`; see
 
 This module gives the provider side as a non-enumerated Clean
 `StaticTable`: `row i` decodes the same arithmetic row, and `Spec` is exact
-membership in that decoded row set. This is the faithful large-ROM pattern
-validated by `AirsClean/ZRomSpike.lean`; there is no `decide` over millions
-of literal rows.
+membership in that decoded row set. This is the faithful large-ROM pattern;
+there is no `decide` over millions of literal rows.
 
 It intentionally does not retire `bin_ext_table_consumer_wf` by itself.
 Load-bearing retirement still needs the consumer lookup path and this

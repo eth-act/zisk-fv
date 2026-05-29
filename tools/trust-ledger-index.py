@@ -31,7 +31,6 @@ FILE_CLASS = {
     "ZiskFv/Airs/OperationBus/Consolidated.lean":   ("4",  "Bus / lookup soundness — operation bus (consolidated)"),
     "ZiskFv/Airs/MemoryBus/MemBridge.lean":         ("4",  "Bus / lookup soundness — memory bus"),
     "ZiskFv/Airs/MemoryBus/MemAlignBridge.lean":    ("4",  "Bus / lookup soundness — MemAlign"),
-    "ZiskFv/Channels/RangeBusSoundness.lean":       ("5b", "Range-bus / byte-range — consolidated soundness axiom"),
     "ZiskFv/Airs/Main/Ranges.lean":                 ("5b", "Range-bus / byte-range — Main"),
     "ZiskFv/Airs/Binary/BinaryAddRanges.lean":      ("5b", "Range-bus / byte-range — BinaryAdd"),
     "ZiskFv/Airs/MemoryBus/EntryRanges.lean":       ("5b", "Range-bus / byte-range — Memory bus entry"),

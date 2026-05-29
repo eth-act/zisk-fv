@@ -12,7 +12,7 @@ the operation code; see
 This module gives the provider side as a non-enumerated Clean
 `StaticTable`: `row i` decodes the same arithmetic row, and `Spec` is exact
 membership in that decoded row set. This follows the large-ROM pattern in
-`AirsClean/ZRomSpike.lean`; there is no literal enumeration of the
+the other static-table providers; there is no literal enumeration of the
 5.5M-row table.
 
 It intentionally does not retire `bin_table_consumer_wf` by itself.

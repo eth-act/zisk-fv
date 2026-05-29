@@ -124,12 +124,12 @@ pil-extract clean-component --pilout <path> --air <needle>
   operation-bus providers. The proves-side emission is a
   logUp **`Lookup`** argument (`proves_operation`,
   `bus_id = 5000`).
-* `mem-align-bus` — the 6-slot `MemAlignBusChannel`
-  (`ZiskFv/Channels/MemAlignBus.lean`), the MemAlign-family
-  memory-bus providers. The proves-side emission is a
+* `mem-align-bus` — compatibility spelling for the 6-slot
+  `MemBusChannel` (`ZiskFv/Channels/MemoryBus.lean`), the
+  MemAlign-family memory-bus providers. The proves-side emission is a
   **`Permutation`** argument (`permutation_proves`,
   `bus_id = 10`); the tuple is
-  `[mem_op, addr, step, width, value_0, value_1]`. The inert
+  `[mem_op, ptr, timestamp, width, value_0, value_1]`. The inert
   `Direct`-mode range-check emissions on the same bus
   (`multiplicity = 0`) are filtered out.
 
