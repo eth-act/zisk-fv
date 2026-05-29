@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Fence
-import ZiskFv.Equivalence.Promises.Fence
+import ZiskFv.EquivCore.Fence
+import ZiskFv.EquivCore.Promises.Fence
 import ZiskFv.SailSpec.fence
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -79,7 +79,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_FENCE`.** Pass-through plus
     Compliance-handshake activation pins.
@@ -105,20 +104,20 @@ theorem equiv_FENCE
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
     -- AIR validator + row index. Compliance.lean shares `main`.
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     -- Activation / opcode pins (Compliance-handshake; tracked here
     -- for uniformity but not consumed by the proof body since FENCE
     -- has no provider AIR).
     (_pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG)
     -- Structural promise bundle (6 fields, see Promises/Fence.lean).
-    (promises : ZiskFv.Equivalence.Promises.FencePromises
+    (promises : ZiskFv.EquivCore.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
         exec_row) :
     execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
       = (bus_effect exec_row [] state).2 :=
-  ZiskFv.Equivalence.Fence.equiv_FENCE
+  ZiskFv.EquivCore.Fence.equiv_FENCE
     state fence_input fm pred succ rs rd exec_row promises
 
 end ZiskFv.Compliance

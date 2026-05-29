@@ -34,14 +34,13 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.ShiftArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in SLLIW-execution mode. Identical to
     SLLW mode (same opcode literal `OP_SLL_W = 36`, same `m32 = 1`,
     same selectors): the immediate-vs-register distinction lives on
     `b_lo`, not on the mode-predicate columns. -/
 @[simp]
-def main_row_in_slliw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_slliw_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (36 : FGL)
   ∧ m.m32 r_main = 1
@@ -52,7 +51,7 @@ def main_row_in_slliw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     `Circuit.Shift.sllw_circuit_holds` modulo the mode-predicate name. -/
 @[simp]
 def slliw_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   flag_boolean m r_main
   ∧ is_external_op_boolean m r_main
@@ -65,7 +64,7 @@ def slliw_circuit_holds
     (same opcode as SLLW; the bus shape doesn't distinguish
     immediate-vs-register source). -/
 lemma slliw_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : slliw_circuit_holds m r_main bus_entry) :
     bus_entry.a_hi = 0 ∧ bus_entry.b_hi = 0 := by

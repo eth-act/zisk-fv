@@ -3,6 +3,8 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Bits.PackedBitVec
+import ZiskFv.Channels.MemoryBusBytes
+import ZiskFv.Channels.MemoryBus
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
@@ -24,46 +26,39 @@ namespace ZiskFv.Airs.MemoryBus
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteOf byteAt)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- The 64-bit memory value packed from a `MemoryBusEntry`'s byte lanes
-    as a single `FGL` element:
-    `x0 + x1 * 2^8 + x2 * 2^16 + ... + x7 * 2^56`.
+/-- The 64-bit memory value of a `MemoryBusEntry`, formed from the two
+    32-bit chunks: `value_0 + value_1 * 2^32`. Matches the PIL emission
+    shape (`mem.pil:436`, `...value` is a 2-element 32-bit chunk array).
 
     This is the field-level image of `U64.toBV` (which produces a
     `BitVec 64`). The two forms are related by the bridge lemma
     `memory_entry_toField_eq_toBV_toNat` below. -/
 @[simp]
 def memory_entry_toField (e : MemoryBusEntry FGL) : FGL :=
-  e.x0
-  + e.x1 * 256
-  + e.x2 * 65536
-  + e.x3 * 16777216
-  + e.x4 * 4294967296
-  + e.x5 * 1099511627776
-  + e.x6 * 281474976710656
-  + e.x7 * 72057594037927936
+  e.value_0 + e.value_1 * 4294967296
 
-/-- Low 32 bits (= `x0..x3`) of a memory-bus entry, packed as FGL. -/
+/-- Low 32 bits (= chunk `value_0`) of a memory-bus entry, as FGL.
+    Direct projection — matches PIL chunk shape. -/
 @[simp]
-def memory_entry_lo (e : MemoryBusEntry FGL) : FGL :=
-  e.x0 + e.x1 * 256 + e.x2 * 65536 + e.x3 * 16777216
+def memory_entry_lo (e : MemoryBusEntry FGL) : FGL := e.value_0
 
-/-- High 32 bits (= `x4..x7`) of a memory-bus entry, packed as FGL. -/
+/-- High 32 bits (= chunk `value_1`) of a memory-bus entry, as FGL.
+    Direct projection — matches PIL chunk shape. -/
 @[simp]
-def memory_entry_hi (e : MemoryBusEntry FGL) : FGL :=
-  e.x4 + e.x5 * 256 + e.x6 * 65536 + e.x7 * 16777216
+def memory_entry_hi (e : MemoryBusEntry FGL) : FGL := e.value_1
 
 /-- The packed lane decomposition: the full 64-bit value equals
-    `lo + hi * 2^32`. Needed by `Spec/LoadD.lean` to bridge the
-    byte-lane memory-entry representation to the Main row's
-    `(b_0, b_1)` 32-bit-lane representation. -/
+    `lo + hi * 2^32`. Trivial after the chunk-shape redesign — both
+    sides reduce to `e.value_0 + e.value_1 * 2^32`. Retained for
+    backwards compatibility with consumers that previously needed it
+    to bridge byte-lane packs to chunk lanes. -/
 lemma memory_entry_toField_lo_hi (e : MemoryBusEntry FGL) :
     memory_entry_toField e =
       memory_entry_lo e + memory_entry_hi e * 4294967296 := by
   simp only [memory_entry_toField, memory_entry_lo, memory_entry_hi]
-  ring
 
 /-- **Memory-bus entry matching.** Two `MemoryBusEntry`s match when
     every field agrees. Used in `Spec/LoadD.lean` to say: the Main
@@ -74,15 +69,297 @@ def matches_memory_entry (a b : MemoryBusEntry FGL) : Prop :=
   a.multiplicity = b.multiplicity
   ∧ a.as = b.as
   ∧ a.ptr = b.ptr
-  ∧ a.x0 = b.x0
-  ∧ a.x1 = b.x1
-  ∧ a.x2 = b.x2
-  ∧ a.x3 = b.x3
-  ∧ a.x4 = b.x4
-  ∧ a.x5 = b.x5
-  ∧ a.x6 = b.x6
-  ∧ a.x7 = b.x7
+  ∧ a.value_0 = b.value_0
+  ∧ a.value_1 = b.value_1
   ∧ a.timestamp = b.timestamp
+
+/-- Payload-only memory-bus entry matching.
+
+This is the right shape for relating a Main-side Clean pull to a provider
+push: their PIL message payloads agree, but legacy multiplicity polarity is
+opposite. Provider-row facts such as `mem_row_matches_entry` consume these
+payload fields and keep selector/polarity obligations separately. -/
+def matches_memory_payload (a b : MemoryBusEntry FGL) : Prop :=
+  a.as = b.as
+  ∧ a.ptr = b.ptr
+  ∧ a.value_0 = b.value_0
+  ∧ a.value_1 = b.value_1
+  ∧ a.timestamp = b.timestamp
+
+theorem matches_memory_entry_refl (a : MemoryBusEntry FGL) :
+    matches_memory_entry a a := by
+  simp [matches_memory_entry]
+
+theorem matches_memory_entry_symm {a b : MemoryBusEntry FGL}
+    (h : matches_memory_entry a b) :
+    matches_memory_entry b a := by
+  obtain ⟨h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h
+  exact ⟨h_mult.symm, h_as.symm, h_ptr.symm, h_v0.symm, h_v1.symm, h_ts.symm⟩
+
+theorem matches_memory_entry_trans {a b c : MemoryBusEntry FGL}
+    (hab : matches_memory_entry a b)
+    (hbc : matches_memory_entry b c) :
+    matches_memory_entry a c := by
+  obtain ⟨hab_mult, hab_as, hab_ptr, hab_v0, hab_v1, hab_ts⟩ := hab
+  obtain ⟨hbc_mult, hbc_as, hbc_ptr, hbc_v0, hbc_v1, hbc_ts⟩ := hbc
+  exact ⟨hab_mult.trans hbc_mult, hab_as.trans hbc_as,
+    hab_ptr.trans hbc_ptr, hab_v0.trans hbc_v0, hab_v1.trans hbc_v1,
+    hab_ts.trans hbc_ts⟩
+
+theorem matches_memory_payload_of_matches_memory_entry {a b : MemoryBusEntry FGL}
+    (h : matches_memory_entry a b) :
+    matches_memory_payload a b := by
+  obtain ⟨_h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h
+  exact ⟨h_as, h_ptr, h_v0, h_v1, h_ts⟩
+
+theorem matches_memory_payload_trans {a b c : MemoryBusEntry FGL}
+    (hab : matches_memory_payload a b)
+    (hbc : matches_memory_payload b c) :
+    matches_memory_payload a c := by
+  obtain ⟨hab_as, hab_ptr, hab_v0, hab_v1, hab_ts⟩ := hab
+  obtain ⟨hbc_as, hbc_ptr, hbc_v0, hbc_v1, hbc_ts⟩ := hbc
+  exact ⟨hab_as.trans hbc_as, hab_ptr.trans hbc_ptr,
+    hab_v0.trans hbc_v0, hab_v1.trans hbc_v1, hab_ts.trans hbc_ts⟩
+
+/-- Equal evaluated Clean memory-bus message arrays give equal legacy
+    memory-bus payloads once both are viewed with the same legacy
+    multiplicity and address space.
+
+This is the message-level adapter needed by T4: Clean balance proves
+equality of PIL-shaped `[mem_op, ptr, timestamp, width, value_0, value_1]`
+messages, while the existing load/store proofs consume legacy
+`MemoryBusEntry` facts. The legacy `as` slot is supplied explicitly
+because it is not the PIL `mem_op` slot. -/
+theorem matches_memory_entry_of_eval_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {multiplicity as : FGL}
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult providerMsg).toRaw).eval
+          providerEnv).msg) :
+    matches_memory_entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval mainEnv mainMsg) multiplicity as)
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) multiplicity as) := by
+  have h_vec :
+      Vector.map (Expression.eval mainEnv) (toElements mainMsg) =
+        Vector.map (Expression.eval providerEnv) (toElements providerMsg) := by
+    apply Vector.toArray_injective
+    simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+  have h_eval : eval mainEnv mainMsg = eval providerEnv providerMsg := by
+    have h_from := congrArg
+      (fun xs => (fromElements xs :
+        ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+    simpa [ProvableType.fromElements_eval_toElements] using h_from
+  rw [h_eval]
+  simp [matches_memory_entry]
+
+/-- Equal evaluated Clean memory-bus messages give equal legacy payloads,
+    even when the legacy multiplicities supplied on the two sides differ. -/
+theorem matches_memory_payload_of_eval_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {mainMultiplicity providerMultiplicity as : FGL}
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult providerMsg).toRaw).eval
+          providerEnv).msg) :
+    matches_memory_payload
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval mainEnv mainMsg) mainMultiplicity as)
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) providerMultiplicity as) := by
+  have h_vec :
+      Vector.map (Expression.eval mainEnv) (toElements mainMsg) =
+        Vector.map (Expression.eval providerEnv) (toElements providerMsg) := by
+    apply Vector.toArray_injective
+    simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+  have h_eval : eval mainEnv mainMsg = eval providerEnv providerMsg := by
+    have h_from := congrArg
+      (fun xs => (fromElements xs :
+        ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+    simpa [ProvableType.fromElements_eval_toElements] using h_from
+  rw [h_eval]
+  simp [matches_memory_payload]
+
+/-- Same as `matches_memory_entry_of_eval_msg_eq`, with the raw message
+    equality oriented as provider-to-Main.
+
+Clean balance projections usually expose same-message evidence as
+`providerInteraction.msg = mainInteraction.msg`. This wrapper keeps later
+full-ensemble adapters from locally flipping that equality for every emitted
+provider branch. -/
+theorem matches_memory_entry_of_eval_emitted_provider_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {multiplicity as : FGL}
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval mainEnv mainMsg) multiplicity as)
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) multiplicity as) := by
+  exact matches_memory_entry_of_eval_msg_eq (h_msg := h_msg.symm)
+
+/-- Compose a caller's legacy-entry match against the selected Main Clean
+    memory message with an emitted provider row selected by Clean balance. -/
+theorem matches_memory_entry_of_left_match_eval_emitted_provider_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {entry : MemoryBusEntry FGL}
+    {multiplicity as : FGL}
+    (h_entry :
+      matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval mainEnv mainMsg) multiplicity as))
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_entry entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) multiplicity as) := by
+  exact matches_memory_entry_trans h_entry
+    (matches_memory_entry_of_eval_emitted_provider_msg_eq (h_msg := h_msg))
+
+/-- Payload-only version of
+    `matches_memory_entry_of_left_match_eval_emitted_provider_msg_eq`, allowing
+    opposite legacy multiplicities on Main and provider rows. -/
+theorem matches_memory_payload_of_left_match_eval_emitted_provider_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {entry : MemoryBusEntry FGL}
+    {mainMultiplicity providerMultiplicity as : FGL}
+    (h_entry :
+      matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval mainEnv mainMsg) mainMultiplicity as))
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_payload entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) providerMultiplicity as) := by
+  exact matches_memory_payload_trans
+    (matches_memory_payload_of_matches_memory_entry h_entry)
+    (matches_memory_payload_of_eval_msg_eq (h_msg := h_msg.symm))
+
+/-- Variant of `matches_memory_entry_of_eval_msg_eq` for provider rows exposed
+    as Clean `push` interactions.
+
+Full-ensemble memory balance can match a Main emitted interaction with
+MemAlignByte/MemAlignReadByte provider pushes. The raw channel message is
+still the same PIL-shaped memory tuple; only the interaction multiplicity
+polarity differs, and legacy multiplicity/address-space slots remain explicit
+arguments to `MemBusMessage.toEntry`. -/
+theorem matches_memory_entry_of_eval_pushed_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {multiplicity as : FGL}
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.pushed providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval mainEnv mainMsg) multiplicity as)
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) multiplicity as) := by
+  have h_vec :
+      Vector.map (Expression.eval providerEnv) (toElements providerMsg) =
+        Vector.map (Expression.eval mainEnv) (toElements mainMsg) := by
+    apply Vector.toArray_injective
+    simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+  have h_eval : eval providerEnv providerMsg = eval mainEnv mainMsg := by
+    have h_from := congrArg
+      (fun xs => (fromElements xs :
+        ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+    simpa [ProvableType.fromElements_eval_toElements] using h_from
+  rw [h_eval]
+  simp [matches_memory_entry]
+
+/-- Compose a caller's legacy-entry match against the selected Main Clean
+    memory message with a pushed provider row selected by Clean balance. -/
+theorem matches_memory_entry_of_left_match_eval_pushed_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {entry : MemoryBusEntry FGL}
+    {multiplicity as : FGL}
+    (h_entry :
+      matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval mainEnv mainMsg) multiplicity as))
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.pushed providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_entry entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) multiplicity as) := by
+  exact matches_memory_entry_trans h_entry
+    (matches_memory_entry_of_eval_pushed_msg_eq (h_msg := h_msg))
+
+/-- Payload-only version of
+    `matches_memory_entry_of_left_match_eval_pushed_msg_eq`, allowing opposite
+    legacy multiplicities on Main and provider rows. -/
+theorem matches_memory_payload_of_left_match_eval_pushed_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {entry : MemoryBusEntry FGL}
+    {mainMultiplicity providerMultiplicity as : FGL}
+    (h_entry :
+      matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval mainEnv mainMsg) mainMultiplicity as))
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.pushed providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_payload entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) providerMultiplicity as) := by
+  have h_provider :
+      matches_memory_payload
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval mainEnv mainMsg) mainMultiplicity as)
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval providerEnv providerMsg) providerMultiplicity as) := by
+    have h_vec :
+        Vector.map (Expression.eval providerEnv) (toElements providerMsg) =
+          Vector.map (Expression.eval mainEnv) (toElements mainMsg) := by
+      apply Vector.toArray_injective
+      simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+    have h_eval : eval providerEnv providerMsg = eval mainEnv mainMsg := by
+      have h_from := congrArg
+        (fun xs => (fromElements xs :
+          ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+      simpa [ProvableType.fromElements_eval_toElements] using h_from
+    rw [h_eval]
+    simp [matches_memory_payload]
+  exact matches_memory_payload_trans
+    (matches_memory_payload_of_matches_memory_entry h_entry) h_provider
 
 /-- **Memory-read lane hypotheses for LD.** The Main row's low/high `b`
     lanes (as FGL field elements) equal the low/high halves of the
@@ -94,7 +371,7 @@ def matches_memory_entry (a b : MemoryBusEntry FGL) : Prop :=
     `[op=LOAD, addr, mem_step, bytes=8, ...value]` entry on the bus. -/
 @[simp]
 def memory_load_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.b_0 row = memory_entry_lo e
   ∧ m.b_1 row = memory_entry_hi e
@@ -105,7 +382,7 @@ def memory_load_lanes_match
     (`main.pil:316-319,323-328`). -/
 @[simp]
 def register_write_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.c_0 row = memory_entry_lo e
   ∧ m.c_1 row = memory_entry_hi e
@@ -134,7 +411,7 @@ against `b` or `c`. We expose the `c`-side form (symmetric with LD's
       constraint 9/16). -/
 @[simp]
 def memory_store_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.c_0 row = memory_entry_lo e
   ∧ m.c_1 row = memory_entry_hi e
@@ -152,7 +429,7 @@ def memory_store_lanes_match
     `matches_memory_entry`. -/
 @[simp]
 def register_read_rs1_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.a_0 row = memory_entry_lo e
   ∧ m.a_1 row = memory_entry_hi e
@@ -165,7 +442,7 @@ def register_read_rs1_lanes_match
     into `b`. -/
 @[simp]
 def register_read_rs2_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.b_0 row = memory_entry_lo e
   ∧ m.b_1 row = memory_entry_hi e
@@ -213,7 +490,7 @@ a single FGL value carried entirely in the lo lane.) -/
     the `store_pc = 1` case, see file). -/
 @[simp]
 def store_pc_lanes_match_lo
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   memory_entry_lo e =
     m.store_pc row * (m.pc row + m.jmp_offset2 row - m.c_0 row) + m.c_0 row
@@ -240,58 +517,65 @@ def store_pc_lanes_match_lo
     Trust class: same as `store_pc_lanes_match_lo`. -/
 @[simp]
 def store_pc_lanes_match_hi
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   memory_entry_hi e = (1 - m.store_pc row) * m.c_1 row
 
 /-! ## Bridge to `U64.toBV` for register-write values
 
 `memory_entry_toField_eq_toBV_toNat` bridges from
-`memory_entry_toField` (field-level byte pack) to `U64.toBV`
-(`BitVec 64` register-write value) under per-byte range hypotheses and
-a no-wrap bound. Direct consequence of
-`Fundamentals/PackedBitVec.lean`'s `u64_toBV_eq_ofNat_fgl_val`. -/
+`memory_entry_toField` (chunk-shape field value) to `U64.toBV`
+(`BitVec 64` register-write value), using the chunk-pack identity
+`bytes_of_chunk_packing` to decompose each chunk into 4 bytes for the
+byte-addressed Sail memory model. Direct consequence of
+`Channels/MemoryBusBytes.lean`'s `u64_toBV_chunks_eq_ofNat_fgl_val`. -/
 
-/-- **Entry byte ranges.** Each of the 8 byte lanes of a memory-bus
-    entry has `.val < 256` (discharged by the PIL range-check bus). -/
+/-- **Entry chunk ranges.** Each of the 2 chunks of a memory-bus entry
+    has `.val < 2^32` (discharged by the PIL range-check bus, which
+    enforces `value[0], value[1] ∈ [0, 2^32)` per `mem.pil`). -/
 @[simp]
-def memory_entry_bytes_in_range (e : MemoryBusEntry FGL) : Prop :=
-  e.x0.val < 256 ∧ e.x1.val < 256 ∧ e.x2.val < 256 ∧ e.x3.val < 256
-  ∧ e.x4.val < 256 ∧ e.x5.val < 256 ∧ e.x6.val < 256 ∧ e.x7.val < 256
+def memory_entry_chunks_in_range (e : MemoryBusEntry FGL) : Prop :=
+  e.value_0.val < 4294967296 ∧ e.value_1.val < 4294967296
 
-/-- **No-wraparound bound on the packed entry.** The Nat byte-sum
-    `x0.val + x1.val * 256 + … + x7.val * 256^7` is below `GL_prime`.
+/-- **No-wraparound bound on the packed entry.** The Nat chunk-sum
+    `value_0.val + value_1.val * 2^32` is below `GL_prime`.
 
-    Under `memory_entry_bytes_in_range`, the byte-sum is at most
+    Under `memory_entry_chunks_in_range`, the chunk-sum is at most
     `2^64 - 1`, which *can* exceed `GL_prime = 2^64 - 2^32 + 1` in the
     "high-register" range. Callers discharge this either
-    architecturally (e.g. for 32-bit ops the top four bytes are zero)
+    architecturally (e.g. for 32-bit ops the top chunk is zero)
     or from the concrete product range. -/
 @[simp]
 def memory_entry_packed_no_wrap (e : MemoryBusEntry FGL) : Prop :=
-  e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-  + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-  + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936 < GL_prime
+  e.value_0.val + e.value_1.val * 4294967296 < GL_prime
 
-/-- **Bridge: `U64.toBV` of entry bytes equals `BitVec.ofNat 64
-    (memory_entry_toField e).val`.** Given byte ranges and the
-    no-wraparound bound, the 8 memory-bus byte lanes — fed through
-    `U64.toBV` (which coerces each `FGL` byte to `BitVec 8` via the
-    `mod 256` instance) — produce the same `BitVec 64` as
-    `BitVec.ofNat 64` applied to the field-level packed byte-sum's
-    `.val`. -/
+/-- **Bridge: `U64.toBV` of entry's byte projections equals
+    `BitVec.ofNat 64 (memory_entry_toField e).val`.** Given chunk
+    ranges and the no-wraparound bound, the 8 byte projections of the
+    entry's two 32-bit chunks (`byteAt e 0..7`) — fed through `U64.toBV`
+    (which coerces each `FGL` byte to `BitVec 8` via the `mod 256`
+    instance) — produce the same `BitVec 64` as `BitVec.ofNat 64`
+    applied to the chunk-pack field value's `.val`. -/
 lemma memory_entry_toField_eq_toBV_toNat
     (e : MemoryBusEntry FGL)
-    (h_range : memory_entry_bytes_in_range e)
+    (h_range : memory_entry_chunks_in_range e)
     (h_no_wrap : memory_entry_packed_no_wrap e) :
-    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
-                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    U64.toBV #v[(byteAt e 0 : BitVec 8), (byteAt e 1 : BitVec 8),
+                (byteAt e 2 : BitVec 8), (byteAt e 3 : BitVec 8),
+                (byteAt e 4 : BitVec 8), (byteAt e 5 : BitVec 8),
+                (byteAt e 6 : BitVec 8), (byteAt e 7 : BitVec 8)]
     = BitVec.ofNat 64 (memory_entry_toField e).val := by
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := h_range
+  obtain ⟨h_v0, h_v1⟩ := h_range
   simp only [memory_entry_packed_no_wrap] at h_no_wrap
   simp only [memory_entry_toField]
-  exact ZiskFv.PackedBitVec.u64_toBV_eq_ofNat_fgl_val
-    e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
-    h0 h1 h2 h3 h4 h5 h6 h7 h_no_wrap
+  -- Unfold byteAt for indices 0..7: 0..3 from value_0, 4..7 from value_1.
+  show U64.toBV
+        #v[(byteOf e.value_0 0 : BitVec 8), (byteOf e.value_0 1 : BitVec 8),
+           (byteOf e.value_0 2 : BitVec 8), (byteOf e.value_0 3 : BitVec 8),
+           (byteOf e.value_1 0 : BitVec 8), (byteOf e.value_1 1 : BitVec 8),
+           (byteOf e.value_1 2 : BitVec 8), (byteOf e.value_1 3 : BitVec 8)]
+      = BitVec.ofNat 64 (e.value_0 + e.value_1 * 4294967296 : FGL).val
+  exact ZiskFv.Channels.MemoryBusBytes.u64_toBV_chunks_eq_ofNat_fgl_val
+    e.value_0 e.value_1 h_v0 h_v1 h_no_wrap
 
 end ZiskFv.Airs.MemoryBus

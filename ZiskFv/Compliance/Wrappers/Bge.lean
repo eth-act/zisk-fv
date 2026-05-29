@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Bge
-import ZiskFv.Equivalence.Promises.BranchHelpers
+import ZiskFv.EquivCore.Bge
+import ZiskFv.EquivCore.Promises.BranchHelpers
 import ZiskFv.SailSpec.bge
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -20,7 +20,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_BGE`.** Pure pass-through to the
     canonical `equiv_BGE` over a fully-constructed `BranchPromises`
@@ -29,7 +28,7 @@ theorem equiv_BGE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bge_input : PureSpec.BgeInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)
-    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+    (promises : ZiskFv.EquivCore.Promises.BranchPromises
         state bge_input.imm bge_input.r1_val bge_input.r2_val bge_input.PC
         ops.misa_val
         (PureSpec.execute_BGE_pure bge_input).nextPC
@@ -38,7 +37,7 @@ theorem equiv_BGE
         ops.imm ops.r1 ops.r2 ops.exec_row) :
     execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BGE)) state
       = (bus_effect ops.exec_row [] state).2 :=
-  ZiskFv.Equivalence.Bge.equiv_BGE
+  ZiskFv.EquivCore.Bge.equiv_BGE
     state bge_input ops promises
 
 end ZiskFv.Compliance

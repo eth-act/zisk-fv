@@ -27,12 +27,11 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.BranchArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in BGEU-execution mode (shape = BLTU;
     polarity differs via the transpile axiom). -/
 @[simp]
-def main_row_in_bgeu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_bgeu_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (6 : FGL)
   ∧ m.m32 r_main = 0
@@ -42,14 +41,14 @@ def main_row_in_bgeu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     `branch_archetype_circuit_holds` at `opcode_lit = OP_LTU`. -/
 @[simp]
 def branch_geu_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) : Prop :=
   branch_subset_holds m r_main next_pc
   ∧ main_row_in_bgeu_mode m r_main
 
 /-- **Compositional BGEU PC-dispatch theorem (via `BranchArchetype`).** -/
 lemma branch_geu_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_geu_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
             + m.flag r_main * (m.jmp_offset1 r_main - m.jmp_offset2 r_main) := by
@@ -61,7 +60,7 @@ lemma branch_geu_compositional
 /-- **BGEU taken case.** When `flag = 0` (`a ≥u b`), next-pc is
     `pc + jmp_offset2 = pc + imm` (BNE polarity). -/
 lemma branch_geu_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_geu_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main := by
@@ -71,7 +70,7 @@ lemma branch_geu_taken
 /-- **BGEU not-taken case.** When `flag = 1` (`a <u b`), next-pc is
     `pc + jmp_offset1 = pc + 4`. -/
 lemma branch_geu_not_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_geu_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main := by

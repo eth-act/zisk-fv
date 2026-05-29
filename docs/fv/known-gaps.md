@@ -6,13 +6,26 @@
 > (Step 4) and the V3 trust gates (Step 5). All 63 RV64IM opcodes
 > are now covered by `equiv_<OP>` wrappers under
 > `ZiskFv/Compliance/Wrappers/<Op>.lean`, which discharge the promise hypotheses from
-> the trust ledger; the global theorem dispatches the 35-arm
+> the trust ledger; the global theorem dispatches the 63-arm
 > `OpEnvelope` sum type through those wrappers. The trust closure
 > of the global theorem is captured in
-> `trust/baseline-zisk-riscv-compliant.txt` (122 axioms) and
-> `docs/fv/trusted-base.md` documents the per-class rationale. The
+> `trust/baseline-zisk-riscv-compliant.txt` (50 names at the current
+> `clean-air-integration` head) and `docs/fv/trusted-base.md`
+> documents the 53 source trust-ledger axioms and per-class rationale. The
 > V3 trust gate's `check-closure-vs-baseline` subcommand
 > mechanically prevents the gap from re-opening.
+>
+> **Correction (Clean C3/C4 audit, 2026-05-21):** The uber theorem is
+> still only as meaningful as its trust ledger. The ArithTable audit found
+> that several `arith_table_op_*` axioms introduced during promise discharge
+> are the wrong shape, and some are false as static-table claims. This is
+> not a caller-burden regression; it is a trust-ledger granularity bug. The
+> corrected pattern is one shared lookup/permutation soundness boundary for
+> ArithTable membership, plus proved finite-table projections. A green
+> `lake build` under known-false trust assumptions is not a completed
+> verification claim. Current implementation/proof defects are tracked in
+> [`defects.md`](defects.md); the governing design is
+> the policy summary at the top of [`defects.md`](defects.md).
 >
 > This document is preserved as a historical record of how the gap
 > was identified and closed. Nothing else below is removed; the
@@ -48,14 +61,16 @@ keep the discussion checkable against this document.
 | **promise hypothesis**  | A caller-supplied parameter on a canonical `equiv_<OP>` theorem that asserts an algebraic or structural relationship the theorem could derive from the trust ledger but currently does not. The proof body substitutes the hypothesis without deriving it. Example: `h_match_clo : m.c_0 r_main = v.free_in_c_0 r_binary + … + v.free_in_c_7 r_binary`. The full audit is in this document; the cross-AIR matching family, the Sail-input bridge family, the per-byte range/chain family, the BinaryExtension specifics family, and the Tier-1 loose-element-algebra family are all promise hypotheses. |
 | **promise discharge**   | The work of replacing a promise hypothesis with a derivation from the trust ledger (transpile axioms, bus permutation axioms, lookup-soundness axioms, range-check axioms, AIR-validity structures). The result: the theorem still typechecks, but the hypothesis is no longer caller-supplied — it is internally derived from axioms already on the books. **Real promise discharge reduces the trust surface; renaming or splitting a hypothesis without deriving it is laundering, not discharge** (see CLAUDE.md "Anti-laundering principle"). |
 | **discharge bridge**    | A Lean file under `ZiskFv/Equivalence/Bridge/<Shape>.lean` that exposes a uniform discharge API for one provider-AIR shape. Consumes the trust-ledger axioms relevant to that shape; produces the per-byte / per-chunk / cross-AIR equations the per-opcode `equiv_<OP>` theorems for that shape need. Step 2 of `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`. |
-| **trust ledger**        | The 87 axioms in `trust/baseline-axioms.txt`, organized by class in `docs/fv/trusted-base.md`. The project's named, audited trust surface. **Promise discharge does not extend the trust ledger** (modulo small bus-protocol additions like Phase A's OpBus axioms, which fit existing classes). |
+| **trust ledger**        | The axioms in `trust/baseline-axioms.txt`, organized by class in `docs/fv/trusted-base.md`. The project's named, audited trust surface. **Promise discharge must not replace caller promises with false or over-specific trust-ledger axioms**. If the real trust boundary is lookup/permutation soundness, the ledger entry should state that shared boundary, while opcode facts are proved from table contents. |
 | **caller-burden ledger** | `trust/baseline-caller-burden.txt`, the corresponding ledger of every parameter binder on every canonical `equiv_<OP>`. Promise discharge **shrinks** this ledger. The diff IS the audit surface for whether a refactor accomplished real discharge or just laundering (see CLAUDE.md V1 check #8). |
 | **anti-laundering metric** | The pair of gates `check-hypothesis-count.sh` (V1 #7) and `check-caller-burden.sh` (V1 #8). Operational meaning of "real promise discharge": every plan PR must reduce or hold both columns of `trust/baseline-hypothesis-count.txt` and show net REMOVALS (not renamings) in `trust/baseline-caller-burden.txt`. |
 | **constructibility (separate gap)** | Whether a `Valid_<AIR>` instance can actually be constructed from a real ZisK trace. If `Valid_<AIR>`'s declared constraints are stronger than the actual circuit, the equivalence theorems are vacuous. Not addressed by promise discharge; tracked as a separate concern in CLAUDE.md "Anti-laundering principle" item 4. |
+| **lookup/permutation boundary** | The accepted out-of-scope statement that a PLONK/logUp-style lookup or bus argument implies the semantic channel balance / table membership used by Lean. Clean formalizes the semantic consequence of balanced channels; it does not, by itself, prove the external cryptographic polynomial argument. This boundary must be shared and table/channel-level, not encoded as per-opcode table conclusions. |
 
-## TL;DR
+## TL;DR (historical 2026-05-13 framing)
 
-62 of 63 canonical `equiv_<OP>` theorems carry **promise hypotheses**
+At the time of the original audit, 62 of 63 canonical `equiv_<OP>`
+theorems carried **promise hypotheses**
 — user-supplied parameters that assert algebraic relationships
 between Main's columns, Provider AIR columns, loose field elements,
 and Sail input/output values, **without those relationships being
@@ -222,11 +237,13 @@ But what the proofs prove is:
 
 For the per-opcode theorems to constitute an end-to-end claim about
 ZisK, every promise hypothesis must be discharged from circuit
-witnesses + the trusted bus / transpile axioms. Today, **62 of 63
-opcodes have no such discharge** — only `Add` (after a recent
-refactor that bundled `matches_entry` into `add_circuit_holds` and
-derived it from a new `op_bus_perm_sound_BinaryAdd` axiom)
-demonstrates the chain end-to-end.
+witnesses + the trusted bus / transpile axioms. At the time of this
+historical survey, **62 of 63 opcodes had no such discharge** — only
+`Add` (after a then-recent refactor that bundled `matches_entry` into
+`add_circuit_holds` and derived it from a new
+`op_bus_perm_sound_BinaryAdd` axiom) demonstrated the chain end-to-end.
+That principal caller-burden gap is now closed at the global theorem as
+described in the status block above.
 
 ## Immediate TODO (historical — all items DONE)
 

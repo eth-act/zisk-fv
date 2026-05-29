@@ -28,6 +28,7 @@ FILE_CLASS = {
     "ZiskFv/Trusted/Transpiler.lean":               ("1",  "Transpile contracts"),
     "ZiskFv/ZiskCircuit/MemModel.lean":             ("2",  "Memory state bridge — load"),
     "ZiskFv/Airs/OperationBus/Bridge.lean":         ("4",  "Bus / lookup soundness — operation bus"),
+    "ZiskFv/Airs/OperationBus/Consolidated.lean":   ("4",  "Bus / lookup soundness — operation bus (consolidated)"),
     "ZiskFv/Airs/MemoryBus/MemBridge.lean":         ("4",  "Bus / lookup soundness — memory bus"),
     "ZiskFv/Airs/MemoryBus/MemAlignBridge.lean":    ("4",  "Bus / lookup soundness — MemAlign"),
     "ZiskFv/Airs/Main/Ranges.lean":                 ("5b", "Range-bus / byte-range — Main"),
@@ -39,6 +40,7 @@ FILE_CLASS = {
     "ZiskFv/Airs/Binary/BinaryExtensionRanges.lean":("6",  "Lookup soundness — BinaryExtension pins"),
     "ZiskFv/Airs/Arith/Ranges.lean":                ("6b", "Arith range / table / Euclidean pins"),
     "ZiskFv/SailSpec/Auxiliaries.lean":             ("7-10","Platform scope (PMP / CLINT / PMA / Zicfilp)"),
+    "ZiskFv/AirsClean/Completeness.lean":           ("C",  "Clean-Component completeness (non-security-critical)"),
 }
 
 # Class number → (label, why-we-trust-it summary).
@@ -57,6 +59,8 @@ CLASS_HEADERS = {
            "Range-checker bus lookup soundness on the Arith AIR's `bits(16)`-annotated chunk columns; arith_table lookup soundness for the per-row sign/mode/operand/sign-witness/selector pins; binary-bus lookup soundness on the Arith `assumes_operation(|d|<|b|)` consumer for the Euclidean magnitude/sign bound."),
     "7-10":("Platform-scope assumptions",
            "ZisK's RV64IM target excludes PMP, CLINT, PMA, and Zicfilp. Axiomatising these helpers as inert under the existing `RISC_V_assumptions` is strictly stronger than threading state-level disjointness through every load/store proof."),
+    "C":  ("Clean-Component completeness (NON-SECURITY-CRITICAL)",
+           "Clean's `GeneralFormalCircuit` makes `completeness` a mandatory field; zisk-fv is a soundness-only verification and does not prove completeness (that an honest prover can satisfy the constraints — the pre-Clean code never established it either). These axioms are completeness-direction: a falsehood in any one CANNOT make a wrong execution verify — the verification's soundness does not depend on them. One axiom per AIR. Plan decision D-COMPLETE."),
 }
 
 # Parse baseline-axioms.txt → list of (file, line, name).

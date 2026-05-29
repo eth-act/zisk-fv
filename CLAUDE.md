@@ -24,12 +24,20 @@ DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
 **Status:** `zisk_riscv_compliant_program_bus` is proved
 (`ZiskFv/Compliance.lean`); its trust closure
-is the **122 axioms** enumerated in
-`trust/baseline-zisk-riscv-compliant.txt` and documented per-class
-in `docs/fv/trusted-base.md`. All 63 RV64IM opcodes are covered as
+is the **50-name global compliance closure** enumerated in
+`trust/baseline-zisk-riscv-compliant.txt`; the source trust ledger
+records **53 axioms** in `trust/baseline-axioms.txt`, documented
+per-class in `docs/fv/trusted-base.md`. All 63 RV64IM opcodes are covered as
 `ZiskFv.Compliance.equiv_<OP>` wrappers under
-`ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 35-arm
-`OpEnvelope` sum type. The principal "promise hypothesis"
+`ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 63-arm
+`OpEnvelope` sum type.
+
+Per-opcode the proof is a 3-layer tower: `ZiskFv/EquivCore/<Op>.lean`
+(the real Sail↔circuit proof, plus shared `EquivCore/{Bridge,Promises,
+WriteValueProofs}/`) → `ZiskFv/Compliance/Wrappers/<Op>.lean` (promise
+discharge) → `ZiskFv/Equivalence/<Op>.lean` (the canonical
+`equiv_<OP>`, channel-balance form). The global theorem aggregates the
+ten per-family dispatchers in `ZiskFv/Compliance/Dispatch/`. The principal "promise hypothesis"
 soundness gap surveyed in
 [`docs/fv/known-gaps.md`](docs/fv/known-gaps.md) is closed at the
 global theorem: V3 trust gates
@@ -42,14 +50,14 @@ deriving their cross-entry rd-value byte equations from circuit
 witnesses — see `ZiskFv/ZiskCircuit/LoadDerivation.lean` for the
 copyb / MemAlign families and `ZiskFv/ZiskCircuit/SextLoadBridge.lean`
 for the LB/LH/LW signed-load chain
-(`bin_ext_table_consumer_wf` +
-`binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat`). The
+(`binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat` plus
+Clean/static lookup witnesses). The
 LBU/LHU/LWU zero-pad is itself a derived theorem
 (`memalign_subdoubleword_load_high_bytes_zero` in
-`Airs/MemoryBus/MemAlignBridge.lean`) consuming a generic
-permutation-soundness axiom for the MemAlign* providers plus
-`mem_align_rom_subdoubleword_load_value_1_zero` (a narrow
-ROM-lookup axiom).
+`Airs/MemoryBus/MemAlignBridge.lean`) consuming an explicit
+`SubdoublewordLoadProviderWitness` and ROM-derived row facts. No
+MemAlign permutation or MemAlignRom axiom remains in canonical/global
+closure.
 
 ## Pipeline
 
@@ -76,7 +84,15 @@ ZiskFv/ZiskCircuit/<family>   ← circuit semantics in BitVec / FGL
         │
         │ + LHS bridge to Sail spec
         ▼
-ZiskFv/Equivalence/<OP>       ← equiv_<OP> : Sail.execute = bus_effect.2
+ZiskFv/EquivCore/<OP>         ← core proof : Sail.execute = bus_effect.2
+        │
+        │ promise discharge
+        ▼
+ZiskFv/Compliance/Wrappers/<OP>  ← Compliance.equiv_<OP>
+        │
+        │ channel-balance bridge
+        ▼
+ZiskFv/Equivalence/<OP>       ← canonical equiv_<OP> : Sail.execute = state_effect_via_channels
 ```
 
 ## Build / verify / test
@@ -149,7 +165,7 @@ Eight checks; if you break any, CI fails:
    `h_entry_lo_eq`, `h_high_bytes_signext`, `h_high_bytes_zeroext`,
    `h_e1_e2_bytes`). Pattern list: `trust/forbidden-param-shapes.txt`.
    Enforced uniformly across all 63 opcodes (no exemptions).
-4. **Floors.** ≥82 axioms in baseline, ≥63 canonical `equiv_<OP>`
+4. **Floors.** ≥53 axioms in baseline, ≥63 canonical `equiv_<OP>`
    theorems, plus a cross-witness check that the parser hasn't been
    sabotaged.
 5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,ZiskCircuit,Equivalence,Tactics,Sail}`.

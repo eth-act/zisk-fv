@@ -26,12 +26,11 @@ open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in ADD-execution mode: external op with
     opcode literal 10, full 64-bit width (m32 = 0), and `flag = 0`. -/
 @[simp]
-def main_row_in_add_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_add_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (10 : FGL)
   ∧ m.m32 r_main = 0
@@ -41,7 +40,7 @@ def main_row_in_add_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     on each AIR plus the bus-row equality between them. -/
 @[simp]
 def add_circuit_holds
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ ZiskFv.Airs.BinaryAdd.core_every_row b r_binary
@@ -51,16 +50,16 @@ def add_circuit_holds
 /-- The 64-bit value packed into the Main row's `(c_0, c_1)` lanes,
     treated as a single Goldilocks element. -/
 @[simp]
-def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
+def main_c_packed (m : Valid_Main FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296
 
 /-- The 64-bit value packed into the Main row's `(a_0, a_1)` lanes. -/
 @[simp]
-def main_a_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
+def main_a_packed (m : Valid_Main FGL FGL) (r : ℕ) : FGL :=
   m.a_0 r + m.a_1 r * 4294967296
 
 @[simp]
-def main_b_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
+def main_b_packed (m : Valid_Main FGL FGL) (r : ℕ) : FGL :=
   m.b_0 r + m.b_1 r * 4294967296
 
 /-- **Compositional ADD theorem.** If the ADD-subset Main constraints hold,
@@ -77,7 +76,7 @@ def main_b_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     The lifting from this field-level identity to the RV64 `BitVec 64` ADD
     semantics happens in `Equivalence.Add`. -/
 lemma add_compositional
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ)
     (h : add_circuit_holds m b r_main r_binary) :
     main_c_packed m r_main

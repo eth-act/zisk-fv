@@ -1,27 +1,27 @@
 import Mathlib
 
-import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
-import Extraction.Main
 
 /-!
 Named-column mirror of the subset of ZisK's `Main` AIR consumed by the
-per-opcode equivalence proofs, plus the `constraint_N_of_extraction`
-iff-bridges. Other constraints remain reachable via raw `Circuit.main`
-on the underlying circuit handle.
+per-opcode equivalence proofs.
+
+After Phase F6 (the OpenVM Circuit retirement), this record no longer
+exposes a `circuit : C F ExtF` field or `_def` constraints binding the
+named accessors to the auto-extracted `Circuit.main` projections. The
+named accessors are now opaque `ℕ → F` thunks; the trust ledger's
+permutation-soundness axioms close the gap to the extracted spec.
 -/
 
 namespace ZiskFv.Airs.Main
 
 open Goldilocks
-open Main.extraction
 
 /-- Named accessors for the ADD- and branch-relevant Main-AIR columns.
     Column numbers come from the witness-column header of
-    `ZiskFv/ZiskFv/Extraction/Main.lean`. -/
-structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
-    [Field F] [Field ExtF] [Circuit F ExtF C] where
-  circuit : C F ExtF
+    `build/extraction/Extraction/Main.lean`. -/
+structure Valid_Main (F ExtF : Type)
+    [Field F] [Field ExtF] where
   /-- low 32-bit lane of operand `a` (Main col 0). -/
   a_0 : ℕ → F
   a_1 : ℕ → F
@@ -65,96 +65,59 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
       vacuously satisfied at a segment boundary where "previous row"
       is ill-defined. -/
   segment_l1 : ℕ → F
-  a_0_def : ∀ row,
-    a_0 row = Circuit.main circuit (id := 1) (column := 0) (row := row) (rotation := 0)
-  a_1_def : ∀ row,
-    a_1 row = Circuit.main circuit (id := 1) (column := 1) (row := row) (rotation := 0)
-  b_0_def : ∀ row,
-    b_0 row = Circuit.main circuit (id := 1) (column := 2) (row := row) (rotation := 0)
-  b_1_def : ∀ row,
-    b_1 row = Circuit.main circuit (id := 1) (column := 3) (row := row) (rotation := 0)
-  c_0_def : ∀ row,
-    c_0 row = Circuit.main circuit (id := 1) (column := 4) (row := row) (rotation := 0)
-  c_1_def : ∀ row,
-    c_1 row = Circuit.main circuit (id := 1) (column := 5) (row := row) (rotation := 0)
-  flag_def : ∀ row,
-    flag row = Circuit.main circuit (id := 1) (column := 6) (row := row) (rotation := 0)
-  pc_def : ∀ row,
-    pc row = Circuit.main circuit (id := 1) (column := 7) (row := row) (rotation := 0)
-  is_external_op_def : ∀ row,
-    is_external_op row = Circuit.main circuit (id := 1) (column := 19) (row := row) (rotation := 0)
-  op_def : ∀ row,
-    op row = Circuit.main circuit (id := 1) (column := 20) (row := row) (rotation := 0)
-  m32_def : ∀ row,
-    m32 row = Circuit.main circuit (id := 1) (column := 28) (row := row) (rotation := 0)
-  ind_width_def : ∀ row,
-    ind_width row = Circuit.main circuit (id := 1) (column := 18) (row := row) (rotation := 0)
-  set_pc_def : ∀ row,
-    set_pc row = Circuit.main circuit (id := 1) (column := 25) (row := row) (rotation := 0)
-  jmp_offset1_def : ∀ row,
-    jmp_offset1 row = Circuit.main circuit (id := 1) (column := 26) (row := row) (rotation := 0)
-  jmp_offset2_def : ∀ row,
-    jmp_offset2 row = Circuit.main circuit (id := 1) (column := 27) (row := row) (rotation := 0)
-  store_pc_def : ∀ row,
-    store_pc row = Circuit.main circuit (id := 1) (column := 22) (row := row) (rotation := 0)
-  im_high_degree_2_def : ∀ row,
-    im_high_degree_2 row = Circuit.main circuit (id := 2) (column := 7) (row := row) (rotation := 0)
-  segment_l1_def : ∀ row,
-    segment_l1 row = Circuit.preprocessed circuit (column := 0) (row := row) (rotation := 0)
 
-variable {C : Type → Type → Type} {F ExtF : Type}
-  [Field F] [Field ExtF] [Circuit F ExtF C]
+variable {F ExtF : Type} [Field F] [Field ExtF]
 
 /-- `flag` is boolean — constraint_19 in the extracted Main AIR. -/
 @[simp]
-def flag_boolean (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def flag_boolean (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   v.flag row * (1 - v.flag row) = 0
 
 /-- `is_external_op` is boolean — constraint_30. -/
 @[simp]
-def is_external_op_boolean (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def is_external_op_boolean (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   v.is_external_op row * (1 - v.is_external_op row) = 0
 
 /-- "Internal op=0" short-circuit zero: if the row is not an external op and
     `op = 0`, then `c[0] = 0`. Constraint_8. -/
 @[simp]
-def internal_op0_zeroes_c0 (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def internal_op0_zeroes_c0 (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   (1 - v.is_external_op row) * (1 - v.op row) * v.c_0 row = 0
 
 /-- Constraint_15 — same shape for c[1]. -/
 @[simp]
-def internal_op0_zeroes_c1 (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def internal_op0_zeroes_c1 (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   (1 - v.is_external_op row) * (1 - v.op row) * v.c_1 row = 0
 
 /-- "Internal op=1" short-circuit copy: if the row is not an external op and
     `op = 1`, then `c[0] = b[0]`. Constraint_9. -/
 @[simp]
-def internal_op1_copies_b0 (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def internal_op1_copies_b0 (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   (1 - v.is_external_op row) * v.op row * (v.b_0 row - v.c_0 row) = 0
 
 /-- Constraint_16 — same shape for c[1]. -/
 @[simp]
-def internal_op1_copies_b1 (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def internal_op1_copies_b1 (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   (1 - v.is_external_op row) * v.op row * (v.b_1 row - v.c_1 row) = 0
 
 /-- Constraint_17: internal op=0 forces `flag = 1`. -/
 @[simp]
-def internal_op0_sets_flag (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def internal_op0_sets_flag (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   (1 - v.is_external_op row) * (1 - v.op row) * (1 - v.flag row) = 0
 
 /-- Constraint_18: internal op=1 forces `flag = 0`. -/
 @[simp]
-def internal_op1_clears_flag (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def internal_op1_clears_flag (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   (1 - v.is_external_op row) * v.op row * v.flag row = 0
 
 /-- Constraint_19: `flag` and `set_pc` are mutually exclusive. -/
 @[simp]
-def flag_set_pc_disjoint (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def flag_set_pc_disjoint (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   v.flag row * v.set_pc row = 0
 
 /-- ADD subset — all the named constraints from Task 3's enumeration. -/
 @[simp]
-def add_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def add_subset_holds (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   internal_op0_zeroes_c0 v row
   ∧ internal_op1_copies_b0 v row
   ∧ internal_op0_zeroes_c1 v row
@@ -190,7 +153,7 @@ def add_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
     `pc_handshake_with_next_pc` below, derived from this via
     `pc_handshake_to_next_pc` when the row is not a segment boundary. -/
 @[simp]
-def pc_handshake (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+def pc_handshake (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   (1 - v.segment_l1 row) *
     (v.pc row -
       (v.set_pc (row - 1) * (v.c_0 (row - 1) + v.jmp_offset1 (row - 1))
@@ -207,7 +170,7 @@ def pc_handshake (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
     For flag=1 (taken), `next_pc = pc + jmp_offset1 = pc + imm`.
     For flag=0 (not-taken), `next_pc = pc + jmp_offset2 = pc + 4`. -/
 @[simp]
-def pc_handshake_with_next_pc (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=
+def pc_handshake_with_next_pc (v : Valid_Main F ExtF) (row : ℕ) (next_pc : F) : Prop :=
   next_pc =
     v.set_pc row * (v.c_0 row + v.jmp_offset1 row)
       + (1 - v.set_pc row) * (v.pc row + v.jmp_offset2 row)
@@ -222,8 +185,7 @@ def pc_handshake_with_next_pc (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F
     Specialized to `FGL` so `linear_combination` / `ring` can see a
     commutative-ring. -/
 lemma pc_handshake_to_next_pc
-    {C' : Type → Type → Type} [Circuit FGL FGL C']
-    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (v : Valid_Main FGL FGL) (row : ℕ)
     (h_seg : v.segment_l1 (row + 1) = 0)
     (h : pc_handshake v (row + 1)) :
     pc_handshake_with_next_pc v row (v.pc (row + 1)) := by
@@ -244,7 +206,7 @@ lemma pc_handshake_to_next_pc
     form used by the archetype proof:
     `next_pc = pc + jmp_offset2 + flag * (jmp_offset1 - jmp_offset2)`. -/
 lemma pc_handshake_branch
-    (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F)
+    (v : Valid_Main F ExtF) (row : ℕ) (next_pc : F)
     (h_set_pc : v.set_pc row = 0)
     (h : pc_handshake_with_next_pc v row next_pc) :
     next_pc = v.pc row + v.jmp_offset2 row
@@ -253,14 +215,12 @@ lemma pc_handshake_branch
   rw [h_set_pc] at h
   linear_combination h
 
-variable {C' : Type → Type → Type} [Circuit FGL FGL C']
-
 /-- From the three `jump_subset_holds` ingredients (`is_external_op = 0`,
     `op = 0`, constraint 17 — `internal_op0_sets_flag`), we can derive
     `flag = 1`. Specialized to `FGL` so `linear_combination` sees a
     commutative-ring. Used by `Circuit.Jal`. -/
 lemma flag_eq_one_of_internal_op_zero
-    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (v : Valid_Main FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
     (h_op : v.op row = 0)
     (h17 : internal_op0_sets_flag v row) :
@@ -273,7 +233,7 @@ lemma flag_eq_one_of_internal_op_zero
     we can derive `c_0 = 0`. Used to show `store_value[0]` simplifies to
     `pc + jmp_offset2` for JAL (i.e. `rd ← pc + 4`). -/
 lemma c_0_eq_zero_of_internal_op_zero
-    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (v : Valid_Main FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
     (h_op : v.op row = 0)
     (h8 : internal_op0_zeroes_c0 v row) :
@@ -285,7 +245,7 @@ lemma c_0_eq_zero_of_internal_op_zero
 /-- From `internal_op0_zeroes_c1` with `is_external_op = 0` and `op = 0`,
     we can derive `c_1 = 0`. -/
 lemma c_1_eq_zero_of_internal_op_zero
-    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (v : Valid_Main FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
     (h_op : v.op row = 0)
     (h15 : internal_op0_zeroes_c1 v row) :
@@ -298,7 +258,7 @@ lemma c_1_eq_zero_of_internal_op_zero
     and `flag = 1`. The handshake collapses to `next_pc = pc + jmp_offset1`
     (the taken-offset path). Used by `Circuit.Jal.jal_pc_advance`. -/
 lemma pc_handshake_jump
-    (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F)
+    (v : Valid_Main F ExtF) (row : ℕ) (next_pc : F)
     (h_set_pc : v.set_pc row = 0)
     (h_flag : v.flag row = 1)
     (h : pc_handshake_with_next_pc v row next_pc) :
@@ -313,7 +273,7 @@ lemma pc_handshake_jump
     factor `(1 - is_external_op) = 0`; we include the booleans for
     `flag`, `is_external_op`, and the `flag * set_pc = 0` disjointness. -/
 @[simp]
-def branch_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=
+def branch_subset_holds (v : Valid_Main F ExtF) (row : ℕ) (next_pc : F) : Prop :=
   flag_boolean v row
   ∧ is_external_op_boolean v row
   ∧ flag_set_pc_disjoint v row
@@ -327,7 +287,7 @@ def branch_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Pr
     constraint bundle consumed by `Circuit.Jal.jal_pc_advance` to establish
     `next_pc = pc + jmp_offset1`. -/
 @[simp]
-def jump_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=
+def jump_subset_holds (v : Valid_Main F ExtF) (row : ℕ) (next_pc : F) : Prop :=
   flag_boolean v row
   ∧ is_external_op_boolean v row
   ∧ flag_set_pc_disjoint v row
@@ -335,90 +295,5 @@ def jump_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop
   ∧ internal_op0_zeroes_c1 v row
   ∧ internal_op0_sets_flag v row
   ∧ pc_handshake_with_next_pc v row next_pc
-
-section extraction_bridge
-
-@[simp]
-lemma constraint_7_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_7_every_row v.circuit row ↔ internal_op0_zeroes_c0 v row := by
-  unfold constraint_7_every_row internal_op0_zeroes_c0
-  rw [v.is_external_op_def, v.op_def, v.c_0_def]
-
-@[simp]
-lemma constraint_8_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_8_every_row v.circuit row ↔ internal_op1_copies_b0 v row := by
-  unfold constraint_8_every_row internal_op1_copies_b0
-  rw [v.is_external_op_def, v.op_def, v.b_0_def, v.c_0_def]
-
-@[simp]
-lemma constraint_13_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_13_every_row v.circuit row ↔ internal_op0_zeroes_c1 v row := by
-  unfold constraint_13_every_row internal_op0_zeroes_c1
-  rw [v.is_external_op_def, v.op_def, v.c_1_def]
-
-@[simp]
-lemma constraint_14_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_14_every_row v.circuit row ↔ internal_op1_copies_b1 v row := by
-  unfold constraint_14_every_row internal_op1_copies_b1
-  rw [v.is_external_op_def, v.op_def, v.b_1_def, v.c_1_def]
-
-@[simp]
-lemma constraint_15_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_15_every_row v.circuit row ↔ internal_op0_sets_flag v row := by
-  unfold constraint_15_every_row internal_op0_sets_flag
-  rw [v.is_external_op_def, v.op_def, v.flag_def]
-
-@[simp]
-lemma constraint_16_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_16_every_row v.circuit row ↔ internal_op1_clears_flag v row := by
-  unfold constraint_16_every_row internal_op1_clears_flag
-  rw [v.is_external_op_def, v.op_def, v.flag_def]
-
-@[simp]
-lemma constraint_17_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_17_every_row v.circuit row ↔ flag_set_pc_disjoint v row := by
-  unfold constraint_17_every_row flag_set_pc_disjoint
-  rw [v.flag_def, v.set_pc_def]
-
-/-- **Constraint 18 (PC handshake) bridge.** The raw extracted
-    `constraint_18_every_row` — `(1 - SEGMENT_L1) * (pc - expected) = 0`
-    with all primed cells rendered at `(row := row - 1) (rotation := 0)`
-    by the extractor — is definitionally the named closed-form
-    `pc_handshake`. Bridge via `unfold` + the per-column
-    `<col>_def` lemmas.
-
-    The extractor rewrite `row - 1` is a `ℕ` (saturating) subtraction;
-    the `(1 - SEGMENT_L1)` gate makes the `row = 0` case vacuous, so
-    the bridge is sound. -/
-@[simp]
-lemma constraint_18_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_18_every_row v.circuit row ↔ pc_handshake v row := by
-  unfold constraint_18_every_row pc_handshake
-  simp only [v.segment_l1_def, v.pc_def, v.set_pc_def, v.c_0_def,
-             v.jmp_offset1_def, v.jmp_offset2_def, v.flag_def]
-
-@[simp]
-lemma constraint_22_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_22_every_row v.circuit row ↔ flag_boolean v row := by
-  unfold constraint_22_every_row flag_boolean
-  rw [v.flag_def]
-
-@[simp]
-lemma constraint_28_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_28_every_row v.circuit row ↔ is_external_op_boolean v row := by
-  unfold constraint_28_every_row is_external_op_boolean
-  rw [v.is_external_op_def]
-
-end extraction_bridge
 
 end ZiskFv.Airs.Main

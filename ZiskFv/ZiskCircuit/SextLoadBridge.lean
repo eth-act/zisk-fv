@@ -1,14 +1,14 @@
 import Mathlib
 
-import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
-import ZiskFv.Equivalence.WriteValueProofs.Arith
+import ZiskFv.EquivCore.WriteValueProofs.Arith
 
 /-!
 # Circuit.SextLoadBridge — proven c-packed identities for LB / LH / LW
@@ -41,12 +41,12 @@ namespace ZiskFv.ZiskCircuit.SextLoadBridge
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf)
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.Tables.BinaryExtensionTable
 open ZiskFv.Airs.BinaryExtension
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Nat-form `signExtend` identities
 
@@ -242,9 +242,85 @@ Given the c-lo/c-hi bus match between Main and BinaryExtension plus the
 rd-write lane match, derive
 `(memory_entry_lo e2).val + (memory_entry_hi e2).val * 2^32 = Σ free_in_c`. -/
 
+/-! `byteAt` lo / hi byte-sum convenience helpers (private to this file). -/
+
+private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL)
+    (h : e.value_0.val < 4294967296) :
+    (byteAt e 0).val + (byteAt e 1).val * 256
+      + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+    = e.value_0.val := by
+  have hb0 : byteAt e 0 = byteOf e.value_0 0 := by
+    unfold byteAt; simp only [show (0 : ℕ) < 4 from by decide, if_true]
+  have hb1 : byteAt e 1 = byteOf e.value_0 1 := by
+    unfold byteAt; simp only [show (1 : ℕ) < 4 from by decide, if_true]
+  have hb2 : byteAt e 2 = byteOf e.value_0 2 := by
+    unfold byteAt; simp only [show (2 : ℕ) < 4 from by decide, if_true]
+  have hb3 : byteAt e 3 = byteOf e.value_0 3 := by
+    unfold byteAt; simp only [show (3 : ℕ) < 4 from by decide, if_true]
+  rw [hb0, hb1, hb2, hb3]
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_0 h
+
+private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL)
+    (h : e.value_1.val < 4294967296) :
+    (byteAt e 4).val + (byteAt e 5).val * 256
+      + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
+    = e.value_1.val := by
+  have hb4 : byteAt e 4 = byteOf e.value_1 0 := by
+    unfold byteAt; simp only [show ¬ (4 : ℕ) < 4 from by decide, if_false]
+  have hb5 : byteAt e 5 = byteOf e.value_1 1 := by
+    unfold byteAt; simp only [show ¬ (5 : ℕ) < 4 from by decide, if_false]
+  have hb6 : byteAt e 6 = byteOf e.value_1 2 := by
+    unfold byteAt; simp only [show ¬ (6 : ℕ) < 4 from by decide, if_false]
+  have hb7 : byteAt e 7 = byteOf e.value_1 3 := by
+    unfold byteAt; simp only [show ¬ (7 : ℕ) < 4 from by decide, if_false]
+  rw [hb4, hb5, hb6, hb7]
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h
+
+private lemma memory_entry_lo_bound_of_sext_sum
+    (e : MemoryBusEntry FGL)
+    (c0 c1 c2 c3 c4 c5 c6 c7 : FGL)
+    (h_eq : memory_entry_lo e = c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7)
+    (h_sum_lt : c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val
+      < 4294967296) :
+    e.value_0.val < 4294967296 := by
+  have h_sum_val :
+      (c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7 : FGL).val
+        = c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val := by
+    have h_cast :
+        c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7
+          = ((((c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val : ℕ) : FGL))) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_val := congrArg Fin.val h_eq
+  simp only [memory_entry_lo] at h_val
+  rw [h_sum_val] at h_val
+  omega
+
+private lemma memory_entry_hi_bound_of_sext_sum
+    (e : MemoryBusEntry FGL)
+    (c0 c1 c2 c3 c4 c5 c6 c7 : FGL)
+    (h_eq : memory_entry_hi e = c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7)
+    (h_sum_lt : c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val
+      < 4294967296) :
+    e.value_1.val < 4294967296 := by
+  have h_sum_val :
+      (c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7 : FGL).val
+        = c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val := by
+    have h_cast :
+        c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7
+          = ((((c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val : ℕ) : FGL))) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_val := congrArg Fin.val h_eq
+  simp only [memory_entry_hi] at h_val
+  rw [h_sum_val] at h_val
+  omega
+
 private lemma c_lift_to_byte_sum
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (hc_lo_sum_lt :
       (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
@@ -267,13 +343,14 @@ private lemma c_lift_to_byte_sum
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
-    e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-    + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-    + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256) :
+    (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+    + (byteAt e2 4).val * 4294967296 + (byteAt e2 5).val * 1099511627776
+    + (byteAt e2 6).val * 281474976710656 + (byteAt e2 7).val * 72057594037927936
     = ((v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
        + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
        + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
@@ -296,22 +373,28 @@ private lemma c_lift_to_byte_sum
         + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
         + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary := by
     rw [← h_hi_match, h_match_chi]
+  have h_v0_lt : e2.value_0.val < 4294967296 :=
+    memory_entry_lo_bound_of_sext_sum e2
+      (v.free_in_c_0 r_binary) (v.free_in_c_2 r_binary)
+      (v.free_in_c_4 r_binary) (v.free_in_c_6 r_binary)
+      (v.free_in_c_8 r_binary) (v.free_in_c_10 r_binary)
+      (v.free_in_c_12 r_binary) (v.free_in_c_14 r_binary)
+      h_lo_eq_fgl hc_lo_sum_lt
+  have h_v1_lt : e2.value_1.val < 4294967296 :=
+    memory_entry_hi_bound_of_sext_sum e2
+      (v.free_in_c_1 r_binary) (v.free_in_c_3 r_binary)
+      (v.free_in_c_5 r_binary) (v.free_in_c_7 r_binary)
+      (v.free_in_c_9 r_binary) (v.free_in_c_11 r_binary)
+      (v.free_in_c_13 r_binary) (v.free_in_c_15 r_binary)
+      h_hi_eq_fgl hc_hi_sum_lt
   have h_lo_nat : (memory_entry_lo e2).val
-      = e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 := by
-    simp only [memory_entry_lo]
-    have h_cast : e2.x0 + e2.x1 * 256 + e2.x2 * 65536 + e2.x3 * 16777216
-        = (((e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536
-             + e2.x3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
-    rw [h_cast, Fin.val_natCast]
-    apply Nat.mod_eq_of_lt; omega
+      = (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_v0_lt).symm
   have h_hi_nat : (memory_entry_hi e2).val
-      = e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216 := by
-    simp only [memory_entry_hi]
-    have h_cast : e2.x4 + e2.x5 * 256 + e2.x6 * 65536 + e2.x7 * 16777216
-        = (((e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536
-             + e2.x7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
-    rw [h_cast, Fin.val_natCast]
-    apply Nat.mod_eq_of_lt; omega
+      = (byteAt e2 4).val + (byteAt e2 5).val * 256
+        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_v1_lt).symm
   have h_lo_bin_nat :
       (v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
@@ -362,13 +445,15 @@ private lemma c_lift_to_byte_sum
 
 /-! ## LB bridge -/
 
-/-- **Proven c-packed identity for LB.** -/
-lemma load_byte_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+-- legacy load_byte_c_packed (bin_ext_table_consumer_wf route) deleted in T4-purge P3.7.
+
+lemma load_byte_c_packed_of_wf
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_op : (v.op r_binary).val = OP_SEXT_B)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (hc_lo_sum_lt :
       (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
       + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
@@ -390,22 +475,24 @@ lemma load_byte_c_packed
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
-    (h_e1_x0 : e1.x0.val < 256) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = BitVec.signExtend 64 (e1.x0 : BitVec 8) := by
-  have h_packed := binary_extension_sext_b_chunks_eq_signextend_nat v r_binary h_op h_bytes
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
+    (h_a0_match : (v.free_in_a_0 r_binary).val = (byteAt e1 0).val)
+    (h_e1_x0 : (byteAt e1 0).val < 256) :
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8),
+                ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
+      = BitVec.signExtend 64 ((byteAt e1 0) : BitVec 8) := by
+  have h_packed :=
+    binary_extension_sext_b_chunks_eq_signextend_nat_of_wf v r_binary h_op h_bytes h_wfs
   rw [h_a0_match] at h_packed
   have h_byte_sum := c_lift_to_byte_sum m r_main v r_binary e2
     hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-  -- The coercion `(e1.x0 : BitVec 8) = BitVec.ofNat 8 e1.x0.val`.
-  have h_coe : (e1.x0 : BitVec 8) = BitVec.ofNat 8 e1.x0.val := by
+  have h_coe : ((byteAt e1 0) : BitVec 8) = BitVec.ofNat 8 (byteAt e1 0).val := by
     apply BitVec.eq_of_toNat_eq
     rw [ZiskFv.PackedBitVec.fgl_byte_coe_toBV8_toNat h_e1_x0]
     rw [BitVec.toNat_ofNat]
@@ -413,25 +500,29 @@ lemma load_byte_c_packed
   rw [h_coe]
   have h_se_toNat := signExtend_8_toNat h_e1_x0
   have h_target :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (BitVec.signExtend 64 (BitVec.ofNat 8 e1.x0.val)).toNat := by
+      (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      + (byteAt e2 4).val * 4294967296 + (byteAt e2 5).val * 1099511627776
+      + (byteAt e2 6).val * 281474976710656 + (byteAt e2 7).val * 72057594037927936
+      = (BitVec.signExtend 64 (BitVec.ofNat 8 (byteAt e1 0).val)).toNat := by
     rw [h_se_toNat, h_byte_sum, h_packed]
-  exact ZiskFv.Equivalence.WriteValueProofs.Arith.bv64_of_byte_sum
-    (BitVec.signExtend 64 (BitVec.ofNat 8 e1.x0.val))
-    e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+  exact ZiskFv.EquivCore.WriteValueProofs.Arith.bv64_of_byte_sum
+    (BitVec.signExtend 64 (BitVec.ofNat 8 (byteAt e1 0).val))
+    (byteAt e2 0) (byteAt e2 1) (byteAt e2 2) (byteAt e2 3)
+    (byteAt e2 4) (byteAt e2 5) (byteAt e2 6) (byteAt e2 7)
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
 /-! ## LH bridge -/
 
-/-- **Proven c-packed identity for LH.** -/
-lemma load_half_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+-- legacy load_half_c_packed (bin_ext_table_consumer_wf route) deleted in T4-purge P3.7.
+
+lemma load_half_c_packed_of_wf
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_op : (v.op r_binary).val = OP_SEXT_H)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (hc_lo_sum_lt :
       (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
       + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
@@ -453,42 +544,49 @@ lemma load_half_c_packed
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
-    (h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val)
-    (h_e1_x0 : e1.x0.val < 256) (h_e1_x1 : e1.x1.val < 256) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = BitVec.signExtend 64 ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)) := by
-  have h_packed := binary_extension_sext_h_chunks_eq_signextend_nat v r_binary h_op h_bytes
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
+    (h_a0_match : (v.free_in_a_0 r_binary).val = (byteAt e1 0).val)
+    (h_a1_match : (v.free_in_a_1 r_binary).val = (byteAt e1 1).val)
+    (h_e1_x0 : (byteAt e1 0).val < 256) (h_e1_x1 : (byteAt e1 1).val < 256) :
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8),
+                ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
+      = BitVec.signExtend 64 (((byteAt e1 1) : BitVec 8) ++ ((byteAt e1 0) : BitVec 8)) := by
+  have h_packed :=
+    binary_extension_sext_h_chunks_eq_signextend_nat_of_wf v r_binary h_op h_bytes h_wfs
   rw [h_a0_match, h_a1_match] at h_packed
   have h_byte_sum := c_lift_to_byte_sum m r_main v r_binary e2
     hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-  have h_se_toNat := signExtend_append16_toNat e1.x1 e1.x0 h_e1_x0 h_e1_x1
+  have h_se_toNat := signExtend_append16_toNat (byteAt e1 1) (byteAt e1 0) h_e1_x0 h_e1_x1
   have h_target :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (BitVec.signExtend 64 ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))).toNat := by
+      (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      + (byteAt e2 4).val * 4294967296 + (byteAt e2 5).val * 1099511627776
+      + (byteAt e2 6).val * 281474976710656 + (byteAt e2 7).val * 72057594037927936
+      = (BitVec.signExtend 64 (((byteAt e1 1) : BitVec 8) ++ ((byteAt e1 0) : BitVec 8))).toNat := by
     rw [h_se_toNat, h_byte_sum, h_packed]
-  exact ZiskFv.Equivalence.WriteValueProofs.Arith.bv64_of_byte_sum
-    (BitVec.signExtend 64 ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)))
-    e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+  exact ZiskFv.EquivCore.WriteValueProofs.Arith.bv64_of_byte_sum
+    (BitVec.signExtend 64 (((byteAt e1 1) : BitVec 8) ++ ((byteAt e1 0) : BitVec 8)))
+    (byteAt e2 0) (byteAt e2 1) (byteAt e2 2) (byteAt e2 3)
+    (byteAt e2 4) (byteAt e2 5) (byteAt e2 6) (byteAt e2 7)
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
 /-! ## LW bridge -/
 
-/-- **Proven c-packed identity for LW.** -/
-lemma load_word_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+-- legacy load_word_c_packed (bin_ext_table_consumer_wf route) deleted in T4-purge P3.7.
+
+lemma load_word_c_packed_of_wf
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_op : (v.op r_binary).val = OP_SEXT_W)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (hc_lo_sum_lt :
       (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
       + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
@@ -510,41 +608,47 @@ lemma load_word_c_packed
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
-    (h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val)
-    (h_a2_match : (v.free_in_a_2 r_binary).val = e1.x2.val)
-    (h_a3_match : (v.free_in_a_3 r_binary).val = e1.x3.val)
-    (h_e1_x0 : e1.x0.val < 256) (h_e1_x1 : e1.x1.val < 256)
-    (h_e1_x2 : e1.x2.val < 256) (h_e1_x3 : e1.x3.val < 256) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
+    (h_a0_match : (v.free_in_a_0 r_binary).val = (byteAt e1 0).val)
+    (h_a1_match : (v.free_in_a_1 r_binary).val = (byteAt e1 1).val)
+    (h_a2_match : (v.free_in_a_2 r_binary).val = (byteAt e1 2).val)
+    (h_a3_match : (v.free_in_a_3 r_binary).val = (byteAt e1 3).val)
+    (h_e1_x0 : (byteAt e1 0).val < 256) (h_e1_x1 : (byteAt e1 1).val < 256)
+    (h_e1_x2 : (byteAt e1 2).val < 256) (h_e1_x3 : (byteAt e1 3).val < 256) :
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8),
+                ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = BitVec.signExtend 64
-          ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
-            ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)) := by
-  have h_packed := binary_extension_sext_w_chunks_eq_signextend_nat v r_binary h_op h_bytes
+          (((byteAt e1 3) : BitVec 8) ++ ((byteAt e1 2) : BitVec 8)
+            ++ ((byteAt e1 1) : BitVec 8) ++ ((byteAt e1 0) : BitVec 8)) := by
+  have h_packed :=
+    binary_extension_sext_w_chunks_eq_signextend_nat_of_wf v r_binary h_op h_bytes h_wfs
   rw [h_a0_match, h_a1_match, h_a2_match, h_a3_match] at h_packed
   have h_byte_sum := c_lift_to_byte_sum m r_main v r_binary e2
     hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
   have h_se_toNat :=
-    signExtend_append32_toNat e1.x3 e1.x2 e1.x1 e1.x0 h_e1_x0 h_e1_x1 h_e1_x2 h_e1_x3
+    signExtend_append32_toNat (byteAt e1 3) (byteAt e1 2) (byteAt e1 1) (byteAt e1 0)
+      h_e1_x0 h_e1_x1 h_e1_x2 h_e1_x3
   have h_target :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      + (byteAt e2 4).val * 4294967296 + (byteAt e2 5).val * 1099511627776
+      + (byteAt e2 6).val * 281474976710656 + (byteAt e2 7).val * 72057594037927936
       = (BitVec.signExtend 64
-          ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
-            ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))).toNat := by
+          (((byteAt e1 3) : BitVec 8) ++ ((byteAt e1 2) : BitVec 8)
+            ++ ((byteAt e1 1) : BitVec 8) ++ ((byteAt e1 0) : BitVec 8))).toNat := by
     rw [h_se_toNat, h_byte_sum, h_packed]
-  exact ZiskFv.Equivalence.WriteValueProofs.Arith.bv64_of_byte_sum
+  exact ZiskFv.EquivCore.WriteValueProofs.Arith.bv64_of_byte_sum
     (BitVec.signExtend 64
-      ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
-        ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)))
-    e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+      (((byteAt e1 3) : BitVec 8) ++ ((byteAt e1 2) : BitVec 8)
+        ++ ((byteAt e1 1) : BitVec 8) ++ ((byteAt e1 0) : BitVec 8)))
+    (byteAt e2 0) (byteAt e2 1) (byteAt e2 2) (byteAt e2 3)
+    (byteAt e2 4) (byteAt e2 5) (byteAt e2 6) (byteAt e2 7)
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
 end ZiskFv.ZiskCircuit.SextLoadBridge

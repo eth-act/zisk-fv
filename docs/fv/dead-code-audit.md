@@ -1,5 +1,12 @@
 # Dead-code audit
 
+> **Historical snapshot.** This audit records the Step-4 dead-code cleanup
+> that reduced the ledger from 147 to 122 axioms. It is intentionally kept
+> as the recovery index for that cleanup, not as the current trust count.
+> Current source-ledger and global-closure counts live in
+> [`trusted-base.md`](trusted-base.md) and
+> [`axiom-index.md`](axiom-index.md).
+
 Inventory of constants in the `ZiskFv.*` namespace that are
 **unreachable** from the project's public proof surface — the entry
 points listed in
@@ -294,7 +301,8 @@ deleted `Fundamentals/TranspileConsumers.lean` in full plus the
 truly textually-dead Tactics archetype scaffolding identified after
 cross-checking the detector's reports against `grep -rn`).
 
-Final state: **122 axioms** in `trust/baseline-axioms.txt`,
+Historical final state for this audit: **122 axioms** in
+`trust/baseline-axioms.txt`,
 matching exactly the transitive closure of
 `zisk_riscv_compliant_program_bus`. Several Tactics archetype
 constants flagged "unreachable" by the detector turned out to be

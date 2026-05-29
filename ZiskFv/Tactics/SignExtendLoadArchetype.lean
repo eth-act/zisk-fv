@@ -81,7 +81,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Archetype mode predicate.** A Main row is in sign-extend-load
     execution mode for a given Zisk opcode literal and `m32` bit when
@@ -90,7 +89,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     covers LH / LB. -/
 @[simp]
 def main_row_in_sign_extend_load_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (opcode_lit m32_val : FGL) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = opcode_lit
@@ -105,7 +104,7 @@ def main_row_in_sign_extend_load_mode
     from the BinaryExtension SM row. -/
 @[simp]
 def sign_extend_load_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit m32_val : FGL) : Prop :=
   main_row_in_sign_extend_load_mode m r_main opcode_lit m32_val
@@ -116,7 +115,7 @@ def sign_extend_load_archetype_circuit_holds
     `Circuit.Shift.sllw_compositional` and the
     `shift_archetype_m32_one_zeros_bus` theorem. -/
 lemma sign_extend_load_archetype_m32_one_zeros_bus
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
     (h : sign_extend_load_archetype_circuit_holds m r_main bus_entry
@@ -138,7 +137,7 @@ lemma sign_extend_load_archetype_m32_one_zeros_bus
     `(1 - m32) = 1` factor leaves them unchanged. Mirror of
     `shift_archetype_m32_zero_passthrough_bus`. -/
 lemma sign_extend_load_archetype_m32_zero_passthrough_bus
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
     (h : sign_extend_load_archetype_circuit_holds m r_main bus_entry
@@ -162,7 +161,7 @@ lemma sign_extend_load_archetype_m32_zero_passthrough_bus
     signed loads. Useful at the equivalence layer for tying the Main
     bus emission to the BinaryExtension SM's bus pop. -/
 lemma sign_extend_load_archetype_multiplicity_one
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit m32_val : FGL)
     (h : sign_extend_load_archetype_circuit_holds m r_main bus_entry
@@ -178,7 +177,7 @@ lemma sign_extend_load_archetype_multiplicity_one
 /-- **Archetype op passthrough.** The bus entry's `op` field matches
     the Main row's `op` — = `opcode_lit` for signed loads. -/
 lemma sign_extend_load_archetype_op_passthrough
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit m32_val : FGL)
     (h : sign_extend_load_archetype_circuit_holds m r_main bus_entry

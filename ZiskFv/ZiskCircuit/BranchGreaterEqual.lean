@@ -39,14 +39,13 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.BranchArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in BGE-execution mode. **Same shape as
     `main_row_in_blt_mode`** — ZisK emits `op = OP_LT = 7` for both BLT
     and BGE; only the `jmp_offset1`/`jmp_offset2` assignment differs,
     which the transpile axiom captures, not the mode predicate. -/
 @[simp]
-def main_row_in_bge_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_bge_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (7 : FGL)
   ∧ m.m32 r_main = 0
@@ -56,7 +55,7 @@ def main_row_in_bge_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     of `branch_archetype_circuit_holds` at `opcode_lit = OP_LT`. -/
 @[simp]
 def branch_ge_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) : Prop :=
   branch_subset_holds m r_main next_pc
   ∧ main_row_in_bge_mode m r_main
@@ -68,7 +67,7 @@ def branch_ge_circuit_holds
     from composing with `transpile_BGE`'s `jmp_offset1 = 4,
     jmp_offset2 = imm` assignment. -/
 lemma branch_ge_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ge_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
             + m.flag r_main * (m.jmp_offset1 r_main - m.jmp_offset2 r_main) := by
@@ -85,7 +84,7 @@ lemma branch_ge_compositional
     Note the polarity inversion relative to `branch_lt_taken`:
     BGE-taken is `flag = 0`, not `flag = 1`. -/
 lemma branch_ge_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ge_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main := by
@@ -95,7 +94,7 @@ lemma branch_ge_taken
 /-- **BGE not-taken case.** When `flag = 1` (`a <s b`), the next-pc is
     `pc + jmp_offset1 = pc + 4` (from `transpile_BGE`'s swap). -/
 lemma branch_ge_not_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ge_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main := by

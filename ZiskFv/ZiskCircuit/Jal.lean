@@ -52,14 +52,13 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.PackedBitVec.WidePCNoWrap
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in JAL-execution mode: internal op with
     opcode literal 0 (OP_FLAG), full 64-bit width (m32 = 0), `set_pc = 0`
     (PC advance comes from `flag = 1` + `jmp_offset1`, not `c[0]`), and
     `store_pc = 1` (rd receives `pc + jmp_offset2 = pc + 4`). -/
 @[simp]
-def main_row_in_jal_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_jal_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 0
   ∧ m.op r_main = (0 : FGL)
   ∧ m.m32 r_main = 0
@@ -72,7 +71,7 @@ def main_row_in_jal_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     op 0). -/
 @[simp]
 def jal_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) : Prop :=
   jump_subset_holds m r_main next_pc
   ∧ main_row_in_jal_mode m r_main
@@ -87,7 +86,7 @@ def jal_circuit_holds
     says JAL advances PC to `pc + imm`, consistent with the RISC-V
     unconditional-jump semantics. -/
 lemma jal_pc_advance
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jal_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main := by
   obtain ⟨h_subset, h_mode⟩ := h
@@ -105,7 +104,7 @@ lemma jal_pc_advance
     With `transpile_JAL` pinning `jmp_offset2 = 4`, this is the
     `pc + 4` return-address value written to rd. -/
 lemma jal_store_value
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jal_circuit_holds m r_main next_pc) :
     m.store_pc r_main * (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
         + m.c_0 r_main
@@ -139,7 +138,7 @@ lemma jal_store_value
     `h_lo_bound : (m.pc + 4).val < 2^32` hypothesis is realistic for
     ELF-loaded ZisK programs (ROM `pc : bits(32)` invariant). -/
 lemma jal_store_value_lo_bv
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : jal_circuit_holds m r_main next_pc)
     (h_jmp2 : m.jmp_offset2 r_main = 4)
@@ -180,7 +179,7 @@ lemma jal_store_value_lo_bv
 
     Plugged into JumpUType's hi-entry input by the equivalence layer. -/
 lemma jal_store_value_hi_bv
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : jal_circuit_holds m r_main next_pc)
     (h_lane_hi : store_pc_lanes_match_hi m r_main e)

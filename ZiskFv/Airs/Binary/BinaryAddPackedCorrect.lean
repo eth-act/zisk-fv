@@ -1,6 +1,5 @@
 import Mathlib
 
-import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Binary.BinaryAdd
 
@@ -43,23 +42,22 @@ namespace ZiskFv.Airs.BinaryAdd
 open Goldilocks
 open ZiskFv.Airs.BinaryAdd
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Range predicates -/
 
 /-- Each 32-bit lane of the first operand is in `[0, 2^32)`. -/
 @[simp]
-def a_chunks_in_range (v : Valid_BinaryAdd C FGL FGL) (row : ℕ) : Prop :=
+def a_chunks_in_range (v : Valid_BinaryAdd FGL FGL) (row : ℕ) : Prop :=
   (v.a_0 row).val < 4294967296 ∧ (v.a_1 row).val < 4294967296
 
 /-- Each 32-bit lane of the second operand is in `[0, 2^32)`. -/
 @[simp]
-def b_chunks_in_range (v : Valid_BinaryAdd C FGL FGL) (row : ℕ) : Prop :=
+def b_chunks_in_range (v : Valid_BinaryAdd FGL FGL) (row : ℕ) : Prop :=
   (v.b_0 row).val < 4294967296 ∧ (v.b_1 row).val < 4294967296
 
 /-- Each 16-bit result chunk is in `[0, 2^16)`. -/
 @[simp]
-def c_chunks_in_range (v : Valid_BinaryAdd C FGL FGL) (row : ℕ) : Prop :=
+def c_chunks_in_range (v : Valid_BinaryAdd FGL FGL) (row : ℕ) : Prop :=
   (v.c_chunks_0 row).val < 65536
     ∧ (v.c_chunks_1 row).val < 65536
     ∧ (v.c_chunks_2 row).val < 65536
@@ -93,7 +91,7 @@ Bound check for carry_chain_1: LHS ≤ 2^33 + 1 < GL_prime. ✓
 
     `a_0.val + b_0.val = cout_0.val · 2^32 + c_chunks_1.val · 2^16 + c_chunks_0.val` -/
 lemma carry_chain_0_nat
-    (v : Valid_BinaryAdd C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryAdd FGL FGL) (row : ℕ)
     (h_bool0 : boolean_cout_0 v row)
     (h_carry0 : carry_chain_0 v row)
     (h_a0 : (v.a_0 row).val < 4294967296)
@@ -128,7 +126,7 @@ lemma carry_chain_0_nat
 
     `a_1.val + b_1.val + cout_0.val = cout_1.val · 2^32 + c_chunks_3.val · 2^16 + c_chunks_2.val` -/
 lemma carry_chain_1_nat
-    (v : Valid_BinaryAdd C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryAdd FGL FGL) (row : ℕ)
     (h_bool0 : boolean_cout_0 v row)
     (h_bool1 : boolean_cout_1 v row)
     (h_carry1 : carry_chain_1 v row)
@@ -176,7 +174,7 @@ lemma carry_chain_1_nat
     Combining with `cout_1.val ∈ {0,1}`, the `BitVec.toNat` form of the goal
     reduces to a modular-arithmetic statement that `omega` closes. -/
 lemma binary_add_chunks_eq_bv_add
-    (v : Valid_BinaryAdd C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryAdd FGL FGL) (row : ℕ)
     (h_chain : core_every_row v row)
     (h_a_range : a_chunks_in_range v row)
     (h_b_range : b_chunks_in_range v row)

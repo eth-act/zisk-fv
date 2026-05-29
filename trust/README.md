@@ -29,7 +29,7 @@ Lean file to spot one. Drift is caught mechanically.
 | `scripts/check-locality.sh`     | Greps every `*.lean` under `ZiskFv/` for trust-leak constructs and ensures they live only in `allowed-axiom-files.txt`. Pure shell + grep.                                                                                                                                             |
 | `scripts/check-baseline.sh`     | Re-runs `regenerate.py` into a temp file and `diff`s against `baseline-axioms.txt`. Any unack'd add / remove / rename / statement-hash change fails.                                                                                                                                   |
 | `scripts/check-no-output-eq.sh` | Extracts every canonical `equiv_<OP>` signature (skipping companions like `_from_bus`, `_circuit`) and greps it for the patterns in `forbidden-param-shapes.txt`. V1 is a regex over source text. (V2 will use a Lean meta-program to walk elaborated types and resist `abbrev` / `def` aliasing — see [Future work](#future-work).) |
-| `scripts/check-floor.sh`        | Sanity-checks that the whole pipeline isn't silently producing empty output: minimum counts of axioms (≥ 80) and canonical `equiv_<OP>` theorems (≥ 56). Catches a sabotaged `regenerate.py` or a sweep that drops canonical theorems.                                                                                                           |
+| `scripts/check-floor.sh`        | Sanity-checks that the whole pipeline isn't silently producing empty output: minimum counts of axioms (≥ 57) and canonical `equiv_<OP>` theorems (≥ 63). Catches a sabotaged `regenerate.py` or a sweep that drops canonical theorems.                                                                                                           |
 | `scripts/check-all.sh`          | Runs all of the above. CI invokes this.                                                                                                                                                                                                                                                |
 | `scripts/regenerate.py`         | Walks the allowed files, parses every axiom block, hashes it, writes the sorted baseline. Run after a legitimate trust change, then commit the new baseline.                                                                                                                           |
 | `scripts/count-hypotheses.py`   | Walks every canonical `equiv_<OP>` and counts caller-supplied parameter binders. Output goes to `baseline-hypothesis-count.txt`.                                                                                                                                                       |
@@ -53,10 +53,10 @@ section at the bottom of this file tracks the V2 hardening.
 | New `axiom`-allowed file added to `allowed-axiom-files.txt` to launder a new axiom past locality.                                                          | `.github/CODEOWNERS`            | `allowed-axiom-files.txt` and `baseline-axioms.txt` are CODEOWNER-protected; the PR cannot land without explicit reviewer ack.                                                   |
 | Canonical `equiv_<OP>` accepts a retired OUTPUT-EQ hypothesis as a parameter (`h_rd_val`, `h_byte_sum`, `h_bus_execute_matches_sail`, `h_high_bytes_*`, `h_e1_e2_bytes`, etc.).      | `check-no-output-eq.sh`         | Paren-depth-aware Python parser extracts each canonical parameter list (excluding companions like `_from_bus`) and matches against `forbidden-param-shapes.txt`. Enforced uniformly across all 63 opcodes.                                                             |
 | Same scenario, but laundered behind `abbrev SilentSpec := PureSpec.execute_X_pure` to dodge the regex.                                                     | **Not V1; V2 future work.**     | V1 is textual. The aliasing dodge is a known V2 gap — see *Future work* below. Mitigated in practice by reviewer attention on the `baseline-axioms.txt` diff.                    |
-| `regenerate.py` quietly sabotaged to emit nothing, or `allowed-axiom-files.txt` emptied so the parser walks zero files.                                    | `check-floor.sh` Floor 1        | `MIN_AXIOMS=82` floor on baseline rows. Empty output trips it.                                                                                                                   |
+| `regenerate.py` quietly sabotaged to emit nothing, or `allowed-axiom-files.txt` emptied so the parser walks zero files.                                    | `check-floor.sh` Floor 1        | `MIN_AXIOMS=57` floor on baseline rows. Empty output trips it.                                                                                                                   |
 | A sweep across `ZiskFv/Equivalence/` accidentally drops canonical equivalence theorems.                                                                      | `check-floor.sh` Floor 2        | `MIN_CANONICAL=63` floor on the count of bare `equiv_<OP>` theorems (no underscore-suffix).                                                                                                          |
 | Allowlist edited to *exclude* a file that still contains trust-leak constructs (so `check-locality` would still pass against the smaller set).             | `check-floor.sh` cross-witness  | Re-runs the parser against the *entire* tree (not just allowlisted files); fails when the tree-wide count exceeds the baseline count.                                            |
-| Naked `sorry` slipped into `Fundamentals/`, `Airs/`, `Circuit/`, `Equivalence/`, `Tactics/`, or `Sail/`.                                                     | `check-no-sorry.sh`             | Greps for unparenthesized `sorry` (excluding line/doc comments and prose mentions like `` `sorry` ``).                                                                           |
+| Naked `sorry` slipped into `Fundamentals/`, `Airs/`, `Circuit/`, `Equivalence/`, `EquivCore/`, `Compliance/`, `Tactics/`, or `Sail/`.                              | `check-no-sorry.sh`             | Greps for unparenthesized `sorry` (excluding line/doc comments and prose mentions like `` `sorry` ``).                                                                           |
 | New RV64IM opcode added without a canonical `equiv_<OP>` theorem — or an existing one renamed past the canonical shape.                           | `check-uniformity.sh`           | Enumerates `equiv_*` against the 63-opcode list; missing or shape-deviant entries fail.                                                                                 |
 | Whitespace-only edit to an axiom statement.                                                                                                               | `check-baseline.sh` (noisily)   | sha256 of source text changes → diff lands → reviewer sees the trivial diff and acks. Noisy but not unsound.                                                                     |
 
@@ -164,21 +164,18 @@ git diff trust/baseline-equiv-axiom-deps.txt    # AUDIT this diff
 The diff IS the audit surface — a CODEOWNER reviews exactly which
 theorems gained or lost which axiom dependencies.
 
-## Known gap — promise hypotheses in canonical equiv theorems
+## Promise-hypothesis regression guard
 
 The OUTPUT-EQ retirement (`forbidden-param-shapes.txt`,
 `forbidden-types.txt`) catches the 10 most extreme hypothesis
 names/shapes — those that literally state the conclusion as an
-assumption. **It does not catch the broader promise-hypothesis
-pattern** that 62 of 63 canonical `equiv_<OP>` theorems still rely
-on: user-supplied algebraic equations linking Main columns,
-provider columns, loose field elements, and Sail input/output
-values, **without those equations being derived from the bus
-protocol or transpile contract**.
+assumption. The broader promise-hypothesis pattern is guarded by the
+hypothesis-count and caller-burden ledgers: a PR that renames, splits,
+or reintroduces caller-supplied algebraic equations on canonical
+`equiv_<OP>` theorems causes V1 drift.
 
-Both V1 and V2 gates pass cleanly today; the residual gap is
-semantic, not syntactic, and is the project's principal open
-soundness item. See [`docs/fv/known-gaps.md`](../docs/fv/known-gaps.md)
-for the full survey, the three tiers of detachment, the
-implications for the global compliance theorem, and the immediate
-TODO.
+The historical survey in [`docs/fv/known-gaps.md`](../docs/fv/known-gaps.md)
+records how that gap was found and closed at the global compliance
+theorem. Current implementation/proof defects that weaken or block the
+public claim live in [`docs/fv/defects.md`](../docs/fv/defects.md); a
+defect entry is not a trust-ledger axiom.

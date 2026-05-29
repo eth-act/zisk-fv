@@ -10,6 +10,7 @@ import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.ZiskCircuit.LoadD
 import ZiskFv.Tactics.LoadArchetype
 
@@ -47,6 +48,7 @@ namespace ZiskFv.ZiskCircuit.LoadDerivation
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf byteOf_zero byteOf_of_lt_pow)
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
@@ -54,7 +56,6 @@ open ZiskFv.Airs.MemoryBus.MemBridge
 open ZiskFv.ZiskCircuit.LoadD
 open ZiskFv.Tactics.LoadArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Base-256 unique decomposition over FGL
 
@@ -122,7 +123,7 @@ lemma four_bytes_eq_of_packed_eq
     LD-mode witnesses (`is_external_op = 0, op = 1`); per-byte
     equality follows from `four_bytes_eq_of_packed_eq` on each half. -/
 lemma load_copyb_e1_e2_bytes_eq
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -133,33 +134,28 @@ lemma load_copyb_e1_e2_bytes_eq
       ∧ m.b_1 r_main = memory_entry_hi e1)
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
-      ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2) :
-    e1.x0 = e2.x0 ∧ e1.x1 = e2.x1 ∧ e1.x2 = e2.x2 ∧ e1.x3 = e2.x3
-    ∧ e1.x4 = e2.x4 ∧ e1.x5 = e2.x5 ∧ e1.x6 = e2.x6 ∧ e1.x7 = e2.x7 := by
+      ∧ m.c_1 r_main = memory_entry_hi e2) :
+    (byteAt e1 0) = (byteAt e2 0) ∧ (byteAt e1 1) = (byteAt e2 1) ∧ (byteAt e1 2) = (byteAt e2 2) ∧ (byteAt e1 3) = (byteAt e2 3)
+    ∧ (byteAt e1 4) = (byteAt e2 4) ∧ (byteAt e1 5) = (byteAt e2 5) ∧ (byteAt e1 6) = (byteAt e2 6) ∧ (byteAt e1 7) = (byteAt e2 7) := by
   obtain ⟨h_b0, h_b1⟩ := h_emit_b
   obtain ⟨h_c0, h_c1⟩ := h_emit_c
-  obtain ⟨e1_0, e1_1, e1_2, e1_3, e1_4, e1_5, e1_6, e1_7⟩ := h_e1_range
-  obtain ⟨e2_0, e2_1, e2_2, e2_3, e2_4, e2_5, e2_6, e2_7⟩ := h_e2_range
   -- Constraint 9/16 reduce to `b_0 = c_0` / `b_1 = c_1` after substitution.
   simp only [internal_op1_copies_b0, internal_op1_copies_b1] at h_copy0 h_copy1
   rw [h_ext, h_op] at h_copy0 h_copy1
   have h_bc0 : m.b_0 r_main = m.c_0 r_main := by linear_combination h_copy0
   have h_bc1 : m.b_1 r_main = m.c_1 r_main := by linear_combination h_copy1
-  have h_lo : memory_entry_lo e1 = memory_entry_lo e2 := by
-    rw [← h_b0, h_bc0, h_c0]
-  have h_hi : memory_entry_hi e1 = memory_entry_hi e2 := by
-    rw [← h_b1, h_bc1, h_c1]
-  -- Per-half base-256 unique decomposition.
-  simp only [memory_entry_lo, memory_entry_hi] at h_lo h_hi
-  obtain ⟨l0, l1, l2, l3⟩ :=
-    four_bytes_eq_of_packed_eq e1.x0 e1.x1 e1.x2 e1.x3 e2.x0 e2.x1 e2.x2 e2.x3
-      e1_0 e1_1 e1_2 e1_3 e2_0 e2_1 e2_2 e2_3 h_lo
-  obtain ⟨h4, h5, h6, h7⟩ :=
-    four_bytes_eq_of_packed_eq e1.x4 e1.x5 e1.x6 e1.x7 e2.x4 e2.x5 e2.x6 e2.x7
-      e1_4 e1_5 e1_6 e1_7 e2_4 e2_5 e2_6 e2_7 h_hi
-  exact ⟨l0, l1, l2, l3, h4, h5, h6, h7⟩
+  have h_v0 : e1.value_0 = e2.value_0 := by
+    have h_lo : memory_entry_lo e1 = memory_entry_lo e2 := by
+      rw [← h_b0, h_bc0, h_c0]
+    simpa only [memory_entry_lo] using h_lo
+  have h_v1 : e1.value_1 = e2.value_1 := by
+    have h_hi : memory_entry_hi e1 = memory_entry_hi e2 := by
+      rw [← h_b1, h_bc1, h_c1]
+    simpa only [memory_entry_hi] using h_hi
+  -- Each byteAt projection depends only on value_0 or value_1; chunk
+  -- equality propagates pointwise.
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    (unfold byteAt; simp only [h_v0, h_v1])
 
 /-- **BitVec 8 lift.** Per-byte FGL equality lifts to per-byte
     `BitVec 8` equality through the `FGL → BitVec 8` coercion. -/
@@ -172,7 +168,7 @@ lemma byte_bitvec_eq_of_fgl_eq {a b : FGL} (h : a = b) :
     equations the `Equivalence/Ld.lean` proof body needs in place
     of the retired `h_e1_e2_bytes` hypothesis. -/
 lemma load_copyb_e1_e2_bytes_eq_bv
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -183,20 +179,18 @@ lemma load_copyb_e1_e2_bytes_eq_bv
       ∧ m.b_1 r_main = memory_entry_hi e1)
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
-      ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2) :
-    (e2.x0 : BitVec 8) = e1.x0
-    ∧ (e2.x1 : BitVec 8) = e1.x1
-    ∧ (e2.x2 : BitVec 8) = e1.x2
-    ∧ (e2.x3 : BitVec 8) = e1.x3
-    ∧ (e2.x4 : BitVec 8) = e1.x4
-    ∧ (e2.x5 : BitVec 8) = e1.x5
-    ∧ (e2.x6 : BitVec 8) = e1.x6
-    ∧ (e2.x7 : BitVec 8) = e1.x7 := by
+      ∧ m.c_1 r_main = memory_entry_hi e2) :
+    ((byteAt e2 0) : BitVec 8) = (byteAt e1 0)
+    ∧ ((byteAt e2 1) : BitVec 8) = (byteAt e1 1)
+    ∧ ((byteAt e2 2) : BitVec 8) = (byteAt e1 2)
+    ∧ ((byteAt e2 3) : BitVec 8) = (byteAt e1 3)
+    ∧ ((byteAt e2 4) : BitVec 8) = (byteAt e1 4)
+    ∧ ((byteAt e2 5) : BitVec 8) = (byteAt e1 5)
+    ∧ ((byteAt e2 6) : BitVec 8) = (byteAt e1 6)
+    ∧ ((byteAt e2 7) : BitVec 8) = (byteAt e1 7) := by
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ :=
     load_copyb_e1_e2_bytes_eq m r_main e1 e2
-      h_copy0 h_copy1 h_ext h_op h_emit_b h_emit_c h_e1_range h_e2_range
+      h_copy0 h_copy1 h_ext h_op h_emit_b h_emit_c
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     <;> exact (byte_bitvec_eq_of_fgl_eq (by assumption)).symm
 
@@ -207,9 +201,9 @@ lemma load_copyb_e1_e2_bytes_eq_bv
 /-! ## Family A + C — zero-extension load c-packed forms
 
 For LBU/LHU/LWU, Family A passthrough plus the MemAlign zero-padding
-conjunct of `lookup_consumer_matches_provider_load` compose into the
-`U64.toBV` equation each canonical equivalence proof expects. These
-BitVec shapes — `(setWidth 32 b).setWidth 64`, etc. — match the
+theorem over the structural provider witness compose into the `U64.toBV`
+equation each canonical equivalence proof expects. These BitVec shapes
+— `(setWidth 32 b).setWidth 64`, etc. — match the
 `bus_effect_matches_sail_loadu_<n>byte_rrrw` consumer side. -/
 
 /-- BitVec helper: a `U64.toBV` whose top 7 byte lanes are zero
@@ -248,10 +242,10 @@ lemma fgl_zero_to_bitvec8 : ((0 : FGL) : BitVec 8) = 0#8 := by
     `Airs/MemoryBus/MemAlignBridge.lean`), derive the LBU U64.toBV
     form. -/
 lemma load_lbu_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
-    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -265,24 +259,65 @@ lemma load_lbu_c_packed
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2)
-    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8),
-                (e2.x3 : BitVec 8), (e2.x4 : BitVec 8), (e2.x5 : BitVec 8),
-                (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = (BitVec.setWidth 32 (e1.x0 : BitVec 8)).setWidth 64 := by
+    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
+    (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
+    (h_mab_lookup :
+      ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r)
+    (h_marb_lookup :
+      ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r)
+    (h_provider :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+        m mab marb ma r_main e1) :
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8),
+                ((byteAt e2 3) : BitVec 8), ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
+      = (BitVec.setWidth 32 ((byteAt e1 0) : BitVec 8)).setWidth 64 := by
   -- Family A passthrough.
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ :=
     load_copyb_e1_e2_bytes_eq_bv m r_main e1 e2
       h_copy0 h_copy1 h_ext h_op
-      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
+      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
-      m mab marb ma r_main e1 h_emit_b (Or.inl h_width) h_e1_range h_low
-  obtain ⟨z1, z2, z3, z4, z5, z6, z7⟩ := h_zero_pad.1 h_width
+      m mab marb ma r_main e1 h_emit_b (Or.inl h_width) h_mab_core
+      h_marb_core h_mab_lookup h_marb_lookup h_provider
+  -- Width = 1 chunk-shape zero-pad: e1.value_1 = 0 ∧ e1.value_0.val < 256.
+  obtain ⟨hv1_zero, hv0_lt⟩ := h_zero_pad.1 h_width
+  -- Derive the 7 zero-byte facts at the FGL level (byteAt e1 i for i = 1..7).
+  have hb1 : byteAt e1 1 = 0 := by
+    show (if (1 : ℕ) < 4 then byteOf e1.value_0 1 else byteOf e1.value_1 (1 - 4)) = 0
+    simp only [show (1 : ℕ) < 4 from by decide, if_true]
+    exact byteOf_of_lt_pow e1.value_0 1 (by simpa using hv0_lt)
+  have hb2 : byteAt e1 2 = 0 := by
+    show (if (2 : ℕ) < 4 then byteOf e1.value_0 2 else byteOf e1.value_1 (2 - 4)) = 0
+    simp only [show (2 : ℕ) < 4 from by decide, if_true]
+    exact byteOf_of_lt_pow e1.value_0 2 (by
+      have : (256 : ℕ) ^ 2 = 65536 := by decide
+      omega)
+  have hb3 : byteAt e1 3 = 0 := by
+    show (if (3 : ℕ) < 4 then byteOf e1.value_0 3 else byteOf e1.value_1 (3 - 4)) = 0
+    simp only [show (3 : ℕ) < 4 from by decide, if_true]
+    exact byteOf_of_lt_pow e1.value_0 3 (by
+      have : (256 : ℕ) ^ 3 = 16777216 := by decide
+      omega)
+  have hb4 : byteAt e1 4 = 0 := by
+    show (if (4 : ℕ) < 4 then byteOf e1.value_0 4 else byteOf e1.value_1 (4 - 4)) = 0
+    simp only [show ¬ (4 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
+  have hb5 : byteAt e1 5 = 0 := by
+    show (if (5 : ℕ) < 4 then byteOf e1.value_0 5 else byteOf e1.value_1 (5 - 4)) = 0
+    simp only [show ¬ (5 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
+  have hb6 : byteAt e1 6 = 0 := by
+    show (if (6 : ℕ) < 4 then byteOf e1.value_0 6 else byteOf e1.value_1 (6 - 4)) = 0
+    simp only [show ¬ (6 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
+  have hb7 : byteAt e1 7 = 0 := by
+    show (if (7 : ℕ) < 4 then byteOf e1.value_0 7 else byteOf e1.value_1 (7 - 4)) = 0
+    simp only [show ¬ (7 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
-  rw [z1, z2, z3, z4, z5, z6, z7]
+  rw [hb1, hb2, hb3, hb4, hb5, hb6, hb7]
   simp only [fgl_zero_to_bitvec8]
   exact u64_toBV_low_byte_only _
 
@@ -290,10 +325,10 @@ lemma load_lbu_c_packed
     zero-padding (derived in `MemAlignBridge.lean`), derive the LHU
     U64.toBV form. -/
 lemma load_lhu_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
-    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -307,24 +342,61 @@ lemma load_lhu_c_packed
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2)
-    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8),
-                (e2.x3 : BitVec 8), (e2.x4 : BitVec 8), (e2.x5 : BitVec 8),
-                (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
+    (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
+    (h_mab_lookup :
+      ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r)
+    (h_marb_lookup :
+      ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r)
+    (h_provider :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+        m mab marb ma r_main e1) :
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8),
+                ((byteAt e2 3) : BitVec 8), ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = (BitVec.setWidth 32
-          ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))).setWidth 64 := by
+          (((byteAt e1 1) : BitVec 8) ++ ((byteAt e1 0) : BitVec 8))).setWidth 64 := by
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ :=
     load_copyb_e1_e2_bytes_eq_bv m r_main e1 e2
       h_copy0 h_copy1 h_ext h_op
-      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
+      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
-      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inl h_width)) h_e1_range h_low
-  obtain ⟨z2, z3, z4, z5, z6, z7⟩ := h_zero_pad.2.1 h_width
+      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inl h_width)) h_mab_core
+      h_marb_core h_mab_lookup h_marb_lookup h_provider
+  -- Width = 2 chunk-shape zero-pad: e1.value_1 = 0 ∧ e1.value_0.val < 65536.
+  obtain ⟨hv1_zero, hv0_lt⟩ := h_zero_pad.2.1 h_width
+  -- Derive bytes 2..7 of e1 are 0 at the FGL level.
+  have hb2 : byteAt e1 2 = 0 := by
+    show (if (2 : ℕ) < 4 then byteOf e1.value_0 2 else byteOf e1.value_1 (2 - 4)) = 0
+    simp only [show (2 : ℕ) < 4 from by decide, if_true]
+    exact byteOf_of_lt_pow e1.value_0 2 (by
+      have : (256 : ℕ) ^ 2 = 65536 := by decide
+      omega)
+  have hb3 : byteAt e1 3 = 0 := by
+    show (if (3 : ℕ) < 4 then byteOf e1.value_0 3 else byteOf e1.value_1 (3 - 4)) = 0
+    simp only [show (3 : ℕ) < 4 from by decide, if_true]
+    exact byteOf_of_lt_pow e1.value_0 3 (by
+      have : (256 : ℕ) ^ 3 = 16777216 := by decide
+      omega)
+  have hb4 : byteAt e1 4 = 0 := by
+    show (if (4 : ℕ) < 4 then byteOf e1.value_0 4 else byteOf e1.value_1 (4 - 4)) = 0
+    simp only [show ¬ (4 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
+  have hb5 : byteAt e1 5 = 0 := by
+    show (if (5 : ℕ) < 4 then byteOf e1.value_0 5 else byteOf e1.value_1 (5 - 4)) = 0
+    simp only [show ¬ (5 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
+  have hb6 : byteAt e1 6 = 0 := by
+    show (if (6 : ℕ) < 4 then byteOf e1.value_0 6 else byteOf e1.value_1 (6 - 4)) = 0
+    simp only [show ¬ (6 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
+  have hb7 : byteAt e1 7 = 0 := by
+    show (if (7 : ℕ) < 4 then byteOf e1.value_0 7 else byteOf e1.value_1 (7 - 4)) = 0
+    simp only [show ¬ (7 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
-  rw [z2, z3, z4, z5, z6, z7]
+  rw [hb2, hb3, hb4, hb5, hb6, hb7]
   simp only [fgl_zero_to_bitvec8]
   exact u64_toBV_low_2bytes_only _ _
 
@@ -332,10 +404,10 @@ lemma load_lhu_c_packed
     zero-padding (derived in `MemAlignBridge.lean`), derive the LWU
     U64.toBV form. -/
 lemma load_lwu_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
-    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -349,25 +421,50 @@ lemma load_lwu_c_packed
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2)
-    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8),
-                (e2.x3 : BitVec 8), (e2.x4 : BitVec 8), (e2.x5 : BitVec 8),
-                (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
+    (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
+    (h_mab_lookup :
+      ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r)
+    (h_marb_lookup :
+      ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r)
+    (h_provider :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+        m mab marb ma r_main e1) :
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8),
+                ((byteAt e2 3) : BitVec 8), ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = BitVec.zeroExtend 64
-          ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
-            ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)) := by
+          (((byteAt e1 3) : BitVec 8) ++ ((byteAt e1 2) : BitVec 8)
+            ++ ((byteAt e1 1) : BitVec 8) ++ ((byteAt e1 0) : BitVec 8)) := by
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ :=
     load_copyb_e1_e2_bytes_eq_bv m r_main e1 e2
       h_copy0 h_copy1 h_ext h_op
-      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
+      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
-      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inr h_width)) h_e1_range h_low
-  obtain ⟨z4, z5, z6, z7⟩ := h_zero_pad.2.2 h_width
+      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inr h_width)) h_mab_core
+      h_marb_core h_mab_lookup h_marb_lookup h_provider
+  -- Width = 4 chunk-shape zero-pad: e1.value_1 = 0.
+  have hv1_zero : e1.value_1 = 0 := h_zero_pad.2.2 h_width
+  -- Derive bytes 4..7 of e1 are 0 at the FGL level.
+  have hb4 : byteAt e1 4 = 0 := by
+    show (if (4 : ℕ) < 4 then byteOf e1.value_0 4 else byteOf e1.value_1 (4 - 4)) = 0
+    simp only [show ¬ (4 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
+  have hb5 : byteAt e1 5 = 0 := by
+    show (if (5 : ℕ) < 4 then byteOf e1.value_0 5 else byteOf e1.value_1 (5 - 4)) = 0
+    simp only [show ¬ (5 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
+  have hb6 : byteAt e1 6 = 0 := by
+    show (if (6 : ℕ) < 4 then byteOf e1.value_0 6 else byteOf e1.value_1 (6 - 4)) = 0
+    simp only [show ¬ (6 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
+  have hb7 : byteAt e1 7 = 0 := by
+    show (if (7 : ℕ) < 4 then byteOf e1.value_0 7 else byteOf e1.value_1 (7 - 4)) = 0
+    simp only [show ¬ (7 : ℕ) < 4 from by decide, if_false]
+    rw [hv1_zero]; exact byteOf_zero _
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
-  rw [z4, z5, z6, z7]
+  rw [hb4, hb5, hb6, hb7]
   simp only [fgl_zero_to_bitvec8]
   exact u64_toBV_low_4bytes_only _ _ _ _
 

@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec
+import ZiskFv.Bits.PackedBitVec.Extensions
 import ZiskFv.Bits.PackedBitVec.Signed
 import ZiskFv.Bits.Execution
 
@@ -646,6 +647,164 @@ lemma signed_mul_high_half_eq
   rw [h_step]
   rw [Int.ediv_eq_zero_of_lt h_C_lb h_C_ub]
   ring
+
+/-- **MUL low-half extraction from the signed chunk identity.**
+    The low 64 bits of multiplication are independent of signedness:
+    once the signed AIR identity gives
+    `r1.toInt * r2.toInt = C + k * 2^64`, the same `C` is also
+    `(r1.toNat * r2.toNat) mod 2^64`.
+
+    This is the low-half companion to `signed_mul_high_half_eq`. -/
+lemma signed_mul_low_half_nat_eq
+    (r1 r2 : BitVec 64) (C D np : ℤ)
+    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
+    (h_prod : r1.toInt * r2.toInt = C + (D - np * 2^64) * 2^64) :
+    C.toNat = (r1.toNat * r2.toNat) % 2^64 := by
+  have h_C_emod : (r1.toInt * r2.toInt) % (2^64 : ℤ) = C := by
+    rw [h_prod]
+    have h_step :
+        (C + (D - np * 2^64) * 2^64 : ℤ) % (2^64 : ℤ)
+          = C % (2^64 : ℤ) := by
+      rw [Int.add_mul_emod_self_right]
+    rw [h_step]
+    exact Int.emod_eq_of_lt h_C_lb h_C_ub
+  have hr1 :
+      (r1.toInt : ℤ) % (2^64 : ℤ)
+        = (r1.toNat : ℤ) % (2^64 : ℤ) := by
+    rw [BitVec.toInt_eq_toNat_bmod, Int.bmod]
+    split_ifs <;> push_cast <;> omega
+  have hr2 :
+      (r2.toInt : ℤ) % (2^64 : ℤ)
+        = (r2.toNat : ℤ) % (2^64 : ℤ) := by
+    rw [BitVec.toInt_eq_toNat_bmod, Int.bmod]
+    split_ifs <;> push_cast <;> omega
+  have h_nat_emod :
+      ((r1.toNat * r2.toNat : ℕ) : ℤ) % (2^64 : ℤ) = C := by
+    rw [← h_C_emod]
+    change ((r1.toNat : ℤ) * (r2.toNat : ℤ)) % (2^64 : ℤ)
+      = r1.toInt * r2.toInt % (2^64 : ℤ)
+    calc
+      ((r1.toNat : ℤ) * (r2.toNat : ℤ)) % (2^64 : ℤ)
+          = (((r1.toNat : ℤ) % (2^64 : ℤ))
+              * ((r2.toNat : ℤ) % (2^64 : ℤ))) % (2^64 : ℤ) := by
+            rw [Int.mul_emod]
+      _ = ((r1.toInt % (2^64 : ℤ)) * (r2.toInt % (2^64 : ℤ))) % (2^64 : ℤ) := by
+            rw [← hr1, ← hr2]
+      _ = r1.toInt * r2.toInt % (2^64 : ℤ) := by
+            rw [← Int.mul_emod]
+  have h_cast_mod :
+      (((r1.toNat * r2.toNat) % 2^64 : ℕ) : ℤ) = C := by
+    rw [Int.natCast_mod]
+    exact h_nat_emod
+  have h_C_toNat :
+      C.toNat = (r1.toNat * r2.toNat) % 2^64 := by
+    rw [← h_cast_mod]
+    exact Int.toNat_natCast _
+  exact h_C_toNat
+
+/-- **Final BV64 wrapper: MUL low half from signed chunks.**
+
+    This is the `.MUL` companion to `fgl_mul_signed_to_bv64_hi`.
+    It uses the same signed AIR chunk identity, but concludes the low
+    64-bit result. The final step is purely modular: `BitVec.toInt`
+    and `BitVec.toNat` agree modulo `2^64`, so the low half of signed
+    multiplication is the same as the low half of unsigned
+    multiplication. -/
+lemma fgl_mul_signed_to_bv64_lo
+    (r1 r2 : BitVec 64)
+    (A B C D na nb np : ℤ)
+    (h_na_bool : na = 0 ∨ na = 1)
+    (h_nb_bool : nb = 0 ∨ nb = 1)
+    (h_np_xor : np = na + nb - 2 * na * nb)
+    (h_r1 : r1.toInt = A - na * 2^64) (h_r2 : r2.toInt = B - nb * 2^64)
+    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
+    (h_chunk :
+      (1 - 2 * np) * A * B
+        + (nb * (1 - 2 * na) * A + na * (1 - 2 * nb) * B) * 2^64
+        + (na * nb - np) * 2^128
+      = (1 - 2 * np) * (C + D * 2^64)) :
+    BitVec.ofNat 64 C.toNat = execute_MUL_pure r1 r2 .MUL := by
+  rw [ZiskFv.PackedBitVec.Extensions.execute_MUL_pure_lo_eq]
+  have h_prod : r1.toInt * r2.toInt = C + (D - np * 2^64) * 2^64 :=
+    signed_mul_int_product_eq A B C D na nb np r1.toInt r2.toInt
+      h_na_bool h_nb_bool h_np_xor h_r1 h_r2 h_chunk
+  have h_low := signed_mul_low_half_nat_eq r1 r2 C D np h_C_lb h_C_ub h_prod
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_ofNat, h_low]
+
+/-- **Low-half extraction from signed chunks and unsigned operand packs.**
+
+    Low `MUL` does not need the sign witnesses to match the operands'
+    actual MSBs. The signed chunk identity proves the product of
+    `(A - na*2^64)` and `(B - nb*2^64)`, which is congruent to `A*B`
+    modulo `2^64` for any integer `na` and `nb`. Therefore, once
+    `A` and `B` are the unsigned operand packings, the low half is `C`.
+
+    This is the theorem low `MUL` should consume; the high-half signed
+    opcodes still need the stronger `toInt` operand bridges. -/
+lemma fgl_mul_signed_chunks_to_bv64_lo_of_nat_pack
+    (r1 r2 : BitVec 64)
+    (A B C D na nb np : ℤ)
+    (h_na_bool : na = 0 ∨ na = 1)
+    (h_nb_bool : nb = 0 ∨ nb = 1)
+    (h_np_xor : np = na + nb - 2 * na * nb)
+    (h_A_lb : 0 ≤ A)
+    (h_B_lb : 0 ≤ B)
+    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
+    (h_r1_nat : r1.toNat = A.toNat)
+    (h_r2_nat : r2.toNat = B.toNat)
+    (h_chunk :
+      (1 - 2 * np) * A * B
+        + (nb * (1 - 2 * na) * A + na * (1 - 2 * nb) * B) * 2^64
+        + (na * nb - np) * 2^128
+      = (1 - 2 * np) * (C + D * 2^64)) :
+    BitVec.ofNat 64 C.toNat = execute_MUL_pure r1 r2 .MUL := by
+  rw [ZiskFv.PackedBitVec.Extensions.execute_MUL_pure_lo_eq]
+  have h_prod :
+      (A - na * 2^64) * (B - nb * 2^64)
+        = C + (D - np * 2^64) * 2^64 :=
+    signed_mul_int_product_eq A B C D na nb np
+      (A - na * 2^64) (B - nb * 2^64)
+      h_na_bool h_nb_bool h_np_xor rfl rfl h_chunk
+  have h_low_int : (A * B) % (2^64 : ℤ) = C := by
+    have h_congr :
+        (A * B) % (2^64 : ℤ)
+          = ((A - na * 2^64) * (B - nb * 2^64)) % (2^64 : ℤ) := by
+      have hA : (A - na * 2^64 : ℤ) = A + (-na) * 2^64 := by ring
+      have hB : (B - nb * 2^64 : ℤ) = B + (-nb) * 2^64 := by ring
+      rw [hA, hB]
+      calc
+        (A * B) % (2^64 : ℤ)
+            = ((A % (2^64 : ℤ)) * (B % (2^64 : ℤ))) % (2^64 : ℤ) := by
+              rw [Int.mul_emod]
+        _ = (((A + (-na) * 2^64) % (2^64 : ℤ))
+              * ((B + (-nb) * 2^64) % (2^64 : ℤ))) % (2^64 : ℤ) := by
+              rw [Int.add_mul_emod_self_right, Int.add_mul_emod_self_right]
+        _ = ((A + (-na) * 2^64) * (B + (-nb) * 2^64)) % (2^64 : ℤ) := by
+              rw [← Int.mul_emod]
+    rw [h_congr, h_prod]
+    have h_step :
+        (C + (D - np * 2^64) * 2^64 : ℤ) % (2^64 : ℤ)
+          = C % (2^64 : ℤ) := by
+      rw [Int.add_mul_emod_self_right]
+    rw [h_step]
+    exact Int.emod_eq_of_lt h_C_lb h_C_ub
+  have h_A_toNat : A.toNat = r1.toNat := h_r1_nat.symm
+  have h_B_toNat : B.toNat = r2.toNat := h_r2_nat.symm
+  have h_nat_mod_cast :
+      (((r1.toNat * r2.toNat) % 2^64 : ℕ) : ℤ) = C := by
+    rw [← h_A_toNat, ← h_B_toNat]
+    rw [Int.natCast_mod]
+    have hA_nat : (A.toNat : ℤ) = A := Int.toNat_of_nonneg h_A_lb
+    have hB_nat : (B.toNat : ℤ) = B := Int.toNat_of_nonneg h_B_lb
+    rw [Int.natCast_mul, hA_nat, hB_nat]
+    exact h_low_int
+  have h_C_toNat :
+      C.toNat = (r1.toNat * r2.toNat) % 2^64 := by
+    rw [← h_nat_mod_cast]
+    exact Int.toNat_natCast _
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_ofNat, h_C_toNat]
 
 /-- **Modular equivalence: `D - np * 2^64 ≡ D (mod 2^64)`.** -/
 private lemma int_d_minus_np_mod_eq (D np : ℤ) :

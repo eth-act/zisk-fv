@@ -28,13 +28,12 @@ open ZiskFv.Airs.Main
 open ZiskFv.Trusted
 open ZiskFv.Tactics.UTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compositional LUI theorem — next-pc advance.** The next-pc equals
     `pc + jmp_offset2`. Combined with `transpile_LUI`'s pinning
     `jmp_offset2 = 4`, this says LUI advances PC by 4. -/
 lemma lui_pc_advance
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main :=
   lui_archetype_pc_advance m r_main next_pc h
@@ -46,7 +45,7 @@ lemma lui_pc_advance
     (which is `imm[11:0] ++ 0#12` in Sail terms — 20 imm bits shifted
     left by 12 into a 32-bit lane). -/
 lemma lui_store_value_lo
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
     m.store_pc r_main *
         (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
@@ -59,7 +58,7 @@ lemma lui_store_value_lo
     `transpile_LUI`'s pinning `b_hi = imm_hi`, this says the high 32
     bits of rd receive the sign-extension of the LUI immediate. -/
 lemma lui_store_value_hi
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
     (1 - m.store_pc r_main) * m.c_1 r_main = m.b_1 r_main :=
   lui_archetype_store_value_hi m r_main next_pc h

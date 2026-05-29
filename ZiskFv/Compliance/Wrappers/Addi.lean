@@ -1,84 +1,25 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Addi
-import ZiskFv.Equivalence.Promises.IType
+import ZiskFv.EquivCore.Addi
+import ZiskFv.EquivCore.Promises.IType
+import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Compliance.SharedBundles
 
 /-!
-# `equiv_ADDI` Compliance wrapper — BinaryAdd ITYPE shape
+# `equiv_ADDI` Compliance wrapper — alternate Binary arm
 
-> **Status:** round 3.I (ITYPE constructibility bundles).
-> Mirrors `Wrappers/Add.lean` for ADD, with the ITYPE-specific
-> immediate-routing addition (`h_addi_subset`).
->
-> Lives outside the canonical surface (under
-> `Compliance/Wrappers/`) so V1 anti-laundering metrics on the
-> canonical theorem are unaffected.
-
-## Why ADDI
-
-ADDI is the BinaryAdd ITYPE companion to ADD: the same Binary-SM
-provider handles both, distinguished only by the transpiler's b-lane
-routing — ADD reads `xreg(rs2)` onto Main's b-lanes; ADDI routes the
-sign-extended 12-bit immediate. The Sail-level immediate must therefore
-appear in the canonical equiv as a structural pin
-(`itype_imm_subset_holds_main`) since `transpile_ADDI` leaves
-`imm_b_lo`/`imm_b_hi` caller-routed. The wrapper passes this pin
-through unchanged from caller; `Compliance.lean` will supply it from
-a per-program universal invariant pinning every ADDI row's b-lanes
-to the actual immediate of the originating RV64 instruction.
-
-## 5-category discharge applied
-
-* **Lane-match.** Internalized by `equiv_ADDI` via the existing
-  `Bridge.BinaryAdd` discharge family (`chunk_ranges_at_holds` +
-  matches_entry projection). The wrapper-level lane-match obligation
-  on `e2` is currently caller-supplied (`h_lane_rd`).
-* **Mode pins.** Main-side pins `m32 = 0`, `set_pc = 0` come from
-  `transpile_ADDI` (class #1) — already consumed inside `equiv_ADDI`'s
-  proof. Provider AIR (BinaryAdd) has no mode columns (N/A).
-* **Sign-witness pins.** N/A.
-* **Range/bound.** Discharged by `binary_add_columns_in_range`
-  (class #5b) — internalized by `equiv_ADDI`. The 8 `e2` byte ranges
-  are unpacked from `memory_bus_entry_byte_range_perm_sound` (class
-  #5b) inside the wrapper.
-* **Operand bridges.** The `h_input_r1_circuit` (Sail-input ↔ Main
-  a-lane) bridge is internalized by `equiv_ADDI` via
-  `Bridge.SailStateBridge.addi_input_r1_main_eq_of_read_xreg`. The
-  immediate bridge (`h_addi_subset`) is the structural-unpacking
-  pin — passed through as-is from caller.
-
-## Anti-laundering report
-
-* **No new axioms.** This wrapper consumes only `transpile_ADDI`
-  (class #1, transitively via the canonical's closure),
-  `op_bus_perm_sound_BinaryAdd` (class #4, consumed inside
-  `equiv_ADDI`), `memory_bus_entry_byte_range_perm_sound` (class
-  #5b), plus `equiv_ADDI`'s existing closure.
-* **Caller-burden shrinks** (wrapper vs. canonical): the wrapper
-  internalizes the 8 `e2` byte-range obligations via
-  `memory_bus_entry_byte_range_perm_sound`. Net −8 binders.
-* **Constructibility bundle.** `h_addi_subset` is a per-row
-  pin delivered by `Compliance.lean` from a program-level universal
-  — not a new caller-supplied promise hypothesis.
-
-## Cross-shape lessons
-
-The pattern transfers mechanically to ANDI/ORI/XORI (Binary provider
-ITYPE variants):
-* Swap `transpile_ADDI` → `transpile_<OP>I`.
-* Swap `op_bus_perm_sound_BinaryAdd` → `op_bus_perm_sound_Binary`
-  (with the larger opcode disjunction).
-* The `itype_imm_subset_holds_main` predicate is reused verbatim —
-  it's opcode-agnostic.
-* The wrapper-level work for each is essentially copy of this file.
+ADDI at `OP_ADD = 10` may be served by either the BinaryAdd or the
+lookup-aware Binary provider. The original `Compliance.equiv_ADDI`
+covers the BinaryAdd arm; this wrapper covers the Binary arm via
+the Clean static-lookup table interface, mirroring
+`equiv_ADD_via_binary`.
 -/
 
 namespace ZiskFv.Compliance
@@ -86,62 +27,36 @@ namespace ZiskFv.Compliance
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.BinaryAdd
+open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Airs.MemoryBus
-open ZiskFv.ZiskCircuit.Add
-open ZiskFv.ZiskCircuit.Addi
-open ZiskFv.Tactics.ALUITypeArchetype
+open ZiskFv.EquivCore.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Compliance wrapper for `equiv_ADDI`.**
-
-    Caller obligations:
-    1. Sail-side inputs (`state`, `addi_input`, `imm`, `r1`, `rd`).
-    2. AIR validators + row index (`m`, `b`, `r_main`). Shared with
-       ADD across the BinaryAdd shape.
-    3. Structural bus rows (`exec_row`, `e0`, `e1`, `e2`).
-    4. Activation + opcode pins (`h_main_active`, `h_main_op_addi`).
-    5. Main-side constructibility bundles:
-       * `h_main_subset : add_subset_holds m r_main` — universal-row
-         ADD-subset constraints, shared with ADD via
-         `∀ r, add_universal_row m r`.
-       * `h_main_set_pc : m.set_pc r_main = 0` — ITYPE-specific pin
-         (the canonical `main_row_in_addi_mode` uses `set_pc = 0` as
-         its fourth pin instead of ADD's `flag = 0`). Derivable from
-         `transpile_ADDI`.
-       * `h_addi_subset : itype_imm_subset_holds_main m r_main
-         addi_input.imm` — the constructibility pin tying Main's
-         b-lanes to the actual RV64 immediate. Delivered by
-         `Compliance.lean` from a per-program universal invariant.
-       * `h_b_core` — universal BinaryAdd per-row validity, shared
-         with ADD.
-    6. `h_lane_rd` — rd-write lane-match, deferred to Mem pilot.
-    7. Sail-state predicates + bus-shape obligations — pass-through.
-
-    Derived internally (NOT caller-supplied):
-    * `m.m32 r_main = 0` — from `transpile_ADDI` (class #1).
-    * `main_row_in_addi_mode m r_main` — assembled from the four
-      derived/caller-supplied pins.
-    * `h_e2_0..h_e2_7 : e2.x{0..7}.val < 256` — unpacked from
-      `memory_bus_entry_byte_range_perm_sound` (class #5b). -/
 theorem equiv_ADDI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
+    (m : Valid_Main FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    -- Activation / opcode pins (Compliance.lean derives from ROM handshake).
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
-    -- Main-side constructibility bundles.
-    (h_main_subset : add_subset_holds m r_main)
-    (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
-    -- Lane-match for rd-write entry (deferred to Mem pilot).
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : matches_entry
+      (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_addi_subset :
+      ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+        m r_main addi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    -- Structural promise bundle (14 fields, see Promises/IType.lean).
-    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
         (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -151,31 +66,30 @@ theorem equiv_ADDI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨b, h_b_core⟩ := badd
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op_addi⟩ := pins
-  -- ============ Derive `m.m32 r_main = 0` and `m.set_pc r_main = 0`
-  -- via `transpile_ADDI` ============
-  have h_tr := ZiskFv.Trusted.transpile_ADDI
-    m r_main (0 : Fin 32) (0 : Fin 32)
-    (m.b_0 r_main) (m.b_1 r_main)
-    ({ xreg := fun _ => 0#64, pc := 0#64 } : RV64State)
-    h_main_active h_main_op_addi
-  obtain ⟨_, h_m32, h_set_pc, _, _, _, _, _, _, _⟩ := h_tr
-  -- ============ Assemble `main_row_in_addi_mode` ============
-  have h_main_mode : main_row_in_addi_mode m r_main := by
-    refine ⟨h_main_active, ?_, h_m32, h_set_pc⟩
-    -- `OP_ADD := (10 : FGL)` definitionally.
-    exact h_main_op_addi
-  -- ============ Discharge the 8 e2 byte ranges ============
-  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
-    memory_bus_entry_byte_range_perm_sound e2
-  -- ============ Delegate to canonical `equiv_ADDI` ============
-  exact ZiskFv.Equivalence.Addi.equiv_ADDI
-    state addi_input r1 rd imm m ⟨b, h_b_core⟩ r_main
-    ⟨exec_row, e0, e1, e2⟩
-    promises
-    h_main_subset h_main_mode h_addi_subset h_lane_rd
-    ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
+  obtain ⟨h_main_active, h_main_op_add⟩ := pins
+  let row :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  obtain ⟨h_core, h_facts⟩ :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_spec_facts :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_emit : row.chain.b_op + 16 * row.mode.mode32 = (10 : FGL) := by
+    have h_lane_eqs := h_match
+    simp only [matches_entry, opBus_row_Main] at h_lane_eqs
+    obtain ⟨_, h_op_match, _, _, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
+    rw [← h_op_match]
+    simpa [ZiskFv.Trusted.OP_ADD] using h_main_op_add
+  obtain ⟨h_mode32_zero, h_bop_val, _⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+      row h_spec_facts 10 (by decide) h_core h_emit
+  have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val
+  exact ZiskFv.EquivCore.Addi.equiv_ADDI_of_static_row
+    state addi_input r1 rd imm m row r_main bus promises
+    ⟨h_main_active, h_main_op_add⟩
+    h_match h_addi_subset h_core h_facts h_mode32_zero h_b_op h_lane_rd
 
 end ZiskFv.Compliance

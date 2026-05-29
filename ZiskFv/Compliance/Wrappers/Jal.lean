@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Jal
-import ZiskFv.Equivalence.Promises.Jump
-import ZiskFv.Equivalence.Promises.JumpHelpers
+import ZiskFv.EquivCore.Jal
+import ZiskFv.EquivCore.Promises.Jump
+import ZiskFv.EquivCore.Promises.JumpHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
@@ -22,7 +22,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_JAL`.** Derives `h_circuit` from
     `jal_h_circuit_of_main_constraints` (consuming `transpile_JAL`)
@@ -33,16 +32,17 @@ theorem equiv_JAL
     (imm : BitVec 21)
     (rd : regidx)
     (misa_val : RegisterType Register.misa)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     -- Activation / opcode pins on Main + per-row subset constraint.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_jal_subset :
       ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
     -- Structural `JumpPromises` bundle.
-    (promises : ZiskFv.Equivalence.Promises.JumpPromises
+    (promises : ZiskFv.EquivCore.Promises.JumpPromises
         state jal_input.PC jal_input.rd misa_val
         (PureSpec.execute_JAL_pure jal_input).success
         (PureSpec.execute_JAL_pure jal_input).nextPC
@@ -50,16 +50,15 @@ theorem equiv_JAL
     (h_input_imm : jal_input.imm = imm)
     (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
     (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
-    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) :
     execute_instruction (instruction.JAL (imm, rd)) state
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
-    ZiskFv.Equivalence.Promises.jal_h_circuit_of_main_constraints
+    ZiskFv.EquivCore.Promises.jal_h_circuit_of_main_constraints
       m r_main next_pc pins.main_active pins.main_op h_jal_subset
-  ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val
-    exec_row e_rd nextPC_val m r_main next_pc
+  ZiskFv.EquivCore.Jal.equiv_JAL state jal_input imm rd misa_val
+    exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_input_imm h_not_throws
-    h_circuit h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+    h_circuit h_pc_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

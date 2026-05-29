@@ -65,7 +65,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.ZiskCircuit.Shift
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Archetype mode predicate.** A Main row is in shift-execution
     mode for a given Zisk opcode literal and `m32` bit when
@@ -74,7 +73,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `m32_val = 0` covers SLL/SRL/SRA. -/
 @[simp]
 def main_row_in_shift_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (opcode_lit m32_val : FGL) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = opcode_lit
@@ -86,7 +85,7 @@ def main_row_in_shift_mode
     `Circuit.Shift.sllw_circuit_holds` over opcode literal and `m32`. -/
 @[simp]
 def shift_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit m32_val : FGL) : Prop :=
   flag_boolean m r_main
@@ -101,7 +100,7 @@ def shift_archetype_circuit_holds
     `Circuit.Shift.sllw_compositional` but parametric over the opcode
     literal. -/
 lemma shift_archetype_m32_one_zeros_bus
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
     (h : shift_archetype_circuit_holds m r_main bus_entry opcode_lit 1) :
@@ -124,7 +123,7 @@ lemma shift_archetype_m32_one_zeros_bus
     SLL/SRL/SRA proofs chain this with a `Valid_BinaryExtension`
     bus-emission; this theorem states the Main-side half only. -/
 lemma shift_archetype_m32_zero_passthrough_bus
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
     (h : shift_archetype_circuit_holds m r_main bus_entry opcode_lit 0) :

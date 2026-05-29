@@ -59,7 +59,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Archetype mode predicate.** A Main row is in branch-execution
     mode for a given Zisk opcode literal when `is_external_op = 1`,
@@ -69,7 +68,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     pin it explicitly for clarity). -/
 @[simp]
 def main_row_in_branch_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = opcode_lit
   ∧ m.m32 r_main = 0
@@ -79,7 +78,7 @@ def main_row_in_branch_mode
     `Circuit.BranchEqual.branch_eq_circuit_holds` over the opcode literal. -/
 @[simp]
 def branch_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL) : Prop :=
   branch_subset_holds m r_main next_pc
   ∧ main_row_in_branch_mode m r_main opcode_lit
@@ -89,7 +88,7 @@ def branch_archetype_circuit_holds
     the Zisk opcode literal. Proves the flag-dispatched next-pc
     formula from the branch-subset constraints + mode witnesses. -/
 lemma branch_archetype_pc_dispatch
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL)
     (h : branch_archetype_circuit_holds m r_main next_pc opcode_lit) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
             + m.flag r_main * (m.jmp_offset1 r_main - m.jmp_offset2 r_main) := by
@@ -100,7 +99,7 @@ lemma branch_archetype_pc_dispatch
 
 /-- **Archetype taken case.** -/
 lemma branch_archetype_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL)
     (h : branch_archetype_circuit_holds m r_main next_pc opcode_lit)
     (h_flag : m.flag r_main = 1) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main := by
@@ -110,7 +109,7 @@ lemma branch_archetype_taken
 
 /-- **Archetype not-taken case.** -/
 lemma branch_archetype_not_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL)
     (h : branch_archetype_circuit_holds m r_main next_pc opcode_lit)
     (h_flag : m.flag r_main = 0) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main := by

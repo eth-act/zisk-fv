@@ -1,99 +1,43 @@
-import Mathlib
-
-import ZiskFv.Field.Goldilocks
-import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.OperationBus.OperationBus
-import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Airs.BusHypotheses
-import ZiskFv.SailSpec.fence
-import ZiskFv.SailSpec.BusEffect
-import ZiskFv.Airs.OpBusEffect
-import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.Promises.Fence
+import ZiskFv.Compliance.Wrappers.Fence
+import ZiskFv.Channels.StateEffect
 
 /-!
-End-to-end theorem for RV64I FENCE.
+# `equiv_FENCE` per-opcode canonical theorem (channel-balance form)
 
-FENCE is a memory-ordering hint that, on ZisK's single-threaded
-zkVM, reduces to "advance PC by 4." The Sail body
-(`execute_FENCE`) is a no-op composition (barrier match arms all
-collapse to `pure ()` via `sail_barrier`). The ZisK transpiler
-emits a single Internal-op row with all sources zeroed and
-`jmp_offset = 4` (`riscv2zisk_context.rs:228 → fn nop`).
+Post-Phase-6 canonical per-opcode theorem for FENCE. Proves the
+channel-balance conclusion (`= state_effect_via_channels …`) by
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_FENCE`.
 
-Three theorems mirroring the BEQ pattern (shape-(b) — empty memory bus):
+The pre-cutover v1 form (`= (bus_effect …).2`) lives at
+`ZiskFv/EquivCore/Fence.lean`.
 
-* `equiv_FENCE_sail` — Sail-level wrapper for `execute_FENCE_pure_equiv`.
-* `equiv_FENCE` — the canonical shape combining
-  Sail + bus-effect via `bus_effect_matches_sail_beq` (empty memory
-  bus → same shape lemma BEQ uses).
+## Trust note
+
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_FENCE`'s closure exactly.
 -/
+
+open ZiskFv.Channels
+open Goldilocks
+open ZiskFv.Airs.Main (Valid_Main)
+open ZiskFv.Trusted (OP_FLAG)
 
 namespace ZiskFv.Equivalence.Fence
 
-open Goldilocks
-open Interaction
-open ZiskFv.Trusted
-open ZiskFv.Airs.Main
 
-/-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
-    RV64 FENCE reduces to `Sail.writeReg Register.nextPC (PC + 4) ;
-    pure RETIRE_SUCCESS`. Wraps `PureSpec.execute_FENCE_pure_equiv`.
-
-    The M-mode privilege hypothesis is required to collapse Sail's
-    `is_fiom_active` to the constant `false`. ZisK targets RV64IM
-    Machine-mode only, so this is part of the trusted scope (see
-    `RISC_V_assumptions` A1.1 in `RV64D/Auxiliaries.lean`). -/
-lemma equiv_FENCE_sail
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (fence_input : PureSpec.FenceInput)
-    (fm pred succ : BitVec 4) (rs rd : regidx)
-    (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC)
-    (h_input_priv :
-      state.regs.get? Register.cur_privilege = .some Privilege.Machine) :
-    execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state =
-    let fence_output := PureSpec.execute_FENCE_pure fence_input
-    (do
-      Sail.writeReg Register.nextPC fence_output.nextPC
-      pure (ExecutionResult.Retire_Success ())
-    ) state :=
-  PureSpec.execute_FENCE_pure_equiv fence_input fm pred succ rs rd
-    h_input_pc h_input_priv
-
-/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
-    FENCE equals `(bus_effect exec_row [] state).2`. Composes
-    `equiv_FENCE_sail` with `bus_effect_matches_sail_beq` (FENCE
-    uses the same empty-memory-bus shape as branches). -/
 theorem equiv_FENCE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (promises : ZiskFv.Equivalence.Promises.FencePromises
+    (_pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG)
+    (promises : ZiskFv.EquivCore.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
-        exec_row) :
-    execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
-      = (bus_effect exec_row [] state).2 := by
-  obtain ⟨h_input_pc, h_input_priv, h_exec_len, h_e0_mult, h_e1_mult,
-          h_nextPC_matches⟩ := promises
-  rw [equiv_FENCE_sail state fence_input fm pred succ rs rd h_input_pc
-        h_input_priv]
-  symm
-  -- Use bus_effect_matches_sail_beq with throws=false, success=true.
-  -- The beq_PC / beq_imm parameters are unused under those flags;
-  -- pass dummies.
-  have h_bus_eq := ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_beq
-    (imm_width := 1)
-    state exec_row
-    (PureSpec.execute_FENCE_pure fence_input).nextPC
-    false true
-    (0#64) (0#1)
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches rfl rfl
-  rw [h_bus_eq]
-  -- Both inner if-chains reduce to `pure RETIRE_SUCCESS`.
-  simp
+        exec_row)
+    : execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
+      = state_effect_via_channels ⟨exec_row, []⟩ state := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_FENCE state fence_input fm pred succ rs rd main r_main exec_row _pins promises
 
 end ZiskFv.Equivalence.Fence

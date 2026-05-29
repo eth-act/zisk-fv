@@ -77,9 +77,10 @@ form), `h_match_clo`, `h_match_chi`.
 **Generalization.** Every opcode with an rd-write needs lane-match
 discharge. The bundle name varies by op-class (the trust ledger
 exposes parallel bundles in `MemBridge.lean`: `main_load_emission_bundle`
-4(d), `main_sext_load_emission_bundle` 4(e), `main_store_pc_emission_bundle`
-4(f), `main_external_arith_emission_bundle` 4(g)). Match your opcode
-to the bundle covering its op-set.
+4(d), `main_sext_load_emission_bundle` 4(e), and historical
+store-PC/external-arith bundles that have since been retired from the live
+trust ledger). Match your opcode to the currently live bridge surface covering
+its op-set, preferring Clean structural witnesses where available.
 
 **Trust class.** Typically #4 (memory-bus emission bundle soundness),
 plus an op-bus `matches_entry` projection that comes for free with
@@ -206,8 +207,8 @@ bound consumed by `arith_div_remainder_bound`).
   `signed_packed_toInt_eq_of_read_xreg`
   (`Equivalence/Bridge/SailStateBridge.lean:190`). Inputs: the Sail
   `read_xreg` predicate `h_input_r1`, the unsigned `r1_val.toNat =
-  packed4` identity (derived from `transpile_DIV` + op-bus
-  `matches_entry` lane projections + chunk-range bounds; see
+  packed4` identity (formerly derived from the DIV transpile contract +
+  op-bus `matches_entry` lane projections + chunk-range bounds; see
   `Wrappers/Div.lean:347-435`), the chunk-range bundle, and the
   `np = MSB` pin from category 3.
 * `h_op2` discharged symmetrically at `Wrappers/Div.lean:476-482`.

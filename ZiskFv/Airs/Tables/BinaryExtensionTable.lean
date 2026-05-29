@@ -1,6 +1,5 @@
 import Mathlib
 
-import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
@@ -256,12 +255,7 @@ def wf_properties (e : BinaryExtensionTableEntry FGL) : Prop :=
   ∧ wf_SEXT_H e
   ∧ wf_SEXT_W e
 
-/-- **Trusted axiom (consumer-side).** Every entry the BinaryExtension AIR
-    consumes against the binary-extension table satisfies `wf_properties`.
-    Mirror of `BinaryTable.bin_table_consumer_wf`. -/
-axiom bin_ext_table_consumer_wf
-    (e : BinaryExtensionTableEntry FGL)
-    (h_consumer : e.multiplicity = 1) :
-    wf_properties e
+-- `bin_ext_table_consumer_wf` axiom retired in T4-purge P4. All consumers
+-- now use the Clean static-BinaryExtensionTable route (StaticLookupSoundness).
 
 end ZiskFv.Airs.Tables.BinaryExtensionTable

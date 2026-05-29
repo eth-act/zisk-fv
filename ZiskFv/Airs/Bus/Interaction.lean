@@ -45,25 +45,26 @@ structure ExecutionBusEntry where
 deriving BEq, DecidableEq, Inhabited
 
 /-- Memory bus entry: one row carries address space (`as`), pointer (`ptr`),
-    eight byte-lanes `x0..x7`, timestamp, and signed multiplicity.
+    two 32-bit chunks `value_0, value_1` matching ZisK's PIL emission
+    (`zisk/state-machines/mem/pil/mem.pil:436`:
+    `permutation_proves(MEMORY_ID, [mem_op, addr*bytes, step, bytes, ...value], sel)`,
+    with `value` a 2-element 32-bit-chunk array), timestamp, and signed
+    multiplicity.
 
-    **RV64 widening note.** openvm-fv's RV32 layout has four byte-lanes
-    (`x0..x3`) because their XLEN=32 register lanes fit in 4 bytes.
-    RV64 needs eight lanes to represent a 64-bit register or 64-bit memory
-    word. Callers (`BusEffect.lean`) assemble these into a `BitVec 64` via
-    `U64.toBV` (defined below). -/
+    **C8 Phase 2 cutover note.** This entry shape was previously 8 byte
+    lanes (`x0..x7`) inherited from openvm-fv's RV32 4-lane analogue
+    (widened to RV64). The current chunk shape matches PIL emission
+    exactly; byte-level access for Sail's byte-addressed memory model
+    happens at the bridge boundary via `byteOf v_i j`
+    (`ZiskFv/Channels/MemoryBusBytes.lean`). The chunk → `BitVec 64`
+    bridge for register-write assembly is
+    `u64_toBV_chunks_eq_ofNat_fgl_val` in the same file. -/
 structure MemoryBusEntry where
   multiplicity : F
   as : F
   ptr : F
-  x0 : F
-  x1 : F
-  x2 : F
-  x3 : F
-  x4 : F
-  x5 : F
-  x6 : F
-  x7 : F
+  value_0 : F
+  value_1 : F
   timestamp : F
 deriving BEq, DecidableEq, Inhabited
 

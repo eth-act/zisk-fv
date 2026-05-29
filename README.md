@@ -10,18 +10,22 @@ via [`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)'s
 **Status:** the verification claim is the global compliance theorem
 `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`
 (in `ZiskFv/Compliance.lean`), which dispatches all
-63 RV64IM opcodes through a 35-arm `OpEnvelope` sum type to per-opcode
+63 RV64IM opcodes through a 63-arm `OpEnvelope` sum type to per-opcode
 `equiv_<OP>` wrappers, each discharging its canonical
 `equiv_<OP>` theorem's promise hypotheses from the trust ledger. The
-trusted computing base is **122 axioms across 9 classes** (51
-transpile contracts + 14 bus / lookup soundness + 14 Binary /
-BinaryExtension lookup soundness + 35 Arith range / table / Euclidean
-pins + 3 range-bus byte-range + 1 memory-state load bridge + 4
-platform-scope — full per-class breakdown in
-`docs/fv/trusted-base.md`), 0 sorries. Closure mechanically enforced:
-V2 gate `check-closure-vs-baseline` asserts
-`#print axioms zisk_riscv_compliant_program_bus` equals
-`trust/baseline-axioms.txt` exactly. The load-bearing claim is
+source trust ledger currently records **53 axioms across 4 files / 8
+classes**: 42 transpile contracts, 1 memory-state load bridge, 4
+platform-scope assumptions, and 6 Clean-component completeness
+placeholders. The live global compliance theorem's closure contains 50
+names; the 6 Clean completeness placeholders are documented
+non-security-critical completeness-direction axioms and may be absent
+from the soundness closure. Full per-class rationale is in
+`docs/fv/trusted-base.md`. Closure is mechanically enforced: the V2
+gate `check-closure-vs-baseline` asserts that
+`#print axioms zisk_riscv_compliant_program_bus` matches
+`trust/baseline-zisk-riscv-compliant.txt`, while
+`trust/baseline-axioms.txt` is the hashed source-line ledger. The
+load-bearing claim is
 `lake build`: every per-opcode equivalence theorem + every wrapper +
 the uber theorem typechecks. Run `nix run .#test` for the full suite
 (cargo + lake + trust gate V1 + V2 + flake repro check).
@@ -115,12 +119,11 @@ build/sail-lean/                       build/extraction/Extraction/
         (TRANSPILE-BRIDGE, RANGE, etc.)
                          │
                          │  discharged by ZiskFv/Trusted/Transpiler.lean
-                         │  + axiom-bearing files under ZiskFv/Airs/{Arith/Ranges,
-                         │  Binary/{Binary,BinaryAdd,BinaryExtension}Ranges,
-                         │  Main/Ranges, MemoryBus/{MemBridge,MemAlignBridge,
-                         │  EntryRanges}, OperationBus/Bridge, Tables/*}
-                         │  + ZiskCircuit/MemModel + SailSpec/Auxiliaries
-                         │  (122 axioms total — see docs/fv/trusted-base.md)
+                         │  + source trust in ZiskFv/Trusted/Transpiler,
+                         │  ZiskFv/ZiskCircuit/MemModel,
+                         │  ZiskFv/SailSpec/Auxiliaries, and
+                         │  ZiskFv/AirsClean/Completeness
+                         │  (53 source axioms total — see docs/fv/trusted-base.md)
                          ▼
         ZiskFv/Compliance/Wrappers/<Op>.lean
         equiv_<OP>    ← 63 wrappers, one per RV64IM opcode
@@ -142,8 +145,9 @@ graph TD
   ZiskCircuit["ZiskFv/ZiskCircuit/&lt;Op&gt;<br/>lifted ZisK semantics<br/>(by RISC-V opcode)"]
   SailSpec["ZiskFv/SailSpec/&lt;op&gt;<br/>Sail-side bridges<br/>(per opcode)"]
   Tactics["ZiskFv/Tactics/<br/>12 shape archetypes<br/>(proof drivers)"]
-  Airs["ZiskFv/Airs/&lt;AIR&gt;<br/>named columns, ranges, buses<br/><b>67 axioms in subdirs</b>"]
-  Trusted["ZiskFv/Trusted/Transpiler.lean<br/><b>51 transpile axioms</b>"]
+  Airs["ZiskFv/Airs/&lt;AIR&gt;<br/>named columns, ranges, buses<br/>(no live source axioms)"]
+  AirsClean["ZiskFv/AirsClean/Completeness.lean<br/><b>6 Clean completeness axioms</b>"]
+  Trusted["ZiskFv/Trusted/Transpiler.lean<br/><b>42 transpile axioms</b>"]
   MemModel["ZiskFv/ZiskCircuit/MemModel.lean<br/><b>1 mem-state axiom</b>"]
   Auxiliaries["ZiskFv/SailSpec/Auxiliaries.lean<br/><b>4 platform axioms</b>"]
   Bits["ZiskFv/Bits/<br/>BitVec, U64, PackedBitVec"]
@@ -171,6 +175,7 @@ graph TD
   Airs --> Field
   Airs --> Bits
   Trusted --> Airs
+  AirsClean --> Airs
   Bits --> Mathlib
   Field --> Mathlib
 
@@ -178,16 +183,17 @@ graph TD
   classDef build fill:#e0e8ff,stroke:#369,color:#000
   classDef proof fill:#e8ffe0,stroke:#393,color:#000
   classDef external fill:#f0f0f0,stroke:#999,color:#000
-  class Trusted,MemModel,Auxiliaries,Airs trust
+  class Trusted,MemModel,Auxiliaries,AirsClean trust
   class Extraction,SailLean,Mathlib external
   class Compliance,Wrappers,Equiv,ZiskCircuit,SailSpec,Tactics proof
   class Bits,Field build
 ```
 
 **Reading the graph.** Arrows point in the *import* direction: A → B
-means "A imports / depends on B." Red boxes carry axioms (122 total:
-51 in `Trusted/Transpiler.lean`, 67 in `Airs/<AIR>/...` subdirs, 1
-in `ZiskCircuit/MemModel.lean`, 4 in `SailSpec/Auxiliaries.lean`).
+means "A imports / depends on B." Red boxes carry source axioms (53
+total: 42 in `Trusted/Transpiler.lean`, 6 completeness-direction
+placeholders in `AirsClean/Completeness.lean`, 1 in
+`ZiskCircuit/MemModel.lean`, and 4 in `SailSpec/Auxiliaries.lean`).
 Grey boxes are external (built or pulled outside the Lake package).
 Green boxes are pure-proof. The `Trusted → Airs` edge looks
 backwards but is correct — `Transpiler.lean` references `Airs/Main/Main`
@@ -197,9 +203,10 @@ either a red box (a trust commitment) or one of the two `build/...`
 external nodes (Sail spec or extracted PIL); the rest is pure proof.
 
 `lake build` succeeding **is** the formal-verification claim: every
-typed name above checks against the 122 axioms in
+typed name above checks against the 50-name global compliance closure in
+`trust/baseline-zisk-riscv-compliant.txt` and the 53 source axioms in
 `trust/baseline-axioms.txt` (plus Lean 4's kernel and the LeanRV64D
-Sail-translation — see [trusted-base.md](docs/fv/trusted-base.md)).
+Sail translation — see [trusted-base.md](docs/fv/trusted-base.md)).
 The V2 trust gate's `check-closure-vs-baseline` subcommand asserts
 that the live closure equals the baseline exactly, catching both
 silent additions and dead trust.
@@ -218,15 +225,15 @@ ZiskFv/
 ├── ZiskCircuit/         per-opcode lifted circuit semantics (62 files, by opcode)
 ├── SailSpec/            per-opcode Sail-side mirrors + bus_effect (65 files)
 ├── Airs/                per-AIR named-column wrappers (by ZisK AIR, not by opcode)
-│   ├── Main/, Binary/,    + Airs/Tables/ for Binary/BinaryExtension lookup table
-│   │   Arith/, MemoryBus/,  soundness, Airs/{Operation,Memory}Bus/ for permutation-
-│   │   OperationBus/        argument soundness, Airs/Bus/ for the bus-emission ADT
+│   ├── Main/, Binary/,    + Airs/Tables/ for Binary/BinaryExtension lookup proofs,
+│   │   Arith/, MemoryBus/,  Airs/{Operation,Memory}Bus/ for channel bridges,
+│   │   OperationBus/        Airs/Bus/ for the bus-emission ADT
 │   ├── Tables/, Bus/      and the generic bus-interaction structure.
 │   └── Mem*.lean
 ├── Tactics/             instruction-shape archetype tactics (12 files)
 ├── Field/               Goldilocks field + primality certificate
 ├── Bits/                BitVec / U64 / PackedBitVec lemmas (foundational)
-├── Trusted/             Transpiler.lean — declares 51 transpile_* axioms (class #1)
+├── Trusted/             Transpiler.lean — declares 42 transpile_* axioms (class #1)
 └── ZiskFv.lean          root module — imports the whole tree
 ```
 
@@ -328,26 +335,22 @@ this layer provides:
   `Binary/BinaryPackedCorrect.lean` is ~2,100 lines,
   `Binary/BinaryExtensionPackedCorrect.lean` is ~2,800;
 - **bus-protocol machinery** under `Airs/OperationBus/` (operation-bus
-  permutation-argument soundness), `Airs/MemoryBus/` (memory-bus
-  soundness + MemAlign bridges), `Airs/Bus/` (bus-emission ADT +
+  channels and bridges), `Airs/MemoryBus/` (memory-bus channels and
+  MemAlign bridges), `Airs/Bus/` (bus-emission ADT +
   generic bus-interaction structure);
-- **lookup-table soundness** under `Airs/Tables/` (Binary and
-  BinaryExtension table soundness) and per-AIR `*Ranges.lean` files
-  (Main, BinaryAdd, Binary, BinaryExtension, Arith) declaring the
-  range-bus / column-range axioms.
+- **lookup-table and range proofs** under `Airs/Tables/` and per-AIR
+  support files. The former bus, lookup, and range soundness axioms in
+  this layer have been retired from the live source ledger.
 
 Files are organised **by ZisK constraint table**, not by RISC-V
 instruction — a single AIR (e.g. `Binary`) covers many opcodes (ADD,
 SUB, AND, OR, XOR, branches, …).
 
-Most files in `Airs/` are pure-proof; the axiom-bearing files are
-`Trusted/Transpiler.lean` (51), `Airs/Arith/Ranges.lean` (35),
-`Airs/MemoryBus/{MemBridge,MemAlignBridge,EntryRanges}.lean` (12),
-`Airs/Binary/{BinaryRanges,BinaryExtensionRanges,BinaryAddRanges}.lean`
-(13), `Airs/Tables/{BinaryTable,BinaryExtensionTable}.lean` (2),
-`Airs/OperationBus/Bridge.lean` (3), `Airs/Main/Ranges.lean` (1),
-`ZiskCircuit/MemModel.lean` (1), `SailSpec/Auxiliaries.lean` (4) —
-122 axioms total. The allowlist is `trust/allowed-axiom-files.txt`.
+The axiom-bearing files are exactly the four paths allowed by
+`trust/allowed-axiom-files.txt`: `Trusted/Transpiler.lean` (42),
+`AirsClean/Completeness.lean` (6 non-security-critical completeness
+placeholders), `ZiskCircuit/MemModel.lean` (1), and
+`SailSpec/Auxiliaries.lean` (4), for 53 source axioms total.
 
 ### `ZiskFv/Tactics/`
 

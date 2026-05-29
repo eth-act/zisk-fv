@@ -54,14 +54,14 @@ concurrency:
 jobs:
   pick-runner:
     # Pre-flight on a free GitHub-hosted runner: evaluate the pilout
-    # derivation's output store path, ask cachix whether it's already
-    # cached, and pick a runner size accordingly. The pilout build
-    # peaks at ~17 GiB total RSS (pil2-compiler's V8 heap + mmap'd
-    # fixed-table pages); only the cold path needs the 32 GiB XL
-    # runner. Lake build itself peaks at ~9 GiB system used (run
-    # 25371352799), which fits comfortably on the 16 GiB L runner.
-    # Net effect: warm PRs (~99% of them) pay the cheaper L runner.
-    name: pick runner based on cachix state
+    # derivation's output store path and ask cachix whether it's already
+    # cached, so logs still explain whether the run is warm or cold.
+    # The proof job itself always uses the eth-act XL runner
+    # (`size-xl-x64`, 32 GiB). The cold pilout build needs >16 GiB, and
+    # the 2026-05-29 Clean AIR integration fresh `lake build` measured
+    # 27.9 GiB summed Lean RSS at LEAN_NUM_THREADS=3, so warm proof runs
+    # no longer fit the 16 GiB L runner either.
+    name: probe cachix and select XL runner
     if: >-
       github.event_name != 'pull_request' ||
       contains(github.event.pull_request.labels.*.name, 'run-ci')
@@ -97,25 +97,22 @@ jobs:
             "https://zisk-fv.cachix.org/${hash}.narinfo" || echo "000")
           echo "narinfo HTTP $status for $hash"
           if [ "$status" = "200" ]; then
-            echo "→ pilout cached; routing to size-l-x64"
-            echo "runner=size-l-x64" >> "$GITHUB_OUTPUT"
+            echo "→ pilout cached; routing to size-xl-x64 for lake build headroom"
           else
             echo "→ pilout NOT cached; routing to size-xl-x64 for cold build"
-            echo "runner=size-xl-x64" >> "$GITHUB_OUTPUT"
           fi
+          echo "runner=size-xl-x64" >> "$GITHUB_OUTPUT"
 
   lake-build:
     name: lake build (full FV check)
     needs: pick-runner
-    # Runner size is chosen at runtime by the pick-runner job above:
-    # XL (32 GiB) only when the cold pilout rebuild is needed (its
-    # ~17 GiB peak exceeds L), L (16 GiB) otherwise. Lake build
-    # itself peaks ~9 GiB system used (run 25371352799), so warm-
-    # cachix PRs fit L with 7 GiB headroom. Cold first run: ~30 min
-    # nix populate + ~90 min lake build (single-thread perf on the
-    # self-hosted runners is much slower than typical dev boxes).
-    # Subsequent runs hit the cachix cache for nix outputs and the
-    # actions/cache for .lake — finish in ~10 min.
+    # XL (32 GiB) is required for both cold pilout rebuilds and this
+    # branch's warm lake build: the 2026-05-29 fresh build at
+    # LEAN_NUM_THREADS=3 peaked at 27.9 GiB summed Lean RSS (12.1 GiB
+    # max single Lean process). Cold first run: ~30 min nix populate +
+    # ~90 min lake build (single-thread perf on the self-hosted runners
+    # is much slower than typical dev boxes). Subsequent runs hit the
+    # cachix cache for nix outputs and the actions/cache for .lake.
     runs-on: ["self-hosted-ghr", "${{ needs.pick-runner.outputs.runner }}"]
     timeout-minutes: 240
     steps:
@@ -171,13 +168,15 @@ jobs:
 
       - name: nix run .#test (cargo + lake + trust gate + flake check)
         env:
-          # threads=3 in CI. The fresh-build mem measurement
-          # (2026-05-14) showed 8 GiB peak per `lean` process; 3 workers
-          # ≈ 24 GiB peak on the 32 GiB XL runner, leaving safe headroom.
-          # Earlier threads=4 (run 25367633312) worked but with less
-          # margin; threads=2 was the conservative original default.
-          # nix/test.nix's default is matched at 3.
-          LEAN_NUM_THREADS: "3"
+          # threads=4 in CI. Run 26661855178's mem-trace (2026-05-29,
+          # warm cache, this branch) measured peak kernel `used` =
+          # 12.4 GiB and MemAvailable = 19 GiB on the 32 GiB XL runner
+          # at threads=3, so a 4th thread comfortably fits. Earlier
+          # threads=4 attempt OOM-killed at ZiskFv.Sail.sd back when
+          # sd.lean's elaboration peaked at 42 GiB; PR #4's layered
+          # dsimp+rw refactor cut it to ~8 GiB PSS, which is what makes
+          # 4 viable now. nix/test.nix's default is matched at 4.
+          LEAN_NUM_THREADS: "4"
         run: |
           # Memory + lean-process sidecar. Run 25230110804 died with no
           # step log content preserved → strong signal the runner host
