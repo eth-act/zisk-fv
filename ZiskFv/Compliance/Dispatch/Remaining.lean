@@ -294,13 +294,15 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_component h_table_spec h_provider_row h_match h_lane_rd
   -- Mul family
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a pins h_match_primary
-        promises arith_mem bounds h_row_constraints arith_table =>
+        promises arith_mem bounds h_row_constraints arith_table
+        arith_chunk_ranges arith_carry_ranges =>
     simp only [OpEnvelope.exec_eq_remaining]
     have h_no_signed_mul_witness_defect : False :=
       Defects.no_malicious_signed_mul_witness_of_no_known_defect
       h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
     exact ZiskFv.Equivalence.Mul.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
-      pins h_match_primary promises arith_mem bounds h_row_constraints arith_table h_no_signed_mul_witness_defect
+      pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_no_signed_mul_witness_defect
   | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem h_row_constraints arith_table =>
     simp only [OpEnvelope.exec_eq_remaining]
@@ -325,10 +327,13 @@ theorem zisk_riscv_compliant_program_bus_remaining
     exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU state mulhsu_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
   | mulw mulw_input r1 r2 rd bus v r_a pins h_match_primary
-        promises arith_mem h_row_constraints arith_table h_sext_choice h_rs1_value h_rs2_value =>
+        promises arith_mem h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.MulW.equiv_MULW state mulw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value
+      pins h_match_primary promises arith_mem arith_table h_row_constraints
+      arith_chunk_ranges arith_carry_ranges
+      h_sext_choice h_rs1_value h_rs2_value
   -- Div / Rem
   | div div_input r1 r2 rd bus v r_a
         pins h_match_primary
@@ -550,13 +555,15 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       m providerTable providerRow r_main bus promises pins
       h_component h_table_spec h_provider_row h_match h_lane_rd
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a pins h_match_primary
-        promises arith_mem bounds h_row_constraints arith_table =>
+        promises arith_mem bounds h_row_constraints arith_table
+        arith_chunk_ranges arith_carry_ranges =>
     simp only [OpEnvelope.exec_eq_remaining]
     have h_no_signed_mul_witness_defect : False :=
       Defects.no_malicious_signed_mul_witness_of_no_known_defect
       h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
     exact ZiskFv.Equivalence.Mul.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
-      pins h_match_primary promises arith_mem bounds h_row_constraints arith_table h_no_signed_mul_witness_defect
+      pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_no_signed_mul_witness_defect
   | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem h_row_constraints arith_table =>
     simp only [OpEnvelope.exec_eq_remaining]
@@ -581,10 +588,13 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU state mulhsu_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
   | mulw mulw_input r1 r2 rd bus v r_a pins h_match_primary
-        promises arith_mem h_row_constraints arith_table h_sext_choice h_rs1_value h_rs2_value =>
+        promises arith_mem h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.MulW.equiv_MULW state mulw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value
+      pins h_match_primary promises arith_mem arith_table h_row_constraints
+      arith_chunk_ranges arith_carry_ranges
+      h_sext_choice h_rs1_value h_rs2_value
   | div div_input r1 r2 rd bus v r_a
         pins h_match_primary
         promises arith_mem h_op2_ne h_no_overflow

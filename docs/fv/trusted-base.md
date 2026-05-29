@@ -71,14 +71,9 @@ remains out of scope. Item (3) must be proved from the translated table.
 Item (1) must be represented by the AIR/Clean row model, not silently
 folded into per-op axioms.
 
-C3/C4-b is partially landed: nine old opcode-shaped mode/selector axioms
-are now theorems from shared ArithTable lookup membership plus finite-table
+C3/C4-b is landed: the old opcode-shaped mode/selector axioms are now
+theorems from shared ArithTable lookup membership plus finite-table
 projection lemmas under `ZiskFv/AirsClean/ArithTableProjections.lean`.
-The faithful static subsets of the remaining over-claiming mode pins are
-also exposed as derived `*_basic_mode_pin` theorems in
-`ZiskFv/Airs/Arith/Ranges.lean`; those theorems intentionally omit the
-clauses that the real ROM does not prove (`np_xor` and W-mode
-`sext = 0`).
 The per-axiom classification lives in
 [`arith-table-axiom-audit.md`](arith-table-axiom-audit.md).
 C3.2-P is closed: the ordinary zero-sorry trust gate is restored, and the
@@ -93,25 +88,16 @@ separately from the trust ledger in [`defects.md`](defects.md), following
 [`defect-ledger-design.md`](defect-ledger-design.md). A defect entry is not
 a trusted fact and must not be used to justify a new axiom.
 
-Per-class spot check (102 axioms total):
+Per-class spot check (55 axioms total):
 
 ```bash
 awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
   | sort | uniq -c
-#  35 ZiskFv/Airs/Arith/Ranges.lean                arith range / table / Euclidean-bound pins (class #6b)
-#   1 ZiskFv/Airs/Binary/BinaryAddRanges.lean       binary-add column range (class #5b)
-#   3 ZiskFv/Airs/Binary/BinaryExtensionRanges.lean BinaryExtension shift-pin + row→byte witness (class #6)
-#   7 ZiskFv/Airs/Binary/BinaryRanges.lean          Binary range / per-byte / carry / b_op_or_sext consolidated / W-mode pins (class #6)
-#   1 ZiskFv/Airs/Tables/BinaryExtensionTable.lean         BinaryExtension lookup soundness (class #6)
-#   1 ZiskFv/Airs/Tables/BinaryTable.lean                  Binary lookup soundness (class #6)
-#   1 ZiskFv/Airs/Main/Ranges.lean                  Main range-check soundness (class #5b)
-#   1 ZiskFv/Airs/MemoryBus/EntryRanges.lean        memory-bus entry byte ranges (class #5b)
-#   2 ZiskFv/Airs/MemoryBus/MemAlignBridge.lean     MemAlign permutation + ROM lookup (class #4)
-#   7 ZiskFv/Airs/MemoryBus/MemBridge.lean          memory-bus lookup soundness + emission bundles, sub-doubleword consolidated (class #4)
-#   1 ZiskFv/Airs/OperationBus/Consolidated.lean   op-bus permutation soundness, consolidated (class #4)
-#   1 ZiskFv/ZiskCircuit/MemModel.lean                  memory-state bridge — load (class #2)
-#  51 ZiskFv/Trusted/Transpiler.lean           transpile contracts (class #1)
-#   4 ZiskFv/SailSpec/Auxiliaries.lean                  platform-feature scope (classes #7–#10)
+#   2 ZiskFv/Airs/Binary/BinaryRanges.lean       residual Binary W-mode facts (class #6)
+#   6 ZiskFv/AirsClean/Completeness.lean         Clean completeness placeholders (class #C)
+#   4 ZiskFv/SailSpec/Auxiliaries.lean           platform-feature scope (classes #7-#10)
+#  42 ZiskFv/Trusted/Transpiler.lean             transpile contracts (class #1)
+#   1 ZiskFv/ZiskCircuit/MemModel.lean           memory-state bridge -- load (class #2)
 ```
 
 `trust/scripts/check-locality.sh` enforces that no other file under
@@ -134,19 +120,19 @@ The narrative per-class rationale below stays here.
 
 | #  | Class                               | Count | File                                  | What is asserted                                                                                                                                  | Why we trust it                                                                                                                                              |
 | -- | ----------------------------------- | ----: | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1  | Transpile contracts                 |    44 | `Trusted/Transpiler.lean`             | For each non-defect-gated RV64IM instruction kind, ZisK's Rust transpilation lowers a Sail-decoded `ast` into a Main-row column shape that matches the pure spec. | Direct reading of ZisK's `transpile_*` Rust functions in the `zisk/` submodule; each axiom's docstring cites the exact upstream source line.                 |
+| 1  | Transpile contracts                 |    42 | `Trusted/Transpiler.lean`             | For each non-defect-gated RV64IM instruction kind, ZisK's Rust transpilation lowers a Sail-decoded `ast` into a Main-row column shape that matches the pure spec. | Direct reading of ZisK's `transpile_*` Rust functions in the `zisk/` submodule; each axiom's docstring cites the exact upstream source line.                 |
 | 2  | Memory state bridge — load          |     1 | `ZiskCircuit/MemModel.lean`           | A Mem-AIR row tagged `wr=0` matching a memory-bus entry implies Sail's `state.mem` agrees with the entry's eight bytes.                           | Bridges Mem AIR's column language to Sail's byte-addressable `Std.HashMap` once class #4 has placed the entry on the bus.                                    |
 | 4  | Bus / lookup soundness              |     0 | — | Retired from the live trust ledger. | The T4 Clean memory-channel route retired the load/provider, store, and MemAlign sub-doubleword entries from canonical/global trust. T5 retired `main_external_arith_emission_bundle`; T7 retired `main_store_pc_emission_bundle` by deriving store-PC/register-write lanes from selected Clean Main `cMemMessage` structural witnesses. |
-| 5b | Range-bus / byte-range soundness    |     2 | `Channels/RangeBusSoundness.lean` | Consolidated byte/signed range-bus soundness for `bits(width)` PIL columns and signed Arith carry-table checks. | Lookup-argument soundness on the standard byte-range buses, restricted to participants annotated in the PIL — see citations in each axiom's docstring. |
+| 5b | Range-bus / byte-range soundness    |     0 | — | Retired from the live trust ledger. | T7 removed `range_bus_sound` and `signed_range_bus_sound`; byte and signed-range facts now come from concrete Clean/static lookup witnesses or local row constraints. |
 | 6  | Binary / BinaryExtension lookup soundness | 2 | `Airs/Binary/BinaryRanges.lean` (2) | Lookup-argument soundness still live for Binary W-mode sign-extension: `binary_w_sext_choice_pin` and `binary_w_mode_carry_7_zero` for ADDW/SUBW. `bin_table_consumer_wf` and `bin_ext_table_consumer_wf` have been retired from source. | Lookup-argument soundness on the Binary AIR, scoped to the remaining W-mode row facts. |
-| 6b | Arith range / Euclidean pins |     0 | `Airs/Arith/Ranges.lean`              | Retired in T5. The shared `arith_{mul,div}_table_lookup_sound` axioms and the remaining dynamic `arith_table_op_*` / `arith_div_*` source axioms were removed. `MUL*`, `DIV*`, and `REM*` proofs now consume lookup-aware `ArithMulTableWitness` / `ArithDivTableWitness` binders for true static `ArithTableSpec` projections, while known dynamic witness gaps are explicit defects. | No live source axioms remain in this class. Future row/range/operation-bus facts must be proved from constraints and range/binary bus soundness rather than reintroduced as class-#6b trust. |
+| 6b | Arith range / Euclidean pins |     0 | —              | Retired in T5/T7. The shared `arith_{mul,div}_table_lookup_sound` axioms and the remaining dynamic `arith_table_op_*` / `arith_div_*` source axioms were removed. `MUL*`, `DIV*`, and `REM*` proofs now consume lookup-aware `ArithMulTableWitness` / `ArithDivTableWitness` binders for true static `ArithTableSpec` projections, while known dynamic witness gaps are explicit defects. | No live source axioms remain in this class. Future row/range/operation-bus facts must be proved from constraints and Clean/static lookup facts rather than reintroduced as trust. |
 | 7  | Platform — PMP inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmpCheck _ _ _ _ = pure none`.                                                                                               | ZisK's RV64IM target excludes PMP. Axiomatising as inert is strictly stronger than threading state-level disjointness through every load/store proof.        |
 | 8  | Platform — CLINT disjoint           |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.within_clint _ _ = pure false`.                                                                                              | ZisK programs do not access the CLINT MMIO region. Same scope-honest framing as #7.                                                                          |
 | 9  | Platform — PMA inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmaCheck _ _ _ _ = pure none`.                                                                                               | Alignment-fault arm short-circuited under the `RISC_V_assumptions` fields already recorded by LeanRV64D.                                                     |
 | 10 | Platform — Zicfilp disabled         |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.update_elp_state _ = pure ()`.                                                                                               | Zicfilp landing-pad extension is disabled in ZisK's target; helper reduces to no-op under `currentlyEnabled Ext_Zicfilp = false`.                            |
 | C  | Clean-Component completeness — NON-SECURITY-CRITICAL | 6 | `AirsClean/Completeness.lean` | `binaryAdd_circuit_completeness`, `memAlignByte_circuit_completeness`, `memAlignReadByte_circuit_completeness`, `arithMul_circuit_completeness`, `arithDiv_circuit_completeness`, `mainWithRomAndMemBus_circuit_completeness` — fill mandatory `completeness` fields for Clean `GeneralFormalCircuit`s as integration proceeds. BinaryExtension's C5 component has trivial proved completeness and does not add an axiom. Binary's C6 component also adds no axiom: its prover-completeness side is explicitly conditional on the row `Spec`, while soundness remains proved from constraints. | zisk-fv is a **soundness-only** verification: it does not prove completeness (that an honest prover can satisfy the constraints — the pre-Clean code never established it either). These axioms are **completeness-direction** — a falsehood in any one CANNOT make a wrong execution verify; the verification's *soundness* does not depend on this class. Clean's `GeneralFormalCircuit` simply makes the field mandatory. (Plan decision D-COMPLETE.) |
 
-Total live count: `trust/baseline-axioms.txt` currently records **57**
+Total live count: `trust/baseline-axioms.txt` currently records **55**
 axioms, including the 6 non-security-critical Clean completeness axioms in
 class C. Class C is separate in kind from the soundness-critical trust classes.
 

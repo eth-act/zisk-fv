@@ -4,13 +4,11 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Trusted.Transpiler
@@ -84,21 +82,6 @@ def byte_ranges_at (v : Valid_Binary FGL FGL) (r : ℕ) : Prop :=
   ∧ (v.free_in_c_2 r).val < 256 ∧ (v.free_in_c_3 r).val < 256
   ∧ (v.free_in_c_4 r).val < 256 ∧ (v.free_in_c_5 r).val < 256
   ∧ (v.free_in_c_6 r).val < 256 ∧ (v.free_in_c_7 r).val < 256
-
-lemma byte_ranges_at_holds (v : Valid_Binary FGL FGL) (r : ℕ) :
-    byte_ranges_at v r :=
-  ⟨bin_a_0_lt_256 v r, bin_a_1_lt_256 v r,
-   bin_a_2_lt_256 v r, bin_a_3_lt_256 v r,
-   bin_a_4_lt_256 v r, bin_a_5_lt_256 v r,
-   bin_a_6_lt_256 v r, bin_a_7_lt_256 v r,
-   bin_b_0_lt_256 v r, bin_b_1_lt_256 v r,
-   bin_b_2_lt_256 v r, bin_b_3_lt_256 v r,
-   bin_b_4_lt_256 v r, bin_b_5_lt_256 v r,
-   bin_b_6_lt_256 v r, bin_b_7_lt_256 v r,
-   bin_c_0_lt_256 v r, bin_c_1_lt_256 v r,
-   bin_c_2_lt_256 v r, bin_c_3_lt_256 v r,
-   bin_c_4_lt_256 v r, bin_c_5_lt_256 v r,
-   bin_c_6_lt_256 v r, bin_c_7_lt_256 v r⟩
 
 lemma chain_a_byte_lt_256
     {op : ℕ} {a b c cin flags pos : FGL}
@@ -195,8 +178,10 @@ lemma carry_7_zero_AND_of_static_lookup
           cin := v.carry_6 r
           c_byte := v.free_in_c_7 r
           flags := v.carry_7 r } 1).flags.val % 2 = 0 := (h_AND h_e_op).2
+  have h_core :=
+    ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup v r offset env h_static
   simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using
-    boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+    boolean_carry_implies_eq_zero h_core.2.1 h_cout_zero
 
 /-- Static-lookup route for `carry_7 = 0` on OR rows. -/
 lemma carry_7_zero_OR_of_static_lookup
@@ -226,8 +211,10 @@ lemma carry_7_zero_OR_of_static_lookup
           cin := v.carry_6 r
           c_byte := v.free_in_c_7 r
           flags := v.carry_7 r } 1).flags.val % 2 = 0 := (h_OR h_e_op).2
+  have h_core :=
+    ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup v r offset env h_static
   simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using
-    boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+    boolean_carry_implies_eq_zero h_core.2.1 h_cout_zero
 
 /-- Static-lookup route for `carry_7 = 0` on XOR rows. -/
 lemma carry_7_zero_XOR_of_static_lookup
@@ -257,8 +244,10 @@ lemma carry_7_zero_XOR_of_static_lookup
           cin := v.carry_6 r
           c_byte := v.free_in_c_7 r
           flags := v.carry_7 r } 1).flags.val % 2 = 0 := (h_XOR h_e_op).2
+  have h_core :=
+    ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup v r offset env h_static
   simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using
-    boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+    boolean_carry_implies_eq_zero h_core.2.1 h_cout_zero
 
 /-! ## e2 byte-range discharge
 
@@ -677,33 +666,6 @@ lemma b_op_or_sext_val_eq_of_mode32_zero
   rw [h_bop_or]
   exact h_b_op
 
-/-- A Binary op-bus emission below `0x10` can only be a 64-bit row:
-    `mode32 = 0` and `b_op` is the emitted opcode. This is the local
-    row-shape derivation used by static chain routes; it consumes only the
-    emitted-op equality plus the declared Binary column ranges. -/
-lemma chain_row_shape_of_emit_op_lt_16
-    (v : Valid_Binary FGL FGL) (r op_val : ℕ)
-    (h_op_lt : op_val < 16)
-    (h_emit : v.b_op r + 16 * v.mode32 r = (op_val : FGL)) :
-    v.mode32 r = 0 ∧ (v.b_op r).val = op_val := by
-  have h_bop_lt : (v.b_op r).val < 128 :=
-    ZiskFv.Airs.Binary.bin_b_op_lt_128 v r
-  have h_mode32_lt : (v.mode32 r).val < 2 :=
-    ZiskFv.Airs.Binary.bin_mode32_lt_2 v r
-  have hval : (v.b_op r).val + 16 * (v.mode32 r).val = op_val := by
-    have hv := congrArg Fin.val h_emit
-    rw [Fin.val_add, Fin.val_mul, Fin.val_natCast] at hv
-    have hsmall :
-        (v.b_op r).val + 16 * (v.mode32 r).val < GL_prime := by omega
-    have hmulsmall : 16 * (v.mode32 r).val < GL_prime := by omega
-    have hopsmall : op_val < GL_prime := by omega
-    simp [Nat.mod_eq_of_lt hsmall, Nat.mod_eq_of_lt hmulsmall,
-      Nat.mod_eq_of_lt (by omega : 16 < GL_prime),
-      Nat.mod_eq_of_lt hopsmall] at hv
-    exact hv
-  have h_mode32_val : (v.mode32 r).val = 0 := by omega
-  exact ⟨Fin.ext h_mode32_val, by omega⟩
-
 /-- W-mode row-shape derivation for ADDW/SUBW. Given the op-bus emission
     `b_op + 16 * mode32 = op_emit` with `op_emit ∈ {0x1A, 0x1B}` and a
     Clean static-table spec for byte 0 (whose `op` field is `b_op`),
@@ -763,33 +725,6 @@ lemma chain_row_shape_W_of_emit
   have h_bop_val : (row.chain.b_op).val = op_emit - 16 := by
     rcases h_op_W with h | h <;> rw [h] at hval ⊢ <;> omega
   refine ⟨Fin.ext h_mode32_val, h_bop_val⟩
-
-/-- Row-native version of `chain_row_shape_of_emit_op_lt_16` plus the
-    Binary core equation connecting `b_op_or_sext` to `b_op`. This is the
-    mode-pin bridge needed by Clean-row callers: once the op-bus emission is
-    one of the small 64-bit logic opcodes, the row is not a 32-bit/sext row,
-    and both opcode columns are pinned to the emitted opcode. -/
-lemma logic_row_mode_pins_of_emit_op_lt_16
-    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) (op_val : ℕ)
-    (h_op_lt : op_val < 16)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
-      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
-    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_val : FGL)) :
-    row.mode.mode32 = 0
-      ∧ row.chain.b_op.val = op_val
-      ∧ row.chain.b_op_or_sext.val = op_val := by
-  have h_shape :=
-    chain_row_shape_of_emit_op_lt_16
-      (ZiskFv.AirsClean.Binary.validOfRow row) 0 op_val h_op_lt
-      (by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_emit)
-  rcases h_shape with ⟨h_mode32, h_bop⟩
-  have h_bop_or :=
-    b_op_or_sext_val_eq_of_mode32_zero
-      (ZiskFv.AirsClean.Binary.validOfRow row) 0 op_val
-      h_core h_mode32 h_bop
-  exact ⟨by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_mode32,
-    by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_bop,
-    by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_bop_or⟩
 
 /-- Row-native static-table variant of
     `logic_row_mode_pins_of_emit_op_lt_16`. The opcode bound comes from exact
@@ -979,16 +914,51 @@ lemma byte_chain_discharge_64_of_static_lookup
   rcases h_facts with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
   rcases h_core with
     ⟨_, _, _, h_use_first_byte_bool, _, _, _⟩
-  have hc0 := ZiskFv.Airs.Binary.bin_c_0_lt_256 v r
-  have hc1 := ZiskFv.Airs.Binary.bin_c_1_lt_256 v r
-  have hc2 := ZiskFv.Airs.Binary.bin_c_2_lt_256 v r
-  have hc3 := ZiskFv.Airs.Binary.bin_c_3_lt_256 v r
-  have hc4 := ZiskFv.Airs.Binary.bin_c_4_lt_256 v r
-  have hc5 := ZiskFv.Airs.Binary.bin_c_5_lt_256 v r
-  have hc6 := ZiskFv.Airs.Binary.bin_c_6_lt_256 v r
-  have hc7 := ZiskFv.Airs.Binary.bin_c_7_lt_256 v r
-  obtain ⟨hcarry0, hcarry1, hcarry2, hcarry3, hcarry4, hcarry5, hcarry6, _⟩ :=
-    ZiskFv.Airs.Binary.binary_carry_bits_in_range v r
+  have hc0 : (v.free_in_c_0 r).val < 256 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h0.1.2.2.1
+  have hc1 : (v.free_in_c_1 r).val < 256 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h1.1.2.2.1
+  have hc2 : (v.free_in_c_2 r).val < 256 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h2.1.2.2.1
+  have hc3 : (v.free_in_c_3 r).val < 256 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h3.1.2.2.1
+  have hc4 : (v.free_in_c_4 r).val < 256 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h4.1.2.2.1
+  have hc5 : (v.free_in_c_5 r).val < 256 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h5.1.2.2.1
+  have hc6 : (v.free_in_c_6 r).val < 256 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h6.1.2.2.1
+  have hc7 : (v.free_in_c_7 r).val < 256 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h7.1.2.2.1
+  have hcarry0 : (v.carry_0 r).val < 2 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h1.1.2.2.2
+  have hcarry1 : (v.carry_1 r).val < 2 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h2.1.2.2.2
+  have hcarry2 : (v.carry_2 r).val < 2 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h3.1.2.2.2
+  have hcarry3 : (v.carry_3 r).val < 2 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h4.1.2.2.2
+  have hcarry4 : (v.carry_4 r).val < 2 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h5.1.2.2.2
+  have hcarry5 : (v.carry_5 r).val < 2 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h6.1.2.2.2
+  have hcarry6 : (v.carry_6 r).val < 2 := by
+    simpa [ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h7.1.2.2.2
   refine {
     chain_0 := ?_, chain_1 := ?_, chain_2 := ?_, chain_3 := ?_,
     chain_4 := ?_, chain_5 := ?_, chain_6 := ?_, chain_7 := ?_,
@@ -1768,6 +1738,7 @@ lemma input_r1_packed_a
     (h_a_hi_t : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
+    (h_ranges : byte_ranges_at v r_binary)
     (h_input_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state) :
     r1_val = BitVec.ofNat 64
         ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
@@ -1777,14 +1748,9 @@ lemma input_r1_packed_a
           + (v.free_in_a_5 r_binary).val * 1099511627776
           + (v.free_in_a_6 r_binary).val * 281474976710656
           + (v.free_in_a_7 r_binary).val * 72057594037927936) := by
-  have ha0 := bin_a_0_lt_256 v r_binary
-  have ha1 := bin_a_1_lt_256 v r_binary
-  have ha2 := bin_a_2_lt_256 v r_binary
-  have ha3 := bin_a_3_lt_256 v r_binary
-  have ha4 := bin_a_4_lt_256 v r_binary
-  have ha5 := bin_a_5_lt_256 v r_binary
-  have ha6 := bin_a_6_lt_256 v r_binary
-  have ha7 := bin_a_7_lt_256 v r_binary
+  rcases h_ranges with
+    ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7,
+     _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩
   have h_r1_main :=
     packed_lane_eq_of_read_xreg state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main)
       h_a_lo_t h_a_hi_t h_input_r1
@@ -1841,6 +1807,7 @@ lemma input_r2_packed_b
     (h_b_hi_t : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
+    (h_ranges : byte_ranges_at v r_binary)
     (h_input_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
     r2_val = BitVec.ofNat 64
         ((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
@@ -1850,14 +1817,10 @@ lemma input_r2_packed_b
           + (v.free_in_b_5 r_binary).val * 1099511627776
           + (v.free_in_b_6 r_binary).val * 281474976710656
           + (v.free_in_b_7 r_binary).val * 72057594037927936) := by
-  have hb0 := bin_b_0_lt_256 v r_binary
-  have hb1 := bin_b_1_lt_256 v r_binary
-  have hb2 := bin_b_2_lt_256 v r_binary
-  have hb3 := bin_b_3_lt_256 v r_binary
-  have hb4 := bin_b_4_lt_256 v r_binary
-  have hb5 := bin_b_5_lt_256 v r_binary
-  have hb6 := bin_b_6_lt_256 v r_binary
-  have hb7 := bin_b_7_lt_256 v r_binary
+  rcases h_ranges with
+    ⟨_, _, _, _, _, _, _, _,
+     hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7,
+     _, _, _, _, _, _, _, _⟩
   have h_r2_main :=
     packed_lane_eq_of_read_xreg state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main)
       h_b_lo_t h_b_hi_t h_input_r2
@@ -2284,6 +2247,7 @@ lemma itype_imm_subset_binary_row_of_main
     (h_m32 : m.m32 r_main = 0)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
+    (h_ranges : byte_ranges_at v r_binary)
     (h_addi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main imm) :
@@ -2296,15 +2260,10 @@ lemma itype_imm_subset_binary_row_of_main
             + (v.free_in_b_5 r_binary).val * 1099511627776
             + (v.free_in_b_6 r_binary).val * 281474976710656
             + (v.free_in_b_7 r_binary).val * 72057594037927936) := by
-  -- Byte ranges (derived from `binary_columns_in_range`).
-  have hb0 := bin_b_0_lt_256 v r_binary
-  have hb1 := bin_b_1_lt_256 v r_binary
-  have hb2 := bin_b_2_lt_256 v r_binary
-  have hb3 := bin_b_3_lt_256 v r_binary
-  have hb4 := bin_b_4_lt_256 v r_binary
-  have hb5 := bin_b_5_lt_256 v r_binary
-  have hb6 := bin_b_6_lt_256 v r_binary
-  have hb7 := bin_b_7_lt_256 v r_binary
+  rcases h_ranges with
+    ⟨_, _, _, _, _, _, _, _,
+     hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7,
+     _, _, _, _, _, _, _, _⟩
   -- Unfold the Main-form pin.
   have h_subset := h_addi_subset
   simp only [ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main]

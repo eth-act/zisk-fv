@@ -6,7 +6,6 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.ZiskCircuit.Mul
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
-import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -121,6 +120,10 @@ theorem equiv_MUL
           + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
           - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
             * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
+    (h_chunk_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
+    (h_carry_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
     (h_nr : v.nr r_a = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
     (h_div : v.div r_a = 0)
@@ -157,6 +160,7 @@ theorem equiv_MUL
       mul_input.r1_val mul_input.r2_val e2 v r_a
       h0 h1 h2 h3 h4 h5 h6 h7
       h_chain h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
+      h_chunk_ranges h_carry_ranges
       h_byte_lo h_byte_hi h_rs1_value h_rs2_value
   rw [equiv_MUL_sail state mul_input r1 r2 rd srs1 srs2
         h_input_r1 h_input_r2 h_input_rd h_input_pc]

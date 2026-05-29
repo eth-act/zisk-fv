@@ -1,20 +1,20 @@
 import Mathlib
 
-import ZiskFv.EquivCore.MulHSU
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.AirsClean.ArithMul.Bridge
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.SailStateBridge
-import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.SailSpec.mul
+import ZiskFv.SailSpec.mulhsu
+import ZiskFv.SailSpec.BusEffect
 
 /-!
 # `equiv_MULHSU` Compliance exemplar

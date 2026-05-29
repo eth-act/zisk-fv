@@ -5,12 +5,10 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
-import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.BusHypotheses
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.SailSpec.remw
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.OpBusEffect

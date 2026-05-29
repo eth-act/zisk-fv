@@ -18,7 +18,6 @@ import ZiskFv.EquivCore.WriteValueProofs.BinaryCompare
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.Compliance.SharedBundles
 
@@ -271,75 +270,6 @@ theorem equiv_SLTI_of_wf
   · simp only [h_rd_zero, ↓reduceDIte]
   · simp only [h_rd_zero, ↓reduceDIte]
     rw [h_rd_val]
-
-/-- Static-provider BinaryTable route for `equiv_SLTI`. The immediate
-    packing bridge remains explicit, matching the canonical theorem. -/
-theorem equiv_SLTI_of_static_lookup
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (slti_input : PureSpec.SltiInput)
-    (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
-    (r_main r_binary offset : ℕ) (env : Environment FGL)
-    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r_binary)
-    (h_mode32_zero : v.mode32 r_binary = 0)
-    (h_b_op : (v.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_LT)
-    (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.EquivCore.Promises.ITypePromises
-        state slti_input.r1_val slti_input.imm slti_input.rd slti_input.PC
-        (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
-        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
-    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (h_input_imm_circuit : BitVec.signExtend 64 slti_input.imm
-      = BitVec.ofNat 64
-          ((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
-            + (v.free_in_b_2 r_binary).val * 65536
-            + (v.free_in_b_3 r_binary).val * 16777216
-            + (v.free_in_b_4 r_binary).val * 4294967296
-            + (v.free_in_b_5 r_binary).val * 1099511627776
-            + (v.free_in_b_6 r_binary).val * 281474976710656
-            + (v.free_in_b_7 r_binary).val * 72057594037927936)) :
-    (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.ITYPE (imm, r1, rd, iop.SLTI))) state
-      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op_slti⟩ := pins
-  have out :=
-    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_64_of_static_lookup
-      v r_binary offset env h_static
-      ZiskFv.Airs.Tables.BinaryTable.OP_LT h_core h_mode32_zero h_b_op
-  obtain ⟨h_match_clo, h_match_chi⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.compare_c_lanes_LT_of_static_chain h_match out
-  have h_fl7_lt_2 : (v.carry_7 r_binary).val < 2 :=
-    ZiskFv.Airs.Binary.bin_carry_7_lt_2 v r_binary
-  exact ZiskFv.EquivCore.Slti.equiv_SLTI_of_wf
-    state slti_input r1 rd imm m r_main
-    ⟨exec_row, e0, e1, e2⟩
-    promises
-    v r_binary
-    ⟨h_main_active, h_main_op_slti⟩
-    h_match
-    (v.free_in_c_0 r_binary) (v.free_in_c_1 r_binary) (v.free_in_c_2 r_binary)
-    (v.free_in_c_3 r_binary) (v.free_in_c_4 r_binary) (v.free_in_c_5 r_binary)
-    (v.free_in_c_6 r_binary) (v.free_in_c_7 r_binary)
-    (0 : FGL) (v.carry_0 r_binary) (v.carry_1 r_binary) (v.carry_2 r_binary)
-    (v.carry_3 r_binary) (v.carry_4 r_binary) (v.carry_5 r_binary) (v.carry_6 r_binary)
-    (v.carry_0 r_binary) (v.carry_1 r_binary) (v.carry_2 r_binary) (v.carry_3 r_binary)
-    (v.carry_4 r_binary) (v.carry_5 r_binary) (v.carry_6 r_binary) (v.carry_7 r_binary)
-    (2 * v.use_first_byte r_binary) (0 : FGL) (0 : FGL) (v.mode32 r_binary)
-    (0 : FGL) (0 : FGL) (0 : FGL) (1 - v.mode32 r_binary)
-    out.chain_0 out.chain_1 out.chain_2 out.chain_3
-    out.chain_4 out.chain_5 out.chain_6 out.chain_7
-    out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
-    out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
-    out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_ne
-    out.pi4_ne out.pi5_ne out.pi6_ne out.pi7_eq
-    h_match_clo h_match_chi h_lane_rd h_fl7_lt_2 h_input_imm_circuit
 
 /-- Row-native static-provider BinaryTable route for `equiv_SLTI`. -/
 theorem equiv_SLTI_of_static_row

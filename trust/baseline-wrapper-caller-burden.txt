@@ -12,13 +12,13 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1066
+# Total rows: 1070
 # Total wrappers: 63
 # Category bridge: 72
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 711
+# Category other: 715
 # Category range: 3
 # Category row: 60
 # Category state: 73
@@ -457,7 +457,9 @@ ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 015 arith_mem [other] ZiskFv.Compliance
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 016 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 017 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 018 arith_table [other] ZiskFv.Compliance.ArithMulTableWitness v r_a
-ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 019 h_no_signed_mul_witness_defect [other] False
+ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 019 arith_chunk_ranges [other] ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 020 arith_carry_ranges [other] ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 021 h_no_signed_mul_witness_defect [other] False
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 001 mulh_input [other] PureSpec.MulhInput
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 002 r1 [other] regidx
@@ -527,9 +529,11 @@ ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 012 promises [bridge] ZiskFv.EquivCor
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 013 arith_mem [other] ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 014 arith_table [other] ZiskFv.Compliance.ArithMulTableWitness v r_a
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 015 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 016 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
-ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 017 h_rs1_value [bridge] (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt = ((v.a_0 r_a).val + (v.a_
-ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 018 h_rs2_value [bridge] (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
+ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 016 arith_chunk_ranges [other] ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 017 arith_carry_ranges [other] ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 018 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
+ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 019 h_rs1_value [bridge] (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt = ((v.a_0 r_a).val + (v.a_
+ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 020 h_rs2_value [bridge] (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
 ZiskFv.Compliance.Wrappers.Or.equiv_OR 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Or.equiv_OR 001 or_input [other] PureSpec.OrInput
 ZiskFv.Compliance.Wrappers.Or.equiv_OR 002 r1 [other] regidx

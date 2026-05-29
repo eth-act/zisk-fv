@@ -72,7 +72,7 @@ open ZiskFv.EquivCore.Promises
     shift pin, `a`-byte ranges, `c`-lane ranges, and `c`-lane sum
     bounds from the exact Clean/static BinaryExtensionTable provider
     row, so its semantic closure no longer includes the generic
-    `range_bus_sound` axiom. The remaining opcode-specific trust is
+    retired range-bus axiom. The remaining opcode-specific trust is
     `transpile_SLL` (class #1). Zero new axioms. -/
 theorem equiv_SLL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

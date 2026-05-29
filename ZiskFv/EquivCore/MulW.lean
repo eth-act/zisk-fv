@@ -8,10 +8,8 @@ import ZiskFv.ZiskCircuit.Mul
 import ZiskFv.ZiskCircuit.MulW
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
-import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.SailSpec.mulw
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
@@ -117,6 +115,10 @@ theorem equiv_MULW
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_chunk_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
+    (h_carry_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
     -- W operand chunk facts from op-bus high-lane collapse.
     (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
@@ -163,7 +165,8 @@ theorem equiv_MULW
       mulw_input.r1_val mulw_input.r2_val e2 v r_a
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_chain h_nr h_m32 h_div h_op
-      h_na_bool h_nb_bool h_np_xor h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_na_bool h_nb_bool h_np_xor h_chunk_ranges h_carry_ranges
+      h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
   rw [equiv_MULW_sail state mulw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

@@ -11,7 +11,6 @@ import ZiskFv.SailSpec.lui
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType

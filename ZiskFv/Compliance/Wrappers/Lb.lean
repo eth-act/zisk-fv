@@ -12,7 +12,6 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Compliance.SharedBundles
 
@@ -23,10 +22,9 @@ Post-T4-purge canonical: takes BinaryExtension row witness +
 matches_entry + static lookup soundness directly. The legacy BinaryAdd-arm
 route was retired in T4-purge.
 
-Trust footprint: `transpile_*`, `range_bus_sound`,
-`memory_bus_entry_byte_range_perm_sound`, MemBridge facts, plus
-BinaryExtension `circuit` (static-table lookup soundness via
-`StaticLookupSoundness`). Notably absent:
+Trust footprint: `transpile_*`, MemBridge facts, plus BinaryExtension
+`circuit` (static-table lookup soundness via `StaticLookupSoundness`).
+Notably absent:
 `op_bus_permutation_sound`, `bin_ext_table_consumer_wf`.
 -/
 

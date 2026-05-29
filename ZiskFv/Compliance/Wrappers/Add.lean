@@ -9,7 +9,6 @@ import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Compliance.SharedBundles
 
 /-!
@@ -20,9 +19,8 @@ lookup-aware Binary provider. The original `Compliance.equiv_ADD`
 covers the BinaryAdd arm; this wrapper covers the Binary arm via
 the Clean static-lookup table interface, mirroring the SUBW shape.
 
-Trust footprint: `transpile_ADD` (#1),
-`memory_bus_entry_byte_range_perm_sound` (#5b),
-`range_bus_sound` (Clean), plus `equiv_ADD_of_static_row`'s closure.
+Trust footprint: `transpile_ADD` (#1), plus
+`equiv_ADD_of_static_row`'s closure.
 Notably absent: `op_bus_perm_sound_BinaryAdd` and
 `op_bus_perm_sound_Binary` — the caller supplies the matches_entry.
 -/

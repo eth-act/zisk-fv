@@ -12,7 +12,6 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Compliance.SharedBundles
 

@@ -26,11 +26,11 @@ ZiskFv.Equivalence.Lhu.equiv_LHU: ZiskFv.AirsClean.MemAlignByte.memAlignByte_cir
 ZiskFv.Equivalence.Lui.equiv_LUI: ZiskFv.Trusted.transpile_LUI
 ZiskFv.Equivalence.Lw.equiv_LW: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Lwu.equiv_LWU: ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness, ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Mul.equiv_MUL: ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Channels.RangeBusSoundness.signed_range_bus_sound, ZiskFv.Trusted.transpile_MUL
+ZiskFv.Equivalence.Mul.equiv_MUL: ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness, ZiskFv.Trusted.transpile_MUL
 ZiskFv.Equivalence.MulH.equiv_MULH:
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU:
 ZiskFv.Equivalence.MulHU.equiv_MULHU: ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness, ZiskFv.Trusted.transpile_MULHU
-ZiskFv.Equivalence.MulW.equiv_MULW: ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Channels.RangeBusSoundness.signed_range_bus_sound, ZiskFv.Trusted.transpile_MULW
+ZiskFv.Equivalence.MulW.equiv_MULW: ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness, ZiskFv.Trusted.transpile_MULW
 ZiskFv.Equivalence.Or.equiv_OR: ZiskFv.Trusted.transpile_OR
 ZiskFv.Equivalence.Ori.equiv_ORI: ZiskFv.Trusted.transpile_ORI
 ZiskFv.Equivalence.Rem.equiv_REM:

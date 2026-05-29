@@ -9,7 +9,6 @@ import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.WriteValueProofs.Arith
 

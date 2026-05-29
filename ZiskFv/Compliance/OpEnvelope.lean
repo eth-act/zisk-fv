@@ -1567,7 +1567,10 @@ inductive OpEnvelope
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a) :
     OpEnvelope state m r_main
   -- ============================ MULH ====================================
   | mulh
@@ -1644,6 +1647,9 @@ inductive OpEnvelope
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨

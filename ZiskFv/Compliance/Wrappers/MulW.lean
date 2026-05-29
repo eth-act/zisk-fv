@@ -7,11 +7,9 @@ import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.AirsClean.ArithMul.Bridge
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.SailStateBridge
-import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Compliance.SharedBundles
@@ -84,6 +82,9 @@ theorem equiv_MULW_of_table
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
     -- Pass-through caller burdens (W-mode sign-extension + W-form operand bridges).
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
@@ -146,22 +147,28 @@ theorem equiv_MULW_of_table
   -- main_external_arith_emission_bundle 14-way disjunction
   -- (MULU, MULUH, MULSUH, MUL, MULH, MUL_W, …).
   have h_bundle := arith_mem.c_lane_vals
-  have h_chunks_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e2
-  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
-      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
-      = (m.c_0 r_main).val := by
-    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_chunks_range.1, h_bundle.1]
   obtain ⟨h_m32_main, _h_sp1, _h_sp2, _h_off1, _h_off2,
          _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_MULW
       m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
       (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
       h_main_active h_main_op_mulw
+  have h_arith_chunk_ranges := arith_chunk_ranges.ranges
+  have h_arith_carry_ranges := arith_carry_ranges.ranges
+  have h_arith_chunk_ranges_arg := h_arith_chunk_ranges
   obtain ⟨_h_a0_lt, _h_a1_lt, h_a2_lt, h_a3_lt,
           _h_b0_lt, _h_b1_lt, h_b2_lt, h_b3_lt,
           h_c0_lt, h_c1_lt, _h_c2_lt, _h_c3_lt,
           _h_d0_lt, _h_d1_lt, _h_d2_lt, _h_d3_lt⟩ :=
-    ZiskFv.Airs.Arith.arith_mul_columns_in_range v r_a
+    h_arith_chunk_ranges
+  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      = (m.c_0 r_main).val := by
+    have h_e2_lo_bound : e2.value_0.val < 4294967296 := by
+      rw [← h_bundle.1, h_c0_eq_FGL]
+      rw [arith_h_pair_lift _ _ h_c0_lt h_c1_lt]
+      omega
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_e2_lo_bound, h_bundle.1]
   have h_a23 := arith_chunk_pair_eq_zero_of_m32_one
     (m.a_1 r_main) (m.m32 r_main) h_a_hi_eq_FGL h_m32_main h_a2_lt h_a3_lt
   have h_b23 := arith_chunk_pair_eq_zero_of_m32_one
@@ -174,7 +181,9 @@ theorem equiv_MULW_of_table
     ⟨exec_row, e0, e1, e2⟩
     promises
     h_chain h_nr h_m32 h_div h_op_arith_mulw
-    h_na_bool h_nb_bool h_np_xor h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+    h_na_bool h_nb_bool h_np_xor
+    h_arith_chunk_ranges_arg h_arith_carry_ranges
+    h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
 
 /-- Compatibility wrapper preserving the current canonical surface while
     the Compliance dispatcher is migrated to row-native table witnesses. -/
@@ -197,6 +206,9 @@ theorem equiv_MULW
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
@@ -219,6 +231,7 @@ theorem equiv_MULW
   exact equiv_MULW_of_table
     state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises arith_mem
     arith_table
-    h_row_constraints h_sext_choice h_rs1_value h_rs2_value
+    h_row_constraints arith_chunk_ranges arith_carry_ranges
+    h_sext_choice h_rs1_value h_rs2_value
 
 end ZiskFv.Compliance

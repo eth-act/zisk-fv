@@ -16,13 +16,11 @@ import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.EquivCore.WriteValueProofs.Arith
 import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.AirsClean.BinaryAdd.Bridge
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Channels.MemoryBusBytes
 
@@ -136,6 +134,9 @@ theorem equiv_ADDI_with_match
     (h_main_mode : main_row_in_addi_mode m r_main)
     (h_b_core : ZiskFv.Airs.BinaryAdd.core_every_row b r_binary)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_binary))
+    (h_a_range : a_chunks_in_range b r_binary)
+    (h_b_range : b_chunks_in_range b r_binary)
+    (h_c_range : c_chunks_in_range b r_binary)
     (h_addi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main addi_input.imm)
@@ -159,8 +160,6 @@ theorem equiv_ADDI_with_match
   have h_circuit : ZiskFv.ZiskCircuit.Addi.addi_circuit_holds_with_binaryadd
       m b r_main r_binary :=
     ⟨h_main_subset, h_b_core, h_match, h_main_mode⟩
-  obtain ⟨h_a_range, h_b_range, h_c_range⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryAdd.chunk_ranges_at_holds b r_binary
   have h_input_r1_main :=
     ZiskFv.EquivCore.Bridge.SailStateBridge.addi_input_r1_main_eq_of_read_xreg
       m r_main state (regidx_to_fin r1) (regidx_to_fin rd)
@@ -582,6 +581,9 @@ theorem equiv_ADDI_of_binaryadd_row
     (h_core : ZiskFv.Airs.BinaryAdd.core_every_row
       (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
     (h_main_subset : add_subset_holds m r_main)
+    (h_a_range : a_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
+    (h_b_range : b_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
+    (h_c_range : c_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
     (h_addi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main addi_input.imm)
@@ -621,7 +623,7 @@ theorem equiv_ADDI_of_binaryadd_row
     ⟨exec_row, e0, e1, e2⟩
     promises h_main_subset
     ⟨h_main_active, h_main_op_add, h_m32, h_set_pc⟩
-    h_core h_match_b
+    h_core h_match_b h_a_range h_b_range h_c_range
     h_addi_subset h_lane_rd
     ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 

@@ -3,7 +3,6 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
-import ZiskFv.Airs.Binary.BinaryAddRanges
 import ZiskFv.Airs.Binary.BinaryAddPackedCorrect
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -92,6 +91,9 @@ lemma add_discharge_with_match
     (h_main_mode : main_row_in_add_mode m r_main)
     (h_b_core : core_every_row b r_binary)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_binary))
+    (h_a_range : a_chunks_in_range b r_binary)
+    (h_b_range : b_chunks_in_range b r_binary)
+    (h_c_range : c_chunks_in_range b r_binary)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs1 rs2 : Fin 32) (r1_val r2_val : BitVec 64)
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
@@ -109,15 +111,6 @@ lemma add_discharge_with_match
   have h_m32 : m.m32 r_main = 0 := h_main_mode.2.2.1
   have h_circuit : add_circuit_holds m b r_main r_binary :=
     ⟨h_main_subset, h_b_core, h_match, h_main_mode⟩
-  have h_a_range : a_chunks_in_range b r_binary :=
-    ⟨ba_a_lo_lt_2_32 b r_binary, ba_a_hi_lt_2_32 b r_binary⟩
-  have h_b_range : b_chunks_in_range b r_binary :=
-    ⟨ba_b_lo_lt_2_32 b r_binary, ba_b_hi_lt_2_32 b r_binary⟩
-  have h_c_range : c_chunks_in_range b r_binary :=
-    ⟨ba_c_chunk_0_lt_2_16 b r_binary,
-     ba_c_chunk_1_lt_2_16 b r_binary,
-     ba_c_chunk_2_lt_2_16 b r_binary,
-     ba_c_chunk_3_lt_2_16 b r_binary⟩
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd]
     at h_lane_eqs
@@ -143,26 +136,5 @@ lemma add_discharge_with_match
     rw [h_input_r2_main, h_b0_val, h_b1_val]
   exact ⟨h_circuit, h_a_range, h_b_range, h_c_range,
          h_input_r1_circuit, h_input_r2_circuit⟩
-
-/-! ## Narrow helper for the discharge path (keeps `r_binary`
-    as caller-supplied) — analogue of `Bridge.Binary.byte_ranges_at_holds`
-
-The 3 BinaryAdd chunk-range predicates (`a_chunks_in_range`,
-`b_chunks_in_range`, `c_chunks_in_range`) at any caller-supplied
-`r_binary` are all derivable from `binary_add_columns_in_range`
-(axiom). This helper packages exactly that for the
-discharge of ADDI and other BinaryAdd-shape opcodes
-that retain `r_binary` as a parameter.
--/
-
-/-- Discharge the 3 BinaryAdd chunk-range *promise hypotheses* at any
-    caller-supplied row. Pure derivation from
-    `binary_add_columns_in_range`; no caller hypothesis needed. -/
-lemma chunk_ranges_at_holds (b : Valid_BinaryAdd FGL FGL) (r : ℕ) :
-    a_chunks_in_range b r ∧ b_chunks_in_range b r ∧ c_chunks_in_range b r :=
-  ⟨⟨ba_a_lo_lt_2_32 b r, ba_a_hi_lt_2_32 b r⟩,
-   ⟨ba_b_lo_lt_2_32 b r, ba_b_hi_lt_2_32 b r⟩,
-   ⟨ba_c_chunk_0_lt_2_16 b r, ba_c_chunk_1_lt_2_16 b r,
-    ba_c_chunk_2_lt_2_16 b r, ba_c_chunk_3_lt_2_16 b r⟩⟩
 
 end ZiskFv.EquivCore.Bridge.BinaryAdd

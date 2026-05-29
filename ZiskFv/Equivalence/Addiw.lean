@@ -1,7 +1,6 @@
 import ZiskFv.Compliance.Wrappers.Addiw
 import ZiskFv.Channels.StateEffect
 import ZiskFv.AirsClean.BinaryFamily.Balance
-import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!

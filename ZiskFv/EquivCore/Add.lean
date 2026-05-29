@@ -22,9 +22,7 @@ import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.AirsClean.BinaryAdd.Bridge
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Channels.MemoryBusBytes
 
 /-!
@@ -123,6 +121,9 @@ theorem equiv_ADD_with_match
     (h_main_mode : main_row_in_add_mode m r_main)
     (h_b_core : ZiskFv.Airs.BinaryAdd.core_every_row b r_binary)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_binary))
+    (h_a_range : a_chunks_in_range b r_binary)
+    (h_b_range : b_chunks_in_range b r_binary)
+    (h_c_range : c_chunks_in_range b r_binary)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
@@ -137,6 +138,7 @@ theorem equiv_ADD_with_match
           h_input_r1_circuit, h_input_r2_circuit⟩ :=
     ZiskFv.EquivCore.Bridge.BinaryAdd.add_discharge_with_match
       m b r_main r_binary h_main_subset h_main_mode h_b_core h_match
+      h_a_range h_b_range h_c_range
       state (regidx_to_fin r1) (regidx_to_fin r2)
       add_input.r1_val add_input.r2_val
       h_input_r1_sail h_input_r2_sail
@@ -547,6 +549,9 @@ theorem equiv_ADD_of_binaryadd_row
     (h_core : ZiskFv.Airs.BinaryAdd.core_every_row
       (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
     (h_main_subset : add_subset_holds m r_main)
+    (h_a_range : a_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
+    (h_b_range : b_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
+    (h_c_range : c_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
@@ -586,7 +591,8 @@ theorem equiv_ADD_of_binaryadd_row
   exact ZiskFv.EquivCore.Add.equiv_ADD_with_match
     state add_input r1 r2 rd m b r_main 0
     ⟨exec_row, e0, e1, e2⟩
-    promises h_main_subset h_main_mode h_core h_match_b h_lane_rd
+    promises h_main_subset h_main_mode h_core h_match_b
+    h_a_range h_b_range h_c_range h_lane_rd
     ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 
 end ZiskFv.EquivCore.Add

@@ -7,11 +7,15 @@ cd "$(git rev-parse --show-toplevel)"
 
 baseline=trust/baseline-arith-table-op-axioms.txt
 
-current=$(
-  grep -hE '^[[:space:]]*axiom[[:space:]]+arith_table_op_' ZiskFv/Airs/Arith/Ranges.lean \
-    | sed -E 's/^[[:space:]]*axiom[[:space:]]+([A-Za-z0-9_]+).*/\1/' \
-    | sort -u
-)
+if [ -f ZiskFv/Airs/Arith/Ranges.lean ]; then
+  current=$(
+    grep -hE '^[[:space:]]*axiom[[:space:]]+arith_table_op_' ZiskFv/Airs/Arith/Ranges.lean \
+      | sed -E 's/^[[:space:]]*axiom[[:space:]]+([A-Za-z0-9_]+).*/\1/' \
+      | sort -u
+  )
+else
+  current=
+fi
 
 allowed=$(grep -v '^[[:space:]]*#' "$baseline" | grep -v '^[[:space:]]*$' | sort -u)
 

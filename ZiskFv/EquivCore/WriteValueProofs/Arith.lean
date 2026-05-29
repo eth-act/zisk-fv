@@ -12,7 +12,6 @@ import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.ZiskCircuit.Add
 import ZiskFv.ZiskCircuit.Addi
@@ -128,7 +127,8 @@ or `byteOf e.value_1 (i - 4)` (high half). Composed with
 `byteOf_val_sum_eq` and the chunk-range soundness theorem, this yields
 the Nat-level byte-sum identity for either half of a memory-bus entry. -/
 
-private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL) :
+private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL)
+    (h_bound : e.value_0.val < 4294967296) :
     (byteAt e 0).val + (byteAt e 1).val * 256
       + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
     = e.value_0.val := by
@@ -141,10 +141,10 @@ private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL) :
   have hb3 : byteAt e 3 = byteOf e.value_0 3 := by
     unfold byteAt; simp only [show (3 : ℕ) < 4 from by decide, if_true]
   rw [hb0, hb1, hb2, hb3]
-  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_0
-          (ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e)
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_0 h_bound
 
-private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL) :
+private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL)
+    (h_bound : e.value_1.val < 4294967296) :
     (byteAt e 4).val + (byteAt e 5).val * 256
       + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
     = e.value_1.val := by
@@ -157,9 +157,7 @@ private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL) :
   have hb7 : byteAt e 7 = byteOf e.value_1 3 := by
     unfold byteAt; simp only [show ¬ (7 : ℕ) < 4 from by decide, if_false]
   rw [hb4, hb5, hb6, hb7]
-  have h_v1_lt : e.value_1.val < 4294967296 :=
-    (ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e).2
-  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h_v1_lt
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h_bound
 
 /-! ## Shared primitive: byte-sum → U64.toBV bridge
 
@@ -189,69 +187,6 @@ lemma bv64_of_byte_sum
   rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat _ _ _ _ _ _ _ _
         h0 h1 h2 h3 h4 h5 h6 h7]
   rw [h_sum]
-
-/-! ## Shared primitive: lane-match → byte-sum derivation
-
-For opcodes using an abstract `OperationBusEntry`, derives the byte-sum
-Nat equality from the c-lane bus-match and lane-match hypotheses. -/
-
-/-- **Lane-match → byte-sum.** Given:
-    * `h_clo : m.c_0 r_main = bus_entry.c_lo` (from bus-match),
-    * `h_chi : m.c_1 r_main = bus_entry.c_hi` (from bus-match),
-    * `h_lo_match : m.c_0 r_main = memory_entry_lo e2` (from lane-match),
-    * `h_hi_match : m.c_1 r_main = memory_entry_hi e2` (from lane-match),
-    * byte ranges on `e2`,
-    * `h_input_val : bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat`,
-
-    derives the byte-sum equality
-    `(byteAt e2 0).val + ... + (byteAt e2 7).val * 2^56 = spec_val.toNat`.
-
-    This is the internal derivation step that replaces the old `h_c_byte_sum`
-    parameter in all non-ADD Tier-1 lemmas. -/
-private lemma byte_sum_from_lane_match
-    (m : Valid_Main FGL FGL) (r_main : ℕ)
-    (bus_entry : OperationBusEntry FGL)
-    (e2 : MemoryBusEntry FGL)
-    (spec_val : BitVec 64)
-    (h_clo : m.c_0 r_main = bus_entry.c_lo)
-    (h_chi : m.c_1 r_main = bus_entry.c_hi)
-    (h_lo_match : m.c_0 r_main = memory_entry_lo e2)
-    (h_hi_match : m.c_1 r_main = memory_entry_hi e2)
-    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
-    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
-    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
-    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
-    (h_input_val :
-      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat) :
-    (byteAt e2 0).val + (byteAt e2 1).val * 256 + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
-    + (byteAt e2 4).val * 4294967296 + (byteAt e2 5).val * 1099511627776
-    + (byteAt e2 6).val * 281474976710656 + (byteAt e2 7).val * 72057594037927936
-    = spec_val.toNat := by
-  -- bus_entry.c_lo = memory_entry_lo e2 (from h_clo + h_lo_match)
-  have h_lo_eq : bus_entry.c_lo = memory_entry_lo e2 := by
-    rw [← h_clo, h_lo_match]
-  have h_hi_eq : bus_entry.c_hi = memory_entry_hi e2 := by
-    rw [← h_chi, h_hi_match]
-  -- Chunk-shape: memory_entry_lo e2 = e2.value_0, and the byte projections
-  -- of value_0 pack-decompose into the byte sum via byteAt_lo_val_sum_eq.
-  have h_lo_nat : (memory_entry_lo e2).val
-      = (byteAt e2 0).val + (byteAt e2 1).val * 256
-        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
-  have h_hi_nat : (memory_entry_hi e2).val
-      = (byteAt e2 4).val + (byteAt e2 5).val * 256
-        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
-  -- rewrite c_lo.val and c_hi.val via the entry equalities
-  rw [h_lo_eq] at h_input_val
-  rw [h_hi_eq] at h_input_val
-  rw [h_lo_nat, h_hi_nat] at h_input_val
-  -- h_input_val now:
-  --   ((byteAt e2 0).val + ... + (byteAt e2 3).val*16777216)
-  --   + ((byteAt e2 4).val + ... + (byteAt e2 7).val*16777216) * 4294967296
-  --   = spec_val.toNat
-  -- omega closes the rearrangement to the byte-sum form
-  omega
 
 /-! ## ADD (Tier 1 — fully derived from circuit constraints) -/
 
@@ -355,8 +290,10 @@ lemma h_rd_val_arith_add
     omega
   simp only [memory_entry_lo, memory_entry_hi] at h_lo_eq h_hi_eq
   -- Byte-pack identity for the lo/hi halves of e2 (chunk-shape).
-  have h_byte_lo := byteAt_lo_val_sum_eq e2
-  have h_byte_hi := byteAt_hi_val_sum_eq e2
+  have h_lo_bound : e2.value_0.val < 4294967296 := by omega
+  have h_hi_bound : e2.value_1.val < 4294967296 := by omega
+  have h_byte_lo := byteAt_lo_val_sum_eq e2 h_lo_bound
+  have h_byte_hi := byteAt_hi_val_sum_eq e2 h_hi_bound
   omega
 
 /-! ## ADDI (Tier 1 — fully derived from circuit constraints) -/
@@ -466,8 +403,10 @@ lemma h_rd_val_arith_addi
     omega
   simp only [memory_entry_lo, memory_entry_hi] at h_lo_eq h_hi_eq
   -- Byte-pack identity for the lo/hi halves of e2 (chunk-shape).
-  have h_byte_lo := byteAt_lo_val_sum_eq e2
-  have h_byte_hi := byteAt_hi_val_sum_eq e2
+  have h_lo_bound : e2.value_0.val < 4294967296 := by omega
+  have h_hi_bound : e2.value_1.val < 4294967296 := by omega
+  have h_byte_lo := byteAt_lo_val_sum_eq e2 h_lo_bound
+  have h_byte_hi := byteAt_hi_val_sum_eq e2 h_hi_bound
   omega
 
 /-! ## Internal kernel: byte-sum from chain-style c-lane match

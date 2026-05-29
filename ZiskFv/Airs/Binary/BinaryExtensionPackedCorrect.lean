@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 
@@ -120,6 +121,93 @@ structure ByteLookupHypotheses (v : Valid_BinaryExtension FGL FGL) (row : ℕ) w
        ∧ e7.a_byte = v.free_in_a_7 row ∧ e7.shift_amount = v.free_in_b row
        ∧ e7.c_lo_byte = v.free_in_c_14 row ∧ e7.c_hi_byte = v.free_in_c_15 row
 
+/-- Construct the eight row-shaped BinaryExtension table lookup entries. This
+    is structural unpacking only; semantic table well-formedness is still
+    supplied separately by `ByteLookupWfHypotheses`. -/
+@[reducible]
+def binary_extension_row_byte_lookups (v : Valid_BinaryExtension FGL FGL) (row : ℕ) :
+    ByteLookupHypotheses v row :=
+  { e0 :=
+      { multiplicity := 1
+        op := v.op row
+        byte_index := 0
+        a_byte := v.free_in_a_0 row
+        shift_amount := v.free_in_b row
+        c_lo_byte := v.free_in_c_0 row
+        c_hi_byte := v.free_in_c_1 row
+        op_is_shift := v.op_is_shift row }
+    h0 := by simp
+    e1 :=
+      { multiplicity := 1
+        op := v.op row
+        byte_index := 1
+        a_byte := v.free_in_a_1 row
+        shift_amount := v.free_in_b row
+        c_lo_byte := v.free_in_c_2 row
+        c_hi_byte := v.free_in_c_3 row
+        op_is_shift := v.op_is_shift row }
+    h1 := by simp
+    e2 :=
+      { multiplicity := 1
+        op := v.op row
+        byte_index := 2
+        a_byte := v.free_in_a_2 row
+        shift_amount := v.free_in_b row
+        c_lo_byte := v.free_in_c_4 row
+        c_hi_byte := v.free_in_c_5 row
+        op_is_shift := v.op_is_shift row }
+    h2 := by simp
+    e3 :=
+      { multiplicity := 1
+        op := v.op row
+        byte_index := 3
+        a_byte := v.free_in_a_3 row
+        shift_amount := v.free_in_b row
+        c_lo_byte := v.free_in_c_6 row
+        c_hi_byte := v.free_in_c_7 row
+        op_is_shift := v.op_is_shift row }
+    h3 := by simp
+    e4 :=
+      { multiplicity := 1
+        op := v.op row
+        byte_index := 4
+        a_byte := v.free_in_a_4 row
+        shift_amount := v.free_in_b row
+        c_lo_byte := v.free_in_c_8 row
+        c_hi_byte := v.free_in_c_9 row
+        op_is_shift := v.op_is_shift row }
+    h4 := by simp
+    e5 :=
+      { multiplicity := 1
+        op := v.op row
+        byte_index := 5
+        a_byte := v.free_in_a_5 row
+        shift_amount := v.free_in_b row
+        c_lo_byte := v.free_in_c_10 row
+        c_hi_byte := v.free_in_c_11 row
+        op_is_shift := v.op_is_shift row }
+    h5 := by simp
+    e6 :=
+      { multiplicity := 1
+        op := v.op row
+        byte_index := 6
+        a_byte := v.free_in_a_6 row
+        shift_amount := v.free_in_b row
+        c_lo_byte := v.free_in_c_12 row
+        c_hi_byte := v.free_in_c_13 row
+        op_is_shift := v.op_is_shift row }
+    h6 := by simp
+    e7 :=
+      { multiplicity := 1
+        op := v.op row
+        byte_index := 7
+        a_byte := v.free_in_a_7 row
+        shift_amount := v.free_in_b row
+        c_lo_byte := v.free_in_c_14 row
+        c_hi_byte := v.free_in_c_15 row
+        op_is_shift := v.op_is_shift row }
+    h7 := by simp }
+
 /-- The semantic `wf_properties` facts for the eight per-byte
     BinaryExtension table entries packaged by `ByteLookupHypotheses`.
     Static-provider C7 routes prove this bundle from exact table membership;
@@ -130,6 +218,83 @@ def ByteLookupWfHypotheses {v : Valid_BinaryExtension FGL FGL} {row : ℕ}
     ∧ wf_properties h_bytes.e2 ∧ wf_properties h_bytes.e3
     ∧ wf_properties h_bytes.e4 ∧ wf_properties h_bytes.e5
     ∧ wf_properties h_bytes.e6 ∧ wf_properties h_bytes.e7
+
+private theorem binary_extension_op_is_shift_pin_of_e0_wf
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_wf : wf_properties (binary_extension_row_byte_lookups v row).e0) :
+    ((v.op row = ZiskFv.Trusted.OP_SLL ∨ v.op row = ZiskFv.Trusted.OP_SRL ∨ v.op row = ZiskFv.Trusted.OP_SRA
+      ∨ v.op row = ZiskFv.Trusted.OP_SLL_W ∨ v.op row = ZiskFv.Trusted.OP_SRL_W ∨ v.op row = ZiskFv.Trusted.OP_SRA_W)
+        → v.op_is_shift row = 1)
+  ∧ ((v.op row = ZiskFv.Trusted.OP_SIGNEXTEND_B ∨ v.op row = ZiskFv.Trusted.OP_SIGNEXTEND_H
+      ∨ v.op row = ZiskFv.Trusted.OP_SIGNEXTEND_W) → v.op_is_shift row = 0) := by
+  let hbytes := binary_extension_row_byte_lookups v row
+  have h_wf' : wf_properties hbytes.e0 := by
+    simpa [hbytes] using h_wf
+  rcases h_wf' with
+    ⟨_hrange, hSLL, hSRL, hSRA, hSLLW, hSRLW, hSRAW, hSEXTB, hSEXTH, hSEXTW⟩
+  constructor
+  · intro h_op
+    rcases h_op with h_op | h_op | h_op | h_op | h_op | h_op
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SLL, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL]
+      have h_flag := (hSLL h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRL, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL]
+      have h_flag := (hSRL h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRA, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA]
+      have h_flag := (hSRA h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SLL_W, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W]
+      have h_flag := (hSLLW h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRL_W, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W]
+      have h_flag := (hSRLW h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRA_W, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W]
+      have h_flag := (hSRAW h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+  · intro h_op
+    rcases h_op with h_op | h_op | h_op
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_B,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B]
+      have h_flag := (hSEXTB h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_H,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H]
+      have h_flag := (hSEXTH h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_W,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W]
+      have h_flag := (hSEXTW h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+
+theorem binary_extension_op_is_shift_pin_of_wf_hypotheses
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_wfs : ByteLookupWfHypotheses (binary_extension_row_byte_lookups v row)) :
+    ((v.op row = ZiskFv.Trusted.OP_SLL ∨ v.op row = ZiskFv.Trusted.OP_SRL ∨ v.op row = ZiskFv.Trusted.OP_SRA
+      ∨ v.op row = ZiskFv.Trusted.OP_SLL_W ∨ v.op row = ZiskFv.Trusted.OP_SRL_W ∨ v.op row = ZiskFv.Trusted.OP_SRA_W)
+        → v.op_is_shift row = 1)
+  ∧ ((v.op row = ZiskFv.Trusted.OP_SIGNEXTEND_B ∨ v.op row = ZiskFv.Trusted.OP_SIGNEXTEND_H
+      ∨ v.op row = ZiskFv.Trusted.OP_SIGNEXTEND_W) → v.op_is_shift row = 0) :=
+  binary_extension_op_is_shift_pin_of_e0_wf v row h_wfs.1
 
 /-! ## Per-byte arithmetic helpers — extract the SLL/SRL byte-equation
     from the trusted lookup-table contract. -/
@@ -4336,7 +4501,7 @@ lemma binary_extension_sraw_c_sums_lt_of_wf
 private lemma sext_b_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
     (h_wf : wf_properties e)
-    (h_op_val : e.op.val = OP_SEXT_B) :
+    (h_op_val : e.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B) :
     e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
       = if e.byte_index.val = 0 then
           if e.a_byte.val ≥ 128
@@ -4362,7 +4527,7 @@ private lemma sext_b_byte_eq_of_wf
 private lemma sext_h_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
     (h_wf : wf_properties e)
-    (h_op_val : e.op.val = OP_SEXT_H) :
+    (h_op_val : e.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H) :
     e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
       = if e.byte_index.val = 0 then e.a_byte.val
         else if e.byte_index.val = 1 then
@@ -4388,7 +4553,7 @@ private lemma sext_h_byte_eq_of_wf
 private lemma sext_w_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
     (h_wf : wf_properties e)
-    (h_op_val : e.op.val = OP_SEXT_W) :
+    (h_op_val : e.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W) :
     e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
       = if e.byte_index.val < 4 then
           if e.byte_index.val = 3 ∧ e.a_byte.val ≥ 128
@@ -4413,7 +4578,7 @@ private lemma sext_w_byte_eq_of_wf
 
 lemma binary_extension_sext_b_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SEXT_B)
+    (h_op : (v.op row).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B)
     (h_bytes : ByteLookupHypotheses v row)
     (h_wfs : ByteLookupWfHypotheses h_bytes) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
@@ -4486,7 +4651,7 @@ lemma binary_extension_sext_b_chunks_eq_signextend_nat_of_wf
     the bound comes from the exact static BinaryExtensionTable row facts. -/
 lemma binary_extension_sext_b_c_sums_lt_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SEXT_B)
+    (h_op : (v.op row).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B)
     (h_bytes : ByteLookupHypotheses v row)
     (h_wfs : ByteLookupWfHypotheses h_bytes) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
@@ -4586,7 +4751,7 @@ lemma binary_extension_sext_b_c_sums_lt_of_wf
 
 lemma binary_extension_sext_h_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SEXT_H)
+    (h_op : (v.op row).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H)
     (h_bytes : ByteLookupHypotheses v row)
     (h_wfs : ByteLookupWfHypotheses h_bytes) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
@@ -4670,7 +4835,7 @@ lemma binary_extension_sext_h_chunks_eq_signextend_nat_of_wf
     fit in one 32-bit chunk. -/
 lemma binary_extension_sext_h_c_sums_lt_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SEXT_H)
+    (h_op : (v.op row).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H)
     (h_bytes : ByteLookupHypotheses v row)
     (h_wfs : ByteLookupWfHypotheses h_bytes) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
@@ -4793,7 +4958,7 @@ lemma binary_extension_sext_h_c_sums_lt_of_wf
 
 lemma binary_extension_sext_w_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SEXT_W)
+    (h_op : (v.op row).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W)
     (h_bytes : ByteLookupHypotheses v row)
     (h_wfs : ByteLookupWfHypotheses h_bytes) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
@@ -4883,7 +5048,7 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat_of_wf
     fit in one 32-bit chunk. -/
 lemma binary_extension_sext_w_c_sums_lt_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SEXT_W)
+    (h_op : (v.op row).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W)
     (h_bytes : ByteLookupHypotheses v row)
     (h_wfs : ByteLookupWfHypotheses h_bytes) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val

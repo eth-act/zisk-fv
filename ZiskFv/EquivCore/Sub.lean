@@ -6,7 +6,6 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.ZiskCircuit.Sub
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.SailSpec.sub

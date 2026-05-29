@@ -554,17 +554,18 @@ ADDED: arith_table
        (same ArithDiv lookup-aware witness as DIVW.)
 
 # ============================================================
-# T6 ArithMul range-bus structural unpacking (MULHU)
+# T6 ArithMul range-bus structural unpacking (MULHU/MUL/MULW)
 # ============================================================
 #
-# `equiv_MULHU` previously inherited `range_bus_sound` through the legacy
-# `arith_mul_columns_in_range`, `arith_mul_carry_columns_in_range_unsigned`,
-# and memory-entry chunk-range routes. T6 replaces those generic trust-ledger
-# facts with selected-row Clean lookup witnesses:
+# `equiv_MULHU`, `equiv_MUL`, and `equiv_MULW` previously inherited
+# `range_bus_sound` / `signed_range_bus_sound` through the legacy
+# `arith_mul_columns_in_range`, carry-range helpers, and memory-entry
+# chunk-range routes. T6 replaces those generic trust-ledger facts with
+# selected-row Clean lookup witnesses:
 #   * `ArithMulChunkRangeWitness v r_a` for the sixteen `bits(16)` a/b/c/d
 #     chunk lookups, and
-#   * `ArithMulUnsignedCarryRangeWitness v r_a` for the seven unsigned
-#     `bits(17)` carry lookups.
+#   * `ArithMulUnsignedCarryRangeWitness v r_a` or
+#     `ArithMulSignedCarryRangeWitness v r_a` for the seven carry lookups.
 #
 # This is structural unpacking, not promise laundering, because the added
 # binders expose lookup-aware `ConstraintsHold.Soundness` evidence for the
@@ -580,6 +581,9 @@ ADDED: arith_table
 #   * ArithMul Clean `mainWithUnsignedCarryRanges` — unsigned MUL/MULHU
 #     carry consumers use the seven `rangeTable17` carry lookups surfaced by
 #     the Clean range witness, replacing the legacy generic range-bus axiom.
+#   * ArithMul Clean `mainWithSignedCarryRanges` — signed/W carry consumers
+#     use the signed carry range lookup witness for the seven signed carry
+#     checks instead of `signed_range_bus_sound`.
 #   * Main external-arith memory message shape is already covered by the T5
 #     `ExternalArithMemoryWitness` entry above; this T6 slice only changes
 #     where the byte-sum bounds come from.
@@ -591,6 +595,22 @@ ADDED: arith_chunk_ranges, arith_carry_ranges
         `ArithMulUnsignedCarryRangeWitness v r_a`, selected-row Clean lookup
         witnesses deriving the exact chunk and carry bounds consumed by the
         MULHU bridge.)
+
+OPCODE: ZiskFv.Equivalence.Mul.equiv_MUL
+DROPPED: range_bus_sound, signed_range_bus_sound from semantic closure
+ADDED: arith_chunk_ranges, arith_carry_ranges
+       (`ArithMulChunkRangeWitness v r_a` and
+        `ArithMulSignedCarryRangeWitness v r_a`, selected-row Clean lookup
+        witnesses deriving the exact chunk and signed-carry bounds consumed
+        by the low-MUL bridge.)
+
+OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
+DROPPED: range_bus_sound, signed_range_bus_sound from semantic closure
+ADDED: arith_chunk_ranges, arith_carry_ranges
+       (`ArithMulChunkRangeWitness v r_a` and
+        `ArithMulSignedCarryRangeWitness v r_a`, selected-row Clean lookup
+        witnesses deriving the exact W-mode chunk and signed-carry bounds
+        consumed by the MULW bridge.)
 
 # ============================================================
 # T5 external-arith memory structural unpacking (13)

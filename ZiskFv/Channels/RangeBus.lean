@@ -16,12 +16,9 @@ table is fixed and its `Guarantees` is set-membership in that table.
 
 ## Trust note
 
-Same pattern as the other channels — no new axioms. The 3 byte-range
-axioms in `Airs/Main/Ranges.lean`, `Airs/Binary/BinaryAddRanges.lean`,
-and `Airs/MemoryBus/EntryRanges.lean` consolidate into this single
-StaticLookupChannel-derived statement in Phase 3 (when the per-AIR
-ranges become *derived* from the lookup channel's Guarantees rather
-than axiomatized).
+Same pattern as the other channels -- no new axioms. T7 retired the former
+generic range-bus trust boundary; remaining byte-range facts are routed
+through concrete Clean/static lookup witnesses for the selected provider row.
 -/
 
 namespace ZiskFv.Channels.RangeBus

@@ -167,8 +167,13 @@ MULHU now consumes that chunk witness plus a new
 carry checks. Its wrapper derives the remaining rd-write memory byte-sum bounds
 from the selected external-arith memory witness, secondary op-bus equalities,
 and exact Arith chunk bounds instead of the legacy memory-entry range route.
-`equiv_MULHU` now closes without `range_bus_sound`; remaining Arith range
-consumers are `MUL` and `MULW`, both through unsigned/signed carry range facts.
+`equiv_MULHU` now closes without `range_bus_sound`; the follow-on `MUL` and
+`MULW` cutover threads `ArithMulChunkRangeWitness` plus
+`ArithMulSignedCarryRangeWitness` through their canonical surfaces. `MUL`
+derives both rd-write memory-entry byte-pack bounds from the selected
+external-arith memory witness and c-lane op-bus equalities; `MULW` does the
+same for its low 32-bit c-lane write. `equiv_MUL` and `equiv_MULW` now close
+without `range_bus_sound` or `signed_range_bus_sound`.
 
 The third T5 landing replaced the raw canonical `ArithTableSpec`
 binders with lookup-aware Clean witnesses:
@@ -1137,9 +1142,9 @@ range membership are routed through Clean/static lookup facts.
 
 Checklist:
 
-- ☐ T6.1 enumerate last consumers of `range_bus_sound` and
+- ☑ T6.1 enumerate last consumers of `range_bus_sound` and
   `signed_range_bus_sound`.
-- ☐ T6.2 replace each with a row/static-table/local component fact from the
+- ☑ T6.2 replace each with a row/static-table/local component fact from the
   relevant family phase rather than a new global range axiom. Follow T1's
   rule: the fact must be tied to the same concrete provider row used by the
   channel/matches proof.
@@ -1149,11 +1154,14 @@ Checklist:
   route. LD, LBU/LHU/LWU, and LB/LH/LW have also dropped it through
   row-local memory/BinaryExtension evidence. All shift-family closures have
   dropped it through the shift-specific BinaryExtension static-provider route.
-  MULHU has also dropped it through Clean ArithMul chunk and unsigned-carry
-  range witnesses. Remaining consumers are the `MUL` and `MULW` Arith-family
-  paths shown in `trust/baseline-equiv-axiom-deps.txt`.
-- ☐ T6.3 retire `range_bus_sound` and `signed_range_bus_sound` when their
-  global closure entries disappear.
+  MULHU, MUL, and MULW have also dropped it through Clean ArithMul chunk and
+  carry range witnesses. The latest regenerated
+  `trust/baseline-equiv-axiom-deps.txt` has no remaining
+  `range_bus_sound` or `signed_range_bus_sound` entries.
+- ☑ T6.3 retire `range_bus_sound` and `signed_range_bus_sound` when their
+  global closure entries disappear. T7 deleted
+  `ZiskFv/Channels/RangeBusSoundness.lean` and the unused per-AIR range
+  wrappers, and the regenerated trust ledger now records 55 axioms.
 
 ### T7 — Final ensemble re-root and deletion pass
 

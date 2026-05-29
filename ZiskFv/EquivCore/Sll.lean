@@ -17,6 +17,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
+import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.EquivCore.WriteValueProofs.BinaryShift
 import ZiskFv.EquivCore.WriteValueProofs.SailBridge
 import ZiskFv.EquivCore.Bridge.BinaryExtension

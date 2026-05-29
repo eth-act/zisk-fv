@@ -9,7 +9,6 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.SailSpec.div
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses

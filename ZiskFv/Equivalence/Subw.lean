@@ -1,7 +1,6 @@
 import ZiskFv.Compliance.Wrappers.Subw
 import ZiskFv.Channels.StateEffect
 import ZiskFv.AirsClean.BinaryFamily.Balance
-import ZiskFv.Airs.Binary.BinaryRanges
 
 /-!
 # `equiv_SUBW` per-opcode canonical theorem (channel-balance form)
