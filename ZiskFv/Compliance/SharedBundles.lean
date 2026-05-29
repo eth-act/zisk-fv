@@ -209,6 +209,26 @@ theorem ArithMulUnsignedCarryRangeWitness.ranges
   ∧ (v.cy_6 r).val < 2 ^ 17 :=
   ZiskFv.AirsClean.ArithMul.unsigned_carry_ranges_of_lookup_aware_const_soundness w
 
+/-- Lookup-aware Clean witness for a selected ArithMul row's seven signed/W
+    carry range checks. This is the T6 structural source for replacing
+    `arith_mul_carry_columns_in_range_signed` and
+    `arith_mul_carry_columns_in_range_w` on signed/W MUL-family paths. -/
+abbrev ArithMulSignedCarryRangeWitness
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :=
+  ZiskFv.AirsClean.ArithMul.SignedCarryRangeLookupWitness v r
+
+theorem ArithMulSignedCarryRangeWitness.ranges
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (w : ArithMulSignedCarryRangeWitness v r) :
+    ((v.cy_0 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_0 r).val)
+  ∧ ((v.cy_1 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_1 r).val)
+  ∧ ((v.cy_2 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_2 r).val)
+  ∧ ((v.cy_3 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_3 r).val)
+  ∧ ((v.cy_4 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_4 r).val)
+  ∧ ((v.cy_5 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_5 r).val)
+  ∧ ((v.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_6 r).val) :=
+  ZiskFv.AirsClean.ArithMul.signed_carry_ranges_of_lookup_aware_const_soundness w
+
 /-- Lookup-aware Clean witness for a selected ArithDiv row's
     `arith_table_assumes` tuple. Same shape as `ArithMulTableWitness`,
     specialized to the Div view of the Arith AIR. -/

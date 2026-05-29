@@ -211,6 +211,40 @@ theorem unsigned_carry_ranges_of_lookup_aware_const_soundness
     by simpa [rowAt, constVar] using h_cy5,
     by simpa [rowAt, constVar] using h_cy6⟩
 
+/-- Lookup-aware Clean witness for the seven signed/W carry range lookups
+    in a selected ArithMul row. This is structural evidence for
+    `mainWithSignedCarryRanges`, not a replacement range axiom. -/
+structure SignedCarryRangeLookupWitness
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((mainWithSignedCarryRanges (constVar (rowAt v r))).operations offset)
+
+theorem signed_carry_ranges_of_lookup_aware_const_soundness
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (w : SignedCarryRangeLookupWitness v r) :
+    ((v.cy_0 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_0 r).val)
+  ∧ ((v.cy_1 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_1 r).val)
+  ∧ ((v.cy_2 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_2 r).val)
+  ∧ ((v.cy_3 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_3 r).val)
+  ∧ ((v.cy_4 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_4 r).val)
+  ∧ ((v.cy_5 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_5 r).val)
+  ∧ ((v.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_6 r).val) := by
+  have h_holds := w.holds
+  simp only [mainWithSignedCarryRanges, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6⟩
+  exact ⟨by simpa [rowAt, constVar] using h_cy0,
+    by simpa [rowAt, constVar] using h_cy1,
+    by simpa [rowAt, constVar] using h_cy2,
+    by simpa [rowAt, constVar] using h_cy3,
+    by simpa [rowAt, constVar] using h_cy4,
+    by simpa [rowAt, constVar] using h_cy5,
+    by simpa [rowAt, constVar] using h_cy6⟩
+
 /-- Concrete primary MUL/MULW op-bus message for a Clean ArithMul row. -/
 @[reducible]
 def primaryOpBusMessage (row : ArithMulRow FGL) : OpBusMessage FGL :=

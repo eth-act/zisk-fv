@@ -218,6 +218,21 @@ def mainWithUnsignedCarryRanges (row : Var ArithMulRow FGL) : Circuit FGL Unit :
   lookup (Table.fromStatic rangeTable17) row.carries.carry_5
   lookup (Table.fromStatic rangeTable17) row.carries.carry_6
 
+/-- Lookup-aware ArithMul path for the seven signed/W carry columns. This
+    models the `ARITH_RANGE_CARRY` signed-range membership used by signed
+    MUL-family and W-mode carry-chain consumers without using the legacy
+    signed range-bus axiom. -/
+@[circuit_norm]
+def mainWithSignedCarryRanges (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
+  main row
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_0
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_1
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_2
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_3
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_4
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_5
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_6
+
 
 /-- Lookup-aware elaboration for the next C3/C4 stage. It is intentionally
     separate from `arithMulElaborated` so existing carry-chain consumers do
@@ -249,6 +264,15 @@ def mainWithUnsignedCarryRanges (row : Var ArithMulRow FGL) : Circuit FGL Unit :
     ElaboratedCircuit FGL ArithMulRow unit where
   name := "ArithMulWithUnsignedCarryRanges"
   main := mainWithUnsignedCarryRanges
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+
+/-- Lookup-aware elaboration exposing signed/W carry range lookups. -/
+@[reducible] def arithMulWithSignedCarryRangesElaborated :
+    ElaboratedCircuit FGL ArithMulRow unit where
+  name := "ArithMulWithSignedCarryRanges"
+  main := mainWithSignedCarryRanges
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]

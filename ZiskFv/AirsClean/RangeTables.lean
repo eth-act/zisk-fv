@@ -67,4 +67,64 @@ def rangeTable24 : StaticTable FGL field :=
 def rangeTable32 : StaticTable FGL field :=
   rangeStaticTable (2 ^ 32) (by decide) "range-32"
 
+set_option maxRecDepth 10000
+
+/-- Signed Arith carry range table.
+
+Rows are the field encodings of `[-0xEFFFF, 0xF0000]`, i.e. the low
+non-negative representatives `0..983040` plus the high Goldilocks
+representatives `GL_prime - 983040 .. GL_prime - 1`. -/
+def signedCarryRangeTable : StaticTable FGL field where
+  name := "arith-signed-carry-range"
+  length := 1966081
+  row i :=
+    if h : i.val < 983041 then
+      ⟨i.val, by omega⟩
+    else
+      ⟨GL_prime - 983040 + (i.val - 983041), by omega⟩
+  index t :=
+    if t.val < 983041 then
+      t.val
+    else if GL_prime - 983040 ≤ t.val then
+      983041 + (t.val - (GL_prime - 983040))
+    else
+      0
+  Spec t := t.val < 983041 ∨ GL_prime - 983040 ≤ t.val
+  contains_iff := by
+    intro t
+    constructor
+    · rintro ⟨i, rfl⟩
+      dsimp
+      split
+      · left
+        assumption
+      · right
+        change GL_prime - 983040 ≤ GL_prime - 983040 + (i.val - 983041)
+        omega
+    · intro h
+      rcases h with h_low | h_high
+      · refine ⟨⟨t.val, by omega⟩, ?_⟩
+        change t =
+          (if h : t.val < 983041 then
+            (⟨t.val, by omega⟩ : FGL)
+          else
+            (⟨GL_prime - 983040 + (t.val - 983041), by omega⟩ : FGL))
+        split
+        · apply Fin.ext
+          rfl
+        · omega
+      · refine ⟨⟨983041 + (t.val - (GL_prime - 983040)), by omega⟩, ?_⟩
+        change t =
+          (if h : 983041 + (t.val - (GL_prime - 983040)) < 983041 then
+            (⟨983041 + (t.val - (GL_prime - 983040)), by omega⟩ : FGL)
+          else
+            (⟨GL_prime - 983040 +
+              ((983041 + (t.val - (GL_prime - 983040))) - 983041), by omega⟩ : FGL))
+        split
+        · omega
+        · apply Fin.ext
+          change t.val = GL_prime - 983040 +
+            ((983041 + (t.val - (GL_prime - 983040))) - 983041)
+          omega
+
 end ZiskFv.AirsClean.RangeTables
