@@ -25,7 +25,7 @@ memAlignByte_circuit_completeness
 memAlignReadByte_circuit_completeness
 arithMul_circuit_completeness
 arithDiv_circuit_completeness
-# T4.1 — staging-period entry; will become reachable from the global
-# closure once T4.4 routes the memory-family canonical theorems
-# through `MemFamily.memBusEnsemble`.
+# mainWithRomAndMemBus fills Clean's mandatory completeness field for
+# the assembled Main/ROM/memory-bus component. It remains
+# completeness-direction only and may be absent from the soundness closure.
 mainWithRomAndMemBus_circuit_completeness

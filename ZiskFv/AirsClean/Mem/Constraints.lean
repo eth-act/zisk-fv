@@ -72,8 +72,8 @@ MemoryBus). The byte address is `addr * 8`, `mem_op = wr + 1`
 Modelled here as a `MemBusChannel.emit` with the 6-slot
 `MemBusMessage` shape. The optional `dual_mem` emission at
 `mem.pil:438-441` is not included; it adds a second push that's a
-mirror of the primary one with `step_dual` and `sel_dual`. T4.1 will
-include it once the dual_mem flag handling lands. -/
+mirror of the primary one with `step_dual` and `sel_dual`. It remains
+deferred until the dual_mem flag handling lands. -/
 
 open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
 
@@ -98,8 +98,8 @@ def memWithMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
   main row
   MemBusChannel.emit row.sel (memBusMessageExpr row)
 
-/-- Elaborated `memWithMemBus` circuit, ready for use in the
-    memory-family ensemble (T4.1). -/
+/-- Elaborated `memWithMemBus` circuit, ready for use in Clean
+    memory-bus component assembly. -/
 @[reducible] def memWithMemBusElaborated :
     ElaboratedCircuit FGL MemRow unit where
   name := "MemWithMemBus"

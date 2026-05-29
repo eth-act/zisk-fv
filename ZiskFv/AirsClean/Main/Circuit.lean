@@ -55,7 +55,7 @@ def circuit : GeneralFormalCircuit FGL MainRow unit :=
 
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 
-/-! ## T4.1 — Main with ROM + memory-bus consumer emissions -/
+/-! ## Main with ROM + memory-bus consumer emissions -/
 
 /-- The extra boolean obligations introduced by `mainWithRom`, beyond the
     original nine Main constraints. These are not part of Main's per-row
@@ -154,7 +154,7 @@ theorem romBoolSpec_of_mainWithRomAndMemBus_constraints
     completeness-direction axiom
     `mainWithRomAndMemBus_circuit_completeness` (per plan policy:
     zisk-fv is soundness-only; the axiom is in the tolerated allowlist
-    until T4.4 wires this Component through the global theorem). -/
+    and may be absent from the global soundness closure). -/
 def circuitWithRomAndMemBus
     (length : ℕ) (program : Program length) :
     GeneralFormalCircuit FGL MainRowWithRom unit :=
@@ -168,8 +168,8 @@ def circuitWithRomAndMemBus
       ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness length program }
 
 /-- Main as a Clean `Air.Flat.Component` exposing the ROM lookup and
-    the 3 memory-bus consumer interactions. Used by the T4.1
-    memory-family ensemble. -/
+    the 3 memory-bus consumer interactions. Used by the full Clean
+    ensemble assembly. -/
 def componentWithRomAndMemBus
     (length : ℕ) (program : Program length) :
     Air.Flat.Component FGL :=

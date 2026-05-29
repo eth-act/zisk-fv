@@ -14,13 +14,14 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 and as a hashed source-line ledger in
 [`trust/baseline-axioms.txt`](../../trust/baseline-axioms.txt) —
 **is** the trusted computing base for zisk-fv. The source trust ledger
-currently records **58 axioms** and the global compliance closure contains
-**55 names**, organised into the rationale classes summarised below.
+currently records **53 axioms** and the global compliance closure contains
+**50 names**, organised into the rationale classes summarised below.
 
-**As of T5 on `clean-air-integration`** (commit `de5080d`), the floor is
-58 source trust-ledger axioms. The larger historical reductions include the
-range-bus consolidations, T4's Clean memory-channel route, and T5's
-Arith-family retirement of class-#6b source trust.
+**As of the current `clean-air-integration` head**, the floor is
+53 source trust-ledger axioms. The larger historical reductions include
+the range-bus consolidations, T4's Clean memory-channel route, T5's
+Arith-family retirement of class-#6b source trust, and later Clean trim
+passes that removed obsolete scaffolding without adding new trust.
 
 The global theorem dispatches the 63 RV64IM opcodes through a 63-arm
 `OpEnvelope` sum type to per-opcode `equiv_<OP>` wrappers
@@ -32,7 +33,7 @@ global theorem; the V3 trust gates (`check-closure-vs-baseline` +
 the wrapper caller-burden ledger) mechanically prevent regression.
 
 Together with Lean 4's kernel and the LeanRV64D Sail-translated
-specification (the LHS of every per-opcode equivalence), the 58
+specification (the LHS of every per-opcode equivalence), the 53
 source trust-ledger axioms below **are** the project-internal trusted
 computing base. Adding, removing,
 renaming, or weakening any axiom is a trust-surface change — see
@@ -45,7 +46,7 @@ Three independent checks, all run from the repo root:
 ```bash
 trust/scripts/check-all.sh                                      # full V1 gate (CI runs this)
 trust/scripts/check-all-semantic.sh                             # full V2 gate (post lake build)
-awk '$3=="axiom" {print $4}' trust/baseline-axioms.txt | wc -l  # total: 58
+awk '$3=="axiom" {print $4}' trust/baseline-axioms.txt | wc -l  # total: 53
 ```
 
 The V2 gate's `check-closure-vs-baseline` subcommand enforces that
@@ -156,16 +157,16 @@ names and signatures, so downstream consumers require no changes.
 The retired subword-store memory results are replaced on canonical
 SB/SH/SW paths by Clean structural witnesses plus proved adapters.
 
-Remaining axiom classes (#1 transpile, #2 mem state bridge, #6b
-Arith range/table/Euclidean, #7–10 platform) are honestly at the
-right granularity — per-axiom specialization reflects genuinely
-distinct trust content (different Rust source lines, different
-state-bridge claims, different sign/mode/width specializations).
-Further consolidation would require typeclass abstractions or
-disjunctive conclusion shapes that compromise per-axiom
-auditability.
+Remaining soundness-critical axiom classes (#1 transpile, #2 memory
+state bridge, and #7-10 platform) are honestly at the right granularity
+— per-axiom specialization reflects genuinely distinct trust content
+(different Rust source lines, different state-bridge claims, and
+different platform-scope reductions). Class #C is separate and
+completeness-direction only. Further consolidation would require
+typeclass abstractions or disjunctive conclusion shapes that compromise
+per-axiom auditability.
 
-### Out-of-scope assumptions (NOT in the 58)
+### Out-of-scope assumptions (NOT in the 53)
 
 For completeness, two trusts the proofs rely on that are not counted
 here:
@@ -178,7 +179,7 @@ here:
   `flake.lock` (`sail-src`, `sail-riscv-src`); the build is
   reproduced by `nix build .#sail-lean-tree`.
 
-These are scope decisions, not omissions. The 58 axioms above are the
+These are scope decisions, not omissions. The 53 axioms above are the
 project-internal assumptions on top of those external trusts.
 
 ### Load-equivalence trust path

@@ -93,5 +93,5 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 | 3 | `memAlignReadByte_circuit_completeness` | 65 | **MemAlignReadByte Component completeness** (plan decision D-COMPLETE). |
 | 4 | `arithMul_circuit_completeness` | 78 | **ArithMul Component completeness** (plan decision D-COMPLETE). |
 | 5 | `arithDiv_circuit_completeness` | 91 | **ArithDiv Component completeness** (plan decision D-COMPLETE). |
-| 6 | `mainWithRomAndMemBus_circuit_completeness` | 113 | **mainWithRomAndMemBus Component completeness** (plan decision D-COMPLETE; T4.1). |
+| 6 | `mainWithRomAndMemBus_circuit_completeness` | 111 | **mainWithRomAndMemBus Component completeness** (plan decision D-COMPLETE). |
 

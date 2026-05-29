@@ -1,5 +1,11 @@
 # Per-AIR axiom inventory and predicted-gap map
 
+> **Historical snapshot.** This file preserves the Step-4 planning
+> inventory from commit `83532d7`, when the trust ledger contained 116
+> axioms. It is not the current trust ledger. For current counts and
+> per-class rationale, use [`trusted-base.md`](trusted-base.md) and the
+> generated flat index [`axiom-index.md`](axiom-index.md).
+
 > **Planning surface for Step 4 of `plan-to-completely-resolve-wild-lynx.md`.**
 > Companion to [`docs/fv/discharge-recipe.md`](discharge-recipe.md) (the
 > 5-category framework) and [`docs/fv/trusted-base.md`](trusted-base.md)
@@ -938,8 +944,8 @@ Cross-cutting axioms NOT in the per-AIR tally above:
 * 6 op-bus permutation-soundness axioms (one per provider in
   class #4)
 
-Grand total at this snapshot: **116 axioms** (matches
-`trust/baseline-axioms.txt`).
+Grand total at this snapshot: **116 axioms** (matched
+`trust/baseline-axioms.txt` at commit `83532d7`).
 
 ### Where the surprise might come
 

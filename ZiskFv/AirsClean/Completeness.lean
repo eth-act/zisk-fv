@@ -100,16 +100,14 @@ open Goldilocks
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 
 /-- **mainWithRomAndMemBus Component completeness** (plan decision
-    D-COMPLETE; T4.1). Declared, not proved — zisk-fv is soundness-only.
+    D-COMPLETE). Declared, not proved — zisk-fv is soundness-only.
     Completeness-direction: the verification's soundness does not depend
     on this axiom. Program-parameterised mirroring the underlying
     elaborated circuit.
 
-    Until T4.4 routes the memory-family canonical theorems through the
-    new Component, this axiom sits in the tolerated-completeness
-    allowlist (`trust/tolerated-completeness-axioms.txt`); V2's
-    dead-axiom check treats its absence from the global closure as
-    expected. -/
+    This axiom sits in the tolerated-completeness allowlist
+    (`trust/tolerated-completeness-axioms.txt`); V2's dead-axiom check
+    treats its absence from the global soundness closure as expected. -/
 axiom mainWithRomAndMemBus_circuit_completeness
     (length : ℕ) (program : Program length) :
     GeneralFormalCircuit.Completeness FGL

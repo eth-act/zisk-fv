@@ -53,7 +53,7 @@ def circuit : GeneralFormalCircuit FGL MemRow unit :=
 /-- Mem as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 
-/-! ## T4.1 — Mem-with-MemBus Component
+/-! ## Mem-with-MemBus Component
 
 `circuitWithMemBus` wraps `memWithMemBusElaborated` (Mem's per-row
 constraints + the memory-bus provider emission) as a Clean
@@ -87,7 +87,7 @@ def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
       simpa only [Spec, sub_eq_add_neg] using h_assumptions }
 
 /-- Mem as a Clean `Air.Flat.Component` exposing the memory-bus
-    provider emission. Used by the T4.1 memory-family ensemble. -/
+    provider emission. Used by Clean memory-bus component assembly. -/
 def componentWithMemBus : Air.Flat.Component FGL := ⟨ circuitWithMemBus ⟩
 
 theorem componentWithMemBus_interactionsWith_memBus :

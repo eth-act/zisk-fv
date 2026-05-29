@@ -6,11 +6,12 @@
 > (Step 4) and the V3 trust gates (Step 5). All 63 RV64IM opcodes
 > are now covered by `equiv_<OP>` wrappers under
 > `ZiskFv/Compliance/Wrappers/<Op>.lean`, which discharge the promise hypotheses from
-> the trust ledger; the global theorem dispatches the 35-arm
+> the trust ledger; the global theorem dispatches the 63-arm
 > `OpEnvelope` sum type through those wrappers. The trust closure
 > of the global theorem is captured in
-> `trust/baseline-zisk-riscv-compliant.txt` (122 axioms) and
-> `docs/fv/trusted-base.md` documents the per-class rationale. The
+> `trust/baseline-zisk-riscv-compliant.txt` (50 names at the current
+> `clean-air-integration` head) and `docs/fv/trusted-base.md`
+> documents the 53 source trust-ledger axioms and per-class rationale. The
 > V3 trust gate's `check-closure-vs-baseline` subcommand
 > mechanically prevents the gap from re-opening.
 >
@@ -66,9 +67,10 @@ keep the discussion checkable against this document.
 | **constructibility (separate gap)** | Whether a `Valid_<AIR>` instance can actually be constructed from a real ZisK trace. If `Valid_<AIR>`'s declared constraints are stronger than the actual circuit, the equivalence theorems are vacuous. Not addressed by promise discharge; tracked as a separate concern in CLAUDE.md "Anti-laundering principle" item 4. |
 | **lookup/permutation boundary** | The accepted out-of-scope statement that a PLONK/logUp-style lookup or bus argument implies the semantic channel balance / table membership used by Lean. Clean formalizes the semantic consequence of balanced channels; it does not, by itself, prove the external cryptographic polynomial argument. This boundary must be shared and table/channel-level, not encoded as per-opcode table conclusions. |
 
-## TL;DR
+## TL;DR (historical 2026-05-13 framing)
 
-62 of 63 canonical `equiv_<OP>` theorems carry **promise hypotheses**
+At the time of the original audit, 62 of 63 canonical `equiv_<OP>`
+theorems carried **promise hypotheses**
 — user-supplied parameters that assert algebraic relationships
 between Main's columns, Provider AIR columns, loose field elements,
 and Sail input/output values, **without those relationships being
@@ -235,11 +237,13 @@ But what the proofs prove is:
 
 For the per-opcode theorems to constitute an end-to-end claim about
 ZisK, every promise hypothesis must be discharged from circuit
-witnesses + the trusted bus / transpile axioms. Today, **62 of 63
-opcodes have no such discharge** — only `Add` (after a recent
-refactor that bundled `matches_entry` into `add_circuit_holds` and
-derived it from a new `op_bus_perm_sound_BinaryAdd` axiom)
-demonstrates the chain end-to-end.
+witnesses + the trusted bus / transpile axioms. At the time of this
+historical survey, **62 of 63 opcodes had no such discharge** — only
+`Add` (after a then-recent refactor that bundled `matches_entry` into
+`add_circuit_holds` and derived it from a new
+`op_bus_perm_sound_BinaryAdd` axiom) demonstrated the chain end-to-end.
+That principal caller-burden gap is now closed at the global theorem as
+described in the status block above.
 
 ## Immediate TODO (historical — all items DONE)
 

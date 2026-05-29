@@ -1,9 +1,9 @@
 # `ZiskFv/Trusted/`
 
 The **transpile-contract trust surface**. The single file
-`Transpiler.lean` declares the **51 `transpile_*` axioms** that
+`Transpiler.lean` declares the **42 `transpile_*` axioms** that
 constitute class #1 of the trust ledger (the largest single block
-in the 122-axiom TCB). Each axiom asserts that ZisK's Rust
+in the 53-source-axiom TCB). Each axiom asserts that ZisK's Rust
 transpilation lowers a Sail-decoded RV64IM instruction
 (`ast` value) into a Main-AIR row column shape that matches the
 pure spec.
@@ -25,7 +25,7 @@ The submodule is pinned at `0xPolygonHermez/zisk@48cf7ccef`.
 
 To audit class #1: read `Transpiler.lean` top-to-bottom alongside
 the `zisk/` source it cites. The same axioms also surface as the
-`transpile_*` references in `trust/baseline-axioms.txt` (51 lines).
+`transpile_*` references in `trust/baseline-axioms.txt` (42 lines).
 
 See `docs/fv/trusted-base.md` for the full per-class breakdown of
-the 122 axioms.
+the 53 source axioms.

@@ -39,7 +39,7 @@
 #
 # The load/store opcodes below are allowed to replace the compressed
 # Main/MemAlign memory-bus *promise hypotheses* with explicit Clean
-# memory-channel structure: a memory-family ensemble witness, the
+# memory-channel structure: a Clean memory-channel/full-ensemble witness, the
 # `MemBusChannel` balance proof, selected Main/provider component rows,
 # row-equality pins tying the Clean Main row to the existing `Valid_Main`
 # row, and ROM/transpile pins for `addr1`, `addr2`, `main_step`,

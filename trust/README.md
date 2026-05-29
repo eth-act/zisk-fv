@@ -164,21 +164,18 @@ git diff trust/baseline-equiv-axiom-deps.txt    # AUDIT this diff
 The diff IS the audit surface — a CODEOWNER reviews exactly which
 theorems gained or lost which axiom dependencies.
 
-## Known gap — promise hypotheses in canonical equiv theorems
+## Promise-hypothesis regression guard
 
 The OUTPUT-EQ retirement (`forbidden-param-shapes.txt`,
 `forbidden-types.txt`) catches the 10 most extreme hypothesis
 names/shapes — those that literally state the conclusion as an
-assumption. **It does not catch the broader promise-hypothesis
-pattern** that 62 of 63 canonical `equiv_<OP>` theorems still rely
-on: user-supplied algebraic equations linking Main columns,
-provider columns, loose field elements, and Sail input/output
-values, **without those equations being derived from the bus
-protocol or transpile contract**.
+assumption. The broader promise-hypothesis pattern is guarded by the
+hypothesis-count and caller-burden ledgers: a PR that renames, splits,
+or reintroduces caller-supplied algebraic equations on canonical
+`equiv_<OP>` theorems causes V1 drift.
 
-Both V1 and V2 gates pass cleanly today; the residual gap is
-semantic, not syntactic, and is the project's principal open
-soundness item. See [`docs/fv/known-gaps.md`](../docs/fv/known-gaps.md)
-for the full survey, the three tiers of detachment, the
-implications for the global compliance theorem, and the immediate
-TODO.
+The historical survey in [`docs/fv/known-gaps.md`](../docs/fv/known-gaps.md)
+records how that gap was found and closed at the global compliance
+theorem. Current implementation/proof defects that weaken or block the
+public claim live in [`docs/fv/defects.md`](../docs/fv/defects.md); a
+defect entry is not a trust-ledger axiom.
