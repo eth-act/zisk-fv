@@ -168,12 +168,15 @@ jobs:
 
       - name: nix run .#test (cargo + lake + trust gate + flake check)
         env:
-          # threads=3 in CI. The fresh-build mem measurement on this
-          # branch (2026-05-29) peaked at 27.9 GiB summed Lean RSS and
-          # 12.1 GiB for the largest single Lean process, so this run
-          # needs the 32 GiB XL runner. nix/test.nix's default is
-          # matched at 3.
-          LEAN_NUM_THREADS: "3"
+          # threads=4 in CI. Run 26661855178's mem-trace (2026-05-29,
+          # warm cache, this branch) measured peak kernel `used` =
+          # 12.4 GiB and MemAvailable = 19 GiB on the 32 GiB XL runner
+          # at threads=3, so a 4th thread comfortably fits. Earlier
+          # threads=4 attempt OOM-killed at ZiskFv.Sail.sd back when
+          # sd.lean's elaboration peaked at 42 GiB; PR #4's layered
+          # dsimp+rw refactor cut it to ~8 GiB PSS, which is what makes
+          # 4 viable now. nix/test.nix's default is matched at 4.
+          LEAN_NUM_THREADS: "4"
         run: |
           # Memory + lean-process sidecar. Run 25230110804 died with no
           # step log content preserved → strong signal the runner host

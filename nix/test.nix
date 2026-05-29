@@ -45,13 +45,15 @@ writeShellApplication {
     #
     # Lake at 5.0 has no -j/jobs flag, but its async build jobs run on
     # Lean's runtime task scheduler, which honors LEAN_NUM_THREADS.
-    # threads=3 matches the 32 GB XL runner's budget. The 2026-05-29
-    # Clean AIR integration fresh-build measurement peaked at 27.9 GiB
-    # summed Lean RSS and 12.1 GiB for the largest single Lean process.
-    # Earlier caps: threads=2 was the original conservative default;
-    # threads=4 OOM-killed at ZiskFv.Sail.sd. Override with
+    # threads=4 fits the 32 GB XL runner's budget. CI run 26661855178
+    # (2026-05-29, this branch, warm cache) measured peak kernel `used`
+    # = 12.4 GiB and MemAvailable = 19 GiB at threads=3, leaving room
+    # for a 4th thread. Earlier caps: threads=2 was the original
+    # conservative default; threads=4 OOM-killed at ZiskFv.Sail.sd back
+    # when sd.lean's elaboration peaked at 42 GiB, before PR #4's
+    # layered dsimp+rw refactor cut it to ~8 GiB PSS. Override with
     # LEAN_NUM_THREADS=N at call site for a different cap.
-    run "2/4 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-3}" lake build
+    run "2/4 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
 
     # 3. Trust gate (locality + baseline + forbidden tier1 params +
     # floors + zero-sorry + uniformity lint). See trust/README.md.
