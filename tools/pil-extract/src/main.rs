@@ -15,8 +15,8 @@ pub mod pilout {
 
 use pilout::{
     constraint::Constraint as ConstraintKind, expression::Operation as ExprOp, hint_field,
-    operand::Operand as OperandKind, Air, Constraint, Expression, Hint, HintField,
-    HintFieldArray, Operand, PilOut, SymbolType,
+    operand::Operand as OperandKind, Air, Constraint, Expression, Hint, HintField, Operand, PilOut,
+    SymbolType,
 };
 
 #[derive(Parser, Debug)]
@@ -143,9 +143,9 @@ struct CleanComponentCmd {
 
     /// Channel shape for the proves-side `push`. `op-bus` (default) is
     /// the 11-slot `OpBusChannel` (BinaryAdd-family providers, C0g).
-    /// `mem-align-bus` is the 6-slot `MemAlignBusChannel` for the
-    /// MemAlign-family memory-bus providers (`bus_id = 10`; C1) —
-    /// `[mem_op, addr, step, width, value_0, value_1]`.
+    /// `mem-align-bus` is accepted for compatibility and emits the unified
+    /// 6-slot `MemBusChannel` for memory-bus providers (`bus_id = 10`) —
+    /// `[mem_op, ptr, timestamp, width, value_0, value_1]`.
     #[arg(long, default_value = "op-bus")]
     channel: String,
 }

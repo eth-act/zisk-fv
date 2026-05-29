@@ -26,11 +26,10 @@ No axioms added. This is the bridge that Phase 5's
 the Compliance dispatch layer will use to dispatch via the Clean Component's
 Soundness instead of the spike's bespoke per-AIR proofs.
 
-The actual retirement of `binary_add_columns_in_range` (the one
-BinaryAdd-specific axiom in `trust/baseline-axioms.txt`) requires
-the full FlatEnsemble's RangeBus channel-balance discharge —
-deferred to Phase 5. For now this Bridge demonstrates the
-*architectural* connection.
+The old `binary_add_columns_in_range` axiom is retired by concrete
+Clean/static lookup witnesses in the full ensemble path. This bridge
+preserves the architectural connection from the named AIR wrapper to the
+Clean component.
 -/
 
 namespace ZiskFv.AirsClean.BinaryAdd
@@ -94,9 +93,9 @@ def constraints_at (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (r : ℕ)
 
     This routes the existing `Valid_BinaryAdd` consumer through the
     Clean Component's `soundness` lemma. The Compliance dispatch layer
-    will discharge the `Assumptions` precondition via the FlatEnsemble's
-    RangeBus channel-balance proof — completing the trust-retirement chain
-    for `binary_add_columns_in_range`. -/
+    discharges the `Assumptions` precondition via concrete Clean/static
+    lookup witnesses, completing the trust-retirement chain for
+    `binary_add_columns_in_range`. -/
 theorem spec_of_valid
     (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt v r))

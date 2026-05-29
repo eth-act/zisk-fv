@@ -19,7 +19,7 @@ over the program, so the `Program` parameter flows through unchanged.
 
 The `Spec` is exact decoded-row membership and `contains_iff` is
 definitional, matching the large-ROM pattern from
-`AirsClean/ZRomSpike.lean` and `AirsClean/BinaryTable.lean`.
+`AirsClean/BinaryTable.lean`.
 
 ## Trust note
 

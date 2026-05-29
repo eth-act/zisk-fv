@@ -1,12 +1,29 @@
 # Defect ledger
 
 This ledger tracks known defects that affect the formal verification claim.
-It is paired with the design in
-[`defect-ledger-design.md`](defect-ledger-design.md).
-
-The ledger is not the trust ledger. Do not add axioms to cover these rows.
+The ledger is not the trust ledger: do not add axioms to cover these rows.
 Each open defect must either block the unqualified theorem or appear as an
 explicit exception predicate in the theorem statement.
+
+Every known defect must be visible in three places:
+
+1. a human-readable ledger entry in this file;
+2. a Lean predicate under `ZiskFv/Compliance/Defects.lean` naming the exact
+   excluded behavior or blocked witness shape;
+3. a top-level theorem statement whose name and hypotheses make the
+   exception explicit.
+
+The theorem must exclude the smallest behavior justified by the evidence.
+Excluding an entire opcode is allowed only when the defect covers the whole
+opcode. Ordinary out-of-scope items, such as precompiles or non-RV64IM
+extensions, belong in scope documentation rather than this ledger.
+
+| Kind | Meaning | Theorem treatment |
+|------|---------|-------------------|
+| `implementation-semantic` | ZisK intentionally or accidentally implements less than the RV64IM Sail behavior for an in-scope opcode. | Prove compliance on the complement of a precise defect predicate. |
+| `circuit-soundness` | A malicious witness can satisfy the constraints while disagreeing with the intended execution relation. | Do not advertise an unqualified compliance theorem for affected cases. Either prove a precise exclusion theorem or mark the claim blocked. |
+| `trust-shape` | An axiom states an opcode-level conclusion that should instead be derived from a shared trust boundary plus finite proofs. | Replace with a shared boundary and derived projection theorems. The defect is closed only when the bad axiom disappears from the global theorem closure. |
+| `modeling-gap` | The Lean model deliberately abstracts something required for the real implementation claim. | Either move it to the scope document if it is out of scope, or express it as an explicit theorem hypothesis. |
 
 ## Open / mitigated defects
 
@@ -18,7 +35,7 @@ explicit exception predicate in the theorem statement.
 | `status` | `retired-in-lean` |
 | `affected` | None in `Defects.UsesOpcodeSpecificArithTableAxiom`. The false opcode-shaped declarations for `MUL`, `MULH`, `MULHSU`, `MULW`, unsigned-W DIV/REM, and signed-W DIV/REM have been deleted from `ZiskFv.Airs.Arith.Ranges`. |
 | `condition` | Opcode-specific ArithTable conclusions are trusted directly instead of proved from shared table membership plus finite projections. |
-| `evidence` | See [`trusted-base.md`](trusted-base.md) "Current correction: ArithTable trust shape" and [`clean-integration-plan.md`](clean-integration-plan.md) C3/C4. |
+| `evidence` | See [`trusted-base.md`](trusted-base.md) "Current correction: ArithTable trust shape" and [`arith-table-axiom-audit.md`](arith-table-axiom-audit.md). |
 | `claim impact` | This trust-shape defect no longer blocks the defect-aware theorem. The ordinary zero-sorry invariant is restored for this cleanup; the remaining signed-MUL limitation is tracked separately as `ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`. |
 | `retirement condition` | Met for the defect predicate: every C3/C4 constructor is removed from `Defects.UsesOpcodeSpecificArithTableAxiom`; proof closures for repaired arms consume shared lookup/permutation membership plus proved finite-table projections, not false opcode-shaped ArithTable facts. |
 

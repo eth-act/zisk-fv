@@ -14,8 +14,7 @@ extracted form lives at `build/extraction/Extraction/ArithTable.lean`.
 
 This module repackages those 74 rows as a Clean `Circuit.StaticTable`
 over `fields 15` rows — the proven Clean mechanism for static ROM
-tables (plan decision D-ROM; the C0e Z-ROM spike
-`AirsClean/ZRomSpike.lean` is the reference). The 15 slots, in PIL
+tables. The 15 slots, in PIL
 column order (`arith_table.pil:228-253` / the FLAGS decode at
 `arith_table.pil:209-211`), are:
 
@@ -32,9 +31,9 @@ column order (`arith_table.pil:228-253` / the FLAGS decode at
 
 ## `Spec` (faithful, non-vacuous)
 
-For an arbitrary ROM (the 74 rows have no arithmetic decode — unlike
-the `ZRomSpike` range table), the faithful membership predicate IS
-the row set: `Spec t` holds iff `t` is one of the 74 explicit rows.
+For an arbitrary ROM (the 74 rows have no arithmetic decode), the
+faithful membership predicate IS the row set: `Spec t` holds iff `t`
+is one of the 74 explicit rows.
 This is **not vacuous** (`True` would be) — it pins `t` to exactly
 the ROM content — and it makes `contains_iff` definitional (`Spec`
 is, by construction, the `StaticTable.Contains` predicate). A

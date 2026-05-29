@@ -280,12 +280,12 @@ const OP_BUS_MESSAGE_FIELDS: [&str; 11] = [
     "extra_args_0",
 ];
 
-/// The 6 `MemAlignBusMessage` fields, in declared order
-/// (`ZiskFv/Channels/MemAlignBus.lean`). The MemAlign-family memory-bus
-/// proves-side tuple is `[mem_op, addr, step, width, value_0, value_1]`
+/// The 6 `MemBusMessage` fields, in declared order
+/// (`ZiskFv/Channels/MemoryBus.lean`). The MemAlign-family memory-bus
+/// proves-side tuple is `[mem_op, ptr, timestamp, width, value_0, value_1]`
 /// (`mem_align_byte.pil:96`, `permutation_proves`).
-const MEM_ALIGN_BUS_MESSAGE_FIELDS: [&str; 6] =
-    ["mem_op", "addr", "step", "width", "value_0", "value_1"];
+const MEM_BUS_MESSAGE_FIELDS: [&str; 6] =
+    ["mem_op", "ptr", "timestamp", "width", "value_0", "value_1"];
 
 /// Which Clean channel the AIR's proves-side `push` targets — selects the
 /// message shape, the channel name, and which bus to resolve.
@@ -293,8 +293,8 @@ const MEM_ALIGN_BUS_MESSAGE_FIELDS: [&str; 6] =
 pub enum ChannelKind {
     /// The 11-slot `OpBusChannel` (operation bus, C0g BinaryAdd shape).
     OpBus,
-    /// The 6-slot `MemAlignBusChannel` (MemAlign-family memory bus, C1).
-    MemAlignBus,
+    /// The 6-slot `MemBusChannel`; selected by legacy `mem-align-bus`.
+    MemoryBus,
 }
 
 impl ChannelKind {
@@ -302,7 +302,7 @@ impl ChannelKind {
     pub fn from_flag(flag: &str) -> Result<ChannelKind> {
         match flag {
             "op-bus" => Ok(ChannelKind::OpBus),
-            "mem-align-bus" => Ok(ChannelKind::MemAlignBus),
+            "mem-align-bus" => Ok(ChannelKind::MemoryBus),
             other => bail!(
                 "unknown --channel `{}`; expected `op-bus` or `mem-align-bus`",
                 other
@@ -314,7 +314,7 @@ impl ChannelKind {
     fn message_fields(self) -> &'static [&'static str] {
         match self {
             ChannelKind::OpBus => &OP_BUS_MESSAGE_FIELDS,
-            ChannelKind::MemAlignBus => &MEM_ALIGN_BUS_MESSAGE_FIELDS,
+            ChannelKind::MemoryBus => &MEM_BUS_MESSAGE_FIELDS,
         }
     }
 
@@ -322,7 +322,7 @@ impl ChannelKind {
     fn channel_value(self) -> &'static str {
         match self {
             ChannelKind::OpBus => "OpBusChannel",
-            ChannelKind::MemAlignBus => "MemAlignBusChannel",
+            ChannelKind::MemoryBus => "MemBusChannel",
         }
     }
 
@@ -330,7 +330,7 @@ impl ChannelKind {
     fn channel_import(self) -> &'static str {
         match self {
             ChannelKind::OpBus => "import ZiskFv.Channels.OperationBus",
-            ChannelKind::MemAlignBus => "import ZiskFv.Channels.MemAlignBus",
+            ChannelKind::MemoryBus => "import ZiskFv.Channels.MemoryBus",
         }
     }
 
@@ -338,7 +338,7 @@ impl ChannelKind {
     fn channel_open(self) -> &'static str {
         match self {
             ChannelKind::OpBus => "open ZiskFv.Channels.OperationBus (OpBusChannel)",
-            ChannelKind::MemAlignBus => "open ZiskFv.Channels.MemAlignBus (MemAlignBusChannel)",
+            ChannelKind::MemoryBus => "open ZiskFv.Channels.MemoryBus (MemBusChannel)",
         }
     }
 
@@ -346,7 +346,7 @@ impl ChannelKind {
     fn bus_label(self) -> &'static str {
         match self {
             ChannelKind::OpBus => "operation bus",
-            ChannelKind::MemAlignBus => "memory bus",
+            ChannelKind::MemoryBus => "memory bus",
         }
     }
 
@@ -359,7 +359,7 @@ impl ChannelKind {
     fn proves_piop(self) -> &'static str {
         match self {
             ChannelKind::OpBus => "Lookup",
-            ChannelKind::MemAlignBus => "Permutation",
+            ChannelKind::MemoryBus => "Permutation",
         }
     }
 }
