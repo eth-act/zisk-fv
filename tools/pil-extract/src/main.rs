@@ -1160,6 +1160,7 @@ fn render_bus_emissions_multi(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pilout::HintFieldArray;
 
     #[test]
     fn format_basefield_empty() {
