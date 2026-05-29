@@ -14,22 +14,6 @@
 # platform assumptions (P1-P4), and store_pc=1 PC bridges (TP-*).
 ZiskFv/Trusted/Transpiler.lean
 
-# Bus-protocol soundness for bus_id=10 (memory bus).
-ZiskFv/Airs/MemoryBus/MemBridge.lean
-ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
-
-# Lookup-table content for bus_id=125 / 124.
-ZiskFv/Airs/Tables/BinaryTable.lean
-ZiskFv/Airs/Tables/BinaryExtensionTable.lean
-
-# Bus-protocol soundness for bus_id=5000 (operation bus).
-# The consolidated bus-level axiom lives in Consolidated.lean;
-# Bridge.lean now exposes the per-provider results as theorems
-# derived from it (kept allowlisted for transitional safety in case
-# of future axiom additions in this file).
-ZiskFv/Airs/OperationBus/Bridge.lean
-ZiskFv/Airs/OperationBus/Consolidated.lean
-
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
 ZiskFv/ZiskCircuit/MemModel.lean
 
