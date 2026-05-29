@@ -88,12 +88,11 @@ separately from the trust ledger in [`defects.md`](defects.md), following
 [`defect-ledger-design.md`](defect-ledger-design.md). A defect entry is not
 a trusted fact and must not be used to justify a new axiom.
 
-Per-class spot check (55 axioms total):
+Per-class spot check (53 axioms total):
 
 ```bash
 awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
   | sort | uniq -c
-#   2 ZiskFv/Airs/Binary/BinaryRanges.lean       residual Binary W-mode facts (class #6)
 #   6 ZiskFv/AirsClean/Completeness.lean         Clean completeness placeholders (class #C)
 #   4 ZiskFv/SailSpec/Auxiliaries.lean           platform-feature scope (classes #7-#10)
 #  42 ZiskFv/Trusted/Transpiler.lean             transpile contracts (class #1)
@@ -124,7 +123,7 @@ The narrative per-class rationale below stays here.
 | 2  | Memory state bridge — load          |     1 | `ZiskCircuit/MemModel.lean`           | A Mem-AIR row tagged `wr=0` matching a memory-bus entry implies Sail's `state.mem` agrees with the entry's eight bytes.                           | Bridges Mem AIR's column language to Sail's byte-addressable `Std.HashMap` once class #4 has placed the entry on the bus.                                    |
 | 4  | Bus / lookup soundness              |     0 | — | Retired from the live trust ledger. | The T4 Clean memory-channel route retired the load/provider, store, and MemAlign sub-doubleword entries from canonical/global trust. T5 retired `main_external_arith_emission_bundle`; T7 retired `main_store_pc_emission_bundle` by deriving store-PC/register-write lanes from selected Clean Main `cMemMessage` structural witnesses. |
 | 5b | Range-bus / byte-range soundness    |     0 | — | Retired from the live trust ledger. | T7 removed `range_bus_sound` and `signed_range_bus_sound`; byte and signed-range facts now come from concrete Clean/static lookup witnesses or local row constraints. |
-| 6  | Binary / BinaryExtension lookup soundness | 2 | `Airs/Binary/BinaryRanges.lean` (2) | Lookup-argument soundness still live for Binary W-mode sign-extension: `binary_w_sext_choice_pin` and `binary_w_mode_carry_7_zero` for ADDW/SUBW. `bin_table_consumer_wf` and `bin_ext_table_consumer_wf` have been retired from source. | Lookup-argument soundness on the Binary AIR, scoped to the remaining W-mode row facts. |
+| 6  | Binary / BinaryExtension lookup soundness | 0 | — | Retired from the live trust ledger. `bin_table_consumer_wf`, `bin_ext_table_consumer_wf`, and the residual Binary W-mode facts have all been removed from source. | Binary-family table facts now come from Clean/static lookup witnesses and exact `BinaryTable` row proofs. |
 | 6b | Arith range / Euclidean pins |     0 | —              | Retired in T5/T7. The shared `arith_{mul,div}_table_lookup_sound` axioms and the remaining dynamic `arith_table_op_*` / `arith_div_*` source axioms were removed. `MUL*`, `DIV*`, and `REM*` proofs now consume lookup-aware `ArithMulTableWitness` / `ArithDivTableWitness` binders for true static `ArithTableSpec` projections, while known dynamic witness gaps are explicit defects. | No live source axioms remain in this class. Future row/range/operation-bus facts must be proved from constraints and Clean/static lookup facts rather than reintroduced as trust. |
 | 7  | Platform — PMP inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmpCheck _ _ _ _ = pure none`.                                                                                               | ZisK's RV64IM target excludes PMP. Axiomatising as inert is strictly stronger than threading state-level disjointness through every load/store proof.        |
 | 8  | Platform — CLINT disjoint           |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.within_clint _ _ = pure false`.                                                                                              | ZisK programs do not access the CLINT MMIO region. Same scope-honest framing as #7.                                                                          |
@@ -132,7 +131,7 @@ The narrative per-class rationale below stays here.
 | 10 | Platform — Zicfilp disabled         |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.update_elp_state _ = pure ()`.                                                                                               | Zicfilp landing-pad extension is disabled in ZisK's target; helper reduces to no-op under `currentlyEnabled Ext_Zicfilp = false`.                            |
 | C  | Clean-Component completeness — NON-SECURITY-CRITICAL | 6 | `AirsClean/Completeness.lean` | `binaryAdd_circuit_completeness`, `memAlignByte_circuit_completeness`, `memAlignReadByte_circuit_completeness`, `arithMul_circuit_completeness`, `arithDiv_circuit_completeness`, `mainWithRomAndMemBus_circuit_completeness` — fill mandatory `completeness` fields for Clean `GeneralFormalCircuit`s as integration proceeds. BinaryExtension's C5 component has trivial proved completeness and does not add an axiom. Binary's C6 component also adds no axiom: its prover-completeness side is explicitly conditional on the row `Spec`, while soundness remains proved from constraints. | zisk-fv is a **soundness-only** verification: it does not prove completeness (that an honest prover can satisfy the constraints — the pre-Clean code never established it either). These axioms are **completeness-direction** — a falsehood in any one CANNOT make a wrong execution verify; the verification's *soundness* does not depend on this class. Clean's `GeneralFormalCircuit` simply makes the field mandatory. (Plan decision D-COMPLETE.) |
 
-Total live count: `trust/baseline-axioms.txt` currently records **55**
+Total live count: `trust/baseline-axioms.txt` currently records **53**
 axioms, including the 6 non-security-critical Clean completeness axioms in
 class C. Class C is separate in kind from the soundness-critical trust classes.
 
@@ -150,9 +149,8 @@ division/remainder witness route is proved.
 * `op_bus_perm_sound_{BinaryAdd, Binary, BinaryExtension}` (3) →
   `op_bus_permutation_sound` (1) — parameterized over an
   `OpBusProvider` sum type. `ZiskFv/Airs/OperationBus/Consolidated.lean`.
-* `binary_b_op_or_sext_eq_OP_{AND, OR, XOR}` (3) →
-  `binary_b_op_or_sext_eq_op_general` (1) — parameterized over
-  opcode literal. `ZiskFv/Airs/Binary/BinaryRanges.lean`.
+* The old Binary table-pin family was retired by the Clean/static Binary
+  route; no Binary table-pin axiom remains in the source ledger.
 
 The binary per-target results are preserved as theorems with original
 names and signatures, so downstream consumers require no changes.
@@ -277,8 +275,8 @@ CODEOWNER-protected change.
 
 The trust ledger grew incrementally as the per-opcode `equiv_<OP>`
 proofs were closed; the rounds below preserve the audit trail of
-which axiom landed when and why. The current state — 58 source
-trust-ledger axioms and a 55-name global compliance closure — is the
+which axiom landed when and why. The current state — 53 source
+trust-ledger axioms and a 50-name global compliance closure — is the
 result of the rounds chronologically listed below, with the Step-4
 dead-code cleanup trimming the ledger from 147 to 122 and the later
 Clean terminal phases retiring memory and Arith-family trust.
@@ -294,17 +292,13 @@ proved; afterwards the V2 trust gate's `check-closure-vs-baseline`
 subcommand enforces that no further dead axioms can survive in the
 ledger.
 
-### Step 4.2 round 4 — SUBW/ADDW SEXT byte case-split (+2 in class #6)
+### Binary W-mode lookup retirement
 
-`binary_w_sext_choice_pin` (W-mode sign-extension byte choice for
-`free_in_c_4..7` based on the low-32-bit result MSB, per
-`binary.pil:111` + `binary.pil:120-124` +
-`binary_table.rs::ARITH_TABLE`) and `binary_w_mode_carry_7_zero`
-(W-mode `carry_7 = 0` bundled corollary) close the SEXT-byte
-case-split for SUBW/ADDW that Round 3.II's chain-pin axiom did not
-expose for bytes 4..7. Wrappers landed: `equiv_SUBW`
-(`Compliance/Wrappers/Subw.lean`), `equiv_ADDW`
-(`Compliance/Wrappers/Addw.lean`).
+The former W-mode sign-extension and final-carry facts for
+ADDW/SUBW/ADDIW are now derived from Clean Binary balance, PIL-shaped
+BinaryTable lookup messages, exact static table membership, and the
+row-level Binary constraints. No Binary/BinaryExtension class-#6 source
+axioms remain in the live trust ledger.
 
 ### Step 4.2 round 3 — Four parallel branches landing 13 wrappers
 

@@ -782,9 +782,9 @@ closure. `trust/baseline-equiv-axiom-deps.txt` still lists
 `op_bus_permutation_sound` in canonical closures for `ADD`, `ADDI`, and signed
 loads `LB/LH/LW`; it is also still in the global compliance closure.
 `ADDIW/ADDW/SUBW` now use the Clean/static Binary route and have dropped
-`range_bus_sound`; they retain only the W-mode Binary refinements
-`binary_w_sext_choice_pin` and `binary_w_mode_carry_7_zero` besides
-transpile trust.
+`range_bus_sound`; the former W-mode Binary refinements are also derived
+from exact static BinaryTable lookup rows, leaving only transpile trust for
+those opcodes.
 `bin_ext_table_consumer_wf` remains in signed loads `LB/LH/LW`. The remaining
 consumers move to T2 BinaryAdd `ADD/ADDI` work and T4 memory/signed-load work.
 
@@ -1161,7 +1161,8 @@ Checklist:
 - ☑ T6.3 retire `range_bus_sound` and `signed_range_bus_sound` when their
   global closure entries disappear. T7 deleted
   `ZiskFv/Channels/RangeBusSoundness.lean` and the unused per-AIR range
-  wrappers, and the regenerated trust ledger now records 55 axioms.
+  wrappers; after the Binary W-mode retirement the regenerated trust ledger
+  now records 53 axioms.
 
 ### T7 — Final ensemble re-root and deletion pass
 

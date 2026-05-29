@@ -18,6 +18,7 @@ namespace ZiskFv.AirsClean.Binary
 open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
+open ZiskFv.Channels.BinaryTable (BinaryTableMessage)
 
 def circuit : GeneralFormalCircuit FGL BinaryRow unit :=
   { binaryElaborated with
@@ -44,71 +45,109 @@ def circuit : GeneralFormalCircuit FGL BinaryRow unit :=
 
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 
+@[reducible]
+def lookupFlags012Row (row : BinaryRow FGL) (carry : FGL) : FGL :=
+  carry + 2 * row.mode.result_is_a + 4 * row.mode.use_first_byte
+
+@[reducible]
+def lookupFlags3456Row (row : BinaryRow FGL) (carry : FGL) : FGL :=
+  carry + 2 * row.mode.result_is_a + 4 * row.mode.use_first_byte
+    + 8 * row.mode.mode32_and_c_is_signed
+
+@[reducible]
+def lookupFlags7Row (row : BinaryRow FGL) : FGL :=
+  row.chain.carry_7 + 2 * row.mode.result_is_a + 4 * row.mode.use_first_byte
+    + 8 * row.mode.c_is_signed
+
+@[reducible]
+def lookupMessage0Row (row : BinaryRow FGL) : BinaryTableMessage FGL :=
+  { pos_ind := 2 * row.mode.use_first_byte
+    op := row.chain.b_op
+    a_byte := row.aBytes.free_in_a_0
+    b_byte := row.bBytes.free_in_b_0
+    cin := 0
+    c_byte := row.cBytes.free_in_c_0
+    flags := lookupFlags012Row row row.chain.carry_0 }
+
+@[reducible]
+def lookupMessage1Row (row : BinaryRow FGL) : BinaryTableMessage FGL :=
+  { pos_ind := 0
+    op := row.chain.b_op
+    a_byte := row.aBytes.free_in_a_1
+    b_byte := row.bBytes.free_in_b_1
+    cin := row.chain.carry_0
+    c_byte := row.cBytes.free_in_c_1
+    flags := lookupFlags012Row row row.chain.carry_1 }
+
+@[reducible]
+def lookupMessage2Row (row : BinaryRow FGL) : BinaryTableMessage FGL :=
+  { pos_ind := 0
+    op := row.chain.b_op
+    a_byte := row.aBytes.free_in_a_2
+    b_byte := row.bBytes.free_in_b_2
+    cin := row.chain.carry_1
+    c_byte := row.cBytes.free_in_c_2
+    flags := lookupFlags012Row row row.chain.carry_2 }
+
+@[reducible]
+def lookupMessage3Row (row : BinaryRow FGL) : BinaryTableMessage FGL :=
+  { pos_ind := row.mode.mode32
+    op := row.chain.b_op
+    a_byte := row.aBytes.free_in_a_3
+    b_byte := row.bBytes.free_in_b_3
+    cin := row.chain.carry_2
+    c_byte := row.cBytes.free_in_c_3
+    flags := lookupFlags3456Row row row.chain.carry_3 }
+
+@[reducible]
+def lookupMessage4Row (row : BinaryRow FGL) : BinaryTableMessage FGL :=
+  { pos_ind := 0
+    op := row.chain.b_op_or_sext
+    a_byte := row.aBytes.free_in_a_4
+    b_byte := row.bBytes.free_in_b_4
+    cin := row.chain.carry_3
+    c_byte := row.cBytes.free_in_c_4
+    flags := lookupFlags3456Row row row.chain.carry_4 }
+
+@[reducible]
+def lookupMessage5Row (row : BinaryRow FGL) : BinaryTableMessage FGL :=
+  { pos_ind := 0
+    op := row.chain.b_op_or_sext
+    a_byte := row.aBytes.free_in_a_5
+    b_byte := row.bBytes.free_in_b_5
+    cin := row.chain.carry_4
+    c_byte := row.cBytes.free_in_c_5
+    flags := lookupFlags3456Row row row.chain.carry_5 }
+
+@[reducible]
+def lookupMessage6Row (row : BinaryRow FGL) : BinaryTableMessage FGL :=
+  { pos_ind := 0
+    op := row.chain.b_op_or_sext
+    a_byte := row.aBytes.free_in_a_6
+    b_byte := row.bBytes.free_in_b_6
+    cin := row.chain.carry_5
+    c_byte := row.cBytes.free_in_c_6
+    flags := lookupFlags3456Row row row.chain.carry_6 }
+
+@[reducible]
+def lookupMessage7Row (row : BinaryRow FGL) : BinaryTableMessage FGL :=
+  { pos_ind := 1 - row.mode.mode32
+    op := row.chain.b_op_or_sext
+    a_byte := row.aBytes.free_in_a_7
+    b_byte := row.bBytes.free_in_b_7
+    cin := row.chain.carry_6
+    c_byte := row.cBytes.free_in_c_7
+    flags := lookupFlags7Row row }
+
 abbrev StaticBinaryTableSpecFacts (row : BinaryRow FGL) : Prop :=
-      ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-        { pos_ind := 2 * row.mode.use_first_byte
-          op := row.chain.b_op
-          a_byte := row.aBytes.free_in_a_0
-          b_byte := row.bBytes.free_in_b_0
-          cin := 0
-          c_byte := row.cBytes.free_in_c_0
-          flags := row.chain.carry_0 }
-      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-        { pos_ind := 0
-          op := row.chain.b_op
-          a_byte := row.aBytes.free_in_a_1
-          b_byte := row.bBytes.free_in_b_1
-          cin := row.chain.carry_0
-          c_byte := row.cBytes.free_in_c_1
-          flags := row.chain.carry_1 }
-      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-        { pos_ind := 0
-          op := row.chain.b_op
-          a_byte := row.aBytes.free_in_a_2
-          b_byte := row.bBytes.free_in_b_2
-          cin := row.chain.carry_1
-          c_byte := row.cBytes.free_in_c_2
-          flags := row.chain.carry_2 }
-      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-        { pos_ind := row.mode.mode32
-          op := row.chain.b_op
-          a_byte := row.aBytes.free_in_a_3
-          b_byte := row.bBytes.free_in_b_3
-          cin := row.chain.carry_2
-          c_byte := row.cBytes.free_in_c_3
-          flags := row.chain.carry_3 }
-      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-        { pos_ind := 0
-          op := row.chain.b_op_or_sext
-          a_byte := row.aBytes.free_in_a_4
-          b_byte := row.bBytes.free_in_b_4
-          cin := row.chain.carry_3
-          c_byte := row.cBytes.free_in_c_4
-          flags := row.chain.carry_4 }
-      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-        { pos_ind := 0
-          op := row.chain.b_op_or_sext
-          a_byte := row.aBytes.free_in_a_5
-          b_byte := row.bBytes.free_in_b_5
-          cin := row.chain.carry_4
-          c_byte := row.cBytes.free_in_c_5
-          flags := row.chain.carry_5 }
-      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-        { pos_ind := 0
-          op := row.chain.b_op_or_sext
-          a_byte := row.aBytes.free_in_a_6
-          b_byte := row.bBytes.free_in_b_6
-          cin := row.chain.carry_5
-          c_byte := row.cBytes.free_in_c_6
-          flags := row.chain.carry_6 }
-      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-        { pos_ind := 1 - row.mode.mode32
-          op := row.chain.b_op_or_sext
-          a_byte := row.aBytes.free_in_a_7
-          b_byte := row.bBytes.free_in_b_7
-          cin := row.chain.carry_6
-          c_byte := row.cBytes.free_in_c_7
-          flags := row.chain.carry_7 }
+      ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage0Row row)
+      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage1Row row)
+      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage2Row row)
+      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage3Row row)
+      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage4Row row)
+      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage5Row row)
+      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage6Row row)
+      ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage7Row row)
 
 def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit :=
   { binaryWithStaticBinaryTableElaborated with
@@ -133,14 +172,22 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit :=
                   , by simpa [sub_eq_add_neg] using h4
                   , by simpa [sub_eq_add_neg] using h5
                   , by simpa [sub_eq_add_neg] using h6 ⟩
-              , ⟨ by simpa [StaticBinaryTableSpecFacts, sub_eq_add_neg] using h7
-                  , by simpa [StaticBinaryTableSpecFacts, sub_eq_add_neg] using h8
-                  , by simpa [StaticBinaryTableSpecFacts, sub_eq_add_neg] using h9
-                  , by simpa [StaticBinaryTableSpecFacts, sub_eq_add_neg] using h10
-                  , by simpa [StaticBinaryTableSpecFacts, sub_eq_add_neg] using h11
-                  , by simpa [StaticBinaryTableSpecFacts, sub_eq_add_neg] using h12
-                  , by simpa [StaticBinaryTableSpecFacts, sub_eq_add_neg] using h13
-                  , by simpa [StaticBinaryTableSpecFacts, sub_eq_add_neg] using h14 ⟩ ⟩
+              , ⟨ by simp [StaticBinaryTableSpecFacts, lookupMessage0Row,
+                      lookupFlags012Row, sub_eq_add_neg] at h7 ⊢; exact h7
+                  , by simp [StaticBinaryTableSpecFacts, lookupMessage1Row,
+                      lookupFlags012Row, sub_eq_add_neg] at h8 ⊢; exact h8
+                  , by simp [StaticBinaryTableSpecFacts, lookupMessage2Row,
+                      lookupFlags012Row, sub_eq_add_neg] at h9 ⊢; exact h9
+                  , by simp [StaticBinaryTableSpecFacts, lookupMessage3Row,
+                      lookupFlags3456Row, sub_eq_add_neg] at h10 ⊢; exact h10
+                  , by simp [StaticBinaryTableSpecFacts, lookupMessage4Row,
+                      lookupFlags3456Row, sub_eq_add_neg] at h11 ⊢; exact h11
+                  , by simp [StaticBinaryTableSpecFacts, lookupMessage5Row,
+                      lookupFlags3456Row, sub_eq_add_neg] at h12 ⊢; exact h12
+                  , by simp [StaticBinaryTableSpecFacts, lookupMessage6Row,
+                      lookupFlags3456Row, sub_eq_add_neg] at h13 ⊢; exact h13
+                  , by simp [StaticBinaryTableSpecFacts, lookupMessage7Row,
+                      lookupFlags7Row, sub_eq_add_neg] at h14 ⊢; exact h14 ⟩ ⟩
       · intro _
         trivial
     completeness := by
@@ -155,14 +202,14 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit :=
             , by simpa [sub_eq_add_neg] using h4
             , by simpa [sub_eq_add_neg] using h5
             , by simpa [sub_eq_add_neg] using h6
-            , by simpa [sub_eq_add_neg] using h7
-            , by simpa [sub_eq_add_neg] using h8
-            , by simpa [sub_eq_add_neg] using h9
-            , by simpa [sub_eq_add_neg] using h10
-            , by simpa [sub_eq_add_neg] using h11
-            , by simpa [sub_eq_add_neg] using h12
-            , by simpa [sub_eq_add_neg] using h13
-            , by simpa [sub_eq_add_neg] using h14 ⟩ }
+            , by simp [lookupMessage0Row, lookupFlags012Row, sub_eq_add_neg] at h7 ⊢; exact h7
+            , by simp [lookupMessage1Row, lookupFlags012Row, sub_eq_add_neg] at h8 ⊢; exact h8
+            , by simp [lookupMessage2Row, lookupFlags012Row, sub_eq_add_neg] at h9 ⊢; exact h9
+            , by simp [lookupMessage3Row, lookupFlags3456Row, sub_eq_add_neg] at h10 ⊢; exact h10
+            , by simp [lookupMessage4Row, lookupFlags3456Row, sub_eq_add_neg] at h11 ⊢; exact h11
+            , by simp [lookupMessage5Row, lookupFlags3456Row, sub_eq_add_neg] at h12 ⊢; exact h12
+            , by simp [lookupMessage6Row, lookupFlags3456Row, sub_eq_add_neg] at h13 ⊢; exact h13
+            , by simp [lookupMessage7Row, lookupFlags7Row, sub_eq_add_neg] at h14 ⊢; exact h14 ⟩ }
 
 def staticLookupComponent : Air.Flat.Component FGL := ⟨ staticLookupCircuit ⟩
 

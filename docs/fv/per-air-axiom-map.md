@@ -190,15 +190,6 @@ shape and that the per-AIR axiom map's 0–1 prediction was correct.
 | Axiom | Class | Source | Discharges |
 |---|---|---|---|
 | `op_bus_perm_sound_Binary` | #4 (op-bus perm) | `Airs/OperationBus/Bridge.lean:77` | cross-AIR matches_entry for Binary-shape opcodes |
-| `binary_columns_in_range` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:56` | chunk-range bounds on Binary's `bits(8)` byte columns |
-| `binary_per_byte_lookup_witness` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:149` | per-byte BinaryTable lookup witness — links each row byte slot to a `consumer_byte_match_chain` instance |
-| `binary_carry_bits_in_range` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:198` | `(v.carry_i r).val < 2` for the 8 `bits(1) carry[BYTES]` columns (`binary.pil:67`) — needed for AND/OR/XOR `c_7 = 0` derivation |
-| `binary_b_op_or_sext_eq_OP_OR` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean:263` | for any Binary row whose op-bus emission `b_op + 16 * mode32 = 15` (OP_OR), `b_op_or_sext = OP_OR` (`binary.pil:104` + `binary.pil:131-148`). Added by Step 4.1.4 (OR exemplar). |
-| `binary_b_op_or_sext_eq_OP_AND` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean` | parallel pin for `b_op + 16 * mode32 = 14` (OP_AND). Added by Step 4.2.B (AND wrapper). |
-| `binary_b_op_or_sext_eq_OP_XOR` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean` | parallel pin for `b_op + 16 * mode32 = 16` (OP_XOR). Added by Step 4.2.B (XOR wrapper). |
-| `binary_consumer_byte_match_chain_pin` | #6 (chain-pin) | `Airs/Binary/BinaryRanges.lean:398` | 6-field per-byte chain witness exposing `cin`/`pos_ind` for SUB/SLT-family + W-mode (`op_emit ∈ {0x06, 0x07, 0x0B, 0x1A, 0x1B}`). Added by Step 4.2 round 3.II (SUB wrapper). |
-| `binary_w_sext_choice_pin` | #6 (W-mode SEXT) | `Airs/Binary/BinaryRanges.lean:542` | W-mode (`op_emit ∈ {0x1A, 0x1B}`) sign-extension byte choice — for `free_in_c_4..7`, either all `0x00` and low-32 result MSB = 0, or all `0xFF` and MSB = 1. Added by Step 4.2 round 4.B (SUBW/ADDW wrappers). |
-| `binary_w_mode_carry_7_zero` | #6 (W-mode chain-end) | `Airs/Binary/BinaryRanges.lean:568` | W-mode (`op_emit ∈ {0x1A, 0x1B}`) `v.carry_7 r = 0` bundled corollary. Added by Step 4.2 round 4.B (SUBW/ADDW wrappers). |
 | `bin_table_consumer_wf` | #6 (lookup-bus) | `Airs/BinaryTable.lean:281` | BinaryTable consumer rows (`multiplicity = 1`) satisfy `wf_properties` |
 
 ### Predicted gaps for the AIR's discharge pilot
@@ -241,11 +232,12 @@ op-class diversity.
 
 ### Pilot landed (Step 4.1.4 — OR exemplar)
 
-**Added: 1 axiom** at the low end of the 2–4 prediction.
+Historical note: this pilot originally added one table-pin axiom. The
+Clean/static Binary route has since retired that path from the live ledger.
 
 | New axiom | Class | Source | Discharges (in `equiv_OR`) |
 |---|---|---|---|
-| `binary_b_op_or_sext_eq_OP_OR` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean:263` | `h_bop_or_sext : (v.b_op_or_sext r_binary).val = OP_OR` |
+| retired Binary table-pin path | #6 (table-pin) | — | `h_bop_or_sext : (v.b_op_or_sext r_binary).val = OP_OR` |
 
 Composition: `op_bus_perm_sound_Binary` (class #4) provides the
 existential row witness `r_binary` + the `matches_entry` predicate.

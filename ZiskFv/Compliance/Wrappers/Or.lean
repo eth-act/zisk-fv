@@ -26,32 +26,21 @@ OR is the simplest of the 14 Binary-shape opcodes:
   byte-local 3-field family covers).
 * Symmetric in rs1/rs2 (unlike Tier-2 ops, no extra ordering).
 
-Per `docs/fv/per-air-axiom-map.md` the Binary shape pilot has the
-largest predicted axiom delta (2–4) of the six remaining shapes —
-the AIR covers 14 opcodes across several sub-shapes, and the
-mode-pin / sign-pin surface is broader than BinaryAdd's. **This OR
-pilot lands 1 new axiom** at the low end of the prediction, because
-the OR-shape (and AND/XOR by symmetry) only need the
-`b_op_or_sext = OP_OR` mode pin — no sign or W-mode pins required.
+The historical OR pilot originally exposed the Binary shape before the
+Clean/static Binary route existed. The live wrapper now consumes the shared
+Clean Binary balance and exact table facts; the old Binary trust file has
+been retired.
 
 ## 5-category discharge applied
 
 * **Lane-match.** Internalized by the Clean/static Binary provider route.
   The retired multiplicity-based BinaryTable path and `bin_table_consumer_wf`
   no longer appear in the canonical closure.
-* **Mode pins.** OR consumes one mode pin on the provider AIR:
-  `(v.b_op_or_sext r_binary).val = OP_OR`. This is the gap addressed
-  by the **new axiom** `binary_b_op_or_sext_eq_OP_OR` (class #6) in
-  `ZiskFv/Airs/Binary/BinaryRanges.lean` — the consequence of
-  PIL's `b_op_or_sext` linear def (`binary.pil:104`) plus the
-  per-byte BinaryTable lookup (`binary.pil:131-148`) restricting the
-  `(b_op, mode32, c_is_signed)` triple to a unique valid decomposition
-  when the on-bus emission `b_op + 16 * mode32 = 15`.
+* **Mode pins.** OR's `b_op_or_sext = OP_OR` fact is derived through
+  the Clean/static Binary provider path and exact BinaryTable lookup facts.
 * **Sign-witness pins.** N/A for OR (unsigned bitwise op).
-* **Range/bound.** Discharged by the Binary AIR's range axioms
-  (`binary_columns_in_range`, `binary_carry_bits_in_range`) —
-  pre-internalized by `equiv_OR` via the `Bridge.Binary` helpers.
-  No wrapper-level work.
+* **Range/bound.** Discharged by the Clean/static Binary route and
+  `Bridge.Binary` helpers. No wrapper-level work.
 * **Operand bridges.** Discharged by
   `Bridge.SailStateBridge.packed_lane_eq_of_read_xreg` (consumed
   through `Bridge.Binary.input_r1_packed_a` / `input_r2_packed_b`).
@@ -59,16 +48,8 @@ the OR-shape (and AND/XOR by symmetry) only need the
 
 ## Anti-laundering report
 
-* **One new axiom.** `binary_b_op_or_sext_eq_OP_OR` in
-  `ZiskFv/Airs/Binary/BinaryRanges.lean`. Class #6 (Binary AIR
-  lookup soundness — table-pin sub-class). PIL-cited
-  (`binary.pil:104` + `binary.pil:131-148`). At the **low end** of
-  the per-AIR axiom map's 2–4 prediction — possible because OR's
-  byte-local logic shape (shared with AND/XOR) only needs one pin
-  to distinguish OR from AND/XOR at the `b_op_or_sext` lookup level;
-  AND and XOR will need parallel `binary_b_op_or_sext_eq_OP_{AND,XOR}`
-  pins for their wrappers (so the shape's mass-author phase will
-  add 2 more class-#6 axioms — still within the 2–4 envelope).
+* **No new axiom.** The former Binary table-pin path is gone from the live
+  trust ledger; this wrapper relies on the shared Clean/static Binary route.
 * **Bridges cross-shape if possible.** No new bridge helpers added.
   The existing `Bridge.Binary` infrastructure (`carry_7_zero_OR_pure`,
   `byte_chain_discharge_logic`, `match_clo_chi_OR`, the

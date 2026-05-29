@@ -336,6 +336,9 @@ theorem equiv_SLTIU_of_static_row
       h_mode32_zero h_b_op
   obtain ⟨h_match_clo, h_match_chi⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.compare_c_lanes_LTU_of_static_chain h_match_v out
+  have h_chain_7 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain7_carry_flag_of_static_row_out
+      row h_core ZiskFv.Airs.Tables.BinaryTable.OP_LTU out
   have h_fl7_lt_2 : (v.carry_7 0).val < 2 :=
     ZiskFv.EquivCore.Bridge.Binary.carry_7_val_lt_2_of_row_core row h_core
   have h_input_imm_v : BitVec.signExtend 64 sltiu_input.imm
@@ -360,12 +363,18 @@ theorem equiv_SLTIU_of_static_row
     (v.free_in_c_6 0) (v.free_in_c_7 0)
     (0 : FGL) (v.carry_0 0) (v.carry_1 0) (v.carry_2 0)
     (v.carry_3 0) (v.carry_4 0) (v.carry_5 0) (v.carry_6 0)
-    (v.carry_0 0) (v.carry_1 0) (v.carry_2 0) (v.carry_3 0)
-    (v.carry_4 0) (v.carry_5 0) (v.carry_6 0) (v.carry_7 0)
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_0 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_1 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_2 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_3 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_4 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_5 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_6 0))
+    (v.carry_7 0)
     (2 * v.use_first_byte 0) (0 : FGL) (0 : FGL) (v.mode32 0)
     (0 : FGL) (0 : FGL) (0 : FGL) (1 - v.mode32 0)
     out.chain_0 out.chain_1 out.chain_2 out.chain_3
-    out.chain_4 out.chain_5 out.chain_6 out.chain_7
+    out.chain_4 out.chain_5 out.chain_6 h_chain_7
     out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
     out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
     h_match_clo h_match_chi h_lane_rd h_fl7_lt_2 h_input_imm_v

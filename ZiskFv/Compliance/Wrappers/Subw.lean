@@ -9,15 +9,13 @@ import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_SUBW` Compliance wrapper — Binary W-mode 6-field chain shape
 
 Canonical wrapper delegates to the Clean/static provider core. Trust footprint is tracked by the regenerated caller-burden and axiom-closure ledgers.
-(consumes `op_bus_perm_sound_Binary`, `binary_consumer_byte_match_chain_pin`,
-`binary_w_sext_choice_pin`, `binary_w_mode_carry_7_zero`).
+(consumes Clean/static Binary provider facts for the row shape and byte chain).
 -/
 
 namespace ZiskFv.Compliance
@@ -90,27 +88,9 @@ theorem equiv_SUBW
       row h_spec_facts h_core 0x1B (Or.inr rfl) h_emit
   have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_SUB] using h_bop_val
-  let v := ZiskFv.AirsClean.Binary.validOfRow row
-  have h_emit_v : v.b_op 0 + 16 * v.mode32 0 = (0x1B : FGL) := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_emit
-  have h_sext_choice :=
-    binary_w_sext_choice_pin v 0 0x1B h_emit_v (Or.inr rfl)
-  have h_carry_7_zero :=
-    binary_w_mode_carry_7_zero v 0 0x1B h_emit_v (Or.inr rfl)
-  have h_sext_choice_row :
-      ((row.cBytes.free_in_c_4.val = 0 ∧ row.cBytes.free_in_c_5.val = 0
-          ∧ row.cBytes.free_in_c_6.val = 0 ∧ row.cBytes.free_in_c_7.val = 0) ∧
-        row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
-          + row.cBytes.free_in_c_2.val * 65536
-          + row.cBytes.free_in_c_3.val * 16777216 < 2147483648) ∨
-      ((row.cBytes.free_in_c_4.val = 255 ∧ row.cBytes.free_in_c_5.val = 255
-          ∧ row.cBytes.free_in_c_6.val = 255 ∧ row.cBytes.free_in_c_7.val = 255) ∧
-        row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
-          + row.cBytes.free_in_c_2.val * 65536
-          + row.cBytes.free_in_c_3.val * 16777216 ≥ 2147483648) := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_sext_choice
-  have h_carry_7_zero_row : row.chain.carry_7 = 0 := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_carry_7_zero
+  obtain ⟨h_sext_choice_row, h_carry_7_zero_row⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
+      row h_spec_facts h_facts h_core h_mode32_one (Or.inr h_b_op)
   exact ZiskFv.EquivCore.Subw.equiv_SUBW_of_static_row
     state subw_input r1 r2 rd m row r_main bus promises
     ⟨h_main_active, h_main_op_subw⟩

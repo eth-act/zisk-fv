@@ -1,7 +1,7 @@
 ZiskFv.Equivalence.Add.equiv_ADD: ZiskFv.Trusted.transpile_ADD
 ZiskFv.Equivalence.Addi.equiv_ADDI: ZiskFv.Trusted.transpile_ADDI
-ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero, ZiskFv.Airs.Binary.binary_w_sext_choice_pin, ZiskFv.Trusted.transpile_ADDIW
-ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero, ZiskFv.Airs.Binary.binary_w_sext_choice_pin, ZiskFv.Trusted.transpile_ADDW
+ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Trusted.transpile_ADDIW
+ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Trusted.transpile_ADDW
 ZiskFv.Equivalence.And.equiv_AND: ZiskFv.Trusted.transpile_AND
 ZiskFv.Equivalence.Andi.equiv_ANDI: ZiskFv.Trusted.transpile_ANDI
 ZiskFv.Equivalence.Auipc.equiv_AUIPC: ZiskFv.Trusted.transpile_AUIPC, ZiskFv.Trusted.transpile_PC_for_AUIPC
@@ -57,7 +57,7 @@ ZiskFv.Equivalence.Srli.equiv_SRLI: ZiskFv.Trusted.transpile_SRLI
 ZiskFv.Equivalence.Srliw.equiv_SRLIW: ZiskFv.Trusted.transpile_SRLIW
 ZiskFv.Equivalence.Srlw.equiv_SRLW: ZiskFv.Trusted.transpile_SRLW
 ZiskFv.Equivalence.Sub.equiv_SUB: ZiskFv.Trusted.transpile_SUB
-ZiskFv.Equivalence.Subw.equiv_SUBW: ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero, ZiskFv.Airs.Binary.binary_w_sext_choice_pin, ZiskFv.Trusted.transpile_SUBW
+ZiskFv.Equivalence.Subw.equiv_SUBW: ZiskFv.Trusted.transpile_SUBW
 ZiskFv.Equivalence.Sw.equiv_SW: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.Trusted.transpile_SW
 ZiskFv.Equivalence.Xor.equiv_XOR: ZiskFv.Trusted.transpile_XOR
 ZiskFv.Equivalence.Xori.equiv_XORI: ZiskFv.Trusted.transpile_XORI

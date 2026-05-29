@@ -403,7 +403,14 @@ theorem equiv_SUBW_of_static_row
     (v.free_in_c_3 0) (v.free_in_c_4 0) (v.free_in_c_5 0)
     (v.free_in_c_6 0) (v.free_in_c_7 0)
     (0 : FGL) (v.carry_0 0) (v.carry_1 0) (v.carry_2 0)
-    (v.carry_0 0) (v.carry_1 0) (v.carry_2 0) (v.carry_3 0)
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row
+      (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_0 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row
+      (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_1 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row
+      (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_2 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row
+      (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_3 0))
     (2 * v.use_first_byte 0) (0 : FGL) (0 : FGL) (v.mode32 0)
     out.chain_0 out.chain_1 out.chain_2 out.chain_3
     out.c0_lt out.c1_lt out.c2_lt out.c3_lt hc4 hc5 hc6 hc7

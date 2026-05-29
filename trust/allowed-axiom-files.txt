@@ -30,9 +30,6 @@ ZiskFv/Airs/Tables/BinaryExtensionTable.lean
 ZiskFv/Airs/OperationBus/Bridge.lean
 ZiskFv/Airs/OperationBus/Consolidated.lean
 
-# Residual W-mode Binary trust facts.
-ZiskFv/Airs/Binary/BinaryRanges.lean
-
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
 ZiskFv/ZiskCircuit/MemModel.lean
 

@@ -17,6 +17,19 @@ open Goldilocks
 open ZiskFv.Channels.OperationBus
 open ZiskFv.Channels.BinaryTable
 
+open ZiskFv.Airs.Tables.BinaryTable in
+/-- The eight legacy `BinaryTable.wf_properties` facts for the exact rows
+    emitted by Binary's static-table lookup path. -/
+abbrev StaticBinaryTableWfFacts (row : BinaryRow FGL) : Prop :=
+    wf_properties (BinaryTableMessage.toEntry (lookupMessage0Row row) 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry (lookupMessage1Row row) 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry (lookupMessage2Row row) 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry (lookupMessage3Row row) 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry (lookupMessage4Row row) 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry (lookupMessage5Row row) 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry (lookupMessage6Row row) 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry (lookupMessage7Row row) 1)
+
 @[reducible]
 def constVar (row : BinaryRow FGL) : Var BinaryRow FGL where
   aBytes := {
@@ -74,70 +87,7 @@ theorem binary_table_wf_of_lookup_aware_const_soundness
     (h_holds :
       ConstraintsHold.Soundness env
         ((mainWithBinaryTable (constVar row)).operations offset)) :
-    wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 2 * row.mode.use_first_byte
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_0
-        b_byte := row.bBytes.free_in_b_0
-        cin := 0
-        c_byte := row.cBytes.free_in_c_0
-        flags := row.chain.carry_0 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_1
-        b_byte := row.bBytes.free_in_b_1
-        cin := row.chain.carry_0
-        c_byte := row.cBytes.free_in_c_1
-        flags := row.chain.carry_1 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_2
-        b_byte := row.bBytes.free_in_b_2
-        cin := row.chain.carry_1
-        c_byte := row.cBytes.free_in_c_2
-        flags := row.chain.carry_2 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := row.mode.mode32
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_3
-        b_byte := row.bBytes.free_in_b_3
-        cin := row.chain.carry_2
-        c_byte := row.cBytes.free_in_c_3
-        flags := row.chain.carry_3 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_4
-        b_byte := row.bBytes.free_in_b_4
-        cin := row.chain.carry_3
-        c_byte := row.cBytes.free_in_c_4
-        flags := row.chain.carry_4 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_5
-        b_byte := row.bBytes.free_in_b_5
-        cin := row.chain.carry_4
-        c_byte := row.cBytes.free_in_c_5
-        flags := row.chain.carry_5 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_6
-        b_byte := row.bBytes.free_in_b_6
-        cin := row.chain.carry_5
-        c_byte := row.cBytes.free_in_c_6
-        flags := row.chain.carry_6 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 1 - row.mode.mode32
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_7
-        b_byte := row.bBytes.free_in_b_7
-        cin := row.chain.carry_6
-        c_byte := row.cBytes.free_in_c_7
-        flags := row.chain.carry_7 } 1) := by
+    StaticBinaryTableWfFacts row := by
   simp only [mainWithBinaryTable, main, circuit_norm] at h_holds
   rcases h_holds with
     ⟨_h0, _h1, _h2, _h3, _h4, _h5, _h6,
@@ -165,70 +115,7 @@ theorem binary_table_specs_of_static_lookup_const_soundness
     (h_holds :
       ConstraintsHold.Soundness env
         ((mainWithStaticBinaryTable (constVar row)).operations offset)) :
-    ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-      { pos_ind := 2 * row.mode.use_first_byte
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_0
-        b_byte := row.bBytes.free_in_b_0
-        cin := 0
-        c_byte := row.cBytes.free_in_c_0
-        flags := row.chain.carry_0 }
-  ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-      { pos_ind := 0
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_1
-        b_byte := row.bBytes.free_in_b_1
-        cin := row.chain.carry_0
-        c_byte := row.cBytes.free_in_c_1
-        flags := row.chain.carry_1 }
-  ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-      { pos_ind := 0
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_2
-        b_byte := row.bBytes.free_in_b_2
-        cin := row.chain.carry_1
-        c_byte := row.cBytes.free_in_c_2
-        flags := row.chain.carry_2 }
-  ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-      { pos_ind := row.mode.mode32
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_3
-        b_byte := row.bBytes.free_in_b_3
-        cin := row.chain.carry_2
-        c_byte := row.cBytes.free_in_c_3
-        flags := row.chain.carry_3 }
-  ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-      { pos_ind := 0
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_4
-        b_byte := row.bBytes.free_in_b_4
-        cin := row.chain.carry_3
-        c_byte := row.cBytes.free_in_c_4
-        flags := row.chain.carry_4 }
-  ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-      { pos_ind := 0
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_5
-        b_byte := row.bBytes.free_in_b_5
-        cin := row.chain.carry_4
-        c_byte := row.cBytes.free_in_c_5
-        flags := row.chain.carry_5 }
-  ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-      { pos_ind := 0
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_6
-        b_byte := row.bBytes.free_in_b_6
-        cin := row.chain.carry_5
-        c_byte := row.cBytes.free_in_c_6
-        flags := row.chain.carry_6 }
-  ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec
-      { pos_ind := 1 - row.mode.mode32
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_7
-        b_byte := row.bBytes.free_in_b_7
-        cin := row.chain.carry_6
-        c_byte := row.cBytes.free_in_c_7
-        flags := row.chain.carry_7 } := by
+    StaticBinaryTableSpecFacts row := by
   simp only [mainWithStaticBinaryTable, main, circuit_norm] at h_holds
   rcases h_holds with
     ⟨_h0, _h1, _h2, _h3, _h4, _h5, _h6,
@@ -247,79 +134,10 @@ theorem binary_table_specs_of_static_lookup_const_soundness
                     Table.toRaw] using h5
         , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
                     Table.toRaw] using h6
-        , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
-                    Table.toRaw, sub_eq_add_neg] using h7 ⟩
-
-open ZiskFv.Airs.Tables.BinaryTable in
-/-- The eight legacy `BinaryTable.wf_properties` facts for the exact rows
-    emitted by Binary's static-table lookup path. This is the shared C7 target
-    shape: downstream Binary proofs should consume this fact rather than call
-    `bin_table_consumer_wf` directly. -/
-abbrev StaticBinaryTableWfFacts (row : BinaryRow FGL) : Prop :=
-    wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 2 * row.mode.use_first_byte
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_0
-        b_byte := row.bBytes.free_in_b_0
-        cin := 0
-        c_byte := row.cBytes.free_in_c_0
-        flags := row.chain.carry_0 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_1
-        b_byte := row.bBytes.free_in_b_1
-        cin := row.chain.carry_0
-        c_byte := row.cBytes.free_in_c_1
-        flags := row.chain.carry_1 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_2
-        b_byte := row.bBytes.free_in_b_2
-        cin := row.chain.carry_1
-        c_byte := row.cBytes.free_in_c_2
-        flags := row.chain.carry_2 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := row.mode.mode32
-        op := row.chain.b_op
-        a_byte := row.aBytes.free_in_a_3
-        b_byte := row.bBytes.free_in_b_3
-        cin := row.chain.carry_2
-        c_byte := row.cBytes.free_in_c_3
-        flags := row.chain.carry_3 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_4
-        b_byte := row.bBytes.free_in_b_4
-        cin := row.chain.carry_3
-        c_byte := row.cBytes.free_in_c_4
-        flags := row.chain.carry_4 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_5
-        b_byte := row.bBytes.free_in_b_5
-        cin := row.chain.carry_4
-        c_byte := row.cBytes.free_in_c_5
-        flags := row.chain.carry_5 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 0
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_6
-        b_byte := row.bBytes.free_in_b_6
-        cin := row.chain.carry_5
-        c_byte := row.cBytes.free_in_c_6
-        flags := row.chain.carry_6 } 1)
-  ∧ wf_properties (BinaryTableMessage.toEntry
-      { pos_ind := 1 - row.mode.mode32
-        op := row.chain.b_op_or_sext
-        a_byte := row.aBytes.free_in_a_7
-        b_byte := row.bBytes.free_in_b_7
-        cin := row.chain.carry_6
-        c_byte := row.cBytes.free_in_c_7
-        flags := row.chain.carry_7 } 1)
+        , by
+            simp [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw, lookupMessage7Row, lookupFlags7Row, sub_eq_add_neg] at h7 ⊢
+            exact h7 ⟩
 
 open ZiskFv.Airs.Tables.BinaryTable in
 /-- Static-provider BinaryTable lookup path, projected all the way to the
@@ -519,7 +337,7 @@ theorem static_table_b_op_or_sext_eq_of_xor_emit
       rw [h_one] at h_emit
       simpa using (add_right_cancel h_emit)
     have h_ne := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_zero h3
-    exact False.elim (h_ne (by rw [h_bop_zero]; norm_num))
+    exact False.elim (h_ne (by simp [lookupMessage3Row, h_bop_zero]))
 
 /-- Exact static BinaryTable membership also pins the low-byte opcode and
     `mode32` for an emitted XOR row. -/
@@ -553,7 +371,7 @@ theorem static_table_xor_mode_pins_of_emit
       rw [h_one] at h_emit
       simpa using (add_right_cancel h_emit)
     have h_ne := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_zero h3
-    exact False.elim (h_ne (by rw [h_bop_zero]; norm_num))
+    exact False.elim (h_ne (by simp [lookupMessage3Row, h_bop_zero]))
 
 /-- Exact static BinaryTable membership plus the Binary boolean/core row
     constraints pin the 64-bit logic op-bus shapes without the legacy

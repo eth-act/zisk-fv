@@ -9,7 +9,6 @@ import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Compliance.SharedBundles
 
@@ -90,26 +89,9 @@ theorem equiv_ADDIW
   have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val
   let v := ZiskFv.AirsClean.Binary.validOfRow row
-  have h_emit_v : v.b_op 0 + 16 * v.mode32 0 = (0x1A : FGL) := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_emit
-  have h_sext_choice :=
-    binary_w_sext_choice_pin v 0 0x1A h_emit_v (Or.inl rfl)
-  have h_carry_7_zero :=
-    binary_w_mode_carry_7_zero v 0 0x1A h_emit_v (Or.inl rfl)
-  have h_sext_choice_row :
-      ((row.cBytes.free_in_c_4.val = 0 ∧ row.cBytes.free_in_c_5.val = 0
-          ∧ row.cBytes.free_in_c_6.val = 0 ∧ row.cBytes.free_in_c_7.val = 0) ∧
-        row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
-          + row.cBytes.free_in_c_2.val * 65536
-          + row.cBytes.free_in_c_3.val * 16777216 < 2147483648) ∨
-      ((row.cBytes.free_in_c_4.val = 255 ∧ row.cBytes.free_in_c_5.val = 255
-          ∧ row.cBytes.free_in_c_6.val = 255 ∧ row.cBytes.free_in_c_7.val = 255) ∧
-        row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
-          + row.cBytes.free_in_c_2.val * 65536
-          + row.cBytes.free_in_c_3.val * 16777216 ≥ 2147483648) := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_sext_choice
-  have h_carry_7_zero_row : row.chain.carry_7 = 0 := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_carry_7_zero
+  obtain ⟨h_sext_choice_row, h_carry_7_zero_row⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
+      row h_spec_facts h_facts h_core h_mode32_one (Or.inl h_b_op)
   have h_b_lo_m : m.b_0 r_main = v.free_in_b_0 0 + 256 * v.free_in_b_1 0
                                   + 65536 * v.free_in_b_2 0
                                   + 16777216 * v.free_in_b_3 0 := by

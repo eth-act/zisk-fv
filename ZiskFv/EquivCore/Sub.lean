@@ -394,7 +394,7 @@ theorem equiv_SUB_of_static_lookup
       ZiskFv.Airs.Tables.BinaryTable.OP_SUB h_core h_mode32_zero h_b_op
   have h_carry_7_zero :=
     ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_SUB_of_static_chain
-      v r_binary out h_core.2.1
+      v r_binary out h_core h_core.2.1
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
   obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, _, _, _, _⟩ := h_lane_eqs
@@ -420,8 +420,14 @@ theorem equiv_SUB_of_static_lookup
     (v.free_in_c_6 r_binary) (v.free_in_c_7 r_binary)
     (0 : FGL) (v.carry_0 r_binary) (v.carry_1 r_binary) (v.carry_2 r_binary)
     (v.carry_3 r_binary) (v.carry_4 r_binary) (v.carry_5 r_binary) (v.carry_6 r_binary)
-    (v.carry_0 r_binary) (v.carry_1 r_binary) (v.carry_2 r_binary) (v.carry_3 r_binary)
-    (v.carry_4 r_binary) (v.carry_5 r_binary) (v.carry_6 r_binary) (v.carry_7 r_binary)
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt v r_binary) (v.carry_0 r_binary))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt v r_binary) (v.carry_1 r_binary))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt v r_binary) (v.carry_2 r_binary))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v r_binary) (v.carry_3 r_binary))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v r_binary) (v.carry_4 r_binary))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v r_binary) (v.carry_5 r_binary))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v r_binary) (v.carry_6 r_binary))
+    (ZiskFv.AirsClean.Binary.lookupFlags7Row (ZiskFv.AirsClean.Binary.rowAt v r_binary))
     (2 * v.use_first_byte r_binary) (0 : FGL) (0 : FGL) (v.mode32 r_binary)
     (0 : FGL) (0 : FGL) (0 : FGL) (1 - v.mode32 r_binary)
     out.chain_0 out.chain_1 out.chain_2 out.chain_3
@@ -476,7 +482,7 @@ theorem equiv_SUB_of_static_row
       h_mode32_zero h_b_op
   have h_carry_7_zero :=
     ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_SUB_of_static_chain
-      v 0 out h_core.2.1
+      v 0 out h_core h_core.2.1
   have h_lane_eqs := h_match_v
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
   obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, _, _, _, _⟩ := h_lane_eqs
@@ -502,8 +508,14 @@ theorem equiv_SUB_of_static_row
     (v.free_in_c_6 0) (v.free_in_c_7 0)
     (0 : FGL) (v.carry_0 0) (v.carry_1 0) (v.carry_2 0)
     (v.carry_3 0) (v.carry_4 0) (v.carry_5 0) (v.carry_6 0)
-    (v.carry_0 0) (v.carry_1 0) (v.carry_2 0) (v.carry_3 0)
-    (v.carry_4 0) (v.carry_5 0) (v.carry_6 0) (v.carry_7 0)
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_0 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_1 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_2 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_3 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_4 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_5 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt v 0) (v.carry_6 0))
+    (ZiskFv.AirsClean.Binary.lookupFlags7Row (ZiskFv.AirsClean.Binary.rowAt v 0))
     (2 * v.use_first_byte 0) (0 : FGL) (0 : FGL) (v.mode32 0)
     (0 : FGL) (0 : FGL) (0 : FGL) (1 - v.mode32 0)
     out.chain_0 out.chain_1 out.chain_2 out.chain_3
