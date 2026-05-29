@@ -34,16 +34,16 @@
       flake = false;
     };
     clean-src = {
-      # Private fork codygunton/clean: a squashed snapshot of upstream
+      # Public fork codygunton/clean: a squashed snapshot of upstream
       # Verified-zkEVM/clean @ 95c8cc2e (= upstream main HEAD; Lean/Mathlib
       # v4.28.0, matches zisk-fv) plus two zisk-fv integration patches:
       # namespace hygiene (Fin.foldl_eq_foldl_finRange →
       # Clean.Fin.foldl_eq_foldl_finRange, so Clean.Air.* can be imported
       # alongside Mathlib/Batteries) and the C7
       # `exists_nonzero_push_of_pull` balance strengthening. To be upstreamed;
-      # re-point at Verified-zkEVM/clean once both merge.
-      # NOTE: private repo — `nix` needs GitHub SSH access to fetch it.
-      url = "git+ssh://git@github.com/codygunton/clean.git?ref=zisk-nonzero-balance&rev=b0302b747ece73dd607651c0ca784ae801cbe8be";
+      # re-point at Verified-zkEVM/clean once both merge. Pinned by rev so
+      # the lock is immutable; fetched over HTTPS so CI needs no SSH key.
+      url = "github:codygunton/clean/ef6dfbcd353b4f6b15897c8113cf691d15b98b4c";
       flake = false;
     };
   };
