@@ -3,14 +3,14 @@
 **Instruction-shape archetype tactics** that drive the per-opcode
 `Equivalence/<Op>.lean` proofs. The RV64IM instruction set has only
 a handful of structural *shapes* (R-type ALU, I-type immediate ALU,
-branch, load, store, jump, mul, shift, sign-extend-load, R-type-W,
-U-type, arith state-machine). Each archetype packages the standard
+branch, load, store, mul, shift, sign-extend-load, R-type-W, U-type,
+arith state-machine). Each archetype packages the standard
 `simp` / `rewrite` cascade that closes the equivalence for one shape;
 each `Equivalence/<Op>.lean` mostly **instantiates** the matching
 archetype with the opcode's specific Sail-side rewrite and
 `ZiskCircuit/` compositional theorem.
 
-The 12 archetypes:
+The 11 archetypes:
 
 | File                              | Covers                                       |
 | --------------------------------- | -------------------------------------------- |
@@ -20,7 +20,6 @@ The 12 archetypes:
 | `LoadArchetype.lean`              | LD, LBU, LHU, LWU (copyb family)             |
 | `SignExtendLoadArchetype.lean`    | LB, LH, LW (sign-extension family)           |
 | `StoreArchetype.lean`             | SB, SH, SW, SD                               |
-| `JumpArchetype.lean`              | JAL, JALR                                    |
 | `MulArchetype.lean`               | MUL, MULH, MULHSU, MULHU, MULW               |
 | `ShiftArchetype.lean`             | SLLW, SLLIW, SRAW, SRAIW, SRLW, SRLIW        |
 | `RTypeWArchetype.lean`            | ADDW, SUBW                                   |
@@ -31,6 +30,10 @@ This is what makes 63 individual equivalence proofs feasible without
 writing 63 bespoke proof scripts. To audit one archetype, read it
 once, then a handful of the opcodes that share the shape — they
 should all look like the same proof modulo Sail rewrite.
+
+JAL and JALR are handled directly in `ZiskCircuit/Jal.lean` and
+`ZiskCircuit/Jalr.lean`; the old internal-copyb JALR archetype was
+removed when production JALR moved to the final external `OP_AND` row.
 
 Important: the archetype files contain some helper `theorem`
 declarations whose leaf name (`equiv_<OP>`) collides with the

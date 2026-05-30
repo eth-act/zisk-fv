@@ -31,8 +31,8 @@ python3 trust/scripts/regenerate-wrapper-caller-burden.py > trust/baseline-wrapp
 echo "  → trust/baseline-wrapper-caller-burden.txt"
 
 echo "Refreshing trust-ledger axiom index..."
-python3 tools/trust-ledger-index.py > docs/fv/axiom-index.md
-echo "  → docs/fv/axiom-index.md"
+python3 tools/trust-ledger-index.py > trust/axiom-index.md
+echo "  → trust/axiom-index.md"
 
 if [ -d .lake/build ]; then
   echo "Refreshing V2 per-theorem axiom-dep baseline..."
@@ -53,9 +53,11 @@ if [ -d .lake/build ]; then
     echo "# enumeration of that closure for external auditors who want to inspect"
     echo "# the surface without running Lean."
     echo "#"
-    echo "# Source-of-truth cross-check: this set must match the unqualified"
-    echo "# axiom names in \`trust/baseline-axioms.txt\`. The V2 trust gate's"
-    echo "# \`check-closure-vs-baseline\` subcommand enforces the match"
+    echo "# Source-of-truth cross-check: this set must match the reachable"
+    echo "# unqualified axiom names in \`trust/baseline-axioms.txt\`, modulo"
+    echo "# the explicit completeness-direction allowlist in"
+    echo "# \`trust/tolerated-completeness-axioms.txt\`. The V2 trust gate's"
+    echo "# \`check-closure-vs-baseline\` subcommand enforces that relation"
     echo "# mechanically; this file is a standalone audit document — readable"
     echo "# without running Lean."
     echo "#"

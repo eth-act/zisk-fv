@@ -64,6 +64,10 @@ def validOfRow (row : MainRow FGL) :
   pc := fun _ => row.pc
   is_external_op := fun _ => row.is_external_op
   op := fun _ => row.op
+  b_src_imm := fun _ => 0
+  b_src_mem := fun _ => 0
+  b_src_ind := fun _ => 0
+  b_src_reg := fun _ => 0
   m32 := fun _ => row.m32
   ind_width := fun _ => row.ind_width
   set_pc := fun _ => row.set_pc

@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 53
+# Total entries: 12
 #
 fa200b1ab7404b33  ZiskFv/AirsClean/Completeness.lean:39  axiom     binaryAdd_circuit_completeness
 3f25cdecf241bf62  ZiskFv/AirsClean/Completeness.lean:52  axiom     memAlignByte_circuit_completeness
@@ -14,46 +14,5 @@ a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pu
 1f6fb25749dc02ac  ZiskFv/SailSpec/Auxiliaries.lean:817  axiom     within_clint_is_false
 52c0bbafc03c9989  ZiskFv/SailSpec/Auxiliaries.lean:831  axiom     pmaCheck_is_pure_none
 724bd1dd06f6384f  ZiskFv/SailSpec/Auxiliaries.lean:850  axiom     update_elp_state_is_pure_unit
-4847e5a17551750c  ZiskFv/Trusted/Transpiler.lean:252  axiom     transpile_ADD
-f28ccabfb4722e0f  ZiskFv/Trusted/Transpiler.lean:291  axiom     transpile_JAL
-16bad62350196528  ZiskFv/Trusted/Transpiler.lean:339  axiom     transpile_JALR
-e1a62d6011916c5b  ZiskFv/Trusted/Transpiler.lean:384  axiom     transpile_SD
-1e162c9c0fe454e2  ZiskFv/Trusted/Transpiler.lean:433  axiom     transpile_SW
-bee3ee4750dda24b  ZiskFv/Trusted/Transpiler.lean:489  axiom     transpile_MULW
-65f559bf567690aa  ZiskFv/Trusted/Transpiler.lean:528  axiom     transpile_MUL
-2309ae8387ca2ebf  ZiskFv/Trusted/Transpiler.lean:570  axiom     transpile_SLLW
-2f90b169336109bd  ZiskFv/Trusted/Transpiler.lean:612  axiom     transpile_SH
-3520b9ff3b4a2f6a  ZiskFv/Trusted/Transpiler.lean:646  axiom     transpile_SB
-53dcdf997c6df17e  ZiskFv/Trusted/Transpiler.lean:676  axiom     transpile_SLL
-0ae5206c14709c36  ZiskFv/Trusted/Transpiler.lean:701  axiom     transpile_SRL
-faa0c7df4439ece7  ZiskFv/Trusted/Transpiler.lean:726  axiom     transpile_SRA
-769377aba46f9262  ZiskFv/Trusted/Transpiler.lean:780  axiom     transpile_SLLI
-f9c75363c3916db8  ZiskFv/Trusted/Transpiler.lean:799  axiom     transpile_SRLI
-5506b5c03aba90be  ZiskFv/Trusted/Transpiler.lean:818  axiom     transpile_SRAI
-8a8fde0426ca2051  ZiskFv/Trusted/Transpiler.lean:844  axiom     transpile_SRLW
-d053abf8ff6a8888  ZiskFv/Trusted/Transpiler.lean:872  axiom     transpile_SRAW
-74a5d99371a11fe1  ZiskFv/Trusted/Transpiler.lean:925  axiom     transpile_SLLIW
-dfda56666540601a  ZiskFv/Trusted/Transpiler.lean:944  axiom     transpile_SRLIW
-39fa0d2790a0f9e5  ZiskFv/Trusted/Transpiler.lean:963  axiom     transpile_SRAIW
-a5a388c853eee9c1  ZiskFv/Trusted/Transpiler.lean:998  axiom     transpile_MULHU
-9a2175dd05267df5  ZiskFv/Trusted/Transpiler.lean:1041  axiom     transpile_LUI
-0bb6aa5fdd55a72f  ZiskFv/Trusted/Transpiler.lean:1086  axiom     transpile_AUIPC
-fe6fadd94fe8e9e4  ZiskFv/Trusted/Transpiler.lean:1157  axiom     transpile_SUB
-7678281cb4bd0168  ZiskFv/Trusted/Transpiler.lean:1184  axiom     transpile_AND
-d0cef15f9396ed89  ZiskFv/Trusted/Transpiler.lean:1213  axiom     transpile_OR
-97bd2bc7c14a2c3f  ZiskFv/Trusted/Transpiler.lean:1240  axiom     transpile_XOR
-f7eaf1a7608253eb  ZiskFv/Trusted/Transpiler.lean:1276  axiom     transpile_SLT
-85acd20bac560b8d  ZiskFv/Trusted/Transpiler.lean:1302  axiom     transpile_SLTU
-a09798f40433e256  ZiskFv/Trusted/Transpiler.lean:1373  axiom     transpile_ADDI
-909e45d4cf8404e1  ZiskFv/Trusted/Transpiler.lean:1400  axiom     transpile_ANDI
-dc7fca2661b82b7e  ZiskFv/Trusted/Transpiler.lean:1428  axiom     transpile_ORI
-8f5e6d815c00ecd9  ZiskFv/Trusted/Transpiler.lean:1456  axiom     transpile_XORI
-9ea0468fda1434de  ZiskFv/Trusted/Transpiler.lean:1488  axiom     transpile_SLTI
-0d54f2cb7b84af6c  ZiskFv/Trusted/Transpiler.lean:1514  axiom     transpile_SLTIU
-4b9d2fd962adce6c  ZiskFv/Trusted/Transpiler.lean:1567  axiom     transpile_ADDW
-7d34dc6ef492e50f  ZiskFv/Trusted/Transpiler.lean:1596  axiom     transpile_SUBW
-059171ef93f17ac3  ZiskFv/Trusted/Transpiler.lean:1641  axiom     transpile_ADDIW
-6ea7556907569111  ZiskFv/Trusted/Transpiler.lean:1847  axiom     transpile_PC_for_JAL
-b262a1ef230870ea  ZiskFv/Trusted/Transpiler.lean:1868  axiom     transpile_PC_for_JALR
-d6212bf68a2ad3c1  ZiskFv/Trusted/Transpiler.lean:1896  axiom     transpile_PC_for_AUIPC
+41d7a26bc9779765  ZiskFv/Trusted/Transpiler.lean:2234  axiom     transpiler_contract_sound
 b4ad9615202917eb  ZiskFv/ZiskCircuit/MemModel.lean:121  axiom     row_models_sail_state_load

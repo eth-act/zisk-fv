@@ -19,8 +19,7 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_JAL`'s closure 
 open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main jump_subset_holds)
-open ZiskFv.Tactics.JumpArchetype (jalr_subset_holds)
-open ZiskFv.Trusted (OP_FLAG OP_COPYB)
+open ZiskFv.Trusted (OP_FLAG)
 
 namespace ZiskFv.Equivalence.Jal
 

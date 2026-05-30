@@ -39,7 +39,7 @@ NEXT_DECL = re.compile(
 # MemAlign chain (`ZiskFv/Airs/MemoryBus/MemAlignBridge.lean`,
 # `memalign_subdoubleword_load_high_bytes_zero` derived from a generic
 # permutation-soundness axiom + a narrow MemAlignRom lookup-soundness
-# axiom — see `docs/fv/trusted-base.md` class #4).
+# axiom — see `trust/trusted-base.md` class #4).
 EXEMPT_STEMS: set[str] = set()
 
 

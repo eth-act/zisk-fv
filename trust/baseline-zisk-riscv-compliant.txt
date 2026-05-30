@@ -10,9 +10,11 @@
 # enumeration of that closure for external auditors who want to inspect
 # the surface without running Lean.
 #
-# Source-of-truth cross-check: this set must match the unqualified
-# axiom names in `trust/baseline-axioms.txt`. The V2 trust gate's
-# `check-closure-vs-baseline` subcommand enforces the match
+# Source-of-truth cross-check: this set must match the reachable
+# unqualified axiom names in `trust/baseline-axioms.txt`, modulo
+# the explicit completeness-direction allowlist in
+# `trust/tolerated-completeness-axioms.txt`. The V2 trust gate's
+# `check-closure-vs-baseline` subcommand enforces that relation
 # mechanically; this file is a standalone audit document — readable
 # without running Lean.
 #
@@ -23,9 +25,9 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-29.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-30.
 #
-# Total entries: 50
+# Total entries: 9
 #
 ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
 ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
@@ -34,46 +36,5 @@ ZiskFv.PlatformScope.pmaCheck_is_pure_none
 ZiskFv.PlatformScope.pmpCheck_is_pure_none
 ZiskFv.PlatformScope.update_elp_state_is_pure_unit
 ZiskFv.PlatformScope.within_clint_is_false
-ZiskFv.Trusted.transpile_ADD
-ZiskFv.Trusted.transpile_ADDI
-ZiskFv.Trusted.transpile_ADDIW
-ZiskFv.Trusted.transpile_ADDW
-ZiskFv.Trusted.transpile_AND
-ZiskFv.Trusted.transpile_ANDI
-ZiskFv.Trusted.transpile_AUIPC
-ZiskFv.Trusted.transpile_JAL
-ZiskFv.Trusted.transpile_JALR
-ZiskFv.Trusted.transpile_LUI
-ZiskFv.Trusted.transpile_MUL
-ZiskFv.Trusted.transpile_MULHU
-ZiskFv.Trusted.transpile_MULW
-ZiskFv.Trusted.transpile_OR
-ZiskFv.Trusted.transpile_ORI
-ZiskFv.Trusted.transpile_PC_for_AUIPC
-ZiskFv.Trusted.transpile_PC_for_JAL
-ZiskFv.Trusted.transpile_PC_for_JALR
-ZiskFv.Trusted.transpile_SB
-ZiskFv.Trusted.transpile_SD
-ZiskFv.Trusted.transpile_SH
-ZiskFv.Trusted.transpile_SLL
-ZiskFv.Trusted.transpile_SLLI
-ZiskFv.Trusted.transpile_SLLIW
-ZiskFv.Trusted.transpile_SLLW
-ZiskFv.Trusted.transpile_SLT
-ZiskFv.Trusted.transpile_SLTI
-ZiskFv.Trusted.transpile_SLTIU
-ZiskFv.Trusted.transpile_SLTU
-ZiskFv.Trusted.transpile_SRA
-ZiskFv.Trusted.transpile_SRAI
-ZiskFv.Trusted.transpile_SRAIW
-ZiskFv.Trusted.transpile_SRAW
-ZiskFv.Trusted.transpile_SRL
-ZiskFv.Trusted.transpile_SRLI
-ZiskFv.Trusted.transpile_SRLIW
-ZiskFv.Trusted.transpile_SRLW
-ZiskFv.Trusted.transpile_SUB
-ZiskFv.Trusted.transpile_SUBW
-ZiskFv.Trusted.transpile_SW
-ZiskFv.Trusted.transpile_XOR
-ZiskFv.Trusted.transpile_XORI
+ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load

@@ -26,7 +26,7 @@ Axioms here: `binaryAdd_circuit_completeness`, `memAlignByte_circuit_completenes
 `memAlignReadByte_circuit_completeness`, `arithMul_circuit_completeness`,
 `arithDiv_circuit_completeness` (one more per AIR as the epic proceeds).
 Trust class: "Clean-Component completeness (non-security-critical)" — see
-`docs/fv/trusted-base.md`.
+`trust/trusted-base.md`.
 -/
 
 namespace ZiskFv.AirsClean.BinaryAdd

@@ -28,7 +28,7 @@ dispatches by case on which literal is in play. This file provides:
 
 **No new axiom is added.** The opcode-set fact is a *scope assumption*
 about the program being verified — the same flavor as
-`docs/fv/trusted-base.md`'s "Out of scope: Zicclsm, precompiles
+`trust/trusted-base.md`'s "Out of scope: Zicclsm, precompiles
 (Keccak / SHA256 / big-int / DMA / etc.), ECALL/EBREAK, ZisK's custom
 internal ops." Callers (the global theorem) accept the scope
 assumption explicitly and pass it through.
@@ -44,7 +44,7 @@ open ZiskFv.Trusted
 
 
 /-- **RV64IM opcode-set classifier.** Asserts that `m.op r_main` is one
-    of the 35 `OP_<X>` literals defined in `Fundamentals/Transpiler.lean`
+    of the 35 `OP_<X>` literals defined in `Trusted/Transpiler.lean`
     that Zisk uses to encode the 63 RV64IM opcodes (some Zisk OPs are
     shared across RTYPE / ITYPE variants).
 

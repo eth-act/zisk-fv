@@ -28,7 +28,7 @@ End-to-end theorem for RV64 JALR. Combines:
 * the Sail pure-function equivalence
   (`PureSpec.execute_JALR_pure_equiv`, closed via the trusted
   `execute_JALR_pure_equiv_axiom` at `ZiskFv/RV64D/jalr.lean:67` —
-  see `docs/fv/trusted-base.md` for the closure path),
+  see `trust/trusted-base.md` for the closure path),
 
 into a canonical theorem:
 
@@ -158,34 +158,9 @@ theorem equiv_JALR
   obtain ⟨h_input_rd, h_input_pc, h_input_misa, h_misa_c, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches, h_rd_mult, h_rd_as,
           h_success, h_nextPC_option, h_rd_idx⟩ := promises
-  -- Discharge `h_jmp2` via `transpile_JALR` (class #1).
-  have h_jmp2 : m.jmp_offset2 r_main = 4 :=
-    ZiskFv.EquivCore.Bridge.ControlFlow.jalr_discharge_full
-      m r_main next_pc h_circuit
   -- Discharge `h_lane_lo`/`h_lane_hi` from the selected Clean Main
   -- `cMemMessage` row, rather than through `main_store_pc_emission_bundle`.
   obtain ⟨h_lane_lo, h_lane_hi⟩ := store_pc_mem.lanes
-  -- Derive `h_lo_bound` from the PC bridge and the existing link-address
-  -- bound, avoiding the legacy range bus.
-  have h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296 := by
-    obtain ⟨_h_subset, h_mode⟩ := h_circuit
-    obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-    have h_pc_bridge : (m.pc r_main).val = jalr_input.PC.toNat :=
-      ZiskFv.Trusted.transpile_PC_for_JALR m r_main jalr_input.PC h_ext h_op
-    have h4 : ((4 : FGL)).val = 4 := by decide
-    have h_no_wrap : (m.pc r_main).val + ((4 : FGL)).val < GL_prime := by
-      rw [h_pc_bridge, h4]
-      omega
-    have h_fgl_val : (m.pc r_main + 4 : FGL).val = jalr_input.PC.toNat + 4 := by
-      rw [Fin.val_add, Nat.mod_eq_of_lt h_no_wrap, h_pc_bridge, h4]
-    have h_bv_add : (jalr_input.PC + 4#64).toNat = jalr_input.PC.toNat + 4 := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-      have h_lt_64 : jalr_input.PC.toNat + 4 < 18446744073709551616 := by
-        have h_gl_lt : GL_prime < 18446744073709551616 := by decide
-        omega
-      rw [Nat.mod_eq_of_lt h_lt_64]
-    rw [h_fgl_val, ← h_bv_add]
-    exact h_pc_offset_lt_2_32
   -- Per-byte ranges from `byteOf_val_lt_256` (chunk-shape replacement
   -- for the retired memory_bus_entry_byte_range_perm_sound axiom).
   have hb0 : (byteAt e_rd 0).val < 256 := byteOf_val_lt_256 e_rd.value_0 0
@@ -199,8 +174,8 @@ theorem equiv_JALR
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_jalr
       jalr_input.PC m r_main next_pc e_rd
-      h_circuit h_jmp2 h_lane_lo h_lane_hi
-      h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+      h_circuit h_lane_lo h_lane_hi
+      h_pc_bound h_pc_offset_lt_2_32
       hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
   rw [equiv_JALR_sail state jalr_input imm rs1 rd misa_val mseccfg
         h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c

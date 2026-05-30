@@ -18,9 +18,9 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_JALR`'s closure
 
 open ZiskFv.Channels
 open Goldilocks
-open ZiskFv.Airs.Main (Valid_Main jump_subset_holds)
-open ZiskFv.Tactics.JumpArchetype (jalr_subset_holds)
-open ZiskFv.Trusted (OP_FLAG OP_COPYB)
+open ZiskFv.Airs.Main (Valid_Main flag_boolean is_external_op_boolean flag_set_pc_disjoint
+  pc_handshake_with_next_pc)
+open ZiskFv.Trusted (OP_AND)
 
 namespace ZiskFv.Equivalence.Jalr
 
@@ -37,8 +37,12 @@ theorem equiv_JALR
     (nextPC_val : BitVec 64)
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
-    (h_jalr_subset : jalr_subset_holds m r_main next_pc)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
+    (h_jalr_subset :
+      flag_boolean m r_main
+      ∧ is_external_op_boolean m r_main
+      ∧ flag_set_pc_disjoint m r_main
+      ∧ pc_handshake_with_next_pc m r_main next_pc)
     (promises : ZiskFv.EquivCore.Promises.JumpPromises
         state jalr_input.PC jalr_input.rd misa_val
         (PureSpec.execute_JALR_pure jalr_input).success
