@@ -274,40 +274,29 @@ def lane_hi (v : BitVec 64) : FGL :=
 
     **Trust basis.** Pure spec of `fn jal` in `riscv2zisk_context.rs`
     at line 1098. -/
-/- The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register).
+/- The axiomatic RV64 → Zisk row contract for JALR's final architectural
+    row.
 
-    Per `zisk/core/src/riscv2zisk_context.rs:200,1025` an RV64 JALR
-    `rd, rs1, imm12` transpiles via `self.jalr(i, 4)`. The archetype-
-    validation contract below captures the simplified "internal-copyb"
-    shape the `JumpArchetype.jalr_archetype_*` lemmas consume:
-    * `op = OP_COPYB = 1` — internal op 1 (c = b via constraint 9);
-    * `is_external_op = 0` — no operation-bus hop;
-    * `set_pc = 1` — next-pc comes from `c_0 + jmp_offset1 = b_0 +
-      jmp_offset1 = rs1_lo + imm12`. Constraint 19
-      (`flag * set_pc = 0`) forces `flag = 0`, consistent with
-      constraint 18 under `op = 1`;
-    * `store_pc = 1` — rd receives `pc + jmp_offset2 = pc + 4` via the
-      store_value expression with `c_0 = b_0` (rs1) canceling;
-    * `jmp_offset1 = imm_offset` — the register-relative offset;
-    * `jmp_offset2 = 4` — link-address offset;
-    * `b` lanes carry `xreg(rs1)`; the transpile axiom does **not** pin
-      `a`/`c` because they don't participate in the JALR
-      archetype theorems (`a` is an immediate mask in the live Rust
-      code, and `c` is constrained by the copyb rule).
+    Per `zisk/core/src/riscv2zisk_context.rs::jalr`, RV64 JALR lowers to
+    a final external Binary `and` row. If `imm % 4 = 0` that is the only
+    row; otherwise an earlier external `add` row computes `rs1 + imm`
+    and the final row reads it through `lastc`.
 
-    **Note on the live ZisK transpiler.** The actual Rust `jalr`
-    function (line 1055-1092) emits a Binary `and` microinstruction
-    (external op), and for misaligned immediates a two-instruction
-    `add`+`and` sequence. Both paths ultimately produce the same
-    architectural behavior (`rd ← pc + 4`, `nextPC ← (rs1 + imm) &
-    mask`). We model JALR here as internal-copyb for archetype-macro
-    validation; closing the full Rust contract (with the Binary-SM
-    bus hop) requires the `equiv_AND_circuit`/`equiv_ADD_IMM` external-op
-    infrastructure.
+    This contract describes the final row consumed by the equivalence
+    theorem:
+    * `op = OP_AND`, `is_external_op = 1`;
+    * `flag = 0`, `m32 = 0`, `set_pc = 1`, `store_pc = 1`;
+    * `a = 0xfffffffffffffffe` split into 32-bit lanes.
 
-    **Trust basis.** Simplified spec of `fn jalr` in
-    `riscv2zisk_context.rs:1025`, targeting the Main AIR row observables
-    the `JumpArchetype` macro depends on. -/
+    The aligned one-row lowering sources `b` from `rs1` and uses
+    `jmp_offset1 = imm`, `jmp_offset2 = 4`; the unaligned final row
+    sources `b` from `lastc` and uses `jmp_offset1 = 0`,
+    `jmp_offset2 = 3`. Those branch-specific facts are intentionally
+    not part of this common final-row contract.
+
+    **Trust basis.** Production spec of `fn jalr` in
+    `riscv2zisk_context.rs`, targeting the Main AIR row observables the
+    final-row JALR proof consumes. -/
 /- The axiomatic RV64 → Zisk row contract for SD (store doubleword).
 
     Per `zisk/core/src/riscv2zisk_context.rs:223` an RV64 SD
@@ -1404,16 +1393,12 @@ that degenerate instance is outside the per-opcode axiom's scope —
     in-tree pieces. See `docs/fv/trusted-base.md` entry **TP-JAL**. -/
 /- JALR PC bridge.
 
-    Asserts that on a JALR row (`is_external_op = 0`,
-    `op = OP_COPYB`, transpile-context per
-    `riscv2zisk_context.rs:200,1025`), the Main-AIR `pc` column at row
-    `r_main` carries the Sail-side program counter `PC`.
+    Asserts that on JALR's final production row (`is_external_op = 1`,
+    `op = OP_AND`), the Main-AIR `pc + jmp_offset2` value is the
+    Sail-side link address `PC + 4`.
 
-    JALR transpiles via the simplified internal-copyb shape (with
-    `set_pc = 1` so next-pc comes from `c_0 + jmp_offset1 = rs1 + imm`)
-    that `transpile_JALR` and the `JumpArchetype` validation lemmas
-    consume. The PC bridge composes with that to drive the rd-write
-    `pc + 4` derivation in JumpUType.
+    The bridge composes with the final-row `store_pc = 1` proof to
+    drive the rd-write `pc + 4` derivation in JumpUType.
 
     **Trust class.** Same as `transpile_PC_for_JAL`. See
     `docs/fv/trusted-base.md` entry **TP-JALR**. -/
@@ -1542,16 +1527,15 @@ def TranspilerContract : TranspilerContractKind → Prop
 
   | .JALR =>
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_offset : FGL) (state : RV64State),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_COPYB →
-        m.m32 r_main = 0
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rs1 _rd : Fin 32) (_imm_offset : FGL) (_state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_AND →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
       ∧ m.set_pc r_main = 1
       ∧ m.store_pc r_main = 1
-      ∧ m.jmp_offset1 r_main = imm_offset
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.a_0 r_main = 4294967294
+      ∧ m.a_1 r_main = 4294967295
 
   | .SD =>
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -2261,9 +2245,9 @@ def TranspilerContract : TranspilerContractKind → Prop
   | .PC_for_JALR =>
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
       (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_COPYB →
-      (m.pc r_main).val = PC.toNat
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_AND →
+      (m.pc r_main + m.jmp_offset2 r_main).val = (PC + 4#64).toNat
 
   | .PC_for_AUIPC =>
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -2280,10 +2264,10 @@ def TranspilerContract : TranspilerContractKind → Prop
     and the remaining runtime Main-AIR witness bridge.
 
     Most cases are static-shape contracts plus register/immediate witness
-    lanes. JALR is currently a classified exception: the production Rust
-    transpiler lowers it through `and` (and sometimes two rows), while the
-    existing proof stack still consumes the legacy single-row internal-`copyb`
-    archetype. See `docs/fv/transpiler/differential-pinning.md`. -/
+    lanes. JALR now consumes the production final `OP_AND` row; its
+    unaligned row-1 `ADD` to final-row `lastc` chain is derived in
+    `ZiskCircuit.Jalr` from the explicit source-C / selector bridge
+    axioms below. -/
 axiom transpiler_contract_sound :
     ∀ (kind : TranspilerContractKind), TranspilerContract kind
 
@@ -2295,6 +2279,79 @@ theorem transpile_JAL : TranspilerContract .JAL :=
 
 theorem transpile_JALR : TranspilerContract .JALR :=
   transpiler_contract_sound .JALR
+
+/-!
+## Production JALR unaligned lastc bridge
+
+The common `transpile_JALR` theorem above intentionally pins only the
+final architectural row (`OP_AND`, `store_pc = 1`, `set_pc = 1`). The
+production unaligned lowering has one extra row:
+
+* row `r_main - 1`: external `OP_ADD`, computing `rs1 + imm`;
+* row `r_main`: external `OP_AND`, reading its `b` operand from
+  `lastc` (`b_src_c`) and masking bit 0 with `0xfffffffffffffffe`.
+
+Two narrow trust facts below expose the parts that are not yet emitted
+as typechecking extraction:
+
+* `main_source_c_copies_prev_c{0,1}_nonsegment` is the non-segment
+  specialization of Main source-C constraints at `main.pil:386`;
+* `transpile_JALR_unaligned_final_source_c` is the branch-specific
+  source-selector/row-shape contract of `riscv2zisk_context.rs::jalr`.
+
+The actual `b = previous c` lastc equality is proved in
+`ZiskCircuit.Jalr` from these facts and the named Main source-C lemmas.
+-/
+
+/-- Main source-C lane 0, specialized to non-segment rows.
+    Trust basis: `zisk/state-machines/main/pil/main.pil:386`
+    constraint `(b_src_c)*(b[0]-(previous_c)) === 0`, with
+    `SEGMENT_L1 = 0` reducing `previous_c` to the previous row's `c[0]`.
+
+    This is explicit trust because the generic extractor currently skips
+    the original constraint: it references `segment_previous_c`, an
+    `AirValue`, even though that term is multiplied out on non-segment
+    rows. -/
+axiom main_source_c_copies_prev_c0_nonsegment
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (row : ℕ) :
+    m.segment_l1 row = 0 →
+    ZiskFv.Airs.Main.b_src_c_copies_prev_c0 m row
+
+/-- Main source-C lane 1, specialized to non-segment rows.
+    See `main_source_c_copies_prev_c0_nonsegment`. -/
+axiom main_source_c_copies_prev_c1_nonsegment
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (row : ℕ) :
+    m.segment_l1 row = 0 →
+    ZiskFv.Airs.Main.b_src_c_copies_prev_c1 m row
+
+/-- Production unaligned JALR final-row selector contract.
+
+    For `imm % 4 ≠ 0`, upstream ZisK emits an `ADD` row immediately
+    before the final `AND` row; the final row sources `b` from `lastc`,
+    i.e. Main's source-C path. It also uses `jmp_offset1 = 0` and
+    `jmp_offset2 = 3` so the row's PC bookkeeping still links to
+    `PC + 4`.
+
+    Trust basis: `zisk/core/src/riscv2zisk_context.rs::jalr` production
+    lowering, specifically the unaligned branch that emits `add` before
+    the final `and`. -/
+axiom transpile_JALR_unaligned_final_source_c
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rs1 _rd : Fin 32)
+    (imm_offset : FGL) (_state : RV64State) :
+    imm_offset.val % 4 ≠ 0 →
+    m.is_external_op r_main = 1 →
+    m.op r_main = OP_AND →
+      m.b_src_mem r_main = 0
+    ∧ m.b_src_imm r_main = 0
+    ∧ m.b_src_ind r_main = 0
+    ∧ m.b_src_reg r_main = 0
+    ∧ m.jmp_offset1 r_main = 0
+    ∧ m.jmp_offset2 r_main = 3
+    ∧ m.is_external_op (r_main - 1) = 1
+    ∧ m.op (r_main - 1) = OP_ADD
 
 theorem transpile_SD : TranspilerContract .SD :=
   transpiler_contract_sound .SD

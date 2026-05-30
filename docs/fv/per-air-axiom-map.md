@@ -585,7 +585,7 @@ bridge axioms below absorb them).
 | `main_store_emission_bundle_sw` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:832` | SW (4-byte) store emission — ptr-match + 4 low bytes + 4 RMW high-byte preservations; consumed by `Bridge.Mem.sw_discharge_full` |
 | `main_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:374` | internal-copyb (load) Main-row b/c emission lane equalities — consumed by LD/LBU/LHU/LWU discharge |
 | `main_sext_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:433` | external-row analog of the above for signed loads (LB/LH/LW; `is_external_op = 1`, `op ∈ OP_SIGNEXTEND_*`) |
-| `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | rd-write entry lanes match `store_pc_lanes_match_{lo,hi}` for `is_external_op = 0`, `op ∈ {OP_FLAG, OP_COPYB}` — consumed by JAL/JALR/AUIPC/LUI |
+| `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | rd-write entry lanes match `store_pc_lanes_match_{lo,hi}` for JAL/AUIPC internal `OP_FLAG`, LUI internal `OP_COPYB`, and production JALR final external `OP_AND` rows |
 | `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | rd-write entry lanes for MUL/DIV-family rows — shared with ArithMul/ArithDiv |
 | `memory_bus_register_write_perm_sound` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138` | Main rd-write entry pairs with a "next read" Mem row at same address |
 | `memory_bus_register_write_perm_sound_store_pc` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:329` | `store_pc = 1` variant of the above |
@@ -773,12 +773,15 @@ ControlFlow splits into three sub-shapes:
 
 ### Trust-ledger axioms already in place
 
-ControlFlow has **no AIR-specific axioms**. It consumes:
+ControlFlow has **no AIR-specific axioms** outside the explicit
+transpiler/Main-source-C bridge. It consumes:
 
 | Axiom | Class | Source | When |
 |---|---|---|---|
 | `transpiler_contract_sound`, consumed through `transpile_AUIPC`, `transpile_BEQ`, `transpile_BNE`, `transpile_JAL`, `transpile_JALR`, `transpile_FENCE`, `transpile_BLT`, `transpile_BGE`, `transpile_BLTU`, `transpile_BGEU`, `transpile_LUI` | #1 (transpiler bridge) | `Trusted/Transpiler.lean` | every opcode in the shape — Main column ↔ Sail-decoded `ast` |
 | `transpiler_contract_sound`, consumed through `transpile_PC_for_JAL`, `transpile_PC_for_JALR`, `transpile_PC_for_AUIPC` | #1 (transpiler bridge) | `Trusted/Transpiler.lean` | the PC-update half (separate contract case from the operand half) |
+| `main_source_c_copies_prev_c{0,1}_nonsegment` | #1 (transpiler / Main source-C bridge) | `Trusted/Transpiler.lean` | production unaligned JALR final row: Main source-C lane constraints specialized to `SEGMENT_L1 = 0` |
+| `transpile_JALR_unaligned_final_source_c` | #1 (transpiler bridge) | `Trusted/Transpiler.lean` | production unaligned JALR final `OP_AND` row sources `b` from `lastc`, has `jmp_offset1 = 0`, `jmp_offset2 = 3`, and follows an `OP_ADD` row |
 | `main_columns_in_range` | #5b (range-bus) | `Airs/Main/Ranges.lean:67` | `bits(N)`-annotated Main column ranges |
 | `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | JAL/JALR/AUIPC/LUI rd-write entry lane equalities (`store_pc=0` or `store_pc=1` per op) |
 | `memory_bus_register_write_perm_sound{,_store_pc}` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138,329` | rd-write entry pairs with Mem row (consumed by JAL/JALR/AUIPC/LUI) |

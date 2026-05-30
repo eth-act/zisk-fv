@@ -32,7 +32,7 @@ This is evidence, not proof of the production Rust transpiler. Narrowing or
 retiring `transpiler_contract_sound` still requires separate proof work for the
 ROM/Main/register and memory bridges, plus a reviewed trust-ledger update.
 
-## Classified Mismatch: JALR Proof Shape
+## JALR Proof Shape
 
 The Lean model and Rust differential harness agree on current upstream JALR
 lowering:
@@ -40,8 +40,11 @@ lowering:
 * `imm % 4 = 0`: one external `and` row with `set_pc = 1`, `store_pc = 1`;
 * otherwise: an `add` row followed by an `and` row.
 
-The existing proof stack still proves a legacy single-row internal-`copyb`
-JALR archetype. That mismatch is not a Lean-model/Rust mismatch; it is an
-existing proof/trust mismatch exposed by the model. Until the JALR equivalence
-is refactored to the real `and`/two-row lowering, `transpiler_contract_sound`
-must still cover the legacy JALR contract explicitly.
+The equivalence proof now consumes the production final `OP_AND` row and
+uses the trusted final-row link bridge `pc + jmp_offset2 = PC + 4`, which
+covers both aligned (`jmp_offset2 = 4`) and unaligned (`jmp_offset2 = 3`)
+lowerings. The unaligned row-1 `ADD` to final-row `lastc` chain is now
+represented by `jalr_unaligned_add_lastc_and_chain_of_circuit`: the
+wrapper discharges Main source-C obligations from explicit non-segment
+source-C axioms and discharges the unaligned final-row selector contract
+from `transpile_JALR_unaligned_final_source_c`.

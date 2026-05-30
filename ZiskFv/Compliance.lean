@@ -401,9 +401,12 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (next_pc : FGL)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_jalr_subset :
-      ZiskFv.Tactics.JumpArchetype.jalr_subset_holds m r_main next_pc)
+      ZiskFv.Airs.Main.flag_boolean m r_main
+      ∧ ZiskFv.Airs.Main.is_external_op_boolean m r_main
+      ∧ ZiskFv.Airs.Main.flag_set_pc_disjoint m r_main
+      ∧ ZiskFv.Airs.Main.pc_handshake_with_next_pc m r_main next_pc)
     (promises : ZiskFv.Equivalence.Promises.JumpPromises
         state jalr_input.PC jalr_input.rd misa_val
         (PureSpec.execute_JALR_pure jalr_input).success
@@ -1272,7 +1275,7 @@ def kind : OpEnvelope state m r_main → mainOpKind
   | .lui .. => .COPYB
   | .auipc .. => .FLAG
   | .jal .. => .FLAG
-  | .jalr .. => .COPYB
+  | .jalr .. => .AND
   | .add .. => .ADD
   | .addi .. => .ADD
   | .addw .. => .ADD_W

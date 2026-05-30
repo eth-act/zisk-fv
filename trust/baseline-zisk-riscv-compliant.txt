@@ -23,9 +23,9 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-29.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-30.
 #
-# Total entries: 72
+# Total entries: 75
 #
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned
@@ -97,5 +97,8 @@ ZiskFv.PlatformScope.pmaCheck_is_pure_none
 ZiskFv.PlatformScope.pmpCheck_is_pure_none
 ZiskFv.PlatformScope.update_elp_state_is_pure_unit
 ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Trusted.main_source_c_copies_prev_c0_nonsegment
+ZiskFv.Trusted.main_source_c_copies_prev_c1_nonsegment
+ZiskFv.Trusted.transpile_JALR_unaligned_final_source_c
 ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load

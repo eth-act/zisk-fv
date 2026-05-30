@@ -3,7 +3,6 @@ import Mathlib
 import ZiskFv.Equivalence.Jalr
 import ZiskFv.Equivalence.Promises.Jump
 import ZiskFv.Equivalence.Promises.JumpHelpers
-import ZiskFv.Tactics.JumpArchetype
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
@@ -40,9 +39,12 @@ theorem equiv_JALR
     (nextPC_val : BitVec 64)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     -- Activation / opcode pins on Main + per-row subset constraint.
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_jalr_subset :
-      ZiskFv.Tactics.JumpArchetype.jalr_subset_holds m r_main next_pc)
+      ZiskFv.Airs.Main.flag_boolean m r_main
+      ∧ ZiskFv.Airs.Main.is_external_op_boolean m r_main
+      ∧ ZiskFv.Airs.Main.flag_set_pc_disjoint m r_main
+      ∧ ZiskFv.Airs.Main.pc_handshake_with_next_pc m r_main next_pc)
     -- Structural `JumpPromises` bundle.
     (promises : ZiskFv.Equivalence.Promises.JumpPromises
         state jalr_input.PC jalr_input.rd misa_val

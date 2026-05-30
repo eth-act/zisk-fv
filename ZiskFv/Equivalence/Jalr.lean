@@ -24,7 +24,8 @@ End-to-end theorem for RV64 JALR. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_JALR`),
-* the compositional JALR spec (`ZiskFv.ZiskCircuit.Jalr.jalr_pc_advance`),
+* the production final-row JALR store-PC spec
+  (`ZiskFv.ZiskCircuit.Jalr.jalr_store_value`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_JALR_pure_equiv`, closed via the trusted
   `execute_JALR_pure_equiv_axiom` at `ZiskFv/RV64D/jalr.lean:67` —
@@ -39,8 +40,8 @@ into a canonical theorem:
 Like JAL (shape (c)), the bus-matching is discharged
 internally via `bus_effect_matches_sail_jump_rrw`, which handles any
 "two-exec-entry + one-rd-write-mem-entry" shape. JALR emits exactly
-that shape under the archetype-validation contract in `transpile_JALR`
-(internal-copyb, `store_pc = 1`, no operation-bus hop).
+that shape under the final-row production contract in `transpile_JALR`
+(`OP_AND`, `store_pc = 1`).
 -/
 
 namespace ZiskFv.Equivalence.Jalr
@@ -157,10 +158,6 @@ theorem equiv_JALR
   obtain ⟨h_input_rd, h_input_pc, h_input_misa, h_misa_c, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches, h_rd_mult, h_rd_as,
           h_success, h_nextPC_option, h_rd_idx⟩ := promises
-  -- Discharge `h_jmp2` via `transpile_JALR` (class #1).
-  have h_jmp2 : m.jmp_offset2 r_main = 4 :=
-    ZiskFv.Equivalence.Bridge.ControlFlow.jalr_discharge_full
-      m r_main next_pc h_circuit
   -- Discharge `h_lane_lo`/`h_lane_hi` via `main_store_pc_emission_bundle`
   -- (trust class #4).
   obtain ⟨h_lane_lo, h_lane_hi⟩ :=
@@ -169,7 +166,7 @@ theorem equiv_JALR
   have h_rd_val :=
     ZiskFv.Equivalence.WriteValueProofs.JumpUType.h_rd_val_jut_jalr
       jalr_input.PC m r_main next_pc e_rd
-      h_circuit h_jmp2 h_lane_lo h_lane_hi
+      h_circuit h_lane_lo h_lane_hi
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
       (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).1
       (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.1

@@ -628,7 +628,7 @@ lemma bus_shape_for_SW
     bus_shape_main_at_m32_zero_conclusion m row 1 := by
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
-/-- JAL/JALR — jump archetype, opcode 1 (OP_COPYB), m32 = 0. -/
+/-- Legacy internal-copyb jump archetype, opcode 1 (OP_COPYB), m32 = 0. -/
 lemma bus_shape_for_JAL
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)

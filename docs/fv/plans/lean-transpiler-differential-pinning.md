@@ -21,7 +21,7 @@ Sail-state bridges, and Main-AIR witness construction.
 * `ZiskFv/Transpiler/Static.lean` — executable Lean model.
 * `tools/transpiler-diff/` — Rust harness plus Lean oracle.
 * `docs/fv/transpiler/differential-pinning.md` — operational notes,
-  coverage modes, and the classified JALR proof-shape mismatch.
+  coverage modes, and the production JALR proof shape.
 * `nix/test.nix` — quick differential suite wired into the project test
   command.
 
@@ -57,7 +57,8 @@ external differential evidence, and runtime witness facts remain inside
 the explicit bridge.
 
 The trust ledger, axiom index, and semantic closure baselines are
-regenerated around this one bridge axiom.
+regenerated around `transpiler_contract_sound` plus three explicit
+JALR source-C / unaligned-final-row bridge axioms.
 
 ## Completion Audit
 
@@ -79,16 +80,15 @@ Original plan requirements:
 * Trust story: documented in `docs/fv/transpiler/differential-pinning.md`
   and `docs/fv/trusted-base.md`. Rust-vs-Lean agreement is explicitly
   external evidence, not a Lean proof of Rust.
-* Mismatch policy: JALR is classified as an existing proof/trust mismatch.
-  The Lean model and Rust harness agree on production JALR lowering
-  (`and`, or `add` plus `and`), while the current equivalence proof stack
-  still consumes the legacy single-row internal-`copyb` contract. The
-  remaining explicit bridge axiom states that legacy contract until a
-  separate multi-row JALR proof refactor lands.
+* Mismatch policy: the JALR proof/trust mismatch found by the model is
+  resolved in this branch. The equivalence proof consumes the production
+  final `OP_AND` row, and the unaligned `ADD -> lastc -> AND` bridge is
+  derived from explicit non-segment Main source-C axioms plus an explicit
+  unaligned final-row selector contract.
 * More ambitious trust replacement: the former source-level
   `transpile_<OP>` axioms are theorem wrappers over
   `transpiler_contract_sound`; the global closure baseline is regenerated
-  at 72 axioms.
+  at 75 axioms.
 
 Verification command used for this branch:
 

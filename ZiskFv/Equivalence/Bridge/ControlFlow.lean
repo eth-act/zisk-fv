@@ -33,8 +33,9 @@ write). There is no separate Provider AIR for arithmetic — the
   pins then `a_0 = lane_lo (state.xreg rs1)`, `a_1 = lane_hi
   (state.xreg rs1)`, `b_0 = lane_lo (state.xreg rs2)`, `b_1 =
   lane_hi (state.xreg rs2)`.
-* For JALR: derive r1_val packed form (uses transpile_JALR which
-  has ITYPE shape).
+* For JALR: the proof now consumes the production final `OP_AND` row;
+  the unaligned `ADD -> lastc -> AND` facts are carried by explicit
+  source-C / selector bridge axioms and assembled in `ZiskCircuit.Jalr`.
 * For AUIPC / LUI / JAL / FENCE: no register reads — the input
   bridge step is vacuous; the discharge is the PC-routing axioms
   `transpile_PC_for_{JAL,JALR,AUIPC}` consumed directly by the
@@ -88,8 +89,8 @@ lemma branch_input_bridges_of_read_xreg
 
 /-! ## Non-branch discharge entry points
 
-The four entry points below — `lui_discharge_full`, `jal_discharge_full`,
-`jalr_discharge_full`, `auipc_discharge_full` — package the
+The entry points below — `lui_discharge_full`, `jal_discharge_full`,
+and `auipc_discharge_full` — package the
 transpile-pinnable FGL ↔ `Nat` / FGL identities that the
 corresponding `equiv_<OP>` theorems currently take as separate
 `h_imm_lo_nat` / `h_imm_hi_nat` / `h_jmp2` parameters.
@@ -111,7 +112,9 @@ arithmetic). FENCE is already minimal and needs no entry point.
 Caller-burden reduction (per opcode):
 * LUI:  −2 binders (`h_imm_lo_nat`, `h_imm_hi_nat`).
 * JAL:  −1 binder  (`h_jmp2`).
-* JALR: −1 binder  (`h_jmp2`).
+* JALR: the old `h_jmp2` discharge no longer applies because the
+  production final row uses `jmp_offset2 = 4` only in the aligned
+  lowering and `jmp_offset2 = 3` in the unaligned lowering.
 * AUIPC: −0 binders at this iteration — `h_offset_bridge` involves
   `(BitVec.signExtend 64 …).toNat` whose value can exceed
   `GL_prime`, so the transpile axiom's FGL equation does not
@@ -206,25 +209,6 @@ lemma jal_discharge_full
     (0 : FGL) { xreg := fun _ => 0#64, pc := 0#64 } h_ext h_op
   exact h_tr.2.2.2.2.1
 
-/-- **JALR discharge.** From the JALR `jalr_subset_holds + mode`
-    bundle, produce the FGL identity `m.jmp_offset2 r_main = 4` the
-    `h_rd_val_jut_jalr` derivation consumes.
-
-    Trust footprint: pure composition of `transpile_JALR` (class
-    #1) — no new axiom. -/
-lemma jalr_discharge_full
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc) :
-    m.jmp_offset2 r_main = 4 := by
-  obtain ⟨_h_subset, h_mode⟩ := h_circuit
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-  -- JALR's mode pins `op = 1`; `transpile_JALR` expects `op = OP_COPYB`
-  -- (definitionally `= 1`). The `rs1` Fin 32 and state are ghost
-  -- with respect to the `jmp_offset2 = 4` conjunct.
-  have h_tr := ZiskFv.Trusted.transpile_JALR m r_main (0 : Fin 32) (0 : Fin 32)
-    (0 : FGL) { xreg := fun _ => 0#64, pc := 0#64 } h_ext h_op
-  exact h_tr.2.2.2.2.1
-
 /-! ## Round-3 (post-parser-fix): store_pc lane discharge
 
 After the parser-bug fix exposed the true post-round-3 hypothesis
@@ -262,14 +246,14 @@ lemma jal_discharge_lanes
   obtain ⟨_h_subset, h_mode⟩ := h_circuit
   obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
   exact ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-    m r_main e_rd ZiskFv.Trusted.OP_FLAG h_ext h_op (Or.inl rfl)
+    m r_main e_rd ZiskFv.Trusted.OP_FLAG (Or.inl h_ext) h_op (Or.inl rfl)
     h_rd_mult h_rd_as
 
 /-- **JALR lane discharge.** Retires `h_lane_lo` + `h_lane_hi` for
     `equiv_JALR` via `main_store_pc_emission_bundle`.
 
-    JALR's circuit mode pins `is_external_op = 0` and `op = OP_COPYB`,
-    activating the bundle's `op_code = OP_COPYB` disjunct. -/
+    JALR's circuit mode pins `is_external_op = 1` and `op = OP_AND`,
+    activating the bundle's `op_code = OP_AND` disjunct. -/
 lemma jalr_discharge_lanes
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
@@ -277,10 +261,11 @@ lemma jalr_discharge_lanes
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1) :
     ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
     ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd := by
-  obtain ⟨_h_subset, h_mode⟩ := h_circuit
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
+  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode,
+          _h_source_c, _h_unaligned⟩ := h_circuit
+  obtain ⟨h_ext, h_op, _h_flag, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
   exact ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-    m r_main e_rd ZiskFv.Trusted.OP_COPYB h_ext h_op (Or.inr rfl)
+    m r_main e_rd ZiskFv.Trusted.OP_AND (Or.inr h_ext) h_op (Or.inr (Or.inr rfl))
     h_rd_mult h_rd_as
 
 /-- **AUIPC offset discharge.** Retires `h_offset_bridge` for
@@ -336,7 +321,7 @@ lemma lui_discharge_lanes
   obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
   obtain ⟨h_lo, h_hi⟩ :=
     ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-      m r_main e_rd ZiskFv.Trusted.OP_COPYB h_ext h_op (Or.inr rfl)
+      m r_main e_rd ZiskFv.Trusted.OP_COPYB (Or.inl h_ext) h_op (Or.inr (Or.inl rfl))
       h_rd_mult h_rd_as
   -- Specialize the uniform store_pc lane match to store_pc = 0 to recover
   -- register_write_lanes_match (with sides flipped).
@@ -362,7 +347,7 @@ lemma auipc_discharge_lanes
   obtain ⟨_h_subset, h_mode⟩ := h_circuit
   obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
   exact ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-    m r_main e_rd ZiskFv.Trusted.OP_FLAG h_ext h_op (Or.inl rfl)
+    m r_main e_rd ZiskFv.Trusted.OP_FLAG (Or.inl h_ext) h_op (Or.inl rfl)
     h_rd_mult h_rd_as
 
 end ZiskFv.Equivalence.Bridge.ControlFlow

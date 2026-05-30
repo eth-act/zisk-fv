@@ -424,11 +424,12 @@ axiom main_sext_load_emission_bundle
     `store_pc = 1` rows.
 
     The activation pins are parameterized via an `op_code` operand:
-    JAL / AUIPC have `op = OP_FLAG` (`is_external_op = 0`); JALR has
-    `op = OP_COPYB` (`is_external_op = 0`). This is the only
-    `store_pc = 1` family in RV64IM (the only callers of the
-    `store_pc_lanes_match_*` predicates), so the bundle's
-    `op_code ∈ {OP_FLAG, OP_COPYB}` disjunct covers it.
+    JAL / AUIPC have `op = OP_FLAG` (`is_external_op = 0`), LUI uses
+    the same bundle in its `store_pc = 0` specialization with
+    `OP_COPYB`, and production JALR's final row has `op = OP_AND`
+    (`is_external_op = 1`). The bundle's
+    `op_code ∈ {OP_FLAG, OP_COPYB, OP_AND}` disjunct covers those
+    register-write call sites.
 
     PIL citations:
     * `state-machines/main/pil/main.pil:311-312` — `store_value[0/1]`
@@ -453,11 +454,13 @@ axiom main_store_pc_emission_bundle
     (main : Valid_Main C FGL FGL) (r_main : ℕ)
     (e_rd : MemoryBusEntry FGL)
     (op_code : FGL)
-    -- Activation: this row is an internal `store_pc = 1` register-write
-    -- (JAL / AUIPC `op = OP_FLAG`, or JALR `op = OP_COPYB`).
-    (h_ext : main.is_external_op r_main = 0)
+    -- Activation: this row is a `store_pc = 1` register-write
+    -- (JAL / AUIPC `op = OP_FLAG`, or production JALR `op = OP_AND`).
+    (h_ext : main.is_external_op r_main = 0 ∨ main.is_external_op r_main = 1)
     (h_op : main.op r_main = op_code)
-    (h_op_disj : op_code = ZiskFv.Trusted.OP_FLAG ∨ op_code = ZiskFv.Trusted.OP_COPYB)
+    (h_op_disj : op_code = ZiskFv.Trusted.OP_FLAG
+      ∨ op_code = ZiskFv.Trusted.OP_COPYB
+      ∨ op_code = ZiskFv.Trusted.OP_AND)
     -- Bus side: e_rd is the rd-write entry.
     (h_e_rd_mult : e_rd.multiplicity = 1) (h_e_rd_as_val : e_rd.as.val = 1) :
     ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo main r_main e_rd

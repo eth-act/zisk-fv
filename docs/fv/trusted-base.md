@@ -14,7 +14,7 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 and as a hashed source-line ledger in
 [`trust/baseline-axioms.txt`](../../trust/baseline-axioms.txt) —
 **is** the trusted computing base for zisk-fv. The closure currently
-contains **72 axioms**, organised into the rationale classes
+contains **75 axioms**, organised into the rationale classes
 summarised below.
 
 The global theorem dispatches the 63 RV64IM opcodes through a 35-arm
@@ -27,7 +27,7 @@ global theorem; the V3 trust gates (`check-closure-vs-baseline` +
 the wrapper caller-burden ledger) mechanically prevent regression.
 
 Together with Lean 4's kernel and the LeanRV64D Sail-translated
-specification (the LHS of every per-opcode equivalence), the 72
+specification (the LHS of every per-opcode equivalence), the 75
 axioms below **are** the trusted computing base. Adding, removing,
 renaming, or weakening any axiom is a trust-surface change — see
 "Changing the trust surface" at the bottom.
@@ -39,7 +39,7 @@ Three independent checks, all run from the repo root:
 ```bash
 trust/scripts/check-all.sh                                      # full V1 gate (CI runs this)
 trust/scripts/check-all-semantic.sh                             # full V2 gate (post lake build)
-awk '$3=="axiom" {print $4}' trust/baseline-axioms.txt | wc -l  # total: 72
+awk '$3=="axiom" {print $4}' trust/baseline-axioms.txt | wc -l  # total: 75
 ```
 
 The V2 gate's `check-closure-vs-baseline` subcommand enforces that
@@ -48,7 +48,7 @@ the live transitive `#print axioms` closure of
 `trust/baseline-axioms.txt` exactly; any silent drift — addition OR
 removal — fails the gate.
 
-Per-class spot check (72 axioms total):
+Per-class spot check (75 axioms total):
 
 ```bash
 awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
@@ -65,7 +65,7 @@ awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
 #   9 ZiskFv/Airs/MemoryBus/MemBridge.lean          memory-bus lookup soundness + emission bundles (class #4)
 #   3 ZiskFv/Airs/OperationBus/Bridge.lean          op-bus permutation soundness (class #4)
 #   1 ZiskFv/ZiskCircuit/MemModel.lean                  memory-state bridge — load (class #2)
-#   1 ZiskFv/Trusted/Transpiler.lean           transpiler bridge contract (class #1)
+#   4 ZiskFv/Trusted/Transpiler.lean           transpiler bridge contract (class #1)
 #   4 ZiskFv/SailSpec/Auxiliaries.lean                  platform-feature scope (classes #7–#10)
 ```
 
@@ -89,7 +89,7 @@ The narrative per-class rationale below stays here.
 
 | #  | Class                               | Count | File                                  | What is asserted                                                                                                                                  | Why we trust it                                                                                                                                              |
 | -- | ----------------------------------- | ----: | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1  | Transpiler bridge contract          |     1 | `Trusted/Transpiler.lean`             | The indexed `TranspilerContractKind` family, whose cases preserve the former `transpile_*` propositions as theorem contracts, holds for the Main-row witness columns selected by compliance. | The non-trusted Lean static model in `ZiskFv/Transpiler/Static.lean` is differentially pinned against ZisK's Rust `Riscv2ZiskContext::convert` by `tools/transpiler-diff`; the remaining explicit axiom bridges that static lowering contract to runtime Main-AIR witness columns and PC/store witness values. |
+| 1  | Transpiler bridge contract          |     4 | `Trusted/Transpiler.lean`             | The indexed `TranspilerContractKind` family, whose cases preserve the former `transpile_*` propositions as theorem contracts, holds for the Main-row witness columns selected by compliance; three JALR-specific entries expose the production unaligned source-C / final-row bridge. | The non-trusted Lean static model in `ZiskFv/Transpiler/Static.lean` is differentially pinned against ZisK's Rust `Riscv2ZiskContext::convert` by `tools/transpiler-diff`; the explicit axioms bridge that static lowering contract to runtime Main-AIR witness columns, PC/store witness values, and the non-segment source-C form the extractor cannot yet render. |
 | 2  | Memory state bridge — load          |     1 | `ZiskCircuit/MemModel.lean`           | A Mem-AIR row tagged `wr=0` matching a memory-bus entry implies Sail's `state.mem` agrees with the entry's eight bytes.                           | Bridges Mem AIR's column language to Sail's byte-addressable `Std.HashMap` once class #4 has placed the entry on the bus.                                    |
 | 4  | Bus / lookup soundness              |    14 | `Airs/OperationBus/Bridge.lean` (3), `Airs/MemoryBus/{MemBridge,MemAlignBridge}.lean` (9 + 2) | Permutation-argument and lookup soundness on the operation-bus, memory-bus, and MemAlign providers: (i) `op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}` — a Main-row consumer pairs with a row in the provider AIR (operation_bus); (ii) `lookup_consumer_matches_provider_load` — load consumer ↔ Mem AIR row; (iii) `memalign_load_perm_sound` — sub-doubleword load consumer ↔ MemAlign* row; (iv) `mem_align_rom_subdoubleword_load_value_1_zero` — MemAlignRom lookup pins `value_1 = 0`; (v) `main_load_emission_bundle` / `main_sext_load_emission_bundle` — load and signed-load lane / ptr / rd-routing bundle on Main; (vi) `main_store_pc_emission_bundle` — lane match for `store_pc ∈ {0,1}` register writes; (vii) `main_external_arith_emission_bundle` — rd-write byte-pack lanes for the MUL/DIV family; (viii) `main_store_emission_bundle_{sd,sb,sh,sw}` — byte-extract + ptr-match + RMW high-byte preservation for the four store widths. | PLONK / logUp permutation-argument soundness for `bus_id = 10` (op-bus + mem-bus) and ROM-lookup soundness for the MemAlignRom table. Each axiom's docstring cites the PIL line and Rust transpile function it mirrors. |
 | 5b | Range-bus / byte-range soundness    |     3 | `Airs/MemoryBus/EntryRanges.lean`, `Airs/Binary/BinaryAddRanges.lean`, `Airs/Main/Ranges.lean` | Each participating AIR's `bits(8)` / `bits(N)`-annotated columns satisfy the byte-range bus: `memory_bus_entry_byte_range_perm_sound`, `binary_add_columns_in_range`, `main_columns_in_range`. | Lookup-argument soundness on the standard byte-range bus, restricted to participants annotated `bits(N)` in the PIL — see citations in each axiom's docstring. |
@@ -100,9 +100,9 @@ The narrative per-class rationale below stays here.
 | 9  | Platform — PMA inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmaCheck _ _ _ _ = pure none`.                                                                                               | Alignment-fault arm short-circuited under the `RISC_V_assumptions` fields already recorded by LeanRV64D.                                                     |
 | 10 | Platform — Zicfilp disabled         |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.update_elp_state _ = pure ()`.                                                                                               | Zicfilp landing-pad extension is disabled in ZisK's target; helper reduces to no-op under `currentlyEnabled Ext_Zicfilp = false`.                            |
 
-Total: 1 + 1 + 14 + 3 + 14 + 35 + 4 = **72 axioms**.
+Total: 4 + 1 + 14 + 3 + 14 + 35 + 4 = **75 axioms**.
 
-### Out-of-scope assumptions (NOT in the 72)
+### Out-of-scope assumptions (NOT in the 75)
 
 For completeness, two trusts the proofs rely on that are not counted
 here:
@@ -115,7 +115,7 @@ here:
   `flake.lock` (`sail-src`, `sail-riscv-src`); the build is
   reproduced by `nix build .#sail-lean-tree`.
 
-These are scope decisions, not omissions. The 72 axioms above are the
+These are scope decisions, not omissions. The 75 axioms above are the
 project-internal assumptions on top of those external trusts.
 
 ### Load-equivalence trust path
@@ -215,14 +215,14 @@ CODEOWNER-protected change.
 
 The trust ledger grew incrementally as the per-opcode `equiv_<OP>`
 proofs were closed; the rounds below preserve the audit trail of
-which axiom landed when and why. The current state — 72 axioms,
+which axiom landed when and why. The current state — 75 axioms,
 verified equal to the project-axiom closure of
 `zisk_riscv_compliant_program_bus` — is the result of the rounds
 chronologically listed below, followed by the Lean transpiler trust
 replacement that collapsed the per-opcode transpiler contracts from 51
 axioms to one indexed bridge axiom.
 
-### Lean transpiler trust replacement (122 → 72)
+### Lean transpiler trust replacement (122 → 75)
 
 Replaced the 51 source-level `transpile_<OP>` axioms with theorem
 wrappers over a single explicit axiom,
@@ -235,18 +235,24 @@ it against the pinned Rust transpiler over exhaustive finite fields
 (registers, short immediates, shift amounts, widths, rd-zero paths) plus
 representative wide U/J-offset samples.
 
-The remaining axiom is deliberately explicit rather than a caller
-hypothesis: it is the bridge from the differentially pinned static model
-and compliance-selected Main rows to runtime witness facts such as
-register lanes, `store_pc`, and PC columns.
+The remaining transpiler bridge axioms are deliberately explicit rather
+than caller hypotheses. `transpiler_contract_sound` connects the
+differentially pinned static model and compliance-selected Main rows to
+runtime witness facts such as register lanes, `store_pc`, and PC
+columns. Three JALR-specific explicit axioms cover the production
+unaligned bridge that the generic extractor cannot yet render:
+`main_source_c_copies_prev_c0_nonsegment`,
+`main_source_c_copies_prev_c1_nonsegment`, and
+`transpile_JALR_unaligned_final_source_c`.
 
-JALR is a classified exception inside that bridge. The Lean model and
-Rust harness agree that current upstream ZisK lowers JALR through an
-external `and` row, or an `add` row followed by an `and` row when the
-immediate is not divisible by 4. The existing JALR equivalence proof
-still consumes the older single-row internal-`copyb` archetype. That
-known proof/trust mismatch remains covered by `transpiler_contract_sound`
-until the JALR proof is refactored to the production lowering.
+JALR now consumes the production final `OP_AND` row inside that bridge.
+The aligned lowering is a single external `and` row; the unaligned
+lowering is an external `add` row followed by the final external `and`
+row. The `ADD -> lastc -> AND` lane bridge is derived in Lean from the
+explicit non-segment Main source-C axioms and the unaligned final-row
+selector contract; the remaining trusted JALR bridge is the final-row
+link-address fact `pc + jmp_offset2 = PC + 4`, plus the still-trusted
+transpiler selection of the final row.
 
 ### Step 4 dead-code cleanup (147 → 122)
 

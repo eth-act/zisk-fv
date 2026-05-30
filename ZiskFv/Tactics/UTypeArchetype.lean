@@ -103,8 +103,7 @@ def lui_archetype_circuit_holds
   lui_subset_holds m r_main next_pc
   ∧ main_row_in_lui_mode m r_main
 
-/-- Derived: `flag = 0` when the row is internal-op-1 (mirrors
-    `JumpArchetype.flag_eq_zero_of_internal_op_one`). -/
+/-- Derived: `flag = 0` when the row is internal-op-1. -/
 private lemma flag_eq_zero_of_internal_op_one
     (v : Valid_Main C FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)

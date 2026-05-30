@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 72
+# Total entries: 75
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:44  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:56  axiom     arith_div_columns_in_range
@@ -59,12 +59,12 @@ ddbca43a3ae7757a  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:168  axiom     mem_a
 2a92e6d678fb5c0f  ZiskFv/Airs/MemoryBus/MemBridge.lean:163  axiom     lookup_consumer_matches_provider_load
 df1bb212fcddf2a6  ZiskFv/Airs/MemoryBus/MemBridge.lean:330  axiom     main_load_emission_bundle
 24dd4ca3f75ffaf3  ZiskFv/Airs/MemoryBus/MemBridge.lean:389  axiom     main_sext_load_emission_bundle
-b7525f7cc15044c1  ZiskFv/Airs/MemoryBus/MemBridge.lean:451  axiom     main_store_pc_emission_bundle
-be9709898787174a  ZiskFv/Airs/MemoryBus/MemBridge.lean:509  axiom     main_external_arith_emission_bundle
-93a53506ac1d3111  ZiskFv/Airs/MemoryBus/MemBridge.lean:629  axiom     main_store_emission_bundle_sd
-ad517419e27f4b60  ZiskFv/Airs/MemoryBus/MemBridge.lean:723  axiom     main_store_emission_bundle_sb
-6e2cbab0ad008e6c  ZiskFv/Airs/MemoryBus/MemBridge.lean:759  axiom     main_store_emission_bundle_sh
-8a4cf50573c92704  ZiskFv/Airs/MemoryBus/MemBridge.lean:787  axiom     main_store_emission_bundle_sw
+0b23dac858d2605d  ZiskFv/Airs/MemoryBus/MemBridge.lean:452  axiom     main_store_pc_emission_bundle
+be9709898787174a  ZiskFv/Airs/MemoryBus/MemBridge.lean:512  axiom     main_external_arith_emission_bundle
+93a53506ac1d3111  ZiskFv/Airs/MemoryBus/MemBridge.lean:632  axiom     main_store_emission_bundle_sd
+ad517419e27f4b60  ZiskFv/Airs/MemoryBus/MemBridge.lean:726  axiom     main_store_emission_bundle_sb
+6e2cbab0ad008e6c  ZiskFv/Airs/MemoryBus/MemBridge.lean:762  axiom     main_store_emission_bundle_sh
+8a4cf50573c92704  ZiskFv/Airs/MemoryBus/MemBridge.lean:790  axiom     main_store_emission_bundle_sw
 67ed8e590d7f0792  ZiskFv/Airs/OperationBus/Bridge.lean:54  axiom     op_bus_perm_sound_BinaryAdd
 d9d7d2422146a7dd  ZiskFv/Airs/OperationBus/Bridge.lean:77  axiom     op_bus_perm_sound_Binary
 f0f2b4a2aaab18ee  ZiskFv/Airs/OperationBus/Bridge.lean:101  axiom     op_bus_perm_sound_BinaryExtension
@@ -74,5 +74,8 @@ a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pu
 1f6fb25749dc02ac  ZiskFv/SailSpec/Auxiliaries.lean:817  axiom     within_clint_is_false
 52c0bbafc03c9989  ZiskFv/SailSpec/Auxiliaries.lean:831  axiom     pmaCheck_is_pure_none
 724bd1dd06f6384f  ZiskFv/SailSpec/Auxiliaries.lean:850  axiom     update_elp_state_is_pure_unit
-41d7a26bc9779765  ZiskFv/Trusted/Transpiler.lean:2287  axiom     transpiler_contract_sound
+41d7a26bc9779765  ZiskFv/Trusted/Transpiler.lean:2271  axiom     transpiler_contract_sound
+1005c4cd95c3831b  ZiskFv/Trusted/Transpiler.lean:2315  axiom     main_source_c_copies_prev_c0_nonsegment
+5ca7f4ab47c33500  ZiskFv/Trusted/Transpiler.lean:2323  axiom     main_source_c_copies_prev_c1_nonsegment
+d5f1ad1e7da55548  ZiskFv/Trusted/Transpiler.lean:2340  axiom     transpile_JALR_unaligned_final_source_c
 0cd0f525da3c690b  ZiskFv/ZiskCircuit/MemModel.lean:127  axiom     row_models_sail_state_load
