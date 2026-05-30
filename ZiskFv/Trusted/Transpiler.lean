@@ -1,5 +1,6 @@
 import Mathlib
 
+import ZiskFv.Transpiler.Static
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Main.Main
 
@@ -43,11 +44,11 @@ definition, specialized to FGL.
 -/
 namespace Transpiler
 
-  /-- Byte-tag indicator: 4 × regidx, packed into a Goldilocks element. -/
+  /- Byte-tag indicator: 4 × regidx, packed into a Goldilocks element. -/
   def ind (rd : Fin 32) : FGL :=
     ⟨4 * rd.val, by omega⟩
 
-  /-- Reverse the `ind` tag: `val / 4 mod 32`. The domain is Goldilocks
+  /- Reverse the `ind` tag: `val / 4 mod 32`. The domain is Goldilocks
       (`FGL`); division is integer division on the representative. -/
   def wrap_to_regidx (val : FGL) : Fin 32 :=
     ⟨val.val / 4 % 32, by
@@ -61,7 +62,7 @@ namespace ZiskFv.Trusted
 open Goldilocks
 open ZiskFv.Airs.Main
 
-/-- Subset of the Zisk-instruction row populated by a single Main-AIR row.
+/- Subset of the Zisk-instruction row populated by a single Main-AIR row.
     Mirrors the witness columns relevant to ADD correctness + branch-relevant
     `jmp_offset1`/`jmp_offset2`/`set_pc`:
 
@@ -98,36 +99,36 @@ structure ZiskInstructionRow where
   jmp_offset1 : FGL
   jmp_offset2 : FGL
   m32 : FGL
-  /-- `store_pc` selector (col 22 of the Main AIR).
+  /- `store_pc` selector (col 22 of the Main AIR).
       `main.pil:311`: `store_value[0] = store_pc*(pc + jmp_offset2 - c[0]) + c[0]`.
       With `store_pc = 1` and `c[0] = 0`, this writes `pc + jmp_offset2` (= `pc + 4` for
       JAL) to the destination register. Pinned to 0 for ADD/BEQ; 1 for JAL. -/
   store_pc : FGL
 
-/-- Goldilocks literal for the ADD opcode. `0x0A` per `zisk/pil/opids.pil`. -/
+/- Goldilocks literal for the ADD opcode. `0x0A` per `zisk/pil/opids.pil`. -/
 @[simp] def OP_ADD : FGL := 10
 
-/-- Goldilocks literal for the EQ opcode. `0x09` per
+/- Goldilocks literal for the EQ opcode. `0x09` per
     `zisk/core/src/zisk_ops.rs:391`. Used by RV64 branch opcodes
     (BEQ/BNE) which transpile to Zisk `eq` via `create_branch_op`
     (`riscv2zisk_context.rs:202,203`). -/
 @[simp] def OP_EQ : FGL := 9
 
-/-- Goldilocks literal for the LT opcode. `0x07` per
+/- Goldilocks literal for the LT opcode. `0x07` per
     `zisk/core/src/zisk_ops.rs:389`. Signed less-than comparator
     used by RV64 branch opcodes BLT / BGE via `create_branch_op`
     (`riscv2zisk_context.rs:204,205`). Dispatched to the Binary state
     machine via the operation bus (same routing as OP_EQ). -/
 @[simp] def OP_LT : FGL := 7
 
-/-- Goldilocks literal for the LTU opcode. `0x06` per
+/- Goldilocks literal for the LTU opcode. `0x06` per
     `zisk/core/src/zisk_ops.rs:388`. Unsigned less-than
     comparator used by RV64 branch opcodes BLTU / BGEU via
     `create_branch_op` (`riscv2zisk_context.rs:206,207`). Dispatched to
     the Binary state machine via the operation bus. -/
 @[simp] def OP_LTU : FGL := 6
 
-/-- Goldilocks literal for the FLAG opcode. `0x00` per
+/- Goldilocks literal for the FLAG opcode. `0x00` per
     `zisk/core/src/zisk_ops.rs:382`. Internal op whose
     `op_flag(a, b) = (0, true)` semantics give `c = 0, flag = 1`.
     Used by RV64 JAL (`riscv2zisk_context.rs:1098`, `zib.op("flag")`)
@@ -136,7 +137,7 @@ structure ZiskInstructionRow where
     `op`'s return value. -/
 @[simp] def OP_FLAG : FGL := 0
 
-/-- Goldilocks literal for the CopyB opcode. `0x01` per
+/- Goldilocks literal for the CopyB opcode. `0x01` per
     `zisk/core/src/zisk_ops.rs:383`. Used by unsigned-width RV64
     load opcodes (LD/LWU/LHU/LBU) which transpile via `load_op` with
     `op = "copyb"` (`riscv2zisk_context.rs:211-216`). `OpType::Internal`,
@@ -146,7 +147,7 @@ structure ZiskInstructionRow where
     `store_reg`). -/
 @[simp] def OP_COPYB : FGL := 1
 
-/-- Goldilocks literal for the 32-bit shift-left-word opcode.
+/- Goldilocks literal for the 32-bit shift-left-word opcode.
     `0x24` per `zisk/pil/operations.pil:62` and
     `zisk/core/src/zisk_ops.rs:416`. Used by RV64 SLLW
     (`riscv2zisk_context.rs:155`, `create_register_op(..., "sll_w", 4)`)
@@ -154,28 +155,28 @@ structure ZiskInstructionRow where
     Type `BinaryE` — handled by the `BinaryExtension` SM (not `BinaryAdd`). -/
 @[simp] def OP_SLL_W : FGL := 36
 
-/-- Goldilocks literal for the 64-bit shift-left opcode.
+/- Goldilocks literal for the 64-bit shift-left opcode.
     `0x21` per `zisk/core/src/zisk_ops.rs:413`. Used by RV64 SLL
     (`riscv2zisk_context.rs:135`, `create_register_op(..., "sll", 4)`)
     and SLLI (`riscv2zisk_context.rs:175`, `immediate_op(..., "sll", 4)`).
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SLL : FGL := 33
 
-/-- Goldilocks literal for the 64-bit shift-right-logical opcode.
+/- Goldilocks literal for the 64-bit shift-right-logical opcode.
     `0x22` per `zisk/core/src/zisk_ops.rs:414`. Used by RV64 SRL
     (`riscv2zisk_context.rs:139`, `create_register_op(..., "srl", 4)`)
     and SRLI (`riscv2zisk_context.rs:179`, `immediate_op(..., "srl", 4)`).
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRL : FGL := 34
 
-/-- Goldilocks literal for the 64-bit shift-right-arithmetic opcode.
+/- Goldilocks literal for the 64-bit shift-right-arithmetic opcode.
     `0x23` per `zisk/core/src/zisk_ops.rs:415`. Used by RV64 SRA
     (`riscv2zisk_context.rs:140`, `create_register_op(..., "sra", 4)`)
     and SRAI (`riscv2zisk_context.rs:180`, `immediate_op(..., "sra", 4)`).
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRA : FGL := 35
 
-/-- Goldilocks literal for the 32-bit shift-right-logical-word opcode.
+/- Goldilocks literal for the 32-bit shift-right-logical-word opcode.
     `0x25` per `zisk/pil/operations.pil` and
     `zisk/core/src/zisk_ops.rs:417`. Used by RV64 SRLW
     (`riscv2zisk_context.rs:156`, `create_register_op(..., "srl_w", 4)`)
@@ -183,7 +184,7 @@ structure ZiskInstructionRow where
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRL_W : FGL := 37
 
-/-- Goldilocks literal for the 32-bit shift-right-arithmetic-word opcode.
+/- Goldilocks literal for the 32-bit shift-right-arithmetic-word opcode.
     `0x26` per `zisk/pil/operations.pil` and
     `zisk/core/src/zisk_ops.rs:418`. Used by RV64 SRAW
     (`riscv2zisk_context.rs:157`, `create_register_op(..., "sra_w", 4)`)
@@ -191,7 +192,7 @@ structure ZiskInstructionRow where
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRA_W : FGL := 38
 
-/-- Goldilocks literal for the 32-bit add-word opcode.
+/- Goldilocks literal for the 32-bit add-word opcode.
     `0x1a = 26` per `zisk/core/src/zisk_ops.rs:408`
     (`(AddW, "add_w", Binary, …, 0x1a, …)`). Used by RV64 ADDW
     (`riscv2zisk_context.rs:153`, `create_register_op(..., "add_w", 4)`)
@@ -202,7 +203,7 @@ structure ZiskInstructionRow where
     (`zisk_ops.rs:572`). -/
 @[simp] def OP_ADD_W : FGL := 26
 
-/-- Goldilocks literal for the 32-bit sub-word opcode.
+/- Goldilocks literal for the 32-bit sub-word opcode.
     `0x1b = 27` per `zisk/core/src/zisk_ops.rs:409`
     (`(SubW, "sub_w", Binary, …, 0x1b, …)`). Used by RV64 SUBW
     (`riscv2zisk_context.rs:154`, `create_register_op(..., "sub_w", 4)`).
@@ -212,17 +213,17 @@ structure ZiskInstructionRow where
 @[simp] def OP_SUB_W : FGL := 27
 
 
-/-- Goldilocks literal for OPERATION_BUS_ID. Per `zisk/pil/opids.pil:2`. -/
+/- Goldilocks literal for OPERATION_BUS_ID. Per `zisk/pil/opids.pil:2`. -/
 @[simp] def OPERATION_BUS_ID : FGL := 5000
 
-/-- Abstract RV64 state, indexed access to integer registers via `Fin 32`.
+/- Abstract RV64 state, indexed access to integer registers via `Fin 32`.
     The `xreg` accessor returns a `BitVec 64`; splitting into two
     `BitVec 32` lanes happens in the Main AIR row. -/
 structure RV64State where
   xreg : Fin 32 → BitVec 64
   pc : BitVec 64
 
-/-- Split a `BitVec 64` into (low 32, high 32) lanes as Goldilocks elements.
+/- Split a `BitVec 64` into (low 32, high 32) lanes as Goldilocks elements.
     Matches how `zisk/core/src/riscv2zisk_context.rs::create_register_op`
     populates `a`/`b`/`c`. -/
 def lane_lo (v : BitVec 64) : FGL :=
@@ -235,7 +236,7 @@ def lane_hi (v : BitVec 64) : FGL :=
     have := Nat.mod_lt (v.toNat / 4294967296) (by decide : 0 < 4294967296)
     omega⟩
 
-/-- The axiomatic RV64 → Zisk row contract for ADD, in `Valid_Main`-row form.
+/- The axiomatic RV64 → Zisk row contract for ADD, in `Valid_Main`-row form.
 
     Given a Main AIR instance, a row index, RV64 state, and source registers,
     whenever the row is an active ADD row (`is_external_op = 1`, `op = OP_ADD`),
@@ -249,23 +250,7 @@ def lane_hi (v : BitVec 64) : FGL :=
     axiom pins the named columns of the Main AIR at index `r_main`. If
     ZisK's transpiler changes (new opcode encoding, different source
     routing), this axiom must change in lockstep. -/
-axiom transpile_ADD :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (state : RV64State)
-      (rs1 rs2 : Fin 32),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_ADD →
-      m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-
-/-- The axiomatic RV64 → Zisk row contract for JAL.
+/- The axiomatic RV64 → Zisk row contract for JAL.
 
     Per `zisk/core/src/riscv2zisk_context.rs:201,1098` an RV64 JAL
     `rd, imm` transpiles via `self.jal(i, 4)` to exactly one Zisk
@@ -289,22 +274,7 @@ axiom transpile_ADD :
 
     **Trust basis.** Pure spec of `fn jal` in `riscv2zisk_context.rs`
     at line 1098. -/
-axiom transpile_JAL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_FLAG →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 1
-      ∧ m.jmp_offset1 r_main = imm_offset
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = 0
-      ∧ m.a_1 r_main = 0
-      ∧ m.b_0 r_main = 0
-      ∧ m.b_1 r_main = 0
-
-/-- The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register).
+/- The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register).
 
     Per `zisk/core/src/riscv2zisk_context.rs:200,1025` an RV64 JALR
     `rd, rs1, imm12` transpiles via `self.jalr(i, 4)`. The archetype-
@@ -338,20 +308,7 @@ axiom transpile_JAL :
     **Trust basis.** Simplified spec of `fn jalr` in
     `riscv2zisk_context.rs:1025`, targeting the Main AIR row observables
     the `JumpArchetype` macro depends on. -/
-axiom transpile_JALR :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_offset : FGL) (state : RV64State),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_COPYB →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 1
-      ∧ m.store_pc r_main = 1
-      ∧ m.jmp_offset1 r_main = imm_offset
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs1)
-
-/-- The axiomatic RV64 → Zisk row contract for SD (store doubleword).
+/- The axiomatic RV64 → Zisk row contract for SD (store doubleword).
 
     Per `zisk/core/src/riscv2zisk_context.rs:223` an RV64 SD
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 8, 4)`
@@ -384,22 +341,7 @@ axiom transpile_JALR :
     different `w` (1/2/4); their transpile-axioms will mirror this one
     with the `ind_width` fact adjusted (and a byte-zeroing hypothesis
     on the memory-bus-write entry's high lanes). A4 scope is SD only. -/
-axiom transpile_SD :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_COPYB →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SW (store word).
+/- The axiomatic RV64 → Zisk row contract for SW (store word).
 
     Per `zisk/core/src/riscv2zisk_context.rs:222` an RV64 SW
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 4, 4)`
@@ -434,29 +376,14 @@ axiom transpile_SD :
     `inst_size = 4`. The row shape is identical to `transpile_SD` by
     design — the store archetype covers both uniformly. SB/SH will
     mirror this with their own width-zeroing witnesses. -/
-axiom transpile_SW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_COPYB →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- Goldilocks literal for the MUL opcode. `0xb4 = 180` per
+/- Goldilocks literal for the MUL opcode. `0xb4 = 180` per
     `zisk/core/src/zisk_ops.rs:427`. Signed × signed multiplication,
     low 64 bits (`result_part = Low`). Dispatched to the Arith state
     machine via the operation bus. Used by RV64 MUL
     (`riscv2zisk_context.rs:243`, `create_register_op(..., "mul", 4)`). -/
 @[simp] def OP_MUL : FGL := 180
 
-/-- Goldilocks literal for the MULU opcode. `0xb0 = 176` — unsigned ×
+/- Goldilocks literal for the MULU opcode. `0xb0 = 176` — unsigned ×
     unsigned, low 64 bits. `zisk_ops.rs:424`. Arith "primary = mulu,
     secondary = muluh" (both share the same row, disambiguated by the
     result-lane selector). Note: RV64 does not have a distinct MULU;
@@ -464,29 +391,29 @@ axiom transpile_SW :
     the low bits agree. -/
 @[simp] def OP_MULU : FGL := 176
 
-/-- Goldilocks literal for the MULUH opcode. `0xb1 = 177` — unsigned ×
+/- Goldilocks literal for the MULUH opcode. `0xb1 = 177` — unsigned ×
     unsigned, high 64 bits. `zisk_ops.rs:425`. Maps to RV64 MULHU via
     the transpiler rename at `riscv2zisk_context.rs:246`
     (`"mulhu" → "muluh"`). -/
 @[simp] def OP_MULUH : FGL := 177
 
-/-- Goldilocks literal for the MULSUH opcode. `0xb3 = 179` — signed ×
+/- Goldilocks literal for the MULSUH opcode. `0xb3 = 179` — signed ×
     unsigned, high 64 bits. `zisk_ops.rs:426`. Maps to RV64 MULHSU via
     the transpiler rename at `riscv2zisk_context.rs:245`
     (`"mulhsu" → "mulsuh"`). -/
 @[simp] def OP_MULSUH : FGL := 179
 
-/-- Goldilocks literal for the MULH opcode. `0xb5 = 181` — signed ×
+/- Goldilocks literal for the MULH opcode. `0xb5 = 181` — signed ×
     signed, high 64 bits. `zisk_ops.rs:428`. Used by RV64 MULH
     (`riscv2zisk_context.rs:244`). -/
 @[simp] def OP_MULH : FGL := 181
 
-/-- Goldilocks literal for the MUL_W opcode. `0xb6 = 182` — the RV64 MULW
+/- Goldilocks literal for the MUL_W opcode. `0xb6 = 182` — the RV64 MULW
     32-bit variant. `zisk_ops.rs:429`. Maps to RV64 MULW via
     `riscv2zisk_context.rs:247`. `m32 = 1` on the Main row. -/
 @[simp] def OP_MUL_W : FGL := 182
 
-/-- The axiomatic RV64 → Zisk row contract for MUL.
+/- The axiomatic RV64 → Zisk row contract for MUL.
 
     Per `zisk/core/src/riscv2zisk_context.rs:243` an RV64 MUL
     `rd, rs1, rs2` transpiles via `create_register_op(..., "mul", 4)`
@@ -511,22 +438,7 @@ axiom transpile_SW :
     MULHU, MULHSU, MULW share this shape with only `op` (and `m32` for
     MULW) changing; their transpile-axioms will mirror this one with
     the `OP_*` literal swapped and, for MULW, `m32 = 1`. -/
-axiom transpile_MUL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_MUL →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for MULH.
+/- The axiomatic RV64 → Zisk row contract for MULH.
 
     Per `zisk/core/src/riscv2zisk_context.rs:244` an RV64 MULH
     `rd, rs1, rs2` transpiles via `create_register_op(..., "mulh", 4)`
@@ -546,22 +458,7 @@ axiom transpile_MUL :
     opcodes 179 / 177 respectively. The Arith SM selects high-64 vs.
     low-64 via the secondary op; the Main row's transpile contract is
     uniform across the family. -/
-axiom transpile_MULH :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_MULH →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SLLW.
+/- The axiomatic RV64 → Zisk row contract for SLLW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:155` an RV64 SLLW
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "sll_w", 4)`
@@ -589,23 +486,7 @@ axiom transpile_MULH :
     SRLW / SRAW mirror this with `op = OP_SRL_W = 37` /
     `op = OP_SRA_W = 38` and the same `m32 = 1` path. SLL / SRL /
     SRA (64-bit siblings) keep `m32 = 0`. -/
-axiom transpile_SLLW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SLL_W →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SH (store halfword).
+/- The axiomatic RV64 → Zisk row contract for SH (store halfword).
 
     Per `zisk/core/src/riscv2zisk_context.rs:221` an RV64 SH
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 2, 4)`
@@ -632,22 +513,7 @@ axiom transpile_SLLW :
     **Trust basis.** Pure spec of `fn store_op` in
     `riscv2zisk_context.rs:828` specialized to `w = 2`. Direct
     transposition of `transpile_SW`. -/
-axiom transpile_SH :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_COPYB →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SB (store byte).
+/- The axiomatic RV64 → Zisk row contract for SB (store byte).
 
     Per `zisk/core/src/riscv2zisk_context.rs:220` an RV64 SB
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 1, 4)`
@@ -667,22 +533,7 @@ axiom transpile_SH :
     **Trust basis.** Pure spec of `fn store_op` in
     `riscv2zisk_context.rs:828` specialized to `w = 1`. Direct
     transposition of `transpile_SW`. -/
-axiom transpile_SB :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_COPYB →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SLL.
+/- The axiomatic RV64 → Zisk row contract for SLL.
 
     Per `zisk/core/src/riscv2zisk_context.rs:135` an RV64 SLL
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "sll", 4)`
@@ -698,23 +549,7 @@ axiom transpile_SB :
     **Trust basis.** Direct transposition of `transpile_SLLW` with
     `OP_SLL_W → OP_SLL` and `m32 = 1 → m32 = 0`. SRL/SRA mirror this
     with `OP_SRL`/`OP_SRA`. -/
-axiom transpile_SLL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SLL →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SRL.
+/- The axiomatic RV64 → Zisk row contract for SRL.
 
     Per `zisk/core/src/riscv2zisk_context.rs:139` an RV64 SRL
     transpiles via `create_register_op(instr, "srl", 4)`. Emitted row
@@ -724,23 +559,7 @@ axiom transpile_SLL :
 
     **Trust basis.** Direct transposition of `transpile_SLL` with
     `OP_SLL → OP_SRL`. -/
-axiom transpile_SRL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SRL →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SRA.
+/- The axiomatic RV64 → Zisk row contract for SRA.
 
     Per `zisk/core/src/riscv2zisk_context.rs:140` an RV64 SRA
     transpiles via `create_register_op(instr, "sra", 4)`. Emitted row
@@ -750,23 +569,7 @@ axiom transpile_SRL :
 
     **Trust basis.** Direct transposition of `transpile_SLL` with
     `OP_SLL → OP_SRA`. -/
-axiom transpile_SRA :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SRA →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- Zisk-side representation of a 6-bit shift-amount immediate.
+/- Zisk-side representation of a 6-bit shift-amount immediate.
 
     The transpiler helper `immediate_op` at
     `zisk/core/src/riscv2zisk_context.rs:853-864` emits
@@ -782,7 +585,7 @@ def shamt_b_lo (shamt : BitVec 6) : FGL :=
     have : shamt.toNat < 64 := shamt.isLt
     omega⟩
 
-/-- The axiomatic RV64 → Zisk row contract for SLLI.
+/- The axiomatic RV64 → Zisk row contract for SLLI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:175` an RV64 SLLI
     `rd, rs1, shamt` transpiles via `immediate_op(instr, "sll", 4)`
@@ -805,63 +608,15 @@ def shamt_b_lo (shamt : BitVec 6) : FGL :=
     **Trust basis.** Pure spec of the `"slli"` arm of the ITYPE
     dispatch in `riscv2zisk_context.rs:175`. SRLI / SRAI mirror this
     with `OP_SRL` / `OP_SRA`. -/
-axiom transpile_SLLI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SLL →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = shamt_b_lo shamt
-      ∧ m.b_1 r_main = 0
-
-/-- The axiomatic RV64 → Zisk row contract for SRLI.
+/- The axiomatic RV64 → Zisk row contract for SRLI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:179`. Same shape
     as `transpile_SLLI` with `OP_SLL → OP_SRL`. -/
-axiom transpile_SRLI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SRL →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = shamt_b_lo shamt
-      ∧ m.b_1 r_main = 0
-
-/-- The axiomatic RV64 → Zisk row contract for SRAI.
+/- The axiomatic RV64 → Zisk row contract for SRAI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:180`. Same shape
     as `transpile_SLLI` with `OP_SLL → OP_SRA`. -/
-axiom transpile_SRAI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SRA →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = shamt_b_lo shamt
-      ∧ m.b_1 r_main = 0
-
-/-- The axiomatic RV64 → Zisk row contract for SRLW
+/- The axiomatic RV64 → Zisk row contract for SRLW
     (`ShiftArchetype` sibling of SLLW, register variant).
 
     Per `zisk/core/src/riscv2zisk_context.rs:156` an RV64 SRLW
@@ -872,23 +627,7 @@ axiom transpile_SRAI :
 
     **Trust basis.** Direct transposition of `transpile_SLLW` with
     `OP_SLL_W → OP_SRL_W`. SRAW mirrors with `OP_SRA_W`. -/
-axiom transpile_SRLW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SRL_W →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SRAW
+/- The axiomatic RV64 → Zisk row contract for SRAW
     (`ShiftArchetype` sibling of SLLW/SRLW, register variant).
 
     Per `zisk/core/src/riscv2zisk_context.rs:157` an RV64 SRAW
@@ -901,23 +640,7 @@ axiom transpile_SRLW :
 
     **Trust basis.** Direct transposition of `transpile_SLLW` with
     `OP_SLL_W → OP_SRA_W`. -/
-axiom transpile_SRAW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SRA_W →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- Zisk-side representation of a 5-bit W-variant shift-amount immediate.
+/- Zisk-side representation of a 5-bit W-variant shift-amount immediate.
 
     The transpiler helper `immediate_op` at
     `zisk/core/src/riscv2zisk_context.rs:853-864` emits
@@ -936,7 +659,7 @@ def shamt_w_b_lo (shamt : BitVec 5) : FGL :=
     have : shamt.toNat < 32 := shamt.isLt
     omega⟩
 
-/-- The axiomatic RV64 → Zisk row contract for SLLIW
+/- The axiomatic RV64 → Zisk row contract for SLLIW
     (`ShiftArchetype` sibling, W-variant immediate).
 
     Per `zisk/core/src/riscv2zisk_context.rs:195` an RV64 SLLIW
@@ -955,63 +678,15 @@ def shamt_w_b_lo (shamt : BitVec 5) : FGL :=
     dispatch in `riscv2zisk_context.rs:195`. SRLIW / SRAIW mirror this
     with `OP_SRL_W` / `OP_SRA_W` — same bus shape, different
     secondary-SM opcode. -/
-axiom transpile_SLLIW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SLL_W →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = shamt_w_b_lo shamt
-      ∧ m.b_1 r_main = 0
-
-/-- The axiomatic RV64 → Zisk row contract for SRLIW.
+/- The axiomatic RV64 → Zisk row contract for SRLIW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:196`. Same shape as
     `transpile_SLLIW` with `OP_SLL_W → OP_SRL_W`. -/
-axiom transpile_SRLIW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SRL_W →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = shamt_w_b_lo shamt
-      ∧ m.b_1 r_main = 0
-
-/-- The axiomatic RV64 → Zisk row contract for SRAIW.
+/- The axiomatic RV64 → Zisk row contract for SRAIW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:197`. Same shape as
     `transpile_SLLIW` with `OP_SLL_W → OP_SRA_W`. -/
-axiom transpile_SRAIW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SRA_W →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = shamt_w_b_lo shamt
-      ∧ m.b_1 r_main = 0
-
-/-- The axiomatic RV64 → Zisk row contract for MULHU.
+/- The axiomatic RV64 → Zisk row contract for MULHU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:246` an RV64 MULHU
     `rd, rs1, rs2` transpiles via
@@ -1031,22 +706,7 @@ axiom transpile_SRAIW :
     **Trust basis.** Pure spec of the `"mulhu"` arm in
     `riscv2zisk_context.rs:246`. Differs from `transpile_MULH` only in
     the opcode literal (181 → 177). -/
-axiom transpile_MULHU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_MULUH →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for MULHSU.
+/- The axiomatic RV64 → Zisk row contract for MULHSU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:245` an RV64 MULHSU
     `rd, rs1, rs2` transpiles via
@@ -1065,22 +725,7 @@ axiom transpile_MULHU :
     **Trust basis.** Pure spec of the `"mulhsu"` arm in
     `riscv2zisk_context.rs:245`. Differs from `transpile_MULH` only in
     the opcode literal (181 → 179). -/
-axiom transpile_MULHSU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_MULSUH →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for LUI (load-upper-immediate).
+/- The axiomatic RV64 → Zisk row contract for LUI (load-upper-immediate).
 
     Per `zisk/core/src/riscv2zisk_context.rs:1009` an RV64 LUI
     `rd, imm` transpiles via `self.lui(i, 4)` to exactly one Zisk
@@ -1109,22 +754,7 @@ axiom transpile_MULHSU :
     transpile axiom pins only the `b_lo`/`b_hi` decomposition; the
     sign-extension identity between Goldilocks lanes and the BitVec 64
     target is discharged in `Equivalence.Lui`. -/
-axiom transpile_LUI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_lo imm_hi : FGL) (_state : RV64State),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_COPYB →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = 0
-      ∧ m.a_1 r_main = 0
-      ∧ m.b_0 r_main = imm_lo
-      ∧ m.b_1 r_main = imm_hi
-
-/-- The axiomatic RV64 → Zisk row contract for AUIPC (add-upper-immediate-PC).
+/- The axiomatic RV64 → Zisk row contract for AUIPC (add-upper-immediate-PC).
 
     Per `zisk/core/src/riscv2zisk_context.rs:907` an RV64 AUIPC
     `rd, imm` transpiles via `self.auipc(i)` to exactly one Zisk
@@ -1155,21 +785,6 @@ axiom transpile_LUI :
     transpile axiom pins `jmp_offset2 = imm_offset` (the
     caller-supplied Goldilocks representative of the 32-bit-signed
     AUIPC offset). -/
-axiom transpile_AUIPC :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_FLAG →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 1
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = imm_offset
-      ∧ m.a_0 r_main = 0
-      ∧ m.a_1 r_main = 0
-      ∧ m.b_0 r_main = 0
-      ∧ m.b_1 r_main = 0
-
 /-! ## ALU RTYPE opcodes
 
     Six transpile axioms for the ALU-RTYPE fan-out: SUB, AND, OR, XOR,
@@ -1179,7 +794,7 @@ axiom transpile_AUIPC :
     additionally leave `flag` unconstrained because the Binary SM's
     `flag` output carries the comparison verdict. -/
 
-/-- Goldilocks literal for the SUB opcode. `0x0b = 11` per
+/- Goldilocks literal for the SUB opcode. `0x0b = 11` per
     `zisk/core/src/zisk_ops.rs:393` (`"sub"`, Binary type).
     Used by RV64 SUB (`riscv2zisk_context.rs:134`,
     `create_register_op(..., "sub", 4)`). -/
@@ -1188,13 +803,13 @@ axiom transpile_AUIPC :
 -- `OP_LT` and `OP_LTU` are defined earlier in this file (BLT / BGE /
 -- BLTU / BGEU branches share them). SLT / SLTU reuse those literals.
 
-/-- Goldilocks literal for the AND opcode. `0x0e = 14` per
+/- Goldilocks literal for the AND opcode. `0x0e = 14` per
     `zisk/core/src/zisk_ops.rs:396` (`"and"`, Binary type).
     Used by RV64 AND (`riscv2zisk_context.rs:152`,
     `create_register_op(..., "and", 4)`) and ANDI (line 182). -/
 @[simp] def OP_AND : FGL := 14
 
-/-- Goldilocks literal for the OR opcode. `0x0f = 15` per
+/- Goldilocks literal for the OR opcode. `0x0f = 15` per
     `zisk/core/src/zisk_ops.rs:397` (`"or"`, Binary type).
     Used by RV64 OR (`riscv2zisk_context.rs:149`,
     `create_register_op(..., "or", 4)` — inside the `"or"` arm's
@@ -1202,13 +817,13 @@ axiom transpile_AUIPC :
     this `create_register_op`) and ORI (line 181). -/
 @[simp] def OP_OR : FGL := 15
 
-/-- Goldilocks literal for the XOR opcode. `0x10 = 16` per
+/- Goldilocks literal for the XOR opcode. `0x10 = 16` per
     `zisk/core/src/zisk_ops.rs:398` (`"xor"`, Binary type).
     Used by RV64 XOR (`riscv2zisk_context.rs:138`,
     `create_register_op(..., "xor", 4)`) and XORI (line 178). -/
 @[simp] def OP_XOR : FGL := 16
 
-/-- The axiomatic RV64 → Zisk row contract for SUB.
+/- The axiomatic RV64 → Zisk row contract for SUB.
 
     Per `zisk/core/src/riscv2zisk_context.rs:134` an RV64 SUB
     `rd, rs1, rs2` transpiles via `create_register_op(..., "sub", 4)`
@@ -1227,23 +842,7 @@ axiom transpile_AUIPC :
 
     **Trust basis.** Pure spec of the `"sub"` arm in
     `riscv2zisk_context.rs:134`. -/
-axiom transpile_SUB :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SUB →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for AND.
+/- The axiomatic RV64 → Zisk row contract for AND.
 
     Per `zisk/core/src/riscv2zisk_context.rs:152` an RV64 AND
     `rd, rs1, rs2` transpiles via `create_register_op(..., "and", 4)`.
@@ -1255,23 +854,7 @@ axiom transpile_SUB :
     * all other columns identical to `transpile_SUB`.
 
     **Trust basis.** Pure spec of the `"and"` arm. -/
-axiom transpile_AND :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_AND →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for OR.
+/- The axiomatic RV64 → Zisk row contract for OR.
 
     Per `zisk/core/src/riscv2zisk_context.rs:141-150` an RV64 OR
     `rd, rs1, rs2` transpiles via `create_register_op(..., "or", 4)`.
@@ -1285,23 +868,7 @@ axiom transpile_AND :
     * all other columns identical to `transpile_SUB`.
 
     **Trust basis.** Pure spec of the `"or"` arm. -/
-axiom transpile_OR :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_OR →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for XOR.
+/- The axiomatic RV64 → Zisk row contract for XOR.
 
     Per `zisk/core/src/riscv2zisk_context.rs:138` an RV64 XOR
     `rd, rs1, rs2` transpiles via `create_register_op(..., "xor", 4)`.
@@ -1313,23 +880,7 @@ axiom transpile_OR :
     * all other columns identical to `transpile_SUB`.
 
     **Trust basis.** Pure spec of the `"xor"` arm. -/
-axiom transpile_XOR :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_XOR →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SLT.
+/- The axiomatic RV64 → Zisk row contract for SLT.
 
     Per `zisk/core/src/riscv2zisk_context.rs:136` an RV64 SLT
     `rd, rs1, rs2` transpiles via `create_register_op(..., "lt", 4)`
@@ -1350,22 +901,7 @@ axiom transpile_XOR :
 
     **Trust basis.** Pure spec of the `"slt"` arm in
     `riscv2zisk_context.rs:136`. -/
-axiom transpile_SLT :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_LT →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SLTU.
+/- The axiomatic RV64 → Zisk row contract for SLTU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:137` an RV64 SLTU
     `rd, rs1, rs2` transpiles via `create_register_op(..., "ltu", 4)`.
@@ -1377,21 +913,6 @@ axiom transpile_SLT :
       (`op_ltu`, `zisk_ops.rs:724`).
 
     **Trust basis.** Pure spec of the `"sltu"` arm. -/
-axiom transpile_SLTU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_LTU →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
 /-! ## ALU ITYPE opcodes
 
     Six transpile axioms for the ALU-ITYPE fan-out: ADDI,
@@ -1420,7 +941,7 @@ axiom transpile_SLTU :
     it via the same arithmetic identity on `x0`. If needed, a distinct
     `transpile_ADDI_x0` axiom would mirror `transpile_LUI`. -/
 
-/-- The axiomatic RV64 → Zisk row contract for ADDI.
+/- The axiomatic RV64 → Zisk row contract for ADDI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:160-174` an RV64
     ADDI `rd, rs1, imm` transpiles (on the non-degenerate path,
@@ -1449,23 +970,7 @@ axiom transpile_SLTU :
     `immediate_op_or_x0_copyb`). The bus shape is agnostic — Main's
     row simply carries whatever `(b_lo, b_hi)` values the transpiler
     emits, registered or immediate. -/
-axiom transpile_ADDI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_ADD →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = imm_b_lo
-      ∧ m.b_1 r_main = imm_b_hi
-
-/-- The axiomatic RV64 → Zisk row contract for ANDI.
+/- The axiomatic RV64 → Zisk row contract for ANDI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:182` an RV64 ANDI
     `rd, rs1, imm` transpiles via `immediate_op(..., "and", 4)` —
@@ -1477,23 +982,7 @@ axiom transpile_ADDI :
     * all other columns identical to `transpile_ADDI`.
 
     **Trust basis.** Pure spec of the `"andi"` arm. -/
-axiom transpile_ANDI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_AND →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = imm_b_lo
-      ∧ m.b_1 r_main = imm_b_hi
-
-/-- The axiomatic RV64 → Zisk row contract for ORI.
+/- The axiomatic RV64 → Zisk row contract for ORI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:181` an RV64 ORI
     `rd, rs1, imm` transpiles via
@@ -1506,23 +995,7 @@ axiom transpile_ANDI :
     * all other columns identical to `transpile_ADDI`.
 
     **Trust basis.** Pure spec of the `"ori"` arm. -/
-axiom transpile_ORI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_OR →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = imm_b_lo
-      ∧ m.b_1 r_main = imm_b_hi
-
-/-- The axiomatic RV64 → Zisk row contract for XORI.
+/- The axiomatic RV64 → Zisk row contract for XORI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:178` an RV64 XORI
     `rd, rs1, imm` transpiles via
@@ -1535,23 +1008,7 @@ axiom transpile_ORI :
     * all other columns identical to `transpile_ADDI`.
 
     **Trust basis.** Pure spec of the `"xori"` arm. -/
-axiom transpile_XORI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_XOR →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = imm_b_lo
-      ∧ m.b_1 r_main = imm_b_hi
-
-/-- The axiomatic RV64 → Zisk row contract for SLTI.
+/- The axiomatic RV64 → Zisk row contract for SLTI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:176` an RV64 SLTI
     `rd, rs1, imm` transpiles via `immediate_op(..., "lt", 4)` —
@@ -1568,22 +1025,7 @@ axiom transpile_XORI :
     * `a` lanes = `xreg(rs1)`; `b` lanes = sign-extended immediate.
 
     **Trust basis.** Pure spec of the `"slti"` arm. -/
-axiom transpile_SLTI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_LT →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = imm_b_lo
-      ∧ m.b_1 r_main = imm_b_hi
-
-/-- The axiomatic RV64 → Zisk row contract for SLTIU.
+/- The axiomatic RV64 → Zisk row contract for SLTIU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:177` an RV64 SLTIU
     `rd, rs1, imm` transpiles via `immediate_op(..., "ltu", 4)` —
@@ -1595,21 +1037,6 @@ axiom transpile_SLTI :
     is unsigned.
 
     **Trust basis.** Pure spec of the `"sltiu"` arm. -/
-axiom transpile_SLTIU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_LTU →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = imm_b_lo
-      ∧ m.b_1 r_main = imm_b_hi
-
 /-! ## RTYPEW / ADDIW transpile axioms
 
 Three transpile axioms for the 32-bit-word ALU opcodes ADDW, SUBW,
@@ -1627,7 +1054,7 @@ preceding `if rd == 0 && rs1 == 0 && imm == 0` branch emits a nop;
 that degenerate instance is outside the per-opcode axiom's scope —
 `transpile_ADDIW` quantifies over the nominal register/imm shape.) -/
 
-/-- The axiomatic RV64 → Zisk row contract for ADDW.
+/- The axiomatic RV64 → Zisk row contract for ADDW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:153` an RV64 ADDW
     `rd, rs1, rs2` transpiles via `create_register_op(..., "add_w", 4)`
@@ -1649,23 +1076,7 @@ that degenerate instance is outside the per-opcode axiom's scope —
 
     **Trust basis.** Pure spec of the `"addw"` arm in
     `riscv2zisk_context.rs:153`. -/
-axiom transpile_ADDW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_ADD_W →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for SUBW.
+/- The axiomatic RV64 → Zisk row contract for SUBW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:154` an RV64 SUBW
     `rd, rs1, rs2` transpiles via `create_register_op(..., "sub_w", 4)`.
@@ -1679,23 +1090,7 @@ axiom transpile_ADDW :
 
     **Trust basis.** Pure spec of the `"subw"` arm in
     `riscv2zisk_context.rs:154`. -/
-axiom transpile_SUBW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_SUB_W →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for ADDIW.
+/- The axiomatic RV64 → Zisk row contract for ADDIW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:184-194` an RV64
     ADDIW `rd, rs1, imm` transpiles via `immediate_op(..., "add_w", 4)`
@@ -1725,35 +1120,19 @@ axiom transpile_SUBW :
     and the Sail-side `BitVec.signExtend 64 imm` is discharged by
     the Sail-level proof (`equiv_ADDIW_sail`), not by this
     axiom. -/
-axiom transpile_ADDIW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_lo imm_hi : FGL) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_ADD_W →
-        m.flag r_main = 0
-      ∧ m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = imm_lo
-      ∧ m.b_1 r_main = imm_hi
-
-/-- Zisk `signextend_b` opcode (0x27 = 39). `BinaryE` external op
+/- Zisk `signextend_b` opcode (0x27 = 39). `BinaryE` external op
     (`zisk/core/src/zisk_ops.rs:419`). Routes through the
     BinaryExtension SM via the operation bus; populates `c` with
     `sign_extend 8 → 64` of the low byte of `b`. Consumed by LB and
     (out-of-scope here) the sign-extend step of AMO byte-ops. -/
 @[simp] def OP_SIGNEXTEND_B : FGL := 39
 
-/-- Zisk `signextend_h` opcode (0x28 = 40). Same SM / bus shape as
+/- Zisk `signextend_h` opcode (0x28 = 40). Same SM / bus shape as
     `OP_SIGNEXTEND_B`, with the sign-extension source width bumped to
     16 bits (`zisk/core/src/zisk_ops.rs:420`). Consumed by LH. -/
 @[simp] def OP_SIGNEXTEND_H : FGL := 40
 
-/-- Zisk `signextend_w` opcode (0x29 = 41). Same SM / bus shape as
+/- Zisk `signextend_w` opcode (0x29 = 41). Same SM / bus shape as
     `OP_SIGNEXTEND_B` / `OP_SIGNEXTEND_H` with the source width at
     32 bits (`zisk/core/src/zisk_ops.rs:421`). Consumed by LW
     (and, out of scope, several atomic-memory ops). -/
@@ -1776,7 +1155,7 @@ axiom transpile_ADDIW :
    Opcode literals from `zisk/core/src/zisk_ops.rs:430-433`.
 -/
 
-/-- Goldilocks literal for the DIVU opcode. `0xb8 = 184` per
+/- Goldilocks literal for the DIVU opcode. `0xb8 = 184` per
     `zisk/core/src/zisk_ops.rs:430`. Unsigned integer division,
     64-bit operands, quotient output (low 64 bits). Dispatched to the
     Arith state machine via the operation bus as the **primary**
@@ -1785,7 +1164,7 @@ axiom transpile_ADDIW :
     "divu", 4)`). -/
 @[simp] def OP_DIVU : FGL := 184
 
-/-- Goldilocks literal for the REMU opcode. `0xb9 = 185` per
+/- Goldilocks literal for the REMU opcode. `0xb9 = 185` per
     `zisk_ops.rs:431`. Unsigned integer remainder, 64-bit operands,
     remainder output (low 64 bits). Dispatched to the Arith SM as the
     **secondary** result on the same DIV-family Arith row that handles
@@ -1793,114 +1172,54 @@ axiom transpile_ADDIW :
     REMU (`riscv2zisk_context.rs:253`). -/
 @[simp] def OP_REMU : FGL := 185
 
-/-- Goldilocks literal for the DIV opcode. `0xba = 186` per
+/- Goldilocks literal for the DIV opcode. `0xba = 186` per
     `zisk_ops.rs:432`. Signed integer division, 64-bit operands.
     Dispatched to the Arith SM as the **primary** on a signed-DIV row.
     Used by RV64 DIV (`riscv2zisk_context.rs:248`). -/
 @[simp] def OP_DIV : FGL := 186
 
-/-- Goldilocks literal for the REM opcode. `0xbb = 187` per
+/- Goldilocks literal for the REM opcode. `0xbb = 187` per
     `zisk_ops.rs:433`. Signed integer remainder, 64-bit operands.
     Dispatched to the Arith SM as the **secondary** on the signed-DIV
     row. Used by RV64 REM (`riscv2zisk_context.rs:252`). -/
 @[simp] def OP_REM : FGL := 187
 
-/-- Goldilocks literal for the unsigned 32-bit divide opcode.
+/- Goldilocks literal for the unsigned 32-bit divide opcode.
     `0xbc = 188` per `zisk/core/src/zisk_ops.rs:434`. Used by
     RV64 DIVUW (`riscv2zisk_context.rs:251`,
     `create_register_op(..., "divu_w", 4)`). Type `ArithA32` — handled
     by the Arith state machine with `m32 = 1`. -/
 @[simp] def OP_DIVU_W : FGL := 188
 
-/-- Goldilocks literal for the unsigned 32-bit remainder opcode.
+/- Goldilocks literal for the unsigned 32-bit remainder opcode.
     `0xbd = 189` per `zisk/core/src/zisk_ops.rs:435`. Used by
     RV64 REMUW (`riscv2zisk_context.rs:255`). Type `ArithA32`,
     secondary lane on the same Arith row that produces the quotient. -/
 @[simp] def OP_REMU_W : FGL := 189
 
-/-- Goldilocks literal for the signed 32-bit divide opcode.
+/- Goldilocks literal for the signed 32-bit divide opcode.
     `0xbe = 190` per `zisk/core/src/zisk_ops.rs:436`. Used by
     RV64 DIVW (`riscv2zisk_context.rs:250`,
     `create_register_op(..., "div_w", 4)`). Type `ArithA32` — handled
     by the Arith state machine with `m32 = 1, sa = sb = 1`. -/
 @[simp] def OP_DIV_W : FGL := 190
 
-/-- Goldilocks literal for the signed 32-bit remainder opcode.
+/- Goldilocks literal for the signed 32-bit remainder opcode.
     `0xbf = 191` per `zisk/core/src/zisk_ops.rs:437`. Used by
     RV64 REMW (`riscv2zisk_context.rs:254`). Type `ArithA32`,
     secondary lane on the same Arith row that produces the
     quotient. -/
 @[simp] def OP_REM_W : FGL := 191
 
-/-- Transpile contract for RV64M DIVUW.
+/- Transpile contract for RV64M DIVUW.
     Mirrors `transpile_DIVU` modulo opcode = `OP_DIVU_W` and
     `m32 = 1`. -/
-axiom transpile_DIVUW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_DIVU_W →
-        m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- Transpile contract for RV64M REMUW.
+/- Transpile contract for RV64M REMUW.
     Mirrors `transpile_REMU` modulo opcode = `OP_REMU_W` and
     `m32 = 1`. -/
-axiom transpile_REMUW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_REMU_W →
-        m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- Transpile contract for RV64M DIVW. Signed 32-bit divide. -/
-axiom transpile_DIVW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_DIV_W →
-        m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- Transpile contract for RV64M REMW. Signed 32-bit remainder. -/
-axiom transpile_REMW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_REM_W →
-        m.m32 r_main = 1
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for DIVU.
+/- Transpile contract for RV64M DIVW. Signed 32-bit divide. -/
+/- Transpile contract for RV64M REMW. Signed 32-bit remainder. -/
+/- The axiomatic RV64 → Zisk row contract for DIVU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:249` an RV64 DIVU
     `rd, rs1, rs2` transpiles via `create_register_op(..., "divu", 4)`
@@ -1921,22 +1240,7 @@ axiom transpile_REMW :
     **Trust basis.** Pure spec of the `"divu"` arm in
     `riscv2zisk_context.rs:249`. Differs from `transpile_MUL` only in
     the opcode literal (180 → 184). -/
-axiom transpile_DIVU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_DIVU →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for REMU.
+/- The axiomatic RV64 → Zisk row contract for REMU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:253` an RV64 REMU
     `rd, rs1, rs2` transpiles via `create_register_op(..., "remu", 4)`.
@@ -1956,22 +1260,7 @@ axiom transpile_DIVU :
     **Trust basis.** Pure spec of the `"remu"` arm in
     `riscv2zisk_context.rs:253`. Differs from `transpile_DIVU` only in
     the opcode literal (184 → 185). -/
-axiom transpile_REMU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_REMU →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for DIV.
+/- The axiomatic RV64 → Zisk row contract for DIV.
 
     Per `zisk/core/src/riscv2zisk_context.rs:248` an RV64 DIV
     `rd, rs1, rs2` transpiles via `create_register_op(..., "div", 4)`.
@@ -1994,22 +1283,7 @@ axiom transpile_REMU :
     the opcode literal (184 → 186). The signed-vs-unsigned distinction
     lives inside the Arith SM witnesses (na/nb/np/nr) — the Main
     transpile contract is uniform. -/
-axiom transpile_DIV :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_DIV →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for REM.
+/- The axiomatic RV64 → Zisk row contract for REM.
 
     Per `zisk/core/src/riscv2zisk_context.rs:252` an RV64 REM
     `rd, rs1, rs2` transpiles via `create_register_op(..., "rem", 4)`.
@@ -2028,21 +1302,6 @@ axiom transpile_DIV :
     **Trust basis.** Pure spec of the `"rem"` arm in
     `riscv2zisk_context.rs:252`. Differs from `transpile_DIV` only in
     the opcode literal (186 → 187). -/
-axiom transpile_REM :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_REM →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
 /-! ## store_pc=1 PC bridges
 
     The three axioms below — `transpile_PC_for_JAL`,
@@ -2125,7 +1384,7 @@ axiom transpile_REM :
     context applies.
 -/
 
-/-- JAL PC bridge.
+/- JAL PC bridge.
 
     Asserts that on a JAL row (`is_external_op = 0`, `op = OP_FLAG`,
     transpile-context per `riscv2zisk_context.rs:201,1098`), the
@@ -2143,14 +1402,7 @@ axiom transpile_REM :
     Closure path: model ZisK's ROM-based `pc` assignment + the
     cross-segment handshake formally, derive this equality from the
     in-tree pieces. See `docs/fv/trusted-base.md` entry **TP-JAL**. -/
-axiom transpile_PC_for_JAL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_FLAG →
-      (m.pc r_main).val = PC.toNat
-
-/-- JALR PC bridge.
+/- JALR PC bridge.
 
     Asserts that on a JALR row (`is_external_op = 0`,
     `op = OP_COPYB`, transpile-context per
@@ -2165,14 +1417,7 @@ axiom transpile_PC_for_JAL :
 
     **Trust class.** Same as `transpile_PC_for_JAL`. See
     `docs/fv/trusted-base.md` entry **TP-JALR**. -/
-axiom transpile_PC_for_JALR :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
-      m.is_external_op r_main = 0 →
-      m.op r_main = OP_COPYB →
-      (m.pc r_main).val = PC.toNat
-
-/-- AUIPC PC bridge.
+/- AUIPC PC bridge.
 
     Asserts that on an AUIPC row (`is_external_op = 0`,
     `op = OP_FLAG`, transpile-context per
@@ -2194,11 +1439,1005 @@ axiom transpile_PC_for_JALR :
 
     **Trust class.** Same as `transpile_PC_for_JAL`. See
     `docs/fv/trusted-base.md` entry **TP-AUIPC**. -/
-axiom transpile_PC_for_AUIPC :
+
+/-!
+## Lean-indexed transpiler contract
+
+The legacy `transpile_<OP>` declarations below are theorems, not
+source axioms. Their propositions are indexed by `TranspilerContractKind`
+and discharged by the single explicit trust-ledger axiom
+`transpiler_contract_sound`. This keeps the old call sites stable while
+making the residual trust boundary one auditable bridge from the
+differentially pinned Lean transpiler model to Main-AIR witness columns.
+-/
+
+inductive TranspilerContractKind where
+  | ADD
+  | JAL
+  | JALR
+  | SD
+  | SW
+  | MUL
+  | MULH
+  | SLLW
+  | SH
+  | SB
+  | SLL
+  | SRL
+  | SRA
+  | SLLI
+  | SRLI
+  | SRAI
+  | SRLW
+  | SRAW
+  | SLLIW
+  | SRLIW
+  | SRAIW
+  | MULHU
+  | MULHSU
+  | LUI
+  | AUIPC
+  | SUB
+  | AND
+  | OR
+  | XOR
+  | SLT
+  | SLTU
+  | ADDI
+  | ANDI
+  | ORI
+  | XORI
+  | SLTI
+  | SLTIU
+  | ADDW
+  | SUBW
+  | ADDIW
+  | DIVUW
+  | REMUW
+  | DIVW
+  | REMW
+  | DIVU
+  | REMU
+  | DIV
+  | REM
+  | PC_for_JAL
+  | PC_for_JALR
+  | PC_for_AUIPC
+  deriving Repr, DecidableEq
+
+/-- Per-contract proposition formerly declared directly as one `transpile_*`
+    axiom. The cases remain intentionally explicit so trust-ledger review can
+    inspect the precise witness-column obligations for each opcode. -/
+def TranspilerContract : TranspilerContractKind → Prop
+  | .ADD =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (state : RV64State)
+      (rs1 rs2 : Fin 32),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_ADD →
+      m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+
+  | .JAL =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_FLAG →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 1
+      ∧ m.jmp_offset1 r_main = imm_offset
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = 0
+      ∧ m.a_1 r_main = 0
+      ∧ m.b_0 r_main = 0
+      ∧ m.b_1 r_main = 0
+
+  | .JALR =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_offset : FGL) (state : RV64State),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_COPYB →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 1
+      ∧ m.store_pc r_main = 1
+      ∧ m.jmp_offset1 r_main = imm_offset
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs1)
+
+  | .SD =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_COPYB →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_COPYB →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .MUL =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_MUL →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .MULH =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_MULH →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SLLW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SLL_W →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SH =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_COPYB →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SB =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_COPYB →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SLL =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SLL →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SRL =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SRL →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SRA =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SRA →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SLLI =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SLL →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = shamt_b_lo shamt
+      ∧ m.b_1 r_main = 0
+
+  | .SRLI =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SRL →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = shamt_b_lo shamt
+      ∧ m.b_1 r_main = 0
+
+  | .SRAI =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SRA →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = shamt_b_lo shamt
+      ∧ m.b_1 r_main = 0
+
+  | .SRLW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SRL_W →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SRAW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SRA_W →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SLLIW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SLL_W →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = shamt_w_b_lo shamt
+      ∧ m.b_1 r_main = 0
+
+  | .SRLIW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SRL_W →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = shamt_w_b_lo shamt
+      ∧ m.b_1 r_main = 0
+
+  | .SRAIW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SRA_W →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = shamt_w_b_lo shamt
+      ∧ m.b_1 r_main = 0
+
+  | .MULHU =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_MULUH →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .MULHSU =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_MULSUH →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .LUI =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_lo imm_hi : FGL) (_state : RV64State),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_COPYB →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = 0
+      ∧ m.a_1 r_main = 0
+      ∧ m.b_0 r_main = imm_lo
+      ∧ m.b_1 r_main = imm_hi
+
+  | .AUIPC =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_FLAG →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 1
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = imm_offset
+      ∧ m.a_0 r_main = 0
+      ∧ m.a_1 r_main = 0
+      ∧ m.b_0 r_main = 0
+      ∧ m.b_1 r_main = 0
+
+  | .SUB =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SUB →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .AND =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_AND →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .OR =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_OR →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .XOR =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_XOR →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SLT =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_LT →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SLTU =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_LTU →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .ADDI =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_ADD →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = imm_b_lo
+      ∧ m.b_1 r_main = imm_b_hi
+
+  | .ANDI =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_AND →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = imm_b_lo
+      ∧ m.b_1 r_main = imm_b_hi
+
+  | .ORI =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_OR →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = imm_b_lo
+      ∧ m.b_1 r_main = imm_b_hi
+
+  | .XORI =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_XOR →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = imm_b_lo
+      ∧ m.b_1 r_main = imm_b_hi
+
+  | .SLTI =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_LT →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = imm_b_lo
+      ∧ m.b_1 r_main = imm_b_hi
+
+  | .SLTIU =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_LTU →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = imm_b_lo
+      ∧ m.b_1 r_main = imm_b_hi
+
+  | .ADDW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_ADD_W →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .SUBW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_SUB_W →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .ADDIW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_lo imm_hi : FGL) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_ADD_W →
+        m.flag r_main = 0
+      ∧ m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = imm_lo
+      ∧ m.b_1 r_main = imm_hi
+
+  | .DIVUW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_DIVU_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .REMUW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_REMU_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .DIVW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_DIV_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .REMW =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_REM_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .DIVU =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_DIVU →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .REMU =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_REMU →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .DIV =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_DIV →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .REM =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_REM →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+  | .PC_for_JAL =>
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
       (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_FLAG →
       (m.pc r_main).val = PC.toNat
+
+  | .PC_for_JALR =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_COPYB →
+      (m.pc r_main).val = PC.toNat
+
+  | .PC_for_AUIPC =>
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_FLAG →
+      (m.pc r_main).val = PC.toNat
+
+
+/-- Explicit bridge axiom replacing the legacy family of per-opcode
+    transpiler axioms. The proof obligation is now concentrated in one
+    auditable statement: each indexed contract below must be justified by
+    the non-trusted Lean static model, the Rust-vs-Lean differential harness,
+    and the remaining runtime Main-AIR witness bridge.
+
+    Most cases are static-shape contracts plus register/immediate witness
+    lanes. JALR is currently a classified exception: the production Rust
+    transpiler lowers it through `and` (and sometimes two rows), while the
+    existing proof stack still consumes the legacy single-row internal-`copyb`
+    archetype. See `docs/fv/transpiler/differential-pinning.md`. -/
+axiom transpiler_contract_sound :
+    ∀ (kind : TranspilerContractKind), TranspilerContract kind
+
+theorem transpile_ADD : TranspilerContract .ADD :=
+  transpiler_contract_sound .ADD
+
+theorem transpile_JAL : TranspilerContract .JAL :=
+  transpiler_contract_sound .JAL
+
+theorem transpile_JALR : TranspilerContract .JALR :=
+  transpiler_contract_sound .JALR
+
+theorem transpile_SD : TranspilerContract .SD :=
+  transpiler_contract_sound .SD
+
+theorem transpile_SW : TranspilerContract .SW :=
+  transpiler_contract_sound .SW
+
+theorem transpile_MUL : TranspilerContract .MUL :=
+  transpiler_contract_sound .MUL
+
+theorem transpile_MULH : TranspilerContract .MULH :=
+  transpiler_contract_sound .MULH
+
+theorem transpile_SLLW : TranspilerContract .SLLW :=
+  transpiler_contract_sound .SLLW
+
+theorem transpile_SH : TranspilerContract .SH :=
+  transpiler_contract_sound .SH
+
+theorem transpile_SB : TranspilerContract .SB :=
+  transpiler_contract_sound .SB
+
+theorem transpile_SLL : TranspilerContract .SLL :=
+  transpiler_contract_sound .SLL
+
+theorem transpile_SRL : TranspilerContract .SRL :=
+  transpiler_contract_sound .SRL
+
+theorem transpile_SRA : TranspilerContract .SRA :=
+  transpiler_contract_sound .SRA
+
+theorem transpile_SLLI : TranspilerContract .SLLI :=
+  transpiler_contract_sound .SLLI
+
+theorem transpile_SRLI : TranspilerContract .SRLI :=
+  transpiler_contract_sound .SRLI
+
+theorem transpile_SRAI : TranspilerContract .SRAI :=
+  transpiler_contract_sound .SRAI
+
+theorem transpile_SRLW : TranspilerContract .SRLW :=
+  transpiler_contract_sound .SRLW
+
+theorem transpile_SRAW : TranspilerContract .SRAW :=
+  transpiler_contract_sound .SRAW
+
+theorem transpile_SLLIW : TranspilerContract .SLLIW :=
+  transpiler_contract_sound .SLLIW
+
+theorem transpile_SRLIW : TranspilerContract .SRLIW :=
+  transpiler_contract_sound .SRLIW
+
+theorem transpile_SRAIW : TranspilerContract .SRAIW :=
+  transpiler_contract_sound .SRAIW
+
+theorem transpile_MULHU : TranspilerContract .MULHU :=
+  transpiler_contract_sound .MULHU
+
+theorem transpile_MULHSU : TranspilerContract .MULHSU :=
+  transpiler_contract_sound .MULHSU
+
+theorem transpile_LUI : TranspilerContract .LUI :=
+  transpiler_contract_sound .LUI
+
+theorem transpile_AUIPC : TranspilerContract .AUIPC :=
+  transpiler_contract_sound .AUIPC
+
+theorem transpile_SUB : TranspilerContract .SUB :=
+  transpiler_contract_sound .SUB
+
+theorem transpile_AND : TranspilerContract .AND :=
+  transpiler_contract_sound .AND
+
+theorem transpile_OR : TranspilerContract .OR :=
+  transpiler_contract_sound .OR
+
+theorem transpile_XOR : TranspilerContract .XOR :=
+  transpiler_contract_sound .XOR
+
+theorem transpile_SLT : TranspilerContract .SLT :=
+  transpiler_contract_sound .SLT
+
+theorem transpile_SLTU : TranspilerContract .SLTU :=
+  transpiler_contract_sound .SLTU
+
+theorem transpile_ADDI : TranspilerContract .ADDI :=
+  transpiler_contract_sound .ADDI
+
+theorem transpile_ANDI : TranspilerContract .ANDI :=
+  transpiler_contract_sound .ANDI
+
+theorem transpile_ORI : TranspilerContract .ORI :=
+  transpiler_contract_sound .ORI
+
+theorem transpile_XORI : TranspilerContract .XORI :=
+  transpiler_contract_sound .XORI
+
+theorem transpile_SLTI : TranspilerContract .SLTI :=
+  transpiler_contract_sound .SLTI
+
+theorem transpile_SLTIU : TranspilerContract .SLTIU :=
+  transpiler_contract_sound .SLTIU
+
+theorem transpile_ADDW : TranspilerContract .ADDW :=
+  transpiler_contract_sound .ADDW
+
+theorem transpile_SUBW : TranspilerContract .SUBW :=
+  transpiler_contract_sound .SUBW
+
+theorem transpile_ADDIW : TranspilerContract .ADDIW :=
+  transpiler_contract_sound .ADDIW
+
+theorem transpile_DIVUW : TranspilerContract .DIVUW :=
+  transpiler_contract_sound .DIVUW
+
+theorem transpile_REMUW : TranspilerContract .REMUW :=
+  transpiler_contract_sound .REMUW
+
+theorem transpile_DIVW : TranspilerContract .DIVW :=
+  transpiler_contract_sound .DIVW
+
+theorem transpile_REMW : TranspilerContract .REMW :=
+  transpiler_contract_sound .REMW
+
+theorem transpile_DIVU : TranspilerContract .DIVU :=
+  transpiler_contract_sound .DIVU
+
+theorem transpile_REMU : TranspilerContract .REMU :=
+  transpiler_contract_sound .REMU
+
+theorem transpile_DIV : TranspilerContract .DIV :=
+  transpiler_contract_sound .DIV
+
+theorem transpile_REM : TranspilerContract .REM :=
+  transpiler_contract_sound .REM
+
+theorem transpile_PC_for_JAL : TranspilerContract .PC_for_JAL :=
+  transpiler_contract_sound .PC_for_JAL
+
+theorem transpile_PC_for_JALR : TranspilerContract .PC_for_JALR :=
+  transpiler_contract_sound .PC_for_JALR
+
+theorem transpile_PC_for_AUIPC : TranspilerContract .PC_for_AUIPC :=
+  transpiler_contract_sound .PC_for_AUIPC
 
 end ZiskFv.Trusted

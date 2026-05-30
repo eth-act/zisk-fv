@@ -43,7 +43,7 @@ SUB, AND, OR, XOR, branches, …). To find which AIR backs a given
 opcode, read the matching `ZiskCircuit/<Op>.lean` and follow its
 imports.
 
-## Axiom-bearing files (108 of the 122 axioms live under `Airs/`)
+## Axiom-bearing files (66 of the 72 axioms live under `Airs/`)
 
 - **`Arith/Ranges.lean`** — 35 range / table-row / Euclidean-bound
   pins (class #6b)

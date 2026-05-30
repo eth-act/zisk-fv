@@ -539,14 +539,14 @@
 
 <div class="hero">
   <div class="wrap">
-    <div class="badge b-accent" style="margin-bottom: 22px;">project status · 2026-05-14</div>
+    <div class="badge b-accent" style="margin-bottom: 22px;">project status · 2026-05-29</div>
     <h1>zisk-fv: <span class="accent">one global compliance theorem</span> for ZisK's RV64IM circuit</h1>
     <p class="tagline">
-      A Lean&nbsp;4 formal-verification project whose verification claim is a single theorem — <code style="background:transparent;color:var(--cyan);padding:0;">zisk_riscv_compliant_program_bus</code> — dispatching all 63 RV64IM opcodes through a 35-arm <code style="background:transparent;color:var(--cyan);padding:0;">OpEnvelope</code> to the Sail RISC-V spec. Everything else on this page is a corollary or supporting infrastructure. The residual trust surface (122 axioms, 12 classes) is named, hashed, and mechanically asserted equal to the theorem's transitive axiom closure on every PR.
+      A Lean&nbsp;4 formal-verification project whose verification claim is a single theorem — <code style="background:transparent;color:var(--cyan);padding:0;">zisk_riscv_compliant_program_bus</code> — dispatching all 63 RV64IM opcodes through a 35-arm <code style="background:transparent;color:var(--cyan);padding:0;">OpEnvelope</code> to the Sail RISC-V spec. Everything else on this page is a corollary or supporting infrastructure. The residual trust surface (72 axioms, 10 classes) is named, hashed, and mechanically asserted equal to the theorem's transitive axiom closure on every PR.
     </p>
     <div class="stats">
       <div class="stat"><div class="num">63 / 63</div><div class="lbl">RV64IM opcodes proven equivalent</div></div>
-      <div class="stat"><div class="num">122</div><div class="lbl">trusted axioms (12 classes)</div></div>
+      <div class="stat"><div class="num">72</div><div class="lbl">trusted axioms (10 classes)</div></div>
       <div class="stat"><div class="num">0</div><div class="lbl"><code>sorry</code> in the proof tree</div></div>
       <div class="stat"><div class="num">9 + 3</div><div class="lbl">V1 syntactic + V2 semantic gates</div></div>
     </div>
@@ -568,7 +568,7 @@
     <div class="section-eyebrow">the question</div>
     <h2>What are you trusting when a ZisK proof verifies?</h2>
     <p class="section-lead">
-      A ZKVM proof says: "this RISC-V program ran correctly on this circuit." But the circuit is just polynomial constraints; "ran correctly" means "matches the RISC-V architectural spec." Without a formal proof tying the two together, the claim is a wish. <strong>zisk-fv</strong> is that proof — the global theorem <code>ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus</code> dispatches all 63 RV64IM opcodes to the Sail spec, and its transitive axiom closure (122 axioms, 12 classes) is mechanically asserted equal to the ledger on every PR. This page lays out exactly what those axioms say.
+      A ZKVM proof says: "this RISC-V program ran correctly on this circuit." But the circuit is just polynomial constraints; "ran correctly" means "matches the RISC-V architectural spec." Without a formal proof tying the two together, the claim is a wish. <strong>zisk-fv</strong> is that proof — the global theorem <code>ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus</code> dispatches all 63 RV64IM opcodes to the Sail spec, and its transitive axiom closure (72 axioms, 10 classes) is mechanically asserted equal to the ledger on every PR. This page lays out exactly what those axioms say.
     </p>
 
     <div class="diagram-wrap">
@@ -620,8 +620,8 @@
           <rect x="380" y="240" width="340" height="80" rx="10"
                 fill="url(#hatch)" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
           <text x="550" y="270" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">THE TRUST BOUNDARY</text>
-          <text x="550" y="290" text-anchor="middle" fill="#e7e9ee" font-size="12">122 axioms · 12 classes</text>
-          <text x="550" y="306" text-anchor="middle" fill="#9aa0ad" font-size="11">transpile, bus/lookup, arith pins, range, mem-state, platform</text>
+          <text x="550" y="290" text-anchor="middle" fill="#e7e9ee" font-size="12">72 axioms · 10 classes</text>
+          <text x="550" y="306" text-anchor="middle" fill="#9aa0ad" font-size="11">transpiler bridge, bus/lookup, arith pins, range, mem-state, platform</text>
         </g>
 
         <!-- center proof -->
@@ -659,7 +659,7 @@
 <section>
   <div class="wrap">
     <div class="section-eyebrow">the trust ledger</div>
-    <h2>What we trust, exactly — 122 axioms, 12 classes</h2>
+    <h2>What we trust, exactly — 72 axioms, 10 classes</h2>
     <p class="section-lead">
       The global compliance theorem's transitive <code>#print axioms</code> closure (recorded in <code>trust/baseline-zisk-riscv-compliant.txt</code> and hashed line-by-line in <code>trust/baseline-axioms.txt</code>) <em>is</em> the trusted computing base. The V2 gate's <code>check-closure-vs-baseline</code> asserts they match exactly on every PR. Counts and locations refresh against the current ledger (<code>docs/fv/trusted-base.md</code>).
     </p>
@@ -667,7 +667,7 @@
     <div class="ledger">
 
       <div class="ledger-cat">
-        <h3><span class="badge b-trusted">Inherited</span> The RISC-V specification itself <span class="count">— 1 source, machine-translated, not counted in the 122</span></h3>
+        <h3><span class="badge b-trusted">Inherited</span> The RISC-V specification itself <span class="count">— 1 source, machine-translated, not counted in the 72</span></h3>
         <p class="why">
           We don't prove that the Sail-RISC-V model is correct — that's an <em>inherited</em> trust from the formally-developed Sail spec used by Nethermind / OpenLabs and the broader community. Every opcode's "intended behavior" is what the Sail model says it is. We use the <strong>stock <code>NethermindEth/sail-riscv-lean</code> transpiler output</strong> unchanged: the <code>LeanRV64D</code> Lean module is mechanically generated from the upstream Sail RV64 spec — RV64 is native there, no widening on our side, no fork. The Sail compiler + sail-riscv source pin live in <code>flake.lock</code>; the build is reproduced by <code>nix build .#sail-lean-tree</code>.
         </p>
@@ -681,15 +681,15 @@
       </div>
 
       <div class="ledger-cat">
-        <h3><span class="badge b-trusted">Class #1</span> Transpile contracts <span class="count">— 51 axioms · <code>Fundamentals/Transpiler.lean</code></span></h3>
+        <h3><span class="badge b-trusted">Class #1</span> Transpiler bridge contract <span class="count">— 1 axiom · <code>Trusted/Transpiler.lean</code></span></h3>
         <p class="why">
-          ZisK doesn't run RV64 instructions directly. It compiles them into <em>Zisk microinstructions</em> via <code>core/src/riscv2zisk_context.rs</code> (a Rust program). For each RV64IM instruction kind we axiomatize that translation — "if Main's columns are configured this way, then the Zisk witness corresponds to this RV instruction." Each axiom's docstring cites the exact upstream source line. We do not prove the transpiler; we declare the contract it must keep. A Rust-side proof would close this gap.
+          ZisK doesn't run RV64 instructions directly. It compiles them into <em>Zisk microinstructions</em> via <code>core/src/riscv2zisk_context.rs</code> (a Rust program). The Lean static model in <code>ZiskFv/Transpiler/Static.lean</code> is differentially pinned against that Rust lowering, and one explicit bridge axiom connects the indexed contract family to the Main-AIR runtime witness columns consumed by the proofs.
         </p>
         <div class="ledger-items">
           <div class="item">
-            <div class="item-head"><span class="id">51 axioms</span></div>
-            <div><code>transpile_&lt;OP&gt;</code> + <code>transpile_PC_for_&lt;OP&gt;</code></div>
-            <div class="desc">One per RV64IM opcode kind, plus runtime-PC bridges for the three <span class="chip">store_pc=1</span> opcodes (JAL, JALR, AUIPC) tying Sail's program counter to Main's <span class="chip">pc</span> column. Pins Main-AIR mode flags (<span class="chip">op</span>, <span class="chip">store_pc</span>, <span class="chip">m32</span>, <span class="chip">jmp_offset2</span>, …) in terms of the RV instruction encoding.</div>
+            <div class="item-head"><span class="id">1 axiom</span></div>
+            <div><code>transpiler_contract_sound</code></div>
+            <div class="desc">The former <code>transpile_&lt;OP&gt;</code> and <code>transpile_PC_for_&lt;OP&gt;</code> contracts remain as theorem wrappers over <code>TranspilerContractKind</code>. The single axiom is the remaining runtime bridge from the differentially pinned static model to Main-AIR witness columns.</div>
           </div>
         </div>
       </div>
@@ -866,7 +866,7 @@
         It dispatches all 63 RV64IM opcodes through a 35-arm <code>OpEnvelope</code> sum type to the per-opcode <code>equiv_&lt;OP&gt;_from_trust</code> wrappers under <code>Compliance/&lt;Op&gt;Exemplar.lean</code> (plus <code>DivPilot.lean</code>); each wrapper discharges its canonical <code>equiv_&lt;OP&gt;</code> theorem's promise hypotheses from the trust ledger.
       </p>
       <p style="color:var(--muted);font-size:0.94rem; margin-top: 10px;">
-        The <strong>closure-vs-baseline gate</strong> (V2's <code>check-closure-vs-baseline</code>) computes the transitive <code>#print axioms</code> closure of <code>zisk_riscv_compliant_program_bus</code> at every CI run and asserts it equals the set of names in <code>trust/baseline-axioms.txt</code> exactly. Any addition (a proof silently picks up a new axiom) <em>or</em> removal (dead trust no longer reachable) fails the gate. This is what makes "122 axioms" not just a count but a mechanically-enforced equality.
+        The <strong>closure-vs-baseline gate</strong> (V2's <code>check-closure-vs-baseline</code>) computes the transitive <code>#print axioms</code> closure of <code>zisk_riscv_compliant_program_bus</code> at every CI run and asserts it equals the set of names in <code>trust/baseline-axioms.txt</code> exactly. Any addition (a proof silently picks up a new axiom) <em>or</em> removal (dead trust no longer reachable) fails the gate. This is what makes "72 axioms" not just a count but a mechanically-enforced equality.
       </p>
     </div>
 
@@ -1260,10 +1260,10 @@
           <strong>Trust as named ledger.</strong> Each trust assumption is an explicit <code>axiom</code> declaration with a docstring, an entry in <code>docs/fv/trusted-base.md</code>, and a reference in <code>CLAUDE.md</code>'s trusted-surface section.
         </p>
         <p style="color:var(--muted);font-size:0.95rem;margin-top:10px;">
-          <strong>Pro:</strong> Every trust item is greppable, individually auditable, and load-bearing — the V2 <code>check-closure-vs-baseline</code> gate asserts the uber theorem's transitive axiom closure equals the ledger exactly, so dead trust is impossible by construction. The 122-axiom ledger (12 classes) is the audit artifact.
+          <strong>Pro:</strong> Every trust item is greppable, individually auditable, and load-bearing — the V2 <code>check-closure-vs-baseline</code> gate asserts the uber theorem's transitive axiom closure equals the ledger exactly, so dead trust is impossible by construction. The 72-axiom ledger (10 classes) is the audit artifact.
         </p>
         <p style="color:var(--muted);font-size:0.95rem;margin-top:10px;">
-          <strong>Con:</strong> <code>#print axioms</code> on a final theorem prints a long list, including axioms that are structural (many of the per-opcode <code>transpile_&lt;OP&gt;</code> axioms). The trust ledger is more honest but also more verbose.
+          <strong>Con:</strong> <code>#print axioms</code> on a final theorem prints a long list, including structural bus, lookup, range, platform, and transpiler-bridge axioms. The trust ledger is more honest but also more verbose.
         </p>
       </div>
     </div>
@@ -1316,7 +1316,7 @@
       <a href="../docs/fv/trusted-base.md">trusted-base.md</a>
       <a href="../trust/baseline-axioms.txt">baseline-axioms.txt</a>
     </div>
-    <div>zisk-fv · global compliance theorem · Lean 4 · 63 RV64IM opcodes · 122 trusted axioms across 12 classes · built 2026-05-14</div>
+    <div>zisk-fv · global compliance theorem · Lean 4 · 63 RV64IM opcodes · 72 trusted axioms across 10 classes · built 2026-05-29</div>
   </div>
 </footer>
 

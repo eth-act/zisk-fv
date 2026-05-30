@@ -96,8 +96,8 @@ corresponding `equiv_<OP>` theorems currently take as separate
 
 Each consumes the per-shape `*_circuit_holds` predicate (already a
 required input to the equiv, for the PC-advance + store_value
-formula derivations) and the relevant `transpile_<OP>` axiom from
-`Fundamentals/Transpiler.lean` instantiated at the appropriate
+formula derivations) and the relevant `transpile_<OP>` theorem wrapper
+from `Trusted/Transpiler.lean` instantiated at the appropriate
 ghost `imm_lo`/`imm_hi`/`imm_offset` operand. The transpile axiom
 delivers an FGL equation (`m.b_0 r_main = imm_lo`, etc.); the
 discharge then extracts `.val` and uses `Fin.val_natCast` plus a

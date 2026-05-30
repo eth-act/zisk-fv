@@ -155,7 +155,7 @@ inductive mainOpKind where
 namespace mainOpKind
 
 /-- Project the kind enum back to its `FGL` literal. Round-trips
-    through `Fundamentals/Transpiler.lean`'s `OP_<X>` definitions. -/
+    through `Trusted/Transpiler.lean`'s `OP_<X>` definitions. -/
 @[simp] def toFGL : mainOpKind → FGL
   | .FLAG => OP_FLAG | .COPYB => OP_COPYB
   | .LTU => OP_LTU | .LT => OP_LT | .EQ => OP_EQ

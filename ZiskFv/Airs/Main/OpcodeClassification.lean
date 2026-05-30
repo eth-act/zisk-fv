@@ -46,7 +46,7 @@ open ZiskFv.Trusted
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **RV64IM opcode-set classifier.** Asserts that `m.op r_main` is one
-    of the 35 `OP_<X>` literals defined in `Fundamentals/Transpiler.lean`
+    of the 35 `OP_<X>` literals defined in `Trusted/Transpiler.lean`
     that Zisk uses to encode the 63 RV64IM opcodes (some Zisk OPs are
     shared across RTYPE / ITYPE variants).
 

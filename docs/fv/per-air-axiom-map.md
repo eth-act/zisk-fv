@@ -68,15 +68,16 @@ For each AIR, the "Predicted gaps" section flags each category as:
 Cross-cutting axioms NOT counted in any AIR's column (because they
 apply globally):
 
-* 66 transpile contracts in `Fundamentals/Transpiler.lean` — one
-  per RV64IM instruction kind, consumed by every per-opcode proof.
+* 1 transpiler bridge contract in `Trusted/Transpiler.lean` —
+  `transpiler_contract_sound`, indexed by `TranspilerContractKind` and
+  consumed through the theorem wrappers named `transpile_*`.
 * 4 platform-feature axioms in `SailSpec/Auxiliaries.lean` (PMP / CLINT
   / PMA / Zicfilp).
 * 1 main-range axiom (`main_columns_in_range`) in
   `Airs/Main/Ranges.lean`.
 
-Total: 13 + 0 + 5 + 5 + 17 (Arith shared) + 1 (BinaryAdd) + 66
-(transpile) + 4 (platform) + 1 (main range) + 2 (op-bus
+Total: 13 + 0 + 5 + 5 + 17 (Arith shared) + 1 (BinaryAdd) + 1
+(transpiler bridge) + 4 (platform) + 1 (main range) + 2 (op-bus
 ArithMul/ArithDivSecondary not separately counted above) +
 remainder = 116. The "fingerprint" column above counts only the
 AIR-specific axioms most likely to dominate the AIR's discharge
@@ -776,8 +777,8 @@ ControlFlow has **no AIR-specific axioms**. It consumes:
 
 | Axiom | Class | Source | When |
 |---|---|---|---|
-| `transpile_AUIPC`, `transpile_BEQ`, `transpile_BNE`, `transpile_JAL`, `transpile_JALR`, `transpile_FENCE`, `transpile_BLT`, `transpile_BGE`, `transpile_BLTU`, `transpile_BGEU`, `transpile_LUI` | #1 (transpile) | `Fundamentals/Transpiler.lean` | every opcode in the shape — Main column ↔ Sail-decoded `ast` |
-| `transpile_PC_for_JAL`, `transpile_PC_for_JALR`, `transpile_PC_for_AUIPC` | #1 (transpile) | `Fundamentals/Transpiler.lean:2719,2741,2770` | the PC-update half (separate axiom from the operand half) |
+| `transpiler_contract_sound`, consumed through `transpile_AUIPC`, `transpile_BEQ`, `transpile_BNE`, `transpile_JAL`, `transpile_JALR`, `transpile_FENCE`, `transpile_BLT`, `transpile_BGE`, `transpile_BLTU`, `transpile_BGEU`, `transpile_LUI` | #1 (transpiler bridge) | `Trusted/Transpiler.lean` | every opcode in the shape — Main column ↔ Sail-decoded `ast` |
+| `transpiler_contract_sound`, consumed through `transpile_PC_for_JAL`, `transpile_PC_for_JALR`, `transpile_PC_for_AUIPC` | #1 (transpiler bridge) | `Trusted/Transpiler.lean` | the PC-update half (separate contract case from the operand half) |
 | `main_columns_in_range` | #5b (range-bus) | `Airs/Main/Ranges.lean:67` | `bits(N)`-annotated Main column ranges |
 | `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | JAL/JALR/AUIPC/LUI rd-write entry lane equalities (`store_pc=0` or `store_pc=1` per op) |
 | `memory_bus_register_write_perm_sound{,_store_pc}` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138,329` | rd-write entry pairs with Mem row (consumed by JAL/JALR/AUIPC/LUI) |
@@ -956,14 +957,14 @@ was correct.
 
 Cross-cutting axioms NOT in the per-AIR tally above:
 
-* 66 transpile contracts (class #1)
+* 1 transpiler bridge contract (class #1)
 * 4 platform-feature axioms (classes #7–#10)
 * 1 `main_columns_in_range` (class #5b)
 * 6 op-bus permutation-soundness axioms (one per provider in
   class #4)
 
-Grand total at this snapshot: **116 axioms** (matches
-`trust/baseline-axioms.txt`).
+Grand total at this snapshot predates the transpiler bridge collapse
+and is retained only as historical pilot context.
 
 ### Where the surprise might come
 

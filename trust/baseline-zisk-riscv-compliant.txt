@@ -23,9 +23,9 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-17.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-29.
 #
-# Total entries: 122
+# Total entries: 72
 #
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned
@@ -97,55 +97,5 @@ ZiskFv.PlatformScope.pmaCheck_is_pure_none
 ZiskFv.PlatformScope.pmpCheck_is_pure_none
 ZiskFv.PlatformScope.update_elp_state_is_pure_unit
 ZiskFv.PlatformScope.within_clint_is_false
-ZiskFv.Trusted.transpile_ADD
-ZiskFv.Trusted.transpile_ADDI
-ZiskFv.Trusted.transpile_ADDIW
-ZiskFv.Trusted.transpile_ADDW
-ZiskFv.Trusted.transpile_AND
-ZiskFv.Trusted.transpile_ANDI
-ZiskFv.Trusted.transpile_AUIPC
-ZiskFv.Trusted.transpile_DIV
-ZiskFv.Trusted.transpile_DIVU
-ZiskFv.Trusted.transpile_DIVUW
-ZiskFv.Trusted.transpile_DIVW
-ZiskFv.Trusted.transpile_JAL
-ZiskFv.Trusted.transpile_JALR
-ZiskFv.Trusted.transpile_LUI
-ZiskFv.Trusted.transpile_MUL
-ZiskFv.Trusted.transpile_MULH
-ZiskFv.Trusted.transpile_MULHSU
-ZiskFv.Trusted.transpile_MULHU
-ZiskFv.Trusted.transpile_OR
-ZiskFv.Trusted.transpile_ORI
-ZiskFv.Trusted.transpile_PC_for_AUIPC
-ZiskFv.Trusted.transpile_PC_for_JAL
-ZiskFv.Trusted.transpile_PC_for_JALR
-ZiskFv.Trusted.transpile_REM
-ZiskFv.Trusted.transpile_REMU
-ZiskFv.Trusted.transpile_REMUW
-ZiskFv.Trusted.transpile_REMW
-ZiskFv.Trusted.transpile_SB
-ZiskFv.Trusted.transpile_SD
-ZiskFv.Trusted.transpile_SH
-ZiskFv.Trusted.transpile_SLL
-ZiskFv.Trusted.transpile_SLLI
-ZiskFv.Trusted.transpile_SLLIW
-ZiskFv.Trusted.transpile_SLLW
-ZiskFv.Trusted.transpile_SLT
-ZiskFv.Trusted.transpile_SLTI
-ZiskFv.Trusted.transpile_SLTIU
-ZiskFv.Trusted.transpile_SLTU
-ZiskFv.Trusted.transpile_SRA
-ZiskFv.Trusted.transpile_SRAI
-ZiskFv.Trusted.transpile_SRAIW
-ZiskFv.Trusted.transpile_SRAW
-ZiskFv.Trusted.transpile_SRL
-ZiskFv.Trusted.transpile_SRLI
-ZiskFv.Trusted.transpile_SRLIW
-ZiskFv.Trusted.transpile_SRLW
-ZiskFv.Trusted.transpile_SUB
-ZiskFv.Trusted.transpile_SUBW
-ZiskFv.Trusted.transpile_SW
-ZiskFv.Trusted.transpile_XOR
-ZiskFv.Trusted.transpile_XORI
+ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load

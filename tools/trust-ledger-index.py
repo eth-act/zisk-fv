@@ -25,7 +25,7 @@ BASELINE = ROOT / "trust" / "baseline-axioms.txt"
 # Per-file class mapping (mirrors docs/fv/trusted-base.md).
 # Path → (class_number, class_label).
 FILE_CLASS = {
-    "ZiskFv/Trusted/Transpiler.lean":               ("1",  "Transpile contracts"),
+    "ZiskFv/Trusted/Transpiler.lean":               ("1",  "Transpiler bridge contract"),
     "ZiskFv/ZiskCircuit/MemModel.lean":             ("2",  "Memory state bridge — load"),
     "ZiskFv/Airs/OperationBus/Bridge.lean":         ("4",  "Bus / lookup soundness — operation bus"),
     "ZiskFv/Airs/MemoryBus/MemBridge.lean":         ("4",  "Bus / lookup soundness — memory bus"),
@@ -43,8 +43,8 @@ FILE_CLASS = {
 
 # Class number → (label, why-we-trust-it summary).
 CLASS_HEADERS = {
-    "1":  ("Transpile contracts",
-           "Direct reading of ZisK's `transpile_*` Rust functions in the `zisk/` submodule; each axiom's docstring cites the exact upstream source line."),
+    "1":  ("Transpiler bridge contract",
+           "Single explicit bridge from the differentially pinned Lean/Rust transpiler model to the Main-AIR runtime witness-column contracts indexed by `TranspilerContractKind`."),
     "2":  ("Memory state bridge — load",
            "Bridges Mem AIR's column language to Sail's byte-addressable `Std.HashMap` once class #4 has placed the entry on the bus."),
     "4":  ("Bus / lookup soundness",

@@ -9,7 +9,7 @@
 > the trust ledger; the global theorem dispatches the 35-arm
 > `OpEnvelope` sum type through those wrappers. The trust closure
 > of the global theorem is captured in
-> `trust/baseline-zisk-riscv-compliant.txt` (122 axioms) and
+> `trust/baseline-zisk-riscv-compliant.txt` (72 axioms) and
 > `docs/fv/trusted-base.md` documents the per-class rationale. The
 > V3 trust gate's `check-closure-vs-baseline` subcommand
 > mechanically prevents the gap from re-opening.
