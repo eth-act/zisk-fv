@@ -44,8 +44,14 @@ theorem equiv_DIVUW
         (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+    (remainder_bound :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
@@ -55,13 +61,15 @@ theorem equiv_DIVUW
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
     (h_rs2_value : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
-    (h_op2_ne : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0)
-    (h_no_arith_div_dynamic_defect : False)
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, true))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  exact False.elim h_no_arith_div_dynamic_defect
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_DIVUW_of_table state divuw_input r1 r2 rd bus m r_main v r_a
+    pins h_match_primary promises arith_mem bounds arith_table h_row_constraints
+    arith_chunk_ranges arith_carry_ranges remainder_bound
+    h_sext_choice h_rs1_value h_rs2_value
 
 
 end ZiskFv.Equivalence.Divuw

@@ -314,7 +314,7 @@ private lemma mulw_bv64_of_byte_sum
 Given the 8 mode-pinned FGL chunk equations of the unsigned-DIV carry
 chain plus per-chunk and per-carry range bounds, derive the packed ℕ
 Euclidean identity `a*b + d = c`. -/
-private theorem fgl_div_unsigned_chunks_to_nat_identity
+theorem fgl_div_unsigned_chunks_to_nat_identity
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)

@@ -128,29 +128,42 @@ wrapper keeps true static pins from `arith_table_op_mulw_basic_mode_pin`,
 uses `h_sext_choice` for result sign-extension, and derives operand
 high-chunk zeroes from the operation-bus W high-lane collapse.
 
-`DIVUW` and `REMUW` have also been repaired: the core no longer asks for
-`sext = 0`, and the wrappers are removed from the defect predicate. Their
-closures still consume dynamic Div/Rem facts (`arith_table_op_divw_operand_pin`
-and `arith_div_remainder_bound_unsigned_w`), which are C6-deferred
-row/range/bus facts rather than false static ArithTable projections.
+`DIVU`, `REMU`, `DIVUW`, and `REMUW` have now been repaired from real
+row/range/bus evidence:
+Clean ArithDiv chunk/carry range lookup witnesses supply the range facts, Clean
+ArithTable projections supply the unsigned mode pins, and the Euclidean
+remainder bound is derived from ArithDiv's real remainder-bound operation-bus
+consumer matched to a Binary LTU provider row. The W-mode arms additionally
+derive operand/remainder high-chunk facts from the W high-lane operation-bus
+collapse and derive quotient high-zero facts from the unsigned Euclidean
+identity. Their wrappers and canonical theorems no longer carry `h_op2_ne` or
+`h_no_arith_div_dynamic_defect : False`.
 
-`DIVW` and `REMW` have the same W-contract repair: the core no longer asks
-for `sext = 0`, and the wrappers are removed from the defect predicate. Their
-closures still consume dynamic Div/Rem facts
-(`arith_table_op_div_rem_signed_w_d_sign_pin`,
-`arith_table_op_divw_operand_pin`, and
-`arith_div_remainder_bound_signed_w`), which are C6-deferred row/range/bus
-facts rather than false static ArithTable projections.
+`DIVW` / `REMW` no longer rely on the false static claim `sext = 0`, but they
+remain under the DIV/REM dynamic-witness defect gate. Their remaining
+obligations are signed row/range/bus facts, not finite ArithTable projections:
+sign-witness pins, signed remainder bounds, divide-by-zero behavior, and signed
+overflow behavior. The signed carry range part has been moved onto real Clean
+lookup evidence via `arith_div_signed_carry_ranges_at_holds`; the chain
+identity for non-W signed DIV/REM is now proved by
+`div_signed_chain_witnesses`, and the non-boundary signed DIV quotient
+write-value lemma is now proved by `h_rd_val_mdrs_div_chunked`; the matching
+REM remainder lemma is proved by `h_rd_val_mdrs_rem_chunked`. The legacy
+`EquivCore.Div` / `EquivCore.Rem` surfaces compose those non-boundary lemmas,
+and `arith_div_remainder_bound_op_of_signs` reduces the signed remainder-bound
+consumer to the four exact Binary op cases selected by `(nr, nb)`. The
+Compliance / Equivalence wrappers still need structural witness plumbing, sign
+pins, Binary semantics for `LT_ABS_NP` / `LT_ABS_PN` / `GT`, and boundary
+cases. `DIV` and `REM` remain gated for those signed-specific obligations.
 
-The remaining obligations are no longer proof holes. They are represented
-as explicit known-defect exclusions in the affected wrappers/canonical
-theorems and in the global `h_known_bugs : Defects.NoKnownDefect env`
-hypothesis. This restores zero-sorry while preserving the fact that signed
-multiply is not fully proved.
+The remaining obligations are not hidden proof holes. They are represented as
+explicit known-defect exclusions in the affected wrappers/canonical theorems and
+in the global `h_known_bugs : Defects.NoKnownDefect env` hypothesis. This
+restores zero-sorry while preserving the fact that signed multiply and DIV/REM
+dynamic witness soundness are not fully proved.
 
-For the W-family rows, C3.2-P5 must not try to prove `sext = 0`. The
-finite table contains matching rows with `sext = 1`; this is expected because
-`sext` participates in the high 32 bits of the write value. The correct
-repair is to change the W core contracts so they consume the existing
-`h_sext_choice` / byte-extension evidence and separately justified W operand
-chunk facts, rather than taking `sext = 0`.
+For the W-family rows, do not try to prove `sext = 0`. The finite table
+contains matching rows with `sext = 1`; this is expected because `sext`
+participates in the high 32 bits of the write value. The repaired unsigned W
+core contracts consume the existing `h_sext_choice` / byte-extension evidence
+and separately justified W operand chunk facts rather than taking `sext = 0`.

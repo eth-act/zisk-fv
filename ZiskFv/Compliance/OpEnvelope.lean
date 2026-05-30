@@ -1713,7 +1713,11 @@ inductive OpEnvelope
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
-    (h_op2_ne : divu_input.r2_val.toNat ≠ 0) :
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+    (remainder_bound :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a) :
     OpEnvelope state m r_main
   -- ============================ DIVW ====================================
   | divw
@@ -1771,9 +1775,15 @@ inductive OpEnvelope
         (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+    (remainder_bound :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
@@ -1782,8 +1792,7 @@ inductive OpEnvelope
     (h_rs1_value : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
     (h_rs2_value : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
-              = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
-    (h_op2_ne : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0) :
+              = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536) :
     OpEnvelope state m r_main
   -- ============================ REM =====================================
   | rem
@@ -1831,7 +1840,11 @@ inductive OpEnvelope
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
-    (h_op2_ne : remu_input.r2_val.toNat ≠ 0) :
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+    (remainder_bound :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a) :
     OpEnvelope state m r_main
   -- ============================ REMW ====================================
   | remw
@@ -1889,9 +1902,15 @@ inductive OpEnvelope
         (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+    (remainder_bound :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
@@ -1900,8 +1919,7 @@ inductive OpEnvelope
     (h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
     (h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
-              = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
-    (h_op2_ne : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0) :
+              = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536) :
     OpEnvelope state m r_main
 
 end ZiskFv.Compliance

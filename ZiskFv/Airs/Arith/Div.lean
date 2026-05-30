@@ -273,6 +273,40 @@ def opBus_row_ArithDivSecondary {F ExtF : Type} [Field F] [Field ExtF]
     extended_arg := 0
     extra_args_0 := 0 }
 
+/-- ArithDiv's operation-bus **consumer** row for the remainder-bound
+    comparison.
+
+    Mirrors the `assumes_operation(...)` call at
+    `zisk/state-machines/arith/pil/arith.pil:274-277`. On unsigned
+    64-bit DIVU/REMU rows (`nr = nb = m32 = 0`, `div = 1`,
+    `div_by_zero = 0`) this simplifies to an `OP_LTU` comparison between
+    the remainder chunks `d[0..3]` and divisor chunks `b[0..3]`, with
+    output `c = [1, 0]` and `flag = 1`.
+
+    The opcode literals are the Binary-table op ids:
+    `OP_LTU = 6`, `OP_LT_ABS_NP = 80`, `OP_LT_ABS_PN = 81`,
+    `OP_GT = 8`. -/
+@[simp]
+def opBus_row_ArithDivRemainderBound {F ExtF : Type} [Field F] [Field ExtF]
+    (v : Valid_ArithDiv F ExtF) (row : ℕ) : OperationBusEntry F :=
+  { multiplicity := v.div row * (1 - v.div_by_zero row)
+    op := (1 - v.nr row) * (1 - v.nb row) * 6
+        + v.nr row * (1 - v.nb row) * 80
+        + (1 - v.nr row) * v.nb row * 81
+        + v.nr row * v.nb row * 8
+    a_lo := v.d_0 row + v.d_1 row * 65536
+    a_hi := v.d_2 row + v.d_3 row * 65536
+        + v.m32 row * v.nr row * 4294967295
+    b_lo := v.b_0 row + v.b_1 row * 65536
+    b_hi := v.b_2 row + v.b_3 row * 65536
+        + v.m32 row * v.nb row * 4294967295
+    c_lo := 1
+    c_hi := 0
+    flag := 1
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
 end BusEmission
 
 /-!

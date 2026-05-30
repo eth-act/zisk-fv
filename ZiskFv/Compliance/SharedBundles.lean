@@ -250,6 +250,59 @@ theorem ArithDivTableWitness.spec
   ZiskFv.AirsClean.ArithDiv.arith_table_spec_of_lookup_aware_const_soundness
     w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r) w.holds
 
+/-- Lookup-aware Clean witness for a selected ArithDiv row's sixteen
+    `bits(16)` chunk checks. This is the Div-family counterpart of
+    `ArithMulChunkRangeWitness`. -/
+abbrev ArithDivChunkRangeWitness
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) :=
+  ZiskFv.AirsClean.ArithDiv.ChunkRangeLookupWitness v r
+
+theorem ArithDivChunkRangeWitness.ranges
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivChunkRangeWitness v r) :
+    (v.a_0 r).val < 2 ^ 16 ∧ (v.a_1 r).val < 2 ^ 16
+  ∧ (v.a_2 r).val < 2 ^ 16 ∧ (v.a_3 r).val < 2 ^ 16
+  ∧ (v.b_0 r).val < 2 ^ 16 ∧ (v.b_1 r).val < 2 ^ 16
+  ∧ (v.b_2 r).val < 2 ^ 16 ∧ (v.b_3 r).val < 2 ^ 16
+  ∧ (v.c_0 r).val < 2 ^ 16 ∧ (v.c_1 r).val < 2 ^ 16
+  ∧ (v.c_2 r).val < 2 ^ 16 ∧ (v.c_3 r).val < 2 ^ 16
+  ∧ (v.d_0 r).val < 2 ^ 16 ∧ (v.d_1 r).val < 2 ^ 16
+  ∧ (v.d_2 r).val < 2 ^ 16 ∧ (v.d_3 r).val < 2 ^ 16 :=
+  ZiskFv.AirsClean.ArithDiv.chunk_ranges_of_lookup_aware_const_soundness w
+
+/-- Lookup-aware Clean witness for a selected ArithDiv row's seven unsigned
+    carry `bits(17)` checks. -/
+abbrev ArithDivUnsignedCarryRangeWitness
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) :=
+  ZiskFv.AirsClean.ArithDiv.UnsignedCarryRangeLookupWitness v r
+
+theorem ArithDivUnsignedCarryRangeWitness.ranges
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivUnsignedCarryRangeWitness v r) :
+    (v.cy_0 r).val < 2 ^ 17 ∧ (v.cy_1 r).val < 2 ^ 17
+  ∧ (v.cy_2 r).val < 2 ^ 17 ∧ (v.cy_3 r).val < 2 ^ 17
+  ∧ (v.cy_4 r).val < 2 ^ 17 ∧ (v.cy_5 r).val < 2 ^ 17
+  ∧ (v.cy_6 r).val < 2 ^ 17 :=
+  ZiskFv.AirsClean.ArithDiv.unsigned_carry_ranges_of_lookup_aware_const_soundness w
+
+/-- Lookup-aware Clean witness for a selected ArithDiv row's seven signed/W
+    carry range checks. -/
+abbrev ArithDivSignedCarryRangeWitness
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) :=
+  ZiskFv.AirsClean.ArithDiv.SignedCarryRangeLookupWitness v r
+
+theorem ArithDivSignedCarryRangeWitness.ranges
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedCarryRangeWitness v r) :
+    ((v.cy_0 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_0 r).val)
+  ∧ ((v.cy_1 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_1 r).val)
+  ∧ ((v.cy_2 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_2 r).val)
+  ∧ ((v.cy_3 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_3 r).val)
+  ∧ ((v.cy_4 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_4 r).val)
+  ∧ ((v.cy_5 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_5 r).val)
+  ∧ ((v.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_6 r).val) :=
+  ZiskFv.AirsClean.ArithDiv.signed_carry_ranges_of_lookup_aware_const_soundness w
+
 /-! ## BinaryAdd validator + universal core constraint -/
 
 /-- `Valid_BinaryAdd` provider + the universal-row core-constraint

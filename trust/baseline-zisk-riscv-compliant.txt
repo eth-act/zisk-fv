@@ -27,8 +27,9 @@
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-30.
 #
-# Total entries: 9
+# Total entries: 10
 #
+ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
 ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
 ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
 ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness

@@ -57,19 +57,16 @@ def MaliciousSignedMulWitnessShape
 
 The retired `arith_table_op_*` and `arith_div_*` assumptions were not pure
 finite-table projections: they connected row selectors to concrete operand
-chunks, sign witnesses, and remainder bounds. Until those facts are proved
-from the ArithDiv row/range/operation-bus constraints, the eight DIV/REM
-arms are excluded from the defect-qualified claim. -/
+chunks, sign witnesses, and remainder bounds. The unsigned `DIVU`/`REMU` and
+`DIVUW`/`REMUW` paths now derive these facts from row/range/operation-bus
+evidence; the remaining signed arms stay excluded until their extra sign and
+overflow/div-by-zero facts are proved. -/
 def ArithDivDynamicWitnessShape
     : OpEnvelope state m r_main → Prop
   | .div .. => True
-  | .divu .. => True
   | .divw .. => True
-  | .divuw .. => True
   | .rem .. => True
-  | .remu .. => True
   | .remw .. => True
-  | .remuw .. => True
   | _ => False
 
 /-- Conservative marker for remaining opcode-shaped ArithTable trust.

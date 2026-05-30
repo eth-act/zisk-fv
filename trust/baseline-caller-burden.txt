@@ -12,12 +12,12 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1040
-# Category bridge: 72
+# Total rows: 1046
+# Category bridge: 68
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 684
+# Category other: 694
 # Category range: 3
 # Category row: 60
 # Category state: 73
@@ -209,8 +209,9 @@ ZiskFv.Equivalence.Divu.equiv_DIVU 013 arith_mem [other] ZiskFv.Compliance.Exter
 ZiskFv.Equivalence.Divu.equiv_DIVU 014 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
 ZiskFv.Equivalence.Divu.equiv_DIVU 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
 ZiskFv.Equivalence.Divu.equiv_DIVU 016 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
-ZiskFv.Equivalence.Divu.equiv_DIVU 017 h_op2_ne [bridge] divu_input.r2_val.toNat ≠ 0
-ZiskFv.Equivalence.Divu.equiv_DIVU 018 h_no_arith_div_dynamic_defect [other] False
+ZiskFv.Equivalence.Divu.equiv_DIVU 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+ZiskFv.Equivalence.Divu.equiv_DIVU 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a
+ZiskFv.Equivalence.Divu.equiv_DIVU 019 remainder_bound [other] ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 001 divuw_input [other] PureSpec.DivuwInput
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 002 r1 [other] regidx
@@ -225,13 +226,15 @@ ZiskFv.Equivalence.Divuw.equiv_DIVUW 010 pins [other] ZiskFv.Compliance.MainRowP
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a)
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 012 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state divuw_input.r1_val divuw_input.r2_
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 013 arith_mem [other] ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 014 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 016 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 017 h_rs1_value [bridge] (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 018 h_rs2_value [bridge] (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 019 h_op2_ne [bridge] (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 020 h_no_arith_div_dynamic_defect [other] False
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 014 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 015 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 016 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 019 remainder_bound [other] ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 020 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 021 h_rs1_value [bridge] (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 022 h_rs2_value [bridge] (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
 ZiskFv.Equivalence.Divw.equiv_DIVW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Divw.equiv_DIVW 001 divw_input [other] PureSpec.DivwInput
 ZiskFv.Equivalence.Divw.equiv_DIVW 002 r1 [other] regidx
@@ -590,8 +593,9 @@ ZiskFv.Equivalence.Remu.equiv_REMU 013 arith_mem [other] ZiskFv.Compliance.Exter
 ZiskFv.Equivalence.Remu.equiv_REMU 014 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
 ZiskFv.Equivalence.Remu.equiv_REMU 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
 ZiskFv.Equivalence.Remu.equiv_REMU 016 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
-ZiskFv.Equivalence.Remu.equiv_REMU 017 h_op2_ne [bridge] remu_input.r2_val.toNat ≠ 0
-ZiskFv.Equivalence.Remu.equiv_REMU 018 h_no_arith_div_dynamic_defect [other] False
+ZiskFv.Equivalence.Remu.equiv_REMU 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+ZiskFv.Equivalence.Remu.equiv_REMU 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a
+ZiskFv.Equivalence.Remu.equiv_REMU 019 remainder_bound [other] ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a
 ZiskFv.Equivalence.Remuw.equiv_REMUW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Remuw.equiv_REMUW 001 remuw_input [other] PureSpec.RemuwInput
 ZiskFv.Equivalence.Remuw.equiv_REMUW 002 r1 [other] regidx
@@ -606,13 +610,15 @@ ZiskFv.Equivalence.Remuw.equiv_REMUW 010 pins [other] ZiskFv.Compliance.MainRowP
 ZiskFv.Equivalence.Remuw.equiv_REMUW 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a)
 ZiskFv.Equivalence.Remuw.equiv_REMUW 012 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state remuw_input.r1_val remuw_input.r2_
 ZiskFv.Equivalence.Remuw.equiv_REMUW 013 arith_mem [other] ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2
-ZiskFv.Equivalence.Remuw.equiv_REMUW 014 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
-ZiskFv.Equivalence.Remuw.equiv_REMUW 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Equivalence.Remuw.equiv_REMUW 016 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
-ZiskFv.Equivalence.Remuw.equiv_REMUW 017 h_rs1_value [bridge] (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
-ZiskFv.Equivalence.Remuw.equiv_REMUW 018 h_rs2_value [bridge] (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
-ZiskFv.Equivalence.Remuw.equiv_REMUW 019 h_op2_ne [bridge] (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0
-ZiskFv.Equivalence.Remuw.equiv_REMUW 020 h_no_arith_div_dynamic_defect [other] False
+ZiskFv.Equivalence.Remuw.equiv_REMUW 014 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
+ZiskFv.Equivalence.Remuw.equiv_REMUW 015 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
+ZiskFv.Equivalence.Remuw.equiv_REMUW 016 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Equivalence.Remuw.equiv_REMUW 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+ZiskFv.Equivalence.Remuw.equiv_REMUW 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a
+ZiskFv.Equivalence.Remuw.equiv_REMUW 019 remainder_bound [other] ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a
+ZiskFv.Equivalence.Remuw.equiv_REMUW 020 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
+ZiskFv.Equivalence.Remuw.equiv_REMUW 021 h_rs1_value [bridge] (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
+ZiskFv.Equivalence.Remuw.equiv_REMUW 022 h_rs2_value [bridge] (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
 ZiskFv.Equivalence.Remw.equiv_REMW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Remw.equiv_REMW 001 remw_input [other] PureSpec.RemwInput
 ZiskFv.Equivalence.Remw.equiv_REMW 002 r1 [other] regidx
