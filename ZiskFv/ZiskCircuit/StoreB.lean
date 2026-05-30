@@ -42,36 +42,36 @@ open ZiskFv.ZiskCircuit.StoreD
 open ZiskFv.Tactics.StoreArchetype
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Low 8 bits of a memory-bus entry**, packed as an `FGL` element.
-    Just `x0`. Used by SB's spec to expose the `c`-packed value as the
-    1-byte the store writes. -/
+    Under the SB zeroing hypothesis the entire chunk-pack collapses to
+    `value_0`, which holds the byte as an FGL. Used by SB's spec to
+    expose the `c`-packed value as the 1-byte the store writes. -/
 @[simp]
 def memory_entry_lo_8 (e : MemoryBusEntry FGL) : FGL :=
-  e.x0
+  e.value_0
 
 /-- **SB high-byte zeroing.** The memory-bus write entry populated by a
-    1-byte store has its top 7 byte lanes (`x1..x7`) pinned to zero,
-    because ZisK's Main AIR only routes `ind_width = 1` byte from the
-    `c` cell to the memory-bus entry; the remaining lanes are witnessed
-    as zero by the PIL circuit.
+    1-byte store has its high chunk pinned to zero and its low chunk
+    holding only a single byte (`value_0.val < 256`), because ZisK's
+    Main AIR only routes `ind_width = 1` byte from the `c` cell to
+    the memory-bus entry; the remaining bytes are witnessed as zero
+    by the PIL circuit.
 
     Supplied by the caller; the audit derives it from the PIL
     memory-SM `permutation_proves` side + the `ind_width` selector. -/
 @[simp]
 def sb_high_bytes_zero (entry : MemoryBusEntry FGL) : Prop :=
-  entry.x1 = 0 ∧ entry.x2 = 0 ∧ entry.x3 = 0 ∧ entry.x4 = 0
-    ∧ entry.x5 = 0 ∧ entry.x6 = 0 ∧ entry.x7 = 0
+  entry.value_1 = 0 ∧ entry.value_0.val < 256
 
 /-- When the high bytes are zero, the packed 64-bit memory-entry value
     reduces to just its low 8 bits (`memory_entry_lo_8`). -/
 lemma memory_entry_toField_of_high_zero_8
     (entry : MemoryBusEntry FGL) (h : sb_high_bytes_zero entry) :
     memory_entry_toField entry = memory_entry_lo_8 entry := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  simp only [memory_entry_toField, memory_entry_lo_8, h1, h2, h3, h4, h5, h6, h7]
-  ring
+  obtain ⟨h_v1, _⟩ := h
+  show entry.value_0 + entry.value_1 * 4294967296 = entry.value_0
+  rw [h_v1]; ring
 
 /-- **Compositional SB theorem (c-packed, low-8-specialized).**
     Given the store-archetype circuit-holds (identical to SD/SW/SH's)
@@ -84,7 +84,7 @@ lemma memory_entry_toField_of_high_zero_8
     archetype theorem `store_archetype_copyb_c_packed` (validating the
     macro) and then applies `memory_entry_toField_of_high_zero_8`. -/
 lemma store_b_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry)
     (h_zero : sb_high_bytes_zero entry) :
@@ -99,7 +99,7 @@ lemma store_b_compositional
     `memory_entry_lo_8 entry`, but we expose the general form too so SB
     composes uniformly with SD/SW/SH at the equivalence layer. -/
 lemma store_b_compositional_general
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry) :
     main_c_packed m r_main = memory_entry_toField entry :=
@@ -110,7 +110,7 @@ lemma store_b_compositional_general
     archetype's `j(4, 4)` yields `next_pc = pc + 4` for all stores
     regardless of width. -/
 lemma store_b_next_pc_concrete
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry)
     (h_jmp1 : m.jmp_offset1 r_main = 4)

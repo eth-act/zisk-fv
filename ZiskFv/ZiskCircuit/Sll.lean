@@ -32,7 +32,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.ShiftArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in SLL-execution mode: external op with
     opcode literal 33 (`OP_SLL`), full 64-bit width (`m32 = 0`),
@@ -40,7 +39,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `Circuit.Shift.main_row_in_sllw_mode` modulo `m32 = 0` and the op
     literal. -/
 @[simp]
-def main_row_in_sll_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_sll_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (33 : FGL)
   ∧ m.m32 r_main = 0
@@ -52,7 +51,7 @@ def main_row_in_sll_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     `m32 = 0`. -/
 @[simp]
 def sll_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   flag_boolean m r_main
   ∧ is_external_op_boolean m r_main
@@ -67,7 +66,7 @@ def sll_circuit_holds
     `(1 - m32)` factor passes through under `m32 = 0`, so the high
     lanes flow verbatim to the `BinaryExtension` SM. -/
 lemma sll_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sll_circuit_holds m r_main bus_entry) :
     bus_entry.a_hi = m.a_1 r_main ∧ bus_entry.b_hi = m.b_1 r_main := by

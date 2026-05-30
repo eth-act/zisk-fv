@@ -56,7 +56,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.ZiskCircuit.Mul
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Archetype mode predicate (Main side).** A Main row is in DIV-family
     execution mode when `is_external_op = 1`, `op = opcode_lit`,
@@ -67,7 +66,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `opcode_lit` is one of `OP_DIVU`, `OP_REMU`, `OP_DIV`, `OP_REM`. -/
 @[simp]
 def main_row_in_div_archetype_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = opcode_lit
   ∧ m.m32 r_main = 0
@@ -80,7 +79,7 @@ def main_row_in_div_archetype_mode
     selects quotient (`a[]`) as the bus `c` lane, `main_mul = 0`,
     `sext = 0` (64-bit non-sign-extending), `m32 = 0` (64-bit). -/
 @[simp]
-def arith_row_in_div_primary_mode (v : Valid_ArithDiv C FGL FGL) (r_arith : ℕ) : Prop :=
+def arith_row_in_div_primary_mode (v : Valid_ArithDiv FGL FGL) (r_arith : ℕ) : Prop :=
   v.main_div r_arith = 1
   ∧ v.main_mul r_arith = 0
   ∧ v.div r_arith = 1
@@ -92,7 +91,7 @@ def arith_row_in_div_primary_mode (v : Valid_ArithDiv C FGL FGL) (r_arith : ℕ)
     `main_div = main_mul = 0`): `div = 1`, `main_div = 0`, `main_mul = 0`,
     `sext = 0`, `m32 = 0`. -/
 @[simp]
-def arith_row_in_rem_secondary_mode (v : Valid_ArithDiv C FGL FGL) (r_arith : ℕ) : Prop :=
+def arith_row_in_rem_secondary_mode (v : Valid_ArithDiv FGL FGL) (r_arith : ℕ) : Prop :=
   v.main_div r_arith = 0
   ∧ v.main_mul r_arith = 0
   ∧ v.div r_arith = 1
@@ -105,7 +104,7 @@ def arith_row_in_rem_secondary_mode (v : Valid_ArithDiv C FGL FGL) (r_arith : �
     witnesses on both sides. -/
 @[simp]
 def div_primary_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL) : Prop :=
   add_subset_holds m r_main
   ∧ div_mode_booleans v r_arith
@@ -119,7 +118,7 @@ def div_primary_circuit_holds
     predicate is `arith_row_in_rem_secondary_mode`. -/
 @[simp]
 def rem_secondary_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL) : Prop :=
   add_subset_holds m r_main
   ∧ div_mode_booleans v r_arith
@@ -135,7 +134,7 @@ def rem_secondary_circuit_holds
     half — on non-sign-extending 64-bit rows (sext = 0, m32 = 0) it
     equals `a[2] + a[3]*2^16` per constraint 46. -/
 @[simp]
-def arith_quotient_packed (v : Valid_ArithDiv C FGL FGL) (r : ℕ) : FGL :=
+def arith_quotient_packed (v : Valid_ArithDiv FGL FGL) (r : ℕ) : FGL :=
   (v.a_0 r + v.a_1 r * 65536) + v.bus_res1 r * 4294967296
 
 /-- The 64-bit value packed into Arith's `(d[0], d[1], d[2], d[3])`
@@ -145,7 +144,7 @@ def arith_quotient_packed (v : Valid_ArithDiv C FGL FGL) (r : ℕ) : FGL :=
     secondary rows constraint 46 reduces to
     `bus_res1 = (1 - main_mul - main_div) * (d[2] + d[3]*2^16)` = d-high. -/
 @[simp]
-def arith_remainder_packed (v : Valid_ArithDiv C FGL FGL) (r : ℕ) : FGL :=
+def arith_remainder_packed (v : Valid_ArithDiv FGL FGL) (r : ℕ) : FGL :=
   (v.d_0 r + v.d_1 r * 65536) + v.bus_res1 r * 4294967296
 
 /-- **Archetype bus-match theorem — primary (DIV/DIVU).** Parametric
@@ -154,7 +153,7 @@ def arith_remainder_packed (v : Valid_ArithDiv C FGL FGL) (r : ℕ) : FGL :=
     `Tactics.MulArchetype.mul_archetype_bus_match` — destruct the
     bus-match equalities, substitute into Main's packed `c`, close. -/
 lemma arith_archetype_div_bus_match
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : div_primary_circuit_holds m v r_main r_arith opcode_lit) :
     main_c_packed m r_main = arith_quotient_packed v r_arith := by
@@ -168,7 +167,7 @@ lemma arith_archetype_div_bus_match
     skeleton as the primary theorem, but binds Main's packed `c` to
     the remainder lanes (Arith's `d[]`). -/
 lemma arith_archetype_rem_bus_match
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : rem_secondary_circuit_holds m v r_main r_arith opcode_lit) :
     main_c_packed m r_main = arith_remainder_packed v r_arith := by

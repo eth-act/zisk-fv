@@ -1,18 +1,24 @@
 import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 
 /-!
-RV64 bus-effect model: port of `OpenvmFv/RV32D/BusEffect.lean` widened from
-4-byte to 8-byte memory bus entries (per `Fundamentals/Interaction.lean`).
+RV64 bus-effect model: port of `OpenvmFv/RV32D/BusEffect.lean` widened to
+RV64 chunk-shaped memory bus entries.
 
 Field parameter is `FGL` (Goldilocks) throughout — this is ZisK's native
 prime, and all coercions `BitVec 8 ↔ FGL` needed by memory-byte comparisons
 live in `Fundamentals/Goldilocks.lean`.
+
+Per-byte access into the chunk-shape `MemoryBusEntry` (2 32-bit chunks
+matching the PIL emission) happens via `byteAt` from
+`Channels/MemoryBusBytes.lean`.
 -/
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 /-- `bus_effect` captures the effect of execution and memory bus contents
     on the RISC-V state, returning:
@@ -51,8 +57,8 @@ def bus_effect
               -- register is equal to the 64-bit interpretation of the
               -- appropriate memory bus entry values (8 byte lanes)
               (if (entry.as.val = 1) then
-                let val := U64.toBV #v[entry.x0, entry.x1, entry.x2, entry.x3,
-                                        entry.x4, entry.x5, entry.x6, entry.x7]
+                let val := U64.toBV #v[byteAt entry 0, byteAt entry 1, byteAt entry 2, byteAt entry 3,
+                                        byteAt entry 4, byteAt entry 5, byteAt entry 6, byteAt entry 7]
                 let reg_idx := Transpiler.wrap_to_regidx entry.ptr
                 ⟨ cond ∧ read_xreg reg_idx state = EStateM.Result.ok val state, result ⟩
               -- Memory read adds the assumption that the eight values in memory
@@ -60,14 +66,14 @@ def bus_effect
               -- memory bus entry values
               else if (entry.as.val = 2) then
                 ⟨ cond ∧
-                  state.mem[entry.ptr.toNat]? = .some entry.x0 ∧
-                  state.mem[entry.ptr.toNat + 1]? = .some entry.x1 ∧
-                  state.mem[entry.ptr.toNat + 2]? = .some entry.x2 ∧
-                  state.mem[entry.ptr.toNat + 3]? = .some entry.x3 ∧
-                  state.mem[entry.ptr.toNat + 4]? = .some entry.x4 ∧
-                  state.mem[entry.ptr.toNat + 5]? = .some entry.x5 ∧
-                  state.mem[entry.ptr.toNat + 6]? = .some entry.x6 ∧
-                  state.mem[entry.ptr.toNat + 7]? = .some entry.x7
+                  state.mem[entry.ptr.toNat]? = .some (byteAt entry 0) ∧
+                  state.mem[entry.ptr.toNat + 1]? = .some (byteAt entry 1) ∧
+                  state.mem[entry.ptr.toNat + 2]? = .some (byteAt entry 2) ∧
+                  state.mem[entry.ptr.toNat + 3]? = .some (byteAt entry 3) ∧
+                  state.mem[entry.ptr.toNat + 4]? = .some (byteAt entry 4) ∧
+                  state.mem[entry.ptr.toNat + 5]? = .some (byteAt entry 5) ∧
+                  state.mem[entry.ptr.toNat + 6]? = .some (byteAt entry 6) ∧
+                  state.mem[entry.ptr.toNat + 7]? = .some (byteAt entry 7)
                 , result ⟩
               -- Neither a register nor a memory read: impossible under assumptions
               else ⟨ cond, EStateM.Result.error Sail.Error.Unreachable state ⟩)
@@ -79,8 +85,8 @@ def bus_effect
                 if h : Transpiler.wrap_to_regidx entry.ptr = 0 then
                   ⟨ cond, result ⟩
                 else
-                  let val := U64.toBV #v[entry.x0, entry.x1, entry.x2, entry.x3,
-                                          entry.x4, entry.x5, entry.x6, entry.x7]
+                  let val := U64.toBV #v[byteAt entry 0, byteAt entry 1, byteAt entry 2, byteAt entry 3,
+                                          byteAt entry 4, byteAt entry 5, byteAt entry 6, byteAt entry 7]
                   let reg_idx := ⟨ (Transpiler.wrap_to_regidx entry.ptr).val, by simp; omega ⟩
                   ⟨ cond, EStateM.Result.map
                           (fun x ↦ ExecutionResult.Retire_Success ())
@@ -92,14 +98,14 @@ def bus_effect
                   cond
                 , EStateM.Result.ok (ExecutionResult.Retire_Success ()) {
                     state with mem :=
-                      ((((((((state.mem.insert entry.ptr.toNat entry.x0
-                      ).insert (entry.ptr.toNat + 1) entry.x1
-                      ).insert (entry.ptr.toNat + 2) entry.x2
-                      ).insert (entry.ptr.toNat + 3) entry.x3
-                      ).insert (entry.ptr.toNat + 4) entry.x4
-                      ).insert (entry.ptr.toNat + 5) entry.x5
-                      ).insert (entry.ptr.toNat + 6) entry.x6
-                      ).insert (entry.ptr.toNat + 7) entry.x7)
+                      ((((((((state.mem.insert entry.ptr.toNat (byteAt entry 0)
+                      ).insert (entry.ptr.toNat + 1) (byteAt entry 1)
+                      ).insert (entry.ptr.toNat + 2) (byteAt entry 2)
+                      ).insert (entry.ptr.toNat + 3) (byteAt entry 3)
+                      ).insert (entry.ptr.toNat + 4) (byteAt entry 4)
+                      ).insert (entry.ptr.toNat + 5) (byteAt entry 5)
+                      ).insert (entry.ptr.toNat + 6) (byteAt entry 6)
+                      ).insert (entry.ptr.toNat + 7) (byteAt entry 7))
                   }⟩
               -- Address space not 1 or 2 : impossible under assumptions
               else ⟨ cond, EStateM.Result.error Sail.Error.Unreachable state ⟩)

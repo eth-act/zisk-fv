@@ -43,7 +43,8 @@ def renderDepsBaseline (env : Environment) : String := Id.run do
   for n in canonical do
     let deps := AxiomClosure.axiomDepsForTheorem env n
     let depsStr := String.intercalate ", " (deps.map (·.toString)).toList
-    lines := lines.push s!"{n}: {depsStr}"
+    let line := if depsStr.isEmpty then s!"{n}:" else s!"{n}: {depsStr}"
+    lines := lines.push line
   String.intercalate "\n" lines.toList ++ "\n"
 
 /-- Parse `trust/forbidden-types.txt` (one fully-qualified Name per line;
@@ -144,12 +145,30 @@ def loadBaselineAxioms (path : System.FilePath) : IO (Array String) := do
       out := out.push last
   return out
 
+/-- Load one-axiom-name-per-line file (#-comments and blank lines
+    ignored). Used by the V2 gate's tolerated-completeness allowlist:
+    completeness-direction axioms (`<air>_circuit_completeness`) that
+    the soundness proof intentionally does not reach but which still
+    live in the source tree because the corresponding Clean
+    `circuit.completeness` field requires them. -/
+def loadAxiomList (path : System.FilePath) : IO (Array String) := do
+  if !(← System.FilePath.pathExists path) then return #[]
+  let content ← IO.FS.readFile path
+  let mut out : Array String := #[]
+  for raw in content.splitOn "\n" do
+    let line := raw.trim
+    if line.isEmpty || line.startsWith "#" then continue
+    out := out.push line
+  return out
+
 /-- Subcommand: check that the project-axiom closure of
 `zisk_riscv_compliant_program_bus` exactly matches the unqualified
-names in `trust/baseline-axioms.txt`. Catches the kind of drift that
-the per-theorem `equiv_<OP>` axiom-dep baseline cannot see — i.e.,
-axioms that survive in the trust ledger but are no longer reachable
-from the uber-theorem (dead trust). -/
+names in `trust/baseline-axioms.txt`, modulo the tolerated-completeness
+allowlist at `trust/tolerated-completeness-axioms.txt`. Catches the
+kind of drift that the per-theorem `equiv_<OP>` axiom-dep baseline
+cannot see — i.e., axioms that survive in the trust ledger but are
+no longer reachable from the uber-theorem (dead trust) AND aren't
+explicitly tolerated as completeness-direction trust. -/
 def cmdCheckClosureVsBaseline (env : Environment) (path : String)
     (theoremName : Name) : IO UInt32 := do
   if (env.find? theoremName).isNone then
@@ -161,6 +180,8 @@ def cmdCheckClosureVsBaseline (env : Environment) (path : String)
   let closureLast : Array String :=
     depsQualified.map (fun n => n.componentsRev.head!.toString)
   let baselineLast ← loadBaselineAxioms path
+  let tolerated ← loadAxiomList "trust/tolerated-completeness-axioms.txt"
+  let toleratedSet : Std.HashSet String := tolerated.foldl (·.insert ·) {}
   let closureSet : Std.HashSet String := closureLast.foldl (·.insert ·) {}
   let baselineSet : Std.HashSet String := baselineLast.foldl (·.insert ·) {}
   let mut missingFromBaseline : Array String := #[]
@@ -169,7 +190,7 @@ def cmdCheckClosureVsBaseline (env : Environment) (path : String)
     if !baselineSet.contains n then
       missingFromBaseline := missingFromBaseline.push n
   for n in baselineLast do
-    if !closureSet.contains n then
+    if !closureSet.contains n && !toleratedSet.contains n then
       missingFromClosure := missingFromClosure.push n
   let missingFromBaselineSorted := missingFromBaseline.qsort (· < ·)
   let missingFromClosureSorted := missingFromClosure.qsort (· < ·)

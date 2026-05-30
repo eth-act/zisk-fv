@@ -1443,6 +1443,7 @@ inductive TranspilerContractKind where
   | SD
   | SW
   | MUL
+  | MULW
   | MULH
   | SLLW
   | SH
@@ -1495,8 +1496,7 @@ inductive TranspilerContractKind where
     inspect the precise witness-column obligations for each opcode. -/
 def TranspilerContract : TranspilerContractKind → Prop
   | .ADD =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (state : RV64State)
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (state : RV64State)
       (rs1 rs2 : Fin 32),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_ADD →
@@ -1511,8 +1511,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.jmp_offset2 r_main = 4
 
   | .JAL =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_FLAG →
         m.m32 r_main = 0
@@ -1526,8 +1525,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = 0
 
   | .JALR =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rs1 _rd : Fin 32) (_imm_offset : FGL) (_state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (_rs1 _rd : Fin 32) (_imm_offset : FGL) (_state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_AND →
         m.flag r_main = 0
@@ -1538,8 +1536,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.a_1 r_main = 4294967295
 
   | .SD =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -1553,8 +1550,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -1568,8 +1564,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .MUL =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_MUL →
         m.m32 r_main = 0
@@ -1582,9 +1577,22 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
+  | .MULW =>
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_MUL_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
   | .MULH =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_MULH →
         m.m32 r_main = 0
@@ -1598,8 +1606,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SLLW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SLL_W →
         m.flag r_main = 0
@@ -1614,8 +1621,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SH =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -1629,8 +1635,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SB =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -1644,8 +1649,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SLL =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SLL →
         m.flag r_main = 0
@@ -1660,8 +1664,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SRL =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRL →
         m.flag r_main = 0
@@ -1676,8 +1679,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SRA =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRA →
         m.flag r_main = 0
@@ -1692,8 +1694,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SLLI =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SLL →
         m.flag r_main = 0
@@ -1708,8 +1709,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = 0
 
   | .SRLI =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRL →
         m.flag r_main = 0
@@ -1724,8 +1724,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = 0
 
   | .SRAI =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRA →
         m.flag r_main = 0
@@ -1740,8 +1739,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = 0
 
   | .SRLW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRL_W →
         m.flag r_main = 0
@@ -1756,8 +1754,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SRAW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRA_W →
         m.flag r_main = 0
@@ -1772,8 +1769,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SLLIW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SLL_W →
         m.flag r_main = 0
@@ -1788,8 +1784,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = 0
 
   | .SRLIW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRL_W →
         m.flag r_main = 0
@@ -1804,8 +1799,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = 0
 
   | .SRAIW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRA_W →
         m.flag r_main = 0
@@ -1820,8 +1814,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = 0
 
   | .MULHU =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_MULUH →
         m.m32 r_main = 0
@@ -1835,8 +1828,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .MULHSU =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_MULSUH →
         m.m32 r_main = 0
@@ -1850,8 +1842,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .LUI =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_lo imm_hi : FGL) (_state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_lo imm_hi : FGL) (_state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -1865,8 +1856,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = imm_hi
 
   | .AUIPC =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_FLAG →
         m.m32 r_main = 0
@@ -1880,8 +1870,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = 0
 
   | .SUB =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SUB →
         m.flag r_main = 0
@@ -1896,8 +1885,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .AND =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_AND →
         m.flag r_main = 0
@@ -1912,8 +1900,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .OR =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_OR →
         m.flag r_main = 0
@@ -1928,8 +1915,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .XOR =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_XOR →
         m.flag r_main = 0
@@ -1944,8 +1930,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SLT =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_LT →
         m.m32 r_main = 0
@@ -1959,8 +1944,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SLTU =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_LTU →
         m.m32 r_main = 0
@@ -1974,8 +1958,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .ADDI =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_ADD →
         m.flag r_main = 0
@@ -1990,8 +1973,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = imm_b_hi
 
   | .ANDI =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_AND →
         m.flag r_main = 0
@@ -2006,8 +1988,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = imm_b_hi
 
   | .ORI =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_OR →
         m.flag r_main = 0
@@ -2022,8 +2003,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = imm_b_hi
 
   | .XORI =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_XOR →
         m.flag r_main = 0
@@ -2038,8 +2018,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = imm_b_hi
 
   | .SLTI =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_LT →
         m.m32 r_main = 0
@@ -2053,8 +2032,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = imm_b_hi
 
   | .SLTIU =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_LTU →
         m.m32 r_main = 0
@@ -2068,8 +2046,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = imm_b_hi
 
   | .ADDW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_ADD_W →
         m.flag r_main = 0
@@ -2084,8 +2061,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .SUBW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SUB_W →
         m.flag r_main = 0
@@ -2100,8 +2076,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .ADDIW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_lo imm_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_lo imm_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_ADD_W →
         m.flag r_main = 0
@@ -2116,8 +2091,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = imm_hi
 
   | .DIVUW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_DIVU_W →
         m.m32 r_main = 1
@@ -2131,8 +2105,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .REMUW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_REMU_W →
         m.m32 r_main = 1
@@ -2146,8 +2119,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .DIVW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_DIV_W →
         m.m32 r_main = 1
@@ -2161,8 +2133,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .REMW =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_REM_W →
         m.m32 r_main = 1
@@ -2176,8 +2147,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .DIVU =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_DIVU →
         m.m32 r_main = 0
@@ -2191,8 +2161,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .REMU =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_REMU →
         m.m32 r_main = 0
@@ -2206,8 +2175,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .DIV =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_DIV →
         m.m32 r_main = 0
@@ -2221,8 +2189,7 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .REM =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_REM →
         m.m32 r_main = 0
@@ -2236,22 +2203,19 @@ def TranspilerContract : TranspilerContractKind → Prop
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
   | .PC_for_JAL =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (PC : BitVec 64),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_FLAG →
       (m.pc r_main).val = PC.toNat
 
   | .PC_for_JALR =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (PC : BitVec 64),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_AND →
       (m.pc r_main + m.jmp_offset2 r_main).val = (PC + 4#64).toNat
 
   | .PC_for_AUIPC =>
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (PC : BitVec 64),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_FLAG →
       (m.pc r_main).val = PC.toNat
@@ -2313,16 +2277,14 @@ The actual `b = previous c` lastc equality is proved in
     `AirValue`, even though that term is multiplied out on non-segment
     rows. -/
 axiom main_source_c_copies_prev_c0_nonsegment
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (row : ℕ) :
+    (m : Valid_Main FGL FGL) (row : ℕ) :
     m.segment_l1 row = 0 →
     ZiskFv.Airs.Main.b_src_c_copies_prev_c0 m row
 
 /-- Main source-C lane 1, specialized to non-segment rows.
     See `main_source_c_copies_prev_c0_nonsegment`. -/
 axiom main_source_c_copies_prev_c1_nonsegment
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (row : ℕ) :
+    (m : Valid_Main FGL FGL) (row : ℕ) :
     m.segment_l1 row = 0 →
     ZiskFv.Airs.Main.b_src_c_copies_prev_c1 m row
 
@@ -2338,8 +2300,7 @@ axiom main_source_c_copies_prev_c1_nonsegment
     lowering, specifically the unaligned branch that emits `add` before
     the final `and`. -/
 axiom transpile_JALR_unaligned_final_source_c
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rs1 _rd : Fin 32)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (_rs1 _rd : Fin 32)
     (imm_offset : FGL) (_state : RV64State) :
     imm_offset.val % 4 ≠ 0 →
     m.is_external_op r_main = 1 →
@@ -2361,6 +2322,9 @@ theorem transpile_SW : TranspilerContract .SW :=
 
 theorem transpile_MUL : TranspilerContract .MUL :=
   transpiler_contract_sound .MUL
+
+theorem transpile_MULW : TranspilerContract .MULW :=
+  transpiler_contract_sound .MULW
 
 theorem transpile_MULH : TranspilerContract .MULH :=
   transpiler_contract_sound .MULH

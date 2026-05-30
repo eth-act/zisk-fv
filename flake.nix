@@ -33,10 +33,23 @@
       url = "github:0xPolygonHermez/pil2-proofman/v0.17.0";
       flake = false;
     };
+    clean-src = {
+      # Public fork codygunton/clean: a squashed snapshot of upstream
+      # Verified-zkEVM/clean @ 95c8cc2e (= upstream main HEAD; Lean/Mathlib
+      # v4.28.0, matches zisk-fv) plus two zisk-fv integration patches:
+      # namespace hygiene (Fin.foldl_eq_foldl_finRange →
+      # Clean.Fin.foldl_eq_foldl_finRange, so Clean.Air.* can be imported
+      # alongside Mathlib/Batteries) and the C7
+      # `exists_nonzero_push_of_pull` balance strengthening. To be upstreamed;
+      # re-point at Verified-zkEVM/clean once both merge. Pinned by rev so
+      # the lock is immutable; fetched over HTTPS so CI needs no SSH key.
+      url = "github:codygunton/clean/ef6dfbcd353b4f6b15897c8113cf691d15b98b4c";
+      flake = false;
+    };
   };
 
   outputs = { self, nixpkgs, flake-utils, sail-src, sail-riscv-src,
-              zisk-src, pil2-compiler-src, pil2-proofman-src }:
+              zisk-src, pil2-compiler-src, pil2-proofman-src, clean-src }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -45,6 +58,10 @@
 
         packages.sail-lean-tree = pkgs.callPackage ./nix/sail-lean-tree.nix {
           inherit sail-riscv-src;
+        };
+
+        packages.clean-source = pkgs.callPackage ./nix/clean.nix {
+          inherit clean-src;
         };
 
         packages.pil2-compiler = pkgs.callPackage ./nix/pil2-compiler.nix {
@@ -68,9 +85,10 @@
             sail-lean-tree = self.packages.${system}.sail-lean-tree;
             zisk-pilout = self.packages.${system}.zisk-pilout;
             extracted-lean = self.packages.${system}.extracted-lean;
+            clean-source = self.packages.${system}.clean-source;
           }}/bin/populate";
           meta = {
-            description = "Build and copy the Sail-Lean spec, ZisK pilout, and extracted Lean into build/.";
+            description = "Build and copy the Sail-Lean spec, ZisK pilout, extracted Lean, and Clean source into build/.";
           };
         };
 

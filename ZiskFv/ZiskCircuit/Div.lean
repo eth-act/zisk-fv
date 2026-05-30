@@ -32,14 +32,13 @@ open ZiskFv.Trusted
 open ZiskFv.ZiskCircuit.Mul
 open ZiskFv.Tactics.ArithSMArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in DIV-execution mode: external op with
     opcode literal 186 (OP_DIV), 64-bit operand width (m32 = 0),
     `flag = 0` (non-div-by-zero), and `set_pc = 0`. Specialization of
     `main_row_in_div_archetype_mode` at `opcode_lit = OP_DIV`. -/
 @[simp]
-def main_row_in_div_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_div_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = OP_DIV
   ∧ m.m32 r_main = 0
@@ -52,7 +51,7 @@ def main_row_in_div_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     and mode witnesses on both AIRs. -/
 @[simp]
 def div_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ div_mode_booleans v r_arith
@@ -68,7 +67,7 @@ def div_circuit_holds
     at `opcode_lit = OP_DIV`: the archetype circuit-holds predicate
     definitionally coincides with `div_circuit_holds`. -/
 lemma div_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ)
     (h : div_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_quotient_packed v r_arith :=

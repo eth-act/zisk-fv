@@ -4,25 +4,14 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.SailSpec.BusEffect
-import Extraction.BinaryAdd
-import Extraction.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
-import Extraction.Buses
 
 import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import Extraction.MemoryBuses
-import ZiskFv.Airs.MemoryBus.Projection
-import ZiskFv.Airs.MemoryBus.BusShape
-import ZiskFv.Airs.MemoryBus.LaneMatch
-import Extraction.Mem
 import ZiskFv.Airs.Mem
-import Extraction.MemAlign
-import Extraction.MemAlignByte
-import Extraction.MemAlignReadByte
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
@@ -130,9 +119,13 @@ import ZiskFv.SailSpec.subw
 import ZiskFv.SailSpec.xori
 
 -- Per-shape h_rd_val derivation lemmas.
-import ZiskFv.Equivalence.WriteValueProofs.Arith
-import ZiskFv.Equivalence.WriteValueProofs.JumpUType
-import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
-import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
+import ZiskFv.EquivCore.WriteValueProofs.Arith
+import ZiskFv.EquivCore.WriteValueProofs.JumpUType
+import ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned
+import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
+import ZiskFv.EquivCore.Bridge.MemClean
+import ZiskFv.AirsClean.ArithTableProjections
+import ZiskFv.AirsClean.BinaryFamily.Balance
+import ZiskFv.AirsClean.FullEnsemble
+import ZiskFv.AirsClean.FullEnsemble.Balance
 import ZiskFv.Compliance
-

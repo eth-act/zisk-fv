@@ -28,20 +28,19 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.ALURTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- SUB's specialization of
     `ALURTypeArchetype.main_row_in_alu_rtype_mode` at
     `opcode_lit = OP_SUB`. -/
 @[simp]
-def main_row_in_sub_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_sub_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   main_row_in_alu_rtype_mode m r_main OP_SUB
 
 /-- SUB's circuit-holds predicate: specialization of
     `alu_rtype_archetype_circuit_holds` at `OP_SUB`. -/
 @[simp]
 def sub_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   alu_rtype_archetype_circuit_holds m r_main bus_entry OP_SUB
 
@@ -49,7 +48,7 @@ def sub_circuit_holds
     entry's packed `c` lanes. Instantiation of
     `alu_rtype_archetype_c_bus_match` at `OP_SUB`. -/
 lemma sub_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sub_circuit_holds m r_main bus_entry) :
     main_c_packed m r_main

@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Jalr
-import ZiskFv.Equivalence.Promises.Jump
-import ZiskFv.Equivalence.Promises.JumpHelpers
+import ZiskFv.EquivCore.Jalr
+import ZiskFv.EquivCore.Promises.Jump
+import ZiskFv.EquivCore.Promises.JumpHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
@@ -22,7 +22,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_JALR`.** Derives `h_circuit` from
     `jalr_h_circuit_of_main_constraints` (consuming `transpile_JALR`)
@@ -37,7 +36,8 @@ theorem equiv_JALR
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     -- Activation / opcode pins on Main + per-row subset constraint.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_jalr_subset :
@@ -46,7 +46,7 @@ theorem equiv_JALR
       ∧ ZiskFv.Airs.Main.flag_set_pc_disjoint m r_main
       ∧ ZiskFv.Airs.Main.pc_handshake_with_next_pc m r_main next_pc)
     -- Structural `JumpPromises` bundle.
-    (promises : ZiskFv.Equivalence.Promises.JumpPromises
+    (promises : ZiskFv.EquivCore.Promises.JumpPromises
         state jalr_input.PC jalr_input.rd misa_val
         (PureSpec.execute_JALR_pure jalr_input).success
         (PureSpec.execute_JALR_pure jalr_input).nextPC
@@ -59,19 +59,18 @@ theorem equiv_JALR
     (h_mseccfg : Sail.readReg Register.mseccfg state
       = EStateM.Result.ok mseccfg state)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
-    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
     (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
-    ZiskFv.Equivalence.Promises.jalr_h_circuit_of_main_constraints
+    ZiskFv.EquivCore.Promises.jalr_h_circuit_of_main_constraints
       m r_main next_pc pins.main_active pins.main_op h_jalr_subset
-  ZiskFv.Equivalence.Jalr.equiv_JALR
+  ZiskFv.EquivCore.Jalr.equiv_JALR
     state jalr_input imm rs1 rd misa_val mseccfg
-    exec_row e_rd nextPC_val m r_main next_pc
+    exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
-    h_circuit h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+    h_circuit h_pc_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

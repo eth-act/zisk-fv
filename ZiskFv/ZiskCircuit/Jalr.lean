@@ -30,14 +30,12 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.PackedBitVec.WidePCNoWrap
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
 /-- The final Main row for production JALR: external `OP_AND`, full
     64-bit width, `set_pc = 1`, and `store_pc = 1`. The `flag = 0`
     pin is part of the ordinary `OP_AND` transpiler contract and makes
     the PC handshake reduce to the set-PC branch. -/
 @[simp]
-def main_row_in_jalr_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_jalr_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = OP_AND
   ∧ m.flag r_main = 0
@@ -50,7 +48,7 @@ def main_row_in_jalr_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     `previous_c = c(row - 1)`. -/
 @[simp]
 def jalr_source_c_constraints_hold
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.segment_l1 r_main = 0 →
     b_src_c_copies_prev_c0 m r_main
     ∧ b_src_c_copies_prev_c1 m r_main
@@ -60,7 +58,7 @@ def jalr_source_c_constraints_hold
     `ADD -> lastc -> AND` chain when `imm % 4 ≠ 0`. -/
 @[simp]
 def jalr_unaligned_lowering_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   ∀ (_rs1 _rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
     imm_offset.val % 4 ≠ 0 →
       m.b_src_mem r_main = 0
@@ -77,7 +75,7 @@ def jalr_unaligned_lowering_holds
     mode witnesses for the final production `OP_AND` row. -/
 @[simp]
 def jalr_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) : Prop :=
   flag_boolean m r_main
   ∧ is_external_op_boolean m r_main
@@ -93,7 +91,7 @@ def jalr_circuit_holds
     `jmp_offset1 = imm`; for unaligned JALR the final row pins
     `jmp_offset1 = 0` and receives the add row's result through `lastc`. -/
 lemma jalr_pc_advance
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jalr_circuit_holds m r_main next_pc) :
     next_pc = m.c_0 r_main + m.jmp_offset1 r_main := by
   obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, h_pc, h_mode, _h_src, _h_unaligned⟩ := h
@@ -115,7 +113,7 @@ contract for the unaligned JALR final row.
 /-- Source-C expansion under the four zero source selectors used by the
     unaligned final JALR row. -/
 lemma b_src_c_eq_one_of_all_other_b_sources_zero
-    (m : Valid_Main C FGL FGL) (row : ℕ)
+    (m : Valid_Main FGL FGL) (row : ℕ)
     (h_mem : m.b_src_mem row = 0)
     (h_imm : m.b_src_imm row = 0)
     (h_ind : m.b_src_ind row = 0)
@@ -129,7 +127,7 @@ lemma b_src_c_eq_one_of_all_other_b_sources_zero
     operand is exactly the previous row's `c` result. This is the
     row-local `lastc` bridge for unaligned production JALR. -/
 lemma jalr_unaligned_lastc_lanes
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (h_src : b_src_c m r_main = 1)
     (h_src_c0 : b_src_c_copies_prev_c0 m r_main)
     (h_src_c1 : b_src_c_copies_prev_c1 m r_main) :
@@ -146,7 +144,7 @@ lemma jalr_unaligned_lastc_lanes
     `jmp_offset1 = 0`, `jmp_offset2 = 3`, and the final row's `b` lanes
     equal the previous row's `c` lanes. -/
 lemma jalr_unaligned_add_lastc_and_chain
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (rs1 rd : Fin 32) (imm_offset : FGL) (state : RV64State)
     (h_imm_unaligned : imm_offset.val % 4 ≠ 0)
     (h_ext : m.is_external_op r_main = 1)
@@ -176,7 +174,7 @@ lemma jalr_unaligned_add_lastc_and_chain
     consuming the obligations already packaged in `jalr_circuit_holds`.
     This is the form downstream proofs should prefer. -/
 lemma jalr_unaligned_add_lastc_and_chain_of_circuit
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (rs1 rd : Fin 32) (imm_offset : FGL) (state : RV64State)
     (h_circuit : jalr_circuit_holds m r_main next_pc)
     (h_imm_unaligned : imm_offset.val % 4 ≠ 0)
@@ -208,7 +206,7 @@ lemma jalr_unaligned_add_lastc_and_chain_of_circuit
     expression to Sail's link address `PC + 4`, covering both aligned
     and unaligned production lowerings. -/
 lemma jalr_store_value
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jalr_circuit_holds m r_main next_pc) :
     m.store_pc r_main * (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
         + m.c_0 r_main
@@ -230,7 +228,7 @@ PC + 4` rather than by separately pinning `pc = PC` and
     predicate. Composes `jalr_store_value` with
     `store_pc_lanes_match_lo` and S2's wide-PC strict lo lemma. -/
 lemma jalr_store_value_lo_bv
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : jalr_circuit_holds m r_main next_pc)
     (h_jmp2 : m.jmp_offset2 r_main = 4)
@@ -258,7 +256,7 @@ lemma jalr_store_value_lo_bv
     zero. Matching the BitVec hi-half projection requires
     `(PC + 4).toNat < 2^32`. -/
 lemma jalr_store_value_hi_bv
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : jalr_circuit_holds m r_main next_pc)
     (h_lane_hi : store_pc_lanes_match_hi m r_main e)

@@ -138,13 +138,13 @@ def main() -> int:
                 if not names:
                     # Anonymous binder (typeclass instance like `[Field F]`).
                     cat = categorize(type_text, bracket, "")
-                    snippet = type_text[:80]
+                    snippet = type_text[:80].rstrip()
                     rows.append((theorem, idx, "_", cat, snippet))
                     idx += 1
                     continue
                 for nm in names:
                     cat = categorize(type_text, bracket, nm)
-                    snippet = type_text[:80]
+                    snippet = type_text[:80].rstrip()
                     rows.append((theorem, idx, nm, cat, snippet))
                     idx += 1
     rows.sort(key=lambda r: (r[0], r[1]))

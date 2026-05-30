@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Auipc
-import ZiskFv.Equivalence.Promises.UType
-import ZiskFv.Equivalence.Promises.UTypeHelpers
+import ZiskFv.EquivCore.Auipc
+import ZiskFv.EquivCore.Promises.UType
+import ZiskFv.EquivCore.Promises.UTypeHelpers
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -24,7 +24,6 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Tactics.UTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_AUIPC`.** Derives `h_circuit` from
     `auipc_h_circuit_of_main_constraints` (consuming `transpile_AUIPC`)
@@ -37,29 +36,29 @@ theorem equiv_AUIPC
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     -- Activation / opcode pins on Main + per-row subset constraint.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
     -- Structural `UTypePromises` bundle.
-    (promises : ZiskFv.Equivalence.Promises.UTypePromises
+    (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)
     (h_no_wrap : auipc_input.PC.toNat
       + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < GL_prime)
-    (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
-    ZiskFv.Equivalence.Promises.auipc_h_circuit_of_main_constraints
+    ZiskFv.EquivCore.Promises.auipc_h_circuit_of_main_constraints
       m r_main next_pc pins.main_active pins.main_op h_auipc_subset
-  ZiskFv.Equivalence.Auipc.equiv_AUIPC state auipc_input imm rd
-    exec_row e_rd nextPC_val m r_main next_pc
-    promises h_circuit h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+  ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
+    exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
+    promises h_circuit h_no_wrap h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

@@ -43,29 +43,13 @@ SUB, AND, OR, XOR, branches, …). To find which AIR backs a given
 opcode, read the matching `ZiskCircuit/<Op>.lean` and follow its
 imports.
 
-## Axiom-bearing files (66 of the 75 axioms live under `Airs/`)
+## Historical axiom-bearing files
 
-- **`Arith/Ranges.lean`** — 35 range / table-row / Euclidean-bound
-  pins (class #6b)
-- **`MemoryBus/MemBridge.lean`** — 9 memory-bus emission bundles
-  + lookup soundness (class #4)
-- **`Binary/BinaryRanges.lean`** — 9 Binary range / per-byte / carry
-  / OR-AND-XOR / W-mode pins (class #6)
-- **`Binary/BinaryExtensionRanges.lean`** — 3 BinaryExtension
-  shift / SEXT pins (class #6)
-- **`OperationBus/Bridge.lean`** — 3 operation-bus permutation
-  soundness axioms (class #4)
-- **`MemoryBus/MemAlignBridge.lean`** — 2 MemAlign ROM-lookup
-  + permutation axioms (class #4)
-- **`Tables/{BinaryTable,BinaryExtensionTable}.lean`** — 1 + 1
-  lookup-table consumer-wf axioms (class #6)
-- **`MemoryBus/EntryRanges.lean`** — 1 memory-bus byte-range
-  axiom (class #5b)
-- **`Main/Ranges.lean`** — 1 Main range-bus axiom (class #5b)
-- **`Binary/BinaryAddRanges.lean`** — 1 BinaryAdd column-range
-  axiom (class #5b)
+Most AIR-side soundness axioms have been retired by the Clean/static routes.
+Use `trust/baseline-axioms.txt` and `docs/fv/axiom-index.md` for the current
+live ledger; this directory now mostly contains definitions and proved bridges.
 
-(The remaining 14 axioms are 51 transpile contracts in
+(The remaining non-`Airs/` axioms are transpile contracts in
 `Trusted/Transpiler.lean`, 1 memory-state load bridge in
 `ZiskCircuit/MemModel.lean`, and 4 platform-scope axioms in
 `SailSpec/Auxiliaries.lean` — not in this directory.)

@@ -9,6 +9,7 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 # Circuit.MemModel — memory-model bridge
@@ -39,9 +40,8 @@ The closure path runs
                               or
                         `state.mem` updated to the bytes (store)
 
-The middle arrow is the trusted permutation handshake at `bus_id = 10`
-(see `Airs/MemoryBus/MemBridge.lean`'s
-`lookup_consumer_matches_provider_load` / `_store`). The Mem-row →
+The middle arrow is now supplied on canonical load/store paths by Clean
+memory-channel structural witnesses and explicit adapters. The Mem-row →
 bus-entry projection is purely structural (byte decomposition pin +
 `as = 2` + `mult` sign for read vs write).
 
@@ -50,12 +50,6 @@ unfolding lemma** in `Airs/BusHypotheses.lean::chip_bus_hyps_load_rrrw`.
 We don't re-derive it here — `mem_load_correct` consumes it directly.
 
 ## Trusted-surface entries documented here
-
-* `MemoryBus.lookup_consumer_matches_provider_load` /
-  `..._store` (declared in `MemBridge`) — memory-bus permutation
-  soundness at `bus_id = 10`. Mirrors `OperationBus.matches_entry`.
-  Trust class: PLONK / plookup / logUp / permutation soundness, which
-  CLAUDE.md scopes as project-trusted (proving-system correctness).
 
 * `MemoryBus.row_models_sail_state_load` (declared below) — the
   Sail-state-bridge for the load side. Says that a Mem AIR row in read
@@ -90,12 +84,12 @@ namespace ZiskFv.ZiskCircuit.MemModel
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.MemBridge
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Trusted-surface: Sail-state ↔ Mem-row bridge -/
 
@@ -125,63 +119,42 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     of an "implementation models specification" axiom; it's the
     irreducible memory-model trust for the load side. -/
 axiom row_models_sail_state_load
-    (mem : Valid_Mem C FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_match : mem_row_matches_entry mem r_mem e)
     (h_wr : mem.wr r_mem = 0) :
-    state.mem[e.ptr.toNat]? = .some e.x0
-    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1
-    ∧ state.mem[e.ptr.toNat + 2]? = .some e.x2
-    ∧ state.mem[e.ptr.toNat + 3]? = .some e.x3
-    ∧ state.mem[e.ptr.toNat + 4]? = .some e.x4
-    ∧ state.mem[e.ptr.toNat + 5]? = .some e.x5
-    ∧ state.mem[e.ptr.toNat + 6]? = .some e.x6
-    ∧ state.mem[e.ptr.toNat + 7]? = .some e.x7
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3)
+    ∧ state.mem[e.ptr.toNat + 4]? = .some (byteAt e 4)
+    ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
+    ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
+    ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7)
 
 /-! ## Bridge theorems -/
 
-/-- **Memory-load correctness — the M*-axiom replacement.** Given:
+/-- Provider-explicit load correctness.
 
-    * `m` — Main AIR with the load row at `r_main` emitting on the
-      memory bus with `b_0 = lo(e)`, `b_1 = hi(e)`, `as = 2`,
-      `mult = -1`;
-    * `mem` — Mem AIR (witness state machine);
-    * the bus emission shape on the Main side
-      (`h_main_emit`);
-
-    we conclude the Sail-state predicate `state.mem[e.ptr+i]? = .some
-    e.xi` for all eight byte lanes. This is the predicate consumed by
-    `bus_effect.1` on the load branch (per `BusEffect.lean:62-71` and
-    `BusHypotheses.chip_bus_hyps_load_rrrw`).
-
-    The chain is:
-    1. `lookup_consumer_matches_provider_load` provides a Mem AIR row
-       `r_mem` matching `e`, with `wr = 0`.
-    2. `row_models_sail_state_load` lifts that Mem-row match to the
-       Sail-state predicate.
-
-    No `wr = 0` axiom or other side conditions surface; the load
-    `multiplicity = -1` plus the permutation handshake force the read
-    side. -/
-lemma mem_load_correct
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
+This is the lookup-free core of `mem_load_correct`: once a concrete Mem
+provider row has already been obtained and proved to match the legacy
+memory entry in read mode, the remaining bridge to Sail memory is exactly
+`row_models_sail_state_load`. T4 Clean-balance adapters should target this
+theorem instead of re-entering `lookup_consumer_matches_provider_load`. -/
+lemma mem_load_correct_of_provider_row
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (h_main_emit : main.b_0 r_main = memory_entry_lo e
-                   ∧ main.b_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = -1) :
-    state.mem[e.ptr.toNat]? = .some e.x0
-    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1
-    ∧ state.mem[e.ptr.toNat + 2]? = .some e.x2
-    ∧ state.mem[e.ptr.toNat + 3]? = .some e.x3
-    ∧ state.mem[e.ptr.toNat + 4]? = .some e.x4
-    ∧ state.mem[e.ptr.toNat + 5]? = .some e.x5
-    ∧ state.mem[e.ptr.toNat + 6]? = .some e.x6
-    ∧ state.mem[e.ptr.toNat + 7]? = .some e.x7 := by
-  obtain ⟨r_mem, h_match, h_wr⟩ :=
-    lookup_consumer_matches_provider_load main mem r_main e h_main_emit
-  exact row_models_sail_state_load mem r_mem e state h_match h_wr
+    (h_match : mem_row_matches_entry mem r_mem e)
+    (h_wr : mem.wr r_mem = 0) :
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3)
+    ∧ state.mem[e.ptr.toNat + 4]? = .some (byteAt e 4)
+    ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
+    ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
+    ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7) :=
+  row_models_sail_state_load mem r_mem e state h_match h_wr
 
 /-! ## Convenience: bus_effect-shaped output
 
@@ -214,56 +187,47 @@ only the bytes the corresponding Sail spec writes/reads.
   the 8-byte version's structural-only content for narrow widths. -/
 
 /-- 4-byte projection of `mem_load_correct` for LW / LWU. -/
-lemma mem_load_correct_4byte
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
+lemma mem_load_correct_4byte_of_provider_row
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (h_main_emit : main.b_0 r_main = memory_entry_lo e
-                   ∧ main.b_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = -1) :
-    state.mem[e.ptr.toNat]? = .some e.x0
-    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1
-    ∧ state.mem[e.ptr.toNat + 2]? = .some e.x2
-    ∧ state.mem[e.ptr.toNat + 3]? = .some e.x3 := by
-  have h := mem_load_correct main mem r_main e state h_main_emit
+    (h_match : mem_row_matches_entry mem r_mem e)
+    (h_wr : mem.wr r_mem = 0) :
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3) := by
+  have h := mem_load_correct_of_provider_row mem r_mem e state h_match h_wr
   exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
 
 /-- 2-byte projection of `mem_load_correct` for LH / LHU. -/
-lemma mem_load_correct_2byte
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
+lemma mem_load_correct_2byte_of_provider_row
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (h_main_emit : main.b_0 r_main = memory_entry_lo e
-                   ∧ main.b_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = -1) :
-    state.mem[e.ptr.toNat]? = .some e.x0
-    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1 := by
-  have h := mem_load_correct main mem r_main e state h_main_emit
+    (h_match : mem_row_matches_entry mem r_mem e)
+    (h_wr : mem.wr r_mem = 0) :
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1) := by
+  have h := mem_load_correct_of_provider_row mem r_mem e state h_match h_wr
   exact ⟨h.1, h.2.1⟩
 
 /-- 1-byte projection of `mem_load_correct` for LB / LBU. -/
-lemma mem_load_correct_1byte
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
+lemma mem_load_correct_1byte_of_provider_row
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (h_main_emit : main.b_0 r_main = memory_entry_lo e
-                   ∧ main.b_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = -1) :
-    state.mem[e.ptr.toNat]? = .some e.x0 := by
-  have h := mem_load_correct main mem r_main e state h_main_emit
+    (h_match : mem_row_matches_entry mem r_mem e)
+    (h_wr : mem.wr r_mem = 0) :
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0) := by
+  have h := mem_load_correct_of_provider_row mem r_mem e state h_match h_wr
   exact h.1
 
 /-! ## Axiom audit
 
-`mem_load_correct` and `mem_store_correct` each add **two** ZisK
+`mem_load_correct_of_provider_row` and `mem_store_correct` add ZisK
 trust-base axioms beyond Mathlib's kernel:
 
-* `MemoryBus.MemBridge.lookup_consumer_matches_provider_{load,store}`
-  — bus-permutation soundness (project-trusted; PLONK / logUp /
-  permutation argument scope per CLAUDE.md "Trust scoping").
+* `MemoryBus.MemBridge.lookup_consumer_matches_provider_store`
+  — store-side bus-permutation soundness (project-trusted; PLONK /
+  logUp / permutation argument scope per CLAUDE.md "Trust scoping").
 * `Circuit.MemModel.row_models_sail_state_{load,store}` — Sail-side
   state-bridge: ZisK's Mem AIR models Sail's `state.mem` faithfully on
   aligned reads/writes.
@@ -277,7 +241,7 @@ The narrow-width companions (`mem_load_correct_{1,2,4}byte` /
 restrict the 8-byte versions.
 -/
 
-#print axioms mem_load_correct
-#print axioms mem_load_correct_4byte
+#print axioms mem_load_correct_of_provider_row
+#print axioms mem_load_correct_4byte_of_provider_row
 
 end ZiskFv.ZiskCircuit.MemModel

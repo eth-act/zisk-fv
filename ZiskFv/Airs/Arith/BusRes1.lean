@@ -1,8 +1,6 @@
 import Mathlib
 
-import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
-import Extraction.Arith
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 
@@ -46,48 +44,36 @@ These specializations, combined with the carry-chain identity in
 namespace ZiskFv.Airs.ArithBusRes1
 
 open Goldilocks
-open Arith.extraction
 
-variable {C : Type → Type → Type} {F ExtF : Type}
-  [Field F] [Field ExtF] [Circuit F ExtF C]
+variable {F ExtF : Type} [Field F] [Field ExtF]
 
 /-- **Bridge 1 for MUL-unsigned.** Under MUL-mode witnesses, constraint
     46 collapses `bus_res1` to the high-chunk pack `c[2] + c[3] * 65536`. -/
 lemma mul_bus_res1_eq_c_hi
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C F ExtF) (row : ℕ)
-    (h_c46 : constraint_46_every_row v.circuit row)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul F ExtF) (row : ℕ)
+    (h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v row)
     (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
     (h_main_mul : v.main_mul row = 1) (h_main_div : v.main_div row = 0) :
     v.bus_res1 row = v.c_2 row + v.c_3 row * 65536 := by
-  -- Unfold constraint 46 and rewrite raw extraction columns to named columns.
-  simp only [constraint_46_every_row,
-             ← v.bus_res1_def, ← v.sext_def, ← v.m32_def,
-             ← v.main_mul_def, ← v.main_div_def,
-             ← v.c_2_def, ← v.c_3_def,
-             ← v.a_2_def, ← v.a_3_def,
-             ← v.d_2_def, ← v.d_3_def] at h_c46
-  -- Substitute the MUL-mode witnesses.
-  simp only [h_sext, h_m32, h_main_mul, h_main_div,
+  -- Substitute the MUL-mode witnesses into the named-form constraint 46.
+  simp only [ZiskFv.Airs.ArithMul.mul_constraint_46_named,
+             h_sext, h_m32, h_main_mul, h_main_div,
              zero_mul, one_mul,
              sub_zero, add_zero, zero_add, sub_self] at h_c46
   -- Close via linear_combination over the residual equation.
   linear_combination h_c46
 
 /-- **Bridge 1 for DIV-primary.** Under DIV-primary mode witnesses
-    (`main_div = 1`), constraint 46 collapses `bus_res1` to the
-    quotient high-chunk pack `a[2] + a[3] * 65536`. -/
+    (`main_div = 1`), the named-form `bus_res1_eq_div` predicate
+    collapses `bus_res1` to the quotient high-chunk pack
+    `a[2] + a[3] * 65536`. -/
 lemma div_bus_res1_eq_a_hi
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C F ExtF) (row : ℕ)
-    (h_c46 : constraint_46_every_row v.circuit row)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv F ExtF) (row : ℕ)
+    (h_c46 : ZiskFv.Airs.ArithDiv.bus_res1_eq_div v row)
     (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
     (h_main_mul : v.main_mul row = 0) (h_main_div : v.main_div row = 1) :
     v.bus_res1 row = v.a_2 row + v.a_3 row * 65536 := by
-  simp only [constraint_46_every_row,
-             ← v.bus_res1_def, ← v.sext_def, ← v.m32_def,
-             ← v.main_mul_def, ← v.main_div_def,
-             ← v.c_2_def, ← v.c_3_def,
-             ← v.a_2_def, ← v.a_3_def,
-             ← v.d_2_def, ← v.d_3_def] at h_c46
+  simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div] at h_c46
   simp only [h_sext, h_m32, h_main_mul, h_main_div,
              zero_mul, one_mul,
              sub_zero, add_zero, zero_add, sub_self] at h_c46
@@ -104,38 +90,28 @@ lemma div_bus_res1_eq_a_hi
     analog); they unfold the same constraint 46 against different
     `Valid_<AIR>` views. -/
 lemma mulh_bus_res1_eq_d_hi
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C F ExtF) (row : ℕ)
-    (h_c46 : constraint_46_every_row v.circuit row)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul F ExtF) (row : ℕ)
+    (h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v row)
     (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
     (h_main_mul : v.main_mul row = 0) (h_main_div : v.main_div row = 0) :
     v.bus_res1 row = v.d_2 row + v.d_3 row * 65536 := by
-  simp only [constraint_46_every_row,
-             ← v.bus_res1_def, ← v.sext_def, ← v.m32_def,
-             ← v.main_mul_def, ← v.main_div_def,
-             ← v.c_2_def, ← v.c_3_def,
-             ← v.a_2_def, ← v.a_3_def,
-             ← v.d_2_def, ← v.d_3_def] at h_c46
-  simp only [h_sext, h_m32, h_main_mul, h_main_div,
+  simp only [ZiskFv.Airs.ArithMul.mul_constraint_46_named,
+             h_sext, h_m32, h_main_mul, h_main_div,
              zero_mul, one_mul,
              sub_zero, add_zero, zero_add] at h_c46
   linear_combination h_c46
 
 /-- **Bridge 1 for REM-secondary.** Under REM-secondary mode witnesses
-    (`main_mul = 0`, `main_div = 0`, i.e. `secondary = 1`), constraint 46
-    collapses `bus_res1` to the remainder high-chunk pack
-    `d[2] + d[3] * 65536`. -/
+    (`main_mul = 0`, `main_div = 0`, i.e. `secondary = 1`), the named-form
+    `bus_res1_eq_div` predicate collapses `bus_res1` to the remainder
+    high-chunk pack `d[2] + d[3] * 65536`. -/
 lemma rem_bus_res1_eq_d_hi
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C F ExtF) (row : ℕ)
-    (h_c46 : constraint_46_every_row v.circuit row)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv F ExtF) (row : ℕ)
+    (h_c46 : ZiskFv.Airs.ArithDiv.bus_res1_eq_div v row)
     (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
     (h_main_mul : v.main_mul row = 0) (h_main_div : v.main_div row = 0) :
     v.bus_res1 row = v.d_2 row + v.d_3 row * 65536 := by
-  simp only [constraint_46_every_row,
-             ← v.bus_res1_def, ← v.sext_def, ← v.m32_def,
-             ← v.main_mul_def, ← v.main_div_def,
-             ← v.c_2_def, ← v.c_3_def,
-             ← v.a_2_def, ← v.a_3_def,
-             ← v.d_2_def, ← v.d_3_def] at h_c46
+  simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div] at h_c46
   simp only [h_sext, h_m32, h_main_mul, h_main_div,
              zero_mul, one_mul,
              sub_zero, add_zero, zero_add] at h_c46

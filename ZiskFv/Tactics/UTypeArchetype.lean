@@ -60,7 +60,6 @@ open Goldilocks
 open ZiskFv.Airs.Main
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## LUI sub-archetype -/
 
@@ -71,7 +70,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     (`store_pc = 0`). -/
 @[simp]
 def main_row_in_lui_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 0
   ∧ m.op r_main = (1 : FGL)
   ∧ m.m32 r_main = 0
@@ -85,7 +84,7 @@ def main_row_in_lui_mode
     through for the downstream next-pc lemma. -/
 @[simp]
 def lui_subset_holds
-    (v : Valid_Main C FGL FGL) (row : ℕ) (next_pc : FGL) : Prop :=
+    (v : Valid_Main FGL FGL) (row : ℕ) (next_pc : FGL) : Prop :=
   flag_boolean v row
   ∧ is_external_op_boolean v row
   ∧ flag_set_pc_disjoint v row
@@ -98,14 +97,14 @@ def lui_subset_holds
     the mode witnesses. -/
 @[simp]
 def lui_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) : Prop :=
   lui_subset_holds m r_main next_pc
   ∧ main_row_in_lui_mode m r_main
 
 /-- Derived: `flag = 0` when the row is internal-op-1. -/
 private lemma flag_eq_zero_of_internal_op_one
-    (v : Valid_Main C FGL FGL) (row : ℕ)
+    (v : Valid_Main FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
     (h_op : v.op row = 1)
     (h18 : internal_op1_clears_flag v row) :
@@ -116,7 +115,7 @@ private lemma flag_eq_zero_of_internal_op_one
 
 /-- Derived: `c_0 = b_0` when the row is internal-op-1. -/
 private lemma c_0_eq_b_0_of_internal_op_one
-    (v : Valid_Main C FGL FGL) (row : ℕ)
+    (v : Valid_Main FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
     (h_op : v.op row = 1)
     (h9 : internal_op1_copies_b0 v row) :
@@ -127,7 +126,7 @@ private lemma c_0_eq_b_0_of_internal_op_one
 
 /-- Derived: `c_1 = b_1` when the row is internal-op-1. -/
 private lemma c_1_eq_b_1_of_internal_op_one
-    (v : Valid_Main C FGL FGL) (row : ℕ)
+    (v : Valid_Main FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
     (h_op : v.op row = 1)
     (h16 : internal_op1_copies_b1 v row) :
@@ -140,7 +139,7 @@ private lemma c_1_eq_b_1_of_internal_op_one
     `pc + jmp_offset2`. Together with `transpile_LUI` pinning
     `jmp_offset2 = 4`, this gives `next_pc = pc + 4`. -/
 lemma lui_archetype_pc_advance
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main := by
   obtain ⟨h_subset, h_mode⟩ := h
@@ -157,7 +156,7 @@ lemma lui_archetype_pc_advance
     `store_value[0] = c_0`, and under internal-op-1 `c_0 = b_0`. So rd's
     low lane equals `b_0 = imm_lo` (pinned by `transpile_LUI`). -/
 lemma lui_archetype_store_value_lo
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
     m.store_pc r_main *
         (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
@@ -176,7 +175,7 @@ lemma lui_archetype_store_value_lo
     the high lane is `(1 - store_pc) * c_1 = c_1`. Under internal-op-1,
     `c_1 = b_1 = imm_hi` (pinned by `transpile_LUI`). -/
 lemma lui_archetype_store_value_hi
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
     (1 - m.store_pc r_main) * m.c_1 r_main = m.b_1 r_main := by
   obtain ⟨h_subset, h_mode⟩ := h
@@ -196,7 +195,7 @@ lemma lui_archetype_store_value_hi
     (`set_pc = 0`), and stores `pc + jmp_offset2` to rd (`store_pc = 1`). -/
 @[simp]
 def main_row_in_auipc_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 0
   ∧ m.op r_main = (0 : FGL)
   ∧ m.m32 r_main = 0
@@ -210,7 +209,7 @@ def main_row_in_auipc_mode
     `jmp_offset2` now carrying the AUIPC immediate. -/
 @[simp]
 def auipc_subset_holds
-    (v : Valid_Main C FGL FGL) (row : ℕ) (next_pc : FGL) : Prop :=
+    (v : Valid_Main FGL FGL) (row : ℕ) (next_pc : FGL) : Prop :=
   flag_boolean v row
   ∧ is_external_op_boolean v row
   ∧ flag_set_pc_disjoint v row
@@ -223,7 +222,7 @@ def auipc_subset_holds
     the mode witnesses. -/
 @[simp]
 def auipc_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) : Prop :=
   auipc_subset_holds m r_main next_pc
   ∧ main_row_in_auipc_mode m r_main
@@ -233,7 +232,7 @@ def auipc_archetype_circuit_holds
     handshake reasoning is the same as JAL: `set_pc = 0, flag = 1`
     collapses the formula to `pc + jmp_offset1`. -/
 lemma auipc_archetype_pc_advance
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main := by
   obtain ⟨h_subset, h_mode⟩ := h
@@ -250,7 +249,7 @@ lemma auipc_archetype_pc_advance
     which is the `pc + imm` RV64 semantics expects (given
     `transpile_AUIPC` pins `jmp_offset2 = imm_offset`). -/
 lemma auipc_archetype_store_value_lo
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     m.store_pc r_main *
         (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
@@ -275,7 +274,7 @@ lemma auipc_archetype_store_value_lo
     is the downstream `Spec` file's job to bridge. Here we just prove
     `(1 - store_pc) * c_1 = 0`. -/
 lemma auipc_archetype_store_value_hi
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     (1 - m.store_pc r_main) * m.c_1 r_main = 0 := by
   obtain ⟨_h_subset, h_mode⟩ := h

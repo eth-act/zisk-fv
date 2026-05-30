@@ -47,14 +47,13 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.ZiskCircuit.Mul
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in MULW-execution mode: external op with
     opcode literal 182 (`OP_MUL_W`), 32-bit width (`m32 = 1`), `flag = 0`
     (div_by_zero), and `set_pc = 0`. Distinguished from MUL/MULH/MULHU/
     MULHSU by the `m32 = 1` bit. -/
 @[simp]
-def main_row_in_mulw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_mulw_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = OP_MUL_W
   ∧ m.m32 r_main = 1
@@ -65,7 +64,7 @@ def main_row_in_mulw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     full MUL-primary bits (`main_mul = 1`, `main_div = 0`, `div = 0`)
     plus the 32-bit variant pair (`sext = 1`, `m32 = 1`). -/
 @[simp]
-def arith_row_in_mulw_mode (v : Valid_ArithMul C FGL FGL) (r_arith : ℕ) : Prop :=
+def arith_row_in_mulw_mode (v : Valid_ArithMul FGL FGL) (r_arith : ℕ) : Prop :=
   v.main_mul r_arith = 1
   ∧ v.main_div r_arith = 0
   ∧ v.div r_arith = 0
@@ -79,7 +78,7 @@ def arith_row_in_mulw_mode (v : Valid_ArithMul C FGL FGL) (r_arith : ℕ) : Prop
     MULW mode witnesses on both AIRs. -/
 @[simp]
 def mulw_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ mul_mode_booleans v r_arith
@@ -96,7 +95,7 @@ def mulw_circuit_holds
     identity). The Arith-internal correctness (MULW carry chains →
     sign-extended 32-bit product) is delegated to the audit. -/
 lemma mulw_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mulw_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_c_packed v r_arith := by

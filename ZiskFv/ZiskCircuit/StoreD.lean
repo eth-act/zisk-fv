@@ -48,14 +48,13 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.LoadD
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Store-subset Main constraints.** Definitionally equal to
     `Circuit.LoadD.load_subset_holds` — both LD and SD sit in the
     internal-op=1 mode so the same Main constraints fire. We expose
     this alias for spec-consumer readability. -/
 @[simp]
-def store_subset_holds (m : Valid_Main C FGL FGL) (row : ℕ) (next_pc : FGL) : Prop :=
+def store_subset_holds (m : Valid_Main FGL FGL) (row : ℕ) (next_pc : FGL) : Prop :=
   load_subset_holds m row next_pc
 
 /-- The Main row at `r_main` is in SD-execution mode: **internal** op
@@ -63,7 +62,7 @@ def store_subset_holds (m : Valid_Main C FGL FGL) (row : ℕ) (next_pc : FGL) : 
     (m32 = 0), and no PC override (`set_pc = 0`). Identical to
     `main_row_in_ld_mode` — SD and LD share `OP_COPYB`. -/
 @[simp]
-def main_row_in_sd_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_sd_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 0
   ∧ m.op r_main = (1 : FGL)
   ∧ m.m32 r_main = 0
@@ -81,7 +80,7 @@ def main_row_in_sd_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     side. -/
 @[simp]
 def store_d_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL) : Prop :=
   store_subset_holds m r_main next_pc
   ∧ main_row_in_sd_mode m r_main
@@ -92,7 +91,7 @@ def store_d_circuit_holds
     `Circuit.LoadD.main_c_packed` — we re-export so the SD consumer
     doesn't need to import `Circuit.LoadD` alongside `Circuit.StoreD`. -/
 @[simp]
-def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
+def main_c_packed (m : Valid_Main FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296
 
 /-- **Compositional SD theorem (c-packed).** If the store-subset Main
@@ -109,7 +108,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     on `c` — the existing LD route asserted on `b` and derived `c` via
     constraint 9; here we take `c` directly. -/
 lemma store_d_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : store_d_circuit_holds m r_main next_pc entry) :
     main_c_packed m r_main = memory_entry_toField entry := by
@@ -126,7 +125,7 @@ lemma store_d_compositional
     `next_pc = pc + jmp_offset2`. For SD, `jmp_offset2 = 4` (from
     `transpile_SD`), so this is `pc + 4`. -/
 lemma store_d_next_pc
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : store_d_circuit_holds m r_main next_pc entry) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
@@ -140,7 +139,7 @@ lemma store_d_next_pc
     constraint 18) and `jmp_offset1 = jmp_offset2 = 4` (forced by
     `transpile_SD`), the handshake collapses to `next_pc = pc + 4`. -/
 lemma store_d_next_pc_concrete
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : store_d_circuit_holds m r_main next_pc entry)
     (h_jmp1 : m.jmp_offset1 r_main = 4)

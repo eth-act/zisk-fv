@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "clean-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779815370,
+        "narHash": "sha256-aZL7mstVTJFkID4tzUTfony+xc6Dy832ENWTWTugaX4=",
+        "owner": "codygunton",
+        "repo": "clean",
+        "rev": "ef6dfbcd353b4f6b15897c8113cf691d15b98b4c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "codygunton",
+        "repo": "clean",
+        "rev": "ef6dfbcd353b4f6b15897c8113cf691d15b98b4c",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -70,6 +87,7 @@
     },
     "root": {
       "inputs": {
+        "clean-src": "clean-src",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
         "pil2-compiler-src": "pil2-compiler-src",

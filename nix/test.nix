@@ -40,8 +40,7 @@ writeShellApplication {
       cargo test --manifest-path tools/transpiler-diff/Cargo.toml --quiet
     '
 
-    # 2. Rust-vs-Lean transpiler differential pinning. The default shard
-    # checks all non-wide U/J cases plus representative wide-offset samples.
+    # 2. Default Rust-vs-Lean static-transpiler differential pinning.
     run "2/6 transpiler differential pinning" bash -c '
       cargo run --manifest-path tools/transpiler-diff/Cargo.toml --quiet
     '
@@ -52,13 +51,15 @@ writeShellApplication {
     #
     # Lake at 5.0 has no -j/jobs flag, but its async build jobs run on
     # Lean's runtime task scheduler, which honors LEAN_NUM_THREADS.
-    # threads=3 matches the 32 GB XL runner's budget given the
-    # 2026-05-14 fresh-build measurement of ~8 GB peak per `lean`
-    # process (3 * 8 ≈ 24 GB peak, ~8 GB headroom). Earlier caps:
-    # threads=2 was the original conservative default; threads=4
-    # OOM-killed at ZiskFv.Sail.sd. Override with LEAN_NUM_THREADS=N
-    # at call site for a different cap.
-    run "3/6 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-3}" lake build
+    # threads=4 fits the 32 GB XL runner's budget. CI run 26661855178
+    # (2026-05-29, this branch, warm cache) measured peak kernel `used`
+    # = 12.4 GiB and MemAvailable = 19 GiB at threads=3, leaving room
+    # for a 4th thread. Earlier caps: threads=2 was the original
+    # conservative default; threads=4 OOM-killed at ZiskFv.Sail.sd back
+    # when sd.lean's elaboration peaked at 42 GiB, before PR #4's
+    # layered dsimp+rw refactor cut it to ~8 GiB PSS. Override with
+    # LEAN_NUM_THREADS=N at call site for a different cap.
+    run "3/6 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
 
     # 4. Trust gate (locality + baseline + forbidden tier1 params +
     # floors + zero-sorry + uniformity lint). See trust/README.md.
