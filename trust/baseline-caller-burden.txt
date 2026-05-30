@@ -17,11 +17,11 @@
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 685
+# Category other: 684
 # Category range: 3
 # Category row: 60
 # Category state: 73
-# Category transpile: 25
+# Category transpile: 26
 # Category validator: 80
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -303,8 +303,8 @@ ZiskFv.Equivalence.Jalr.equiv_JALR 010 m [validator] Valid_Main FGL FGL
 ZiskFv.Equivalence.Jalr.equiv_JALR 011 r_main [row] ℕ
 ZiskFv.Equivalence.Jalr.equiv_JALR 012 next_pc [other] FGL
 ZiskFv.Equivalence.Jalr.equiv_JALR 013 store_pc_mem [other] ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd
-ZiskFv.Equivalence.Jalr.equiv_JALR 014 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
-ZiskFv.Equivalence.Jalr.equiv_JALR 015 h_jalr_subset [other] jalr_subset_holds m r_main next_pc
+ZiskFv.Equivalence.Jalr.equiv_JALR 014 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND
+ZiskFv.Equivalence.Jalr.equiv_JALR 015 h_jalr_subset [transpile] flag_boolean m r_main ∧ is_external_op_boolean m r_main ∧ flag_set_pc_disjoint m
 ZiskFv.Equivalence.Jalr.equiv_JALR 016 promises [transpile] ZiskFv.EquivCore.Promises.JumpPromises state jalr_input.PC jalr_input.rd misa_va
 ZiskFv.Equivalence.Jalr.equiv_JALR 017 h_input_imm [other] jalr_input.imm = imm
 ZiskFv.Equivalence.Jalr.equiv_JALR 018 h_input_rs1 [state] read_xreg (regidx_to_fin rs1) state = EStateM.Result.ok jalr_input.rs1_val state

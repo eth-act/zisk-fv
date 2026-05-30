@@ -3,15 +3,15 @@ TrustGate.AxiomClosure — per-theorem transitive axiom closure via
 `Lean.collectAxioms`.
 
 We keep only `ZiskFv.*`-prefixed Names. This is the project trust
-ledger (the 84 axioms tracked in `trust/baseline-axioms.txt`).
+surface tracked by `trust/baseline-axioms.txt`.
 Everything else is external:
 
   * Lean kernel postulates (`propext`, `Classical.choice`, `Quot.sound`,
     `Lean.ofReduceBool`, `Lean.trustCompiler`) — unconditional kernel
     trust.
   * The LeanRV64D Sail-translation axioms (`riscv_f64Sqrt`,
-    `cancel_reservation`, `plat_term_write`, …) — out-of-scope per
-    `docs/fv/trusted-base.md` "Out-of-scope assumptions" section.
+    `cancel_reservation`, `plat_term_write`, …) — external to the
+    project trust ledger documented in `trust/trusted-base.md`.
 
 Both are documented as external trust scopes; the V2 baseline tracks
 only the project-internal axioms whose membership review actually

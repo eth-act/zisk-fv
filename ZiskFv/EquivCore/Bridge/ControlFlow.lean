@@ -32,8 +32,9 @@ write). There is no separate Provider AIR for arithmetic — the
   pins then `a_0 = lane_lo (state.xreg rs1)`, `a_1 = lane_hi
   (state.xreg rs1)`, `b_0 = lane_lo (state.xreg rs2)`, `b_1 =
   lane_hi (state.xreg rs2)`.
-* For JALR: derive r1_val packed form (uses transpile_JALR which
-  has ITYPE shape).
+* For JALR: the proof consumes the production final `OP_AND` row;
+  the unaligned `ADD -> lastc -> AND` facts are carried by explicit
+  source-C / selector bridge axioms and assembled in `ZiskCircuit.Jalr`.
 * For AUIPC / LUI / JAL / FENCE: no register reads — the input
   bridge step is vacuous; the discharge is the PC-routing axioms
   `transpile_PC_for_{JAL,JALR,AUIPC}` consumed directly by the
@@ -86,8 +87,8 @@ lemma branch_input_bridges_of_read_xreg
 
 /-! ## Non-branch discharge entry points
 
-The four entry points below — `lui_discharge_full`, `jal_discharge_full`,
-`jalr_discharge_full`, `auipc_discharge_full` — package the
+The entry points below — `lui_discharge_full`, `jal_discharge_full`,
+and `auipc_discharge_full` — package the
 transpile-pinnable FGL ↔ `Nat` / FGL identities that the
 corresponding `equiv_<OP>` theorems currently take as separate
 `h_imm_lo_nat` / `h_imm_hi_nat` / `h_jmp2` parameters.
@@ -109,7 +110,9 @@ arithmetic). FENCE is already minimal and needs no entry point.
 Caller-burden reduction (per opcode):
 * LUI:  −2 binders (`h_imm_lo_nat`, `h_imm_hi_nat`).
 * JAL:  −1 binder  (`h_jmp2`).
-* JALR: −1 binder  (`h_jmp2`).
+* JALR: the old `h_jmp2` discharge no longer applies because the
+  production final row uses `jmp_offset2 = 4` only in the aligned
+  lowering and `jmp_offset2 = 3` in the unaligned lowering.
 * AUIPC: −0 binders at this iteration — `h_offset_bridge` involves
   `(BitVec.signExtend 64 …).toNat` whose value can exceed
   `GL_prime`, so the transpile axiom's FGL equation does not
@@ -201,25 +204,6 @@ lemma jal_discharge_full
   -- JAL's mode pins `op = 0`; `transpile_JAL` expects `op = OP_FLAG`
   -- (definitionally `= 0`). Use a placeholder Fin 32 / FGL / state.
   have h_tr := ZiskFv.Trusted.transpile_JAL m r_main (0 : Fin 32)
-    (0 : FGL) { xreg := fun _ => 0#64, pc := 0#64 } h_ext h_op
-  exact h_tr.2.2.2.2.1
-
-/-- **JALR discharge.** From the JALR `jalr_subset_holds + mode`
-    bundle, produce the FGL identity `m.jmp_offset2 r_main = 4` the
-    `h_rd_val_jut_jalr` derivation consumes.
-
-    Trust footprint: pure composition of `transpile_JALR` (class
-    #1) — no new axiom. -/
-lemma jalr_discharge_full
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc) :
-    m.jmp_offset2 r_main = 4 := by
-  obtain ⟨_h_subset, h_mode⟩ := h_circuit
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-  -- JALR's mode pins `op = 1`; `transpile_JALR` expects `op = OP_COPYB`
-  -- (definitionally `= 1`). The `rs1` Fin 32 and state are ghost
-  -- with respect to the `jmp_offset2 = 4` conjunct.
-  have h_tr := ZiskFv.Trusted.transpile_JALR m r_main (0 : Fin 32) (0 : Fin 32)
     (0 : FGL) { xreg := fun _ => 0#64, pc := 0#64 } h_ext h_op
   exact h_tr.2.2.2.2.1
 

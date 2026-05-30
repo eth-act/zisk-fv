@@ -14,7 +14,7 @@ Each opcode file does two jobs:
    decoder dispatch removed, and ZisK-irrelevant trap arms eliminated
    via the four platform axioms in `Auxiliaries.lean` (PMP / CLINT /
    PMA inert, Zicfilp disabled — see classes #7–#10 in
-   `docs/fv/trusted-base.md`).
+   `trust/trusted-base.md`).
 2. **Proves an equivalence lemma**
    `execute_<OP>_pure_equiv : LeanRV64D.Functions.execute (.<shape> …) state = … = PureSpec.execute_<shape>_<op>_pure …`.
    The lemma keeps the pure form honest — drift between

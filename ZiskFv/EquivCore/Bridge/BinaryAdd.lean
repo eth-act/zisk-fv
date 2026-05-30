@@ -45,7 +45,7 @@ origin/main pre-pilot:
 
 Net: −4 binders per BinaryAdd-shape opcode.
 
-Per `docs/fv/known-gaps.md`'s Glossary and `CLAUDE.md`'s
+Per `trust/README.md`'s anti-laundering terms and `CLAUDE.md`'s
 *anti-laundering principle*: this bridge produces actual reduction
 in the *anti-laundering metric* (verified at PR time via
 `trust/scripts/check-hypothesis-count.sh` and

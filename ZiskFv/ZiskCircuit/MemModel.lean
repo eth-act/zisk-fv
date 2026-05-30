@@ -222,19 +222,16 @@ lemma mem_load_correct_1byte_of_provider_row
 
 /-! ## Axiom audit
 
-`mem_load_correct_of_provider_row` and `mem_store_correct` add ZisK
-trust-base axioms beyond Mathlib's kernel:
+`mem_load_correct_of_provider_row` is backed by the remaining ZisK
+memory-state trust bridge beyond Mathlib's kernel:
 
-* `MemoryBus.MemBridge.lookup_consumer_matches_provider_store`
-  — store-side bus-permutation soundness (project-trusted; PLONK /
-  logUp / permutation argument scope per CLAUDE.md "Trust scoping").
-* `Circuit.MemModel.row_models_sail_state_{load,store}` — Sail-side
-  state-bridge: ZisK's Mem AIR models Sail's `state.mem` faithfully on
-  aligned reads/writes.
+* `Circuit.MemModel.row_models_sail_state_load` — Sail-side
+  state bridge: ZisK's Mem AIR models Sail's `state.mem` faithfully on
+  aligned reads.
 
-Together these replace the M-family per-opcode axioms catalogued in
-`docs/fv/trusted-base.md`. The trade is: 22 per-opcode M-axioms
-(M1-M11 ×2 for read/write half) → 4 protocol-level axioms here.
+Earlier per-opcode memory axioms and store-side trust bridges have been
+retired from the current global compliance closure; see
+`trust/trusted-base.md` for the live ledger.
 
 The narrow-width companions (`mem_load_correct_{1,2,4}byte` /
 `mem_store_correct_{1,2,4}byte`) add no new axioms — they project /

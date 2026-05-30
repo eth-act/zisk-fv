@@ -46,7 +46,7 @@ imports.
 ## Historical axiom-bearing files
 
 Most AIR-side soundness axioms have been retired by the Clean/static routes.
-Use `trust/baseline-axioms.txt` and `docs/fv/axiom-index.md` for the current
+Use `trust/baseline-axioms.txt` and `trust/axiom-index.md` for the current
 live ledger; this directory now mostly contains definitions and proved bridges.
 
 (The remaining non-`Airs/` axioms are transpile contracts in
@@ -55,6 +55,5 @@ live ledger; this directory now mostly contains definitions and proved bridges.
 `SailSpec/Auxiliaries.lean` — not in this directory.)
 
 The allowlist of files permitted to declare trust-surface constructs
-is `trust/allowed-axiom-files.txt`. Each axiom's docstring cites the
-PIL line / Rust function it mirrors; see `docs/fv/trusted-base.md`
-for the full per-class breakdown.
+is `trust/allowed-axiom-files.txt`; see `trust/trusted-base.md`
+for the current per-class breakdown.

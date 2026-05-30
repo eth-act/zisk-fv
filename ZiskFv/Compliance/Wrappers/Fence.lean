@@ -49,10 +49,7 @@ stays uniform across the shape.
 ## Anti-laundering report
 
 * **No new axioms.** This wrapper consumes only `equiv_FENCE`'s
-  existing closure (trust-ledger axioms: `transpile_FENCE` (class
-  #1), the empty-bus shape lemma). Trust ledger unchanged at the
-  current baseline — matches `docs/fv/per-air-axiom-map.md`'s
-  0-new-axioms prediction for ControlFlow.
+  existing closure. Trust ledger unchanged at the current baseline.
 * **No new bridges.**
 * **Caller-burden** — see the count below.
 

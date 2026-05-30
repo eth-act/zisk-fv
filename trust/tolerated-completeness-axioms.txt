@@ -8,7 +8,7 @@
 # axiom rather than proved.
 #
 # These axioms are in the project's documented class C
-# (see `docs/fv/trusted-base.md`). The V2
+# (see `trust/trusted-base.md`). The V2
 # `check-closure-vs-baseline` gate treats their absence from the
 # global theorem's transitive axiom closure as expected, rather than
 # as dead trust — proper handling requires either retiring the entire

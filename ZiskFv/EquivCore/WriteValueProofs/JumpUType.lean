@@ -267,10 +267,10 @@ lemma h_rd_val_jut_jal
     Identical shape to JAL — JALR also writes `PC + 4` as the link
     value; only the underlying circuit-hypothesis predicate differs
     (`jalr_circuit_holds` instead of `jal_circuit_holds`). Uses S3's
-    `jalr_store_value_lo_bv` / `_hi_bv`. The PC bridge is established
-    internally via `transpile_PC_for_JALR` (gated by JALR mode
-    witnesses `is_external_op = 0`, `op = OP_COPYB = 1` from
-    `h_circuit`).
+    `store_pc_lanes_match_lo` / `_hi` directly. The link-address bridge
+    is established internally via `transpile_PC_for_JALR`, which pins
+    `pc + jmp_offset2 = PC + 4` for JALR's final production `OP_AND`
+    row.
 
     Parameter classes match `h_rd_val_jut_jal` exactly:
     {CIRCUIT-CONSTRAINT, TRANSPILE-PIN, LANE-MATCH, RANGE}. -/
@@ -281,14 +281,11 @@ lemma h_rd_val_jut_jalr
     (e2 : MemoryBusEntry FGL)
     -- CIRCUIT-CONSTRAINT
     (h_circuit : jalr_circuit_holds m r_main next_pc)
-    -- TRANSPILE-PIN
-    (h_jmp2 : m.jmp_offset2 r_main = 4)
     -- LANE-MATCH (lo + hi)
     (h_lane_lo : store_pc_lanes_match_lo m r_main e2)
     (h_lane_hi : store_pc_lanes_match_hi m r_main e2)
-    -- RANGE: PC trajectory + lo-half FGL bound + 32-bit link-addr bound
-    (h_pc_bound : PC.toNat < GL_prime - 4)
-    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
+    -- RANGE: PC trajectory + 32-bit link-addr bound
+    (_h_pc_bound : PC.toNat < GL_prime - 4)
     (h_pc_offset_lt_2_32 : (PC + 4#64).toNat < 4294967296)
     -- RANGE: per-byte bounds
     (h0 : (byteAt e2 0).val < 256) (h1 : (byteAt e2 1).val < 256)
@@ -301,17 +298,24 @@ lemma h_rd_val_jut_jalr
                 (byteAt e2 6 : BitVec 8), (byteAt e2 7 : BitVec 8)]
       = PC + 4 := by
   -- Extract JALR mode witnesses + apply transpile_PC_for_JALR.
-  have h_mode := h_circuit.2
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-  have h_pc_bridge : (m.pc r_main).val = PC.toNat :=
+  have h_circuit_full := h_circuit
+  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode⟩ := h_circuit
+  obtain ⟨h_ext, h_op, _h_flag, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
+  have h_link_bridge : (m.pc r_main + m.jmp_offset2 r_main).val = (PC + 4#64).toNat :=
     transpile_PC_for_JALR m r_main PC h_ext h_op
-  -- Apply S3's lo/hi BitVec bridges (JALR variants).
+  -- The final row's store_pc lane formula writes `pc + jmp_offset2`
+  -- into the lo lane and zero into the hi lane.
   have h_lo_val : (memory_entry_lo e2).val = (PC + 4#64).toNat % 4294967296 :=
-    jalr_store_value_lo_bv m r_main next_pc PC e2
-      h_circuit h_jmp2 h_lane_lo h_pc_bridge h_pc_bound h_lo_bound
+    by
+      simp only [store_pc_lanes_match_lo] at h_lane_lo
+      rw [h_store_pc] at h_lane_lo
+      have h_lane_lo' : memory_entry_lo e2 = m.pc r_main + m.jmp_offset2 r_main := by
+        linear_combination h_lane_lo
+      rw [h_lane_lo', h_link_bridge]
+      exact (Nat.mod_eq_of_lt h_pc_offset_lt_2_32).symm
   have h_hi_val : (memory_entry_hi e2).val = (PC + 4#64).toNat / 4294967296 :=
     jalr_store_value_hi_bv m r_main next_pc PC e2
-      h_circuit h_lane_hi h_pc_offset_lt_2_32
+      h_circuit_full h_lane_hi h_pc_offset_lt_2_32
   -- PC + 4#64 = PC + 4 definitionally.
   have h_pc4_eq : (PC + 4#64) = (PC + 4) := rfl
   rw [h_pc4_eq] at h_lo_val h_hi_val

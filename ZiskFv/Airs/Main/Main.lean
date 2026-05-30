@@ -34,6 +34,14 @@ structure Valid_Main (F ExtF : Type)
   pc : ℕ → F
   is_external_op : ℕ → F
   op : ℕ → F
+  /-- `b_src_imm` selector (column 13). -/
+  b_src_imm : ℕ → F
+  /-- `b_src_mem` selector (column 14). -/
+  b_src_mem : ℕ → F
+  /-- `b_src_ind` selector (column 17). -/
+  b_src_ind : ℕ → F
+  /-- `b_src_reg` selector (column 36). -/
+  b_src_reg : ℕ → F
   m32 : ℕ → F
   /-- `ind_width` (column 18). Memory operand width in bytes — pinned
       by `transpile_<load>` axioms (1 for LB/LBU, 2 for LH/LHU,
@@ -78,6 +86,14 @@ def flag_boolean (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
 def is_external_op_boolean (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   v.is_external_op row * (1 - v.is_external_op row) = 0
 
+/-- Expanded `b_src_c` selector expression. In upstream PIL this is a
+    `const expr`, not a witness column:
+    `1 - b_src_mem - b_src_imm - b_src_ind - b_src_reg`
+    (`main.pil:84`, same expression in stack/non-stack builds). -/
+@[simp]
+def b_src_c (v : Valid_Main F ExtF) (row : ℕ) : F :=
+  1 - v.b_src_mem row - v.b_src_imm row - v.b_src_ind row - v.b_src_reg row
+
 /-- "Internal op=0" short-circuit zero: if the row is not an external op and
     `op = 0`, then `c[0] = 0`. Constraint_8. -/
 @[simp]
@@ -114,6 +130,20 @@ def internal_op1_clears_flag (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
 @[simp]
 def flag_set_pc_disjoint (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
   v.flag row * v.set_pc row = 0
+
+/-- Non-segment specialization of Main's source-C constraint for `b[0]`.
+    It is the `SEGMENT_L1 = 0` form of `main.pil:386`:
+    `b_src_c * (b[0] - previous_c) = 0`, where `previous_c` reduces to
+    the previous row's `c[0]`. -/
+@[simp]
+def b_src_c_copies_prev_c0 (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
+  b_src_c v row * (v.b_0 row - v.c_0 (row - 1)) = 0
+
+/-- Non-segment specialization of Main's source-C constraint for `b[1]`.
+    See `b_src_c_copies_prev_c0`. -/
+@[simp]
+def b_src_c_copies_prev_c1 (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
+  b_src_c v row * (v.b_1 row - v.c_1 (row - 1)) = 0
 
 /-- ADD subset — all the named constraints from Task 3's enumeration. -/
 @[simp]
@@ -265,6 +295,29 @@ lemma pc_handshake_jump
     next_pc = v.pc row + v.jmp_offset1 row := by
   simp only [pc_handshake_with_next_pc] at h
   rw [h_set_pc, h_flag] at h
+  linear_combination h
+
+/-- If the final row routes `b` from source-C and the non-segment lane-0
+    source-C constraint holds, then `b[0]` is the previous row's `c[0]`.
+    This is the Lean-side `lastc` bridge used by production unaligned
+    JALR. -/
+lemma b_0_eq_prev_c_0_of_source_c
+    (v : Valid_Main FGL FGL) (row : ℕ)
+    (h_src : b_src_c v row = 1)
+    (h : b_src_c_copies_prev_c0 v row) :
+    v.b_0 row = v.c_0 (row - 1) := by
+  simp only [b_src_c_copies_prev_c0] at h
+  rw [h_src] at h
+  linear_combination h
+
+/-- High-lane version of `b_0_eq_prev_c_0_of_source_c`. -/
+lemma b_1_eq_prev_c_1_of_source_c
+    (v : Valid_Main FGL FGL) (row : ℕ)
+    (h_src : b_src_c v row = 1)
+    (h : b_src_c_copies_prev_c1 v row) :
+    v.b_1 row = v.c_1 (row - 1) := by
+  simp only [b_src_c_copies_prev_c1] at h
+  rw [h_src] at h
   linear_combination h
 
 /-- Branch subset — the Main constraints a BEQ-family row must satisfy,

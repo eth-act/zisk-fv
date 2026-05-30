@@ -195,7 +195,7 @@ def cmdCheckClosureVsBaseline (env : Environment) (path : String)
   let missingFromBaselineSorted := missingFromBaseline.qsort (· < ·)
   let missingFromClosureSorted := missingFromClosure.qsort (· < ·)
   if missingFromBaselineSorted.isEmpty && missingFromClosureSorted.isEmpty then
-    IO.println s!"trust-gate (V2): uber-theorem axiom closure matches baseline-axioms.txt ({closureLast.size} names)."
+    IO.println s!"trust-gate (V2): uber-theorem axiom closure matches baseline-axioms.txt modulo tolerated completeness ({closureLast.size} names)."
     return 0
   IO.eprintln "trust-gate (V2): uber-theorem axiom closure DIVERGES from baseline-axioms.txt."
   IO.eprintln s!"  Theorem:   {theoremName}"

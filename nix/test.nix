@@ -34,12 +34,18 @@ writeShellApplication {
       echo
     }
 
-    # 1. Tool unit tests (extractor).
-    run "1/4 cargo test" bash -c '
+    # 1. Tool unit tests (extractor + transpiler differential harness).
+    run "1/6 cargo test" bash -c '
       cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet
+      cargo test --manifest-path tools/transpiler-diff/Cargo.toml --quiet
     '
 
-    # 2. Lake build — the FV check. Every theorem typechecks. This is
+    # 2. Default Rust-vs-Lean static-transpiler differential pinning.
+    run "2/6 transpiler differential pinning" bash -c '
+      cargo run --manifest-path tools/transpiler-diff/Cargo.toml --quiet
+    '
+
+    # 3. Lake build — the FV check. Every theorem typechecks. This is
     # the load-bearing claim: if `lake build` is green, every per-opcode
     # equivalence theorem (Sail spec = ZisK circuit + bus model) holds.
     #
@@ -53,22 +59,22 @@ writeShellApplication {
     # when sd.lean's elaboration peaked at 42 GiB, before PR #4's
     # layered dsimp+rw refactor cut it to ~8 GiB PSS. Override with
     # LEAN_NUM_THREADS=N at call site for a different cap.
-    run "2/4 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
+    run "3/6 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
 
-    # 3. Trust gate (locality + baseline + forbidden tier1 params +
+    # 4. Trust gate (locality + baseline + forbidden tier1 params +
     # floors + zero-sorry + uniformity lint). See trust/README.md.
-    run "3/5 trust gate (V1 syntactic)" trust/scripts/check-all.sh
+    run "4/6 trust gate (V1 syntactic)" trust/scripts/check-all.sh
 
-    # 4. V2 trust-gate semantic checks. Walks the elaborated
+    # 5. V2 trust-gate semantic checks. Walks the elaborated
     # environment via `lake exe trust-gate`: per-theorem axiom-closure
     # baseline + binder-type forbidden-Names walk. Requires the lake
     # build above to have populated oleans.
-    run "4/5 trust gate (V2 semantic)" trust/scripts/check-all-semantic.sh
+    run "5/6 trust gate (V2 semantic)" trust/scripts/check-all-semantic.sh
 
-    # 5. Reproducibility check. The flake.lock pins every input
+    # 6. Reproducibility check. The flake.lock pins every input
     # (sail/sail-riscv/zisk/pil2-* sources, nixpkgs revision) by content
     # hash; `nix flake check` verifies the lock matches the flake.
-    run "5/5 flake repro" nix flake check --no-build
+    run "6/6 flake repro" nix flake check --no-build
 
     if [ $overall -eq 0 ]; then
       echo "================================"
