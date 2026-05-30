@@ -10,9 +10,11 @@
 # enumeration of that closure for external auditors who want to inspect
 # the surface without running Lean.
 #
-# Source-of-truth cross-check: this set must match the unqualified
-# axiom names in `trust/baseline-axioms.txt`. The V2 trust gate's
-# `check-closure-vs-baseline` subcommand enforces the match
+# Source-of-truth cross-check: this set must match the reachable
+# unqualified axiom names in `trust/baseline-axioms.txt`, modulo
+# the explicit completeness-direction allowlist in
+# `trust/tolerated-completeness-axioms.txt`. The V2 trust gate's
+# `check-closure-vs-baseline` subcommand enforces that relation
 # mechanically; this file is a standalone audit document — readable
 # without running Lean.
 #
@@ -25,7 +27,7 @@
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-30.
 #
-# Total entries: 12
+# Total entries: 9
 #
 ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
 ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
@@ -34,8 +36,5 @@ ZiskFv.PlatformScope.pmaCheck_is_pure_none
 ZiskFv.PlatformScope.pmpCheck_is_pure_none
 ZiskFv.PlatformScope.update_elp_state_is_pure_unit
 ZiskFv.PlatformScope.within_clint_is_false
-ZiskFv.Trusted.main_source_c_copies_prev_c0_nonsegment
-ZiskFv.Trusted.main_source_c_copies_prev_c1_nonsegment
-ZiskFv.Trusted.transpile_JALR_unaligned_final_source_c
 ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load

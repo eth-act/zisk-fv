@@ -28,7 +28,7 @@ End-to-end theorem for RV64 JALR. Combines:
 * the Sail pure-function equivalence
   (`PureSpec.execute_JALR_pure_equiv`, closed via the trusted
   `execute_JALR_pure_equiv_axiom` at `ZiskFv/RV64D/jalr.lean:67` —
-  see `docs/fv/trusted-base.md` for the closure path),
+  see `trust/trusted-base.md` for the closure path),
 
 into a canonical theorem:
 

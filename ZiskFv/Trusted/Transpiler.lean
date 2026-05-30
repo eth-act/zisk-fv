@@ -32,7 +32,7 @@ extractor does not currently surface), but downstream Spec / Equivalence
 proofs of JAL / JALR / AUIPC's rd-write `pc + jmp_offset2` need to bridge
 the FGL-side `m.pc r_main` to the Sail-side `state.pc`. Trust-base
 entries: **TP-JAL**, **TP-JALR**, **TP-AUIPC** in
-`docs/fv/trusted-base.md`.
+`trust/trusted-base.md`.
 -/
 
 /-!
@@ -1390,7 +1390,7 @@ that degenerate instance is outside the per-opcode axiom's scope —
     transpiler-emits-row faithfulness for the PC witness column.
     Closure path: model ZisK's ROM-based `pc` assignment + the
     cross-segment handshake formally, derive this equality from the
-    in-tree pieces. See `docs/fv/trusted-base.md` entry **TP-JAL**. -/
+    in-tree pieces. See `trust/trusted-base.md` entry **TP-JAL**. -/
 /- JALR PC bridge.
 
     Asserts that on JALR's final production row (`is_external_op = 1`,
@@ -1401,7 +1401,7 @@ that degenerate instance is outside the per-opcode axiom's scope —
     drive the rd-write `pc + 4` derivation in JumpUType.
 
     **Trust class.** Same as `transpile_PC_for_JAL`. See
-    `docs/fv/trusted-base.md` entry **TP-JALR**. -/
+    `trust/trusted-base.md` entry **TP-JALR**. -/
 /- AUIPC PC bridge.
 
     Asserts that on an AUIPC row (`is_external_op = 0`,
@@ -1423,7 +1423,7 @@ that degenerate instance is outside the per-opcode axiom's scope —
     `jmp_offset1` / `jmp_offset2` differently for the two opcodes.
 
     **Trust class.** Same as `transpile_PC_for_JAL`. See
-    `docs/fv/trusted-base.md` entry **TP-AUIPC**. -/
+    `trust/trusted-base.md` entry **TP-AUIPC**. -/
 
 /-!
 ## Lean-indexed transpiler contract
@@ -2228,10 +2228,9 @@ def TranspilerContract : TranspilerContractKind → Prop
     and the remaining runtime Main-AIR witness bridge.
 
     Most cases are static-shape contracts plus register/immediate witness
-    lanes. JALR now consumes the production final `OP_AND` row; its
-    unaligned row-1 `ADD` to final-row `lastc` chain is derived in
-    `ZiskCircuit.Jalr` from the explicit source-C / selector bridge
-    axioms below. -/
+    lanes. JALR consumes only the production final `OP_AND` row facts
+    needed by the end-to-end equivalence proof; the unaligned two-row
+    source-C chain is not part of the trusted compliance closure. -/
 axiom transpiler_contract_sound :
     ∀ (kind : TranspilerContractKind), TranspilerContract kind
 
@@ -2243,76 +2242,6 @@ theorem transpile_JAL : TranspilerContract .JAL :=
 
 theorem transpile_JALR : TranspilerContract .JALR :=
   transpiler_contract_sound .JALR
-
-/-!
-## Production JALR unaligned lastc bridge
-
-The common `transpile_JALR` theorem above intentionally pins only the
-final architectural row (`OP_AND`, `store_pc = 1`, `set_pc = 1`). The
-production unaligned lowering has one extra row:
-
-* row `r_main - 1`: external `OP_ADD`, computing `rs1 + imm`;
-* row `r_main`: external `OP_AND`, reading its `b` operand from
-  `lastc` (`b_src_c`) and masking bit 0 with `0xfffffffffffffffe`.
-
-Two narrow trust facts below expose the parts that are not yet emitted
-as typechecking extraction:
-
-* `main_source_c_copies_prev_c{0,1}_nonsegment` is the non-segment
-  specialization of Main source-C constraints at `main.pil:386`;
-* `transpile_JALR_unaligned_final_source_c` is the branch-specific
-  source-selector/row-shape contract of `riscv2zisk_context.rs::jalr`.
-
-The actual `b = previous c` lastc equality is proved in
-`ZiskCircuit.Jalr` from these facts and the named Main source-C lemmas.
--/
-
-/-- Main source-C lane 0, specialized to non-segment rows.
-    Trust basis: `zisk/state-machines/main/pil/main.pil:386`
-    constraint `(b_src_c)*(b[0]-(previous_c)) === 0`, with
-    `SEGMENT_L1 = 0` reducing `previous_c` to the previous row's `c[0]`.
-
-    This is explicit trust because the generic extractor currently skips
-    the original constraint: it references `segment_previous_c`, an
-    `AirValue`, even though that term is multiplied out on non-segment
-    rows. -/
-axiom main_source_c_copies_prev_c0_nonsegment
-    (m : Valid_Main FGL FGL) (row : ℕ) :
-    m.segment_l1 row = 0 →
-    ZiskFv.Airs.Main.b_src_c_copies_prev_c0 m row
-
-/-- Main source-C lane 1, specialized to non-segment rows.
-    See `main_source_c_copies_prev_c0_nonsegment`. -/
-axiom main_source_c_copies_prev_c1_nonsegment
-    (m : Valid_Main FGL FGL) (row : ℕ) :
-    m.segment_l1 row = 0 →
-    ZiskFv.Airs.Main.b_src_c_copies_prev_c1 m row
-
-/-- Production unaligned JALR final-row selector contract.
-
-    For `imm % 4 ≠ 0`, upstream ZisK emits an `ADD` row immediately
-    before the final `AND` row; the final row sources `b` from `lastc`,
-    i.e. Main's source-C path. It also uses `jmp_offset1 = 0` and
-    `jmp_offset2 = 3` so the row's PC bookkeeping still links to
-    `PC + 4`.
-
-    Trust basis: `zisk/core/src/riscv2zisk_context.rs::jalr` production
-    lowering, specifically the unaligned branch that emits `add` before
-    the final `and`. -/
-axiom transpile_JALR_unaligned_final_source_c
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (_rs1 _rd : Fin 32)
-    (imm_offset : FGL) (_state : RV64State) :
-    imm_offset.val % 4 ≠ 0 →
-    m.is_external_op r_main = 1 →
-    m.op r_main = OP_AND →
-      m.b_src_mem r_main = 0
-    ∧ m.b_src_imm r_main = 0
-    ∧ m.b_src_ind r_main = 0
-    ∧ m.b_src_reg r_main = 0
-    ∧ m.jmp_offset1 r_main = 0
-    ∧ m.jmp_offset2 r_main = 3
-    ∧ m.is_external_op (r_main - 1) = 1
-    ∧ m.op (r_main - 1) = OP_ADD
 
 theorem transpile_SD : TranspilerContract .SD :=
   transpiler_contract_sound .SD

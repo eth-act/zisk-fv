@@ -40,11 +40,13 @@ lowering:
 * `imm % 4 = 0`: one external `and` row with `set_pc = 1`, `store_pc = 1`;
 * otherwise: an `add` row followed by an `and` row.
 
-The equivalence proof now consumes the production final `OP_AND` row and
-uses the trusted final-row link bridge `pc + jmp_offset2 = PC + 4`, which
-covers both aligned (`jmp_offset2 = 4`) and unaligned (`jmp_offset2 = 3`)
-lowerings. The unaligned row-1 `ADD` to final-row `lastc` chain is now
-represented by `jalr_unaligned_add_lastc_and_chain_of_circuit`: the
-wrapper discharges Main source-C obligations from explicit non-segment
-source-C axioms and discharges the unaligned final-row selector contract
-from `transpile_JALR_unaligned_final_source_c`.
+The equivalence proof consumes the production final `OP_AND` row and uses the
+trusted final-row link bridge `PC_for_JALR`: `pc + jmp_offset2 = PC + 4`. That
+bridge covers both aligned (`jmp_offset2 = 4`) and unaligned (`jmp_offset2 = 3`)
+lowerings, so the proof does not need a trusted source-C chain for the optional
+row-1 `ADD`.
+
+The former source-C/JALR special axioms were removed. The unaligned row-1 `ADD`
+to final-row `lastc` relationship remains available only as the pure helper
+`jalr_unaligned_add_lastc_and_chain_of_facts`, which requires explicit facts
+from its caller. It is not in the global compliance theorem's trust closure.

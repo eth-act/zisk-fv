@@ -24,10 +24,10 @@ DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
 **Status:** `zisk_riscv_compliant_program_bus` is proved
 (`ZiskFv/Compliance.lean`); its trust closure
-is the **50-name global compliance closure** enumerated in
+is the **9-name global compliance closure** enumerated in
 `trust/baseline-zisk-riscv-compliant.txt`; the source trust ledger
-records **53 axioms** in `trust/baseline-axioms.txt`, documented
-per-class in `docs/fv/trusted-base.md`. All 63 RV64IM opcodes are covered as
+records **12 axioms** in `trust/baseline-axioms.txt`, documented
+per-class in `trust/trusted-base.md`. All 63 RV64IM opcodes are covered as
 `ZiskFv.Compliance.equiv_<OP>` wrappers under
 `ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 63-arm
 `OpEnvelope` sum type.
@@ -39,7 +39,7 @@ discharge) → `ZiskFv/Equivalence/<Op>.lean` (the canonical
 `equiv_<OP>`, channel-balance form). The global theorem aggregates the
 ten per-family dispatchers in `ZiskFv/Compliance/Dispatch/`. The principal "promise hypothesis"
 soundness gap surveyed in
-[`docs/fv/known-gaps.md`](docs/fv/known-gaps.md) is closed at the
+[`trust/README.md`](trust/README.md) is closed at the
 global theorem: V3 trust gates
 (`check-closure-vs-baseline` + wrapper caller-burden ledger)
 mechanically prevent regression. The 63 canonical `equiv_<OP>`
@@ -165,7 +165,8 @@ Eight checks; if you break any, CI fails:
    `h_entry_lo_eq`, `h_high_bytes_signext`, `h_high_bytes_zeroext`,
    `h_e1_e2_bytes`). Pattern list: `trust/forbidden-param-shapes.txt`.
    Enforced uniformly across all 63 opcodes (no exemptions).
-4. **Floors.** ≥53 axioms in baseline, ≥63 canonical `equiv_<OP>`
+4. **Floors.** The baseline must contain at least one tracked trust
+declaration, the shrinkage floor must not be exceeded, and ≥63 canonical `equiv_<OP>`
    theorems, plus a cross-witness check that the parser hasn't been
    sabotaged.
 5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,ZiskCircuit,Equivalence,Tactics,Sail}`.
@@ -220,7 +221,7 @@ axiom):
 
 1. Add the axiom to one of the files in `trust/allowed-axiom-files.txt`.
 2. Run `trust/scripts/regenerate.sh` to refresh the baseline.
-3. Add a `docs/fv/trusted-base.md` entry describing the trust class +
+3. Add a `trust/trusted-base.md` entry describing the trust class +
    closure path.
 4. Commit axiom + baseline + ledger entry in the same PR.
 5. CODEOWNER review of the `trust/baseline-axioms.txt` diff is the
@@ -234,7 +235,7 @@ or `trust/allowed-axiom-files.txt` directly — both are CODEOWNER-protected.
 **Vocabulary.** This section uses **promise hypothesis**, **promise
 discharge**, **discharge bridge**, **trust ledger**, **caller-burden
 ledger**, **anti-laundering metric**, and **constructibility** as
-defined in [`docs/fv/known-gaps.md`'s Glossary](docs/fv/known-gaps.md#glossary-canonical-terminology).
+defined in [`trust/README.md`](trust/README.md#anti-laundering-terms).
 Any plan / PR / commit / agent prompt touching this work must use
 those terms with those meanings; ad-hoc synonyms fragment the audit
 trail.
@@ -248,8 +249,8 @@ rearranging the trust:
 
 1. **Axiom inflation.** A promise hypothesis becomes an axiom of
    the same shape. The trust ledger grows; the verification claim
-   does not. **Refusal:** every new axiom must fit one of the 11+
-   trust classes already documented in `docs/fv/trusted-base.md`,
+   does not. **Refusal:** every new axiom must fit one of the
+   trust classes already documented in `trust/trusted-base.md`,
    with a citation to a specific PIL line, Rust function, or
    protocol-soundness theorem. New trust *kinds* are a separate
    prior PR with explicit justification.
@@ -308,7 +309,7 @@ opcodes not on the list still face the strict metric.
 
 When delegating to a sub-agent for any plan step, **include this
 anti-laundering principle verbatim in the prompt AND require the
-agent to read [`docs/fv/known-gaps.md`'s Glossary](docs/fv/known-gaps.md#glossary-canonical-terminology)
+agent to read [`trust/README.md`](trust/README.md#anti-laundering-terms)
 before starting**. The agent must explicitly check, before
 declaring a *promise discharge* step complete, that:
 * the *anti-laundering metric* shrank — both the hypothesis-count
@@ -347,12 +348,11 @@ the agent's self-check above enforces the spirit.
 
 | Where | What |
 |---|---|
-| `docs/fv/trusted-base.md` | Human-readable trust ledger. Pairs with `trust/baseline-axioms.txt`. Edit when you legitimately add/remove an axiom. |
+| `trust/trusted-base.md` | Human-readable trust ledger. Pairs with `trust/baseline-axioms.txt`. Edit when you legitimately add/remove an axiom. |
 | `docs/fv/extractor-notes.md` | Durable contract for `tools/pil-extract`. Read first when extending the extractor. |
-| `docs/fv/air-inventory.md` | 22-AIR table: which are extracted, which have named wrappers, which are absorbed into trust. |
+| `docs/fv/air-inventory.md` | 22-AIR inventory and extraction orientation. Trust status lives in `trust/`. |
 | `trust/README.md` | Full reference for the gate scripts + baseline files. |
 | `nix/README.md` | Flake-level docs: what each derivation produces, why we use Nix. |
-| `docs/site/index.html` | Public-facing single-page explainer (run `docs/site/serve.sh`, port 4044). |
 | **agent memory** | `/home/cody/.claude/projects/-home-cody-zisk-fv/memory/` — facts that persist across conversations; update when current state changes. |
 
 ## Past work removed from the tree

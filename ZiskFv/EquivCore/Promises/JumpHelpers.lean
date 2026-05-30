@@ -59,15 +59,8 @@ def jalr_h_circuit_of_main_constraints
     h_main_active h_main_op_jalr
   obtain ⟨h_flag, h_m32, h_set_pc, h_store_pc, _, _⟩ := h_tr
   obtain ⟨h_flag_bool, h_ext_bool, h_disjoint, h_pc⟩ := h_jalr_subset
-  refine ⟨h_flag_bool, h_ext_bool, h_disjoint, h_pc, ?_, ?_, ?_⟩
+  refine ⟨h_flag_bool, h_ext_bool, h_disjoint, h_pc, ?_⟩
   · refine ⟨h_main_active, ?_, h_flag, h_m32, h_set_pc, h_store_pc⟩
     exact h_main_op_jalr
-  · intro h_nonsegment
-    exact ⟨ZiskFv.Trusted.main_source_c_copies_prev_c0_nonsegment m r_main h_nonsegment,
-           ZiskFv.Trusted.main_source_c_copies_prev_c1_nonsegment m r_main h_nonsegment⟩
-  · intro rs1 rd imm_offset state h_imm_unaligned
-    exact ZiskFv.Trusted.transpile_JALR_unaligned_final_source_c
-      m r_main rs1 rd imm_offset state h_imm_unaligned
-      h_main_active h_main_op_jalr
 
 end ZiskFv.EquivCore.Promises

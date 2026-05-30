@@ -29,7 +29,7 @@ End-to-end theorem for RV64 LD (load doubleword). Combines:
 * the Sail pure-function equivalence
   (`PureSpec.execute_LOADD_pure_equiv`; closed via the trusted
   memory-model axiom `execute_LOADD_pure_equiv_axiom` — see
-  `RV64D/ld.lean` and `docs/fv/trusted-base.md` entry M1),
+  `RV64D/ld.lean` and `trust/trusted-base.md` entry M1),
 
 into three companion theorems paralleling the ADD and BEQ archetypes:
 
@@ -64,7 +64,7 @@ open ZiskFv.ZiskCircuit.LoadD
 
     Wraps `PureSpec.execute_LOADD_pure_equiv`, which delegates to the
     trusted `execute_LOADD_pure_equiv_axiom` (see `RV64D/ld.lean` and
-    `docs/fv/trusted-base.md`). -/
+    `trust/trusted-base.md`). -/
 lemma equiv_LD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)

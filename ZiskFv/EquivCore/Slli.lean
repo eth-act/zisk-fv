@@ -40,7 +40,7 @@ downstream bus-emission audit must justify the second read
 microinstruction emits only one memory-bus read, in which case a new
 shape-variant lemma is needed). We keep the archetype
 interface uniform with SLL / SRLW; audit flag surfaces in
-`docs/fv/trusted-base.md`.
+`trust/trusted-base.md`.
 -/
 
 namespace ZiskFv.EquivCore.Slli

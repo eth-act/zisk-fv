@@ -299,8 +299,7 @@ lemma h_rd_val_jut_jalr
       = PC + 4 := by
   -- Extract JALR mode witnesses + apply transpile_PC_for_JALR.
   have h_circuit_full := h_circuit
-  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode,
-          _h_source_c, _h_unaligned⟩ := h_circuit
+  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode⟩ := h_circuit
   obtain ⟨h_ext, h_op, _h_flag, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
   have h_link_bridge : (m.pc r_main + m.jmp_offset2 r_main).val = (PC + 4#64).toNat :=
     transpile_PC_for_JALR m r_main PC h_ext h_op

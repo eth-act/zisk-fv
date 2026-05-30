@@ -1,12 +1,10 @@
 # `ZiskFv/Trusted/`
 
 The **transpile-contract trust surface**. The single file
-`Transpiler.lean` declares the **42 `transpile_*` axioms** that
-constitute class #1 of the trust ledger (the largest single block
-in the 53-source-axiom TCB). Each axiom asserts that ZisK's Rust
-transpilation lowers a Sail-decoded RV64IM instruction
-(`ast` value) into a Main-AIR row column shape that matches the
-pure spec.
+`Transpiler.lean` now exposes legacy `transpile_*` names mostly as
+theorems indexed by one aggregate contract. The source trust ledger
+contains one transpiler declaration:
+`ZiskFv.Trusted.transpiler_contract_sound`.
 
 Why a separate `Trusted/` subdirectory? The namespace
 `ZiskFv.Trusted` reflects the trust-surface status: agents and
@@ -18,14 +16,12 @@ also load-bearing — the trust gate's
 allowlisted in `trust/allowed-axiom-files.txt`, and this file is on
 that list.
 
-Each axiom's docstring cites the exact upstream Rust function in the
-`zisk/` submodule that the contract mirrors (e.g.
-`transpile_ADD` cites `zisk/.../transpile.rs::transpile_R::ADD`).
-The submodule is pinned at `0xPolygonHermez/zisk@48cf7ccef`.
+The surrounding theorem docstrings and differential notes cite the
+upstream Rust paths and the in-tree Lean static transpiler model.
 
-To audit class #1: read `Transpiler.lean` top-to-bottom alongside
-the `zisk/` source it cites. The same axioms also surface as the
-`transpile_*` references in `trust/baseline-axioms.txt` (42 lines).
+To audit this class: read `Transpiler.lean`, the generated source
+ledger in `trust/baseline-axioms.txt`, and
+`trust/transpiler-differential-pinning.md`.
 
-See `docs/fv/trusted-base.md` for the full per-class breakdown of
-the 53 source axioms.
+See `trust/trusted-base.md` for the full per-class breakdown of
+the current source axioms.

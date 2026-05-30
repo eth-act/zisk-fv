@@ -43,33 +43,6 @@ def main_row_in_jalr_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   ∧ m.set_pc r_main = 1
   ∧ m.store_pc r_main = 1
 
-/-- Main source-C obligations for the final JALR row. On non-segment rows
-    these are the extracted/PIL source-C constraints specialized to
-    `previous_c = c(row - 1)`. -/
-@[simp]
-def jalr_source_c_constraints_hold
-    (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
-  m.segment_l1 r_main = 0 →
-    b_src_c_copies_prev_c0 m r_main
-    ∧ b_src_c_copies_prev_c1 m r_main
-
-/-- Branch-specific production shape of the unaligned JALR final row.
-    This records the selector and previous-row pins used to derive the
-    `ADD -> lastc -> AND` chain when `imm % 4 ≠ 0`. -/
-@[simp]
-def jalr_unaligned_lowering_holds
-    (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
-  ∀ (_rs1 _rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
-    imm_offset.val % 4 ≠ 0 →
-      m.b_src_mem r_main = 0
-    ∧ m.b_src_imm r_main = 0
-    ∧ m.b_src_ind r_main = 0
-    ∧ m.b_src_reg r_main = 0
-    ∧ m.jmp_offset1 r_main = 0
-    ∧ m.jmp_offset2 r_main = 3
-    ∧ m.is_external_op (r_main - 1) = 1
-    ∧ m.op (r_main - 1) = OP_ADD
-
 /-- Hypotheses needed by `jalr_compositional`. All four circuit-side
     obligations are constraint witnesses plus the transpile-axiom's
     mode witnesses for the final production `OP_AND` row. -/
@@ -82,8 +55,6 @@ def jalr_circuit_holds
   ∧ flag_set_pc_disjoint m r_main
   ∧ pc_handshake_with_next_pc m r_main next_pc
   ∧ main_row_in_jalr_mode m r_main
-  ∧ jalr_source_c_constraints_hold m r_main
-  ∧ jalr_unaligned_lowering_holds m r_main
 
 /-- **Compositional JALR (next-pc) theorem.** On the final production
     row, `set_pc = 1` and `flag = 0`, so the PC handshake reduces to
@@ -94,20 +65,19 @@ lemma jalr_pc_advance
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jalr_circuit_holds m r_main next_pc) :
     next_pc = m.c_0 r_main + m.jmp_offset1 r_main := by
-  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, h_pc, h_mode, _h_src, _h_unaligned⟩ := h
+  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, h_pc, h_mode⟩ := h
   obtain ⟨_h_ext, _h_op, h_flag, _h_m32, h_set_pc, _h_store_pc⟩ := h_mode
   simp only [pc_handshake_with_next_pc] at h_pc
   rw [h_set_pc, h_flag] at h_pc
   linear_combination h_pc
 
-/-! ## Unaligned production lowering: ADD → lastc → AND
+/-! ## Unaligned production lowering: source-C algebra
 
 The unaligned production lowering computes `rs1 + imm` in the previous
 Main row (`OP_ADD`) and feeds that result into the final `OP_AND` row
-through Main's source-C path (`lastc`). The two lemmas below keep that
-bridge explicit: one proves the lastc lane equalities from Main
-source-C constraints, and one packages the current trusted selector
-contract for the unaligned JALR final row.
+through Main's source-C path (`lastc`). The lemmas below are pure
+algebraic facts: callers must provide the relevant source-selector and
+source-C constraints explicitly.
 -/
 
 /-- Source-C expansion under the four zero source selectors used by the
@@ -136,20 +106,22 @@ lemma jalr_unaligned_lastc_lanes
   ⟨b_0_eq_prev_c_0_of_source_c m r_main h_src h_src_c0,
    b_1_eq_prev_c_1_of_source_c m r_main h_src h_src_c1⟩
 
-/-- Trusted-contract entry point for production unaligned JALR.
-
-    From the unaligned branch of the transpiler contract and the
-    non-segment Main source-C constraints, derive the concrete row chain:
-    the previous row is external `OP_ADD`, the final row has `b_src_c = 1`,
-    `jmp_offset1 = 0`, `jmp_offset2 = 3`, and the final row's `b` lanes
-    equal the previous row's `c` lanes. -/
-lemma jalr_unaligned_add_lastc_and_chain
-    (m : Valid_Main FGL FGL) (r_main : ℕ)
-    (rs1 rd : Fin 32) (imm_offset : FGL) (state : RV64State)
-    (h_imm_unaligned : imm_offset.val % 4 ≠ 0)
-    (h_ext : m.is_external_op r_main = 1)
-    (h_op : m.op r_main = OP_AND)
-    (h_nonsegment : m.segment_l1 r_main = 0) :
+/-- Assemble the unaligned JALR lastc lane equalities from explicit
+    selector, offset, previous-row, and source-C facts. This theorem is
+    intentionally not part of `jalr_circuit_holds`; the end-to-end JALR
+    equivalence does not need to trust the two-row lowering shape. -/
+lemma jalr_unaligned_add_lastc_and_chain_of_facts
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (_next_pc : FGL)
+    (h_mem : m.b_src_mem r_main = 0)
+    (h_imm : m.b_src_imm r_main = 0)
+    (h_ind : m.b_src_ind r_main = 0)
+    (h_reg : m.b_src_reg r_main = 0)
+    (h_jmp1 : m.jmp_offset1 r_main = 0)
+    (h_jmp2 : m.jmp_offset2 r_main = 3)
+    (h_prev_ext : m.is_external_op (r_main - 1) = 1)
+    (h_prev_op : m.op (r_main - 1) = OP_ADD)
+    (h_src_c0 : b_src_c_copies_prev_c0 m r_main)
+    (h_src_c1 : b_src_c_copies_prev_c1 m r_main) :
       m.is_external_op (r_main - 1) = 1
     ∧ m.op (r_main - 1) = OP_ADD
     ∧ b_src_c m r_main = 1
@@ -157,40 +129,6 @@ lemma jalr_unaligned_add_lastc_and_chain
     ∧ m.jmp_offset2 r_main = 3
     ∧ m.b_0 r_main = m.c_0 (r_main - 1)
     ∧ m.b_1 r_main = m.c_1 (r_main - 1) := by
-  have h_shape :=
-    transpile_JALR_unaligned_final_source_c
-      m r_main rs1 rd imm_offset state h_imm_unaligned h_ext h_op
-  obtain ⟨h_mem, h_imm, h_ind, h_reg, h_jmp1, h_jmp2, h_prev_ext, h_prev_op⟩ := h_shape
-  have h_src : b_src_c m r_main = 1 :=
-    b_src_c_eq_one_of_all_other_b_sources_zero
-      m r_main h_mem h_imm h_ind h_reg
-  have h_src_c0 := main_source_c_copies_prev_c0_nonsegment m r_main h_nonsegment
-  have h_src_c1 := main_source_c_copies_prev_c1_nonsegment m r_main h_nonsegment
-  obtain ⟨h_b0, h_b1⟩ :=
-    jalr_unaligned_lastc_lanes m r_main h_src h_src_c0 h_src_c1
-  exact ⟨h_prev_ext, h_prev_op, h_src, h_jmp1, h_jmp2, h_b0, h_b1⟩
-
-/-- Same row-chain theorem as `jalr_unaligned_add_lastc_and_chain`, but
-    consuming the obligations already packaged in `jalr_circuit_holds`.
-    This is the form downstream proofs should prefer. -/
-lemma jalr_unaligned_add_lastc_and_chain_of_circuit
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (rs1 rd : Fin 32) (imm_offset : FGL) (state : RV64State)
-    (h_circuit : jalr_circuit_holds m r_main next_pc)
-    (h_imm_unaligned : imm_offset.val % 4 ≠ 0)
-    (h_nonsegment : m.segment_l1 r_main = 0) :
-      m.is_external_op (r_main - 1) = 1
-    ∧ m.op (r_main - 1) = OP_ADD
-    ∧ b_src_c m r_main = 1
-    ∧ m.jmp_offset1 r_main = 0
-    ∧ m.jmp_offset2 r_main = 3
-    ∧ m.b_0 r_main = m.c_0 (r_main - 1)
-    ∧ m.b_1 r_main = m.c_1 (r_main - 1) := by
-  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, _h_mode,
-          h_source_c, h_unaligned⟩ := h_circuit
-  obtain ⟨h_mem, h_imm, h_ind, h_reg, h_jmp1, h_jmp2, h_prev_ext, h_prev_op⟩ :=
-    h_unaligned rs1 rd imm_offset state h_imm_unaligned
-  obtain ⟨h_src_c0, h_src_c1⟩ := h_source_c h_nonsegment
   have h_src : b_src_c m r_main = 1 :=
     b_src_c_eq_one_of_all_other_b_sources_zero
       m r_main h_mem h_imm h_ind h_reg
@@ -211,7 +149,7 @@ lemma jalr_store_value
     m.store_pc r_main * (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
         + m.c_0 r_main
       = m.pc r_main + m.jmp_offset2 r_main := by
-  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode, _h_src, _h_unaligned⟩ := h
+  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode⟩ := h
   obtain ⟨_h_ext, _h_op, _h_flag, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
   rw [h_store_pc]
   ring
@@ -262,7 +200,7 @@ lemma jalr_store_value_hi_bv
     (h_lane_hi : store_pc_lanes_match_hi m r_main e)
     (h_pc_offset_lt_2_32 : (PC + 4#64).toNat < 4294967296) :
     (memory_entry_hi e).val = (PC + 4#64).toNat / 4294967296 := by
-  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode, _h_src, _h_unaligned⟩ := h_circuit
+  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode⟩ := h_circuit
   obtain ⟨_h_ext, _h_op, _h_flag, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
   simp only [store_pc_lanes_match_hi, h_store_pc] at h_lane_hi
   rw [h_lane_hi]

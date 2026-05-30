@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 15
+# Total entries: 12
 #
 fa200b1ab7404b33  ZiskFv/AirsClean/Completeness.lean:39  axiom     binaryAdd_circuit_completeness
 3f25cdecf241bf62  ZiskFv/AirsClean/Completeness.lean:52  axiom     memAlignByte_circuit_completeness
@@ -14,8 +14,5 @@ a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pu
 1f6fb25749dc02ac  ZiskFv/SailSpec/Auxiliaries.lean:817  axiom     within_clint_is_false
 52c0bbafc03c9989  ZiskFv/SailSpec/Auxiliaries.lean:831  axiom     pmaCheck_is_pure_none
 724bd1dd06f6384f  ZiskFv/SailSpec/Auxiliaries.lean:850  axiom     update_elp_state_is_pure_unit
-41d7a26bc9779765  ZiskFv/Trusted/Transpiler.lean:2235  axiom     transpiler_contract_sound
-1e3238aa31069b0a  ZiskFv/Trusted/Transpiler.lean:2279  axiom     main_source_c_copies_prev_c0_nonsegment
-dd741443fc1a90fd  ZiskFv/Trusted/Transpiler.lean:2286  axiom     main_source_c_copies_prev_c1_nonsegment
-984cf7b33003f5ab  ZiskFv/Trusted/Transpiler.lean:2302  axiom     transpile_JALR_unaligned_final_source_c
+41d7a26bc9779765  ZiskFv/Trusted/Transpiler.lean:2234  axiom     transpiler_contract_sound
 b4ad9615202917eb  ZiskFv/ZiskCircuit/MemModel.lean:121  axiom     row_models_sail_state_load

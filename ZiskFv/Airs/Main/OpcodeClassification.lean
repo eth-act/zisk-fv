@@ -28,7 +28,7 @@ dispatches by case on which literal is in play. This file provides:
 
 **No new axiom is added.** The opcode-set fact is a *scope assumption*
 about the program being verified — the same flavor as
-`docs/fv/trusted-base.md`'s "Out of scope: Zicclsm, precompiles
+`trust/trusted-base.md`'s "Out of scope: Zicclsm, precompiles
 (Keccak / SHA256 / big-int / DMA / etc.), ECALL/EBREAK, ZisK's custom
 internal ops." Callers (the global theorem) accept the scope
 assumption explicitly and pass it through.
