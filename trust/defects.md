@@ -68,12 +68,12 @@ extensions, belong in scope documentation rather than this ledger.
 | Field | Value |
 |-------|-------|
 | `kind` | `implementation-semantic` |
-| `status` | `open-needs-triage` |
+| `status` | `completeness-only-needs-triage` |
 | `affected` | RV64I `FENCE`; `ZiskFv/SailSpec/fence.lean`; `ZiskFv/EquivCore/Fence.lean`; `ZiskFv/Compliance/Wrappers/Fence.lean`. |
-| `condition` | ZisK appears to implement FENCE as `nop()` / `PC += 4`; the exact unsupported behavior relative to the intended RV64IM platform model still needs to be pinned down. |
+| `condition` | ZisK appears to implement accepted FENCE rows as `nop()` / `PC += 4`, and may reject some FENCE encodings that Sail would execute as no-ops. The exact unsupported encoding set still needs to be pinned down. |
 | `evidence` | `ZiskFv/SailSpec/fence.lean` cites the transpiler lowering and proves the no-op Sail subset under Machine mode and the Sail concurrency stub. User report: ZisK does not currently support FENCE completely. |
-| `claim impact` | FENCE should stay in opcode coverage, but the theorem should be named or hypothesized as compliance for the `FenceNopEquivalent` subset until the full support boundary is explicit. |
-| `retirement condition` | Either prove the current no-op model is the full in-scope RV64IM platform behavior, or update ZisK and the proof so FENCE compliance no longer needs a defect predicate. |
+| `claim impact` | No current soundness exclusion. The global theorem is soundness-only: failure to accept every Sail-valid FENCE encoding is a completeness/coverage gap, not a counterexample to "every accepted transition is valid." In Lean, `Defects.FenceNopEquivalent` is intentionally `True` today, so `NoKnownDefect` does not exclude any FENCE envelope. If triage finds an accepted FENCE row whose Sail-observable behavior differs from `PC += 4`, this entry must become a real theorem exclusion. |
+| `retirement condition` | Pin down the accepted/rejected FENCE encoding set. If the gap is rejection-only, move it out of this soundness defect ledger when completeness tracking exists. If an accepted bad transition exists, replace `FenceNopEquivalent` with the precise exclusion predicate and prove the theorem only outside it. |
 
 ## Retired defects
 

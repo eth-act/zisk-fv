@@ -30,11 +30,11 @@ inductive DefectId where
 
 /-- Current modeled FENCE subset: Sail/ZisK-observable no-op behavior.
 
-This is a placeholder predicate for the FENCE triage. Today the FENCE proof
-already reduces Sail FENCE to `PC += 4` under the Machine-mode and Sail
-concurrency assumptions carried by the wrapper, so every current FENCE
-envelope is in the modeled subset. If the triage finds an in-scope behavior
-outside this subset, this predicate should become the precise condition. -/
+This predicate is intentionally `True` today. The known FENCE concern is that
+ZisK may reject some encodings that Sail would execute as no-ops; that is a
+completeness/coverage limitation, not a soundness counterexample. If triage
+finds an accepted FENCE row whose Sail-observable behavior is not `PC += 4`,
+this predicate should become the precise soundness-side exclusion. -/
 def FenceNopEquivalent
     (_env : OpEnvelope state m r_main) : Prop :=
   True

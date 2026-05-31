@@ -43,7 +43,7 @@ Lean axiom ledger:
 | Transpiler bridge | 1 | 1 | Removable by a verified Lean transpiler or checker that proves the same per-opcode contracts. |
 | Memory state load bridge | 1 | 1 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
 | Platform scope | 4 | 4 | Scope assumptions for PMP, PMA, CLINT, and Zicfilp under the current RV64IM platform profile. |
-| Clean completeness placeholders | 6 | 5 | Completeness-direction placeholders; planned retirement with completeness work. |
+| Clean completeness placeholders | 6 | 4 | Completeness-direction placeholders; planned retirement with completeness work. |
 
 ## Transpiler Bridge
 
@@ -122,13 +122,17 @@ Currently reached by the global compliance closure:
 ```text
 ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
 ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
-ZiskFv.AirsClean.Binary.binary_circuit_completeness
 ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
 ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness
 ```
 
-The remaining clean completeness declaration is a source-ledger entry but is
-not part of the current global closure.
+The two remaining clean completeness declarations are source-ledger entries
+but are not part of the current global closure:
+
+```text
+ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness
+ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness
+```
 
 Retirement path: prove the corresponding clean component constructibility from
 extracted constraints and witness definitions.
