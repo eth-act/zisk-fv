@@ -1,4 +1,5 @@
-{ writeShellApplication, elan, cargo, rustc, protobuf, python3, jq, git }:
+{ writeShellApplication, elan, cargo, rustc, protobuf, python3, jq, git
+, gcc, gnumake, nasm, gmp }:
 
 # Top-level test entry point. Single source of truth for "is the
 # project green?" Runs every check in dependency order so a clean
@@ -17,12 +18,25 @@ writeShellApplication {
   # are tracked via `overall` and surfaced in the final exit code.
   bashOptions = [ "nounset" "pipefail" ];
 
-  runtimeInputs = [ elan cargo rustc protobuf python3 jq git ];
+  runtimeInputs = [ elan cargo rustc protobuf python3 jq git gcc gnumake nasm ];
 
   text = ''
     cd "$(git rev-parse --show-toplevel)" || exit 1
 
     overall=0
+
+    export CPATH="${gmp.dev}/include''${CPATH:+:$CPATH}"
+    export LIBRARY_PATH="${gmp.out}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
+
+    prepare_zisk_rust_deps() {
+      # zisk-core's build.rs includes the float ELF unconditionally, but
+      # the RV64IM transpiler differential never executes the float runtime.
+      # Keep cargo focused on the static transpiler without requiring the
+      # RISC-V embedded C toolchain in this top-level test app.
+      mkdir -p zisk/lib-float/c/lib
+      touch zisk/lib-float/c/lib/libziskfloat.a zisk/lib-float/c/lib/ziskfloat.elf
+    }
+    prepare_zisk_rust_deps
 
     run() {
       local name=$1; shift
@@ -42,6 +56,7 @@ writeShellApplication {
 
     # 2. Default Rust-vs-Lean static-transpiler differential pinning.
     run "2/6 transpiler differential pinning" bash -c '
+      lake build ZiskFv.Transpiler.Static
       cargo run --manifest-path tools/transpiler-diff/Cargo.toml --quiet
     '
 

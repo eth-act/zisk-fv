@@ -52,75 +52,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pick-runner:
-    # Pre-flight on a free GitHub-hosted runner: evaluate the pilout
-    # derivation's output store path and ask cachix whether it's already
-    # cached, so logs still explain whether the run is warm or cold.
-    # The proof job itself always uses the eth-act XL runner
-    # (`size-xl-x64`, 32 GiB). The cold pilout build needs >16 GiB, and
-    # the 2026-05-29 Clean AIR integration fresh `lake build` measured
-    # 27.9 GiB summed Lean RSS at LEAN_NUM_THREADS=3, so warm proof runs
-    # no longer fit the 16 GiB L runner either.
-    name: probe cachix and select XL runner
-    if: >-
-      github.event_name != 'pull_request' ||
-      contains(github.event.pull_request.labels.*.name, 'run-ci')
-    runs-on: ubuntu-latest
-    outputs:
-      runner: ${{ steps.pick.outputs.runner }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: false
-
-      - uses: cachix/install-nix-action@v27
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-
-      - name: Resolve pilout derivation output hash
-        id: eval
-        run: |
-          set -euo pipefail
-          path=$(nix eval --raw .#zisk-pilout.outPath)
-          hash=$(basename "$path" | cut -d- -f1)
-          echo "path=$path"
-          echo "hash=$hash"
-          echo "hash=$hash" >> "$GITHUB_OUTPUT"
-
-      - name: Probe zisk-fv.cachix.org for pilout
-        id: pick
-        run: |
-          set -uo pipefail
-          hash="${{ steps.eval.outputs.hash }}"
-          status=$(curl -sIo /dev/null -w "%{http_code}" \
-            "https://zisk-fv.cachix.org/${hash}.narinfo" || echo "000")
-          echo "narinfo HTTP $status for $hash"
-          if [ "$status" = "200" ]; then
-            echo "→ pilout cached; routing to size-xl-x64 for lake build headroom"
-          else
-            echo "→ pilout NOT cached; routing to size-xl-x64 for cold build"
-          fi
-          echo "runner=size-xl-x64" >> "$GITHUB_OUTPUT"
-
   lake-build:
     name: lake build (full FV check)
-    needs: pick-runner
-    # XL (32 GiB) is required for both cold pilout rebuilds and this
-    # branch's warm lake build: the 2026-05-29 fresh build at
-    # LEAN_NUM_THREADS=3 peaked at 27.9 GiB summed Lean RSS (12.1 GiB
-    # max single Lean process). Cold first run: ~30 min nix populate +
-    # ~90 min lake build (single-thread perf on the self-hosted runners
-    # is much slower than typical dev boxes). Subsequent runs hit the
-    # cachix cache for nix outputs and the actions/cache for .lake.
-    runs-on: ["self-hosted-ghr", "${{ needs.pick-runner.outputs.runner }}"]
+    # XL (32 GiB) is required for both cold pilout rebuilds and warm
+    # lake builds: the 2026-05-29 fresh build at LEAN_NUM_THREADS=3
+    # peaked at 27.9 GiB summed Lean RSS (12.1 GiB max single Lean
+    # process), so proof runs no longer target the 16 GiB L runner.
+    # Subsequent runs hit the cachix cache for Nix outputs and the
+    # actions/cache entry for .lake.
+    runs-on: ["self-hosted-ghr", "size-xl-x64"]
     timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
         with:
-          # zisk/ submodule is a citation surface for transpile_*
-          # axiom rationales; the build does not read it.
-          submodules: false
+          # tools/transpiler-diff depends on zisk/{riscv,core} as
+          # path dependencies. The formal build inputs still come from
+          # flake.lock; this checkout is only for the differential pin.
+          submodules: true
 
       # cachix/install-nix-action (rather than DeterminateSystems') —
       # cachix-action assumes paths set up by this installer; using
