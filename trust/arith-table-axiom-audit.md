@@ -157,10 +157,14 @@ pins, Binary semantics for `LT_ABS_NP` / `LT_ABS_PN` / `GT`, and boundary
 cases. `DIV` and `REM` remain gated for those signed-specific obligations.
 
 The remaining obligations are not hidden proof holes. They are represented as
-explicit known-defect exclusions in the affected wrappers/canonical theorems and
-in the global `h_known_bugs : Defects.NoKnownDefect env` hypothesis. This
-restores zero-sorry while preserving the fact that signed multiply and DIV/REM
-dynamic witness soundness are not fully proved.
+explicit known-defect exclusions in the affected theorem surfaces and in the
+global `h_known_bugs : Defects.NoKnownDefect env` hypothesis. For canonical
+signed `DIV`/`REM`/`DIVW`/`REMW`, the old unstructured
+`h_no_arith_div_dynamic_defect : False` promise has been replaced by
+`h_avoid_known_bugs : Defects.NoKnownDefect <signed-DIV/REM envelope>`, which is
+contradictory exactly because those envelopes are registered known-bug shapes.
+This restores zero-sorry while preserving the fact that signed multiply and
+DIV/REM dynamic witness soundness are not fully proved.
 
 For the W-family rows, do not try to prove `sext = 0`. The finite table
 contains matching rows with `sext = 1`; this is expected because `sext`

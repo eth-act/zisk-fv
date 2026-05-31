@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Div
+import ZiskFv.Compliance.Defects
 import ZiskFv.Channels.StateEffect
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
@@ -54,12 +55,20 @@ theorem equiv_DIV
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    (h_no_arith_div_dynamic_defect : False)
+    (h_avoid_known_bugs : ZiskFv.Compliance.Defects.NoKnownDefect
+      (ZiskFv.Compliance.OpEnvelope.div
+        (state := state) (m := m) (r_main := r_main)
+        div_input r1 r2 rd bus v r_a pins h_match_primary promises arith_mem
+        h_op2_ne h_no_overflow h_row_constraints arith_table
+        h_na_bool h_nb_bool h_nr_bool h_np_xor))
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  exact False.elim h_no_arith_div_dynamic_defect
+  have h_known_bug_contradiction : False :=
+    ZiskFv.Compliance.Defects.no_arith_div_dynamic_witness_of_no_known_defect
+      h_avoid_known_bugs (by simp [ZiskFv.Compliance.Defects.ArithDivDynamicWitnessShape])
+  exact False.elim h_known_bug_contradiction
 
 
 end ZiskFv.Equivalence.Div

@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Divw
+import ZiskFv.Compliance.Defects
 import ZiskFv.Channels.StateEffect
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Channels.MemoryBusBytes
@@ -68,12 +69,20 @@ theorem equiv_DIVW
     (h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
           ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
-    (h_no_arith_div_dynamic_defect : False)
+    (h_avoid_known_bugs : ZiskFv.Compliance.Defects.NoKnownDefect
+      (ZiskFv.Compliance.OpEnvelope.divw
+        (state := state) (m := m) (r_main := r_main)
+        divw_input r1 r2 rd bus v r_a pins h_match_primary promises arith_mem
+        h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
+        h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow))
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  exact False.elim h_no_arith_div_dynamic_defect
+  have h_known_bug_contradiction : False :=
+    ZiskFv.Compliance.Defects.no_arith_div_dynamic_witness_of_no_known_defect
+      h_avoid_known_bugs (by simp [ZiskFv.Compliance.Defects.ArithDivDynamicWitnessShape])
+  exact False.elim h_known_bug_contradiction
 
 
 end ZiskFv.Equivalence.Divw

@@ -77,10 +77,10 @@ The non-W signed chain and write-value layers are also now present:
 
 These lemmas are intentionally not counted as defect retirement yet. The
 legacy `EquivCore.Div` / `EquivCore.Rem` surfaces now compose the non-boundary
-chunked write-value lemmas, but the Compliance / Equivalence wrappers still
+chunked write-value lemmas, but the Compliance wrappers and canonical
+Equivalence theorems still
 need structural witness plumbing plus sign-pin, signed-remainder-bound, and
-boundary-case discharge before their `h_no_arith_div_dynamic_defect : False`
-binders can be removed.
+boundary-case discharge before the known-bug exclusion can be retired.
 
 ## Signed Remainder-Bound Blocker
 
@@ -159,3 +159,14 @@ dependencies on:
 
 * `ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness`
 * `ZiskFv.Trusted.transpiler_contract_sound`
+
+Follow-up trust-shape cleanup after the upstream bug repro confirmed the
+signed `LT_ABS_NP` issue replaced the canonical signed `DIV`/`REM`/`DIVW`/`REMW`
+`h_no_arith_div_dynamic_defect : False` promise with
+`h_avoid_known_bugs : Defects.NoKnownDefect <signed-DIV/REM envelope>`. This is
+not a proof of the signed arms; those envelopes are still blocked by
+`Defects.ArithDivDynamicWitnessShape`. The change makes the caller-burden
+ledger point at the existing known-bug registry instead of an unstructured
+contradiction. The lower `ZiskFv.Compliance.Wrappers.*` compatibility theorem
+surfaces still carry the legacy `False` binder because they sit below
+`OpEnvelope` in the import graph.
