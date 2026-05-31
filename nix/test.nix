@@ -56,6 +56,7 @@ writeShellApplication {
 
     # 2. Default Rust-vs-Lean static-transpiler differential pinning.
     run "2/6 transpiler differential pinning" bash -c '
+      lake build ZiskFv.Transpiler.Static
       cargo run --manifest-path tools/transpiler-diff/Cargo.toml --quiet
     '
 
