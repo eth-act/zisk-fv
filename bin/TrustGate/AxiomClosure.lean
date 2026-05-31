@@ -3,7 +3,7 @@ TrustGate.AxiomClosure — per-theorem transitive axiom closure via
 `Lean.collectAxioms`.
 
 We keep only `ZiskFv.*`-prefixed Names. This is the project trust
-surface tracked by `trust/baseline-axioms.txt`.
+surface tracked by `trust/generated/baseline-axioms.txt`.
 Everything else is external:
 
   * Lean kernel postulates (`propext`, `Classical.choice`, `Quot.sound`,

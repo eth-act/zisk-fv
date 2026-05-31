@@ -3,7 +3,7 @@ import ZiskFv.Compliance.OpEnvelope
 /-!
 # Known-defect predicates for the global compliance theorem
 
-This module records the Lean side of `docs/fv/defects.md`. A defect
+This module records the Lean side of `trust/defects.md`. A defect
 predicate is not a trusted fact: it is a visible exclusion on a theorem
 whose claim is "compliance outside known defect regions".
 
@@ -20,7 +20,7 @@ open ZiskFv.Airs.Main (Valid_Main)
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
-/-- Stable identifiers for entries in `docs/fv/defects.md`. -/
+/-- Stable identifiers for entries in `trust/defects.md`. -/
 inductive DefectId where
   | arithTableTrustShape
   | arithMulSignedWitnessSoundness

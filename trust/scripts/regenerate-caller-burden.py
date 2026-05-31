@@ -4,7 +4,7 @@
 For each canonical `equiv_<OP>` theorem, emit one line per parameter
 binder showing `<theorem> <binder_name> <category> <type-snippet>`.
 
-The ledger is the mirror image of `trust/baseline-axioms.txt`: the
+The ledger is the mirror image of `trust/generated/baseline-axioms.txt`: the
 **axiom** ledger covers project-internal trust declarations; the
 **caller-burden** ledger covers the trust the caller is on the hook
 for at every per-opcode `equiv_<OP>` invocation. Together they
@@ -116,7 +116,7 @@ def main() -> int:
     print(f"# Caller-burden ledger.")
     print(f"# Format: <theorem> <binder_index> <name> <category> <type-snippet>")
     print(f"#")
-    print(f"# Mirrors `trust/baseline-axioms.txt` for the OTHER half of the trust")
+    print(f"# Mirrors `trust/generated/baseline-axioms.txt` for the OTHER half of the trust")
     print(f"# surface — every parameter the caller of a canonical `equiv_<OP>` is")
     print(f"# on the hook for. The plan to discharge promise hypotheses MUST")
     print(f"# reduce this ledger; renaming a binder, or splitting one promise into")

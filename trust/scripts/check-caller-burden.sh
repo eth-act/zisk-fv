@@ -3,7 +3,7 @@
 # parameter the caller of a canonical `equiv_<OP>` is on the hook for.
 #
 # Re-runs `regenerate-caller-burden.py` against the live tree and
-# diffs against `trust/baseline-caller-burden.txt`. The baseline is
+# diffs against `trust/generated/baseline-caller-burden.txt`. The baseline is
 # the audit surface: every binder appears as one line with its name,
 # category, and type snippet. Adding, renaming, or reshaping any
 # binder produces a diff that has to land alongside the refactor.
@@ -24,7 +24,7 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-BASELINE=trust/baseline-caller-burden.txt
+BASELINE=trust/generated/baseline-caller-burden.txt
 LIVE=$(mktemp)
 trap "rm -f $LIVE" EXIT
 

@@ -2,7 +2,7 @@
 # check-hypothesis-count.sh — anti-laundering gate.
 #
 # Re-runs `count-hypotheses.py` against the live tree and diffs against
-# `trust/baseline-hypothesis-count.txt`. The baseline is the audit
+# `trust/generated/baseline-hypothesis-count.txt`. The baseline is the audit
 # surface: every per-theorem `total=<N>` and `hypothesis=<M>` is
 # tracked, and any growth requires explicit reviewer ack via a
 # baseline-diff commit.
@@ -23,7 +23,7 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-BASELINE=trust/baseline-hypothesis-count.txt
+BASELINE=trust/generated/baseline-hypothesis-count.txt
 LIVE=$(mktemp)
 trap "rm -f $LIVE" EXIT
 

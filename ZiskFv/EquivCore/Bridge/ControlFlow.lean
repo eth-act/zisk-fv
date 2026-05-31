@@ -123,7 +123,7 @@ Caller-burden reduction (per opcode):
   bridge for future thickening.
 
 Anti-laundering metric:
-* `trust/baseline-hypothesis-count.txt` strictly shrinks for LUI
+* `trust/generated/baseline-hypothesis-count.txt` strictly shrinks for LUI
   (15 → 13), JAL (11 → 10), JALR (14 → 13). AUIPC unchanged.
 * No new axiom; trust ledger unchanged.
 -/

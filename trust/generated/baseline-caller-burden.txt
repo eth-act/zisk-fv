@@ -1,7 +1,7 @@
 # Caller-burden ledger.
 # Format: <theorem> <binder_index> <name> <category> <type-snippet>
 #
-# Mirrors `trust/baseline-axioms.txt` for the OTHER half of the trust
+# Mirrors `trust/generated/baseline-axioms.txt` for the OTHER half of the trust
 # surface — every parameter the caller of a canonical `equiv_<OP>` is
 # on the hook for. The plan to discharge promise hypotheses MUST
 # reduce this ledger; renaming a binder, or splitting one promise into

@@ -49,7 +49,7 @@ closures plus the trivial `state_effect_via_channels_eq_bus_effect_2`
 bridge. The V2 trust gate enforces this.
 
 `zisk_riscv_compliant_program_bus_except_known_defects` is the public
-defect-aware theorem shape while `docs/fv/defects.md` contains open
+defect-aware theorem shape while `trust/defects.md` contains open
 claim-weakening defects. Its extra `h_known_bugs` binder is orthogonal to
 the validity witnesses already bundled in `OpEnvelope`: validity says the
 current modeled constraints hold; `h_known_bugs` says this envelope is not
