@@ -98,6 +98,10 @@ theorem equiv_REMU
     -- replaced by the row-level carry-chain constraint set + unsigned
     -- mode pins, discharged via `Bridge.Arith.div_unsigned_chain_witnesses`.
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
+    (chunk_ranges : ZiskFv.AirsClean.ArithDiv.ChunkRangeLookupWitness v r_a)
+    (carry_ranges : ZiskFv.AirsClean.ArithDiv.UnsignedCarryRangeLookupWitness v r_a)
+    (remainder_bound :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
     (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
@@ -113,11 +117,7 @@ theorem equiv_REMU
           (v.c_2 r_a).val (v.c_3 r_a).val)
     (h_rs2_value : remu_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_op2_ne : remu_input.r2_val.toNat ≠ 0)
-    (h_d_lt_b : ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.d_0 r_a).val (v.d_1 r_a).val
-                  (v.d_2 r_a).val (v.d_3 r_a).val
-                  < remu_input.r2_val.toNat) :
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -133,12 +133,31 @@ theorem equiv_REMU
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a
+    ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges
+  have h_carry_ranges :=
+    ZiskFv.EquivCore.Bridge.Arith.arith_div_unsigned_carry_ranges_at_holds
+      v r_a carry_ranges
+  have h_d_lt_b_arith :=
+    ZiskFv.EquivCore.Bridge.Arith.arith_div_remainder_bound_unsigned
+      remainder_bound
+      (ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges)
+      h_nr h_nb
+  have h_d_lt_b :
+      ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.d_0 r_a).val (v.d_1 r_a).val
+          (v.d_2 r_a).val (v.d_3 r_a).val
+        < remu_input.r2_val.toNat := by
+    simpa [h_rs2_value] using h_d_lt_b_arith
+  have h_op2_ne : remu_input.r2_val.toNat ≠ 0 := by
+    intro h_zero
+    have : ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.d_0 r_a).val (v.d_1 r_a).val
+          (v.d_2 r_a).val (v.d_3 r_a).val < 0 := by
+      simpa [h_zero] using h_d_lt_b
+    omega
   obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
           h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
           hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.div_unsigned_chain_witnesses v r_a h_chain
-      h_na h_nb h_np h_nr h_sext h_m32 h_div
+    ZiskFv.EquivCore.Bridge.Arith.div_unsigned_chain_witnesses_of_carry_ranges
+      v r_a h_chain h_na h_nb h_np h_nr h_div h_carry_ranges
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_remu
       remu_input.r1_val remu_input.r2_val e2

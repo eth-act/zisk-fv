@@ -4,10 +4,13 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.ZiskCircuit.Mul
 import ZiskFv.ZiskCircuit.Rem
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
+import ZiskFv.EquivCore.Bridge.Arith
+import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.SailSpec.rem
@@ -15,7 +18,6 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Channels.MemoryBusBytes
@@ -97,9 +99,12 @@ theorem equiv_REM
         state rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
         (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     -- Structural-unpacking ADDED binders per `trust/structural-unpacking-exceptions.txt` REM entry.
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
+    (chunk_ranges : ZiskFv.AirsClean.ArithDiv.ChunkRangeLookupWitness v r_a)
+    (carry_ranges : ZiskFv.AirsClean.ArithDiv.SignedCarryRangeLookupWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -153,24 +158,23 @@ theorem equiv_REM
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
   obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
           h_rd_idx⟩ := promises
-  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
-  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
-  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
-  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
-  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
-  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
-  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
-  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
+  have h_chunk_ranges :=
+    ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges
+  have h_carry_ranges :=
+    ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
+      v r_a carry_ranges
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_rem_chunked
       rem_input.r1_val rem_input.r2_val e2 v r_a
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool
-      h_np_xor h_nr_pin h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+      h0 h1 h2 h3 h4 h5 h6 h7
+      h_chain h_chunk_ranges h_carry_ranges
+      h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+      h_byte_lo h_byte_hi h_rs1_value h_rs2_value
       h_op2_ne h_no_overflow h_r_abs h_r_sign
   rw [equiv_REM_sail state rem_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]

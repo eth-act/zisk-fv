@@ -8,7 +8,7 @@
 
 # The trust gate itself: scripts, baselines, and the policy doc.
 # `/trust/` covers V1 baselines + scripts AND V2's
-# `forbidden-types.txt` + `baseline-equiv-axiom-deps.txt`.
+# `forbidden-types.txt` + `generated/baseline-equiv-axiom-deps.txt`.
 /trust/                        @codygunton
 
 # V2 trust gate Lake exe sources. Editing the gate's enforcement
@@ -33,4 +33,4 @@
 
 # The trusted-base documentation should track the live ledger; changes
 # here are paired with axiom changes and must be reviewed together.
-/docs/fv/trusted-base.md       @codygunton
+/trust/trusted-base.md       @codygunton

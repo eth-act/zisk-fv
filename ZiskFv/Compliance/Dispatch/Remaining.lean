@@ -340,79 +340,61 @@ theorem zisk_riscv_compliant_program_bus_remaining
         promises arith_mem h_op2_ne h_no_overflow
         h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Div.equiv_DIV state div_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises arith_mem h_op2_ne h_no_overflow
       h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_no_arith_div_dynamic_defect
+      h_known_bugs
   | rem rem_input r1 r2 rd bus v r_a
         pins h_match_secondary
         promises arith_mem h_op2_ne h_no_overflow
         h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Rem.equiv_REM state rem_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem h_op2_ne h_no_overflow
       h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_no_arith_div_dynamic_defect
+      h_known_bugs
   | remu remu_input r1 r2 rd bus v r_a
          pins h_match_secondary promises arith_mem
-      bounds h_row_constraints arith_table h_op2_ne =>
+      bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      remainder_bound =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Remu.equiv_REMU state remu_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table h_op2_ne
-      h_no_arith_div_dynamic_defect
+      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges remainder_bound
   | divw divw_input r1 r2 rd bus v r_a
          pins h_match_primary promises arith_mem
       h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Divw.equiv_DIVW state divw_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
-      h_no_arith_div_dynamic_defect
+      h_known_bugs
   | divuw divuw_input r1 r2 rd bus v r_a
           pins h_match_primary promises arith_mem
-      h_row_constraints arith_table h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
+      bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      remainder_bound h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Divuw.equiv_DIVUW state divuw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
-      h_no_arith_div_dynamic_defect
+      pins h_match_primary promises arith_mem bounds arith_table h_row_constraints
+      arith_chunk_ranges arith_carry_ranges remainder_bound h_sext_choice h_rs1_value h_rs2_value
   | remw remw_input r1 r2 rd bus v r_a
          pins h_match_secondary promises arith_mem
       h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Remw.equiv_REMW state remw_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w
-      h_no_arith_div_dynamic_defect
+      h_known_bugs
   | remuw remuw_input r1 r2 rd bus v r_a
           pins h_match_secondary promises arith_mem
-      h_row_constraints arith_table h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
+      bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      remainder_bound h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Remuw.equiv_REMUW state remuw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
-      h_no_arith_div_dynamic_defect
+      pins h_match_secondary promises arith_mem bounds arith_table h_row_constraints
+      arith_chunk_ranges arith_carry_ranges remainder_bound h_sext_choice h_rs1_value h_rs2_value
   -- Jumps
   | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val store_pc_mem
         pins h_jal_subset
@@ -600,79 +582,61 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         promises arith_mem h_op2_ne h_no_overflow
         h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Div.equiv_DIV state div_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises arith_mem h_op2_ne h_no_overflow
       h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_no_arith_div_dynamic_defect
+      h_known_bugs
   | rem rem_input r1 r2 rd bus v r_a
         pins h_match_secondary
         promises arith_mem h_op2_ne h_no_overflow
         h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Rem.equiv_REM state rem_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem h_op2_ne h_no_overflow
       h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_no_arith_div_dynamic_defect
+      h_known_bugs
   | remu remu_input r1 r2 rd bus v r_a
          pins h_match_secondary promises arith_mem
-      bounds h_row_constraints arith_table h_op2_ne =>
+      bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      remainder_bound =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Remu.equiv_REMU state remu_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table h_op2_ne
-      h_no_arith_div_dynamic_defect
+      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges remainder_bound
   | divw divw_input r1 r2 rd bus v r_a
          pins h_match_primary promises arith_mem
       h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Divw.equiv_DIVW state divw_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
-      h_no_arith_div_dynamic_defect
+      h_known_bugs
   | divuw divuw_input r1 r2 rd bus v r_a
           pins h_match_primary promises arith_mem
-      h_row_constraints arith_table h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
+      bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      remainder_bound h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Divuw.equiv_DIVUW state divuw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
-      h_no_arith_div_dynamic_defect
+      pins h_match_primary promises arith_mem bounds arith_table h_row_constraints
+      arith_chunk_ranges arith_carry_ranges remainder_bound h_sext_choice h_rs1_value h_rs2_value
   | remw remw_input r1 r2 rd bus v r_a
          pins h_match_secondary promises arith_mem
       h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Remw.equiv_REMW state remw_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w
-      h_no_arith_div_dynamic_defect
+      h_known_bugs
   | remuw remuw_input r1 r2 rd bus v r_a
           pins h_match_secondary promises arith_mem
-      h_row_constraints arith_table h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
+      bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      remainder_bound h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq_remaining]
-    have h_no_arith_div_dynamic_defect : False :=
-      Defects.no_arith_div_dynamic_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.ArithDivDynamicWitnessShape])
     exact ZiskFv.Equivalence.Remuw.equiv_REMUW state remuw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
-      h_no_arith_div_dynamic_defect
+      pins h_match_secondary promises arith_mem bounds arith_table h_row_constraints
+      arith_chunk_ranges arith_carry_ranges remainder_bound h_sext_choice h_rs1_value h_rs2_value
   | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val store_pc_mem
         pins h_jal_subset
         promises h_input_imm h_not_throws

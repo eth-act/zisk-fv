@@ -12,6 +12,8 @@ import ZiskFv.Airs.OperationBus.Bridge
 -- chain-witness lemmas below route `div_carry_chain_holds` through
 -- `AirsClean/ArithDiv/circuit`'s proven `soundness`.
 import ZiskFv.AirsClean.ArithDiv.Bridge
+import ZiskFv.EquivCore.Bridge.Binary
+import ZiskFv.EquivCore.Promises.ArithHelpers
 
 /-!
 # Arith discharge bridge (Mul + Div)
@@ -61,6 +63,173 @@ open Goldilocks
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 
+private lemma binary_bytes_lo_val_eq
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
+    (ha0 : (v.free_in_a_0 r).val < 256)
+    (ha1 : (v.free_in_a_1 r).val < 256)
+    (ha2 : (v.free_in_a_2 r).val < 256)
+    (ha3 : (v.free_in_a_3 r).val < 256) :
+    (v.free_in_a_0 r + 256 * v.free_in_a_1 r
+      + 65536 * v.free_in_a_2 r + 16777216 * v.free_in_a_3 r : FGL).val
+      = (v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
+        + (v.free_in_a_2 r).val * 65536 + (v.free_in_a_3 r).val * 16777216 := by
+  have h_cast :
+      v.free_in_a_0 r + 256 * v.free_in_a_1 r
+        + 65536 * v.free_in_a_2 r + 16777216 * v.free_in_a_3 r
+        = ((((v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
+              + (v.free_in_a_2 r).val * 65536
+              + (v.free_in_a_3 r).val * 16777216 : ℕ) : FGL)) := by
+    push_cast; ring
+  rw [h_cast, Fin.val_natCast]
+  apply Nat.mod_eq_of_lt
+  show _ < GL_prime
+  omega
+
+private lemma binary_bytes_hi_val_eq
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
+    (ha4 : (v.free_in_a_4 r).val < 256)
+    (ha5 : (v.free_in_a_5 r).val < 256)
+    (ha6 : (v.free_in_a_6 r).val < 256)
+    (ha7 : (v.free_in_a_7 r).val < 256) :
+    (v.free_in_a_4 r + 256 * v.free_in_a_5 r
+      + 65536 * v.free_in_a_6 r + 16777216 * v.free_in_a_7 r : FGL).val
+      = (v.free_in_a_4 r).val + (v.free_in_a_5 r).val * 256
+        + (v.free_in_a_6 r).val * 65536 + (v.free_in_a_7 r).val * 16777216 := by
+  have h_cast :
+      v.free_in_a_4 r + 256 * v.free_in_a_5 r
+        + 65536 * v.free_in_a_6 r + 16777216 * v.free_in_a_7 r
+        = ((((v.free_in_a_4 r).val + (v.free_in_a_5 r).val * 256
+              + (v.free_in_a_6 r).val * 65536
+              + (v.free_in_a_7 r).val * 16777216 : ℕ) : FGL)) := by
+    push_cast; ring
+  rw [h_cast, Fin.val_natCast]
+  apply Nat.mod_eq_of_lt
+  show _ < GL_prime
+  omega
+
+private lemma binary_b_bytes_lo_val_eq
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
+    (hb0 : (v.free_in_b_0 r).val < 256)
+    (hb1 : (v.free_in_b_1 r).val < 256)
+    (hb2 : (v.free_in_b_2 r).val < 256)
+    (hb3 : (v.free_in_b_3 r).val < 256) :
+    (v.free_in_b_0 r + 256 * v.free_in_b_1 r
+      + 65536 * v.free_in_b_2 r + 16777216 * v.free_in_b_3 r : FGL).val
+      = (v.free_in_b_0 r).val + (v.free_in_b_1 r).val * 256
+        + (v.free_in_b_2 r).val * 65536 + (v.free_in_b_3 r).val * 16777216 := by
+  have h_cast :
+      v.free_in_b_0 r + 256 * v.free_in_b_1 r
+        + 65536 * v.free_in_b_2 r + 16777216 * v.free_in_b_3 r
+        = ((((v.free_in_b_0 r).val + (v.free_in_b_1 r).val * 256
+              + (v.free_in_b_2 r).val * 65536
+              + (v.free_in_b_3 r).val * 16777216 : ℕ) : FGL)) := by
+    push_cast; ring
+  rw [h_cast, Fin.val_natCast]
+  apply Nat.mod_eq_of_lt
+  show _ < GL_prime
+  omega
+
+private lemma binary_b_bytes_hi_val_eq
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
+    (hb4 : (v.free_in_b_4 r).val < 256)
+    (hb5 : (v.free_in_b_5 r).val < 256)
+    (hb6 : (v.free_in_b_6 r).val < 256)
+    (hb7 : (v.free_in_b_7 r).val < 256) :
+    (v.free_in_b_4 r + 256 * v.free_in_b_5 r
+      + 65536 * v.free_in_b_6 r + 16777216 * v.free_in_b_7 r : FGL).val
+      = (v.free_in_b_4 r).val + (v.free_in_b_5 r).val * 256
+        + (v.free_in_b_6 r).val * 65536 + (v.free_in_b_7 r).val * 16777216 := by
+  have h_cast :
+      v.free_in_b_4 r + 256 * v.free_in_b_5 r
+        + 65536 * v.free_in_b_6 r + 16777216 * v.free_in_b_7 r
+        = ((((v.free_in_b_4 r).val + (v.free_in_b_5 r).val * 256
+              + (v.free_in_b_6 r).val * 65536
+              + (v.free_in_b_7 r).val * 16777216 : ℕ) : FGL)) := by
+    push_cast; ring
+  rw [h_cast, Fin.val_natCast]
+  apply Nat.mod_eq_of_lt
+  show _ < GL_prime
+  omega
+
+/-- Structural evidence for ArithDiv's remainder-bound comparison.
+
+    This is the explicit replacement shape for the old broad DIV/REM
+    defect gate. It exposes the real PIL `assumes_operation` consumer
+    row as an operation-bus match against a Binary provider row, plus
+    the Binary static-table chain evidence needed to interpret the row
+    as a comparison. The bundle itself is not the final theorem
+    `remainder < divisor`; consumers still have to prove the lane
+    packing and mode simplifications from these fields. -/
+structure ArithDivRemainderBoundWitness
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
+  binary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL
+  r_binary : ℕ
+  binary_core : ZiskFv.Airs.Binary.core_every_row binary r_binary
+  binary_ltu_chain :
+    ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64 binary r_binary
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
+  remainder_bound_match :
+    matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r)
+      (opBus_row_Binary binary r_binary)
+
+/-- Signed-mode structural evidence for ArithDiv's remainder-bound
+    comparison.
+
+The unsigned witness above is intentionally LTU-only. Signed DIV/REM rows
+select one of four Binary-table comparison operations from `(nr, nb)`:
+`LTU`, `LT_ABS_NP`, `LT_ABS_PN`, or `GT`. This signed witness carries the
+same matched Binary provider row plus proved static-table chain evidence for
+each operation-specific semantic branch. Downstream lemmas case-split on the
+real row signs and consume only the selected branch. -/
+structure ArithDivSignedRemainderBoundWitness
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
+  binary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL
+  r_binary : ℕ
+  binary_core : ZiskFv.Airs.Binary.core_every_row binary r_binary
+  binary_ltu_chain :
+    ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64 binary r_binary
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
+  binary_lt_abs_np_chain :
+    ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsNpStaticOut64 binary r_binary
+  binary_lt_abs_pn_chain :
+    ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsPnStaticOut64 binary r_binary
+  binary_gt_chain :
+    ZiskFv.EquivCore.Bridge.Binary.BinaryChainGtStaticOut64 binary r_binary
+  remainder_bound_match :
+    matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r)
+      (opBus_row_Binary binary r_binary)
+
+/-- Project an ArithDiv remainder-bound witness through the matched Binary
+    provider row. The conclusion is still expressed in Binary byte lanes;
+    later lemmas must identify those lanes with ArithDiv's `d[]` and `b[]`
+    chunks using the bus-lane equations and range facts. -/
+lemma arith_div_remainder_bound_binary_byte_lt
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivRemainderBoundWitness a r) :
+      (w.binary.free_in_a_0 w.r_binary).val
+        + (w.binary.free_in_a_1 w.r_binary).val * 256
+        + (w.binary.free_in_a_2 w.r_binary).val * 65536
+        + (w.binary.free_in_a_3 w.r_binary).val * 16777216
+        + (w.binary.free_in_a_4 w.r_binary).val * 4294967296
+        + (w.binary.free_in_a_5 w.r_binary).val * 1099511627776
+        + (w.binary.free_in_a_6 w.r_binary).val * 281474976710656
+        + (w.binary.free_in_a_7 w.r_binary).val * 72057594037927936
+      <
+      (w.binary.free_in_b_0 w.r_binary).val
+        + (w.binary.free_in_b_1 w.r_binary).val * 256
+        + (w.binary.free_in_b_2 w.r_binary).val * 65536
+        + (w.binary.free_in_b_3 w.r_binary).val * 16777216
+        + (w.binary.free_in_b_4 w.r_binary).val * 4294967296
+        + (w.binary.free_in_b_5 w.r_binary).val * 1099511627776
+        + (w.binary.free_in_b_6 w.r_binary).val * 281474976710656
+        + (w.binary.free_in_b_7 w.r_binary).val * 72057594037927936 := by
+  have h_lane_eqs := w.remainder_bound_match
+  simp only [matches_entry, ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound,
+    opBus_row_Binary] at h_lane_eqs
+  obtain ⟨_, _, _, _, _, _, _, _, h_flag, _, _, _⟩ := h_lane_eqs
+  exact ZiskFv.EquivCore.Bridge.Binary.static_ltu_chain_carry7_one_implies_lt
+    w.binary w.r_binary w.binary_core w.binary_ltu_chain h_flag.symm
+
 @[reducible] def ArithMulChunkRangesAt
     (a : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) : Prop :=
     (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
@@ -81,6 +250,201 @@ open ZiskFv.Airs.OperationBus
   ∧ ((a.cy_4 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_4 r).val)
   ∧ ((a.cy_5 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_5 r).val)
   ∧ ((a.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_6 r).val)
+
+@[reducible] def ArithDivChunkRangesAt
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) : Prop :=
+    (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+  ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+  ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+  ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+  ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+  ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+  ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+  ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536
+
+@[reducible] def ArithDivUnsignedCarryRangesAt
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) : Prop :=
+    (a.cy_0 r).val < 131072 ∧ (a.cy_1 r).val < 131072
+  ∧ (a.cy_2 r).val < 131072 ∧ (a.cy_3 r).val < 131072
+  ∧ (a.cy_4 r).val < 131072 ∧ (a.cy_5 r).val < 131072
+  ∧ (a.cy_6 r).val < 131072
+
+@[reducible] def ArithDivSignedCarryRangesAt
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) : Prop :=
+    ((a.cy_0 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_0 r).val)
+  ∧ ((a.cy_1 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_1 r).val)
+  ∧ ((a.cy_2 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_2 r).val)
+  ∧ ((a.cy_3 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_3 r).val)
+  ∧ ((a.cy_4 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_4 r).val)
+  ∧ ((a.cy_5 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_5 r).val)
+  ∧ ((a.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (a.cy_6 r).val)
+
+/-- ArithDiv chunk ranges derived from concrete Clean lookup evidence. -/
+lemma arith_div_chunk_ranges_at_holds
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (w : ZiskFv.AirsClean.ArithDiv.ChunkRangeLookupWitness a r) :
+    ArithDivChunkRangesAt a r := by
+  simpa [ArithDivChunkRangesAt] using
+    ZiskFv.AirsClean.ArithDiv.chunk_ranges_of_lookup_aware_const_soundness w
+
+/-- ArithDiv unsigned carry ranges derived from concrete Clean lookup evidence. -/
+lemma arith_div_unsigned_carry_ranges_at_holds
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (w : ZiskFv.AirsClean.ArithDiv.UnsignedCarryRangeLookupWitness a r) :
+    ArithDivUnsignedCarryRangesAt a r := by
+  simpa [ArithDivUnsignedCarryRangesAt] using
+    ZiskFv.AirsClean.ArithDiv.unsigned_carry_ranges_of_lookup_aware_const_soundness w
+
+/-- ArithDiv signed/W carry ranges derived from concrete Clean lookup evidence. -/
+lemma arith_div_signed_carry_ranges_at_holds
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (w : ZiskFv.AirsClean.ArithDiv.SignedCarryRangeLookupWitness a r) :
+    ArithDivSignedCarryRangesAt a r := by
+  simpa [ArithDivSignedCarryRangesAt] using
+    ZiskFv.AirsClean.ArithDiv.signed_carry_ranges_of_lookup_aware_const_soundness w
+
+/-- Case split for the Binary operation selected by ArithDiv's
+    remainder-bound consumer.
+
+For signed DIV/REM rows the comparison is not always plain `LTU`. The
+`nr`/`nb` sign witnesses select between the four Binary comparison opcodes
+used by `arith.pil:274-277`: `LTU`, `LT_ABS_NP`, `LT_ABS_PN`, and `GT`.
+This lemma isolates that selector algebra so the future signed
+remainder-bound proof can focus on the Binary-table semantics for those
+three non-LTU operations. -/
+lemma arith_div_remainder_bound_op_of_signs
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) :
+    (a.nr r = 0 → a.nb r = 0 →
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r).op = 6)
+  ∧ (a.nr r = 1 → a.nb r = 0 →
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r).op = 80)
+  ∧ (a.nr r = 0 → a.nb r = 1 →
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r).op = 81)
+  ∧ (a.nr r = 1 → a.nb r = 1 →
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r).op = 8) := by
+  constructor
+  · intro h_nr h_nb
+    simp [ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound, h_nr, h_nb]
+  constructor
+  · intro h_nr h_nb
+    simp [ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound, h_nr, h_nb]
+  constructor
+  · intro h_nr h_nb
+    simp [ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound, h_nr, h_nb]
+  · intro h_nr h_nb
+    simp [ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound, h_nr, h_nb]
+
+/-- Unsigned non-W ArithDiv remainder bound, derived from the real
+    `assumes_operation` comparison row and the matched Binary LTU provider
+    row. This closes the semantic `d < b` fact in ArithDiv chunk form;
+    callers still separately relate `b[]` to the Sail rs2 value. -/
+lemma arith_div_remainder_bound_unsigned
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivRemainderBoundWitness a r)
+    (h_ranges : ArithDivChunkRangesAt a r)
+    (h_nr : a.nr r = 0) (h_nb : a.nb r = 0) :
+    ZiskFv.PackedBitVec.MulNoWrap.packed4
+        (a.d_0 r).val (a.d_1 r).val (a.d_2 r).val (a.d_3 r).val
+      <
+    ZiskFv.PackedBitVec.MulNoWrap.packed4
+        (a.b_0 r).val (a.b_1 r).val (a.b_2 r).val (a.b_3 r).val := by
+  obtain ⟨_, _, _, _,
+          hb0, hb1, hb2, hb3,
+          _, _, _, _,
+          hd0, hd1, hd2, hd3⟩ := h_ranges
+  have h_bin_lt := arith_div_remainder_bound_binary_byte_lt w
+  have h_lane_eqs := w.remainder_bound_match
+  simp only [matches_entry, ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound,
+    opBus_row_Binary] at h_lane_eqs
+  obtain ⟨_, _, h_a_lo, h_a_hi, h_b_lo, h_b_hi, _, _, _, _, _, _⟩ := h_lane_eqs
+  have h_a_hi' :
+      a.d_2 r + a.d_3 r * 65536 =
+        w.binary.free_in_a_4 w.r_binary + 256 * w.binary.free_in_a_5 w.r_binary
+          + 65536 * w.binary.free_in_a_6 w.r_binary
+          + 16777216 * w.binary.free_in_a_7 w.r_binary := by
+    simpa [h_nr] using h_a_hi
+  have h_b_hi' :
+      a.b_2 r + a.b_3 r * 65536 =
+        w.binary.free_in_b_4 w.r_binary + 256 * w.binary.free_in_b_5 w.r_binary
+          + 65536 * w.binary.free_in_b_6 w.r_binary
+          + 16777216 * w.binary.free_in_b_7 w.r_binary := by
+    simpa [h_nb] using h_b_hi
+  have ha0 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+    w.binary_ltu_chain.chain_0
+  have ha1 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+    w.binary_ltu_chain.chain_1
+  have ha2 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+    w.binary_ltu_chain.chain_2
+  have ha3 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+    w.binary_ltu_chain.chain_3
+  have ha4 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+    w.binary_ltu_chain.chain_4
+  have ha5 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+    w.binary_ltu_chain.chain_5
+  have ha6 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+    w.binary_ltu_chain.chain_6
+  have ha7 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+    w.binary_ltu_chain.chain_7
+  have hbb0 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+    w.binary_ltu_chain.chain_0
+  have hbb1 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+    w.binary_ltu_chain.chain_1
+  have hbb2 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+    w.binary_ltu_chain.chain_2
+  have hbb3 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+    w.binary_ltu_chain.chain_3
+  have hbb4 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+    w.binary_ltu_chain.chain_4
+  have hbb5 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+    w.binary_ltu_chain.chain_5
+  have hbb6 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+    w.binary_ltu_chain.chain_6
+  have hbb7 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+    w.binary_ltu_chain.chain_7
+  have h_d_lo_val := congrArg Fin.val h_a_lo
+  rw [ZiskFv.EquivCore.Promises.arith_h_pair_lift (a.d_0 r) (a.d_1 r) hd0 hd1,
+    binary_bytes_lo_val_eq w.binary w.r_binary ha0 ha1 ha2 ha3] at h_d_lo_val
+  have h_d_hi_val := congrArg Fin.val h_a_hi'
+  rw [ZiskFv.EquivCore.Promises.arith_h_pair_lift (a.d_2 r) (a.d_3 r) hd2 hd3,
+    binary_bytes_hi_val_eq w.binary w.r_binary ha4 ha5 ha6 ha7] at h_d_hi_val
+  have h_b_lo_val := congrArg Fin.val h_b_lo
+  rw [ZiskFv.EquivCore.Promises.arith_h_pair_lift (a.b_0 r) (a.b_1 r) hb0 hb1,
+    binary_b_bytes_lo_val_eq w.binary w.r_binary hbb0 hbb1 hbb2 hbb3] at h_b_lo_val
+  have h_b_hi_val := congrArg Fin.val h_b_hi'
+  rw [ZiskFv.EquivCore.Promises.arith_h_pair_lift (a.b_2 r) (a.b_3 r) hb2 hb3,
+    binary_b_bytes_hi_val_eq w.binary w.r_binary hbb4 hbb5 hbb6 hbb7] at h_b_hi_val
+  unfold ZiskFv.PackedBitVec.MulNoWrap.packed4
+  nlinarith
+
+/-- Unsigned W-mode ArithDiv remainder bound, reduced to the low 32-bit
+    chunks. The comparison row itself is the same Binary LTU fact as the
+    non-W case; W-mode consumers additionally provide high-chunk zero pins. -/
+lemma arith_div_remainder_bound_unsigned_w
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivRemainderBoundWitness a r)
+    (h_ranges : ArithDivChunkRangesAt a r)
+    (h_nr : a.nr r = 0) (h_nb : a.nb r = 0)
+    (h_b23 : (a.b_2 r).val = 0 ∧ (a.b_3 r).val = 0) :
+    ((a.d_2 r).val = 0 ∧ (a.d_3 r).val = 0)
+      ∧ (a.d_0 r).val + (a.d_1 r).val * 65536
+        < (a.b_0 r).val + (a.b_1 r).val * 65536 := by
+  have h_full :=
+    arith_div_remainder_bound_unsigned w h_ranges h_nr h_nb
+  obtain ⟨hb2, hb3⟩ := h_b23
+  obtain ⟨_ha0, _ha1, _ha2, _ha3,
+          hb0, hb1, _hb2, _hb3,
+          _hc0, _hc1, _hc2, _hc3,
+          _hd0, _hd1, _hd2, _hd3⟩ := h_ranges
+  unfold ZiskFv.PackedBitVec.MulNoWrap.packed4 at h_full
+  rw [hb2, hb3] at h_full
+  have h_b32_lt :
+      (a.b_0 r).val + (a.b_1 r).val * 65536 < 4294967296 := by
+    have : (a.b_1 r).val * 65536 ≤ 65535 * 65536 :=
+      Nat.mul_le_mul_right _ (by omega)
+    omega
+  constructor
+  · constructor <;> omega
+  · omega
 
 /-! ## CarryChain re-exports — packed multiplication / division
     identities derived from the per-row carry-chain constraints.
@@ -153,6 +517,61 @@ lemma mul_unsigned_chain_witnesses_of_carry_ranges
     at h31 h32 h33 h34 h35 h36 h37 h38
   obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ := h_carry_ranges
   refine ⟨_, _, _, _, _, _, _, hr0, hr1, hr2, hr3, hr4, hr5, hr6, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination h31
+  · linear_combination h32
+  · linear_combination h33
+  · linear_combination h34
+  · linear_combination h35
+  · linear_combination h36
+  · linear_combination h37
+  · linear_combination h38
+
+/-- `div_unsigned_chain_witnesses` with carry ranges supplied from a concrete
+    Clean lookup witness instead of the legacy range-bus theorem. -/
+lemma div_unsigned_chain_witnesses_of_carry_ranges
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_chain : div_carry_chain_holds v r_a)
+    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (h_div : v.div r_a = 1)
+    (h_carry_ranges : ArithDivUnsignedCarryRangesAt v r_a) :
+    ∃ cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL,
+      cy₀.val < 131072 ∧ cy₁.val < 131072 ∧ cy₂.val < 131072 ∧ cy₃.val < 131072
+    ∧ cy₄.val < 131072 ∧ cy₅.val < 131072 ∧ cy₆.val < 131072
+    ∧ (v.a_0 r_a * v.b_0 r_a + v.d_0 r_a = v.c_0 r_a + cy₀ * 65536)
+    ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + v.d_1 r_a + cy₀
+        = v.c_1 r_a + cy₁ * 65536)
+    ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a
+        + v.d_2 r_a + cy₁
+        = v.c_2 r_a + cy₂ * 65536)
+    ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+        + v.a_0 r_a * v.b_3 r_a + v.d_3 r_a + cy₂
+        = v.c_3 r_a + cy₃ * 65536)
+    ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + cy₃
+        = cy₄ * 65536)
+    ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄ = cy₅ * 65536)
+    ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = cy₆ * 65536)
+    ∧ (cy₆ = 0) := by
+  have h_chain := ZiskFv.AirsClean.ArithDiv.div_carry_chain_via_component v r_a h_chain
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
+             ZiskFv.Airs.ArithDiv.nb_fa_eq_div] at h6 h7 h8
+  simp only [h_na, h_nb] at h6 h7 h8
+  have h_fab : v.fab r_a = (1 : FGL) := by linear_combination h6
+  have h_nafb : v.na_fb r_a = (0 : FGL) := by linear_combination h7
+  have h_nbfa : v.nb_fa r_a = (0 : FGL) := by linear_combination h8
+  simp only [ZiskFv.Airs.ArithDiv.carry_eq_0_div, ZiskFv.Airs.ArithDiv.carry_eq_1_div,
+             ZiskFv.Airs.ArithDiv.carry_eq_2_div, ZiskFv.Airs.ArithDiv.carry_eq_3_div,
+             ZiskFv.Airs.ArithDiv.carry_eq_4_div, ZiskFv.Airs.ArithDiv.carry_eq_5_div,
+             ZiskFv.Airs.ArithDiv.carry_eq_6_div, ZiskFv.Airs.ArithDiv.carry_eq_7_div]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  simp only [h_na, h_nb, h_np, h_nr, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, zero_mul, add_zero, sub_zero, zero_sub,
+             mul_one, one_mul]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ := h_carry_ranges
+  refine ⟨_, _, _, _, _, _, _, hr0, hr1, hr2, hr3, hr4, hr5, hr6,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · linear_combination h31
   · linear_combination h32
   · linear_combination h33
@@ -485,6 +904,288 @@ lemma mul_signed_chain_witnesses
   -- Substitute toIntZ fab, toIntZ na_fb, toIntZ nb_fa in h_agg via the pin lifts.
   rw [h_fab_eq_γ, h_nafb_int, h_nbfa_int] at h_agg
   -- Now h_agg has the right shape.
+  show _ = _
+  linear_combination h_agg
+
+/-- **DIV-signed chain witnesses (simplified ℤ Euclidean identity).**
+
+    Given the row-level carry-chain constraint set plus the signed DIV/REM
+    mode pins (`sext = 0`, `m32 = 0`, `div = 1`), sign-witness booleanity,
+    and the XOR relation for `np`, deliver the signed DIV chunk identity
+    consumed by `abs_euclidean_to_signed_euclidean_div_rem`.
+
+    The signed carry bounds are supplied by the constructible Clean
+    `SignedCarryRangeLookupWitness` path and exposed here as
+    `ArithDivSignedCarryRangesAt`; no legacy range axiom is used. -/
+lemma div_signed_chain_witnesses
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_chain : div_carry_chain_holds v r_a)
+    (h_chunk_ranges : ArithDivChunkRangesAt v r_a)
+    (h_carry_ranges : ArithDivSignedCarryRangesAt v r_a)
+    (_h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (h_div : v.div r_a = 1)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+    let A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
+              + toIntZ (v.a_2 r_a) * (65536 * 65536)
+              + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)
+    let B := toIntZ (v.b_0 r_a) + toIntZ (v.b_1 r_a) * 65536
+              + toIntZ (v.b_2 r_a) * (65536 * 65536)
+              + toIntZ (v.b_3 r_a) * (65536 * 65536 * 65536)
+    let C := toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536
+              + toIntZ (v.c_2 r_a) * (65536 * 65536)
+              + toIntZ (v.c_3 r_a) * (65536 * 65536 * 65536)
+    let D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
+              + toIntZ (v.d_2 r_a) * (65536 * 65536)
+              + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536)
+    (1 - 2 * toIntZ (v.np r_a)) * A * B
+        + (1 - 2 * toIntZ (v.nr r_a)) * D
+        + (toIntZ (v.nb r_a) * (1 - 2 * toIntZ (v.na r_a)) * A
+            + toIntZ (v.na r_a) * (1 - 2 * toIntZ (v.nb r_a)) * B) * 2^64
+        + (toIntZ (v.nr r_a) - toIntZ (v.np r_a)) * 2^64
+        + toIntZ (v.na r_a) * toIntZ (v.nb r_a) * 2^128
+      = (1 - 2 * toIntZ (v.np r_a)) * C := by
+  have h_chain := ZiskFv.AirsClean.ArithDiv.div_carry_chain_via_component v r_a h_chain
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
+             ZiskFv.Airs.ArithDiv.nb_fa_eq_div] at h6 h7 h8
+  set fab : FGL := v.fab r_a with h_fab_def
+  set na_fb : FGL := v.na_fb r_a with h_nafb_def
+  set nb_fa : FGL := v.nb_fa r_a with h_nbfa_def
+  have h_fab : fab = 1 - 2 * v.na r_a - 2 * v.nb r_a + 4 * v.na r_a * v.nb r_a := by
+    linear_combination h6
+  have h_nafb : na_fb = v.na r_a * (1 - 2 * v.nb r_a) := by
+    linear_combination h7
+  have h_nbfa : nb_fa = v.nb r_a * (1 - 2 * v.na r_a) := by
+    linear_combination h8
+  simp only [ZiskFv.Airs.ArithDiv.carry_eq_0_div, ZiskFv.Airs.ArithDiv.carry_eq_1_div,
+             ZiskFv.Airs.ArithDiv.carry_eq_2_div, ZiskFv.Airs.ArithDiv.carry_eq_3_div,
+             ZiskFv.Airs.ArithDiv.carry_eq_4_div, ZiskFv.Airs.ArithDiv.carry_eq_5_div,
+             ZiskFv.Airs.ArithDiv.carry_eq_6_div, ZiskFv.Airs.ArithDiv.carry_eq_7_div,
+             ← h_fab_def, ← h_nafb_def, ← h_nbfa_def,
+             h_m32, h_div, mul_zero, zero_mul, add_zero, sub_zero, mul_one, sub_self]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  set γ : FGL := 1 - 2 * v.np r_a with hγ
+  set δ : FGL := 1 - 2 * v.nr r_a with hδ
+  have h_chunk_31 :
+      fab * v.a_0 r_a * v.b_0 r_a + δ * v.d_0 r_a
+        - γ * v.c_0 r_a - v.cy_0 r_a * 65536 = 0 := by
+    linear_combination h31
+  have h_chunk_32 :
+      fab * v.a_1 r_a * v.b_0 r_a + fab * v.a_0 r_a * v.b_1 r_a
+        + δ * v.d_1 r_a - γ * v.c_1 r_a
+        + v.cy_0 r_a - v.cy_1 r_a * 65536 = 0 := by
+    linear_combination h32
+  have h_chunk_33 :
+      fab * v.a_2 r_a * v.b_0 r_a + fab * v.a_1 r_a * v.b_1 r_a
+        + fab * v.a_0 r_a * v.b_2 r_a + δ * v.d_2 r_a
+        - γ * v.c_2 r_a + v.cy_1 r_a - v.cy_2 r_a * 65536 = 0 := by
+    linear_combination h33
+  have h_chunk_34 :
+      fab * v.a_3 r_a * v.b_0 r_a + fab * v.a_2 r_a * v.b_1 r_a
+        + fab * v.a_1 r_a * v.b_2 r_a + fab * v.a_0 r_a * v.b_3 r_a
+        + δ * v.d_3 r_a - γ * v.c_3 r_a
+        + v.cy_2 r_a - v.cy_3 r_a * 65536 = 0 := by
+    linear_combination h34
+  have h_chunk_35 :
+      fab * v.a_3 r_a * v.b_1 r_a + fab * v.a_2 r_a * v.b_2 r_a
+        + fab * v.a_1 r_a * v.b_3 r_a
+        + v.b_0 r_a * na_fb + v.a_0 r_a * nb_fa
+        + (v.nr r_a - v.np r_a)
+        + v.cy_3 r_a - v.cy_4 r_a * 65536 = 0 := by
+    linear_combination h35
+  have h_chunk_36 :
+      fab * v.a_3 r_a * v.b_2 r_a + fab * v.a_2 r_a * v.b_3 r_a
+        + v.a_1 r_a * nb_fa + v.b_1 r_a * na_fb
+        + v.cy_4 r_a - v.cy_5 r_a * 65536 = 0 := by
+    linear_combination h36
+  have h_chunk_37 :
+      fab * v.a_3 r_a * v.b_3 r_a
+        + v.a_2 r_a * nb_fa + v.b_2 r_a * na_fb
+        + v.cy_5 r_a - v.cy_6 r_a * 65536 = 0 := by
+    linear_combination h37
+  have h_chunk_38 :
+      65536 * v.na r_a * v.nb r_a
+        + v.a_3 r_a * nb_fa + v.b_3 r_a * na_fb
+        + v.cy_6 r_a = 0 := by
+    linear_combination h38
+  obtain ⟨h_a0, h_a1, h_a2, h_a3,
+          h_b0, h_b1, h_b2, h_b3,
+          h_c0, h_c1, h_c2, h_c3,
+          h_d0, h_d1, h_d2, h_d3⟩ :=
+    h_chunk_ranges
+  obtain ⟨hcy0_disj, hcy1_disj, hcy2_disj, hcy3_disj,
+          hcy4_disj, hcy5_disj, hcy6_disj⟩ :=
+    h_carry_ranges
+  have hcy0_abs : |toIntZ (v.cy_0 r_a)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy0_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy1_abs : |toIntZ (v.cy_1 r_a)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy1_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy2_abs : |toIntZ (v.cy_2 r_a)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy2_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy3_abs : |toIntZ (v.cy_3 r_a)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy3_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy4_abs : |toIntZ (v.cy_4 r_a)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy4_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy5_abs : |toIntZ (v.cy_5 r_a)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy5_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy6_abs : |toIntZ (v.cy_6 r_a)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy6_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have h_na_abs : |toIntZ (v.na r_a)| ≤ 1 := by
+    rcases h_na_bool with h | h
+    · rw [h]; decide
+    · rw [h]; decide
+  have h_nb_abs : |toIntZ (v.nb r_a)| ≤ 1 := by
+    rcases h_nb_bool with h | h
+    · rw [h]; decide
+    · rw [h]; decide
+  have h_nr_abs : |toIntZ (v.nr r_a)| ≤ 1 := by
+    rcases h_nr_bool with h | h
+    · rw [h]; decide
+    · rw [h]; decide
+  have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
+    rw [h_np_xor]
+    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
+    all_goals (rw [h_na, h_nb])
+    · left; decide
+    · right; decide
+    · right; decide
+    · left; decide
+  have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
+    have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
+    rcases h_np_int_bool with h | h
+    · left; rw [← h_round_trip, h]; norm_cast
+    · right; rw [← h_round_trip, h]; norm_cast
+  have h_np_abs : |toIntZ (v.np r_a)| ≤ 1 := by
+    rcases h_np_int_bool with h | h
+    · rw [h]; decide
+    · rw [h]; decide
+  have h_fab_abs : |toIntZ fab| ≤ 1 := by
+    have h_eq := fgl_fab_pin_int fab (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_fab
+    rw [h_eq]
+    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
+    all_goals (rw [h_na, h_nb])
+    all_goals decide
+  have h_nafb_abs : |toIntZ na_fb| ≤ 1 := by
+    have h_eq := fgl_na_fb_pin_int na_fb (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nafb
+    rw [h_eq]
+    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
+    all_goals (rw [h_na, h_nb])
+    all_goals decide
+  have h_nbfa_abs : |toIntZ nb_fa| ≤ 1 := by
+    have h_eq := fgl_nb_fa_pin_int nb_fa (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nbfa
+    rw [h_eq]
+    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
+    all_goals (rw [h_na, h_nb])
+    all_goals decide
+  have h_γ_abs : |toIntZ γ| ≤ 1 := by
+    rcases h_np_bool with h_np | h_np
+    · rw [hγ, h_np]
+      have : (1 : FGL) - 2 * 0 = 1 := by ring
+      rw [this]; decide
+    · rw [hγ, h_np]
+      have : (1 : FGL) - 2 * 1 = -1 := by ring
+      rw [this]; decide
+  have h_δ_abs : |toIntZ δ| ≤ 1 := by
+    rcases h_nr_bool with h_nr | h_nr
+    · rw [hδ, h_nr]
+      have : (1 : FGL) - 2 * 0 = 1 := by ring
+      rw [this]; decide
+    · rw [hδ, h_nr]
+      have : (1 : FGL) - 2 * 1 = -1 := by ring
+      rw [this]; decide
+  have hZ31 := fgl_div_chunk_lift_C31_signed_int
+    (v.a_0 r_a) (v.b_0 r_a) (v.c_0 r_a) (v.d_0 r_a)
+    (v.cy_0 r_a) fab γ δ
+    h_a0 h_b0 h_c0 h_d0 hcy0_abs h_fab_abs h_γ_abs h_δ_abs h_chunk_31
+  have hZ32 := fgl_div_chunk_lift_C32_signed_int
+    (v.a_0 r_a) (v.a_1 r_a) (v.b_0 r_a) (v.b_1 r_a)
+    (v.c_1 r_a) (v.d_1 r_a) (v.cy_0 r_a) (v.cy_1 r_a) fab γ δ
+    h_a0 h_a1 h_b0 h_b1 h_c1 h_d1 hcy0_abs hcy1_abs h_fab_abs h_γ_abs h_δ_abs h_chunk_32
+  have hZ33 := fgl_div_chunk_lift_C33_signed_int
+    (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a)
+    (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a)
+    (v.c_2 r_a) (v.d_2 r_a) (v.cy_1 r_a) (v.cy_2 r_a) fab γ δ
+    h_a0 h_a1 h_a2 h_b0 h_b1 h_b2 h_c2 h_d2 hcy1_abs hcy2_abs h_fab_abs h_γ_abs h_δ_abs h_chunk_33
+  have hZ34 := fgl_div_chunk_lift_C34_signed_int
+    (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
+    (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
+    (v.c_3 r_a) (v.d_3 r_a) (v.cy_2 r_a) (v.cy_3 r_a) fab γ δ
+    h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3 h_c3 h_d3 hcy2_abs hcy3_abs h_fab_abs h_γ_abs h_δ_abs h_chunk_34
+  have hZ35 := fgl_div_chunk_lift_C35_signed_int
+    (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
+    (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
+    (v.cy_3 r_a) (v.cy_4 r_a) fab na_fb nb_fa (v.nr r_a) (v.np r_a)
+    h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3 hcy3_abs hcy4_abs
+    h_fab_abs h_nafb_abs h_nbfa_abs h_nr_abs h_np_abs h_chunk_35
+  have hZ36 := fgl_div_chunk_lift_C36_signed_int
+    (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
+    (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
+    (v.cy_4 r_a) (v.cy_5 r_a) fab na_fb nb_fa
+    h_a1 h_a2 h_a3 h_b1 h_b2 h_b3 hcy4_abs hcy5_abs h_fab_abs
+    h_nafb_abs h_nbfa_abs h_chunk_36
+  have hZ37 := fgl_div_chunk_lift_C37_signed_int
+    (v.a_2 r_a) (v.a_3 r_a) (v.b_2 r_a) (v.b_3 r_a)
+    (v.cy_5 r_a) (v.cy_6 r_a) fab na_fb nb_fa
+    h_a2 h_a3 h_b2 h_b3 hcy5_abs hcy6_abs h_fab_abs h_nafb_abs h_nbfa_abs h_chunk_37
+  have hZ38 := fgl_div_chunk_lift_C38_signed_int
+    (v.a_3 r_a) (v.b_3 r_a) (v.cy_6 r_a)
+    (v.na r_a) (v.nb r_a) na_fb nb_fa
+    h_a3 h_b3 hcy6_abs h_nafb_abs h_nbfa_abs h_na_abs h_nb_abs h_chunk_38
+  have h_γ_int : toIntZ γ = 1 - 2 * toIntZ (v.np r_a) := by
+    rcases h_np_bool with h | h
+    · rw [hγ, h]
+      have h_lhs : (1 : FGL) - 2 * 0 = 1 := by ring
+      rw [h_lhs]
+      decide
+    · rw [hγ, h]
+      have h_lhs : (1 : FGL) - 2 * 1 = -1 := by ring
+      rw [h_lhs]
+      decide
+  have h_δ_int : toIntZ δ = 1 - 2 * toIntZ (v.nr r_a) := by
+    rcases h_nr_bool with h | h
+    · rw [hδ, h]
+      have h_lhs : (1 : FGL) - 2 * 0 = 1 := by ring
+      rw [h_lhs]
+      decide
+    · rw [hδ, h]
+      have h_lhs : (1 : FGL) - 2 * 1 = -1 := by ring
+      rw [h_lhs]
+      decide
+  have h_fab_int := fgl_fab_pin_int fab (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_fab
+  have h_nafb_int := fgl_na_fb_pin_int na_fb (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nafb
+  have h_nbfa_int := fgl_nb_fa_pin_int nb_fa (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nbfa
+  have h_fab_eq_γ : toIntZ fab = 1 - 2 * toIntZ (v.np r_a) := by
+    rw [h_fab_int]; linarith [h_np_xor]
+  rw [h_γ_int, h_δ_int] at hZ31 hZ32 hZ33 hZ34
+  have h_agg := div_signed_packed_of_chunks_int
+    (toIntZ (v.a_0 r_a)) (toIntZ (v.a_1 r_a)) (toIntZ (v.a_2 r_a)) (toIntZ (v.a_3 r_a))
+    (toIntZ (v.b_0 r_a)) (toIntZ (v.b_1 r_a)) (toIntZ (v.b_2 r_a)) (toIntZ (v.b_3 r_a))
+    (toIntZ (v.c_0 r_a)) (toIntZ (v.c_1 r_a)) (toIntZ (v.c_2 r_a)) (toIntZ (v.c_3 r_a))
+    (toIntZ (v.d_0 r_a)) (toIntZ (v.d_1 r_a)) (toIntZ (v.d_2 r_a)) (toIntZ (v.d_3 r_a))
+    (toIntZ (v.cy_0 r_a))
+    (toIntZ (v.cy_1 r_a))
+    (toIntZ (v.cy_2 r_a))
+    (toIntZ (v.cy_3 r_a))
+    (toIntZ (v.cy_4 r_a))
+    (toIntZ (v.cy_5 r_a))
+    (toIntZ (v.cy_6 r_a))
+    (toIntZ fab) (toIntZ na_fb) (toIntZ nb_fa)
+    (toIntZ (v.na r_a)) (toIntZ (v.nb r_a)) (toIntZ (v.np r_a)) (toIntZ (v.nr r_a))
+    hZ31 hZ32 hZ33 hZ34 hZ35 hZ36 hZ37 hZ38
+  rw [h_fab_eq_γ, h_nafb_int, h_nbfa_int] at h_agg
   show _ = _
   linear_combination h_agg
 

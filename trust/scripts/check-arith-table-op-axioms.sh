@@ -5,7 +5,7 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-baseline=trust/baseline-arith-table-op-axioms.txt
+baseline=trust/generated/baseline-arith-table-op-axioms.txt
 
 if [ -f ZiskFv/Airs/Arith/Ranges.lean ]; then
   current=$(

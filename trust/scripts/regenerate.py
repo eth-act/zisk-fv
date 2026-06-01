@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate `trust/baseline-axioms.txt` from the live tree.
+"""Regenerate `trust/generated/baseline-axioms.txt` from the live tree.
 
 Walks every file in `trust/allowed-axiom-files.txt`, parses each top-level
 axiom / opaque / constant declaration, hashes the **source-text block**
@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 ALLOWED_FILES = ROOT / "trust/allowed-axiom-files.txt"
 # Output path is overridable for the check-baseline temp-file flow.
-BASELINE = Path(sys.argv[1]) if len(sys.argv) > 1 else (ROOT / "trust/baseline-axioms.txt")
+BASELINE = Path(sys.argv[1]) if len(sys.argv) > 1 else (ROOT / "trust/generated/baseline-axioms.txt")
 
 # Match the start of an axiom-shaped declaration:
 #   axiom <name>

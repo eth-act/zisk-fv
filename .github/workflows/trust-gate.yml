@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "::error::trust gate failed. See above. Documentation:"
           echo "  - trust/README.md  (overview of the gate)"
-          echo "  - docs/fv/trusted-base.md  (the trust ledger)"
+          echo "  - trust/trusted-base.md  (the trust ledger)"
           echo "  - CLAUDE.md  (working conventions for agents)"
           echo ""
           echo "If the change to the trust surface is intentional:"

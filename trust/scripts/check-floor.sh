@@ -11,7 +11,7 @@ cd "$(git rev-parse --show-toplevel)"
 # blocking legitimate trust-ledger shrinkage. The monotone upper bound
 # lives in check-shrinkage.sh.
 MIN_AXIOMS=1
-axiom_count=$(grep -cE '^[0-9a-f]{16}  ' trust/baseline-axioms.txt 2>/dev/null || echo 0)
+axiom_count=$(grep -cE '^[0-9a-f]{16}  ' trust/generated/baseline-axioms.txt 2>/dev/null || echo 0)
 if [ "$axiom_count" -lt "$MIN_AXIOMS" ]; then
   echo "trust-gate: FLOOR FAILURE — only $axiom_count axioms in baseline (expected >= $MIN_AXIOMS)."
   echo "  This can happen if regenerate.py was sabotaged or the allowlist was emptied."

@@ -99,7 +99,7 @@ def main() -> int:
     print(f"# Wrapper caller-burden ledger.")
     print(f"# Format: <theorem> <binder_index> <name> <category> <type-snippet>")
     print(f"#")
-    print(f"# Mirrors `trust/baseline-caller-burden.txt` for the wrapper layer —")
+    print(f"# Mirrors `trust/generated/baseline-caller-burden.txt` for the wrapper layer —")
     print(f"# every parameter the caller of an `equiv_<OP>` (the")
     print(f"# wrappers under `ZiskFv/Compliance/Wrappers/*.lean`)")
     print(f"# is on the hook for. Adding, renaming, or")

@@ -47,15 +47,21 @@ theorem equiv_DIVU
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
-    (h_op2_ne : divu_input.r2_val.toNat ≠ 0)
-    (h_no_arith_div_dynamic_defect : False)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+    (remainder_bound :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     : (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, true))) state
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  exact False.elim h_no_arith_div_dynamic_defect
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_DIVU_of_table state divu_input r1 r2 rd bus m r_main v r_a
+    pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
+    arith_chunk_ranges arith_carry_ranges remainder_bound
 
 
 end ZiskFv.Equivalence.Divu
