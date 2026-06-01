@@ -46,7 +46,7 @@ imports.
 ## Historical axiom-bearing files
 
 Most AIR-side soundness axioms have been retired by the Clean/static routes.
-Use `trust/baseline-axioms.txt` and `trust/axiom-index.md` for the current
+Use `trust/generated/baseline-axioms.txt` and `trust/generated/axiom-index.md` for the current
 live ledger; this directory now mostly contains definitions and proved bridges.
 
 (The remaining non-`Airs/` axioms are transpile contracts in

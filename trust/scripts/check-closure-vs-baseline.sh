@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # check-closure-vs-baseline.sh — V2: assert that the uber-theorem's
 # transitive project-axiom closure equals exactly the project axioms
-# in `trust/baseline-axioms.txt`.
+# in `trust/generated/baseline-axioms.txt`.
 #
 # Catches the kind of drift the per-theorem
 # `baseline-equiv-axiom-deps.txt` cannot see — a hash-fresh axiom
@@ -13,7 +13,7 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-baseline=trust/baseline-axioms.txt
+baseline=trust/generated/baseline-axioms.txt
 if [ ! -f "$baseline" ]; then
   echo "trust-gate (V2): missing $baseline."
   exit 1

@@ -2,7 +2,7 @@
 #
 # Per the anti-laundering principle in CLAUDE.md, every refactor must
 # reduce or hold the per-theorem `total=` / `hypothesis=` counts in
-# `trust/baseline-hypothesis-count.txt`. This file lists the narrow
+# `trust/generated/baseline-hypothesis-count.txt`. This file lists the narrow
 # exception class: opcodes where the discharge takes the form of
 # *structural unpacking* — replacing a single compressed *promise
 # hypothesis* (such as `h_byte_sum_circuit` asserting the full

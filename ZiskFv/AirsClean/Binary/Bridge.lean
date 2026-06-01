@@ -30,6 +30,69 @@ abbrev StaticBinaryTableWfFacts (row : BinaryRow FGL) : Prop :=
   ∧ wf_properties (BinaryTableMessage.toEntry (lookupMessage6Row row) 1)
   ∧ wf_properties (BinaryTableMessage.toEntry (lookupMessage7Row row) 1)
 
+/-- Exact static-table GT semantics for the eight Binary byte lookup rows.
+    Kept separate from `StaticBinaryTableWfFacts` so adding signed DIV/REM
+    support does not broaden the legacy trusted `wf_properties` bundle. -/
+abbrev StaticBinaryTableGtFacts (row : BinaryRow FGL) : Prop :=
+    ZiskFv.Airs.Tables.BinaryTable.wf_GT
+      (BinaryTableMessage.toEntry (lookupMessage0Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_GT
+      (BinaryTableMessage.toEntry (lookupMessage1Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_GT
+      (BinaryTableMessage.toEntry (lookupMessage2Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_GT
+      (BinaryTableMessage.toEntry (lookupMessage3Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_GT
+      (BinaryTableMessage.toEntry (lookupMessage4Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_GT
+      (BinaryTableMessage.toEntry (lookupMessage5Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_GT
+      (BinaryTableMessage.toEntry (lookupMessage6Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_GT
+      (BinaryTableMessage.toEntry (lookupMessage7Row row) 1)
+
+/-- Exact static-table LT_ABS_NP semantics for the eight Binary byte lookup
+    rows. Kept out of `StaticBinaryTableWfFacts` for the same reason as GT:
+    these are proved projections for signed DIV/REM, not an expansion of the
+    legacy `wf_properties` bundle. -/
+abbrev StaticBinaryTableLtAbsNpFacts (row : BinaryRow FGL) : Prop :=
+    ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_NP
+      (BinaryTableMessage.toEntry (lookupMessage0Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_NP
+      (BinaryTableMessage.toEntry (lookupMessage1Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_NP
+      (BinaryTableMessage.toEntry (lookupMessage2Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_NP
+      (BinaryTableMessage.toEntry (lookupMessage3Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_NP
+      (BinaryTableMessage.toEntry (lookupMessage4Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_NP
+      (BinaryTableMessage.toEntry (lookupMessage5Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_NP
+      (BinaryTableMessage.toEntry (lookupMessage6Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_NP
+      (BinaryTableMessage.toEntry (lookupMessage7Row row) 1)
+
+/-- Exact static-table LT_ABS_PN semantics for the eight Binary byte lookup
+    rows. -/
+abbrev StaticBinaryTableLtAbsPnFacts (row : BinaryRow FGL) : Prop :=
+    ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_PN
+      (BinaryTableMessage.toEntry (lookupMessage0Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_PN
+      (BinaryTableMessage.toEntry (lookupMessage1Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_PN
+      (BinaryTableMessage.toEntry (lookupMessage2Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_PN
+      (BinaryTableMessage.toEntry (lookupMessage3Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_PN
+      (BinaryTableMessage.toEntry (lookupMessage4Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_PN
+      (BinaryTableMessage.toEntry (lookupMessage5Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_PN
+      (BinaryTableMessage.toEntry (lookupMessage6Row row) 1)
+  ∧ ZiskFv.Airs.Tables.BinaryTable.wf_LT_ABS_PN
+      (BinaryTableMessage.toEntry (lookupMessage7Row row) 1)
+
 @[reducible]
 def constVar (row : BinaryRow FGL) : Var BinaryRow FGL where
   aBytes := {
@@ -178,6 +241,53 @@ theorem static_table_wf_facts_of_spec_facts
         , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h5
         , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h6
         , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h7 ⟩
+
+/-- Project exact static-table membership to signed greater-than semantics.
+    This is a proved provider projection, not a `bin_table_consumer_wf`
+    trust expansion. -/
+theorem static_table_gt_facts_of_spec_facts
+    (row : BinaryRow FGL)
+    (h_static : StaticBinaryTableSpecFacts row) :
+    StaticBinaryTableGtFacts row := by
+  rcases h_static with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨ ZiskFv.AirsClean.BinaryTable.spec_wf_GT h0
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_GT h1
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_GT h2
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_GT h3
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_GT h4
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_GT h5
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_GT h6
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_GT h7 ⟩
+
+/-- Project exact static-table membership to LT_ABS_NP semantics. -/
+theorem static_table_lt_abs_np_facts_of_spec_facts
+    (row : BinaryRow FGL)
+    (h_static : StaticBinaryTableSpecFacts row) :
+    StaticBinaryTableLtAbsNpFacts row := by
+  rcases h_static with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨ ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_NP h0
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_NP h1
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_NP h2
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_NP h3
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_NP h4
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_NP h5
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_NP h6
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_NP h7 ⟩
+
+/-- Project exact static-table membership to LT_ABS_PN semantics. -/
+theorem static_table_lt_abs_pn_facts_of_spec_facts
+    (row : BinaryRow FGL)
+    (h_static : StaticBinaryTableSpecFacts row) :
+    StaticBinaryTableLtAbsPnFacts row := by
+  rcases h_static with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨ ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_PN h0
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_PN h1
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_PN h2
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_PN h3
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_PN h4
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_PN h5
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_PN h6
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_PN h7 ⟩
 
 @[reducible]
 def rowAt (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :

@@ -12,7 +12,7 @@ in `ZiskFv/Compliance.lean` (one level up) case-splits on.
   range / bus / lookup-table soundness, and pure-Lean derivations
   for everything else). The wrapper's parameter surface is the
   *minimal* caller-burden remaining after discharge; that surface
-  is drift-guarded by `trust/baseline-wrapper-caller-burden.txt`.
+  is drift-guarded by `trust/generated/baseline-wrapper-caller-burden.txt`.
 
 The uber theorem `zisk_riscv_compliant_program_bus` lives in
 `ZiskFv/Compliance.lean` (the file at the level above this folder)

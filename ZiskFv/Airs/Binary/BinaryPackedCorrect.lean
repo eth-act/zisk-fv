@@ -676,6 +676,117 @@ def consumer_byte_match_chain_wf
     e.a_byte = a ∧ e.b_byte = b ∧ e.c_byte = c ∧
     e.cin = cin ∧ e.flags = flags ∧ e.pos_ind = pos_ind
 
+/-- Static-provider form for BinaryTable operations that are intentionally
+    kept outside the legacy `wf_properties` bundle. This supports signed
+    DIV/REM's GT comparison without broadening the old trust surface. -/
+def consumer_byte_match_chain_wf_GT
+    (a b c cin flags pos_ind : FGL) : Prop :=
+  ∃ e : BinaryTableEntry FGL,
+    range_conditions e ∧ wf_GT e ∧
+    e.op.val = OP_GT ∧
+    e.a_byte = a ∧ e.b_byte = b ∧ e.c_byte = c ∧
+    e.cin = cin ∧ e.flags = flags ∧ e.pos_ind = pos_ind
+
+/-- Static-provider form for the `LT_ABS_NP` byte operation used by signed
+    DIV/REM remainder-bound checks. -/
+def consumer_byte_match_chain_wf_LT_ABS_NP
+    (a b c cin flags pos_ind : FGL) : Prop :=
+  ∃ e : BinaryTableEntry FGL,
+    range_conditions e ∧ wf_LT_ABS_NP e ∧
+    e.op.val = OP_LT_ABS_NP ∧
+    e.a_byte = a ∧ e.b_byte = b ∧ e.c_byte = c ∧
+    e.cin = cin ∧ e.flags = flags ∧ e.pos_ind = pos_ind
+
+/-- Static-provider form for the `LT_ABS_PN` byte operation used by signed
+    DIV/REM remainder-bound checks. -/
+def consumer_byte_match_chain_wf_LT_ABS_PN
+    (a b c cin flags pos_ind : FGL) : Prop :=
+  ∃ e : BinaryTableEntry FGL,
+    range_conditions e ∧ wf_LT_ABS_PN e ∧
+    e.op.val = OP_LT_ABS_PN ∧
+    e.a_byte = a ∧ e.b_byte = b ∧ e.c_byte = c ∧
+    e.cin = cin ∧ e.flags = flags ∧ e.pos_ind = pos_ind
+
+/-- Pure Nat model of BinaryTable's `LT_ABS_NP` byte-level carry rule.
+
+This is deliberately byte-local: byte 0 uses `pos = 2`, so it adds one
+after bitwise complementing `a`; the remaining bytes use only the
+complemented byte. The signed DIV/REM blocker is that this table-chain
+rule does not propagate the byte-0 `+1` through higher bytes. -/
+def ltAbsNpByteCout (a b cin pos : ℕ) : ℕ :=
+  let a_abs := if pos = 2 then (a ^^^ 0xff) + 1 else a ^^^ 0xff
+  if a_abs < b then 1 else if a_abs = b then cin else 0
+
+/-- Build-checked counterexample for the remaining signed DIV/REM
+    remainder-bound blocker.
+
+For `a = 0xffffffffffffff00` (`-256`) and `b = 0x100` (`+256`), the
+whole-word helper computes `abs(a) < b`, hence `256 < 256`, which is
+false. The byte-chain table rule nevertheless returns final carry `1`.
+This is why the signed `DIV`/`REM` defect gate cannot be soundly removed
+until upstream rejects or fixes this witness shape. -/
+theorem ltAbsNpByteChain_falsePositive_eqAbs256 :
+    (let c0 := ltAbsNpByteCout 0 0 0 2
+     let c1 := ltAbsNpByteCout 255 1 c0 0
+     let c2 := ltAbsNpByteCout 255 0 c1 0
+     let c3 := ltAbsNpByteCout 255 0 c2 0
+     let c4 := ltAbsNpByteCout 255 0 c3 0
+     let c5 := ltAbsNpByteCout 255 0 c4 0
+     let c6 := ltAbsNpByteCout 255 0 c5 0
+     let c7 := ltAbsNpByteCout 255 0 c6 1
+     c7 = 1)
+    ∧ ¬ (((0xffffffffffffff00 ^^^ 0xffffffffffffffff) + 1)
+          % 18446744073709551616 < 0x100) := by
+  native_decide
+
+lemma gt_chain_a_byte_lt_256
+    {a b c cin flags pos : FGL}
+    (h : consumer_byte_match_chain_wf_GT a b c cin flags pos) :
+    a.val < 256 := by
+  obtain ⟨_, h_range, _, _, h_a, _, _, _, _, _⟩ := h
+  rw [← h_a]
+  exact h_range.1
+
+lemma gt_chain_b_byte_lt_256
+    {a b c cin flags pos : FGL}
+    (h : consumer_byte_match_chain_wf_GT a b c cin flags pos) :
+    b.val < 256 := by
+  obtain ⟨_, h_range, _, _, _, h_b, _, _, _, _⟩ := h
+  rw [← h_b]
+  exact h_range.2.1
+
+lemma lt_abs_np_chain_a_byte_lt_256
+    {a b c cin flags pos : FGL}
+    (h : consumer_byte_match_chain_wf_LT_ABS_NP a b c cin flags pos) :
+    a.val < 256 := by
+  obtain ⟨_, h_range, _, _, h_a, _, _, _, _, _⟩ := h
+  rw [← h_a]
+  exact h_range.1
+
+lemma lt_abs_np_chain_b_byte_lt_256
+    {a b c cin flags pos : FGL}
+    (h : consumer_byte_match_chain_wf_LT_ABS_NP a b c cin flags pos) :
+    b.val < 256 := by
+  obtain ⟨_, h_range, _, _, _, h_b, _, _, _, _⟩ := h
+  rw [← h_b]
+  exact h_range.2.1
+
+lemma lt_abs_pn_chain_a_byte_lt_256
+    {a b c cin flags pos : FGL}
+    (h : consumer_byte_match_chain_wf_LT_ABS_PN a b c cin flags pos) :
+    a.val < 256 := by
+  obtain ⟨_, h_range, _, _, h_a, _, _, _, _, _⟩ := h
+  rw [← h_a]
+  exact h_range.1
+
+lemma lt_abs_pn_chain_b_byte_lt_256
+    {a b c cin flags pos : FGL}
+    (h : consumer_byte_match_chain_wf_LT_ABS_PN a b c cin flags pos) :
+    b.val < 256 := by
+  obtain ⟨_, h_range, _, _, _, h_b, _, _, _, _⟩ := h
+  rw [← h_b]
+  exact h_range.2.1
+
 /-! ### LTU byte-relation extractor -/
 
 private lemma byte_relation_LTU_of_wf
@@ -703,6 +814,44 @@ private lemma byte_relation_LT_of_wf
       e.flags.val % 2 = (if (e.a_byte.val &&& 0x80) ≠ 0 then 1 else 0)) := by
   obtain ⟨_, _, _, _, _, h_lt, _⟩ := h_wf
   exact h_lt h_op
+
+private lemma byte_relation_GT_of_wf
+    (e : BinaryTableEntry FGL)
+    (h_wf : wf_GT e)
+    (h_op : e.op.val = OP_GT) :
+    e.c_byte.val = 0 ∧
+    (e.pos_ind.val ≠ 1 ∨ (e.a_byte.val &&& 0x80) = (e.b_byte.val &&& 0x80) →
+      (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 1) ∧
+      (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+      (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 0)) ∧
+    (e.pos_ind.val = 1 →
+      (e.a_byte.val &&& 0x80) ≠ (e.b_byte.val &&& 0x80) →
+      e.flags.val % 2 = (if (e.b_byte.val &&& 0x80) ≠ 0 then 1 else 0)) := by
+  exact h_wf h_op
+
+private lemma byte_relation_LT_ABS_NP_of_wf
+    (e : BinaryTableEntry FGL)
+    (h_wf : wf_LT_ABS_NP e)
+    (h_op : e.op.val = OP_LT_ABS_NP) :
+    e.c_byte.val = 0 ∧
+    (let a_abs := if e.pos_ind.val = 2 then (e.a_byte.val ^^^ 0xFF) + 1
+      else e.a_byte.val ^^^ 0xFF
+     (a_abs < e.b_byte.val → e.flags.val % 2 = 1) ∧
+     (a_abs = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+     (a_abs > e.b_byte.val → e.flags.val % 2 = 0)) := by
+  exact h_wf h_op
+
+private lemma byte_relation_LT_ABS_PN_of_wf
+    (e : BinaryTableEntry FGL)
+    (h_wf : wf_LT_ABS_PN e)
+    (h_op : e.op.val = OP_LT_ABS_PN) :
+    e.c_byte.val = 0 ∧
+    (let b_abs := if e.pos_ind.val = 2 then (e.b_byte.val ^^^ 0xFF) + 1
+      else e.b_byte.val ^^^ 0xFF
+     (e.a_byte.val < b_abs → e.flags.val % 2 = 1) ∧
+     (e.a_byte.val = b_abs → e.flags.val % 2 = e.cin.val) ∧
+     (e.a_byte.val > b_abs → e.flags.val % 2 = 0)) := by
+  exact h_wf h_op
 
 private lemma byte_relation_SUB_of_wf
     (e : BinaryTableEntry FGL)
@@ -844,6 +993,48 @@ private lemma lt_byte_chain_of_wf
       flags_cell.val % 2 = (if (a.val &&& 0x80) ≠ 0 then 1 else 0)) := by
   obtain ⟨e, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos⟩ := h
   have hrel := byte_relation_LT_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos] at hrel
+  exact hrel
+
+private lemma gt_byte_chain_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf_GT a b c cin_cell flags_cell pos_cell) :
+    c.val = 0 ∧
+    (pos_cell.val ≠ 1 ∨ (a.val &&& 0x80) = (b.val &&& 0x80) →
+      (a.val > b.val → flags_cell.val % 2 = 1) ∧
+      (a.val = b.val → flags_cell.val % 2 = cin_cell.val) ∧
+      (a.val < b.val → flags_cell.val % 2 = 0)) ∧
+    (pos_cell.val = 1 →
+      (a.val &&& 0x80) ≠ (b.val &&& 0x80) →
+      flags_cell.val % 2 = (if (b.val &&& 0x80) ≠ 0 then 1 else 0)) := by
+  obtain ⟨e, _h_range, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos⟩ := h
+  have hrel := byte_relation_GT_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos] at hrel
+  exact hrel
+
+private lemma lt_abs_np_byte_chain_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf_LT_ABS_NP a b c cin_cell flags_cell pos_cell) :
+    c.val = 0 ∧
+    (let a_abs := if pos_cell.val = 2 then (a.val ^^^ 0xFF) + 1 else a.val ^^^ 0xFF
+     (a_abs < b.val → flags_cell.val % 2 = 1) ∧
+     (a_abs = b.val → flags_cell.val % 2 = cin_cell.val) ∧
+     (a_abs > b.val → flags_cell.val % 2 = 0)) := by
+  obtain ⟨e, _h_range, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos⟩ := h
+  have hrel := byte_relation_LT_ABS_NP_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos] at hrel
+  exact hrel
+
+private lemma lt_abs_pn_byte_chain_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf_LT_ABS_PN a b c cin_cell flags_cell pos_cell) :
+    c.val = 0 ∧
+    (let b_abs := if pos_cell.val = 2 then (b.val ^^^ 0xFF) + 1 else b.val ^^^ 0xFF
+     (a.val < b_abs → flags_cell.val % 2 = 1) ∧
+     (a.val = b_abs → flags_cell.val % 2 = cin_cell.val) ∧
+     (a.val > b_abs → flags_cell.val % 2 = 0)) := by
+  obtain ⟨e, _h_range, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos⟩ := h
+  have hrel := byte_relation_LT_ABS_PN_of_wf e h_wf h_op
   rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos] at hrel
   exact hrel
 

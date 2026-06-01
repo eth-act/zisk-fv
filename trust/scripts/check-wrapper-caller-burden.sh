@@ -21,7 +21,7 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-BASELINE=trust/baseline-wrapper-caller-burden.txt
+BASELINE=trust/generated/baseline-wrapper-caller-burden.txt
 LIVE=$(mktemp)
 trap "rm -f $LIVE" EXIT
 

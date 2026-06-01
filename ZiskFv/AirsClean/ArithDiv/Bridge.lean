@@ -140,6 +140,117 @@ def rowAt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
       carry_3 := v.cy_3 r, carry_4 := v.cy_4 r, carry_5 := v.cy_5 r
       carry_6 := v.cy_6 r }
 
+/-! ## Lookup-derived range witnesses -/
+
+/-- Lookup-aware Clean witness for the sixteen `bits(16)` chunk lookups in
+    a selected ArithDiv row. This is structural evidence for the Clean
+    `lookup rangeTable16` operations in `mainWithChunkRanges`; it is not a
+    replacement range axiom. -/
+structure ChunkRangeLookupWitness
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((mainWithChunkRanges (constVar (rowAt v r))).operations offset)
+
+theorem chunk_ranges_of_lookup_aware_const_soundness
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ChunkRangeLookupWitness v r) :
+    (v.a_0 r).val < 2 ^ 16 ∧ (v.a_1 r).val < 2 ^ 16
+  ∧ (v.a_2 r).val < 2 ^ 16 ∧ (v.a_3 r).val < 2 ^ 16
+  ∧ (v.b_0 r).val < 2 ^ 16 ∧ (v.b_1 r).val < 2 ^ 16
+  ∧ (v.b_2 r).val < 2 ^ 16 ∧ (v.b_3 r).val < 2 ^ 16
+  ∧ (v.c_0 r).val < 2 ^ 16 ∧ (v.c_1 r).val < 2 ^ 16
+  ∧ (v.c_2 r).val < 2 ^ 16 ∧ (v.c_3 r).val < 2 ^ 16
+  ∧ (v.d_0 r).val < 2 ^ 16 ∧ (v.d_1 r).val < 2 ^ 16
+  ∧ (v.d_2 r).val < 2 ^ 16 ∧ (v.d_3 r).val < 2 ^ 16 := by
+  have h_holds := w.holds
+  simp only [mainWithChunkRanges, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3,
+      h_c0, h_c1, h_c2, h_c3, h_d0, h_d1, h_d2, h_d3⟩
+  exact ⟨by simpa [rowAt, constVar] using h_a0,
+    by simpa [rowAt, constVar] using h_a1,
+    by simpa [rowAt, constVar] using h_a2,
+    by simpa [rowAt, constVar] using h_a3,
+    by simpa [rowAt, constVar] using h_b0,
+    by simpa [rowAt, constVar] using h_b1,
+    by simpa [rowAt, constVar] using h_b2,
+    by simpa [rowAt, constVar] using h_b3,
+    by simpa [rowAt, constVar] using h_c0,
+    by simpa [rowAt, constVar] using h_c1,
+    by simpa [rowAt, constVar] using h_c2,
+    by simpa [rowAt, constVar] using h_c3,
+    by simpa [rowAt, constVar] using h_d0,
+    by simpa [rowAt, constVar] using h_d1,
+    by simpa [rowAt, constVar] using h_d2,
+    by simpa [rowAt, constVar] using h_d3⟩
+
+/-- Lookup-aware Clean witness for the seven unsigned carry lookups in a
+    selected ArithDiv row. -/
+structure UnsignedCarryRangeLookupWitness
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((mainWithUnsignedCarryRanges (constVar (rowAt v r))).operations offset)
+
+theorem unsigned_carry_ranges_of_lookup_aware_const_soundness
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : UnsignedCarryRangeLookupWitness v r) :
+    (v.cy_0 r).val < 2 ^ 17 ∧ (v.cy_1 r).val < 2 ^ 17
+  ∧ (v.cy_2 r).val < 2 ^ 17 ∧ (v.cy_3 r).val < 2 ^ 17
+  ∧ (v.cy_4 r).val < 2 ^ 17 ∧ (v.cy_5 r).val < 2 ^ 17
+  ∧ (v.cy_6 r).val < 2 ^ 17 := by
+  have h_holds := w.holds
+  simp only [mainWithUnsignedCarryRanges, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6⟩
+  exact ⟨by simpa [rowAt, constVar] using h_cy0,
+    by simpa [rowAt, constVar] using h_cy1,
+    by simpa [rowAt, constVar] using h_cy2,
+    by simpa [rowAt, constVar] using h_cy3,
+    by simpa [rowAt, constVar] using h_cy4,
+    by simpa [rowAt, constVar] using h_cy5,
+    by simpa [rowAt, constVar] using h_cy6⟩
+
+/-- Lookup-aware Clean witness for the seven signed/W carry range lookups in
+    a selected ArithDiv row. -/
+structure SignedCarryRangeLookupWitness
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((mainWithSignedCarryRanges (constVar (rowAt v r))).operations offset)
+
+theorem signed_carry_ranges_of_lookup_aware_const_soundness
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : SignedCarryRangeLookupWitness v r) :
+    ((v.cy_0 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_0 r).val)
+  ∧ ((v.cy_1 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_1 r).val)
+  ∧ ((v.cy_2 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_2 r).val)
+  ∧ ((v.cy_3 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_3 r).val)
+  ∧ ((v.cy_4 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_4 r).val)
+  ∧ ((v.cy_5 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_5 r).val)
+  ∧ ((v.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_6 r).val) := by
+  have h_holds := w.holds
+  simp only [mainWithSignedCarryRanges, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6⟩
+  exact ⟨by simpa [rowAt, constVar] using h_cy0,
+    by simpa [rowAt, constVar] using h_cy1,
+    by simpa [rowAt, constVar] using h_cy2,
+    by simpa [rowAt, constVar] using h_cy3,
+    by simpa [rowAt, constVar] using h_cy4,
+    by simpa [rowAt, constVar] using h_cy5,
+    by simpa [rowAt, constVar] using h_cy6⟩
+
 /-- Concrete primary DIV/DIVU op-bus message for a Clean ArithDiv row. -/
 @[reducible]
 def primaryOpBusMessage (row : ArithDivRow FGL) : OpBusMessage FGL :=

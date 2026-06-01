@@ -6,7 +6,7 @@ Subcommands:
   check-deps PATH              Compare regenerated baseline against PATH.
   check-no-output-eq-v2 PATH   Type-walk; fail on forbidden Names from PATH.
   all                          Run check-deps + check-no-output-eq-v2 against
-                               trust/baseline-equiv-axiom-deps.txt and
+                               trust/generated/baseline-equiv-axiom-deps.txt and
                                trust/forbidden-types.txt.
 
 Run AFTER `lake build` (consumes oleans).
@@ -64,7 +64,7 @@ def diffStrings (regenerated committed : String) : IO UInt32 := do
     IO.println "trust-gate (V2): per-theorem axiom-dep baseline matches."
     return 0
   IO.eprintln "trust-gate (V2): per-theorem axiom-dep baseline DIFFERS."
-  IO.eprintln "  Run `lake exe trust-gate regenerate-deps > trust/baseline-equiv-axiom-deps.txt`"
+  IO.eprintln "  Run `lake exe trust-gate regenerate-deps > trust/generated/baseline-equiv-axiom-deps.txt`"
   IO.eprintln "  and review the diff before committing."
   let r := regenerated.splitOn "\n"
   let c := committed.splitOn "\n"
@@ -129,7 +129,7 @@ def cmdPrintReachable (env : Environment) (path : String) : IO UInt32 := do
     IO.println n.toString
   return 0
 
-/-- Parse a `trust/baseline-axioms.txt` line. The file is whitespace-
+/-- Parse a `trust/generated/baseline-axioms.txt` line. The file is whitespace-
 separated columns: `<hash>  <file>:<line>  <kind>  <name>`. We only
 need the last column (the unqualified axiom name). Lines starting
 with `#` and blank lines are skipped. -/
@@ -163,7 +163,7 @@ def loadAxiomList (path : System.FilePath) : IO (Array String) := do
 
 /-- Subcommand: check that the project-axiom closure of
 `zisk_riscv_compliant_program_bus` exactly matches the unqualified
-names in `trust/baseline-axioms.txt`, modulo the tolerated-completeness
+names in `trust/generated/baseline-axioms.txt`, modulo the tolerated-completeness
 allowlist at `trust/tolerated-completeness-axioms.txt`. Catches the
 kind of drift that the per-theorem `equiv_<OP>` axiom-dep baseline
 cannot see — i.e., axioms that survive in the trust ledger but are
@@ -195,9 +195,9 @@ def cmdCheckClosureVsBaseline (env : Environment) (path : String)
   let missingFromBaselineSorted := missingFromBaseline.qsort (· < ·)
   let missingFromClosureSorted := missingFromClosure.qsort (· < ·)
   if missingFromBaselineSorted.isEmpty && missingFromClosureSorted.isEmpty then
-    IO.println s!"trust-gate (V2): uber-theorem axiom closure matches baseline-axioms.txt modulo tolerated completeness ({closureLast.size} names)."
+    IO.println s!"trust-gate (V2): uber-theorem axiom closure matches generated/baseline-axioms.txt modulo tolerated completeness ({closureLast.size} names)."
     return 0
-  IO.eprintln "trust-gate (V2): uber-theorem axiom closure DIVERGES from baseline-axioms.txt."
+  IO.eprintln "trust-gate (V2): uber-theorem axiom closure DIVERGES from generated/baseline-axioms.txt."
   IO.eprintln s!"  Theorem:   {theoremName}"
   IO.eprintln s!"  Baseline:  {path}"
   IO.eprintln s!"  Closure:   {closureLast.size} names"
@@ -280,7 +280,7 @@ def usage : IO Unit := do
   IO.println "  print-axiom-closure NAME       print transitive ZiskFv-namespace axioms reachable from NAME"
   IO.println "  print-reachable PATH           print every ZiskFv.* const reachable from entry-points in PATH"
   IO.println "  find-unused PATH               enumerate ZiskFv.* consts not reachable from PATH entry points"
-  IO.println "  check-closure-vs-baseline PATH check zisk_riscv_compliant_program_bus axiom closure == baseline-axioms.txt"
+  IO.println "  check-closure-vs-baseline PATH check zisk_riscv_compliant_program_bus axiom closure == generated/baseline-axioms.txt"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
@@ -309,7 +309,7 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
     cmdCheckClosureVsBaseline env path
       `ZiskFv.Compliance.zisk_riscv_compliant_program_bus
   | ["all"] =>
-    let baseline ← IO.FS.readFile "trust/baseline-equiv-axiom-deps.txt"
+    let baseline ← IO.FS.readFile "trust/generated/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline
     let forbidden ← loadForbiddenTypes "trust/forbidden-types.txt"
     let r2 ← runTypeWalk env forbidden

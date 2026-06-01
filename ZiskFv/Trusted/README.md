@@ -20,8 +20,8 @@ The surrounding theorem docstrings and differential notes cite the
 upstream Rust paths and the in-tree Lean static transpiler model.
 
 To audit this class: read `Transpiler.lean`, the generated source
-ledger in `trust/baseline-axioms.txt`, and
-`trust/transpiler-differential-pinning.md`.
+ledger in `trust/generated/baseline-axioms.txt`, and
+`trust/trusted-base.md`.
 
 See `trust/trusted-base.md` for the full per-class breakdown of
 the current source axioms.

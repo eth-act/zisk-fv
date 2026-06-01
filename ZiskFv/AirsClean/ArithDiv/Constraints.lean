@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.ArithDiv.Spec
 import ZiskFv.AirsClean.ArithTable
+import ZiskFv.AirsClean.RangeTables
 import Clean.Circuit.Basic
 import ZiskFv.Channels.OperationBus
 
@@ -38,6 +39,7 @@ namespace ZiskFv.AirsClean.ArithDiv
 
 open Goldilocks
 open Circuit (assertZero lookup)
+open ZiskFv.AirsClean.RangeTables
 open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
 
 /-- The 11 DIV carry-chain F-constraints, taking the row's slot values
@@ -206,6 +208,52 @@ def mainWithArithTable (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
   main row
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
 
+/-- Lookup-aware ArithDiv path for the sixteen `bits(16)` chunk columns.
+    This is the Div-family counterpart of ArithMul's chunk range view. -/
+@[circuit_norm]
+def mainWithChunkRanges (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
+  main row
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_3
+
+/-- Lookup-aware ArithDiv path for unsigned carry `bits(17)` checks. -/
+@[circuit_norm]
+def mainWithUnsignedCarryRanges (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
+  main row
+  lookup (Table.fromStatic rangeTable17) row.aux.carry_0
+  lookup (Table.fromStatic rangeTable17) row.aux.carry_1
+  lookup (Table.fromStatic rangeTable17) row.aux.carry_2
+  lookup (Table.fromStatic rangeTable17) row.aux.carry_3
+  lookup (Table.fromStatic rangeTable17) row.aux.carry_4
+  lookup (Table.fromStatic rangeTable17) row.aux.carry_5
+  lookup (Table.fromStatic rangeTable17) row.aux.carry_6
+
+/-- Lookup-aware ArithDiv path for signed/W carry range checks. -/
+@[circuit_norm]
+def mainWithSignedCarryRanges (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
+  main row
+  lookup (Table.fromStatic signedCarryRangeTable) row.aux.carry_0
+  lookup (Table.fromStatic signedCarryRangeTable) row.aux.carry_1
+  lookup (Table.fromStatic signedCarryRangeTable) row.aux.carry_2
+  lookup (Table.fromStatic signedCarryRangeTable) row.aux.carry_3
+  lookup (Table.fromStatic signedCarryRangeTable) row.aux.carry_4
+  lookup (Table.fromStatic signedCarryRangeTable) row.aux.carry_5
+  lookup (Table.fromStatic signedCarryRangeTable) row.aux.carry_6
+
 /-- Lookup-aware elaboration for the next C3/C4 stage. It is intentionally
     separate from `arithDivElaborated` so existing carry-chain consumers do
     not acquire a new caller-supplied lookup promise before Compliance has
@@ -214,6 +262,27 @@ def mainWithArithTable (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
     ElaboratedCircuit FGL ArithDivRow unit where
   name := "ArithDivWithArithTable"
   main := mainWithArithTable
+  localLength _ := 0
+  output _ _ := ()
+
+@[reducible] def arithDivWithChunkRangesElaborated :
+    ElaboratedCircuit FGL ArithDivRow unit where
+  name := "ArithDivWithChunkRanges"
+  main := mainWithChunkRanges
+  localLength _ := 0
+  output _ _ := ()
+
+@[reducible] def arithDivWithUnsignedCarryRangesElaborated :
+    ElaboratedCircuit FGL ArithDivRow unit where
+  name := "ArithDivWithUnsignedCarryRanges"
+  main := mainWithUnsignedCarryRanges
+  localLength _ := 0
+  output _ _ := ()
+
+@[reducible] def arithDivWithSignedCarryRangesElaborated :
+    ElaboratedCircuit FGL ArithDivRow unit where
+  name := "ArithDivWithSignedCarryRanges"
+  main := mainWithSignedCarryRanges
   localLength _ := 0
   output _ _ := ()
 

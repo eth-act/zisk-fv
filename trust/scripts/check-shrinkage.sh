@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # check-shrinkage.sh — enforce that the axiom count in
-# trust/baseline-axioms.txt never exceeds the floor recorded in
+# trust/generated/baseline-axioms.txt never exceeds the floor recorded in
 # trust/.shrinkage-floor. Lowering the floor requires editing that
 # file in the same commit that removes axioms — CODEOWNER review of
 # the diff is the audit step.
@@ -14,7 +14,7 @@ set -eu
 cd "$(git rev-parse --show-toplevel)"
 
 floor_file="trust/.shrinkage-floor"
-baseline_file="trust/baseline-axioms.txt"
+baseline_file="trust/generated/baseline-axioms.txt"
 
 if [ ! -f "$floor_file" ]; then
   echo "FAIL: $floor_file is missing"

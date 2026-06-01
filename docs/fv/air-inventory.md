@@ -47,4 +47,4 @@ The extractor also emits shared files such as `Buses.lean`,
 `MemoryBuses.lean`, and `ArithTable.lean`. `ArithTable.lean` is the finite
 state-machine table used by Arith lookup proofs; its historical trust-shape
 audit is now in
-[`../../trust/arith-table-axiom-audit.md`](../../trust/arith-table-axiom-audit.md).
+[`../../trust/trusted-base.md`](../../trust/trusted-base.md).

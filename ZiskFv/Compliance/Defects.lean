@@ -3,7 +3,7 @@ import ZiskFv.Compliance.OpEnvelope
 /-!
 # Known-defect predicates for the global compliance theorem
 
-This module records the Lean side of `docs/fv/defects.md`. A defect
+This module records the Lean side of `trust/defects.md`. A defect
 predicate is not a trusted fact: it is a visible exclusion on a theorem
 whose claim is "compliance outside known defect regions".
 
@@ -20,7 +20,7 @@ open ZiskFv.Airs.Main (Valid_Main)
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
-/-- Stable identifiers for entries in `docs/fv/defects.md`. -/
+/-- Stable identifiers for entries in `trust/defects.md`. -/
 inductive DefectId where
   | arithTableTrustShape
   | arithMulSignedWitnessSoundness
@@ -30,11 +30,11 @@ inductive DefectId where
 
 /-- Current modeled FENCE subset: Sail/ZisK-observable no-op behavior.
 
-This is a placeholder predicate for the FENCE triage. Today the FENCE proof
-already reduces Sail FENCE to `PC += 4` under the Machine-mode and Sail
-concurrency assumptions carried by the wrapper, so every current FENCE
-envelope is in the modeled subset. If the triage finds an in-scope behavior
-outside this subset, this predicate should become the precise condition. -/
+This predicate is intentionally `True` today. The known FENCE concern is that
+ZisK may reject some encodings that Sail would execute as no-ops; that is a
+completeness/coverage limitation, not a soundness counterexample. If triage
+finds an accepted FENCE row whose Sail-observable behavior is not `PC += 4`,
+this predicate should become the precise soundness-side exclusion. -/
 def FenceNopEquivalent
     (_env : OpEnvelope state m r_main) : Prop :=
   True
@@ -57,19 +57,16 @@ def MaliciousSignedMulWitnessShape
 
 The retired `arith_table_op_*` and `arith_div_*` assumptions were not pure
 finite-table projections: they connected row selectors to concrete operand
-chunks, sign witnesses, and remainder bounds. Until those facts are proved
-from the ArithDiv row/range/operation-bus constraints, the eight DIV/REM
-arms are excluded from the defect-qualified claim. -/
+chunks, sign witnesses, and remainder bounds. The unsigned `DIVU`/`REMU` and
+`DIVUW`/`REMUW` paths now derive these facts from row/range/operation-bus
+evidence; the remaining signed arms stay excluded until their extra sign and
+overflow/div-by-zero facts are proved. -/
 def ArithDivDynamicWitnessShape
     : OpEnvelope state m r_main → Prop
   | .div .. => True
-  | .divu .. => True
   | .divw .. => True
-  | .divuw .. => True
   | .rem .. => True
-  | .remu .. => True
   | .remw .. => True
-  | .remuw .. => True
   | _ => False
 
 /-- Conservative marker for remaining opcode-shaped ArithTable trust.

@@ -1,4 +1,4 @@
-# trust/baseline-zisk-riscv-compliant.txt
+# trust/generated/baseline-zisk-riscv-compliant.txt
 #
 # The project-axiom closure (transitive ZiskFv.* axioms only — Lean kernel
 # axioms and Sail-translated module axioms excluded) of the global
@@ -11,7 +11,7 @@
 # the surface without running Lean.
 #
 # Source-of-truth cross-check: this set must match the reachable
-# unqualified axiom names in `trust/baseline-axioms.txt`, modulo
+# unqualified axiom names in `trust/generated/baseline-axioms.txt`, modulo
 # the explicit completeness-direction allowlist in
 # `trust/tolerated-completeness-axioms.txt`. The V2 trust gate's
 # `check-closure-vs-baseline` subcommand enforces that relation
@@ -22,13 +22,14 @@
 #
 #   lake exe trust-gate print-axiom-closure \
 #     ZiskFv.Compliance.zisk_riscv_compliant_program_bus \
-#     > trust/baseline-zisk-riscv-compliant.txt
+#     > trust/generated/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-30.
 #
-# Total entries: 9
+# Total entries: 10
 #
+ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
 ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
 ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
 ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness

@@ -58,6 +58,10 @@ def OP_XOR : ℕ := 0x10
 def OP_SEXT_00 : ℕ := 0x200
 /-- Sign-extend with `0xFF` (auxiliary; produced by `b_op_or_sext`). -/
 def OP_SEXT_FF : ℕ := 0x201
+/-- Absolute-value compare: negative A, positive B (`(-a) < b`). -/
+def OP_LT_ABS_NP : ℕ := 0x50
+/-- Absolute-value compare: positive A, negative B (`a < (-b)`). -/
+def OP_LT_ABS_PN : ℕ := 0x51
 
 /-! ## Bus-entry structure -/
 
@@ -163,6 +167,45 @@ def wf_LT (e : BinaryTableEntry FGL) : Prop :=
     (e.pos_ind.val = 1 →
       (e.a_byte.val &&& 0x80) ≠ (e.b_byte.val &&& 0x80) →
       e.flags.val % 2 = (if (e.a_byte.val &&& 0x80) ≠ 0 then 1 else 0))
+
+/-- Greater-than signed. Non-final bytes use the byte-level `>` chain.
+    On the final byte (`pos_ind.val = 1`), sign-differing bytes override
+    the chain outcome: `cout = 1` iff `b` is negative. -/
+def wf_GT (e : BinaryTableEntry FGL) : Prop :=
+  e.op.val = OP_GT →
+    e.c_byte.val = 0 ∧
+    (e.pos_ind.val ≠ 1 ∨ (e.a_byte.val &&& 0x80) = (e.b_byte.val &&& 0x80) →
+      (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 1) ∧
+      (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+      (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 0)) ∧
+    (e.pos_ind.val = 1 →
+      (e.a_byte.val &&& 0x80) ≠ (e.b_byte.val &&& 0x80) →
+      e.flags.val % 2 = (if (e.b_byte.val &&& 0x80) ≠ 0 then 1 else 0))
+
+/-- Absolute compare for the signed-remainder case `nr = 1, nb = 0`.
+    The table compares `abs(a)` against `b`, where the negative operand
+    is supplied byte-wise as two's-complement: the first byte contributes
+    `(a ^^^ 0xFF) + 1`, and higher bytes contribute `a ^^^ 0xFF`. -/
+def wf_LT_ABS_NP (e : BinaryTableEntry FGL) : Prop :=
+  e.op.val = OP_LT_ABS_NP →
+    e.c_byte.val = 0 ∧
+    (let a_abs := if e.pos_ind.val = 2 then (e.a_byte.val ^^^ 0xFF) + 1
+      else e.a_byte.val ^^^ 0xFF
+     (a_abs < e.b_byte.val → e.flags.val % 2 = 1) ∧
+     (a_abs = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+     (a_abs > e.b_byte.val → e.flags.val % 2 = 0))
+
+/-- Absolute compare for the signed-remainder case `nr = 0, nb = 1`.
+    The table compares `a` against `abs(b)`, where the negative operand
+    is supplied byte-wise as two's-complement. -/
+def wf_LT_ABS_PN (e : BinaryTableEntry FGL) : Prop :=
+  e.op.val = OP_LT_ABS_PN →
+    e.c_byte.val = 0 ∧
+    (let b_abs := if e.pos_ind.val = 2 then (e.b_byte.val ^^^ 0xFF) + 1
+      else e.b_byte.val ^^^ 0xFF
+     (e.a_byte.val < b_abs → e.flags.val % 2 = 1) ∧
+     (e.a_byte.val = b_abs → e.flags.val % 2 = e.cin.val) ∧
+     (e.a_byte.val > b_abs → e.flags.val % 2 = 0))
 
 /-- Equality: per-byte rule with polarity flip at the final byte.
     Spec from `binary_table.pil`'s `case OP_EQ` branch (lines 233–247):

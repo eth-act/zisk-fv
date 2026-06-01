@@ -28,7 +28,7 @@ cross-AIR consistency is `Clean.Air.Balance.BalancedInteractions`'s
 output, which is a theorem (not an axiom).
 
 The 1 operation-bus axiom currently in
-`trust/baseline-axioms.txt::op_bus_permutation_sound`
+`trust/generated/baseline-axioms.txt::op_bus_permutation_sound`
 (consolidated form on `clean-integration`) can be retired in Phase 3
 once each provider AIR is rewritten as a Clean component.
 -/
