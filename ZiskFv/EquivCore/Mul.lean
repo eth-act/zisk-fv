@@ -94,7 +94,7 @@ lemma equiv_MUL_sail
     equation is derived internally from circuit witnesses via the
     `WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_mul` discharge
     lemma. -/
-theorem equiv_MUL
+lemma equiv_MUL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mul_input : PureSpec.MulInput)
     (r1 r2 rd : regidx)

@@ -32,7 +32,7 @@ open ZiskFv.ZiskCircuit.StoreD
 /-- **Wrapper for `equiv_SD`.** Derives the 9 ptr+byte equalities from
     the Clean Main c/store structural witness and delegates to
     canonical `equiv_SD`. -/
-theorem equiv_SD
+lemma equiv_SD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

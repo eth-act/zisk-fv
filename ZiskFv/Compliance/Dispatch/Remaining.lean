@@ -188,55 +188,73 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Compliance.lbu_eq_of_full_ensemble_mem_provider
-      state lbu_input regs m mem r_main r_mem bus align pins h_width promises
+    let w :=
+      ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
+      m mem r_main r_mem bus lbu_input.r1_val lbu_input.imm lbu_input.rd
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+    exact ZiskFv.Equivalence.Lbu.equiv_LBU
+      state lbu_input regs m mem r_main bus align pins h_width promises w
   | lhu lhu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Compliance.lhu_eq_of_full_ensemble_mem_provider
-      state lhu_input regs m mem r_main r_mem bus align pins h_width promises
+    let w :=
+      ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
+      m mem r_main r_mem bus lhu_input.r1_val lhu_input.imm lhu_input.rd
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+    exact ZiskFv.Equivalence.Lhu.equiv_LHU
+      state lhu_input regs m mem r_main bus align pins h_width promises w
   | lwu lwu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Compliance.lwu_eq_of_full_ensemble_mem_provider
-      state lwu_input regs m mem r_main r_mem bus align pins h_width promises
+    let w :=
+      ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
+      m mem r_main r_mem bus lwu_input.r1_val lwu_input.imm lwu_input.rd
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+    exact ZiskFv.Equivalence.Lwu.equiv_LWU
+      state lwu_input regs m mem r_main bus align pins h_width promises w
   | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2 h_m1 h_m2
       h_m3 h_m4 h_m5 h_m6 h_m7 =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Compliance.sb_eq_of_full_ensemble_main_c
-      state sb_input regs m r_main bus pins h_main_ind_width
-      h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
+    let w :=
+      ZiskFv.EquivCore.Bridge.MemClean.sbCleanWitness_of_full_ensemble_main_c
+      m r_main bus state sb_input h_main_row h_main_spec h_store_pc
       h_main_c_match h_addr2 h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
+    exact ZiskFv.Equivalence.Sb.equiv_SB
+      state sb_input regs m r_main bus pins h_main_ind_width
+      h_opcode_assumptions promises w
   | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2 h_m2 h_m3
       h_m4 h_m5 h_m6 h_m7 =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Compliance.sh_eq_of_full_ensemble_main_c
-      state sh_input regs m r_main bus pins h_main_ind_width
-      h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
+    let w :=
+      ZiskFv.EquivCore.Bridge.MemClean.shCleanWitness_of_full_ensemble_main_c
+      m r_main bus state sh_input h_main_row h_main_spec h_store_pc
       h_main_c_match h_addr2 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
+    exact ZiskFv.Equivalence.Sh.equiv_SH
+      state sh_input regs m r_main bus pins h_main_ind_width
+      h_opcode_assumptions promises w
   | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2 h_m4 h_m5
       h_m6 h_m7 =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Compliance.sw_eq_of_full_ensemble_main_c
-      state sw_input regs m r_main bus pins h_main_ind_width
-      h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
+    let w :=
+      ZiskFv.EquivCore.Bridge.MemClean.swCleanWitness_of_full_ensemble_main_c
+      m r_main bus state sw_input h_main_row h_main_spec h_store_pc
       h_main_c_match h_addr2 h_m4 h_m5 h_m6 h_m7
+    exact ZiskFv.Equivalence.Sw.equiv_SW
+      state sw_input regs m r_main bus pins h_main_ind_width
+      h_opcode_assumptions promises w
   -- W-shifts
   | sllw sllw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc

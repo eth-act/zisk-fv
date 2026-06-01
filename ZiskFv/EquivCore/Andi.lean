@@ -65,7 +65,7 @@ lemma equiv_ANDI_sail
     concrete Clean `BinaryRow`; byte-table semantics come from row-local
     static BinaryTable facts rather than from a legacy selected
     `Valid_Binary` row. -/
-theorem equiv_ANDI_of_static_row
+lemma equiv_ANDI_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (andi_input : PureSpec.AndiInput)
     (r1 rd : regidx) (imm : BitVec 12)

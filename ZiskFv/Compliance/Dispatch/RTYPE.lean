@@ -128,19 +128,19 @@ theorem zisk_riscv_compliant_program_bus_rtype_binary
   | and and_input r1 r2 rd v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
-    exact ZiskFv.Equivalence.And.equiv_AND_of_static_table_row
+    exact ZiskFv.Equivalence.And.equiv_AND
       state and_input r1 r2 rd m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
   | or or_input r1 r2 rd v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
-    exact ZiskFv.Equivalence.Or.equiv_OR_of_static_table_row
+    exact ZiskFv.Equivalence.Or.equiv_OR
       state or_input r1 r2 rd m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
   | xor xor_input r1 r2 rd v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
-    exact ZiskFv.Equivalence.Xor.equiv_XOR_of_static_table_row
+    exact ZiskFv.Equivalence.Xor.equiv_XOR
       state xor_input r1 r2 rd m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
   | slt slt_input r1 r2 rd v bus pins providerTable providerRow h_component

@@ -96,7 +96,7 @@ open ZiskFv.Airs.Main
        `h_input_priv`.
     6. Bus-shape structural pins — `h_exec_len`, `h_e0_mult`,
        `h_e1_mult`, `h_nextPC_matches`. -/
-theorem equiv_FENCE
+lemma equiv_FENCE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)

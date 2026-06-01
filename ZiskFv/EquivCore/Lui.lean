@@ -86,7 +86,7 @@ lemma equiv_LUI_sail
     asserts the spec output (`signExtend (imm ++ 0)`) directly; that
     equation is derived internally from circuit witnesses via the
     `WriteValueProofs.JumpUType.h_rd_val_jut_lui` discharge lemma. -/
-theorem equiv_LUI
+lemma equiv_LUI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)

@@ -93,7 +93,7 @@ lemma equiv_BNE_sail
     BEQ and BNE share shape (b) — two execution-bus entries (pc read,
     nextpc write), empty memory bus — so this theorem reuses
     `bus_effect_matches_sail_beq` directly. -/
-theorem equiv_BNE
+lemma equiv_BNE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

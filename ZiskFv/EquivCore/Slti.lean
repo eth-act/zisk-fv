@@ -64,7 +64,7 @@ lemma equiv_SLTI_sail
 /-- Variant of `equiv_SLTI` whose BinaryTable byte-chain hypotheses carry
     static-provider `wf_properties` facts instead of multiplicity-based table
     consumer facts. -/
-theorem equiv_SLTI_of_wf
+lemma equiv_SLTI_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slti_input : PureSpec.SltiInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -272,7 +272,7 @@ theorem equiv_SLTI_of_wf
     rw [h_rd_val]
 
 /-- Row-native static-provider BinaryTable route for `equiv_SLTI`. -/
-theorem equiv_SLTI_of_static_row
+lemma equiv_SLTI_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slti_input : PureSpec.SltiInput)
     (r1 rd : regidx) (imm : BitVec 12)

@@ -73,7 +73,7 @@ This factors the proof so the Main-load and Mem-provider path can be
 supplied either by the legacy axiom-backed bridge or by the Clean
 memory-bus bridge. The MemAlign zero-padding path is still the existing
 `MemAlignWitness`-based derivation. -/
-theorem equiv_LBU_of_discharged
+lemma equiv_LBU_of_discharged
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -171,7 +171,7 @@ This removes `main_load_emission_bundle` and
 `lookup_consumer_matches_provider_load` from the LBU path. The existing
 MemAlign witness still supplies the zero-padding/packing derivation, so
 the MemAlign T4 targets remain to be retired separately. -/
-theorem equiv_LBU_clean_provider
+lemma equiv_LBU_clean_provider
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -238,7 +238,7 @@ theorem equiv_LBU_clean_provider
     h_rd_zero_iff h_rd_idx h_copy0 h_copy1 h_mem8.1
 
 /-- Clean-backed LBU equivalence from the bundled structural load witness. -/
-theorem equiv_LBU_clean_provider_witness
+lemma equiv_LBU_clean_provider_witness
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

@@ -56,7 +56,7 @@ open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_DIVUW_of_table
+lemma equiv_DIVUW_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput)
     (r1 r2 rd : regidx)
@@ -149,7 +149,7 @@ theorem equiv_DIVUW_of_table
     h_byte_lo h_sext_choice h_rs1_value h_rs2_value
 
 /-- Compatibility wrapper preserving the canonical Compliance theorem name. -/
-theorem equiv_DIVUW
+lemma equiv_DIVUW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput)
     (r1 r2 rd : regidx)

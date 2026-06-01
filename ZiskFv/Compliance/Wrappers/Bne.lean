@@ -24,7 +24,7 @@ open ZiskFv.Airs.Main
 /-- **Compliance wrapper for `equiv_BNE`.** Pure pass-through to the
     canonical `equiv_BNE` over a fully-constructed `BranchPromises`
     bundle. -/
-theorem equiv_BNE
+lemma equiv_BNE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

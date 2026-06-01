@@ -1,0 +1,10 @@
+# Explicit classification for route-named OpEnvelope constructors.
+#
+# These are accepted route variants rather than additional opcodes. They remain
+# documented because the constructor names intentionally expose provider shape.
+
+add_via_binary:canonical route variant for ADD through Binary.staticLookupComponent
+addi_via_binary:canonical route variant for ADDI through Binary.staticLookupComponent
+lb_via_static_match:canonical route variant for LB with BinaryExtension static-match witness
+lh_via_static_match:canonical route variant for LH with BinaryExtension static-match witness
+lw_via_static_match:canonical route variant for LW with BinaryExtension static-match witness

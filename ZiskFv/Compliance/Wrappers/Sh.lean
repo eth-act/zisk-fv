@@ -29,7 +29,7 @@ open ZiskFv.ZiskCircuit.StoreD
 
 /-- **Wrapper for `equiv_SH`.** Derives `h_mem_eq` from the Clean
     c/store witness and delegates to canonical `equiv_SH`. -/
-theorem equiv_SH
+lemma equiv_SH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sh_input : PureSpec.ShInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

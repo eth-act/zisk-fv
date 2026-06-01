@@ -78,7 +78,7 @@ theorem equiv_XOR
 
 
 /-- Row-native static-provider route for `equiv_XOR`. -/
-theorem equiv_XOR_of_static_row
+lemma equiv_XOR_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xor_input : PureSpec.XorInput)
     (r1 r2 rd : regidx)
@@ -117,7 +117,7 @@ theorem equiv_XOR_of_static_row
     row. The provider row's Binary core, static BinaryTable facts, and
     `b_op_or_sext = OP_XOR` mode pin are projected from `table.Spec` plus the
     op-bus match. -/
-theorem equiv_XOR_of_static_table_row
+lemma equiv_XOR_of_static_table_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xor_input : PureSpec.XorInput)
     (r1 r2 rd : regidx)

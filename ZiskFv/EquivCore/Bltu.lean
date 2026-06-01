@@ -69,7 +69,7 @@ lemma equiv_BLTU_sail
     h_input_pc h_input_misa h_misa_c
 
 /-- **Canonical equivalence.** -/
-theorem equiv_BLTU
+lemma equiv_BLTU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

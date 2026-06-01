@@ -67,7 +67,7 @@ the Binary provider is a concrete Clean `BinaryRow`, the cross-AIR relation is
 the Clean-row operation-bus message match, and byte semantics come from
 `StaticBinaryTableWfFacts row`. No legacy `Valid_Binary` provider row or
 `op_bus_perm_sound_Binary` witness is consumed. -/
-theorem equiv_AND_of_static_row
+lemma equiv_AND_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)

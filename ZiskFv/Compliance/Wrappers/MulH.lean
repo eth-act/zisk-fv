@@ -49,7 +49,7 @@ set_option linter.unusedVariables false in
     The signed-MUL witness defect is still explicit in the theorem surface,
     so this wrapper closes from the existing `False` exclusion instead of
     relying on signed-MUL MSB trust facts. -/
-theorem equiv_MULH_of_table
+lemma equiv_MULH_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulh_input : PureSpec.MulhInput)
     (r1 r2 rd : regidx)
@@ -84,7 +84,7 @@ theorem equiv_MULH_of_table
 
 /-- Compatibility wrapper preserving the current canonical surface while
     the Compliance dispatcher is migrated to row-native table witnesses. -/
-theorem equiv_MULH
+lemma equiv_MULH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulh_input : PureSpec.MulhInput)
     (r1 r2 rd : regidx)

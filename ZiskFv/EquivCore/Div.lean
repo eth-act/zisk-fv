@@ -88,7 +88,7 @@ lemma equiv_DIV_sail
     internally from circuit witnesses via the
     `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div` discharge
     lemma. -/
-theorem equiv_DIV
+lemma equiv_DIV
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput)
     (r1 r2 rd : regidx)

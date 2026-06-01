@@ -59,7 +59,7 @@ open ZiskFv.EquivCore.Promises
     the lane-match handshake binds Main's c_0/c_1 against the
     *secondary* bus row's `c_lo := v.d_0 + v.d_1 * 65536` and
     `c_hi := v.bus_res1 = v.d_2 + v.d_3 * 65536`. -/
-theorem equiv_MULHU_of_table
+lemma equiv_MULHU_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)
@@ -113,12 +113,6 @@ theorem equiv_MULHU_of_table
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithMul.mul_carry_chain_holds_of_extended v r_a h_row_constraints
-  -- C3 re-root: route the MUL-mode carry-chain constraints through the
-  -- Clean `Air.Flat.Component` (`AirsClean/ArithMul/`). Same constraint set;
-  -- the routing makes `arithMul_circuit_completeness` (completeness-direction)
-  -- enter this opcode's `#print axioms`, so the Component is load-bearing.
-  have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
-    ZiskFv.AirsClean.ArithMul.mul_carry_chain_holds_via_component v r_a h_chain
   have h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v r_a :=
     ZiskFv.Airs.ArithMul.mul_constraint_46_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins ============
@@ -207,7 +201,7 @@ theorem equiv_MULHU_of_table
     The row-native `_of_table` theorem above is the T5 migration target;
     this theorem keeps existing dispatchers unchanged until the shared
     Arith-family Clean ensemble supplies the table membership. -/
-theorem equiv_MULHU
+lemma equiv_MULHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)

@@ -92,7 +92,7 @@ lemma equiv_MULW_sail
     structural-unpacking refactor with 17 ADDED binders (16 MUL
     base shape + `h_sext_choice` for W-mode sign-extension on bytes
     4..7). -/
-theorem equiv_MULW
+lemma equiv_MULW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)

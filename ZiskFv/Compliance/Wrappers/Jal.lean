@@ -26,7 +26,7 @@ open ZiskFv.Airs.Main
 /-- **Compliance wrapper for `equiv_JAL`.** Derives `h_circuit` from
     `jal_h_circuit_of_main_constraints` (consuming `transpile_JAL`)
     and delegates to canonical `equiv_JAL`. -/
-theorem equiv_JAL
+lemma equiv_JAL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)

@@ -243,7 +243,7 @@ def component_rows(theorems: dict[str, list[tuple[str, str, str]]], deps: dict[s
         elif short == "BinaryExtension.shiftStaticLookupComponent":
             note = "canonical for shift opcodes through BinaryExtension static provider rows"
         elif short.startswith(("Arith", "MemAlignByte", "MemAlignReadByte")):
-            note = "canonical path currently leaks completeness through via_component route"
+            note = "soundness uses row/table-spec projections; component/via_component paths are helper infrastructure"
         else:
             note = "supporting Clean component or helper"
         rows.append((short, reach, str(len(hits)), note))
@@ -368,8 +368,11 @@ def main() -> None:
     print(f"- Route-named `OpEnvelope` constructors: {', '.join(f'`{x}`' for x in route_named_ctors) if route_named_ctors else 'none'}.")
     print("- `ZiskFv/Equivalence/<Op>.lean` imports the matching `Compliance/Wrappers/<Op>.lean`,")
     print("  so a dispatcher call to a canonical `Equivalence.equiv_<OP>` still reaches the wrapper layer.")
-    print("- Some dispatchers intentionally bypass the canonical `Equivalence.equiv_<OP>` name and call")
-    print("  helper surfaces or full-ensemble wrapper helpers directly.")
+    if noncanonical_targets or compliance_helper_targets:
+        print("- Some dispatchers bypass the canonical `Equivalence.equiv_<OP>` name and call")
+        print("  helper surfaces or full-ensemble wrapper helpers directly.")
+    else:
+        print("- All active dispatchers call canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` targets.")
     print()
     print("### Noncanonical Dispatch Targets")
     print()
@@ -396,27 +399,27 @@ def main() -> None:
     print("  `BinaryExtension.shiftStaticLookupComponent`) are the cleanest integrated shape:")
     print("  caller supplies a concrete provider table row and soundness uses `table.Spec`, not")
     print("  component completeness.")
-    print("- ArithDiv, ArithMul, MemAlignByte, and MemAlignReadByte are integrated through")
-    print("  `component`/`via_component` paths that pull Clean completeness into soundness closure.")
+    print("- ArithDiv, ArithMul, MemAlignByte, and MemAlignReadByte no longer pull")
+    print("  Clean completeness into soundness closure; soundness uses direct row/table-spec")
+    print("  projections, while component/via_component paths remain helper infrastructure.")
     print("- Memory load/store proofs use full-ensemble witness constructors. That is a real Clean")
-    print("  integration path, but it is architecturally different from the static-provider rows and")
-    print("  still leaks MemAlign completeness for zero-extending loads.")
+    print("  integration path, and it is architecturally different from the static-provider rows.")
     print("- `BinaryAdd` and full Main/ensemble components are built and balanced in source but are not")
     print("  the current global theorem route. They are scaffold/helper paths, not evidence that the")
     print("  global theorem is incomplete.")
     print("- The dispatcher layer is manually partitioned into ten `exec_eq_*` families with `True`")
     print("  fallthroughs. This is sound when all families are maintained correctly, but it is not a")
     print("  uniform single-source dispatch architecture.")
-    print("- Two public-looking theorem layers exist for every opcode (`Compliance.Wrappers` and")
-    print("  `Equivalence`), plus extra helper theorem surfaces. This makes it harder to see which")
-    print("  surface is canonical and which should be private implementation detail.")
+    print("- The intended public theorem surface is the global compliance theorem plus the 63")
+    print("  canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems. Wrapper and EquivCore")
+    print("  routes are implementation details.")
     print()
     print("## Scaffold And Coverage Questions")
     print()
     print("- `BinaryAdd` has real Clean component and `via_component` lemmas, but canonical `ADD`/`ADDI` use `Binary.staticLookupComponent`; review whether BinaryAdd is dead scaffold, future scaffold, or an accepted provider path missing from `OpEnvelope`.")
     print("- Full-ensemble/Main-Mem helpers construct memory witnesses, but the global theorem remains opcode-envelope driven; review whether this is the intended stable architecture or a staged migration.")
     print("- Signed `MUL`/`MULH`/`MULHSU` and signed `DIV`/`DIVW`/`REM`/`REMW` are defect-gated, so provider classification there describes the visible surface rather than a completed proof route.")
-    print("- The target trust cleanup should make global soundness closure contain zero Clean completeness declarations; this audit intentionally records the current leaks before that cleanup.")
+    print("- Global soundness closure now contains zero Clean completeness declarations; new leaks are blocked by `trust/scripts/check-clean-integration.sh`.")
 
 
 if __name__ == "__main__":

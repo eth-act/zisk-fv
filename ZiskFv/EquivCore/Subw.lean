@@ -74,7 +74,7 @@ lemma equiv_SUBW_sail
     `equiv_SUBW`, routing through `h_rd_val_arith_subw_of_wf`. Designed to
     be consumed by `equiv_SUBW_of_static_row` once the Clean-row layer is
     built. -/
-theorem equiv_SUBW_of_wf
+lemma equiv_SUBW_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)
@@ -291,7 +291,7 @@ theorem equiv_SUBW_of_wf
     Takes a concrete Clean `BinaryRow` + `StaticBinaryTableWfFacts row`
     instead of a Valid_Binary + `StaticLookupSoundness`. Used by the
     wrapper layer to consume a Clean-balanced provider row directly. -/
-theorem equiv_SUBW_of_static_row
+lemma equiv_SUBW_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)

@@ -87,7 +87,7 @@ open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_ANDI
+lemma equiv_ANDI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (andi_input : PureSpec.AndiInput)
     (r1 rd : regidx) (imm : BitVec 12)

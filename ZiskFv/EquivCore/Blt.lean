@@ -92,7 +92,7 @@ lemma equiv_BLT_sail
     `execute_instruction` on an RV64 BLT equals the state computed by
     applying `bus_effect` to the circuit's execution and memory bus rows.
     Reuses `bus_effect_matches_sail_beq` (shape (b), branch-shape). -/
-theorem equiv_BLT
+lemma equiv_BLT
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

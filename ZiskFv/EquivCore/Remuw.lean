@@ -75,7 +75,7 @@ lemma equiv_REMUW_sail
     circuit's execution and memory bus rows.
 
     Structural-unpacking refactor with 17 ADDED binders. -/
-theorem equiv_REMUW
+lemma equiv_REMUW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remuw_input : PureSpec.RemuwInput)
     (r1 r2 rd : regidx)

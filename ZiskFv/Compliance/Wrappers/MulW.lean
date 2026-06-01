@@ -63,7 +63,7 @@ open ZiskFv.EquivCore.Promises
     mode pins + `h_byte_lo` + `h_chain` + sign-witness booleanity/XOR
     from the trust ledger; passes through `h_sext_choice`, `h_rs1_value`,
     `h_rs2_value` as W-form operand bridge obligations (analogous to DIVW). -/
-theorem equiv_MULW_of_table
+lemma equiv_MULW_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)
@@ -122,12 +122,6 @@ theorem equiv_MULW_of_table
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithMul.mul_carry_chain_holds_of_extended v r_a h_row_constraints
-  -- C3 re-root: route the MUL-mode carry-chain constraints through the
-  -- Clean `Air.Flat.Component` (`AirsClean/ArithMul/`). Same constraint set;
-  -- the routing makes `arithMul_circuit_completeness` (completeness-direction)
-  -- enter this opcode's `#print axioms`, so the Component is load-bearing.
-  have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
-    ZiskFv.AirsClean.ArithMul.mul_carry_chain_holds_via_component v r_a h_chain
   -- ============ DISCHARGE true MULW static mode pins ============
   obtain ⟨h_na, h_nb, h_np, h_nr, h_m32, h_div⟩ :=
     ZiskFv.AirsClean.ArithTableProjections.Mul.mulw_basic_mode_pin
@@ -187,7 +181,7 @@ theorem equiv_MULW_of_table
 
 /-- Compatibility wrapper preserving the current canonical surface while
     the Compliance dispatcher is migrated to row-native table witnesses. -/
-theorem equiv_MULW
+lemma equiv_MULW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)
