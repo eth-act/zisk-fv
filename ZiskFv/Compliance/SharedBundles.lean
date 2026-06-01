@@ -333,19 +333,21 @@ structure ModeRegsFull where
     real ZisK MemAlignByte trace satisfies its PIL). It replaces the
     former free-floating `bus_byte < 256` promise (`byte_value_lt`,
     removed from the MemAlign provider witness): the narrow loads
-    now *derive* that range bound from `mab_core` **through the Clean
-    `memAlignByteComponent`** (`bus_byte_in_range_via_component`),
-    rather than accept it as a caller promise. Same validator-bundled
-    universal-row-constraint shape as `BinaryAddWitness.core`.
+    now *derive* that range bound from concrete lookup-aware Clean soundness
+    (`ranges_of_lookup_aware_const_soundness`), rather than accept it as a
+    caller promise or route through the Clean Component completeness field.
+    Same validator-bundled universal-row-constraint shape as
+    `BinaryAddWitness.core`.
 
     **C2 re-root.** `marb_core` is the MemAlignReadByte AIR's own
     `core_every_row` PIL constraints — the analogous *constructibility*
     fact. It replaces the former free-floating `byte_value < 256`
     promise (`read_byte_value_lt`, removed from
     `SubdoublewordLoadLowBytePinning`): the narrow loads now *derive*
-    that range bound from `marb_core` **through the Clean
-    `memAlignReadByteComponent`** (`byte_value_in_range_via_component`),
-    rather than accept it as a caller promise.
+    that range bound from concrete lookup-aware Clean soundness
+    (`byte_value_range_of_lookup_aware_const_soundness`), rather than accept
+    it as a caller promise or route through the Clean Component completeness
+    field.
 
     **T4 structural unpacking.** `provider` replaces the former
     MemAlign-family permutation and MemAlignRom trust-ledger axioms with

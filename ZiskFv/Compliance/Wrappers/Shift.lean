@@ -23,7 +23,7 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_SLLW
+lemma equiv_SLLW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sllw_input : PureSpec.SllwInput)
     (r1 r2 rd : regidx)

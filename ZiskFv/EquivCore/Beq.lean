@@ -83,7 +83,7 @@ lemma equiv_BEQ_sail
     equals the state computed by applying `bus_effect` to the circuit's
     execution and memory bus rows. The memory-bus component is empty
     for BEQ (no register write, no memory access). -/
-theorem equiv_BEQ
+lemma equiv_BEQ
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (beq_input : PureSpec.BeqInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

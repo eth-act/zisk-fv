@@ -24,7 +24,7 @@ open ZiskFv.Airs.Main
 /-- **Compliance wrapper for `equiv_BLT`.** Pure pass-through to the
     canonical `equiv_BLT` over a fully-constructed `BranchPromises`
     bundle. -/
-theorem equiv_BLT
+lemma equiv_BLT
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

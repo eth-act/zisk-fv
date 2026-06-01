@@ -34,7 +34,7 @@ open ZiskFv.EquivCore.Promises
     This version takes the canonical Clean providerTable/providerRow shape
     and dispatches through `EquivCore.Subw.equiv_SUBW_of_static_row`.
     `Equivalence.Subw.equiv_SUBW` is a thin channel-balance shim over this. -/
-theorem equiv_SUBW
+lemma equiv_SUBW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)

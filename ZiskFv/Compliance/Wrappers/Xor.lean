@@ -27,7 +27,7 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_XOR
+lemma equiv_XOR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xor_input : PureSpec.XorInput)
     (r1 r2 rd : regidx)

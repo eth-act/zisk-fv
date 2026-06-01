@@ -29,7 +29,7 @@ open ZiskFv.EquivCore.Promises
 
 /-- Compliance-namespace canonical wrapper for ADDW. See `equiv_SUBW` for
     pattern; identical except OP_SUB → OP_ADD, 0x1B → 0x1A. -/
-theorem equiv_ADDW
+lemma equiv_ADDW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addw_input : PureSpec.AddwInput)
     (r1 r2 rd : regidx)

@@ -74,7 +74,7 @@ lemma equiv_BGE_sail
     h_input_pc h_input_misa h_misa_c
 
 /-- **Canonical equivalence.** Shape (b) bus reuse. -/
-theorem equiv_BGE
+lemma equiv_BGE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bge_input : PureSpec.BgeInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

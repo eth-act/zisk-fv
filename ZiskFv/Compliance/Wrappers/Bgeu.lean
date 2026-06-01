@@ -24,7 +24,7 @@ open ZiskFv.Airs.Main
 /-- **Compliance wrapper for `equiv_BGEU`.** Pure pass-through to the
     canonical `equiv_BGEU` over a fully-constructed `BranchPromises`
     bundle. -/
-theorem equiv_BGEU
+lemma equiv_BGEU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

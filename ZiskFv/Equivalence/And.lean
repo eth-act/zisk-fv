@@ -79,7 +79,7 @@ theorem equiv_AND
 /-- Row-native static-provider route for `equiv_AND`. This is noncanonical C7
     surface: the provider side is a concrete Clean `BinaryRow`, not a legacy
     `Valid_Binary` row selected by `op_bus_perm_sound_Binary`. -/
-theorem equiv_AND_of_static_row
+lemma equiv_AND_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)
@@ -118,7 +118,7 @@ theorem equiv_AND_of_static_row
     row. The caller supplies the concrete provider row and `table.Spec`; the
     Binary core facts and static BinaryTable facts are projected from that
     Clean table spec rather than supplied as promises. -/
-theorem equiv_AND_of_static_table_row
+lemma equiv_AND_of_static_table_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)

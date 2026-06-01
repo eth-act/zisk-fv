@@ -66,7 +66,7 @@ lemma equiv_FENCE_sail
     FENCE equals `(bus_effect exec_row [] state).2`. Composes
     `equiv_FENCE_sail` with `bus_effect_matches_sail_beq` (FENCE
     uses the same empty-memory-bus shape as branches). -/
-theorem equiv_FENCE
+lemma equiv_FENCE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)

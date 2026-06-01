@@ -99,7 +99,7 @@ This is the lookup-free proof core. The canonical `equiv_LD` below still
 feeds it through the legacy bridge while T4 is in progress; the Clean
 variant feeds it from `Bridge.MemClean.ld_discharge_full_clean_provider`.
 -/
-theorem equiv_LD_of_discharged
+lemma equiv_LD_of_discharged
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -240,7 +240,7 @@ facts are supplied by `Bridge.MemClean.ld_discharge_full_clean_provider`.
 It is intentionally non-canonical for now; T4 will move the canonical
 wrapper over only after the shared structural witness bundle is threaded
 through `Compliance.lean`. -/
-theorem equiv_LD_clean_provider
+lemma equiv_LD_clean_provider
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -309,7 +309,7 @@ theorem equiv_LD_clean_provider
 This is the migration-facing form: adding one structural witness binder at
 the canonical layer is reviewable in the caller-burden ledger, while the
 bundle fields document the actual Main/Mem row and adapter pins. -/
-theorem equiv_LD_clean_provider_witness
+lemma equiv_LD_clean_provider_witness
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

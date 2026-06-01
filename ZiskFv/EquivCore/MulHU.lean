@@ -87,7 +87,7 @@ lemma equiv_MULHU_sail
     that equation is derived internally from circuit witnesses via the
     `WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_mulhu` discharge
     lemma. -/
-theorem equiv_MULHU
+lemma equiv_MULHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)

@@ -77,7 +77,7 @@ theorem equiv_OR
 
 
 /-- Row-native static-provider route for `equiv_OR`. -/
-theorem equiv_OR_of_static_row
+lemma equiv_OR_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)
@@ -115,7 +115,7 @@ theorem equiv_OR_of_static_row
 /-- Noncanonical C7 route for `OR` from a lookup-aware Clean Binary table
     row. The provider row's Binary core and static BinaryTable facts are
     projected from `table.Spec`. -/
-theorem equiv_OR_of_static_table_row
+lemma equiv_OR_of_static_table_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)

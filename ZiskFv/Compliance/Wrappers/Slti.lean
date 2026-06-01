@@ -30,7 +30,7 @@ open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_SLTI
+lemma equiv_SLTI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slti_input : PureSpec.SltiInput)
     (r1 rd : regidx) (imm : BitVec 12)

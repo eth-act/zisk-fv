@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # check-wrapper-caller-burden.sh — anti-laundering gate for the
-# wrapper layer (`equiv_<OP>` under
+# wrapper layer (`equiv_<OP>` declarations under
 # `ZiskFv/Compliance/Wrappers/*.lean`).
 #
 # Sibling of `check-caller-burden.sh`: that one tracks the 63

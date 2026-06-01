@@ -29,7 +29,7 @@ open ZiskFv.Airs.MemoryBus
 
 
 /-- **Compliance wrapper for `equiv_LHU`.** -/
-theorem equiv_LHU
+lemma equiv_LHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

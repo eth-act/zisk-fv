@@ -61,7 +61,7 @@ lemma equiv_XOR_sail
     xor_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
 /-- Row-native static-provider route for `XOR`. -/
-theorem equiv_XOR_of_static_row
+lemma equiv_XOR_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xor_input : PureSpec.XorInput)
     (r1 r2 rd : regidx)

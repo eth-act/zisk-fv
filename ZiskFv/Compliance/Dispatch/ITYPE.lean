@@ -76,7 +76,7 @@ theorem zisk_riscv_compliant_program_bus_itype_binary
       h_component h_table_spec h_provider_row h_match_static h_andi_subset
       h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_itype_binary]
-    exact ZiskFv.Equivalence.Andi.equiv_ANDI_of_static_table_row
+    exact ZiskFv.Equivalence.Andi.equiv_ANDI
       state andi_input r1 rd imm m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static h_andi_subset
       h_lane_rd promises
@@ -84,7 +84,7 @@ theorem zisk_riscv_compliant_program_bus_itype_binary
       h_component h_table_spec h_provider_row h_match_static h_ori_subset
       h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_itype_binary]
-    exact ZiskFv.Equivalence.Ori.equiv_ORI_of_static_table_row
+    exact ZiskFv.Equivalence.Ori.equiv_ORI
       state ori_input r1 rd imm m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static h_ori_subset
       h_lane_rd promises
@@ -92,7 +92,7 @@ theorem zisk_riscv_compliant_program_bus_itype_binary
       h_component h_table_spec h_provider_row h_match_static h_xori_subset
       h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_itype_binary]
-    exact ZiskFv.Equivalence.Xori.equiv_XORI_of_static_table_row
+    exact ZiskFv.Equivalence.Xori.equiv_XORI
       state xori_input r1 rd imm m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static h_xori_subset
       h_lane_rd promises

@@ -119,7 +119,7 @@ lemma equiv_ADDI_sail
     Row-explicit variant: takes the BinaryAdd row witness + matches_entry
     directly, bypassing `op_bus_perm_sound_BinaryAdd`. The thin forwarder
     `equiv_ADDI` below derives them via the axiom. -/
-theorem equiv_ADDI_with_match
+lemma equiv_ADDI_with_match
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -213,7 +213,7 @@ theorem equiv_ADDI_with_match
     Mirrors `equiv_ADD_of_wf` with `transpile_ADD → transpile_ADDI`
     and the `r2_val` register-read bridge replaced by the immediate
     constructibility pin `h_addi_subset`. -/
-theorem equiv_ADDI_of_wf
+lemma equiv_ADDI_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -473,7 +473,7 @@ theorem equiv_ADDI_of_wf
   · rw [h_rd_val]
 
 /-- Row-native static-provider BinaryTable route for `equiv_ADDI`. -/
-theorem equiv_ADDI_of_static_row
+lemma equiv_ADDI_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -568,7 +568,7 @@ theorem equiv_ADDI_of_static_row
     `BinaryAddRow` + core_every_row at row 0 + matches_entry against
     the Clean row's emission, derives `m.m32 = 0` + `m.set_pc = 0`
     via `transpile_ADDI`, projects to the canonical `equiv_ADDI`. -/
-theorem equiv_ADDI_of_binaryadd_row
+lemma equiv_ADDI_of_binaryadd_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)

@@ -91,7 +91,7 @@ lemma equiv_SLL_sail
     from the exact static BinaryExtensionTable row facts threaded through the
     Clean shift provider. SLL therefore no longer consumes the legacy generic
     range-bus soundness axiom. -/
-theorem equiv_SLL_of_wf
+lemma equiv_SLL_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
@@ -209,7 +209,7 @@ theorem equiv_SLL_of_wf
 
 -- legacy `equiv_SLL` (bin_ext_table_consumer_wf route) deleted in T4-purge P3.3.
 
-theorem equiv_SLL_of_static_row
+lemma equiv_SLL_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)

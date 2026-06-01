@@ -29,7 +29,7 @@ open ZiskFv.Airs.MemoryBus
 
 
 /-- **Compliance wrapper for `equiv_LWU`.** -/
-theorem equiv_LWU
+lemma equiv_LWU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lwu_input : PureSpec.LwuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

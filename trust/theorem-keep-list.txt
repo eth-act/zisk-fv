@@ -4,10 +4,9 @@
 # under ZiskFv/ should be `lemma` (kernel-identical in Lean 4 /
 # Mathlib but communicates "internal helper").
 #
-# Three groups, 127 names total:
+# Two groups, 64 names total:
 #   1. 1 global compliance theorem (ZiskFv/Compliance.lean)
 #   2. 63 canonical per-opcode equivalences (ZiskFv/Equivalence/<Op>.lean)
-#   3. 63 trust-wrapper theorems (ZiskFv/Compliance/Wrappers/<Op>.lean)
 #
 # The V1 uniformity gate (check 6) and V2 axiom-closure gate
 # require group-2 names to be `theorem`; flipping them would fail
@@ -17,71 +16,6 @@
 zisk_riscv_compliant_program_bus
 
 # ---- Group 2: 63 canonical equiv_<OP> ----
-equiv_ADD
-equiv_ADDI
-equiv_ADDIW
-equiv_ADDW
-equiv_AND
-equiv_ANDI
-equiv_AUIPC
-equiv_BEQ
-equiv_BGE
-equiv_BGEU
-equiv_BLT
-equiv_BLTU
-equiv_BNE
-equiv_DIV
-equiv_DIVU
-equiv_DIVUW
-equiv_DIVW
-equiv_FENCE
-equiv_JAL
-equiv_JALR
-equiv_LB
-equiv_LBU
-equiv_LD
-equiv_LH
-equiv_LHU
-equiv_LUI
-equiv_LW
-equiv_LWU
-equiv_MUL
-equiv_MULH
-equiv_MULHSU
-equiv_MULHU
-equiv_MULW
-equiv_OR
-equiv_ORI
-equiv_REM
-equiv_REMU
-equiv_REMUW
-equiv_REMW
-equiv_SB
-equiv_SD
-equiv_SH
-equiv_SLL
-equiv_SLLI
-equiv_SLLIW
-equiv_SLLW
-equiv_SLT
-equiv_SLTI
-equiv_SLTIU
-equiv_SLTU
-equiv_SRA
-equiv_SRAI
-equiv_SRAIW
-equiv_SRAW
-equiv_SRL
-equiv_SRLI
-equiv_SRLIW
-equiv_SRLW
-equiv_SUB
-equiv_SUBW
-equiv_SW
-equiv_XOR
-equiv_XORI
-
-# ---- Group 3: 63 trust-wrapper equiv_<OP> ----
 equiv_ADD
 equiv_ADDI
 equiv_ADDIW

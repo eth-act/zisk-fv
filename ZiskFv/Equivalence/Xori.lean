@@ -79,7 +79,7 @@ theorem equiv_XORI
 
 
 /-- Row-native static-provider route for `equiv_XORI`. -/
-theorem equiv_XORI_of_static_row
+lemma equiv_XORI_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xori_input : PureSpec.XoriInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -116,7 +116,7 @@ theorem equiv_XORI_of_static_row
     h_match h_row_spec h_core h_static h_facts h_lane_rd h_xori_subset
 
 /-- Lookup-aware Clean table-row route for `XORI`. -/
-theorem equiv_XORI_of_static_table_row
+lemma equiv_XORI_of_static_table_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xori_input : PureSpec.XoriInput)
     (r1 rd : regidx) (imm : BitVec 12)

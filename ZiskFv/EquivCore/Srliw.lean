@@ -72,7 +72,7 @@ lemma equiv_SRLIW_sail
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
     `WriteValueProofs.BinaryShift.h_rd_val_shift_srliw_of_wf` discharge lemma. -/
-theorem equiv_SRLIW_of_wf
+lemma equiv_SRLIW_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)
@@ -213,7 +213,7 @@ theorem equiv_SRLIW_of_wf
 
 -- legacy `equiv_SRLIW` (bin_ext_table_consumer_wf route) deleted in T4-purge P3.3.
 
-theorem equiv_SRLIW_of_static_row
+lemma equiv_SRLIW_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)

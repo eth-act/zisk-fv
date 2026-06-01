@@ -69,7 +69,7 @@ lemma equiv_SRAI_sail
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
     `WriteValueProofs.BinaryShift.h_rd_val_shift_srai_of_wf` discharge lemma. -/
-theorem equiv_SRAI_of_wf
+lemma equiv_SRAI_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srai_input : PureSpec.SraiInput)
     (r1 rd : regidx) (shamt : BitVec 6)
@@ -195,7 +195,7 @@ theorem equiv_SRAI_of_wf
 
 -- legacy `equiv_SRAI` (bin_ext_table_consumer_wf route) deleted in T4-purge P3.3.
 
-theorem equiv_SRAI_of_static_row
+lemma equiv_SRAI_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srai_input : PureSpec.SraiInput)
     (r1 rd : regidx) (shamt : BitVec 6)

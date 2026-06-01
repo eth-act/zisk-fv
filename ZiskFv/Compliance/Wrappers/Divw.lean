@@ -51,7 +51,7 @@ open ZiskFv.PackedBitVec.SignedChunkLift
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_DIVW_of_table
+lemma equiv_DIVW_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput)
     (r1 r2 rd : regidx)
@@ -105,7 +105,7 @@ theorem equiv_DIVW_of_table
   exact False.elim h_no_arith_div_dynamic_defect
 
 /-- Compatibility wrapper preserving the canonical Compliance theorem name. -/
-theorem equiv_DIVW
+lemma equiv_DIVW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput)
     (r1 r2 rd : regidx)

@@ -12,30 +12,30 @@ ZiskFv.Equivalence.Blt.equiv_BLT:
 ZiskFv.Equivalence.Bltu.equiv_BLTU:
 ZiskFv.Equivalence.Bne.equiv_BNE:
 ZiskFv.Equivalence.Div.equiv_DIV:
-ZiskFv.Equivalence.Divu.equiv_DIVU: ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness, ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Divuw.equiv_DIVUW: ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness, ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Divu.equiv_DIVU: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Divuw.equiv_DIVUW: ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.Divw.equiv_DIVW:
 ZiskFv.Equivalence.Fence.equiv_FENCE:
 ZiskFv.Equivalence.Jal.equiv_JAL: ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.Jalr.equiv_JALR: ZiskFv.PlatformScope.update_elp_state_is_pure_unit, ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.Lb.equiv_LB: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Lbu.equiv_LBU: ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness, ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
+ZiskFv.Equivalence.Lbu.equiv_LBU: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Ld.equiv_LD: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Lh.equiv_LH: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Lhu.equiv_LHU: ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness, ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
+ZiskFv.Equivalence.Lhu.equiv_LHU: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Lui.equiv_LUI: ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.Lw.equiv_LW: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Lwu.equiv_LWU: ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness, ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Mul.equiv_MUL: ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness, ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Lwu.equiv_LWU: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
+ZiskFv.Equivalence.Mul.equiv_MUL: ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.MulH.equiv_MULH:
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU:
-ZiskFv.Equivalence.MulHU.equiv_MULHU: ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness, ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.MulW.equiv_MULW: ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness, ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.MulHU.equiv_MULHU: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.MulW.equiv_MULW: ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.Or.equiv_OR: ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.Ori.equiv_ORI: ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.Rem.equiv_REM:
-ZiskFv.Equivalence.Remu.equiv_REMU: ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness, ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Remuw.equiv_REMUW: ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness, ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Remu.equiv_REMU: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Remuw.equiv_REMUW: ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.Remw.equiv_REMW:
 ZiskFv.Equivalence.Sb.equiv_SB: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.Equivalence.Sd.equiv_SD: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.Trusted.transpiler_contract_sound

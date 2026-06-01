@@ -29,7 +29,7 @@ open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_XORI
+lemma equiv_XORI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xori_input : PureSpec.XoriInput)
     (r1 rd : regidx) (imm : BitVec 12)

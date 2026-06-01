@@ -164,7 +164,7 @@ open ZiskFv.Airs.MemoryBus
     load-side Main/provider memory axioms. Its remaining closure is the
     platform scope, range-bus, Sail-state load bridge, and transpiler
     trust already tracked in the regenerated baselines. -/
-theorem equiv_LD
+lemma equiv_LD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

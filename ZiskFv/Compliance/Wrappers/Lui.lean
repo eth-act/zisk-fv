@@ -30,7 +30,7 @@ open ZiskFv.Tactics.UTypeArchetype
 /-- **Trust-discharged wrapper for `equiv_LUI`.** Derives `h_circuit`
     from `lui_h_circuit_of_main_constraints` (consuming `transpile_LUI`)
     and delegates to canonical `equiv_LUI`. -/
-theorem equiv_LUI
+lemma equiv_LUI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
