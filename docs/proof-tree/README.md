@@ -1,3 +1,4 @@
+DOTHIS: is this proof-tree stuff still in use?
 # zisk-fv proof tree visualizer
 
 A single-page D3 graph of the constant-graph reachable from the uber-theorem
