@@ -676,7 +676,7 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
         // exposed values, so we share the `Circuit.exposed` accessor and rely
         // on the named-constraint layer (Airs/Constraints) to pick distinct
         // identifiers. Index spaces overlap with AirValue — see
-        // docs/fv/extractor-notes.md.
+        // docs/extraction/extractor-notes.md.
         OperandKind::AirGroupValue(av) => Ok(format!(
             "(Circuit.exposed c (index := {}))",
             av.idx,

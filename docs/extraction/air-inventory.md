@@ -1,9 +1,10 @@
-DOTHIS: justify that this exists still or remove it or move it
 # ZisK AIR Inventory
 
-This is an inventory of AIRs in the flake-built `build/zisk.pilout`. It is not
-the trust ledger. Trust classes, axiom counts, and closure rationale live only
-under [`../../trust/`](../../trust/README.md).
+This note is a maintainer-facing map of the AIRs present in the flake-built
+`build/zisk.pilout`, used when checking whether a proof path is drawing from
+the expected generated circuit surface. It is intentionally kept outside
+[`../../trust/`](../../trust/README.md): trust classes, axiom counts, closure
+rationale, and CI gates live only under `trust/`.
 
 Regenerate the pilout with:
 

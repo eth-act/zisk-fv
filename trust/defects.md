@@ -27,19 +27,6 @@ extensions, belong in scope documentation rather than this ledger.
 
 ## Open / mitigated defects
 
-DOTHIS: this is resolved now right? if so remove it
-### ZISK-DEFECT-ARITH-TABLE-TRUST-SHAPE
-
-| Field                  | Value                                                                                                                                                                                                                                                                            |
-|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `kind`                 | `trust-shape`                                                                                                                                                                                                                                                                    |
-| `status`               | `retired-in-lean`                                                                                                                                                                                                                                                                |
-| `affected`             | None in `Defects.UsesOpcodeSpecificArithTableAxiom`. The false opcode-shaped declarations for `MUL`, `MULH`, `MULHSU`, `MULW`, unsigned-W DIV/REM, and signed-W DIV/REM have been deleted from `ZiskFv.Airs.Arith.Ranges`.                                                       |
-| `condition`            | Opcode-specific ArithTable conclusions are trusted directly instead of proved from shared table membership plus finite projections.                                                                                                                                              |
-| `evidence`             | See [`trusted-base.md`](trusted-base.md).                                                                                                                                                                                                                                        |
-| `claim impact`         | This trust-shape defect no longer blocks the defect-aware theorem. The ordinary zero-sorry invariant is restored for this cleanup; the remaining signed-MUL limitation is tracked separately as `ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`.                                |
-| `retirement condition` | Met for the defect predicate: every C3/C4 constructor is removed from `Defects.UsesOpcodeSpecificArithTableAxiom`; proof closures for repaired arms consume shared lookup/permutation membership plus proved finite-table projections, not false opcode-shaped ArithTable facts. |
-
 ### ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS
 
 | Field                  | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

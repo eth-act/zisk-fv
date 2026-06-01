@@ -9,7 +9,7 @@ RV64 → Zisk-instruction transpilation contract (axiomatized).
 
 The axioms mirror `zisk/core/src/riscv2zisk_context.rs::create_register_op`
 (and friends). Any deviation between this file and the transpiler
-implementation is a trust-model break — see `docs/fv/extractor-notes.md`.
+implementation is a trust-model break — see `docs/extraction/extractor-notes.md`.
 
 This module is part of the **trusted** surface: proofs of per-opcode
 equivalence consume the axioms here without further justification. Changes

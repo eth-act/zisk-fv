@@ -175,7 +175,7 @@ def add_subset_holds (v : Valid_Main F ExtF) (row : ℕ) : Prop :=
     `Circuit.main`'s rotation is `ℕ`, so at row 0 the `row - 1` subterm
     saturates to 0 — but the `(1 - SEGMENT_L1)` gate evaluates to `0`
     at row 0 (`SEGMENT_L1 = 1` there by definition), so the misaligned
-    subterm is multiplied out. See `docs/fv/extractor-notes.md` for the
+    subterm is multiplied out. See `docs/extraction/extractor-notes.md` for the
     full soundness argument.
 
     Callers who need the "next_pc" formulation (at row `r`, the next-row

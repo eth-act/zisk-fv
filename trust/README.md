@@ -23,8 +23,9 @@ Use exactly three human-facing trust documents:
    TCB, axioms, active hypotheses, generated ledgers, and removability.
 3. [`defects.md`](defects.md): known bugs and theorem-claim exclusions.
 
-Generated audit files live under [`generated/`](generated/). `docs/fv/` is
-limited to non-trust technical documentation.
+Generated audit files live under [`generated/`](generated/). Extractor and
+pilout orientation notes live under [`../docs/extraction/`](../docs/extraction/)
+when they are not trust policy or trust evidence.
 
 ## Current Ledger State
 

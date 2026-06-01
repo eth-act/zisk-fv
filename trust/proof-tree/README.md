@@ -1,14 +1,15 @@
-DOTHIS: is this proof-tree stuff still in use?
 # zisk-fv proof tree visualizer
 
-A single-page D3 graph of the constant-graph reachable from the uber-theorem
-`ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus` down
-to the axiom leaves of the trust ledger.
+This is a local inspection tool for trust reviews. It renders a single-page D3
+graph of the constant graph reachable from the global theorem
+`ZiskFv.Compliance.zisk_riscv_compliant_program_bus` down to the axiom leaves
+of the trust ledger. It is not part of CI; the machine-checked trust gates live
+under [`../scripts/`](../scripts/).
 
 ## Run
 
 ```bash
-docs/proof-tree/serve.sh
+trust/proof-tree/serve.sh
 # → http://0.0.0.0:4042
 ```
 
@@ -30,8 +31,8 @@ internal `ZiskFv.*` structure plus its axiom leaves.
 
 ```bash
 nix develop --command lake exe trust-gate print-tree-edges \
-  ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus \
-  > docs/proof-tree/edges.tsv
+  ZiskFv.Compliance.zisk_riscv_compliant_program_bus \
+  > trust/proof-tree/edges.tsv
 ```
 
 The TSV is gitignored (~1.4 MB).

@@ -14,8 +14,7 @@ The current verification claim is:
 ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 ```
 
-DOTHIS: Are there still 63? Why did I think with FENCE we're up to 64, is that wrong?
-That theorem dispatches all 63 RV64IM opcodes through
+That theorem dispatches all 63 covered RV64IM opcode surfaces through
 `ZiskFv/Compliance/Wrappers/<Op>.lean` to the canonical `equiv_<OP>` theorem
 for each instruction. `lake build` typechecking is the formal check.
 
@@ -61,7 +60,7 @@ nix run .#test
 | `build/`                          | Generated Sail-Lean, PIL extraction, and pilout artifacts. Gitignored; created by `nix run .#populate`. |
 | `tools/pil-extract/`              | Rust extractor from `.pilout` protobuf to Lean constraint files.                                        |
 | `tools/`                          | Auxiliary repository tooling, including trust-ledger index generation.                                  |
-| `docs/fv/`                        | Non-trust FV notes: extractor contract, AIR inventory, and defect tracker.                              |
+| `docs/extraction/`                | Non-trust notes for `pil-extract`, pilout structure, and AIR inventory.                                 |
 | `nix/`, `flake.nix`, `flake.lock` | Reproducible build definitions and pinned upstream inputs.                                              |
 | `zisk/`                           | ZisK source submodule used as a citation surface. The pilout is built from the flake-pinned input.      |
 

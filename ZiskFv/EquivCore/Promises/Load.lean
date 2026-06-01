@@ -13,7 +13,8 @@ uniform binders shared by all four. Opcode-specific extras
 (MemAlign* providers for the sub-doubleword loads, mode pins,
 width pins) stay inline.
 
-Per `docs/fv/promise-bundles-design.md`.
+This bundle is part of the shared promise-family design in
+`ZiskFv/EquivCore/Promises/`.
 -/
 
 namespace ZiskFv.EquivCore.Promises
