@@ -22,7 +22,6 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- Stable identifiers for entries in `trust/defects.md`. -/
 inductive DefectId where
-  | arithTableTrustShape
   | arithMulSignedWitnessSoundness
   | arithDivDynamicWitnessSoundness
   | fenceIncomplete
@@ -69,22 +68,10 @@ def ArithDivDynamicWitnessShape
   | .remw .. => True
   | _ => False
 
-/-- Conservative marker for remaining opcode-shaped ArithTable trust.
-
-This starts broad across the ArithMul/ArithDiv opcode families because the
-current defect is about the proof/trust shape, not a single program input.
-As C3/C4 retire the bad `arith_table_op_*` assumptions, these arms should
-be narrowed and then deleted. -/
-def UsesOpcodeSpecificArithTableAxiom
-    : OpEnvelope state m r_main → Prop
-  | _ => False
-
 /-- `Blocks id env` means defect `id` excludes this envelope from the
     defect-qualified compliance theorem. -/
 def Blocks (id : DefectId) (env : OpEnvelope state m r_main) : Prop :=
   match id with
-  | .arithTableTrustShape =>
-      UsesOpcodeSpecificArithTableAxiom env
   | .arithMulSignedWitnessSoundness =>
       MaliciousSignedMulWitnessShape env
   | .arithDivDynamicWitnessSoundness =>
@@ -115,11 +102,5 @@ theorem no_arith_div_dynamic_witness_of_no_known_defect
     (h_known_bugs : NoKnownDefect env) :
     ¬ ArithDivDynamicWitnessShape env :=
   h_known_bugs .arithDivDynamicWitnessSoundness
-
-theorem no_opcode_specific_arith_table_axiom_of_no_known_defect
-    {env : OpEnvelope state m r_main}
-    (h_known_bugs : NoKnownDefect env) :
-    ¬ UsesOpcodeSpecificArithTableAxiom env :=
-  h_known_bugs .arithTableTrustShape
 
 end ZiskFv.Compliance.Defects

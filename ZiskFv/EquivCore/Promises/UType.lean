@@ -10,7 +10,7 @@ import ZiskFv.SailSpec.Auxiliaries
 
 Bundles the eleven structurally-uniform binders that every U-TYPE
 canonical `equiv_<OP>` theorem accepts as a single record. Per
-`docs/fv/promise-bundles-design.md`.
+the shared promise-family design in `ZiskFv/EquivCore/Promises/`.
 
 Marked `@[reducible]` so the V2 trust gate's `whnfR`-driven
 `forbidden-types.txt` binder walk continues to see the field types

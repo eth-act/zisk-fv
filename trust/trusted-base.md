@@ -19,10 +19,10 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 
 Current generated counts:
 
-| Surface | Count | Ledger |
-| --- | ---: | --- |
-| Source Lean trust declarations | 12 | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt) |
-| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 10 | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Surface                                                                | Count | Ledger                                                                                       |
+| ---                                                                    | ---:  | ---                                                                                          |
+| Source Lean trust declarations                                         | 12    | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 10    | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
 The difference is intentional: some checked-in trust declarations are retained
 for local components or completeness-direction placeholders but are not reached
@@ -38,12 +38,14 @@ Lean axiom ledger:
 
 ## Current Classes
 
-| Class | Declarations | In global closure | Removability |
-| --- | ---: | ---: | --- |
-| Transpiler bridge | 1 | 1 | Removable by a verified Lean transpiler or checker that proves the same per-opcode contracts. |
-| Memory state load bridge | 1 | 1 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
-| Platform scope | 4 | 4 | Scope assumptions for PMP, PMA, CLINT, and Zicfilp under the current RV64IM platform profile. |
-| Clean completeness placeholders | 6 | 4 | Completeness-direction placeholders; planned retirement with completeness work. |
+
+| Class                           | Declarations | In global closure | Removability                                                                                        |
+| ---                             | ---:         | ---:              | ---                                                                                                 |
+| Transpiler bridge               | 1            | 1                 | Removable by a verified Lean transpiler or checker that proves the same per-opcode contracts.       |
+| Memory state load bridge        | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
+| Platform scope                  | 4            | 4                 | Scope assumptions for PMP, PMA, CLINT, and Zicfilp under the current RV64IM platform profile.       |
+| Clean completeness placeholders | 6            | 4                 | Completeness-direction placeholders; planned retirement with completeness work.                     |
+
 
 ## Transpiler Bridge
 

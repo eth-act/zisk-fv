@@ -13,7 +13,8 @@ Opcode-specific binders kept inline: `h_input_imm` (different bit-widths),
 `h_not_throws` (JAL only), `h_input_rs1`, `h_cur_privilege`, `h_mseccfg`
 (JALR only).
 
-Per `docs/fv/promise-bundles-design.md`.
+This bundle is part of the shared promise-family design in
+`ZiskFv/EquivCore/Promises/`.
 -/
 
 namespace ZiskFv.EquivCore.Promises

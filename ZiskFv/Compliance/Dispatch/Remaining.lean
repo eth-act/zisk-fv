@@ -437,10 +437,10 @@ theorem zisk_riscv_compliant_program_bus_remaining
 
 /-- Defect-aware dispatcher for the remaining arms.
 
-    Non-Arith arms use their concrete opcode proofs. ArithMul/ArithDiv-family
-    arms are currently inside the `arithTableTrustShape` defect region, so
-    the defect-aware theorem proves those cases from `h_known_bugs` instead
-    of depending on the old Arith proof closure. -/
+    Non-defect arms use their concrete opcode proofs. The remaining signed
+    MUL/DIV/REM defect arms are discharged from `h_known_bugs`, making the
+    known claim weakening explicit instead of depending on old Arith proof
+    closures. -/
 theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     (env : OpEnvelope state m r_main)
     (h_known_bugs : Defects.NoKnownDefect env) :
