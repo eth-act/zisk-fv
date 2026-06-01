@@ -90,7 +90,7 @@ lemma equiv_REM_sail
     that equation is derived internally from circuit witnesses via
     the `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_rem` discharge
     lemma. -/
-theorem equiv_REM
+lemma equiv_REM
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rem_input : PureSpec.RemInput)
     (r1 r2 rd : regidx)

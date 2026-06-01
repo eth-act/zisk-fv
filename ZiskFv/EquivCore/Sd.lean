@@ -64,7 +64,7 @@ lemma equiv_SD_sail
 /-- **Canonical equivalence.** Discharges via structural bus hypotheses
     plus ptr/byte match parameters that bridge the bus's mem-write
     entry to Sail's `modify_memory_8` shape. -/
-theorem equiv_SD
+lemma equiv_SD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -126,7 +126,7 @@ The canonical theorem remains promise-shaped; this variant derives the
 ptr/byte store facts from a concrete Clean Main c/store message and then
 delegates to `equiv_SD`. It is the migration target for retiring
 `main_store_emission_bundle_sd` from the canonical wrapper. -/
-theorem equiv_SD_clean_provider
+lemma equiv_SD_clean_provider
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -174,7 +174,7 @@ theorem equiv_SD_clean_provider
 This is the canonical migration form for T4: the Main c/store emission
 facts are supplied by one structural Clean witness, while the register
 reads are derived from `sd_state_assumptions`. -/
-theorem equiv_SD_clean_provider_witness
+lemma equiv_SD_clean_provider_witness
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

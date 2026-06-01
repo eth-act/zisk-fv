@@ -86,7 +86,7 @@ lemma equiv_ADDW_sail
     hypotheses carry `consumer_byte_match_chain_wf` (table wf_properties)
     instead of multiplicity-based `consumer_byte_match_chain`. Body
     mirrors `equiv_ADDW`, routing through `h_rd_val_arith_addw_of_wf`. -/
-theorem equiv_ADDW_of_wf
+lemma equiv_ADDW_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addw_input : PureSpec.AddwInput)
     (r1 r2 rd : regidx)
@@ -301,7 +301,7 @@ theorem equiv_ADDW_of_wf
 
 /-- Row-native static-provider route for `equiv_ADDW`. Mirrors
     `equiv_SUBW_of_static_row` with OP_SUB → OP_ADD. -/
-theorem equiv_ADDW_of_static_row
+lemma equiv_ADDW_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addw_input : PureSpec.AddwInput)
     (r1 r2 rd : regidx)

@@ -28,7 +28,7 @@ open ZiskFv.Airs.Main
 /-- **Trust-discharged wrapper for `equiv_BEQ`.** Pure pass-through to
     the canonical `equiv_BEQ` over a fully-constructed `BranchPromises`
     bundle. -/
-theorem equiv_BEQ
+lemma equiv_BEQ
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (beq_input : PureSpec.BeqInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

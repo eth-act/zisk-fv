@@ -129,7 +129,7 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_OR
+lemma equiv_OR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)

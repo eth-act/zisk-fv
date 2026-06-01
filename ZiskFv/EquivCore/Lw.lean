@@ -88,7 +88,7 @@ lemma equiv_LW_sail
 This removes `main_sext_load_emission_bundle` and
 `lookup_consumer_matches_provider_load` from the Main/Mem portion of LW. The
 BinaryExtension witnesses still supply the signed-extension packing facts. -/
-theorem equiv_LW_clean_provider_of_wf
+lemma equiv_LW_clean_provider_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

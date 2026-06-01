@@ -106,7 +106,7 @@ lemma equiv_ADD_sail
     directly, bypassing `op_bus_perm_sound_BinaryAdd`. This is the
     canonical proof body; `equiv_ADD` below is a thin forwarder that
     derives `r_binary` + `h_match` via the axiom. -/
-theorem equiv_ADD_with_match
+lemma equiv_ADD_with_match
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -173,7 +173,7 @@ theorem equiv_ADD_with_match
     m32 = 0 and the source-register lane equalities. The Binary AIR
     serves 64-bit ADD as an alternate provider to BinaryAdd
     (per `binary.pil:22`, OP_ADD = 0x0A is in Binary's coverage). -/
-theorem equiv_ADD_of_wf
+lemma equiv_ADD_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -444,7 +444,7 @@ theorem equiv_ADD_of_wf
     `carry_7 = 0` via `carry_7_zero_ADD_of_static_chain`, projects
     Main↔Binary c-lane matches via `matches_entry`, and delegates to
     `equiv_ADD_of_wf`. -/
-theorem equiv_ADD_of_static_row
+lemma equiv_ADD_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -536,7 +536,7 @@ theorem equiv_ADD_of_static_row
     The op_bus_perm_sound_BinaryAdd existential is bypassed — the row
     witness comes from the caller (typically the family-balance
     extraction). -/
-theorem equiv_ADD_of_binaryadd_row
+lemma equiv_ADD_of_binaryadd_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)

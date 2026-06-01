@@ -69,7 +69,7 @@ lemma equiv_BGEU_sail
     h_input_pc h_input_misa h_misa_c
 
 /-- **Canonical equivalence.** -/
-theorem equiv_BGEU
+lemma equiv_BGEU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)

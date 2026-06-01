@@ -93,7 +93,7 @@ lemma equiv_REMW_sail
     pin, c_2=c_3=0 bus-W pin, byte-pack + sign-extension witnesses,
     operand toInt-form bridges, and non-boundary CIRCUIT-CONSTRAINTs
     (`h_op2_ne`, `h_no_overflow_w`, `h_r_abs`, `h_r_sign`). -/
-theorem equiv_REMW
+lemma equiv_REMW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput)
     (r1 r2 rd : regidx)

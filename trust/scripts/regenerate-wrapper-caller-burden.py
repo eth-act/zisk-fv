@@ -3,7 +3,7 @@
 
 Sibling of `regenerate-caller-burden.py`: that one tracks every binder
 on the 63 canonical `equiv_<OP>` theorems; this one tracks every
-binder on the 63 `equiv_<OP>` Compliance wrappers under
+binder on the 63 `equiv_<OP>` Compliance wrapper lemmas under
 `ZiskFv/Compliance/Wrappers/*.lean`.
 
 Wrappers are the second half of the trust surface: they consume
@@ -15,8 +15,8 @@ binders between the canonical surface and the wrapper get a visible
 diff.
 
 Format: same as `baseline-caller-burden.txt` —
-`<theorem> <binder_index> <name> [category] <type-snippet>`,
-sorted by (theorem, binder_index).
+`<declaration> <binder_index> <name> [category] <type-snippet>`,
+sorted by (declaration, binder_index).
 """
 import re
 import sys
@@ -52,10 +52,11 @@ file_to_module_prefix = _rb_mod.file_to_module_prefix
 ROOT = Path(__file__).resolve().parent.parent.parent
 WRAPPER_DIR = ROOT / "ZiskFv/Compliance/Wrappers"
 
-# Match the canonical wrapper `equiv_<OP>` (lives in the `ZiskFv.Compliance`
-# namespace, distinct from the canonical `ZiskFv.Equivalence.<File>.equiv_<OP>`).
+# Match the canonical wrapper `equiv_<OP>` declaration (lives in the
+# `ZiskFv.Compliance` namespace, distinct from the canonical
+# `ZiskFv.Equivalence.<File>.equiv_<OP>` theorem).
 WRAPPER_HEAD = re.compile(
-    r"^(?P<indent>\s*)theorem\s+(?P<name>equiv_[A-Z][A-Z0-9]*)\b"
+    r"^(?P<indent>\s*)(?:theorem|lemma)\s+(?P<name>equiv_[A-Z][A-Z0-9]*)\b"
 )
 # Lines that signal the END of a theorem signature (proof body starts).
 SIG_END = re.compile(r"^\s*:=\s*by\b|^\s*:=\s*$|^\s+by\s*$")
@@ -67,7 +68,7 @@ NEXT_DECL = re.compile(
 
 def extract_wrapper_signatures(path: Path):
     """Yield (theorem_name, start_line, params_text) for each
-    `equiv_<OP>` theorem in `path`."""
+    `equiv_<OP>` wrapper declaration in `path`."""
     lines = path.read_text().splitlines()
     i = 0
     while i < len(lines):
@@ -97,10 +98,10 @@ def extract_wrapper_signatures(path: Path):
 
 def main() -> int:
     print(f"# Wrapper caller-burden ledger.")
-    print(f"# Format: <theorem> <binder_index> <name> <category> <type-snippet>")
+    print(f"# Format: <declaration> <binder_index> <name> <category> <type-snippet>")
     print(f"#")
     print(f"# Mirrors `trust/generated/baseline-caller-burden.txt` for the wrapper layer —")
-    print(f"# every parameter the caller of an `equiv_<OP>` (the")
+    print(f"# every parameter the caller of an `equiv_<OP>` wrapper lemma (the")
     print(f"# wrappers under `ZiskFv/Compliance/Wrappers/*.lean`)")
     print(f"# is on the hook for. Adding, renaming, or")
     print(f"# reshaping any wrapper binder produces a diff that has to land")

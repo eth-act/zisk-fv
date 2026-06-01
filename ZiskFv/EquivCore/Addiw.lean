@@ -81,7 +81,7 @@ lemma equiv_ADDIW_sail
 /-- Static-provider variant of `equiv_ADDIW`. The 4 low-byte chain
     hypotheses carry `consumer_byte_match_chain_wf` (table wf_properties).
     Body mirrors `equiv_ADDIW`, routing through `h_rd_val_arith_addiw_of_wf`. -/
-theorem equiv_ADDIW_of_wf
+lemma equiv_ADDIW_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -262,7 +262,7 @@ theorem equiv_ADDIW_of_wf
 /-- Row-native static-provider route for `equiv_ADDIW`. Mirrors
     `equiv_ADDW_of_static_row` with ITYPE promises and caller-routed
     immediate decomposition. -/
-theorem equiv_ADDIW_of_static_row
+lemma equiv_ADDIW_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx) (imm : BitVec 12)

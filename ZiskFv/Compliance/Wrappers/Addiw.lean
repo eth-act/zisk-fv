@@ -33,7 +33,7 @@ open ZiskFv.EquivCore.Promises
     with ITYPE promises and caller-routed immediate decomposition; the
     h_input_imm_extract derivation uses `h_addiw_subset` plus the b_lo
     field of `h_match`. -/
-theorem equiv_ADDIW
+lemma equiv_ADDIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx) (imm : BitVec 12)

@@ -121,7 +121,7 @@ lemma equiv_JALR_sail
     raise `Assertion` on a misaligned target (its jump argument is
     pre-masked), so the `throws = false` path is trivially inhabited —
     no `h_not_throws` hypothesis is needed. -/
-theorem equiv_JALR
+lemma equiv_JALR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jalr_input : PureSpec.JalrInput)
     (imm : BitVec 12)

@@ -88,7 +88,7 @@ open ZiskFv.EquivCore.Promises
        + op-bus projection + `mul_bus_res1_eq_c_hi` (hi side) + FGL→ℕ lift.
     * `h_rs1_value` / `h_rs2_value` from `transpile_MUL` + op-bus projection
        + `packed_lane_eq_of_read_xreg` + chunk-range bounds. -/
-theorem equiv_MUL_of_table
+lemma equiv_MUL_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mul_input : PureSpec.MulInput)
     (r1 r2 rd : regidx)
@@ -144,12 +144,6 @@ theorem equiv_MUL_of_table
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithMul.mul_carry_chain_holds_of_extended v r_a h_row_constraints
-  -- C3 re-root: route the MUL-mode carry-chain constraints through the
-  -- Clean `Air.Flat.Component` (`AirsClean/ArithMul/`). Same constraint set;
-  -- the routing makes `arithMul_circuit_completeness` (completeness-direction)
-  -- enter this opcode's `#print axioms`, so the Component is load-bearing.
-  have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
-    ZiskFv.AirsClean.ArithMul.mul_carry_chain_holds_via_component v r_a h_chain
   have h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v r_a :=
     ZiskFv.Airs.ArithMul.mul_constraint_46_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins ============
@@ -260,7 +254,7 @@ theorem equiv_MUL_of_table
 
 /-- Compatibility wrapper preserving the canonical `equiv_MUL` surface.
     The `_of_table` theorem is the T5 row-native entry point. -/
-theorem equiv_MUL
+lemma equiv_MUL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mul_input : PureSpec.MulInput)
     (r1 r2 rd : regidx)

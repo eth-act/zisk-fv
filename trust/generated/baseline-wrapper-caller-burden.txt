@@ -1,8 +1,8 @@
 # Wrapper caller-burden ledger.
-# Format: <theorem> <binder_index> <name> <category> <type-snippet>
+# Format: <declaration> <binder_index> <name> <category> <type-snippet>
 #
 # Mirrors `trust/generated/baseline-caller-burden.txt` for the wrapper layer —
-# every parameter the caller of an `equiv_<OP>` (the
+# every parameter the caller of an `equiv_<OP>` wrapper lemma (the
 # wrappers under `ZiskFv/Compliance/Wrappers/*.lean`)
 # is on the hook for. Adding, renaming, or
 # reshaping any wrapper binder produces a diff that has to land

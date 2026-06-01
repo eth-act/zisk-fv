@@ -78,7 +78,7 @@ open ZiskFv.EquivCore.Promises
     eliminates the vestigial REM dispatch path; a parallel pilot
     `equiv_REM` is the proper future home for REM
     discharge. -/
-theorem equiv_DIV_of_table
+lemma equiv_DIV_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput)
     (r1 r2 rd : regidx)
@@ -136,7 +136,7 @@ theorem equiv_DIV_of_table
   exact False.elim h_no_arith_div_dynamic_defect
 
 /-- Compatibility wrapper preserving the canonical Compliance theorem name. -/
-theorem equiv_DIV
+lemma equiv_DIV
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput)
     (r1 r2 rd : regidx)

@@ -61,7 +61,7 @@ lemma equiv_OR_sail
     or_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
 /-- Row-native static-provider route for `OR`. -/
-theorem equiv_OR_of_static_row
+lemma equiv_OR_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)

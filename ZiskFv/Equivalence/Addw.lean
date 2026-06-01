@@ -65,7 +65,7 @@ theorem equiv_ADDW
 
 /-- Row-native static-provider route for `equiv_ADDW`. Mirrors
     `equiv_SUBW_of_static_row` with OP_SUB → OP_ADD. -/
-theorem equiv_ADDW_of_static_row
+lemma equiv_ADDW_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addw_input : PureSpec.AddwInput)
     (r1 r2 rd : regidx)

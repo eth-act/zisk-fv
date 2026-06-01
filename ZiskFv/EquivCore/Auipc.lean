@@ -93,7 +93,7 @@ lemma equiv_AUIPC_sail
     asserts the spec output (`PC + signExtend (imm ++ 0)`) directly;
     that equation is derived internally from circuit witnesses via the
     `WriteValueProofs.JumpUType.h_rd_val_jut_auipc` discharge lemma. -/
-theorem equiv_AUIPC
+lemma equiv_AUIPC
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)

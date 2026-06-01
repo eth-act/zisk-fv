@@ -28,7 +28,7 @@ open ZiskFv.Tactics.UTypeArchetype
 /-- **Compliance wrapper for `equiv_AUIPC`.** Derives `h_circuit` from
     `auipc_h_circuit_of_main_constraints` (consuming `transpile_AUIPC`)
     and delegates to canonical `equiv_AUIPC`. -/
-theorem equiv_AUIPC
+lemma equiv_AUIPC
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)

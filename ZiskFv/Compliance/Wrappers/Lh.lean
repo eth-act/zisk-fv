@@ -32,7 +32,7 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
 
 
-theorem equiv_LH
+lemma equiv_LH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

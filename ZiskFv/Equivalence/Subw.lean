@@ -67,7 +67,7 @@ theorem equiv_SUBW
     Compliance wrapper and calls `EquivCore.Subw.equiv_SUBW_of_static_row`
     directly with a concrete Clean `BinaryRow` + `StaticBinaryTableWfFacts row`.
     Mirrors `Equivalence.And.equiv_AND_of_static_row`. -/
-theorem equiv_SUBW_of_static_row
+lemma equiv_SUBW_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)

@@ -79,7 +79,7 @@ theorem equiv_ORI
 
 
 /-- Row-native static-provider route for `equiv_ORI`. -/
-theorem equiv_ORI_of_static_row
+lemma equiv_ORI_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ori_input : PureSpec.OriInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -116,7 +116,7 @@ theorem equiv_ORI_of_static_row
     h_match h_row_spec h_core h_static h_facts h_lane_rd h_ori_subset
 
 /-- Lookup-aware Clean table-row route for `ORI`. -/
-theorem equiv_ORI_of_static_table_row
+lemma equiv_ORI_of_static_table_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ori_input : PureSpec.OriInput)
     (r1 rd : regidx) (imm : BitVec 12)

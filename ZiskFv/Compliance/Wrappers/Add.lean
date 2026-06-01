@@ -39,7 +39,7 @@ open ZiskFv.EquivCore.Promises
     `Compliance.equiv_SUBW` shape (same provider/table/row threading)
     plus the `b_op = OP_ADD` + `mode32 = 0` projection that
     `equiv_ADD_of_static_row` consumes. -/
-theorem equiv_ADD
+lemma equiv_ADD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)

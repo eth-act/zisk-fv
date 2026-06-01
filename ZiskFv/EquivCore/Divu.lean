@@ -85,7 +85,7 @@ lemma equiv_DIVU_sail
     internally from circuit witnesses via the
     `WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_divu` discharge
     lemma. -/
-theorem equiv_DIVU
+lemma equiv_DIVU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)

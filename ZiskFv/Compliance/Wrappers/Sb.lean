@@ -30,7 +30,7 @@ open ZiskFv.ZiskCircuit.StoreB
 
 /-- **Wrapper for `equiv_SB`.** Derives `h_mem_eq` from the Clean
     c/store witness and delegates to canonical `equiv_SB`. -/
-theorem equiv_SB
+lemma equiv_SB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sb_input : PureSpec.SbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

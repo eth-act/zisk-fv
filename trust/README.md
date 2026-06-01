@@ -31,7 +31,7 @@ limited to non-trust technical documentation.
 | Ledger | Count | File |
 | --- | ---: | --- |
 | Source Lean trust declarations | 12 | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt) |
-| Global compliance theorem closure | 10 | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Global compliance theorem closure | 6 | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 | Per-canonical-theorem closures | 63 entries | [`generated/baseline-equiv-axiom-deps.txt`](generated/baseline-equiv-axiom-deps.txt) |
 
 ## Generated Files
@@ -50,7 +50,17 @@ limited to non-trust technical documentation.
 Policy/configuration files remain in `trust/` root: `allowed-axiom-files.txt`,
 `forbidden-param-shapes.txt`, `forbidden-types.txt`,
 `tolerated-completeness-axioms.txt`, `structural-unpacking-exceptions.txt`,
-`theorem-keep-list.txt`, `dead-code-entry-points.txt`, and `.shrinkage-floor`.
+`theorem-keep-list.txt`, `dead-code-entry-points.txt`,
+`op-envelope-route-constructors.txt`, and `.shrinkage-floor`.
+
+The Clean integration gate enforces the final cleanup model: no Clean
+completeness declarations in the global soundness closure, canonical active
+dispatch targets, no public-looking `Equivalence.equiv_*` helper theorem
+surfaces, and explicit classification for route-named `OpEnvelope` variants.
+The intended public theorem API is `zisk_riscv_compliant_program_bus` plus the
+63 canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems. Wrapper and
+EquivCore routes are implementation details; the wrapper caller-burden gate
+still tracks wrapper lemma binders as an internal audit surface.
 
 ## PR Policy
 

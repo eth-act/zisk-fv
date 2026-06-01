@@ -50,7 +50,7 @@ open ZiskFv.Airs.MemoryBus
 /-- **Compliance wrapper for `equiv_LBU`.** Mirrors
     `equiv_LD`'s structure with `equiv_LBU` substituted and
     the additional `h_width` pin tracked for the sub-doubleword case. -/
-theorem equiv_LBU
+lemma equiv_LBU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

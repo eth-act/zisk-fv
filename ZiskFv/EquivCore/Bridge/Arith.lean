@@ -552,7 +552,6 @@ lemma div_unsigned_chain_witnesses_of_carry_ranges
     ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄ = cy₅ * 65536)
     ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = cy₆ * 65536)
     ∧ (cy₆ = 0) := by
-  have h_chain := ZiskFv.AirsClean.ArithDiv.div_carry_chain_via_component v r_a h_chain
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
              ZiskFv.Airs.ArithDiv.nb_fa_eq_div] at h6 h7 h8
@@ -950,7 +949,6 @@ lemma div_signed_chain_witnesses
         + (toIntZ (v.nr r_a) - toIntZ (v.np r_a)) * 2^64
         + toIntZ (v.na r_a) * toIntZ (v.nb r_a) * 2^128
       = (1 - 2 * toIntZ (v.np r_a)) * C := by
-  have h_chain := ZiskFv.AirsClean.ArithDiv.div_carry_chain_via_component v r_a h_chain
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
              ZiskFv.Airs.ArithDiv.nb_fa_eq_div] at h6 h7 h8

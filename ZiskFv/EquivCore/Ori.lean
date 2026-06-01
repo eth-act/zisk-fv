@@ -61,7 +61,7 @@ lemma equiv_ORI_sail
     ori_input r1 rd h_input_r1 h_input_imm h_input_rd h_input_pc
 
 /-- Row-native static-provider route for `ORI`. -/
-theorem equiv_ORI_of_static_row
+lemma equiv_ORI_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ori_input : PureSpec.OriInput)
     (r1 rd : regidx) (imm : BitVec 12)

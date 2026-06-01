@@ -68,7 +68,7 @@ lemma equiv_SW_sail
     sw_input risc_v_assumptions h_opcode_assumptions
 
 /-- **Canonical equivalence.** -/
-theorem equiv_SW
+lemma equiv_SW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -143,7 +143,7 @@ theorem equiv_SW
 The low four bytes and pointer come from the Clean Main c/store message;
 the high-byte preservation parameters are the remaining MemAlign RMW
 facts. -/
-theorem equiv_SW_clean_provider
+lemma equiv_SW_clean_provider
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -190,7 +190,7 @@ theorem equiv_SW_clean_provider
       h_m4 h_m5 h_m6 h_m7
   exact equiv_SW state sw_input regs bus promises h_mem_eq
 
-theorem equiv_SW_clean_provider_witness
+lemma equiv_SW_clean_provider_witness
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

@@ -39,7 +39,7 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
 
 
-theorem equiv_LB
+lemma equiv_LB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)

@@ -81,7 +81,7 @@ lemma equiv_SUB_sail
     static-provider `wf_properties` facts instead of multiplicity-based table
     consumer facts. This is the opcode-core bridge needed by the C7 static
     BinaryTable route. -/
-theorem equiv_SUB_of_wf
+lemma equiv_SUB_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
@@ -362,7 +362,7 @@ theorem equiv_SUB_of_wf
     The table lookup itself is discharged through Clean static-table
     `wf_properties` facts. The 64-bit mode/op pins are still explicit because
     they are row-shape facts, not consequences of table membership. -/
-theorem equiv_SUB_of_static_lookup
+lemma equiv_SUB_of_static_lookup
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
@@ -440,7 +440,7 @@ theorem equiv_SUB_of_static_lookup
     h_match_clo h_match_chi h_lane_rd
 
 /-- Row-native static-provider BinaryTable route for `equiv_SUB`. -/
-theorem equiv_SUB_of_static_row
+lemma equiv_SUB_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)

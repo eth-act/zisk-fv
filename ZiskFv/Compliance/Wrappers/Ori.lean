@@ -29,7 +29,7 @@ open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_ORI
+lemma equiv_ORI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ori_input : PureSpec.OriInput)
     (r1 rd : regidx) (imm : BitVec 12)

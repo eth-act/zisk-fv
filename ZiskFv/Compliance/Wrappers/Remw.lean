@@ -37,7 +37,7 @@ open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_REMW_of_table
+lemma equiv_REMW_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput)
     (r1 r2 rd : regidx)
@@ -91,7 +91,7 @@ theorem equiv_REMW_of_table
   exact False.elim h_no_arith_div_dynamic_defect
 
 /-- Compatibility wrapper preserving the canonical Compliance theorem name. -/
-theorem equiv_REMW
+lemma equiv_REMW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput)
     (r1 r2 rd : regidx)

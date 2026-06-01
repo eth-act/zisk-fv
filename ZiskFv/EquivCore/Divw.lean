@@ -89,7 +89,7 @@ lemma equiv_DIVW_sail
     Structural-unpacking refactor with 18 ADDED binders (DIV
     signed-shape 16 + `h_sext_choice` for W-mode sign-extension +
     `h_c23` for bus W-encoding). -/
-theorem equiv_DIVW
+lemma equiv_DIVW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput)
     (r1 r2 rd : regidx)

@@ -97,7 +97,7 @@ lemma equiv_JAL_sail
     asserts the spec output (`PC + 4`) directly; that equation is
     derived internally from circuit witnesses via the
     `WriteValueProofs.JumpUType.h_rd_val_jut_jal` discharge lemma. -/
-theorem equiv_JAL
+lemma equiv_JAL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
