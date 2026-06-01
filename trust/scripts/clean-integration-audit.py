@@ -19,6 +19,11 @@ CALLER = ROOT / "trust/generated/baseline-caller-burden.txt"
 AXIOM_DEPS = ROOT / "trust/generated/baseline-equiv-axiom-deps.txt"
 GLOBAL = ROOT / "trust/generated/baseline-zisk-riscv-compliant.txt"
 OPENVELOPE = ROOT / "ZiskFv/Compliance/OpEnvelope.lean"
+COMPLIANCE = ROOT / "ZiskFv/Compliance.lean"
+DISPATCH = ROOT / "ZiskFv/Compliance/Dispatch"
+EQUIVALENCE = ROOT / "ZiskFv/Equivalence"
+EQUIVCORE = ROOT / "ZiskFv/EquivCore"
+WRAPPERS = ROOT / "ZiskFv/Compliance/Wrappers"
 
 COMPLETENESS = {
     "ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness",
@@ -106,7 +111,44 @@ def parse_global_axioms() -> list[str]:
 
 def parse_openvelope_ctors() -> list[str]:
     text = read(OPENVELOPE)
-    return re.findall(r"^\s*\|\s+([a-zA-Z0-9_]+)\b", text, flags=re.M)
+    body = text.split("inductive OpEnvelope", 1)[1].split("\nend ZiskFv.Compliance", 1)[0]
+    return re.findall(r"^\s*\|\s+([a-zA-Z0-9_]+)\b", body, flags=re.M)
+
+
+def theorem_declarations(base: Path) -> list[tuple[str, str]]:
+    out = []
+    for path in base.rglob("*.lean"):
+        for match in re.finditer(r"^theorem\s+([A-Za-z0-9_'.]+)\b", read(path), flags=re.M):
+            out.append((str(path.relative_to(ROOT)), match.group(1)))
+    return sorted(out)
+
+
+def dispatch_targets() -> list[tuple[str, str]]:
+    out = []
+    pattern = re.compile(r"\bexact\s+(ZiskFv\.(?:Equivalence|Compliance)\.[A-Za-z0-9_'.]+)")
+    active = set(re.findall(r"\bexact\s+(zisk_riscv_compliant_program_bus_[A-Za-z0-9_]+)", read(COMPLIANCE)))
+    for path in sorted(DISPATCH.glob("*.lean")):
+        text = read(path)
+        for theorem in active:
+            marker = f"theorem {theorem}"
+            idx = text.find(marker)
+            if idx < 0:
+                continue
+            next_theorem = text.find("\ntheorem ", idx + len(marker))
+            end_ns = text.find("\nend ZiskFv.Compliance", idx + len(marker))
+            stops = [pos for pos in [next_theorem, end_ns] if pos >= 0]
+            body = text[idx:min(stops) if stops else len(text)]
+            for match in pattern.finditer(body):
+                out.append((path.name, match.group(1)))
+    return out
+
+
+def dispatch_conjunction() -> list[str]:
+    text = read(COMPLIANCE)
+    match = re.search(r"def OpEnvelope\.exec_eq.*?: Prop :=\n(?P<body>.*?)\n\n/", text, flags=re.S)
+    if not match:
+        return []
+    return re.findall(r"env\.(exec_eq_[A-Za-z0-9_]+)", match.group("body"))
 
 
 def classify_theorem(theorem: str, binders: list[tuple[str, str, str]], deps: list[str]) -> tuple[str, str, list[str]]:
@@ -213,6 +255,32 @@ def main() -> None:
     deps = parse_axiom_deps()
     global_axioms = parse_global_axioms()
     ctors = parse_openvelope_ctors()
+    equivalence_theorems = theorem_declarations(EQUIVALENCE)
+    equivcore_theorems = theorem_declarations(EQUIVCORE)
+    wrapper_theorems = theorem_declarations(WRAPPERS)
+    targets = dispatch_targets()
+    target_names = [target for _, target in targets]
+    noncanonical_targets = [
+        (file, target) for file, target in targets
+        if target.startswith("ZiskFv.Equivalence.") and not re.search(r"\.equiv_[A-Z0-9]+$", target)
+    ]
+    compliance_helper_targets = [
+        (file, target) for file, target in targets
+        if target.startswith("ZiskFv.Compliance.") and not re.search(r"\.equiv_[A-Z0-9]+$", target)
+    ]
+    direct_canonical_targets = [
+        (file, target) for file, target in targets
+        if target.startswith("ZiskFv.Equivalence.") and re.search(r"\.equiv_[A-Z0-9]+$", target)
+    ]
+    route_named_ctors = [ctor for ctor in ctors if "_via_" in ctor]
+    helper_equivalence_theorems = [
+        (path, name) for path, name in equivalence_theorems
+        if name.startswith("equiv_") and not re.match(r"equiv_[A-Z0-9]+$", name)
+    ]
+    helper_equivcore_theorems = [
+        (path, name) for path, name in equivcore_theorems
+        if name.startswith("equiv_") and not re.match(r"equiv_[A-Z0-9]+$", name)
+    ]
 
     theorem_rows = []
     provider_counts: Counter[str] = Counter()
@@ -241,9 +309,16 @@ def main() -> None:
     print()
     print(f"- Canonical theorem surfaces classified: {len(theorem_rows)}")
     print(f"- OpEnvelope constructors found: {len(ctors)}")
+    print(f"- OpEnvelope route-named constructors: {len(route_named_ctors)}")
     print(f"- Global Clean completeness leaks: {len(global_leaks)}")
     print(f"- Canonical theorem surfaces with Clean completeness in closure: {len(completion_leaks)}")
     print(f"- Unknown provider classifications: {len(unknowns)}")
+    print(f"- Dispatch family conclusions: {len(dispatch_conjunction())}")
+    print(f"- Dispatch exact targets: {len(targets)}")
+    print(f"- Dispatch targets using noncanonical `Equivalence.*` helpers: {len(noncanonical_targets)}")
+    print(f"- Dispatch targets using `Compliance.*` helper wrappers: {len(compliance_helper_targets)}")
+    print(f"- Extra `Equivalence` helper theorem surfaces: {len(helper_equivalence_theorems)}")
+    print(f"- Extra `EquivCore` helper theorem surfaces: {len(helper_equivcore_theorems)}")
     print()
     print("### Provider Counts")
     print()
@@ -251,6 +326,14 @@ def main() -> None:
     print("| --- | ---: |")
     for provider, count in provider_counts.most_common():
         print(f"| `{provider}` | {count} |")
+    print()
+    print("### Dispatch Target Counts")
+    print()
+    print("| Target class | Count |")
+    print("| --- | ---: |")
+    print(f"| canonical `Equivalence.equiv_<OP>` targets | {len(direct_canonical_targets)} |")
+    print(f"| noncanonical `Equivalence.*` helper targets | {len(noncanonical_targets)} |")
+    print(f"| `Compliance.*` full-ensemble/helper targets | {len(compliance_helper_targets)} |")
     print()
     print("## Global Completeness Leakage")
     print()
@@ -274,6 +357,59 @@ def main() -> None:
     print("| --- | --- | ---: | --- |")
     for short, reach, hits, note in component_rows(theorems, deps, global_axioms):
         print(f"| `{short}` | {reach} | {hits} | {note} |")
+    print()
+    print("## Dispatch And Surface Uniformity")
+    print()
+    print("The global theorem uses a conjunction of family dispatchers. Each dispatcher returns a real")
+    print("postcondition for its arms and `True` for every other arm; this is manually maintained in")
+    print("`ZiskFv/Compliance.lean` and `ZiskFv/Compliance/Dispatch/*.lean`.")
+    print()
+    print(f"- Family dispatcher conclusions in `OpEnvelope.exec_eq`: {', '.join(f'`{x}`' for x in dispatch_conjunction())}.")
+    print(f"- Route-named `OpEnvelope` constructors: {', '.join(f'`{x}`' for x in route_named_ctors) if route_named_ctors else 'none'}.")
+    print("- `ZiskFv/Equivalence/<Op>.lean` imports the matching `Compliance/Wrappers/<Op>.lean`,")
+    print("  so a dispatcher call to a canonical `Equivalence.equiv_<OP>` still reaches the wrapper layer.")
+    print("- Some dispatchers intentionally bypass the canonical `Equivalence.equiv_<OP>` name and call")
+    print("  helper surfaces or full-ensemble wrapper helpers directly.")
+    print()
+    print("### Noncanonical Dispatch Targets")
+    print()
+    if noncanonical_targets or compliance_helper_targets:
+        print("| File | Target |")
+        print("| --- | --- |")
+        for file, target in noncanonical_targets + compliance_helper_targets:
+            print(f"| `{file}` | `{target}` |")
+    else:
+        print("No noncanonical dispatch targets found.")
+    print()
+    print("### Extra Theorem Surfaces")
+    print()
+    print("| Layer | Count | Examples |")
+    print("| --- | ---: | --- |")
+    eq_examples = ", ".join(f"`{name}`" for _, name in helper_equivalence_theorems[:8])
+    core_examples = ", ".join(f"`{name}`" for _, name in helper_equivcore_theorems[:8])
+    print(f"| `ZiskFv/Equivalence` helper `theorem`s | {len(helper_equivalence_theorems)} | {eq_examples} |")
+    print(f"| `ZiskFv/EquivCore` helper `theorem`s | {len(helper_equivcore_theorems)} | {core_examples} |")
+    print()
+    print("## Uniformity Conclusions")
+    print()
+    print("- Clean static-provider routes (`Binary.staticLookupComponent` and")
+    print("  `BinaryExtension.shiftStaticLookupComponent`) are the cleanest integrated shape:")
+    print("  caller supplies a concrete provider table row and soundness uses `table.Spec`, not")
+    print("  component completeness.")
+    print("- ArithDiv, ArithMul, MemAlignByte, and MemAlignReadByte are integrated through")
+    print("  `component`/`via_component` paths that pull Clean completeness into soundness closure.")
+    print("- Memory load/store proofs use full-ensemble witness constructors. That is a real Clean")
+    print("  integration path, but it is architecturally different from the static-provider rows and")
+    print("  still leaks MemAlign completeness for zero-extending loads.")
+    print("- `BinaryAdd` and full Main/ensemble components are built and balanced in source but are not")
+    print("  the current global theorem route. They are scaffold/helper paths, not evidence that the")
+    print("  global theorem is incomplete.")
+    print("- The dispatcher layer is manually partitioned into ten `exec_eq_*` families with `True`")
+    print("  fallthroughs. This is sound when all families are maintained correctly, but it is not a")
+    print("  uniform single-source dispatch architecture.")
+    print("- Two public-looking theorem layers exist for every opcode (`Compliance.Wrappers` and")
+    print("  `Equivalence`), plus extra helper theorem surfaces. This makes it harder to see which")
+    print("  surface is canonical and which should be private implementation detail.")
     print()
     print("## Scaffold And Coverage Questions")
     print()
