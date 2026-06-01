@@ -17,7 +17,8 @@ Bundles fifteen structurally-uniform binders.
 Shifts (SLLI, SRLI, SRAI) are in a different shape (SHIFT) and use
 the BinaryExtension AIR, so they get their own bundle.
 
-Per `docs/fv/promise-bundles-design.md`.
+This bundle is part of the shared promise-family design in
+`ZiskFv/EquivCore/Promises/`.
 -/
 
 namespace ZiskFv.EquivCore.Promises

@@ -53,7 +53,7 @@ Surface:
 - 63 wrapper files: rename `equiv_<OP>_from_trust` → `equiv_<OP>` (in `ZiskFv.Compliance` namespace).
 - 63 imports in `Compliance.lean` (`Compliance.FromTrust.<Op>` → `Compliance.Wrappers.<Op>`).
 - 63 call expressions in `zisk_riscv_compliant_program_bus`.
-- ~19 doc references in CLAUDE.md, README, `docs/fv/*`.
+- ~19 doc references in CLAUDE.md, README, `docs/extraction/*`.
 - Baseline refresh: `baseline-wrapper-caller-burden.txt` (every row's theorem name changes).
 
 Cost: ~10-minute bulk find/replace. Sequenced AFTER the bundling pass so the wrapper-baseline only refreshes once each.

@@ -14,7 +14,7 @@ The current verification claim is:
 ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 ```
 
-That theorem dispatches all 63 RV64IM opcodes through
+That theorem dispatches all 63 covered RV64IM opcode surfaces through
 `ZiskFv/Compliance/Wrappers/<Op>.lean` to the canonical `equiv_<OP>` theorem
 for each instruction. `lake build` typechecking is the formal check.
 
@@ -28,9 +28,7 @@ axiom closure contains 9 of those declarations, recorded in
 
 The narrative trust ledger is
 [`trust/trusted-base.md`](trust/trusted-base.md). The generated flat index is
-[`trust/axiom-index.md`](trust/axiom-index.md). `docs/fv/` intentionally no
-longer contains trust-boundary material.
-
+[`trust/axiom-index.md`](trust/axiom-index.md).
 ## Build And Verify
 
 After a fresh clone, populate the generated inputs:
@@ -55,16 +53,16 @@ nix run .#test
 
 ## Layout
 
-| Path | Purpose |
-| --- | --- |
-| `ZiskFv/` | Lean proofs, per-opcode equivalence theorems, compliance wrappers, and the global theorem. |
-| `trust/` | The trust ledger, generated axiom indices, caller-burden baselines, and trust-gate scripts. |
-| `build/` | Generated Sail-Lean, PIL extraction, and pilout artifacts. Gitignored; created by `nix run .#populate`. |
-| `tools/pil-extract/` | Rust extractor from `.pilout` protobuf to Lean constraint files. |
-| `tools/` | Auxiliary repository tooling, including trust-ledger index generation. |
-| `docs/fv/` | Non-trust FV notes: extractor contract, AIR inventory, and defect tracker. |
-| `nix/`, `flake.nix`, `flake.lock` | Reproducible build definitions and pinned upstream inputs. |
-| `zisk/` | ZisK source submodule used as a citation surface. The pilout is built from the flake-pinned input. |
+| Path                              | Purpose                                                                                                 |
+| ---                               | ---                                                                                                     |
+| `ZiskFv/`                         | Lean proofs, per-opcode equivalence theorems, compliance wrappers, and the global theorem.              |
+| `trust/`                          | The trust ledger, generated axiom indices, caller-burden baselines, and trust-gate scripts.             |
+| `build/`                          | Generated Sail-Lean, PIL extraction, and pilout artifacts. Gitignored; created by `nix run .#populate`. |
+| `tools/pil-extract/`              | Rust extractor from `.pilout` protobuf to Lean constraint files.                                        |
+| `tools/`                          | Auxiliary repository tooling, including trust-ledger index generation.                                  |
+| `docs/extraction/`                | Non-trust notes for `pil-extract`, pilout structure, and AIR inventory.                                 |
+| `nix/`, `flake.nix`, `flake.lock` | Reproducible build definitions and pinned upstream inputs.                                              |
+| `zisk/`                           | ZisK source submodule used as a citation surface. The pilout is built from the flake-pinned input.      |
 
 ## Pipeline
 

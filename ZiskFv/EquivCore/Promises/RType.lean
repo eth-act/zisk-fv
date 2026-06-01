@@ -19,7 +19,8 @@ Bundles fifteen structurally-uniform binders. Opcode-specific stuff
 (AIR witness, mode pins, byte/carry/flag/parity quantifiers,
 lane-match assertions) stays inline at the canonical-theorem level.
 
-Per `docs/fv/promise-bundles-design.md`.
+This bundle is part of the shared promise-family design in
+`ZiskFv/EquivCore/Promises/`.
 -/
 
 namespace ZiskFv.EquivCore.Promises

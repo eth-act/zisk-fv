@@ -12,7 +12,8 @@ Covers six opcodes (BEQ, BNE, BLT, BLTU, BGE, BGEU). Bundles twelve
 structurally-uniform binders. No memory-bus entries — branches only
 read rs1/rs2 and produce a PC update via the execution bus.
 
-Per `docs/fv/promise-bundles-design.md`.
+This bundle is part of the shared promise-family design in
+`ZiskFv/EquivCore/Promises/`.
 -/
 
 namespace ZiskFv.EquivCore.Promises

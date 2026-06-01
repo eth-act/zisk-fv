@@ -1,7 +1,10 @@
 # pil-extract — extractor notes
 
-Contract, pilout structure observations, and known limitations for the Phase 0
-extractor at `tools/pil-extract/`.
+Maintainer notes for `tools/pil-extract/`: command contract, pilout structure
+observations, and rendering limitations. This file is intentionally outside the
+trust ledger; it records extractor behavior and empirical pilout facts used to
+maintain generated Lean surfaces, while trust policy and axiom closure gates
+live under [`../../trust/`](../../trust/README.md).
 
 ## Contract
 

@@ -98,7 +98,7 @@ exists in `Spec/`.
 
 For ADDW/ADDIW/SUBW the missing piece is *both* (1) and (2): the
 W-variant Binary-SM is `BinaryExtension` (PIL AIR #12), which is
-**not extracted** at all (`docs/fv/air-inventory.md` lists it as
+**not extracted** at all (`docs/extraction/air-inventory.md` lists it as
 "❌ row-constraints missing"). No `Valid_BinaryExtension` AIR
 exists in the Lean tree.
 -/

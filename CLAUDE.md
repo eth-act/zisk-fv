@@ -349,8 +349,8 @@ the agent's self-check above enforces the spirit.
 | Where | What |
 |---|---|
 | `trust/trusted-base.md` | Human-readable trust ledger. Pairs with `trust/baseline-axioms.txt`. Edit when you legitimately add/remove an axiom. |
-| `docs/fv/extractor-notes.md` | Durable contract for `tools/pil-extract`. Read first when extending the extractor. |
-| `docs/fv/air-inventory.md` | 22-AIR inventory and extraction orientation. Trust status lives in `trust/`. |
+| `docs/extraction/extractor-notes.md` | Durable contract for `tools/pil-extract`. Read first when extending the extractor. |
+| `docs/extraction/air-inventory.md` | 22-AIR inventory and extraction orientation. Trust status lives in `trust/`. |
 | `trust/README.md` | Full reference for the gate scripts + baseline files. |
 | `nix/README.md` | Flake-level docs: what each derivation produces, why we use Nix. |
 | **agent memory** | `/home/cody/.claude/projects/-home-cody-zisk-fv/memory/` — facts that persist across conversations; update when current state changes. |
@@ -362,7 +362,7 @@ Recover via `git show`:
 - **`ai_plans/`** — commit `ac2d5e4`. The pre-completion planning
   tree (overall plan + per-phase plans, all CLOSED with
   retrospectives). Recover with `git show ac2d5e4^:ai_plans/<file>`.
-- **`docs/fv/`** purge — commit `661fe36`. Commit message lists each
+- **former `docs/fv/` purge** — commit `661fe36`. Commit message lists each
   removed file and what it covered, so it doubles as the recovery index.
 - **`docker/`** — commit `cd4e4d9` ("chore: delete docker pipeline
   (replaced by flake)"). The Dockerfiles, build scripts, and
