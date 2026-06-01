@@ -10,14 +10,15 @@ name: proofs
 # nixpkgs rev) by content hash, so the same build runs across machines.
 
 on:
-  # On PRs the workflow is opt-in: it only runs when the `run-ci` label
-  # is present. Labels require Triage role or higher to apply, so an
-  # external contributor cannot self-trigger a ~30–50 min CI run from a
-  # fork. The job-level `if:` enforces the gate; `types: [labeled,
-  # synchronize]` re-triggers on label apply and on subsequent pushes
-  # to an already-labeled PR. Path filters still apply as a secondary
-  # gate so pure-doc commits on a labeled PR don't burn runner time.
-  # Push to main and manual `workflow_dispatch` are unaffected.
+  # On PRs the workflow is opt-in: the heavy job only runs when the
+  # `run-ci` label is present. Labels require Triage role or higher to
+  # apply, so an external contributor cannot self-trigger a ~30-50 min
+  # CI run from a fork. The job-level `if:` below enforces the gate;
+  # `types: [labeled, synchronize]` re-triggers on label apply and on
+  # subsequent pushes to an already-labeled PR. Path filters still apply
+  # as a secondary gate so pure-doc commits on a labeled PR don't burn
+  # runner time. Push to main and manual `workflow_dispatch` are
+  # unaffected.
   pull_request:
     types: [labeled, synchronize]
     branches: [main]
@@ -54,6 +55,9 @@ concurrency:
 jobs:
   lake-build:
     name: lake build (full FV check)
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-ci')
     # XL (32 GiB) is required for both cold pilout rebuilds and warm
     # lake builds: the 2026-05-29 fresh build at LEAN_NUM_THREADS=3
     # peaked at 27.9 GiB summed Lean RSS (12.1 GiB max single Lean
