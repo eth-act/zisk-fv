@@ -119,8 +119,8 @@ attribute [simp]
   LeanRV64D.Functions.not
   LeanRV64D.Functions.phys_access_check
   LeanRV64D.Functions.plat_enable_misaligned_access
-  -- pmaCheck: closed via ZiskFv.PlatformScope.pmaCheck_is_pure_none.
-  -- pmpCheck: closed via ZiskFv.PlatformScope.pmpCheck_is_pure_none.
+  -- pmaCheck: closed by the ZisK platform profile lemmas.
+  -- pmpCheck: closed by the ZisK platform profile lemmas.
   LeanRV64D.Functions.range_subset
   LeanRV64D.Functions.read_kind_of_flags
   LeanRV64D.Functions.read_ram
@@ -138,7 +138,7 @@ attribute [simp]
   LeanRV64D.Functions.to_bits
   LeanRV64D.Functions.to_bits_checked
   LeanRV64D.Functions.translateAddr
-  -- within_clint: closed via ZiskFv.PlatformScope.within_clint_is_false.
+  -- within_clint: closed by the ZisK platform profile lemmas.
   LeanRV64D.Functions.within_htif_readable
   LeanRV64D.Functions.within_htif_writable
   LeanRV64D.Functions.within_mmio_readable
@@ -724,14 +724,14 @@ end SimplerFunctions
 
 section Memory
 
-  -- OpenVM address space size
-  notation "OpenVM_address_space_size" => 2 ^ 29
+  -- ZisK uses a flat 32-bit guest-visible physical address space.
+  notation "ZiskPhysicalAddressSpaceSize" => 2 ^ 32
 
   @[simp]
   lemma bare_is_bare : (SATPMode.Bare == SATPMode.Bare) = true := rfl
 
   lemma arithmetic_helper
-    (h_ub : a + b < OpenVM_address_space_size)
+    (h_ub : a + b < ZiskPhysicalAddressSpaceSize)
   :
     (a + b) % 4294967296 = (a + b) ∧
     (a + b) % 17179869184 = (a + b) ∧
@@ -776,7 +776,7 @@ end ControlFlow
 
 namespace ZiskFv.PlatformScope
 
-  /-- **Platform-feature axiom (PMP off).** PMP is disabled in the
+  /-- **Platform-feature theorem (PMP off).** PMP is disabled in the
       RV64IM scope ZisK targets: no `pmpcfg_n` entry has its `A` field set
       to anything other than `OFF`, so the 16-entry match loop in
       `LeanRV64D.Functions.pmpCheck` never yields `PMP_Match` /
@@ -791,13 +791,16 @@ namespace ZiskFv.PlatformScope
       so `simp` can rewrite the call inside a `bind` chain before `state`
       is threaded in. -/
   @[simp high]
-  axiom pmpCheck_is_pure_none
+  theorem pmpCheck_is_pure_none
     (addr : physaddr) (width : Nat) (acc : MemoryAccessType Unit)
     (priv : Privilege)
   : LeanRV64D.Functions.pmpCheck addr width acc priv
       = (pure none : SailM (Option ExceptionType))
+  := by
+    funext s
+    simp [LeanRV64D.Functions.pmpCheck, LeanRV64D.Functions.sys_pmp_count]
 
-  /-- **Platform-feature axiom (CLINT disjoint).** The CLINT MMIO region is
+  /-- **Platform-feature theorem (CLINT disjoint).** The CLINT MMIO region is
       never addressed by ZisK-generated code: user programs access only
       flat program memory. Under this scope commitment
       `LeanRV64D.Functions.within_clint` is a pure identity: it returns
@@ -805,52 +808,140 @@ namespace ZiskFv.PlatformScope
 
       The vendored `LeanRV64D` bakes in `plat_clint_base = 2^25` and
       `plat_clint_size = 786432`, which intersects the
-      `OpenVM_address_space_size = 2^29` envelope — so a state-level
+      `ZiskPhysicalAddressSpaceSize = 2^32` envelope — so a state-level
       `addr_disjoint` precondition would be necessary to close `within_clint`
-      derivationally; axiomatizing the inert-for-all-inputs form is strictly
-      stronger, scope-honest, and avoids threading per-opcode disjointness
-      hypotheses.
+      for arbitrary widths. The opcodes here use concrete positive access
+      widths, where the generated CLINT predicate reduces directly.
 
       Stated in monadic (uncurried) form for the same reason as
       `pmpCheck_is_pure_none`. -/
-  @[simp high]
-  axiom within_clint_is_false
+  theorem within_clint_is_false_of_pos_width
     (addr : physaddr) (width : Nat)
+    (h_width : 0 < width)
   : LeanRV64D.Functions.within_clint addr width
       = (pure false : SailM Bool)
+  := by
+    funext state
+    cases addr
+    simp [
+      LeanRV64D.Functions.within_clint,
+      LeanRV64D.Functions.plat_clint_size,
+      Sail.BitVec.toNatInt
+    ]
+    omega
 
-  /-- **Platform-feature axiom (PMA inert).** The PMA check is inert
-      when the single-region / readable / writable / `AlignmentFault`
-      hypotheses already recorded in `RISC_V_assumptions` hold. Rather
-      than threading those fields through `matching_pma` + the
-      `AlignmentFault` arm of `pmaCheck`, we axiomatize the end-state
-      `(ok none, state)` directly — a form that ports cleanly from
-      openvm-fv's RV32D proof for which the same reduction closes by
-      `simp`. Stated in monadic (uncurried) form. -/
+  @[simp high] theorem within_clint_is_false_1 (addr : physaddr) :
+    LeanRV64D.Functions.within_clint addr 1 = (pure false : SailM Bool) :=
+    within_clint_is_false_of_pos_width addr 1 (by decide)
+
+  @[simp high] theorem within_clint_is_false_2 (addr : physaddr) :
+    LeanRV64D.Functions.within_clint addr 2 = (pure false : SailM Bool) :=
+    within_clint_is_false_of_pos_width addr 2 (by decide)
+
+  @[simp high] theorem within_clint_is_false_4 (addr : physaddr) :
+    LeanRV64D.Functions.within_clint addr 4 = (pure false : SailM Bool) :=
+    within_clint_is_false_of_pos_width addr 4 (by decide)
+
+  @[simp high] theorem within_clint_is_false_8 (addr : physaddr) :
+    LeanRV64D.Functions.within_clint addr 8 = (pure false : SailM Bool) :=
+    within_clint_is_false_of_pos_width addr 8 (by decide)
+
   @[simp high]
-  axiom pmaCheck_is_pure_none
-    (paddr : physaddr) (width : Nat) (acc : MemoryAccessType Unit)
-    (res_or_con : Bool)
-  : LeanRV64D.Functions.pmaCheck paddr width acc res_or_con
-      = (pure none : SailM (Option ExceptionType))
+  theorem pmaCheck_load_is_none
+    (addr : BitVec 64) (width : Nat) (acc : Unit)
+    (h_regions : Sail.readReg Register.pma_regions state = EStateM.Result.ok [pmaRegion] state)
+    (h_base : pmaRegion.base = 0)
+    (h_size : ZiskPhysicalAddressSpaceSize ≤ pmaRegion.size.toNat)
+    (h_readable : pmaRegion.attributes.readable)
+    (h_misaligned : pmaRegion.attributes.misaligned_fault = misaligned_fault.AlignmentFault)
+    (h_bound : addr.toNat + width ≤ ZiskPhysicalAddressSpaceSize)
+    (h_div : (↑width : Int) ∣ ↑addr.toNat)
+  : LeanRV64D.Functions.pmaCheck (physaddr.Physaddr addr) width (MemoryAccessType.Load acc) false state
+      = EStateM.Result.ok none state
+  := by
+    have h_mod :
+      (↑addr.toNat + ↑width) % 18446744073709551616 = ↑(addr.toNat + width) := by
+      omega
+    have h_range :
+      addr.toNat ≤ pmaRegion.size.toNat ∧
+        (↑addr.toNat + ↑width) % 18446744073709551616 ≤ ↑pmaRegion.size.toNat ∧
+          ↑addr.toNat ≤ (↑addr.toNat + ↑width) % 18446744073709551616 := by
+      rw [h_mod]
+      omega
+    simp [
+      LeanRV64D.Functions.pmaCheck,
+      LeanRV64D.Functions.matching_pma,
+      LeanRV64D.Functions.matching_pma_bits_range,
+      LeanRV64D.Functions.range_subset,
+      LeanRV64D.Functions.bits_of_physaddr,
+      h_regions, h_base, h_div, h_range
+    ]
+    rw [if_pos (by
+      constructor
+      · omega
+      · omega)]
+    simp [h_readable, h_misaligned]
 
-  /-- **Platform-feature axiom (Zicfilp disabled).** The Zicfilp landing-pad
+  @[simp high]
+  theorem pmaCheck_store_is_none
+    (addr : BitVec 64) (width : Nat) (acc : Unit)
+    (h_regions : Sail.readReg Register.pma_regions state = EStateM.Result.ok [pmaRegion] state)
+    (h_base : pmaRegion.base = 0)
+    (h_size : ZiskPhysicalAddressSpaceSize ≤ pmaRegion.size.toNat)
+    (h_writable : pmaRegion.attributes.writable)
+    (h_misaligned : pmaRegion.attributes.misaligned_fault = misaligned_fault.AlignmentFault)
+    (h_bound : addr.toNat + width ≤ ZiskPhysicalAddressSpaceSize)
+    (h_div : (↑width : Int) ∣ ↑addr.toNat)
+  : LeanRV64D.Functions.pmaCheck (physaddr.Physaddr addr) width (MemoryAccessType.Store acc) false state
+      = EStateM.Result.ok none state
+  := by
+    have h_mod :
+      (↑addr.toNat + ↑width) % 18446744073709551616 = ↑(addr.toNat + width) := by
+      omega
+    have h_range :
+      addr.toNat ≤ pmaRegion.size.toNat ∧
+        (↑addr.toNat + ↑width) % 18446744073709551616 ≤ ↑pmaRegion.size.toNat ∧
+          ↑addr.toNat ≤ (↑addr.toNat + ↑width) % 18446744073709551616 := by
+      rw [h_mod]
+      omega
+    simp [
+      LeanRV64D.Functions.pmaCheck,
+      LeanRV64D.Functions.matching_pma,
+      LeanRV64D.Functions.matching_pma_bits_range,
+      LeanRV64D.Functions.range_subset,
+      LeanRV64D.Functions.bits_of_physaddr,
+      h_regions, h_base, h_div, h_range
+    ]
+    rw [if_pos (by
+      constructor
+      · omega
+      · omega)]
+    simp [h_writable, h_misaligned]
+
+  /-- **Platform-feature theorem (Zicfilp disabled).** The Zicfilp landing-pad
       extension is disabled in ZisK's RV64IM target. Under this scope
       `LeanRV64D.Functions.update_elp_state` (ZicfilpRegs.lean:224) is a
       no-op: its `currentlyEnabled Ext_Zicfilp` guard is always false,
       so the helper reduces to `pure ()`.
 
-      Without this axiom, closing `execute_JALR_pure_equiv` on RV64
-      would require extending `RISC_V_assumptions` with either
-      `currentlyEnabled Ext_Zicfilp state = ok false state` or
-      `mseccfg.MLPE = 0`; both are valid derivation closure paths.
-      The universal axiom form sidesteps this at the same trust cost.
-      Stated in monadic (uncurried) form. -/
+      The proof uses the machine-mode and `mseccfg` profile facts threaded
+      through `RISC_V_assumptions`. -/
   @[simp high]
-  axiom update_elp_state_is_pure_unit
+  theorem update_elp_state_is_pure_unit
     (rs1 : regidx)
-  : LeanRV64D.Functions.update_elp_state rs1
-      = (pure () : SailM Unit)
+    (h_priv : Sail.readReg Register.cur_privilege state = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state)
+  : LeanRV64D.Functions.update_elp_state rs1 state
+      = EStateM.Result.ok () state
+  := by
+    simp [
+      LeanRV64D.Functions.update_elp_state,
+      LeanRV64D.Functions.currentlyEnabled,
+      LeanRV64D.Functions.get_xLPE,
+      LeanRV64D.Functions.hartSupports,
+      h_priv,
+      h_mseccfg
+    ]
 
 end ZiskFv.PlatformScope
 
@@ -879,9 +970,9 @@ section Spec
     (Sail.readReg Register.mstatus state = EStateM.Result.ok mstatus state ∧ BitVec.extractLsb 17 17 mstatus = 0#1) ∧
     -- A2.1 : Single PMA region
     Sail.readReg Register.pma_regions state = EStateM.Result.ok [ pmaRegion ] state ∧
-    -- A2.2 : with base 0 and at least 2^29 bytes in size
+    -- A2.2 : with base 0 and at least the flat 32-bit ZisK address space
     pmaRegion.base = 0 ∧
-    OpenVM_address_space_size ≤ pmaRegion.size.toNat ∧
+    ZiskPhysicalAddressSpaceSize ≤ pmaRegion.size.toNat ∧
     -- A2.3 : with all addresses readable and writable, and misaligned accesses treated as errors
     pmaRegion.attributes.readable ∧
     pmaRegion.attributes.writable ∧
@@ -891,29 +982,15 @@ section Spec
     -- Assumption A4.1: misa register exists
     state.regs.get? Register.misa = .some misa ∧
     -- Assumption A4.2: mseccfg register exists
-    Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state ∧
-    -- Platform-scope tags (descriptive — discharged by the universal
-    -- axioms in `ZiskFv.PlatformScope`). These document the RV64IM
-    -- scope commitment in the assumption bundle and simultaneously give
-    -- downstream proofs direct state-level access to each axiom's
-    -- conclusion via simp-rewrite.
-    -- A5.1 : PMP entries are all OFF (pmp_all_off).
-    (∀ (addr : physaddr) (width : Nat) (acc : MemoryAccessType Unit) (priv : Privilege),
-      LeanRV64D.Functions.pmpCheck addr width acc priv state = EStateM.Result.ok none state) ∧
-    -- A5.2 : CLINT is disjoint from program memory (clint_disjoint).
-    (∀ (addr : physaddr) (width : Nat),
-      LeanRV64D.Functions.within_clint addr width state = EStateM.Result.ok false state) ∧
-    -- A5.3 : PMA check is inert under the single-region A2 clauses (pma_single_region).
-    (∀ (paddr : physaddr) (width : Nat) (acc : MemoryAccessType Unit) (rc : Bool),
-      LeanRV64D.Functions.pmaCheck paddr width acc rc state = EStateM.Result.ok none state)
+    Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state
 
   lemma RISC_V_assumptions_invariant_under_pc_increment
     (assumptions : RISC_V_assumptions s mstatus pmaRegion misa mseccfg)
   :
     RISC_V_assumptions (write_reg_state s Register.nextPC val) mstatus pmaRegion misa mseccfg
   := by
-    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := assumptions
-    refine ⟨ ?_, ⟨ ?_, ?_ ⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_ ⟩
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg ⟩ := assumptions
+    refine ⟨ ?_, ⟨ ?_, ?_ ⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_ ⟩
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_priv (by trivial)]
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_mprv.1 (by trivial)]
     . exact h_mprv.2
@@ -926,11 +1003,5 @@ section Spec
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_htif (by trivial)]
     . grind [write_reg_state]
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_mseccfg (by trivial)]
-    . intros addr width acc priv
-      rw [ZiskFv.PlatformScope.pmpCheck_is_pure_none addr width acc priv]; rfl
-    . intros addr width
-      rw [ZiskFv.PlatformScope.within_clint_is_false addr width]; rfl
-    . intros paddr width acc rc
-      rw [ZiskFv.PlatformScope.pmaCheck_is_pure_none paddr width acc rc]; rfl
 
 end Spec

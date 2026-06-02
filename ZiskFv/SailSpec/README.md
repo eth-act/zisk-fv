@@ -12,9 +12,9 @@ Each opcode file does two jobs:
    Sail-extracted `execute_instruction` rewritten in clean
    `BitVec` / `Option` terms, with the state monad stripped, the
    decoder dispatch removed, and ZisK-irrelevant trap arms eliminated
-   via the four platform axioms in `Auxiliaries.lean` (PMP / CLINT /
-   PMA inert, Zicfilp disabled — see classes #7–#10 in
-   `trust/trusted-base.md`).
+   via platform-profile theorems in `Auxiliaries.lean` (PMP disabled,
+   CLINT disjoint for concrete access widths, PMA covered by the ZisK
+   memory region, Zicfilp disabled).
 2. **Proves an equivalence lemma**
    `execute_<OP>_pure_equiv : LeanRV64D.Functions.execute (.<shape> …) state = … = PureSpec.execute_<shape>_<op>_pure …`.
    The lemma keeps the pure form honest — drift between
@@ -23,11 +23,10 @@ Each opcode file does two jobs:
 
 ## Notable shared files
 
-- **`Auxiliaries.lean`** — declares the **4 platform-scope axioms**
-  (PMP inert, CLINT disjoint, PMA inert, Zicfilp disabled) and the
-  small Sail-side simp helpers consumed by the pure-spec rewrites.
-  This file is allowlisted in `trust/allowed-axiom-files.txt` for
-  the 4 axioms it carries.
+- **`Auxiliaries.lean`** — proves the platform-profile lemmas
+  (PMP disabled, CLINT disjoint for concrete access widths, PMA covered
+  by the ZisK memory region, Zicfilp disabled) and the small Sail-side
+  simp helpers consumed by the pure-spec rewrites.
 - **`BusEffect.lean`** — defines `bus_effect` (the function that
   takes a `MainRow` / `MemRow` and emits a Sail state update). This
   is the **RHS** of every per-opcode `equiv_<OP>` theorem in
