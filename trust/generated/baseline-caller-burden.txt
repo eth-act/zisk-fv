@@ -12,12 +12,12 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1046
+# Total rows: 1047
 # Category bridge: 68
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 694
+# Category other: 695
 # Category range: 3
 # Category row: 60
 # Category state: 73
@@ -273,6 +273,7 @@ ZiskFv.Equivalence.Fence.equiv_FENCE 008 r_main [row] ℕ
 ZiskFv.Equivalence.Fence.equiv_FENCE 009 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Equivalence.Fence.equiv_FENCE 010 _pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG
 ZiskFv.Equivalence.Fence.equiv_FENCE 011 promises [transpile] ZiskFv.EquivCore.Promises.FencePromises state fence_input.PC (PureSpec.execute_F
+ZiskFv.Equivalence.Fence.equiv_FENCE 012 h_avoid_known_bugs [other] ZiskFv.Compliance.Defects.NoKnownDefect (show ZiskFv.Compliance.OpEnvelope state
 ZiskFv.Equivalence.Jal.equiv_JAL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Jal.equiv_JAL 001 jal_input [other] PureSpec.JalInput
 ZiskFv.Equivalence.Jal.equiv_JAL 002 imm [other] BitVec 21
