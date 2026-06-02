@@ -668,22 +668,15 @@ section SimplerFunctions
     LeanRV64D.Functions.bool_bits_forwards b = if b then 1#1 else 0#1
   := by aesop
 
-  /-- In RV64D, `currentlyEnabled Ext_Zca` depends on `currentlyEnabled Ext_C`,
-      which in turn reads misa bit 2. ZisK targets RV64IM only and therefore
-      disables the C extension, i.e. the caller must witness `misa[2] = 0`.
-      The original RV32D lemma takes only the misa-readable hypothesis because
-      the upstream `LeanRV32D` `currentlyEnabled` definition for `Ext_Zca`
-      ignores misa.  See `LeanRV64D/Types.lean` lines ~540-545.
-
-      We carry this lemma locally (mirroring openvm-fv's
-      `OpenvmFv/RV32D/Auxiliaries.lean::currentlyEnabled_Zca_of_misa_val`
-      pattern). The dependency on `NethermindEth/sail-riscv-lean` is the
-      stock upstream — no fork. -/
+  /-- ZisK targets RV64IM only, so the extracted Sail profile disables `Zca`.
+      The misa-bit witness remains in the statement because existing call sites
+      already provide the platform proof package, but the generated support
+      predicate now makes this reduction independent of misa. -/
   @[simp high]
   lemma currentlyEnabled_Zca_of_misa_val
     {misa_val : BitVec 64}
     (h: state.regs.get? Register.misa = .some misa_val)
-    (h_c: Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (_h_c: Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
   :
     LeanRV64D.Functions.currentlyEnabled extension.Ext_Zca state =
     EStateM.Result.ok false state
@@ -743,15 +736,13 @@ end Memory
 
 section ControlFlow
 
-  /-- In RV64D `jump_to` consults `currentlyEnabled Ext_Zca` to decide whether
-      2-byte alignment is allowed. ZisK targets RV64IM only, so the C extension
-      is disabled, i.e. the caller must witness `misa[2] = 0`.
-
-      Closure relies on the `@[simp high]` local lemma
-      `currentlyEnabled_Zca_of_misa_val` defined earlier in this file. -/
+  /-- `jump_to` consults `currentlyEnabled Ext_Zca` to decide whether 2-byte
+      alignment is allowed. ZisK targets RV64IM only, so the extracted Sail
+      profile disables `Zca`; the misa-bit witness is kept for the shared
+      platform proof interface. -/
   lemma jump_to_equiv
     (h_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (_h_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
   :
     LeanRV64D.Functions.jump_to target state =
       if (BitVec.ofBool target[0]) == 1#1 then EStateM.Result.error (Sail.Error.Assertion "extensions/I/base_insts.sail:59.29-59.30") state
@@ -761,13 +752,11 @@ section ControlFlow
           else EStateM.Result.ok (ExecutionResult.Retire_Success ()) (write_reg_state state Register.nextPC target)
   := by
     -- `jump_to` wraps its body in `SailME.run do ...`. The local `@[simp high]`
-    -- lemma `currentlyEnabled_Zca_of_misa_val` reduces `currentlyEnabled Ext_Zca
-    -- state` to `ok false state` under the misa-bit-2-zero hypothesis and fires
-    -- implicitly via the simp-set.
-    have h_c' : BitVec.extractLsb 2 2 misa_val = 0#1 := h_c
+    -- The extracted RV64IM profile makes `currentlyEnabled Ext_Zca state`
+    -- reduce to `ok false state` via the local simp lemma above.
     simp [LeanRV64D.Functions.jump_to]
     by_cases h_bit_0 : BitVec.ofBool target[0] = 0#1 <;> simp [h_bit_0]
-    . simp [readReg_succ h_misa, h_c']
+    . simp [readReg_succ h_misa]
       by_cases h_bit_1 : BitVec.ofBool target[1] = 1#1 <;> simp [h_bit_1]
       simp [writeReg_state_success]
     . grind

@@ -67,7 +67,7 @@
           "write_idempotent": true,
           "misaligned_fault": "AlignmentFault",
           "reservability": "RsrvEventual",
-          "supports_cbo_zero": true
+          "supports_cbo_zero": false
         },
         "include_in_device_tree": true
       }
@@ -93,67 +93,67 @@
       "supported": true
     },
     "A": {
-      "supported": true
+      "supported": false
     },
     "F": {
-      "supported": true
+      "supported": false
     },
     "D": {
-      "supported": true
+      "supported": false
     },
     "V": {
-      "support_level": "Full",
+      "support_level": "Disabled",
       "vlen_exp": 8,
       "elen_exp": 6,
       "vl_use_ceil": false
     },
     "B": {
-      "supported": true
+      "supported": false
     },
     "S": {
-      "supported": true
+      "supported": false
     },
     "U": {
-      "supported": true
+      "supported": false
     },
     "Zicbom": {
-      "supported": true
+      "supported": false
     },
     "Zicbop": {
-      "supported": true
+      "supported": false
     },
     "Zicboz": {
-      "supported": true
+      "supported": false
     },
     "Zic64b": {
-      "supported": true
+      "supported": false
     },
     "Zicfilp": {
       "supported": false
     },
     "Zicond": {
-      "supported": true
+      "supported": false
     },
     "Zicntr": {
-      "supported": true
+      "supported": false
     },
     "Zicsr": {
-      "supported": true
+      "supported": false
     },
     "Zifencei": {
-      "supported": true
+      "supported": false
     },
     "Zihintntl": {
-      "supported": true
+      "supported": false
     },
     "Zihintpause": {
-      "supported": true
+      "supported": false
     },
     "Zihpm": {
-      "supported": true
+      "supported": false
     },
     "Zimop": {
-      "supported": true
+      "supported": false
     },
     "Zmmul": {
       "supported": false
@@ -162,16 +162,16 @@
       "supported": false
     },
     "Zabha": {
-      "supported": true
+      "supported": false
     },
     "Zacas": {
-      "supported": true
+      "supported": false
     },
     "Zalrsc": {
       "supported": false
     },
     "Zawrs": {
-      "supported": true,
+      "supported": false,
       "nto": {
         "is_nop": false
       },
@@ -180,16 +180,16 @@
       }
     },
     "Zfa": {
-      "supported": true
+      "supported": false
     },
     "Zfbfmin": {
-      "supported": true
+      "supported": false
     },
     "Zfh": {
-      "supported": true
+      "supported": false
     },
     "Zfhmin": {
-      "supported": true
+      "supported": false
     },
     "Zfinx": {
       "supported": false
@@ -198,19 +198,19 @@
       "supported": false
     },
     "Zca": {
-      "supported": true
+      "supported": false
     },
     "Zcf": {
       "supported": false
     },
     "Zcd": {
-      "supported": true
+      "supported": false
     },
     "Zcb": {
-      "supported": true
+      "supported": false
     },
     "Zcmop": {
-      "supported": true
+      "supported": false
     },
     "Zba": {
       "supported": false
@@ -222,41 +222,41 @@
       "supported": false
     },
     "Zbc": {
-      "supported": true
+      "supported": false
     },
     "Zbkb": {
-      "supported": true
+      "supported": false
     },
     "Zbkc": {
-      "supported": true
+      "supported": false
     },
     "Zbkx": {
-      "supported": true
+      "supported": false
     },
     "Zknd": {
-      "supported": true
+      "supported": false
     },
     "Zkne": {
-      "supported": true
+      "supported": false
     },
     "Zknh": {
-      "supported": true
+      "supported": false
     },
     "Zkr": {
-      "supported": true,
+      "supported": false,
       "sseed_reset_value": false,
       "useed_reset_value": false,
       "sseed_read_only_zero": false,
       "useed_read_only_zero": false
     },
     "Zksed": {
-      "supported": true
+      "supported": false
     },
     "Zksh": {
-      "supported": true
+      "supported": false
     },
     "Zkt": {
-      "supported": true
+      "supported": false
     },
     "Zhinx": {
       "supported": false
@@ -265,80 +265,80 @@
       "supported": false
     },
     "Zvfbfmin": {
-      "supported": true
+      "supported": false
     },
     "Zvfbfwma": {
-      "supported": true
+      "supported": false
     },
     "Zvfh": {
-      "supported": true
+      "supported": false
     },
     "Zvfhmin": {
-      "supported": true
+      "supported": false
     },
     "Zvbb": {
-      "supported": true
+      "supported": false
     },
     "Zvbc": {
-      "supported": true
+      "supported": false
     },
     "Zvkb": {
       "supported": false
     },
     "Zvkg": {
-      "supported": true
+      "supported": false
     },
     "Zvkned": {
-      "supported": true
+      "supported": false
     },
     "Zvknha": {
-      "supported": true
+      "supported": false
     },
     "Zvknhb": {
-      "supported": true
+      "supported": false
     },
     "Zvksed": {
-      "supported": true
+      "supported": false
     },
     "Zvksh": {
-      "supported": true
+      "supported": false
     },
     "Zvkt": {
-      "supported": true
+      "supported": false
     },
     "Sscofpmf": {
-      "supported": true
+      "supported": false
     },
     "Smcntrpmf": {
-      "supported": true
+      "supported": false
     },
     "Sstc": {
-      "supported": true
+      "supported": false
     },
     "Sstvala": {
-      "supported": true
+      "supported": false
     },
     "Svinval": {
-      "supported": true
+      "supported": false
     },
     "Svrsw60t59b": {
-      "supported": true
+      "supported": false
     },
     "Svbare": {
-      "supported": true,
+      "supported": false,
       "sfence_vma_illegal_if_svbare_only": true
     },
     "Sv32": {
       "supported": false
     },
     "Sv39": {
-      "supported": true
+      "supported": false
     },
     "Sv48": {
-      "supported": true
+      "supported": false
     },
     "Sv57": {
-      "supported": true
+      "supported": false
     }
   }
 }
