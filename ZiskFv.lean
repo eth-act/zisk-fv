@@ -1,5 +1,6 @@
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Transpiler.Static
+import ZiskFv.Transpiler.FenceCoverage
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Field.GoldilocksBridge
