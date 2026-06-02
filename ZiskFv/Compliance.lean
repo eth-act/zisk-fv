@@ -89,7 +89,7 @@ theorem zisk_riscv_compliant_program_bus
     env.exec_eq := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact zisk_riscv_compliant_program_bus_branch env
-  · exact zisk_riscv_compliant_program_bus_nomem env
+  · exact zisk_riscv_compliant_program_bus_nomem env h_known_bugs
   · exact zisk_riscv_compliant_program_bus_rtype_binary env
   · exact zisk_riscv_compliant_program_bus_itype_binary env
   · exact zisk_riscv_compliant_program_bus_shift env

@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Fence
+import ZiskFv.Compliance.Defects
 import ZiskFv.Channels.StateEffect
 
 /-!
@@ -35,8 +36,15 @@ theorem equiv_FENCE
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
         exec_row)
+    (h_avoid_known_bugs : ZiskFv.Compliance.Defects.NoKnownDefect
+        (show ZiskFv.Compliance.OpEnvelope state main r_main from
+          ZiskFv.Compliance.OpEnvelope.fence
+          fence_input fm pred succ rs rd exec_row _pins promises))
     : execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
       = state_effect_via_channels ⟨exec_row, []⟩ state := by
+  have _h_supported_fence_fm : fm = (0#4) :=
+    ZiskFv.Compliance.Defects.fence_fm_zero_of_no_known_defect
+      h_avoid_known_bugs
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_FENCE state fence_input fm pred succ rs rd main r_main exec_row _pins promises
 

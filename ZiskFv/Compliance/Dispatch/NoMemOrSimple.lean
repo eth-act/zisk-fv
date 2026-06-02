@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.OpEnvelope
+import ZiskFv.Compliance.Defects
 import ZiskFv.Equivalence.Auipc
 import ZiskFv.Equivalence.Fence
 import ZiskFv.Equivalence.Lui
@@ -44,7 +45,8 @@ def OpEnvelope.exec_eq_nomem
 
 /-- Partial v2 dispatcher for LUI / AUIPC / FENCE. -/
 theorem zisk_riscv_compliant_program_bus_nomem
-    (env : OpEnvelope state m r_main) :
+    (env : OpEnvelope state m r_main)
+    (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_nomem := by
   cases env with
   | lui lui_input imm rd next_pc exec_row e_rd store_pc_mem pins h_lui_subset promises =>
@@ -61,7 +63,7 @@ theorem zisk_riscv_compliant_program_bus_nomem
   | fence fence_input fm pred succ rs rd exec_row pins promises =>
     simp only [OpEnvelope.exec_eq_nomem]
     exact ZiskFv.Equivalence.Fence.equiv_FENCE state fence_input fm pred succ rs rd m r_main
-      exec_row pins promises
+      exec_row pins promises h_known_bugs
   | _ => trivial
 
 end ZiskFv.Compliance

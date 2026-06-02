@@ -16,6 +16,7 @@ namespace ZiskFv.Compliance.Defects
 
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
+open ZiskFv.Trusted (OP_FLAG)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
@@ -27,16 +28,19 @@ inductive DefectId where
   | fenceIncomplete
   deriving DecidableEq, Repr
 
-/-- Current modeled FENCE subset: Sail/ZisK-observable no-op behavior.
+/-- Current FENCE coverage gap.
 
-This predicate is intentionally `True` today. The known FENCE concern is that
-ZisK may reject some encodings that Sail would execute as no-ops; that is a
-completeness/coverage limitation, not a soundness counterexample. If triage
-finds an accepted FENCE row whose Sail-observable behavior is not `PC += 4`,
-this predicate should become the precise soundness-side exclusion. -/
-def FenceNopEquivalent
-    (_env : OpEnvelope state m r_main) : Prop :=
-  True
+Sail decodes the generic `FENCE` constructor for any `fm : BitVec 4`, but
+the current modeled ZisK FENCE route is restricted to the ordinary `fm = 0`
+shape. Nonzero `fm` values, including the separately decoded TSO encoding
+when projected into the generic fields, are tracked as the FENCE coverage
+defect instead of being silently covered by the already-selected `.fence`
+`OpEnvelope` arm. -/
+def UnsupportedFenceEncoding
+    : OpEnvelope state m r_main → Prop
+  | .fence _ fm _pred _succ _rs _rd _exec_row _pins _promises =>
+      fm ≠ (0#4)
+  | _ => False
 
 /-- Conservative marker for the malicious signed-MUL witness shape.
 
@@ -77,19 +81,48 @@ def Blocks (id : DefectId) (env : OpEnvelope state m r_main) : Prop :=
   | .arithDivDynamicWitnessSoundness =>
       ArithDivDynamicWitnessShape env
   | .fenceIncomplete =>
-      ¬ FenceNopEquivalent env
+      UnsupportedFenceEncoding env
 
 /-- Public theorem-side hypothesis: this envelope is outside every known
     defect region. -/
 def NoKnownDefect (env : OpEnvelope state m r_main) : Prop :=
   ∀ id, ¬ Blocks id env
 
-theorem fence_nop_equivalent_of_no_known_defect
+theorem no_unsupported_fence_encoding_of_no_known_defect
     {env : OpEnvelope state m r_main}
     (h_known_bugs : NoKnownDefect env) :
-    FenceNopEquivalent env := by
-  by_contra h_not
-  exact h_known_bugs .fenceIncomplete h_not
+    ¬ UnsupportedFenceEncoding env :=
+  h_known_bugs .fenceIncomplete
+
+theorem fence_fm_zero_of_no_known_defect
+    {fence_input : PureSpec.FenceInput}
+    {fm pred succ : BitVec 4} {rs rd : regidx}
+    {exec_row : List (Interaction.ExecutionBusEntry FGL)}
+    {pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG}
+    {promises : ZiskFv.EquivCore.Promises.FencePromises
+        state fence_input.PC
+        (PureSpec.execute_FENCE_pure fence_input).nextPC
+        exec_row}
+    (h_known_bugs : NoKnownDefect
+      (OpEnvelope.fence fence_input fm pred succ rs rd exec_row pins promises)) :
+    fm = (0#4) := by
+  by_contra h_fm
+  exact h_known_bugs .fenceIncomplete h_fm
+
+theorem false_of_no_known_defect_unsupported_fence
+    {fence_input : PureSpec.FenceInput}
+    {fm pred succ : BitVec 4} {rs rd : regidx}
+    {exec_row : List (Interaction.ExecutionBusEntry FGL)}
+    {pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG}
+    {promises : ZiskFv.EquivCore.Promises.FencePromises
+        state fence_input.PC
+        (PureSpec.execute_FENCE_pure fence_input).nextPC
+        exec_row}
+    (h_fm : fm ≠ (0#4))
+    (h_known_bugs : NoKnownDefect
+      (OpEnvelope.fence fence_input fm pred succ rs rd exec_row pins promises)) :
+    False :=
+  h_known_bugs .fenceIncomplete h_fm
 
 theorem no_malicious_signed_mul_witness_of_no_known_defect
     {env : OpEnvelope state m r_main}
