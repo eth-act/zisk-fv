@@ -21,8 +21,8 @@ Current generated counts:
 
 | Surface                                                                | Count | Ledger                                                                                       |
 | ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 12    | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 10    | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations                                         | 8     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 2     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
 The difference is intentional: some checked-in trust declarations are retained
 for local components or completeness-direction placeholders but are not reached
@@ -43,8 +43,8 @@ Lean axiom ledger:
 | ---                             | ---:         | ---:              | ---                                                                                                 |
 | Transpiler bridge               | 1            | 1                 | Removable by a verified Lean transpiler or checker that proves the same per-opcode contracts.       |
 | Memory state load bridge        | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
-| Platform scope                  | 4            | 4                 | Scope assumptions for PMP, PMA, CLINT, and Zicfilp under the current RV64IM platform profile.       |
-| Clean completeness placeholders | 6            | 4                 | Completeness-direction placeholders; planned retirement with completeness work.                     |
+| Platform profile lemmas         | 0            | 0                 | PMP, PMA, CLINT, and Zicfilp scope facts are now proved from profile/config hypotheses.             |
+| Clean completeness placeholders | 6            | 0                 | Completeness-direction placeholders retained for Clean component construction, not soundness.       |
 
 
 ## Transpiler Bridge
@@ -93,23 +93,17 @@ Retirement path: prove the end-to-end connection from extracted Mem AIR
 constraints, memory-bus matching, byte assembly, and Sail memory
 representation.
 
-## Platform Scope
+## Platform Profile
 
-Declarations:
+There are no project axioms for the current platform profile. PMP, PMA,
+CLINT, and Zicfilp branches are discharged by ordinary Lean theorems in
+`ZiskFv/SailSpec/Auxiliaries.lean`, using the global RISC-V profile
+hypotheses carried by opcode proofs: machine mode, PMP disabled by the Sail
+configuration, one ZisK physical-memory PMA region, aligned accesses, no HTIF,
+C disabled in `misa`, and `mseccfg` readability.
 
-```text
-ZiskFv.PlatformScope.pmpCheck_is_pure_none
-ZiskFv.PlatformScope.pmaCheck_is_pure_none
-ZiskFv.PlatformScope.within_clint_is_false
-ZiskFv.PlatformScope.update_elp_state_is_pure_unit
-```
-
-These fix the verification target to the current platform profile: no active
-PMP/PMA failure behavior, no CLINT-mapped access, and inert Zicfilp
-landing-pad state update. They are scope assumptions, not ZisK defects.
-
-Retirement path: model the corresponding platform behavior, or prove ordinary
-preconditions that exclude those Sail branches.
+These facts still define the verification target, but they are no longer in
+the trusted axiom ledger.
 
 ## Clean Completeness Placeholders
 
@@ -119,20 +113,15 @@ These are completeness-direction placeholders for clean-table components. They
 assert that a satisfying clean component witness exists for the relevant row
 facts. They do not state per-opcode output equality.
 
-Currently reached by the global compliance closure:
-
-```text
-ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
-ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
-ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
-ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness
-```
-
-The two remaining clean completeness declarations are source-ledger entries
-but are not part of the current global closure:
+None are currently reached by the global compliance closure. All six are
+source-ledger entries retained for Clean component construction:
 
 ```text
 ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness
+ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
+ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness
+ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
+ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
 ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness
 ```
 

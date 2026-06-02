@@ -76,8 +76,10 @@ namespace PureSpec
     state.regs.get? Register.PC = .some i.PC ∧
     LeanRV64D.Functions.rX_bits (regidx.Regidx i.r1) state = EStateM.Result.ok i.r1_val state ∧
     LeanRV64D.Functions.rX_bits (regidx.Regidx i.r2) state = EStateM.Result.ok i.r2_val state ∧
-    (i.r1_val + BitVec.signExtend 64 i.imm).toNat < OpenVM_address_space_size ∧
-    (4 : ℤ) ∣ (i.r1_val.toNat + (BitVec.signExtend 64 i.imm)).toNat
+    (i.r1_val + BitVec.signExtend 64 i.imm).toNat < ZiskPhysicalAddressSpaceSize ∧
+    (i.r1_val + BitVec.signExtend 64 i.imm).toNat + 4 ≤ ZiskPhysicalAddressSpaceSize ∧
+    (4 : ℤ) ∣ i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat ∧
+    (4 : ℤ) ∣ (i.r1_val + BitVec.signExtend 64 i.imm).toNat
 
   -- SW Sail-equivalence: `execute_STORE imm rs2 rs1 4` reduces to the
   -- pure-spec block (write `nextPC = PC+4`; apply 4 byte-writes to
@@ -123,12 +125,20 @@ namespace PureSpec
     have h_r1_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.1 reg_of_fin_neq_nextPC
     have h_r2_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.2.1 reg_of_fin_neq_nextPC
 
-    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := next_gma
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg ⟩ := next_gma
 
     simp at h_opcode_assumptions
+    have h_pma := ZiskFv.PlatformScope.pmaCheck_store_is_none
+      (state := write_reg_state state Register.nextPC (input.PC + 4#64))
+      (pmaRegion := pmaRegion)
+      (addr := input.r1_val + BitVec.signExtend 64 input.imm)
+      (width := 4)
+      (acc := LeanRV64D.Functions.default_write_acc)
+      h_pma_regions h_pma_base h_pma_size h_pma_writable h_pma_misaligned
+      (by simp [BitVec.toNat_add]; omega)
+      (by simp [BitVec.toNat_add]; omega)
     simp [LeanRV64D.Functions.execute_STORE, LeanRV64D.Functions.vmem_write, EStateM.map, *]
     simp [LeanRV64D.Functions.vmem_write_addr, ExceptT.run, *]
-    rw [if_pos (by omega)]; simp [*]
 
     simp [execute_STOREW_pure, EStateM.set, modify_memory_4,
           BitVec.extractLsb, BitVec.extractLsb', *]

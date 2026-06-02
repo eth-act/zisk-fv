@@ -111,8 +111,10 @@ namespace PureSpec
     state.regs.get? Register.PC = .some i.PC ∧
     LeanRV64D.Functions.rX_bits (regidx.Regidx i.r1) state = EStateM.Result.ok i.r1_val state ∧
     LeanRV64D.Functions.rX_bits (regidx.Regidx i.r2) state = EStateM.Result.ok i.r2_val state ∧
-    (i.r1_val + BitVec.signExtend 64 i.imm).toNat < OpenVM_address_space_size ∧
-    (8 : ℤ) ∣ (i.r1_val.toNat + (BitVec.signExtend 64 i.imm)).toNat
+    (i.r1_val + BitVec.signExtend 64 i.imm).toNat < ZiskPhysicalAddressSpaceSize ∧
+    (i.r1_val + BitVec.signExtend 64 i.imm).toNat + 8 ≤ ZiskPhysicalAddressSpaceSize ∧
+    (8 : ℤ) ∣ i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat ∧
+    (8 : ℤ) ∣ (i.r1_val + BitVec.signExtend 64 i.imm).toNat
 
   -- SD Sail-equivalence: `execute_STORE imm rs2 rs1 8` reduces to the
   -- pure-spec block (write `nextPC = PC+4`; apply 8 byte-writes to
@@ -120,8 +122,8 @@ namespace PureSpec
   -- retire success).
   --
   -- Direct port of openvm-fv's RV32 SW proof, widened to 8 bytes. The
-  -- `@[simp high]` platform axioms in `ZiskFv.PlatformScope` discharge
-  -- the PMP/CLINT/PMA chain.
+  -- platform-profile lemmas in `ZiskFv.PlatformScope` discharge the
+  -- PMP/CLINT/PMA chain.
   set_option maxHeartbeats 0 in
   lemma execute_STORED_pure_equiv
     (input : SdInput)
@@ -159,43 +161,20 @@ namespace PureSpec
     have h_r1_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.1 reg_of_fin_neq_nextPC
     have h_r2_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.2.1 reg_of_fin_neq_nextPC
 
-    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := next_gma
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg ⟩ := next_gma
 
     simp at h_opcode_assumptions
+    have h_pma := ZiskFv.PlatformScope.pmaCheck_store_is_none
+      (state := write_reg_state state Register.nextPC (input.PC + 4#64))
+      (pmaRegion := pmaRegion)
+      (addr := input.r1_val + BitVec.signExtend 64 input.imm)
+      (width := 8)
+      (acc := LeanRV64D.Functions.default_write_acc)
+      h_pma_regions h_pma_base h_pma_size h_pma_writable h_pma_misaligned
+      (by simp [BitVec.toNat_add]; omega)
+      (by simp [BitVec.toNat_add]; omega)
     simp [LeanRV64D.Functions.execute_STORE, LeanRV64D.Functions.vmem_write, EStateM.map, *]
     simp [LeanRV64D.Functions.vmem_write_addr, ExceptT.run, *]
-    rw [if_pos (by omega)]
-    -- Layered structural normalization (replaces a `simp [*]` here that
-    -- peaked at ~42 GiB on a 32 GiB CI runner — see commit message).
-    --
-    -- The original `simp [*]` had to traverse the entire untilFuelM body
-    -- inline, building Eq.trans proof-term chains for every rewrite as it
-    -- went. The 33 GiB blowup came from this monolithic pass.
-    --
-    -- Strategy:
-    --   (1) `dsimp only` over the monadic-bind primitives — pure
-    --       definitional unfolding, no proof-term construction.
-    --   (2) `unfold untilFuelM.go` to expose the 1-iteration loop body.
-    --   (3) Peel one readReg/CSR layer at a time with `rw [hyp]; try dsimp`.
-    --       Each step is O(1) memory; the .ok-constructor match resolves
-    --       definitionally without simp's caching overhead.
-    --   (4) Once enough layers are peeled, the residual goal is small
-    --       enough that the closing `simp [*]` runs at low cost.
-    --
-    -- Final peak: ~9 GiB (vs 42 GiB before) — fits comfortably in CI.
-    dsimp only [bind, EStateM.bind, EStateM.pure, pure, EStateM.modifyGet, modify, modifyGet,
-                PreSail.PreSailM, ExceptT.bind, ExceptT.pure, ExceptT.run, ExceptT.mk]
-    unfold untilFuelM.go
-    dsimp only [Int.toNat, bind, EStateM.bind, EStateM.pure, pure, ExceptT.bind, ExceptT.pure,
-                ExceptT.run, ExceptT.mk]
-    rw [h_mprv.1]; try dsimp only [bind, EStateM.bind, ExceptT.bind, EStateM.pure, ExceptT.pure, pure]
-    rw [h_priv];   try dsimp only [bind, EStateM.bind, ExceptT.bind, EStateM.pure, ExceptT.pure, pure]
-    rw [h_mprv.2]; try dsimp only [bind, EStateM.bind, ExceptT.bind, EStateM.pure, ExceptT.pure, pure]
-    simp only [show ¬ ((0#1 : BitVec 1) = (1#1 : BitVec 1)) from by decide,
-               and_false, if_false]
-    try dsimp only [bind, EStateM.bind, ExceptT.bind, EStateM.pure, ExceptT.pure, pure]
-    simp [*]
-
     simp [execute_STORED_pure, EStateM.set, modify_memory_8,
           BitVec.extractLsb, BitVec.extractLsb']
 

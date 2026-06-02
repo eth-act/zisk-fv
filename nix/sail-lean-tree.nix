@@ -20,6 +20,10 @@ sail-riscv.overrideAttrs (old: {
   # the download off.
   cmakeFlags = (old.cmakeFlags or []) ++ [ "-DDOWNLOAD_JSONCONS=OFF" ];
 
+  postConfigure = (old.postConfigure or "") + ''
+    cp ${./sail-riscv-zisk-rv64d.json} "$PWD/config/rv64d_v256_e64.json"
+  '';
+
   # The default cmake install phase builds the emulator. We want only
   # the Lean tree.
   #
