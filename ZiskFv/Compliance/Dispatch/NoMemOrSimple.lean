@@ -63,7 +63,7 @@ theorem zisk_riscv_compliant_program_bus_nomem
   | fence fence_input fm pred succ rs rd exec_row pins promises =>
     simp only [OpEnvelope.exec_eq_nomem]
     exact ZiskFv.Equivalence.Fence.equiv_FENCE state fence_input fm pred succ rs rd m r_main
-      exec_row pins promises h_known_bugs
+      exec_row pins promises
   | _ => trivial
 
 end ZiskFv.Compliance

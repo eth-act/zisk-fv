@@ -86,6 +86,16 @@ namespace PureSpec
     -- BitVec 2 = Fin 4, so 16 cases
     interval_cases np <;> interval_cases nq <;> rfl
 
+  /-- Helper: Sail's `FENCE_TSO` body is also a no-op in the current
+      concurrency model. -/
+  private lemma execute_FENCE_TSO_pure
+      (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
+      LeanRV64D.Functions.execute_FENCE_TSO () state =
+        EStateM.Result.ok (ExecutionResult.Retire_Success ()) state := by
+    simp [LeanRV64D.Functions.execute_FENCE_TSO,
+          Sail.ConcurrencyInterfaceV1.sail_barrier,
+          PreSail.ConcurrencyInterfaceV1.sail_barrier]
+
   /-- Sail-side equivalence theorem for FENCE.
 
       The Sail body of `execute_FENCE` (via barrier pattern-match →
@@ -120,6 +130,29 @@ namespace PureSpec
       writeReg_state_success,
       LeanRV64D.Functions.execute,
       execute_FENCE_machine_pure _ fm pred succ rs rd h_priv',
+      execute_FENCE_pure,
+    ]
+
+  /-- Sail-side equivalence theorem for `FENCE_TSO`.
+
+      Sail decodes `0x8330000F` through the separate `FENCE_TSO`
+      constructor. In the current concurrency model that constructor has
+      the same architectural state effect as generic FENCE: advance
+      `nextPC` by 4 and retire successfully. -/
+  theorem execute_FENCE_TSO_pure_equiv
+      (fence_input : FenceInput)
+      (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC) :
+      execute_instruction (instruction.FENCE_TSO ()) state =
+      let fence_output := execute_FENCE_pure fence_input
+      (do
+        Sail.writeReg Register.nextPC fence_output.nextPC
+        pure (ExecutionResult.Retire_Success ())
+      ) state := by
+    simp [
+      readReg_succ h_input_pc,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      execute_FENCE_TSO_pure,
       execute_FENCE_pure,
     ]
 
