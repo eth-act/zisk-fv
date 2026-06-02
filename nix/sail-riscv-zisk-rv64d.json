@@ -326,7 +326,7 @@
     },
     "Svbare": {
       "supported": false,
-      "sfence_vma_illegal_if_svbare_only": true
+      "sfence_vma_illegal_if_svbare_only": false
     },
     "Sv32": {
       "supported": false
