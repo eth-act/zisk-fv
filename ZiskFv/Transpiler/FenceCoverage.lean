@@ -8,11 +8,13 @@ This file is intentionally small and explicit. `Transpiler.Static` starts
 after instruction classification; here we add the raw 32-bit FENCE
 classification slice needed to state the current coverage claim.
 
-The modeled ZisK route covers both Sail FENCE decode branches:
+The modeled ZisK route covers `.fence` once the checked-out ZisK
+interpreter classifies a raw instruction as `"fence"`.
 
-* `FENCE_TSO` (`0x8330000F`), which Sail decodes before generic FENCE.
-* Generic `FENCE` encodings with opcode `0001111` and funct3 `000`,
-  for every `fm`, `pred`, and `succ`.
+This file deliberately does **not** define a new decoder. The acceptance
+predicate below mirrors the checked-out implementation gate at
+`zisk/riscv/src/riscv_interpreter.rs`, where generic FENCE is classified as
+`"reserved"` when `(inst & 0xF00F8F80) != 0`.
 -/
 
 namespace ZiskFv.Transpiler.FenceCoverage
@@ -61,6 +63,25 @@ def SailGenericFenceEncoding (inst : BitVec 32) : Prop :=
 def SailFenceEncoding (inst : BitVec 32) : Prop :=
   inst = fenceTsoWord ∨ SailGenericFenceEncoding inst
 
+/-- Mask used by the checked-out ZisK interpreter to reject generic FENCE
+    encodings as `"reserved"`.
+
+Source: `zisk/riscv/src/riscv_interpreter.rs`, FENCE branch:
+`if (inst & 0xF00F8F80) != 0 { i.inst = "reserved" }`.
+It covers nonzero `fm`, `rs1`, and `rd`. -/
+def ziskCurrentFenceReservedMask : BitVec 32 := 0xF00F8F80#32
+
+/-- Current checked-out ZisK generic-FENCE acceptance predicate.
+
+This is not a replacement decoder. It is the small source-linked acceptance
+gate copied from `zisk/riscv/src/riscv_interpreter.rs`; after this predicate
+holds, `zisk/core/src/riscv2zisk_context.rs` maps mnemonic `"fence"` to
+`self.nop(riscv_instruction, 4)`. -/
+def CurrentZiskAcceptsGenericFence (inst : BitVec 32) : Prop :=
+  fenceOpcode inst = (0b0001111#7) ∧
+  fenceFunct3 inst = (0b000#3) ∧
+  inst &&& ziskCurrentFenceReservedMask = (0#32)
+
 /-- The static `Rv64Inst` produced once a supported raw FENCE word is
     classified. FENCE ignores `rd`/`rs1` semantically in the current route,
     but we retain them so the raw fields are not erased. `fm`, `pred`, and
@@ -72,15 +93,6 @@ def rawFenceInst (inst : BitVec 32) : Rv64Inst :=
     rs1 := (fenceRs1 inst).toNat
     instSize := 4 }
 
-/-- Raw FENCE decoder model for the static transpiler slice. -/
-noncomputable def decodeFence (inst : BitVec 32) : Option Rv64Inst := by
-  classical
-  exact
-    if SailFenceEncoding inst then
-      some (rawFenceInst inst)
-    else
-      none
-
 /-- The concrete ZisK static route for a raw FENCE word: one internal
     OP_FLAG row, no sources, no store, and PC advances by 4. -/
 def ZiskRoutesAsFence (inst : BitVec 32) : Prop :=
@@ -88,67 +100,33 @@ def ZiskRoutesAsFence (inst : BitVec 32) : Prop :=
     [row 0 Const.opFlag (sourceImm 0) (sourceImm 0)
       (Const.storeNone, 0, false) false 0 4 4 false]
 
-theorem decode_fence_rejects_non_fence
-    {inst : BitVec 32}
-    (h_not_fence : ¬ SailFenceEncoding inst) :
-    decodeFence inst = none := by
-  simp [decodeFence, h_not_fence]
-
-/-- Generic FENCE coverage: every raw word in Sail's generic FENCE branch is
-    accepted by the modeled ZisK FENCE decoder, for every `fm`. -/
-theorem decode_fence_complete_generic
-    {inst : BitVec 32}
-    (h_sail : SailGenericFenceEncoding inst) :
-    decodeFence inst = some (rawFenceInst inst) := by
-  simp [decodeFence, SailFenceEncoding, h_sail]
-
-/-- `FENCE_TSO` coverage: Sail's exact TSO word is accepted by the same
-    modeled ZisK FENCE route. -/
-theorem decode_fence_complete_tso
-    {inst : BitVec 32}
-    (h_tso : inst = fenceTsoWord) :
-    decodeFence inst = some (rawFenceInst inst) := by
-  simp [decodeFence, SailFenceEncoding, h_tso]
-
-/-- Raw FENCE-family coverage: every raw word Sail decodes as generic
-    `FENCE` or exact `FENCE_TSO` is accepted by the modeled ZisK FENCE
-    decoder. -/
-theorem decode_fence_complete
-    {inst : BitVec 32}
-    (h_sail : SailFenceEncoding inst) :
-    decodeFence inst = some (rawFenceInst inst) := by
-  simp [decodeFence, h_sail]
-
 /-- Once accepted by the raw FENCE decoder, the static transpiler emits the
     expected no-op/PC+4 ZisK row. -/
 theorem zisk_routes_raw_fence :
     ZiskRoutesAsFence inst := by
   rfl
 
-/-- End-to-end static coverage statement for Sail's generic FENCE branch. -/
-theorem zisk_covers_sail_generic_fence
+/-- Current checked-out ZisK coverage statement for generic FENCE: when the
+    implementation interpreter accepts a raw generic FENCE instruction, the
+    linked static transpiler model routes it to the FENCE no-op row. -/
+theorem zisk_routes_currently_accepted_generic_fence
     {inst : BitVec 32}
-    (h_sail : SailGenericFenceEncoding inst) :
-    decodeFence inst = some (rawFenceInst inst) ∧
-      ZiskRoutesAsFence inst := by
-  exact ⟨decode_fence_complete_generic h_sail, zisk_routes_raw_fence⟩
+    (_h_zisk : CurrentZiskAcceptsGenericFence inst) :
+    ZiskRoutesAsFence inst := by
+  exact zisk_routes_raw_fence
 
-/-- End-to-end static coverage statement for Sail's exact `FENCE_TSO`
-    branch. -/
-theorem zisk_covers_sail_fence_tso
-    {inst : BitVec 32}
-    (h_tso : inst = fenceTsoWord) :
-    decodeFence inst = some (rawFenceInst inst) ∧
-      ZiskRoutesAsFence inst := by
-  exact ⟨decode_fence_complete_tso h_tso, zisk_routes_raw_fence⟩
+/-- A concrete Sail-valid generic FENCE word rejected by the checked-out ZisK
+    interpreter gate because `fm = 1`.
 
-/-- End-to-end static coverage statement for all Sail FENCE-family raw
-    encodings in this profile. -/
-theorem zisk_covers_sail_fence
-    {inst : BitVec 32}
-    (h_sail : SailFenceEncoding inst) :
-    decodeFence inst = some (rawFenceInst inst) ∧
-      ZiskRoutesAsFence inst := by
-  exact ⟨decode_fence_complete h_sail, zisk_routes_raw_fence⟩
+This is the experiment's guardrail: without the upstream decoder fix, full
+generic FENCE ISA coverage is false for the linked implementation. -/
+theorem sail_generic_fence_with_nonzero_fm :
+    SailGenericFenceEncoding (0x1000000F#32) := by
+  simp [SailGenericFenceEncoding, fenceTsoWord, fenceOpcode, fenceFunct3]
+
+theorem current_zisk_rejects_fence_with_nonzero_fm :
+    ¬ CurrentZiskAcceptsGenericFence (0x1000000F#32) := by
+  intro h
+  simp [CurrentZiskAcceptsGenericFence, ziskCurrentFenceReservedMask] at h
 
 end ZiskFv.Transpiler.FenceCoverage
