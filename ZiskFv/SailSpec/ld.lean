@@ -73,7 +73,8 @@ namespace PureSpec
     state.mem[i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat + 5]? = .some i.data5 ∧
     state.mem[i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat + 6]? = .some i.data6 ∧
     state.mem[i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat + 7]? = .some i.data7 ∧
-    i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat < OpenVM_address_space_size ∧
+    i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat < ZiskPhysicalAddressSpaceSize ∧
+    (i.r1_val + BitVec.signExtend 64 i.imm).toNat + 8 ≤ ZiskPhysicalAddressSpaceSize ∧
     (8 : ℤ) ∣ i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat
 
   -- LD Sail-equivalence: `execute_LOAD imm rs1 rd false 8` reduces to
@@ -81,9 +82,8 @@ namespace PureSpec
   -- little-endian concatenation of `data7..data0` to `rd`; retire
   -- success).
   --
-  -- Direct port of the LWU proof widened to 8 bytes. The
-  -- `@[simp high]` platform axioms in `ZiskFv.PlatformScope` discharge
-  -- the PMP/CLINT/PMA chain.
+  -- Direct port of the LWU proof widened to 8 bytes. The platform-profile
+  -- lemmas in `ZiskFv.PlatformScope` discharge the PMP/CLINT/PMA chain.
   set_option maxHeartbeats 0 in
   lemma execute_LOADD_pure_equiv
     (input : LdInput)
@@ -123,8 +123,17 @@ namespace PureSpec
 
     have h_r1_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.1 reg_of_fin_neq_nextPC
 
-    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := next_gma
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg ⟩ := next_gma
     have := arithmetic_helper (a := input.r1_val.toNat) (b := (BitVec.signExtend 64 input.imm).toNat) (by grind)
+    have h_pma := ZiskFv.PlatformScope.pmaCheck_load_is_none
+      (state := write_reg_state state Register.nextPC (input.PC + 4#64))
+      (pmaRegion := pmaRegion)
+      (addr := input.r1_val + BitVec.signExtend 64 input.imm)
+      (width := 8)
+      (acc := ())
+      h_pma_regions h_pma_base h_pma_size h_pma_readable h_pma_misaligned
+      (by simp [BitVec.toNat_add, this.2.2]; omega)
+      (by simp [BitVec.toNat_add, this.2.2]; omega)
 
     simp [LeanRV64D.Functions.execute_LOAD, LeanRV64D.Functions.vmem_read, EStateM.map, *]
     simp [LeanRV64D.Functions.vmem_read_addr, ExceptT.run, *]

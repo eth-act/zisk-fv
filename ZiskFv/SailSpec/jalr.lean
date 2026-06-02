@@ -39,9 +39,9 @@ namespace PureSpec
   -- JALR Sail-equivalence. Direct port of the `execute_JAL_pure_equiv`
   -- proof shape, adapted for JALR's pre-masked target
   -- (`BitVec.update target 0 0#1` clears bit 0, so the
-  -- bit-0-Assertion branch never fires). The `@[simp high]` platform
-  -- axiom `ZiskFv.PlatformScope.update_elp_state_is_pure_unit` collapses
-  -- the Zicfilp guard that RV64 otherwise consults.
+  -- bit-0-Assertion branch never fires). The platform-profile theorem
+  -- `ZiskFv.PlatformScope.update_elp_state_is_pure_unit` collapses the
+  -- Zicfilp guard that RV64 otherwise consults.
   set_option maxHeartbeats 0 in
   lemma execute_JALR_pure_equiv
     (input : JalrInput)
@@ -89,6 +89,22 @@ namespace PureSpec
       LeanRV64D.Functions.get_next_pc,
       readReg_succ (writeReg_read_same _),
     ]
+    have h_priv_post :
+      Sail.readReg Register.cur_privilege (write_reg_state state Register.nextPC (input.PC + 4#64))
+        = EStateM.Result.ok Privilege.Machine (write_reg_state state Register.nextPC (input.PC + 4#64)) :=
+      readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := input.PC + 4#64)
+        _h_cur_privilege (by trivial)
+    have h_mseccfg_post :
+      Sail.readReg Register.mseccfg (write_reg_state state Register.nextPC (input.PC + 4#64))
+        = EStateM.Result.ok mseccfg (write_reg_state state Register.nextPC (input.PC + 4#64)) :=
+      readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := input.PC + 4#64)
+        _h_mseccfg (by trivial)
+    rw [ZiskFv.PlatformScope.update_elp_state_is_pure_unit
+      (state := write_reg_state state Register.nextPC (input.PC + 4#64))
+      (mseccfg := mseccfg)
+      (rs1 := rs1)
+      h_priv_post h_mseccfg_post]
+    simp [LeanRV64D.Functions.get_next_pc, readReg_succ (writeReg_read_same _)]
     -- read rs1_val from the mutated state.
     obtain ⟨⟨rs1_fin: Fin 32⟩⟩ := rs1
     rewrite [rX_read_xreg_equiv _ ⟨⟨rs1_fin⟩⟩ rs1_fin (by simp)]

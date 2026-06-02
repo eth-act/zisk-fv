@@ -25,13 +25,9 @@
 #     > trust/generated/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-06-01.
+# artefacts under `.lake/build/`). Last regenerated: 2026-06-02.
 #
-# Total entries: 6
+# Total entries: 2
 #
-ZiskFv.PlatformScope.pmaCheck_is_pure_none
-ZiskFv.PlatformScope.pmpCheck_is_pure_none
-ZiskFv.PlatformScope.update_elp_state_is_pure_unit
-ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
