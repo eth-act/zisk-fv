@@ -32,6 +32,13 @@ if rg -n \
   bad+=("retired transpiler generated trust classification")
 fi
 
+if rg -n \
+    'ZiskFv/Trusted/Transpiler|ZiskFv/Transpiler/Contract|Fundamentals/Transpiler|Transpiler bridge contract' \
+    tools trust README.md .github \
+    -g '!trust/scripts/check-retired-transpiler-paths.sh'; then
+  bad+=("retired transpiler tool/docs reference")
+fi
+
 if [[ "${#bad[@]}" -ne 0 ]]; then
   echo "trust-gate: retired transpiler compatibility paths are present:"
   printf '  %s\n' "${bad[@]}"
