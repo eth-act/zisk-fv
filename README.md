@@ -65,7 +65,11 @@ sorries, string/format models, or `HashMap` models. It also checks that every
 configured extraction start appears as a generated Lean definition. By default
 it also stages a temporary Lake project under `build/`, copies the pinned
 Aeneas Lean runtime there, and typechecks the generated `ProductionM2.lean`
-without committing generated code. For extraction-only timing or debugging, run
+without committing generated code. The temporary project also checks concrete
+generated row-shape facts for the production-backed LUI/AUIPC/JAL helpers: the
+generated Lean must compute the opcode, external-op flag, `m32`, `store_pc`,
+source/store selectors, and jump offsets expected by the proof-side mode pins.
+For extraction-only timing or debugging, run
 `AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract`.
 
 On 2026-06-03, a cold local run measured with GNU `time -v` took 3:03.88 wall

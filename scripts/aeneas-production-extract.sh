@@ -162,10 +162,78 @@ require aeneas from "aeneas-lean"
 package zisk_production_extraction_check
 
 @[default_target] lean_lib ProductionM2
+@[default_target] lean_lib GeneratedChecks
 EOF
   cp "$AENEAS_LEAN_SRC/lean-toolchain" "$lean_check/lean-toolchain"
 
-  nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2' bash "$lean_check"
+  cat > "$lean_check/GeneratedChecks.lean" <<'EOF'
+import ProductionM2
+
+open Aeneas Aeneas.Std Result
+open zisk_core
+
+namespace zisk_core_generated_checks
+
+def sampleInst : riscv.riscv_inst.RiscvInstruction :=
+  { rom_address := 16#u64
+    rvinst := 0#u32
+    t := ""
+    funct2 := 0#u32
+    funct3 := 0#u32
+    funct5 := 0#u32
+    funct7 := 0#u32
+    rd := 3#u32
+    rs1 := 5#u32
+    rs2 := 7#u32
+    rs3 := 0#u32
+    imm := 4096#i32
+    imme := 0#u32
+    inst := ""
+    aq := 0#u32
+    rl := 0#u32
+    csr := 0#u32
+    pred := 0#u32
+    succ := 0#u32 }
+
+def rowModeProjection
+    (result : Result aeneas_extract.ZiskInstExtract) :
+    _root_.Option
+      (_root_.Nat × _root_.Bool × _root_.Bool × _root_.Bool × _root_.Nat
+        × _root_.Nat × _root_.Nat × _root_.Int × _root_.Int) :=
+  match result with
+  | ok row => some (row.op.val, row.is_external_op, row.m32, row.store_pc,
+      row.a_src.val, row.b_src.val, row.store.val, row.jmp_offset1.val, row.jmp_offset2.val)
+  | fail _ => none
+  | div => none
+
+def rowModeMatches
+    (result : Result aeneas_extract.ZiskInstExtract)
+    (op : Nat) (isExternal m32 storePc : Bool)
+    (aSrc bSrc store : Nat) (jmp1 jmp2 : Int) : Bool :=
+  match rowModeProjection result with
+  | some actual =>
+      actual == (op, isExternal, m32, storePc, aSrc, bSrc, store, jmp1, jmp2)
+  | none => false
+
+example :
+    rowModeMatches (aeneas_extract.extract_lui_from_inst sampleInst)
+      1 false false false 2 2 3 4 4 = true := by
+  native_decide
+
+example :
+    rowModeMatches (aeneas_extract.extract_auipc_from_inst sampleInst)
+      0 false false true 2 2 3 4 4096 = true := by
+  native_decide
+
+example :
+    rowModeMatches (aeneas_extract.extract_jal_from_inst sampleInst)
+      0 false false true 2 2 3 4096 4 = true := by
+  native_decide
+
+end zisk_core_generated_checks
+EOF
+
+  nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks' bash "$lean_check"
 fi
 
 echo "Production-backed extraction succeeded: ${#starts[@]} starts, $decl_count declarations, $generated"
