@@ -111,9 +111,10 @@
           type = "app";
           program = "${pkgs.writeShellApplication {
             name = "aeneas-production-extract";
-            runtimeInputs = with pkgs; [ cargo elan git jq nix rustc ];
+            runtimeInputs = with pkgs; [ cargo clang elan git jq libclang.lib nix rustc ];
             text = ''
               cd "$(git rev-parse --show-toplevel)" || exit 1
+              export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
               AENEAS_FLAKE="${aeneas}" scripts/aeneas-production-extract.sh
             '';
           }}/bin/aeneas-production-extract";
@@ -131,12 +132,17 @@
             python3
             jq
             git
+            clang
+            libclang.lib
             gcc
             gmp
             gnumake
             nasm
             pkgsCross.riscv64-embedded.stdenv.cc
           ];
+          shellHook = ''
+            export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+          '';
         };
       });
 }

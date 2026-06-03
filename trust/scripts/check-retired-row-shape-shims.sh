@@ -34,14 +34,14 @@ fi
 
 if rg -n \
     'ZiskFv/Trusted/Transpiler|ZiskFv/Transpiler/Contract|Fundamentals/Transpiler|Transpiler bridge contract' \
-    tools trust README.md .github \
+    tools trust README.md CLAUDE.md .github \
     -g '!trust/scripts/check-retired-row-shape-shims.sh'; then
   bad+=("retired row-shape shim tool/docs reference")
 fi
 
 if rg -n \
-    'transpile_<OP>|transpile_[A-Z0-9_]+|transpile-axiom|transpile axiom|transpiler-axiom|transpiler axiom|transpiler lowering|Transpiler\.lean' \
-    ZiskFv trust README.md .github \
+    'transpile_<OP>|transpile_[A-Z0-9_]+|transpile-axiom|transpile axiom|transpiler-axiom|transpiler axiom|transpiler lowering|Transpiler\.lean|citation surface|spike' \
+    ZiskFv trust README.md CLAUDE.md .github \
     -g '!trust/scripts/check-retired-row-shape-shims.sh'; then
   bad+=("retired row-shape proof-surface wording")
 fi

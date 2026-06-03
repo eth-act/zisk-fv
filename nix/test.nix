@@ -1,5 +1,5 @@
 { writeShellApplication, elan, cargo, rustc, protobuf, python3, jq, git
-, gcc, gnumake, nasm, gmp, nix, pkgsCross, aeneas }:
+, clang, libclang, gcc, gnumake, nasm, gmp, nix, pkgsCross, aeneas }:
 
 # Top-level test entry point. Single source of truth for "is the
 # project green?" Runs every check in dependency order so a clean
@@ -28,6 +28,8 @@ writeShellApplication {
     python3
     jq
     git
+    clang
+    libclang.lib
     gcc
     gnumake
     nasm
@@ -42,6 +44,7 @@ writeShellApplication {
 
     export CPATH="${gmp.dev}/include''${CPATH:+:$CPATH}"
     export LIBRARY_PATH="${gmp.out}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
+    export LIBCLANG_PATH="${libclang.lib}/lib"
     riscv_shims="$(mktemp -d)"
     for tool in gcc ar as ld objdump; do
       ln -s "$(command -v "riscv64-none-elf-$tool")" "$riscv_shims/riscv64-unknown-elf-$tool"
