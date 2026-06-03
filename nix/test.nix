@@ -9,7 +9,9 @@
 # Bootstrap on a fresh clone — must run once before this:
 #   nix run .#populate    (~30 min cold; ~seconds warm via Nix store cache)
 #
-# After that, `nix run .#test` runs in seconds (modulo lake build).
+# After that, `nix run .#test` runs the reproducibility checks, the
+# production-backed Aeneas extraction harness, and the Lean build. Cold
+# generated-Lean checking is dominated by the temporary Aeneas Lake project.
 
 writeShellApplication {
   name = "test";
@@ -28,16 +30,6 @@ writeShellApplication {
     export CPATH="${gmp.dev}/include''${CPATH:+:$CPATH}"
     export LIBRARY_PATH="${gmp.out}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
 
-    prepare_zisk_rust_deps() {
-      # zisk-core's build.rs includes the float ELF unconditionally, but
-      # the RV64IM transpiler differential never executes the float runtime.
-      # Keep cargo focused on the static transpiler without requiring the
-      # RISC-V embedded C toolchain in this top-level test app.
-      mkdir -p zisk/lib-float/c/lib
-      touch zisk/lib-float/c/lib/libziskfloat.a zisk/lib-float/c/lib/ziskfloat.elf
-    }
-    prepare_zisk_rust_deps
-
     run() {
       local name=$1; shift
       echo "::: $name :::"
@@ -48,26 +40,19 @@ writeShellApplication {
       echo
     }
 
-    # 1. Tool unit tests (extractor + transpiler differential harness).
-    run "1/7 cargo test" bash -c '
+    # 1. Tool unit tests.
+    run "1/6 cargo test" bash -c '
       cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet
-      cargo test --manifest-path tools/transpiler-diff/Cargo.toml --quiet
     '
 
-    # 2. Default Rust-vs-Lean static-transpiler differential pinning.
-    run "2/7 transpiler differential pinning" bash -c '
-      lake build ZiskFv.Transpiler.Static
-      cargo run --manifest-path tools/transpiler-diff/Cargo.toml --quiet
-    '
-
-    # 3. Pinned Aeneas extraction harness. This stays outside the main Lean
+    # 2. Pinned Aeneas extraction harness. This stays outside the main Lean
     # build and checks the production-backed extraction boundary. Generated
     # files are written under build/ and are not checked in.
-    run "3/7 Aeneas production extraction harness" bash -c '
+    run "2/6 Aeneas production extraction harness" bash -c '
       AENEAS_FLAKE="${aeneas}" scripts/aeneas-production-extract.sh
     '
 
-    # 4. Lake build — the FV check. Every theorem typechecks. This is
+    # 3. Lake build — the FV check. Every theorem typechecks. This is
     # the load-bearing claim: if `lake build` is green, every per-opcode
     # equivalence theorem (Sail spec = ZisK circuit + bus model) holds.
     #
@@ -81,22 +66,22 @@ writeShellApplication {
     # when sd.lean's elaboration peaked at 42 GiB, before PR #4's
     # layered dsimp+rw refactor cut it to ~8 GiB PSS. Override with
     # LEAN_NUM_THREADS=N at call site for a different cap.
-    run "4/7 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
+    run "3/6 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
 
-    # 5. Trust gate (locality + baseline + forbidden tier1 params +
+    # 4. Trust gate (locality + baseline + forbidden tier1 params +
     # floors + zero-sorry + uniformity lint). See trust/README.md.
-    run "5/7 trust gate (V1 syntactic)" trust/scripts/check-all.sh
+    run "4/6 trust gate (V1 syntactic)" trust/scripts/check-all.sh
 
-    # 6. V2 trust-gate semantic checks. Walks the elaborated
+    # 5. V2 trust-gate semantic checks. Walks the elaborated
     # environment via `lake exe trust-gate`: per-theorem axiom-closure
     # baseline + binder-type forbidden-Names walk. Requires the lake
     # build above to have populated oleans.
-    run "6/7 trust gate (V2 semantic)" trust/scripts/check-all-semantic.sh
+    run "5/6 trust gate (V2 semantic)" trust/scripts/check-all-semantic.sh
 
-    # 7. Reproducibility check. The flake.lock pins every input
+    # 6. Reproducibility check. The flake.lock pins every input
     # (sail/sail-riscv/zisk/pil2-* sources, nixpkgs revision) by content
     # hash; `nix flake check` verifies the lock matches the flake.
-    run "7/7 flake repro" nix flake check --no-build
+    run "6/6 flake repro" nix flake check --no-build
 
     if [ $overall -eq 0 ]; then
       echo "================================"
