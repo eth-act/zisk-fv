@@ -1,0 +1,52 @@
+name: aeneas extraction
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/aeneas-production-extract.sh'
+      - 'zisk'
+      - 'zisk/**'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'nix/**'
+      - '.github/workflows/aeneas-extraction.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/aeneas-production-extract.sh'
+      - 'zisk'
+      - 'zisk/**'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'nix/**'
+      - '.github/workflows/aeneas-extraction.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: aeneas-extraction-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  extraction-boundary:
+    name: Rust wrappers + extraction-only Aeneas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Check extraction wrappers match production convert
+        run: |
+          cd zisk/core
+          cargo test --lib --features aeneas_extract \
+            extraction_starts_match_production_convert_for_single_row_opcodes \
+            --quiet
+
+      - name: Regenerate production-backed extraction surface
+        run: AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract
