@@ -224,6 +224,70 @@ def rowReturned (result : Result aeneas_extract.ZiskInstExtract) : Bool :=
   | fail _ => false
   | div => false
 
+structure ProofRowShape where
+  paddr : _root_.Nat
+  op : _root_.Nat
+  aSrc : _root_.Nat
+  aUseSpImm1 : _root_.Nat
+  aOffsetImm0 : _root_.Nat
+  bSrc : _root_.Nat
+  bUseSpImm1 : _root_.Nat
+  bOffsetImm0 : _root_.Nat
+  store : _root_.Nat
+  storeOffset : _root_.Int
+  storePc : _root_.Bool
+  setPc : _root_.Bool
+  indWidth : _root_.Nat
+  jmpOffset1 : _root_.Int
+  jmpOffset2 : _root_.Int
+  isExternalOp : _root_.Bool
+  m32 : _root_.Bool
+  deriving BEq
+
+def proofRowShape
+    (paddr op aSrc aUseSpImm1 aOffsetImm0 bSrc bUseSpImm1 bOffsetImm0 store : _root_.Nat)
+    (storeOffset : _root_.Int)
+    (storePc setPc : _root_.Bool)
+    (indWidth : _root_.Nat)
+    (jmpOffset1 jmpOffset2 : _root_.Int)
+    (isExternalOp m32 : _root_.Bool) : ProofRowShape :=
+  { paddr, op, aSrc, aUseSpImm1, aOffsetImm0, bSrc, bUseSpImm1, bOffsetImm0,
+    store, storeOffset, storePc, setPc, indWidth, jmpOffset1, jmpOffset2,
+    isExternalOp, m32 }
+
+def proofRowShapeProjection
+    (result : Result aeneas_extract.ZiskInstExtract) :
+    _root_.Option ProofRowShape :=
+  match result with
+  | ok row =>
+      some
+        { paddr := row.paddr.val
+          op := row.op.val
+          aSrc := row.a_src.val
+          aUseSpImm1 := row.a_use_sp_imm1.val
+          aOffsetImm0 := row.a_offset_imm0.val
+          bSrc := row.b_src.val
+          bUseSpImm1 := row.b_use_sp_imm1.val
+          bOffsetImm0 := row.b_offset_imm0.val
+          store := row.store.val
+          storeOffset := row.store_offset.val
+          storePc := row.store_pc
+          setPc := row.set_pc
+          indWidth := row.ind_width.val
+          jmpOffset1 := row.jmp_offset1.val
+          jmpOffset2 := row.jmp_offset2.val
+          isExternalOp := row.is_external_op
+          m32 := row.m32 }
+  | fail _ => none
+  | div => none
+
+def rowShapeMatches
+    (result : Result aeneas_extract.ZiskInstExtract)
+    (expected : ProofRowShape) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some actual => actual == expected
+  | none => false
+
 def allConfiguredStartsReturnRows : Bool :=
 EOF
 
@@ -249,8 +313,18 @@ example :
   native_decide
 
 example :
+    rowShapeMatches (aeneas_extract.extract_lui_from_inst sampleInst)
+      (proofRowShape 16 1 2 0 0 2 0 4096 3 3 false false 0 4 4 false false) = true := by
+  native_decide
+
+example :
     rowModeMatches (aeneas_extract.extract_auipc_from_inst sampleInst)
       0 false false true 2 2 3 4 4096 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_auipc_from_inst sampleInst)
+      (proofRowShape 16 0 2 0 0 2 0 0 3 3 true false 0 4 4096 false false) = true := by
   native_decide
 
 example :
@@ -259,13 +333,28 @@ example :
   native_decide
 
 example :
+    rowShapeMatches (aeneas_extract.extract_jal_from_inst sampleInst)
+      (proofRowShape 16 0 2 0 0 2 0 0 3 3 true false 0 4096 4 false false) = true := by
+  native_decide
+
+example :
     rowModeMatches (aeneas_extract.extract_addw_from_inst sampleInst)
       26 true true false 6 6 3 4 4 = true := by
   native_decide
 
 example :
+    rowShapeMatches (aeneas_extract.extract_addw_from_inst sampleInst)
+      (proofRowShape 16 26 6 0 5 6 0 7 3 3 false false 0 4 4 true true) = true := by
+  native_decide
+
+example :
     rowModeMatches (aeneas_extract.extract_add_from_inst sampleRs1ZeroInst)
       1 false false false 2 6 3 4 4 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_add_from_inst sampleRs1ZeroInst)
+      (proofRowShape 16 1 2 0 0 6 0 7 3 3 false false 0 4 4 false false) = true := by
   native_decide
 
 end zisk_core_generated_checks

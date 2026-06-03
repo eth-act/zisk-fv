@@ -69,9 +69,9 @@ without committing generated code. The temporary project executes every
 configured generated start on a sample instruction and checks that all 63
 return a row. It also checks concrete generated row-shape facts for the
 production-backed LUI/AUIPC/JAL/ADDW helpers and the ADD `rs1 = x0` copyb
-special case: the generated Lean must compute the opcode, external-op flag,
-`m32`, `store_pc`, source/store selectors, and jump offsets expected by the
-proof-side mode pins.
+special case: the generated Lean must compute the proof-facing row-shape
+projection, including opcode, external-op flag, `m32`, `store_pc`,
+source/store selectors, offsets, and jump offsets.
 For extraction-only timing or debugging, run
 `AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract`.
 
