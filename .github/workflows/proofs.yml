@@ -25,6 +25,9 @@ on:
     paths:
       - 'ZiskFv/**'
       - 'tools/pil-extract/**'
+      - 'scripts/aeneas-production-extract.sh'
+      - 'zisk'
+      - 'zisk/**'
       - 'lake-manifest.json'
       - 'lakefile.toml'
       - 'lean-toolchain'
@@ -38,6 +41,9 @@ on:
     paths:
       - 'ZiskFv/**'
       - 'tools/pil-extract/**'
+      - 'scripts/aeneas-production-extract.sh'
+      - 'zisk'
+      - 'zisk/**'
       - 'lake-manifest.json'
       - 'lakefile.toml'
       - 'lean-toolchain'
