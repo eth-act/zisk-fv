@@ -41,18 +41,27 @@ writeShellApplication {
     }
 
     # 1. Tool unit tests.
-    run "1/6 cargo test" bash -c '
+    run "1/7 cargo test" bash -c '
       cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet
     '
 
-    # 2. Pinned Aeneas extraction harness. This stays outside the main Lean
+    # 2. Production-wrapper equivalence tests. These compare every
+    # `aeneas_extract` wrapper against `Riscv2ZiskContext::convert` for the
+    # covered single-row opcode surface, preventing extraction shims from
+    # drifting into a parallel Rust lowering path.
+    run "2/7 zisk-core aeneas_extract tests" bash -c '
+      cd zisk/core
+      cargo test --lib --features aeneas_extract extraction_starts_match_production_convert_for_single_row_opcodes --quiet
+    '
+
+    # 3. Pinned Aeneas extraction harness. This stays outside the main Lean
     # build and checks the production-backed extraction boundary. Generated
     # files are written under build/ and are not checked in.
-    run "2/6 Aeneas production extraction harness" bash -c '
+    run "3/7 Aeneas production extraction harness" bash -c '
       AENEAS_FLAKE="${aeneas}" scripts/aeneas-production-extract.sh
     '
 
-    # 3. Lake build — the FV check. Every theorem typechecks. This is
+    # 4. Lake build — the FV check. Every theorem typechecks. This is
     # the load-bearing claim: if `lake build` is green, every per-opcode
     # equivalence theorem (Sail spec = ZisK circuit + bus model) holds.
     #
@@ -66,22 +75,22 @@ writeShellApplication {
     # when sd.lean's elaboration peaked at 42 GiB, before PR #4's
     # layered dsimp+rw refactor cut it to ~8 GiB PSS. Override with
     # LEAN_NUM_THREADS=N at call site for a different cap.
-    run "3/6 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
+    run "4/7 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
 
-    # 4. Trust gate (locality + baseline + forbidden tier1 params +
+    # 5. Trust gate (locality + baseline + forbidden tier1 params +
     # floors + zero-sorry + uniformity lint). See trust/README.md.
-    run "4/6 trust gate (V1 syntactic)" trust/scripts/check-all.sh
+    run "5/7 trust gate (V1 syntactic)" trust/scripts/check-all.sh
 
-    # 5. V2 trust-gate semantic checks. Walks the elaborated
+    # 6. V2 trust-gate semantic checks. Walks the elaborated
     # environment via `lake exe trust-gate`: per-theorem axiom-closure
     # baseline + binder-type forbidden-Names walk. Requires the lake
     # build above to have populated oleans.
-    run "5/6 trust gate (V2 semantic)" trust/scripts/check-all-semantic.sh
+    run "6/7 trust gate (V2 semantic)" trust/scripts/check-all-semantic.sh
 
-    # 6. Reproducibility check. The flake.lock pins every input
+    # 7. Reproducibility check. The flake.lock pins every input
     # (sail/sail-riscv/zisk/pil2-* sources, nixpkgs revision) by content
     # hash; `nix flake check` verifies the lock matches the flake.
-    run "6/6 flake repro" nix flake check --no-build
+    run "7/7 flake repro" nix flake check --no-build
 
     if [ $overall -eq 0 ]; then
       echo "================================"
