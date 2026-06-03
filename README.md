@@ -45,30 +45,23 @@ trust/scripts/check-all.sh
 trust/scripts/check-all-semantic.sh
 ```
 
-The full repository test path, including the pinned Aeneas transpiler
-extraction harness, is:
+The full repository test path, including the pinned Aeneas production-backed
+transpiler extraction harness, is:
 
 ```bash
 nix run .#test
 ```
 
-The RV64IM transpiler Aeneas extraction harness is pinned by `flake.lock` and can
-be rerun with:
+The production-backed Aeneas extraction harness is pinned by `flake.lock` and
+can be rerun with:
 
 ```bash
-nix run .#aeneas-rv64im-extract
+nix run .#aeneas-production-extract
 ```
 
-The direct-import compatibility probe for the main Lean 4.28 project is:
-
-```bash
-scripts/aeneas-rv64im-lean428-compat.sh
-```
-
-It rebuilds the pinned extraction and checks that the generated Aeneas bridge
-builds under Lean 4.28 with the documented compatibility patch. The extraction harness also
-hard-checks the generated manifest counts: 71 valid encoded-word cases, 3
-invalid decode cases, and 71 Aeneas-to-main-static equality theorems.
+It writes generated LLBC/Lean artifacts under `build/aeneas-production-extraction`
+and rejects unexpected trust markers such as generated axioms, opaques,
+sorries, string/format models, or `HashMap` models.
 
 The proof-side migration target is
 `ZiskFv.Compliance.MainStaticRowProvenance`: it ties selected Main/ROM rows to

@@ -107,18 +107,18 @@
           };
         };
 
-        apps.aeneas-rv64im-extract = {
+        apps.aeneas-production-extract = {
           type = "app";
           program = "${pkgs.writeShellApplication {
-            name = "aeneas-rv64im-extract";
+            name = "aeneas-production-extract";
             runtimeInputs = with pkgs; [ cargo elan git jq nix rustc ];
             text = ''
               cd "$(git rev-parse --show-toplevel)" || exit 1
-              AENEAS_FLAKE="${aeneas}" scripts/aeneas-rv64im-extract.sh
+              AENEAS_FLAKE="${aeneas}" scripts/aeneas-production-extract.sh
             '';
-          }}/bin/aeneas-rv64im-extract";
+          }}/bin/aeneas-production-extract";
           meta = {
-            description = "Run the pinned Aeneas RV64IM transpiler extraction harness.";
+            description = "Run the pinned Aeneas production-backed transpiler extraction harness.";
           };
         };
 

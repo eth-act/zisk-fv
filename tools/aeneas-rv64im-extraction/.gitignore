@@ -1,9 +1,0 @@
-MainModelCases.lean
-.aeneas-lean/
-.lake/
-lake-manifest.json
-lake-packages/
-Rv64imExtract/Generated.lean
-Rv64imExtract/GeneratedCases.lean
-Rv64imExtract/CrossModelCases.lean
-rv64im_transpiler.llbc

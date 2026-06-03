@@ -60,12 +60,11 @@ writeShellApplication {
       cargo run --manifest-path tools/transpiler-diff/Cargo.toml --quiet
     '
 
-    # 3. Pinned Aeneas extraction harness. This is intentionally outside the
-    # main Lean build while zisk-fv is on Lean 4.28 and Aeneas' runtime is on
-    # Lean 4.30, but it must keep extracting the fused Rust decode/lower core
-    # and building the generated full-opcode bridge cases.
-    run "3/7 Aeneas RV64IM extraction harness" bash -c '
-      AENEAS_FLAKE="${aeneas}" scripts/aeneas-rv64im-extract.sh
+    # 3. Pinned Aeneas extraction harness. This stays outside the main Lean
+    # build and checks the production-backed extraction boundary. Generated
+    # files are written under build/ and are not checked in.
+    run "3/7 Aeneas production extraction harness" bash -c '
+      AENEAS_FLAKE="${aeneas}" scripts/aeneas-production-extract.sh
     '
 
     # 4. Lake build — the FV check. Every theorem typechecks. This is
