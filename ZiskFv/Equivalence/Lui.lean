@@ -6,15 +6,15 @@ import ZiskFv.Channels.StateEffect
 
 Post-Phase-6 canonical per-opcode theorem for LUI. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the Aeneas-provenance wrapper theorem `ZiskFv.Compliance.equiv_LUI`.
+invoking the wrapper theorem `ZiskFv.Compliance.equiv_LUI`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/EquivCore/Lui.lean`.
 
 ## Trust note
 
-No new axioms. LUI mode pins come from `MainAeneasRowProvenance`; the closure
-keeps the remaining dynamic immediate-lane bridge.
+No new axioms. LUI mode pins are explicit caller obligations; the closure keeps
+the remaining dynamic immediate-lane bridge.
 -/
 
 open ZiskFv.Channels
@@ -35,8 +35,10 @@ theorem equiv_LUI
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Aeneas.Rv64imInst}
-    (provenance : ZiskFv.Compliance.MainAeneasRowProvenance m r_main inst)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
+    (h_m32 : m.m32 r_main = 0)
+    (h_set_pc : m.set_pc r_main = 0)
+    (h_store_pc : m.store_pc r_main = 0)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     (h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat)
     (h_imm_hi_nat : (m.b_1 r_main).val
@@ -50,6 +52,6 @@ theorem equiv_LUI
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_LUI
     state lui_input imm rd m r_main next_pc exec_row e_rd store_pc_mem
-    provenance h_lui_subset h_imm_lo_nat h_imm_hi_nat promises
+    pins h_m32 h_set_pc h_store_pc h_lui_subset h_imm_lo_nat h_imm_hi_nat promises
 
 end ZiskFv.Equivalence.Lui

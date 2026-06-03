@@ -5,7 +5,6 @@ import ZiskFv.ZiskCircuit.Jal
 import ZiskFv.ZiskCircuit.Jalr
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Compliance.AeneasRowProvenance
 import ZiskFv.Compliance.StaticRowProvenance
 
 /-!
@@ -74,36 +73,6 @@ def jal_h_circuit_of_static_provenance
         simp [ZiskFv.Compliance.boolF]⟩
   ⟨h_jal_subset, h_jal_mode⟩
 
-/-- Assemble JAL's `h_circuit` from Aeneas-row provenance plus the per-row JAL
-    subset constraint. This avoids using `transpile_JAL` for mode pins. -/
-def jal_h_circuit_of_aeneas_provenance
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    {inst : ZiskFv.Transpiler.Aeneas.Rv64imInst}
-    (p : ZiskFv.Compliance.MainAeneasJalRowProvenance m r_main inst)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0#u32)
-    (h_jal_subset : ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc) :
-    ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc :=
-  let h_static :=
-    ZiskFv.Compliance.MainAeneasJalRowProvenance.jal_static_mode
-      p h_inst_rd_ne_zero
-  let h_jal_mode : ZiskFv.ZiskCircuit.Jal.main_row_in_jal_mode m r_main :=
-    ⟨by
-        rw [p.is_external_op_eq, h_static.2.1]
-        simp [ZiskFv.Compliance.boolF],
-      by
-        rw [p.op_eq, h_static.1]
-        simp [ZiskFv.Compliance.natF, ZiskFv.Transpiler.Aeneas.Const.opFlag],
-      by
-        rw [p.m32_eq, h_static.2.2.1]
-        simp [ZiskFv.Compliance.boolF],
-      by
-        rw [p.set_pc_eq, h_static.2.2.2.1]
-        simp [ZiskFv.Compliance.boolF],
-      by
-        rw [p.store_pc_eq, h_static.2.2.2.2]
-        simp [ZiskFv.Compliance.boolF]⟩
-  ⟨h_jal_subset, h_jal_mode⟩
-
 /-- Assemble JALR's `h_circuit` from the Main-side activation/opcode
     pins and the per-row JALR subset constraint. -/
 def jalr_h_circuit_of_main_constraints
@@ -124,28 +93,5 @@ def jalr_h_circuit_of_main_constraints
   refine ⟨h_flag_bool, h_ext_bool, h_disjoint, h_pc, ?_⟩
   · refine ⟨h_main_active, ?_, h_flag, h_m32, h_set_pc, h_store_pc⟩
     exact h_main_op_jalr
-
-/-- Assemble JALR's `h_circuit` from Aeneas-row provenance plus the per-row
-    JALR subset constraints. This avoids using `transpile_JALR` for the final
-    row's mode pins. -/
-def jalr_h_circuit_of_aeneas_provenance
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    {inst : ZiskFv.Transpiler.Aeneas.Rv64imInst}
-    (p : ZiskFv.Compliance.MainAeneasJalrRowProvenance m r_main inst)
-    (h_jalr_subset :
-      ZiskFv.Airs.Main.flag_boolean m r_main
-      ∧ ZiskFv.Airs.Main.is_external_op_boolean m r_main
-      ∧ ZiskFv.Airs.Main.flag_set_pc_disjoint m r_main
-      ∧ ZiskFv.Airs.Main.pc_handshake_with_next_pc m r_main next_pc) :
-    ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc := by
-  obtain ⟨h_flag_bool, h_ext_bool, h_disjoint, h_pc⟩ := h_jalr_subset
-  obtain ⟨h_ext, h_op, h_m32, h_set_pc, h_store_pc⟩ :=
-    ZiskFv.Compliance.MainAeneasJalrRowProvenance.jalr_static_mode p
-  have h_flag : m.flag r_main = 0 := by
-    simp only [ZiskFv.Airs.Main.flag_set_pc_disjoint] at h_disjoint
-    rw [h_set_pc] at h_disjoint
-    simpa using h_disjoint
-  exact ⟨h_flag_bool, h_ext_bool, h_disjoint, h_pc,
-    ⟨h_ext, h_op, h_flag, h_m32, h_set_pc, h_store_pc⟩⟩
 
 end ZiskFv.EquivCore.Promises

@@ -5,7 +5,6 @@ import ZiskFv.EquivCore.Promises.Jump
 import ZiskFv.EquivCore.Promises.JumpHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Compliance.AeneasRowProvenance
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Compliance.StaticRowProvenance
 
@@ -129,45 +128,6 @@ lemma equiv_JAL_of_static_provenance
     ZiskFv.EquivCore.Promises.jal_h_circuit_of_static_provenance
       m r_main next_pc provenance h_static.1 h_static.2.1 h_static.2.2.1
       h_static.2.2.2.1 h_static.2.2.2.2 h_jal_subset
-  ZiskFv.EquivCore.Jal.equiv_JAL state jal_input imm rd misa_val
-    exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
-    promises h_input_imm h_not_throws
-    h_circuit h_jmp2 h_pc_bridge h_pc_bound h_pc_offset_lt_2_32
-
-/-- Aeneas-provenance wrapper for the JAL rd-write route. Mode pins come from
-    the selected row emitted by `Aeneas.jalViews`. -/
-lemma equiv_JAL_of_aeneas_provenance
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (jal_input : PureSpec.JalInput)
-    (imm : BitVec 21)
-    (rd : regidx)
-    (misa_val : RegisterType Register.misa)
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e_rd : Interaction.MemoryBusEntry FGL)
-    (nextPC_val : BitVec 64)
-    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Aeneas.Rv64imInst}
-    (provenance : ZiskFv.Compliance.MainAeneasJalRowProvenance m r_main inst)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0#u32)
-    (h_jal_subset :
-      ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
-    (h_jmp2 : m.jmp_offset2 r_main = 4)
-    (h_pc_bridge : (m.pc r_main).val = jal_input.PC.toNat)
-    (promises : ZiskFv.EquivCore.Promises.JumpPromises
-        state jal_input.PC jal_input.rd misa_val
-        (PureSpec.execute_JAL_pure jal_input).success
-        (PureSpec.execute_JAL_pure jal_input).nextPC
-        rd exec_row e_rd nextPC_val)
-    (h_input_imm : jal_input.imm = imm)
-    (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
-    (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
-    (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) :
-    execute_instruction (instruction.JAL (imm, rd)) state
-      = (bus_effect exec_row [e_rd] state).2 :=
-  have h_circuit :=
-    ZiskFv.EquivCore.Promises.jal_h_circuit_of_aeneas_provenance
-      m r_main next_pc provenance h_inst_rd_ne_zero h_jal_subset
   ZiskFv.EquivCore.Jal.equiv_JAL state jal_input imm rd misa_val
     exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_input_imm h_not_throws

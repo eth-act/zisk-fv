@@ -7,7 +7,6 @@ import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Compliance.StaticRowProvenance
-import ZiskFv.Compliance.AeneasRowProvenance
 
 /-!
 # AUIPC Compliance wrappers
@@ -129,45 +128,6 @@ lemma equiv_AUIPC_of_static_provenance
     ZiskFv.EquivCore.Promises.auipc_h_circuit_of_static_provenance
       m r_main next_pc provenance h_static_op h_static_internal h_static_m32
       h_static_set_pc h_static_store_pc h_auipc_subset
-  exact ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
-    exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
-    promises h_circuit h_offset_bridge h_pc_bridge h_no_wrap h_pc_offset_lt_2_32
-
-/-- Aeneas-provenance wrapper for `equiv_AUIPC`. Static/control pins come from
-    the Aeneas-extracted AUIPC lowerer; the canonical AUIPC proof still
-    consumes the existing PC/offset dynamic facts. -/
-lemma equiv_AUIPC_of_aeneas_provenance
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (auipc_input : PureSpec.AuipcInput)
-    (imm : BitVec 20)
-    (rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e_rd : Interaction.MemoryBusEntry FGL)
-    (nextPC_val : BitVec 64)
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Aeneas.Rv64imInst}
-    (provenance : ZiskFv.Compliance.MainAeneasAuipcRowProvenance m r_main inst)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0#u32)
-    (h_auipc_subset : auipc_subset_holds m r_main next_pc)
-    (h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
-    (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
-    (promises : ZiskFv.EquivCore.Promises.UTypePromises
-        state auipc_input.imm auipc_input.rd auipc_input.PC
-        (PureSpec.execute_AUIPC_pure auipc_input).nextPC
-        imm rd exec_row e_rd nextPC_val)
-    (h_no_wrap : auipc_input.PC.toNat
-      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-        < GL_prime)
-    (h_pc_offset_lt_2_32 :
-      (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-        < 4294967296) :
-    execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
-      = (bus_effect exec_row [e_rd] state).2 := by
-  have h_circuit :=
-    ZiskFv.EquivCore.Promises.auipc_h_circuit_of_aeneas_provenance
-      m r_main next_pc provenance h_inst_rd_ne_zero h_auipc_subset
   exact ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
     exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_circuit h_offset_bridge h_pc_bridge h_no_wrap h_pc_offset_lt_2_32
