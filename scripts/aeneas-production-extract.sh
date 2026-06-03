@@ -195,6 +195,9 @@ def sampleInst : riscv.riscv_inst.RiscvInstruction :=
     pred := 0#u32
     succ := 0#u32 }
 
+def sampleRs1ZeroInst : riscv.riscv_inst.RiscvInstruction :=
+  { sampleInst with rs1 := 0#u32 }
+
 def rowModeProjection
     (result : Result aeneas_extract.ZiskInstExtract) :
     _root_.Option
@@ -233,6 +236,11 @@ example :
 example :
     rowModeMatches (aeneas_extract.extract_addw_from_inst sampleInst)
       26 true true false 6 6 3 4 4 = true := by
+  native_decide
+
+example :
+    rowModeMatches (aeneas_extract.extract_add_from_inst sampleRs1ZeroInst)
+      1 false false false 2 6 3 4 4 = true := by
   native_decide
 
 end zisk_core_generated_checks

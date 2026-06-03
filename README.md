@@ -66,18 +66,19 @@ configured extraction start appears as a generated Lean definition. By default
 it also stages a temporary Lake project under `build/`, copies the pinned
 Aeneas Lean runtime there, and typechecks the generated `ProductionM2.lean`
 without committing generated code. The temporary project also checks concrete
-generated row-shape facts for the production-backed LUI/AUIPC/JAL/ADDW helpers:
-the generated Lean must compute the opcode, external-op flag, `m32`, `store_pc`,
-source/store selectors, and jump offsets expected by the proof-side mode pins.
+generated row-shape facts for the production-backed LUI/AUIPC/JAL/ADDW helpers
+and the ADD `rs1 = x0` copyb special case: the generated Lean must compute the
+opcode, external-op flag, `m32`, `store_pc`, source/store selectors, and jump
+offsets expected by the proof-side mode pins.
 For extraction-only timing or debugging, run
 `AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract`.
 
 On 2026-06-03, a cold local run measured with GNU `time -v` took 3:03.88 wall
 time and 5,712,564 KiB maximum RSS with generated-Lean typechecking enabled.
 With `AENEAS_CHECK_LEAN=0`, the current shared-helper batch measured with
-GNU `time -v` took 4.69 seconds wall time and 466,576 KiB maximum RSS; Aeneas
-reported 0.711656 seconds for Lean translation of 148 declarations. The latest
-full validation run reported 0.872457 seconds for Aeneas Lean translation before
+GNU `time -v` took 6.03 seconds wall time and 632,800 KiB maximum RSS; Aeneas
+reported 2.242405 seconds for Lean translation of 157 declarations. The latest
+full validation run reported 2.376877 seconds for Aeneas Lean translation before
 the temporary Lake project typechecked the generated Lean.
 The current extraction batch covers the production-backed LUI/AUIPC/JAL/JALR
 helpers, FENCE/NOP, and the RV64IM single-row register, immediate, branch,
