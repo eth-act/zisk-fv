@@ -70,6 +70,17 @@ if unclassified_starts:
         + ", ".join(unclassified_starts)
     )
 
+non_start_extract_fns = sorted(
+    name
+    for name in re.findall(r"pub fn (extract_[a-z0-9_]+)\b", aeneas_text)
+    if not name.endswith("_from_inst")
+)
+if non_start_extract_fns:
+    fail(
+        "aeneas_extract.rs exposes public extraction helpers outside the generated "
+        "start surface: " + ", ".join(non_start_extract_fns)
+    )
+
 for forbidden in (
     "ZiskInstBuilder::new",
     ".src_a",
