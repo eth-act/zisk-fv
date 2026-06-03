@@ -188,8 +188,8 @@ def classify_theorem(theorem: str, binders: list[tuple[str, str, str]], deps: li
         provider = "legacy-valid-row / clean-witness hybrid: Mem"
         reasons.append("caller uses Valid_Mem without a visible canonical Clean component axiom")
     elif "Valid_Main" in snippets or "BranchInstrOperands" in snippets or "exec_row" in names:
-        provider = "transpiler/no-provider"
-        reasons.append("canonical surface uses Main/promise facts without a provider Clean component")
+        provider = "row-shape/no-clean-provider"
+        reasons.append("canonical surface uses Main/row-shape facts without a provider Clean component")
     else:
         provider = "unknown"
         reasons.append("no classification rule matched")
