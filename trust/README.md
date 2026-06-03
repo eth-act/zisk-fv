@@ -94,7 +94,10 @@ syntactic gate, including CODEOWNERS, retired row-shape shim drift, and
 checked-in Aeneas-artifact checks that keep the live trust allowlist and
 production-backed extraction boundary owner-protected, prevent the old
 compatibility module paths from returning, and keep generated Lean/LLBC under
-`build/` rather than in the tracked tree.
+`build/` rather than in the tracked tree. It also checks that each Aeneas
+extraction start is a thin wrapper over the shared production
+`lower_rv64im_single_row` helper and that `Riscv2ZiskContext::convert` delegates
+the same mnemonic to the same helper variant.
 `check-all-semantic.sh` runs the olean-consuming semantic gate after a build.
 `regenerate.sh` refreshes every generated ledger after an intentional
 trust-boundary change.

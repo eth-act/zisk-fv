@@ -63,10 +63,14 @@ It writes generated LLBC/Lean artifacts under `build/aeneas-production-extractio
 and rejects unexpected trust markers such as generated axioms, opaques,
 sorries, string/format models, or `HashMap` models. It also checks that every
 configured extraction start appears as a generated Lean definition and that the
-configured start set exactly matches the Rust extraction-wrapper surface. By default
-it also stages a temporary Lake project under `build/`, copies the pinned
-Aeneas Lean runtime there, and typechecks the generated `ProductionM2.lean`
-without committing generated code. The temporary project executes every
+configured start set exactly matches the Rust extraction-wrapper surface.
+The trust gate additionally checks that each `extract_<op>_from_inst` wrapper
+delegates through `Riscv2ZiskContext::lower_rv64im_single_row`, and that
+`Riscv2ZiskContext::convert` delegates the same mnemonic to the same opcode
+variant, so the wrapper surface cannot drift into a second hand-written
+lowerer. By default it also stages a temporary Lake project under `build/`,
+copies the pinned Aeneas Lean runtime there, and typechecks the generated
+`ProductionM2.lean` without committing generated code. The temporary project executes every
 configured generated start on a sample instruction and checks that all 63
 return a row. It also checks concrete generated row-shape facts for the
 production-backed LUI/AUIPC/JAL/ADDW helpers and the ADD `rs1 = x0` copyb
