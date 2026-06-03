@@ -230,6 +230,11 @@ example :
       0 false false true 2 2 3 4096 4 = true := by
   native_decide
 
+example :
+    rowModeMatches (aeneas_extract.extract_addw_from_inst sampleInst)
+      26 true true false 6 6 3 4 4 = true := by
+  native_decide
+
 end zisk_core_generated_checks
 EOF
 
