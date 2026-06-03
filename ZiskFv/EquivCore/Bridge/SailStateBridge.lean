@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.EquivCore.Bridge.StateBridge

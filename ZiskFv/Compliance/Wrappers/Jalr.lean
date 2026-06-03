@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Jalr
 import ZiskFv.EquivCore.Promises.Jump
 import ZiskFv.EquivCore.Promises.JumpHelpers
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
 

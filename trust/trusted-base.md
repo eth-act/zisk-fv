@@ -49,10 +49,11 @@ Lean axiom ledger:
 ## Retired Transpiler Bridge
 
 The former RV64-to-ZisK transpiler axiom surface has been removed from the
-active Lean trust ledger. `ZiskFv/Trusted/Transpiler.lean` is now only an
-axiom-free compatibility import; the live opcode literals, lane helpers,
-register-pointer decoding helper, and row/state helper structures live in
-`ZiskFv/Transpiler/Contract.lean`.
+active Lean trust ledger. `ZiskFv/Trusted/Transpiler.lean` and
+`ZiskFv/Transpiler/Contract.lean` are now only axiom-free compatibility
+imports; the live opcode literals, lane helpers, register-pointer decoding
+helper, and row/state helper structures live in
+`ZiskFv/RowShape/Contract.lean`.
 
 Canonical per-opcode theorem closures no longer mention any retired
 transpiler bridge names. The route obligations that used to be hidden behind

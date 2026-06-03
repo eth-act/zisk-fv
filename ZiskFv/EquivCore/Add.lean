@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.Add
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd

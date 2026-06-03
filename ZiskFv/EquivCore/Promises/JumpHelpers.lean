@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Promises.Jump
 import ZiskFv.ZiskCircuit.Jal
 import ZiskFv.ZiskCircuit.Jalr
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.RowProvenance
 

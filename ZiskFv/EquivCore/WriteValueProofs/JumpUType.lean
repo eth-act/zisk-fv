@@ -6,7 +6,7 @@ import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Bits.PackedBitVec.Extensions
 import ZiskFv.Bits.PackedBitVec.NoWrap
 import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes

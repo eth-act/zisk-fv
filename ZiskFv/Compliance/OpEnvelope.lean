@@ -4,7 +4,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Main.OpcodeClassification
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Compliance.Wrappers.Lui
 import ZiskFv.Compliance.Wrappers.Auipc
 import ZiskFv.Compliance.Wrappers.Jal

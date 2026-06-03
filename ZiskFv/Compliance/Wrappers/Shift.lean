@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.EquivCore.Sllw
 import ZiskFv.EquivCore.Promises.BinaryExtensionHelpers
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge

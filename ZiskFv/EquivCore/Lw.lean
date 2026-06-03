@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.LoadWord
 import ZiskFv.ZiskCircuit.MemModel
 import ZiskFv.ZiskCircuit.SextLoadBridge

@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Field.GoldilocksBridge
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 
 /-!
 # Shared *discharge bridge* helper — packed-lane BitVec reconstruction

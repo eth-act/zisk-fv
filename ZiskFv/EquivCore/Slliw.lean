@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Bits.Execution
 import ZiskFv.ZiskCircuit.ShiftLI
 import ZiskFv.Airs.Main.Main

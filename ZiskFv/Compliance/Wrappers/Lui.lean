@@ -4,7 +4,7 @@ import ZiskFv.EquivCore.Lui
 import ZiskFv.EquivCore.Promises.UType
 import ZiskFv.EquivCore.Promises.UTypeHelpers
 import ZiskFv.Tactics.UTypeArchetype
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Compliance.RowProvenance

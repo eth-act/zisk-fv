@@ -4,7 +4,7 @@ import ZiskFv.EquivCore.Sw
 import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.EquivCore.Bridge.MemCleanFullEnsemble
 import ZiskFv.EquivCore.Promises.Store
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Compliance.SharedBundles

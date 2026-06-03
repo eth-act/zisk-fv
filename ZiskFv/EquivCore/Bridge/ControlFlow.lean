@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Tactics.UTypeArchetype
@@ -86,20 +86,19 @@ lemma branch_input_bridges_of_read_xreg
 
 /-! ## Non-branch discharge entry points
 
-The entry point below packages the AUIPC transpile-pinnable FGL ↔
+The entry point below packages the AUIPC row-shape-pinnable FGL ↔
 `Nat` offset identity that `equiv_AUIPC` currently takes as a
 separate parameter.
 
 Each consumes the per-shape `*_circuit_holds` predicate (already a
 required input to the equiv, for the PC-advance + store_value
-formula derivations) and the relevant `transpile_<OP>` axiom from
-`Fundamentals/Transpiler.lean` instantiated at the appropriate
-ghost operand. The transpile axiom delivers an FGL equation; the
+formula derivations) and the relevant row-shape fact instantiated at
+the appropriate ghost operand. The row-shape fact delivers an FGL equation; the
 discharge then extracts `.val` and uses `Fin.val_natCast` plus a
 `< GL_prime` no-wrap bound to land on the shape the equiv expects.
 
 No new axioms — every discharge here is pure composition of
-existing trust-ledger pieces (`transpile_<OP>` + Fin / FGL
+existing trust-ledger pieces (row-shape facts + Fin / FGL
 arithmetic). FENCE is already minimal and needs no entry point.
 
 Caller-burden reduction (per opcode):

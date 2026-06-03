@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.EquivCore.Promises.UType
 import ZiskFv.Tactics.UTypeArchetype
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.RowProvenance
 
