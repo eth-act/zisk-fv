@@ -90,9 +90,11 @@ trust/scripts/regenerate.sh
 ```
 
 `lake build` is the formal-verification check. `check-all.sh` runs the fast
-syntactic gate, including CODEOWNERS and retired row-shape shim drift checks
-that keep the live trust allowlist and production-backed extraction boundary
-owner-protected and prevent the old compatibility module paths from returning.
+syntactic gate, including CODEOWNERS, retired row-shape shim drift, and
+checked-in Aeneas-artifact checks that keep the live trust allowlist and
+production-backed extraction boundary owner-protected, prevent the old
+compatibility module paths from returning, and keep generated Lean/LLBC under
+`build/` rather than in the tracked tree.
 `check-all-semantic.sh` runs the olean-consuming semantic gate after a build.
 `regenerate.sh` refreshes every generated ledger after an intentional
 trust-boundary change.
