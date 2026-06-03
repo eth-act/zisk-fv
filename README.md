@@ -84,9 +84,10 @@ On 2026-06-03, a cold local run measured with GNU `time -v` took 3:03.88 wall
 time and 5,712,564 KiB maximum RSS with generated-Lean typechecking enabled.
 With `AENEAS_CHECK_LEAN=0`, the current shared-helper batch measured with
 GNU `time -v` took 6.03 seconds wall time and 632,800 KiB maximum RSS; Aeneas
-reported 2.242405 seconds for Lean translation of 157 declarations. The latest
-full validation run reported 2.376877 seconds for Aeneas Lean translation before
-the temporary Lake project typechecked the generated Lean.
+reported 2.242405 seconds for Lean translation of 157 declarations. After
+rebasing the extraction submodule onto the same upstream ZisK `v0.17.0` revision
+as the flake-pinned source, the extraction-only run reported 2.267235 seconds
+for Lean translation of 159 declarations.
 The current extraction batch covers the production-backed LUI/AUIPC/JAL/JALR
 helpers, FENCE/NOP, and the RV64IM single-row register, immediate, branch,
 load, and store helper families.
@@ -108,7 +109,7 @@ operand-lane obligations are explicit route facts.
 | `tools/`                          | Auxiliary repository tooling, including trust-ledger index generation.                                  |
 | `docs/extraction/`                | Non-trust notes for `pil-extract`, pilout structure, and AIR inventory.                                 |
 | `nix/`, `flake.nix`, `flake.lock` | Reproducible build definitions and pinned upstream inputs.                                              |
-| `zisk/`                           | ZisK source submodule used as a citation surface. The pilout is built from the flake-pinned input.      |
+| `zisk/`                           | ZisK source submodule for the Aeneas extraction branch, based on the same upstream `v0.17.0` revision as the flake-pinned ZisK input. |
 
 ## Pipeline
 

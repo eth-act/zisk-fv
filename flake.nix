@@ -47,7 +47,7 @@
       flake = false;
     };
 
-    # Aeneas is used only by the RV64IM transpiler extraction harness. It is
+    # Aeneas is used only by the RV64IM production-lowering extraction harness. It is
     # intentionally kept out of the main Lean build until the Lean-toolchain
     # mismatch is resolved, but the flake lock pins the exact Charon/Aeneas
     # revision used for de-risking.
@@ -118,7 +118,7 @@
             '';
           }}/bin/aeneas-production-extract";
           meta = {
-            description = "Run the pinned Aeneas production-backed transpiler extraction harness.";
+            description = "Run the pinned Aeneas production-backed lowering extraction harness.";
           };
         };
 
