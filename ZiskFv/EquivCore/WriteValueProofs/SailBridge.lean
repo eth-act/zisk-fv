@@ -22,7 +22,7 @@ expressions:
 * W-immediate shifts: the raw Sail shape
   `LeanRV64D.Functions.sign_extend (m := 64) (Sail.shift_bits_left ...)` etc.
 
-These bridges show the two forms equal under transpile pin hypotheses
+These bridges show the two forms equal under row-shape pin hypotheses
 (extractLsb / shamt / shift relations). Proven by direct unfolding of
 `execute_RTYPEW_pure` / `execute_RTYPE_pure` / `execute_SHIFTIOP_pure`
 and the Sail prelude `simp_sail` lemmas. **No new axioms.**
@@ -44,7 +44,7 @@ open LeanRV64D.Functions
     The Tier-1 ADDW discharge produces
     `BitVec.signExtend 64 (BitVec.ofNat 32 a32sum + BitVec.ofNat 32 b32sum)`.
     The `h_rd_val` parameter expects
-    `execute_RTYPEW_pure r1 r2 ropw.ADDW`. Given the transpile pins
+    `execute_RTYPEW_pure r1 r2 ropw.ADDW`. Given the row-shape pins
     relating the byte sums to the Sail-side `extractLsb r 31 0`, this
     bridge produces the canonical rewrite. -/
 lemma sail_addw_bridge

@@ -43,7 +43,7 @@ lo / hi 32-bit projections.
 ## What this toolkit does NOT do
 
 * It does not derive `pc_fgl.val = PC.toNat` from circuit constraints —
-  that's the trusted-surface `transpile_PC_for_<op>` axiom.  The
+  that's the trusted-surface per-op PC provenance contract axiom.  The
   toolkit takes that as input.
 * It does not handle the doubly-wrapped case where `pc_fgl + offset_fgl`
   exceeds `2 * GL_prime`.  The hypothesis `pc_fgl.val + offset_fgl.val
@@ -91,7 +91,7 @@ and the lo / hi projections fall out by `omega`. -/
 
 /-- **Lo-half wide-PC lift (general offset).**
 
-Given the transpile bridges `pc_fgl.val = PC.toNat`,
+Given the row-shape bridges `pc_fgl.val = PC.toNat`,
 `offset_fgl.val = offset_bv.toNat`, plus the structural no-wrap
 hypothesis `pc_fgl.val + offset_fgl.val < GL_prime`, conclude that the
 lo 32-bit half of the FGL sum equals the lo 32-bit half of the BitVec
@@ -119,7 +119,7 @@ lemma fgl_pc_plus_offset_lo
     rw [show (pc_fgl + offset_fgl : FGL) = pc_fgl + offset_fgl from rfl]
     rw [Fin.val_add]
     exact Nat.mod_eq_of_lt h_no_fgl_wrap
-  -- Substitute the transpile bridges.
+  -- Substitute the row-shape bridges.
   rw [h_fgl_val, h_pc_bridge, h_offset_bridge]
   -- The BitVec sum's `.toNat` is `(PC.toNat + offset_bv.toNat) % 2^64`.
   rw [BitVec.toNat_add]
@@ -280,7 +280,7 @@ lemma fgl_pc_plus_offset_hi_of_bound
 
 For JAL / JALR's link-register write, the offset is the literal `4`,
 encoded on the FGL side as the natCast `(4 : FGL)` and on the BitVec
-side as `(4#64 : BitVec 64)`.  The transpile bridge `(4 : FGL).val =
+side as `(4#64 : BitVec 64)`.  The row-shape bridge `(4 : FGL).val =
 (4#64 : BitVec 64).toNat` is `decide`-able. -/
 
 /-- The FGL-side natCast `(4 : FGL).val` equals the BitVec `4#64`'s
@@ -339,7 +339,7 @@ by the BitVec sum on the right-hand side; the toolkit's job is only
 to bridge `pc_fgl + offset_fgl : FGL` to `(PC + offset_bv).toNat` mod
 `2^32` / div `2^32`.
 
-In the actual circuit, ZisK's transpiler ensures `jmp_offset2` is a
+In the actual circuit, ZisK's lowerer ensures `jmp_offset2` is a
 BitVec 64 sign-extended value; the FGL element representing it has
 `offset_fgl.val = offset_bv.toNat` whenever that toNat fits in
 `Fin GL_prime`, i.e. **always**, since BitVec 64 toNat ≤ 2^64 - 1 and

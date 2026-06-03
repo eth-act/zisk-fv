@@ -24,7 +24,7 @@ import ZiskFv.Channels.MemoryBusBytes
 /-!
 End-to-end theorem for RV64 MULHU. Mirrors `Equivalence.MulH` with:
 
-* `transpile_MULHU` (opcode 177) in place of `transpile_MULH` (opcode 181);
+* MULHU row-shape contract (opcode 177) in place of MULH row-shape contract (opcode 181);
 * `PureSpec.execute_MULH_mulhu_pure` / `execute_MULH_mulhu_pure_equiv`
   in place of their MULH counterparts — MULHU's Sail-pure output is
   `execute_MUL_pure r1 r2 .MULHU` (unsigned × unsigned, high 64 bits);

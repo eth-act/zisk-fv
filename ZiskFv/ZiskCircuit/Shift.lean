@@ -19,7 +19,7 @@ operand. The `one_sub_one_mul` simp lemma collapses the
 This module packages the **Main-side** compositional theorem for the
 SLLW archetype:
 
-* `main_row_in_sllw_mode` — the mode witnesses that `transpile_SLLW`
+* `main_row_in_sllw_mode` — the mode witnesses that SLLW row-shape contract
   asserts (external op with `op = OP_SLL_W = 36`, `m32 = 1`,
   `set_pc = 0`, `flag = 0`);
 * `sllw_circuit_holds` — adds the boolean / disjointness subset of

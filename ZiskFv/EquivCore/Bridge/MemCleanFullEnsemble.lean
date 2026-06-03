@@ -20,7 +20,7 @@ open ZiskFv.Channels.MemoryBus
     Mem provider rows.
 
 The caller still supplies the structural pins tying the selected Clean rows
-to the legacy validators and ROM/transpile facts.  The provider-side
+to the legacy validators and ROM/row-shape facts.  The provider-side
 `matches_memory_payload` field is derived here from full-ensemble
 same-message evidence, preventing it from becoming a separate promise. -/
 @[reducible]

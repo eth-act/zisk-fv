@@ -97,7 +97,7 @@ bundle). The Add wrapper follows the same convention.
   and XOR (`OP_XOR = 16`).
 * The discharge generalizes mechanically to the **6 byte-local logic
   opcodes** (AND/ANDI/OR/ORI/XOR/XORI):
-  * Swap `transpile_OR` for `transpile_<AND,XOR,…>`.
+  * Swap OR row-shape contract for corresponding row-shape contracts.
   * Swap `OP_OR = 15` for the relevant opcode literal.
   * Swap the new axiom `binary_b_op_or_sext_eq_OP_OR` for the
     parallel `_OP_AND` / `_OP_XOR` pin.

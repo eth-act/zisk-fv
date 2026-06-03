@@ -62,7 +62,7 @@ open ZiskFv.Trusted
 
 /-- **Archetype mode predicate.** A Main row is in store-execution mode
     for a given Zisk opcode literal when `is_external_op`, `op`, `m32`,
-    and `set_pc` match the transpile-axiom witnesses. All four RV64
+    and `set_pc` match the row-shape provenance witness witnesses. All four RV64
     stores (SD/SW/SH/SB) use `OP_COPYB = 1` and `is_external_op = 0` —
     the only sub-family split is by the operand width on the bus, not
     by the Main-level mode. -/
@@ -106,7 +106,7 @@ lemma store_archetype_copyb_c_packed
     `Circuit.StoreD.store_d_next_pc_concrete`: when `jmp_offset1 =
     jmp_offset2 = 4`, the next-pc is `pc + 4`. Holds uniformly for
     SD/SW/SH/SB since they all use `j(4, 4)` in the Zisk
-    transpiler. -/
+    production lowerer. -/
 lemma store_archetype_copyb_next_pc
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)

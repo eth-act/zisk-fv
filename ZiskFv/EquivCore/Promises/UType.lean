@@ -81,7 +81,7 @@ structure UTypePromises
 
 /-- Structural promise bundle for the AUIPC `rd = x0` shape.
 
-    In this shape the production/static transpiler emits no memory-bus
+    In this shape the production/static lowerer emits no memory-bus
     register write: `storeReg 0 true` lowers to `storeNone, storePc = false`.
     The bundle therefore contains only the Sail input bridges and execution
     bus nextPC shape. -/

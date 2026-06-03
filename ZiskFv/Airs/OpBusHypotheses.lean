@@ -34,7 +34,7 @@ open ZiskFv.Airs.OpBusEffect
 
     The `BitVec 64` value on the right of each `read_xreg` equality is
     reassembled from the bus's lane fields via `lanes_to_bv64` — this
-    matches the convention `transpile_BEQ` enforces on the Main row,
+    matches the convention BEQ row-shape contract enforces on the Main row,
     namely `a_0 = lane_lo (xreg rs1)` / `a_1 = lane_hi (xreg rs1)`,
     and analogously for `b`. The op-bus simply forwards Main's `a`/`b`
     cells (modulo the `(1 - m32)` factor on the high lanes, which for
@@ -89,7 +89,7 @@ lemma chip_op_bus_hyps_alu
 /-- **Load shape — single op-bus entry, single rs1 read on a-lanes.**
     LD/LB/LH/LW/LBU/LHU/LWU emit a Main↔Binary op-bus entry whose `a`
     lanes carry `xreg(rs1)` (the address-base register) per
-    `transpile_LD` / `transpile_LW` / etc. The `b` lanes are pinned to
+    LD row-shape contract / LW row-shape contract / etc. The `b` lanes are pinned to
     the immediate (not a register), so this lemma extracts only the
     rs1 read.
     Caller convention: invoke with `rs1` supplied as both the `r1` and
@@ -130,7 +130,7 @@ lemma chip_op_bus_hyps_store
 
 /-- **JALR shape — single op-bus entry, single rs1 read on b-lanes.**
 
-    JALR's `transpile_JALR` axiom pins `m.b_0 = lane_lo (xreg rs1)`
+    JALR's JALR row-shape contract axiom pins `m.b_0 = lane_lo (xreg rs1)`
     and `m.b_1 = lane_hi (xreg rs1)` — the JALR row carries its single
     source register on the `b` lanes (rather than `a` as the branch
     family does). Modelling the op-bus emission analogously, this
@@ -145,7 +145,7 @@ lemma chip_op_bus_hyps_store
 
     The `BitVec 64` value on the right of the equality is reassembled
     from the bus's `b_lo`/`b_hi` lane fields via `lanes_to_bv64`,
-    matching `transpile_JALR`'s `b_0`/`b_1` pinning. -/
+    matching JALR row-shape contract's `b_0`/`b_1` pinning. -/
 lemma chip_op_bus_hyps_jalr
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (entry : OperationBusEntry FGL)

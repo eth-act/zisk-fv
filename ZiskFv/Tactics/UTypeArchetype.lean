@@ -248,7 +248,7 @@ lemma auipc_archetype_pc_advance
     `store_value[0] = 1 * (pc + jmp_offset2 - c_0) + c_0`. Under
     internal-op-0, `c_0 = 0`, so this reduces to `pc + jmp_offset2`,
     which is the `pc + imm` RV64 semantics expects (given
-    `transpile_AUIPC` pins `jmp_offset2 = imm_offset`). -/
+    AUIPC row-shape contract pins `jmp_offset2 = imm_offset`). -/
 lemma auipc_archetype_store_value_lo
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :

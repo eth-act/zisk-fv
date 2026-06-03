@@ -15,12 +15,12 @@ ZisK transpilation shape: one microinstruction with `src_a = reg(rs1)`,
 `src_b = ind(imm)`, `store = reg(rd)`, `j(4, 4)`, and `is_external_op`
 determined by the `op` kind. Two sub-families split on sign-extension:
 
-* **Zero-extension loads (LD, LWU, LHU, LBU)** transpile to
+* **Zero-extension loads (LD, LWU, LHU, LBU)** lower to
   `op = "copyb"` (`OP_COPYB = 1`, `OpType::Internal`). The Main row's
   constraint 9 forces `c = b` directly — **no operation-bus hop**.
   This file's archetype covers them.
 
-* **Sign-extension loads (LW, LH, LB)** transpile to
+* **Sign-extension loads (LW, LH, LB)** lower to
   `op ∈ {"signextend_w", "signextend_h", "signextend_b"}` with
   `OpType::BinaryE` — i.e. external op, operation-bus hop to the
   BinaryExtension SM. See `SignExtendLoadArchetype.lean`.
@@ -52,7 +52,7 @@ open ZiskFv.Trusted
 
 /-- **Archetype mode predicate.** A Main row is in load-execution mode
     for a given Zisk opcode literal when `is_external_op`, `op`, `m32`,
-    `set_pc`, and `store_pc` match the transpile-axiom witnesses.
+    `set_pc`, and `store_pc` match the row-shape provenance witness witnesses.
     Parametric over the opcode literal; for zero-extension loads the
     literal is `OP_COPYB = 1` + `is_external_op = 0`. -/
 @[simp]

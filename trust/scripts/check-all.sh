@@ -29,7 +29,7 @@ run "9/14 caller-burden ledger (wrappers)"  "$dir/check-wrapper-caller-burden.sh
 run "10/14 no new ArithTable opcode axioms" "$dir/check-arith-table-op-axioms.sh"
 run "11/14 Clean integration regressions" "$dir/check-clean-integration.sh"
 run "12/14 CODEOWNERS trust-boundary coverage" "$dir/check-codeowners.sh"
-run "13/14 retired transpiler compatibility paths" "$dir/check-retired-transpiler-paths.sh"
+run "13/14 retired row-shape compatibility shims" "$dir/check-retired-row-shape-shims.sh"
 run "14/14 shrinkage floor (axiom-count monotone)" "$dir/check-shrinkage.sh"
 
 if [ $overall -eq 0 ]; then

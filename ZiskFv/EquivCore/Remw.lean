@@ -21,7 +21,7 @@ import ZiskFv.Channels.MemoryBusBytes
 /-!
 End-to-end theorem for RV64M REMW (signed 32-bit remainder).
 
-REMW is the W-variant sibling of REM. Both transpile through
+REMW is the W-variant sibling of REM. Both lower through
 `create_register_op` with `m32 = 1` for the 32-bit width. Sail-side,
 both call `execute_REMW` with `is_unsigned = false`.
 

@@ -82,7 +82,7 @@ lemma equiv_SW
     -- equals Sail's 4-insert chain (via `modify_memory_4` data
     -- fields). Bundles ptr-match + low-byte match + high-byte no-op
     -- match. Caller establishes via byte-bus high-zero witnesses +
-    -- ptr-match against `transpile_SW`.
+    -- ptr-match against SW row-shape contract.
     (h_mem_eq :
       (((((((state.mem.insert bus.e2.ptr.toNat (byteAt bus.e2 0)
           ).insert (bus.e2.ptr.toNat + 1) (byteAt bus.e2 1)

@@ -123,7 +123,7 @@ lemma store_d_compositional
 /-- **Next-PC for SD.** With `set_pc = 0` and `flag = 0` (both pinned
     by the mode + constraint 18), the PC handshake gives
     `next_pc = pc + jmp_offset2`. For SD, `jmp_offset2 = 4` (from
-    `transpile_SD`), so this is `pc + 4`. -/
+    SD row-shape contract), so this is `pc + 4`. -/
 lemma store_d_next_pc
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
@@ -137,7 +137,7 @@ lemma store_d_next_pc
 
 /-- **Next-PC simplified for SD.** When `flag = 0` (forced by
     constraint 18) and `jmp_offset1 = jmp_offset2 = 4` (forced by
-    `transpile_SD`), the handshake collapses to `next_pc = pc + 4`. -/
+    SD row-shape contract), the handshake collapses to `next_pc = pc + 4`. -/
 lemma store_d_next_pc_concrete
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)

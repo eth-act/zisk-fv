@@ -19,7 +19,7 @@ This bridge consumes pieces of the *trust ledger* —
 `op_bus_perm_sound_BinaryAdd` (PLONK soundness on
 `OPERATION_BUS_ID = 5000`), `binary_add_columns_in_range`
 (range-check bus soundness on BinaryAdd's `bits(N)` columns), and
-the `transpile_ADD` row contract (via
+the ADD row-shape contract (via
 `Bridge.SailStateBridge.add_input_bridges_of_read_xreg`) — to
 derive the `add_circuit_holds` + range facts + per-byte input
 bridges that the canonical `equiv_ADD` would otherwise accept as
@@ -37,7 +37,7 @@ origin/main pre-pilot:
   `binary_add_columns_in_range`
 * drops `h_input_r{1,2}_main` (2) — derived inside the bridge from
   the caller's Sail-form `h_read_r{1,2}` facts via
-  `transpile_ADD` (`SailStateBridge.add_input_bridges_of_read_xreg`).
+  ADD row-shape contract (`SailStateBridge.add_input_bridges_of_read_xreg`).
   The Sail facts are already present at the canonical-theorem
   level for the `equiv_<OP>_sail` companion, so no new caller
   burden is introduced.
@@ -74,7 +74,7 @@ open ZiskFv.ZiskCircuit.Add
       `Valid_Main` universals).
     * `h_main_mode : main_row_in_add_mode m r_main` (activation +
       opcode pin + `m32 = 0` + `flag = 0`; currently caller-supplied,
-      `transpile_ADD` covers all but `flag = 0` which matches_entry
+      ADD row-shape contract covers all but `flag = 0` which matches_entry
       itself would derive — future work eliminates).
     * `h_b_core : ∀ r, core_every_row b r` (universal AIR-validity for
       BinaryAdd's per-row carry-chain constraints).

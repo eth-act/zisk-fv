@@ -47,7 +47,7 @@ open ZiskFv.Airs.OperationBus
 
     Given a list of operation-bus entries and a Sail state, plus the
     `rs1`/`rs2` register indices the row's `a`/`b` lanes are claimed to
-    correspond to (per `transpile_BEQ` and friends), `op_bus_effect`
+    correspond to (per BEQ row-shape contract and friends), `op_bus_effect`
     accumulates the per-entry `read_xreg`-equalities into `.1`.
 
     For each entry with `multiplicity = 1` (Main's assume-side branch

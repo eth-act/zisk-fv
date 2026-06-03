@@ -46,15 +46,15 @@ Lean axiom ledger:
 | Clean completeness placeholders | 6            | 0                 | Completeness-direction placeholders retained for Clean component construction, not soundness.       |
 
 
-## Retired Transpiler Bridge
+## Retired Row-Shape Bridge
 
-The former RV64-to-ZisK transpiler axiom surface has been removed from the
+The former RV64-to-ZisK hand-written row-shape axiom surface has been removed from the
 active Lean trust ledger. The live opcode literals, lane helpers,
 register-pointer decoding helper, and row/state helper structures live in
 `ZiskFv/RowShape/Contract.lean`.
 
 Canonical per-opcode theorem closures no longer mention any retired
-transpiler bridge names. The route obligations that used to be hidden behind
+row-shape bridge names. The route obligations that used to be hidden behind
 that contract are now explicit caller/envelope facts or are derived from row
 provenance and provider rows: static mode/control pins from provenance,
 runtime source/data lanes from caller facts, and jump/PC facts from explicit

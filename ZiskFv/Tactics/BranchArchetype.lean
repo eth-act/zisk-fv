@@ -20,8 +20,8 @@ all six opcodes — the only differences are:
 * Zisk opcode literal (`OP_EQ = 9` for BEQ/BNE; `OP_LT = 7` for BLT/
   BGE; `OP_LTU = 6` for BLTU/BGEU — `zisk_ops.rs:388-391`).
 * The `neg` flag in `create_branch_op`: for BNE/BGE/BGEU, the
-  transpiler swaps `jmp_offset1` (takes) and `jmp_offset2` (fall-through),
-  so the per-opcode transpile axiom encodes the swap.
+  production lowerer swaps `jmp_offset1` (takes) and `jmp_offset2` (fall-through),
+  so the per-opcode row-shape provenance bridge encodes the swap.
 * The Sail-side `execute_BTYPE` match arm and the predicate used
   (`== / != / zopz0zI_s / zopz0zKzJ_s / zopz0zI_u / zopz0zKzJ_u`),
   which drives the per-opcode pure-spec equivalence.
@@ -32,7 +32,7 @@ archetype lemmas (`branch_archetype_pc_dispatch`, `branch_archetype_taken`,
 and the Main row's mode witnesses. BEQ currently uses
 `Circuit.BranchEqual.branch_eq_compositional` directly; BNE/BLT/BGE/
 BLTU/BGEU call `branch_archetype_pc_dispatch` with their own
-`opcode_lit` and transpile-axiom instantiation.
+`opcode_lit` and row-shape provenance witness instantiation.
 
 ## Usage pattern
 

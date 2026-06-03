@@ -8,7 +8,7 @@ open LeanRV64D.Functions
 ## RV64M REMW — pure spec + Sail equivalence
 
 REMW is the signed 32-bit remainder. Per `riscv2zisk_context.rs:250`,
-RV64 `remw` transpiles via `create_register_op(..., "div_w", 4)`,
+RV64 `remw` lowers via `create_register_op(..., "div_w", 4)`,
 op = OP_DIV_W = 0xbe = 190, m32 = 1, sa = sb = 1 (signed).
 
 Sail (`InstsEnd.lean:65921`): `execute_REMW (...) (is_unsigned :=

@@ -26,8 +26,8 @@ write). There is no separate Provider AIR for arithmetic — the
 "discharge" reduces to:
 
 * For branches: derive `r1_val` and `r2_val` packed-lane forms
-  from `transpile_<BRANCH>` + `SailStateBridge`.
-  Each `transpile_<BRANCH>` axiom shares the same shape: 5 mode
+  from corresponding row-shape contracts + `SailStateBridge`.
+  Each corresponding row-shape contracts axiom shares the same shape: 5 mode
   pins then `a_0 = lane_lo (state.xreg rs1)`, `a_1 = lane_hi
   (state.xreg rs1)`, `b_0 = lane_lo (state.xreg rs2)`, `b_1 =
   lane_hi (state.xreg rs2)`.
@@ -36,11 +36,11 @@ write). There is no separate Provider AIR for arithmetic — the
   source-C / selector bridge axioms and assembled in `ZiskCircuit.Jalr`.
 * For AUIPC / LUI / JAL / FENCE: no register reads — the input
   bridge step is vacuous; the discharge is the PC-routing axioms
-  `transpile_PC_for_{JAL,JALR,AUIPC}` consumed directly by the
+  PC provenance contracts for JAL, JALR, and AUIPC consumed directly by the
   equiv proofs.
 
 This file provides one helper for the branch shape (covering all
-6 branches by parameterizing on the transpile axiom's application
+6 branches by parameterizing on the row-shape provenance bridge's application
 result). Other shapes are direct one-line uses of existing
 `SailStateBridge` helpers and don't warrant their own wrappers.
 -/
@@ -56,12 +56,12 @@ open ZiskFv.EquivCore.Bridge.SailStateBridge
 
 /-- **Branch-shape input bridges (r1 + r2 in one call).** Given the
     a and b lane conjuncts already projected from a branch
-    `transpile_<OP>` axiom application (`h_a_lo_t`, `h_a_hi_t`,
+    per-op row-shape contract axiom application (`h_a_lo_t`, `h_a_hi_t`,
     `h_b_lo_t`, `h_b_hi_t`), plus the Sail `read_xreg` facts the
     caller already carries for `equiv_<BRANCH>_sail`, deliver the
     packed-lane equations for both r1_val and r2_val.
 
-    Each `transpile_<BRANCH>` axiom (BEQ, BNE, BLT, BLTU, BGE,
+    Each corresponding row-shape contracts axiom (BEQ, BNE, BLT, BLTU, BGE,
     BGEU) has the same lane-conjunct shape modulo opcode and
     `neg`-or-order flags; this helper consumes the projected
     conjuncts opaquely so all 6 branches can share it.
@@ -106,7 +106,7 @@ Caller-burden reduction (per opcode):
   production final row uses `jmp_offset2 = 4` only in the aligned
   lowering and `jmp_offset2 = 3` in the unaligned lowering.
 * AUIPC: dynamic PC/offset facts are now caller-supplied by the
-  compliance route instead of discharged through the legacy transpiler
+  compliance route instead of discharged through the legacy row-shape
   bridge.
 
 Anti-laundering metric:

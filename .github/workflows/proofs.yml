@@ -87,8 +87,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # tools/transpiler-diff depends on zisk/{riscv,core} as
-          # path dependencies. The formal build inputs still come from
+          # Production-backed extraction checks depend on zisk/{riscv,core}
+          # as path dependencies. The formal build inputs still come from
           # flake.lock; this checkout is only for the differential pin.
           submodules: true
 

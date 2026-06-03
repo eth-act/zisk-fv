@@ -30,7 +30,7 @@
 
 # Production-backed row-shape extraction boundary. These files do not
 # declare Lean axioms, but changes alter the evidence replacing the old
-# handwritten transpiler-axiom surface.
+# handwritten row-shape axiom surface.
 /scripts/aeneas-production-extract.sh                   @codygunton
 /ZiskFv/Compliance/RowProvenance.lean                   @codygunton
 /ZiskFv/RowShape/Contract.lean                          @codygunton

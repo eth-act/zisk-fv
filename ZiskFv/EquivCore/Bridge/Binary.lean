@@ -2653,20 +2653,20 @@ lemma b_op_val_eq_of_logic_core
 
 These helpers package the input-bridge derivation pattern shared by
 all Binary-shape opcodes:
-  (1) consume `transpile_<OP>` to get `m.a_0/1 ↔ lane_lo/hi (state.xreg rs1)`
+  (1) consume per-op row-shape contract to get `m.a_0/1 ↔ lane_lo/hi (state.xreg rs1)`
       + `m.m32 = 0`;
   (2) consume `matches_entry`'s a_lo/a_hi conjuncts after unfolding
       `opBus_row_*` with `m32 = 0` to bridge `m.a_0/1 ↔ packed Binary a-bytes`;
   (3) compose with `SailStateBridge.packed_lane_eq_of_read_xreg` to
       bridge the resulting `Sail r1_val ↔ packed a-bytes`.
 
-Each per-opcode equiv calls one of these with its own `transpile_<OP>` to
+Each per-opcode equiv calls one of these with its own per-op row-shape contract to
 discharge `h_input_r1_circuit` / `h_input_r2_circuit` without inlining
 the ~50-line derivation. -/
 
 open ZiskFv.EquivCore.Bridge.SailStateBridge in
 /-- **Sail r1_val ↔ packed Binary a-byte sum bridge.** Given the
-    transpile axiom's a-lane conjuncts + `m32 = 0`, `matches_entry`
+    row-shape provenance bridge's a-lane conjuncts + `m32 = 0`, `matches_entry`
     on Main/Binary bus rows, and the Sail `read_xreg` reduction,
     derive the standard `r1_val = BitVec.ofNat 64 (Σ free_in_a_i * 256^i)`
     equation. Uniformly applicable across AND/ANDI/OR/ORI/XOR/XORI/

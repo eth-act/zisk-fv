@@ -44,7 +44,7 @@ structure Valid_Main (F ExtF : Type)
   b_src_reg : ℕ → F
   m32 : ℕ → F
   /-- `ind_width` (column 18). Memory operand width in bytes — pinned
-      by `transpile_<load>` axioms (1 for LB/LBU, 2 for LH/LHU,
+      by per-load row-shape witnesses axioms (1 for LB/LBU, 2 for LH/LHU,
       4 for LW/LWU, 8 for LD). Consumed by the MemAlign zero-padding
       and BinaryExtension sign-extension closure axioms. -/
   ind_width : ℕ → F

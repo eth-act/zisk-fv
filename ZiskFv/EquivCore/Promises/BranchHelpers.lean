@@ -54,7 +54,7 @@ private theorem beq_pure_no_exception_of_aligned
 
 /-- Build a `BranchPromises` bundle for BEQ from a 4-byte-alignment
     hypothesis on the branch target plus the structural pass-through
-    pins. ZisK's assembler/transpiler invariant guarantees the
+    pins. ZisK's assembler/lowerer invariant guarantees the
     alignment; the not-throws and success bundle fields are derived
     here via `beq_pure_no_exception_of_aligned`. -/
 def BranchPromises.of_aligned_BEQ

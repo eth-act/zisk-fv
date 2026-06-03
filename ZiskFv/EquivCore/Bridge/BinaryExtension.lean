@@ -186,7 +186,7 @@ the Main row, derive the packed-a-byte form of `r1_val` and the
 shift-pin `r2_val.toNat % 64 = (v.free_in_b).val % 64` (or the
 immediate analogue) from:
 
-* `transpile_<OP>`'s lane equalities (callable at `sail_to_rv64 state`).
+* per-op row-shape contract's lane equalities (callable at `sail_to_rv64 state`).
 * `matches_entry` (caller-supplied or projected).
 * `binary_extension_op_is_shift_pin` (trust ledger) → `v.op_is_shift = 1`.
 * `binary_extension_columns_in_range` (trust ledger) → per-a-byte

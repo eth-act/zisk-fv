@@ -18,7 +18,7 @@ per-opcode differences are:
 * The Zisk opcode literal:
     * MUL     → `OP_MUL = 180` (`0xb4`),
     * MULH    → `OP_MULH = 181` (`0xb5`),
-    * MULHU   → `OP_MULUH = 177` (`0xb1`, renamed by the transpiler),
+    * MULHU   → `OP_MULUH = 177` (`0xb1`, renamed by row-shape provenance),
     * MULHSU  → `OP_MULSUH = 179` (`0xb3`, renamed).
 * The Arith-side output lane — low 64 bits for MUL, high 64 bits for the
   MULH variants. Both land on `c_lo = c[0] + c[1]*2^16`, `c_hi =

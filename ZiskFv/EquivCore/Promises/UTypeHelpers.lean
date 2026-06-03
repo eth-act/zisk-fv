@@ -64,7 +64,7 @@ production-extracted row shape.
 
 /-- Assemble LUI's `h_circuit` from row-shape provenance. The row-shape
     hypotheses are exactly the decode/lower columns that the Aeneas-extracted
-    transpiler path is expected to justify for a selected LUI row. -/
+    row-shape path is expected to justify for a selected LUI row. -/
 def lui_h_circuit_of_row_provenance
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (p : ZiskFv.Compliance.MainRowProvenance m r_main)
@@ -91,7 +91,7 @@ def lui_h_circuit_of_row_provenance
 
 /-- Assemble AUIPC's `h_circuit` from row-shape provenance. The row-shape
     hypotheses are exactly the decode/lower columns that the generated
-    transpiler path is expected to justify for a selected AUIPC row. -/
+    row-shape path is expected to justify for a selected AUIPC row. -/
 def auipc_h_circuit_of_row_provenance
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (p : ZiskFv.Compliance.MainRowProvenance m r_main)

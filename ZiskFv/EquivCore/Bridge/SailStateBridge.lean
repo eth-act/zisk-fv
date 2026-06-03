@@ -14,14 +14,14 @@ every ALU-shape *discharge bridge*. Distinct from `StateBridge.lean`:
 that file holds the **opcode-independent packed-lane arithmetic**
 (`bv64_packed_eq_of_lanes`), while this file holds the **Sail-state
 materialisation** that turns a Sail `read_xreg` fact into a `RV64State`
-suitable for instantiating the `transpile_<OP>` axioms.
+suitable for instantiating the per-op row-shape contract axioms.
 
-The bridge takes a Sail register-read fact and the `transpile_<OP>`
+The bridge takes a Sail register-read fact and the per-op row-shape contract
 lane equalities and produces the packed-lane form of `r_val`:
 
 ```
 read_xreg rs state = .ok r_val state          (caller-supplied; Sail-form)
-transpile_<OP> at (sail_to_rv64 state) rs     (trust-ledger)
+per-op row-shape contract at (sail_to_rv64 state) rs     (trust-ledger)
   → m.a_0 r_main = lane_lo r_val
   → m.a_1 r_main = lane_hi r_val
 bv64_packed_eq_of_lanes
@@ -29,16 +29,16 @@ bv64_packed_eq_of_lanes
 ```
 
 The trust footprint is unchanged: this module adds no axioms. The
-universal-over-`RV64State` shape of the `transpile_<OP>` axioms makes
+universal-over-`RV64State` shape of the per-op row-shape contract axioms makes
 the instantiation at `sail_to_rv64 state` go through — we materialize
 the RV64 state whose `xreg` agrees with Sail's `read_xreg`, instantiate
 the axiom there, and recover the lane equalities at `r_val`.
 
-(The universal-over-state shape of the `transpile_<OP>` family is a
+(The universal-over-state shape of the per-op row-shape contract family is a
 known *trust-ledger* coarsening — a sound formulation would
 existentially quantify the state. This module extracts exactly the
 state-instantiation that the sound formulation would deliver, so
-narrowing `transpile_<OP>` to existential form later would not
+narrowing per-op row-shape contract to existential form later would not
 affect this module's API.)
 -/
 
@@ -51,7 +51,7 @@ open ZiskFv.EquivCore.Bridge.StateBridge
 /-- Materialize the `RV64State` whose `xreg` accessor pulls each
     register slot through Sail's `read_xreg`. The `pc` field is
     irrelevant to the input-bridge derivation in every ALU-shape
-    *discharge bridge* — those consume only `transpile_<OP>`'s
+    *discharge bridge* — those consume only per-op row-shape contract's
     a/b-lane conjuncts, not its pc-related conjuncts — so we fix it
     to `0#64` rather than threading a `Sail.readReg Register.PC`
     unwrap.
@@ -87,7 +87,7 @@ lemma sail_to_rv64_xreg_eq_of_read_xreg
 
     Composes `sail_to_rv64_xreg_eq_of_read_xreg` (above) with
     `bv64_packed_eq_of_lanes`. Opcode-independent — every
-    `transpile_<OP>` lane-equality pair has this shape after the rs
+    per-op row-shape contract lane-equality pair has this shape after the rs
     is the right register. -/
 lemma packed_lane_eq_of_read_xreg
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -103,7 +103,7 @@ lemma packed_lane_eq_of_read_xreg
 /-- **ADD-shape input bridges (r1 + r2 in one call).** Specializes
     `packed_lane_eq_of_read_xreg` to explicit Main source-lane facts.
     Delivers both r1 and r2 packed-lane equations without consulting the
-    retired transpiler bridge. -/
+    retired row-shape bridge. -/
 lemma add_input_bridges_of_read_xreg
 
     (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)

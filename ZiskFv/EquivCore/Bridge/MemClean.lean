@@ -171,7 +171,7 @@ bus path.
 This is the binder shape intended for the eventual canonical structural
 unpacking step: one explicit object collects the selected Clean Main row,
 the selected Clean Mem provider row, row-equality pins to the existing
-validators, ROM/transpile address and rd-routing pins, and legacy adapter
+validators, ROM/row-shape address and rd-routing pins, and legacy adapter
 matches. It deliberately contains no axiom and no universal promise. -/
 structure LdCleanWitness
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
@@ -264,7 +264,7 @@ This packages the two pieces needed to replace the old LD path:
 
 The structural pins are deliberately explicit. In the final T4 migration
 they must come from the memory-family witness, balance proof, row equality,
-and ROM/transpile facts, not from new canonical promise hypotheses. -/
+and ROM/row-shape facts, not from new canonical promise hypotheses. -/
 theorem ld_discharge_full_clean_provider
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
@@ -396,7 +396,7 @@ theorem ld_discharge_full_clean_provider_of_witness
 /-- Structural Clean witness for SD's Main store-side memory-bus path.
 
 The full-width store only needs the selected Clean Main c/store row: the
-byte payload comes from Main's copyb row plus the transpiler register-read
+byte payload comes from Main's copyb row plus the row-shape register-read
 bridge, and no MemAlign RMW provider is involved. -/
 structure SdCleanWitness
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
@@ -499,7 +499,7 @@ structure SwCleanWitness
 This is the store-side analogue of `ld_discharge_full_clean_provider` for
 the Main c/store message. The Clean row and message match provide the
 legacy lane and pointer facts; `Spec` provides the copyb constraints; the
-transpile/read-xreg bridge pins `b` to `rs2`; the private byte lemmas above
+row-shape/read-xreg bridge pins `b` to `rs2`; the private byte lemmas above
 turn the two 32-bit lanes into the byte equalities consumed by `equiv_SD`.
 
 This theorem has no new axioms and does not use

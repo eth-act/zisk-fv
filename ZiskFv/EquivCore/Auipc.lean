@@ -81,7 +81,7 @@ lemma equiv_AUIPC_sail
     h_input_imm h_input_rd h_input_pc
 
 /-- **AUIPC x0 equivalence.** When `rd = x0`, Sail emits no x-register
-    write and the production/static transpiler emits no Main memory-bus
+    write and the production/static lowerer emits no Main memory-bus
     register write. The state effect is therefore the empty-memory-bus
     execution shape: only `nextPC` is written. -/
 lemma equiv_AUIPC_x0_no_memory

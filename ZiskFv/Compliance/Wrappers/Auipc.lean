@@ -23,8 +23,8 @@ open ZiskFv.Airs.Main
 open ZiskFv.Tactics.UTypeArchetype
 
 /-- Compliance wrapper for the AUIPC `rd = x0` no-memory shape. This route
-    does not consume Main AUIPC mode pins, dynamic AUIPC transpiler bridges, or
-    store-value witnesses because Sail and the production/static transpiler
+    does not consume Main AUIPC mode pins, dynamic AUIPC row-shape bridges, or
+    store-value witnesses because Sail and the production/static lowerer
     both perform no x-register write. -/
 lemma equiv_AUIPC_x0_no_memory
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

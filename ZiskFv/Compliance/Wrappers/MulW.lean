@@ -42,7 +42,7 @@ import ZiskFv.Compliance.SharedBundles
 >   pass-throughs.
     > * `h_rs1_value`, `h_rs2_value` — signed-extractLsb-31-0 operand bridges
     >   derived from the operation-bus W high-lane collapse plus the
-    >   transpiler row contract.
+    >   row-shape contract.
 -/
 
 namespace ZiskFv.Compliance

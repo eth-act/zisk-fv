@@ -7,7 +7,7 @@ import ZiskFv.Compliance.SharedBundles
 # Row-shape provenance for Main rows
 
 This module defines the proof-facing row-shape provenance bridge that replaced
-the old transpiler contract surface and no longer depends on the hand-written
+the old row-shape contract surface and no longer depends on the hand-written
 Lean row-lowering model.
 
 The Aeneas extraction harness extracts and checks the Rust decode/lower path as
@@ -43,7 +43,7 @@ def selectorF (value tag : Nat) : FGL :=
 /-- Instruction row-shape fields of a production-extracted ZisK row.
 
 This is intentionally just a row-shape record, not a second Lean
-implementation of the transpiler. The production-backed Aeneas regeneration
+implementation of the production lowerer. The production-backed Aeneas regeneration
 checks exercise the Rust extraction path that computes these fields. -/
 structure MainExtractedRow where
   paddr : Nat

@@ -13,8 +13,8 @@ immediate.
 SLLIW's Main-AIR row mirrors SLLW's exactly (same `op = OP_SLL_W = 36`,
 same `m32 = 1` bus path, same `is_external_op = 1` to the
 `BinaryExtension` SM). The only difference is **operand routing**:
-`transpile_SLLIW` emits `b_lo = shamt_w_b_lo shamt` (immediate source)
-where `transpile_SLLW` emits `b_lo = lane_lo (state.xreg rs2)` (register
+SLLIW row-shape contract emits `b_lo = shamt_w_b_lo shamt` (immediate source)
+where SLLW row-shape contract emits `b_lo = lane_lo (state.xreg rs2)` (register
 source). Since the `ShiftArchetype` m32=1 macro theorem is
 `b_lo`-source-agnostic (it reasons only about `bus_entry.b_hi` /
 `opBus_row_Main` via the `(1 - m32) * b[1]` PIL collapse, not about

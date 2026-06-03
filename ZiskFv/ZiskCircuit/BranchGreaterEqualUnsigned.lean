@@ -29,7 +29,7 @@ open ZiskFv.Tactics.BranchArchetype
 
 
 /-- The Main row at `r_main` is in BGEU-execution mode (shape = BLTU;
-    polarity differs via the transpile axiom). -/
+    polarity differs via the row-shape provenance bridge). -/
 @[simp]
 def main_row_in_bgeu_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1

@@ -7,7 +7,7 @@ open LeanRV64D.Functions
 ## RV64M REMUW — pure spec + Sail equivalence
 
 REMUW is the unsigned 32-bit remainder. Per
-`riscv2zisk_context.rs:255`, transpiles via
+`riscv2zisk_context.rs:255`, lowers via
 `create_register_op(..., "remu_w", 4)`, op = OP_REMU_W = 0xbd = 189,
 m32 = 1, secondary lane.
 

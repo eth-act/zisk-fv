@@ -15,7 +15,7 @@ Compositional AUIPC spec.
 AUIPC has no secondary state-machine hop — the whole microinstruction
 is handled by the Main AIR alone (internal `flag` routing). Given the
 named `auipc_subset_holds` Main constraints and the mode witnesses
-supplied by `transpile_AUIPC` (`op = OP_FLAG = 0`,
+supplied by AUIPC row-shape contract (`op = OP_FLAG = 0`,
 `is_external_op = 0`, `m32 = 0`, `set_pc = 0`, `store_pc = 1`), the
 next-row `pc` cell equals `pc + jmp_offset1 = pc + 4`, and the
 store-value low lane equals `pc + jmp_offset2 = pc + imm`.
@@ -40,11 +40,11 @@ open ZiskFv.PackedBitVec.WidePCNoWrap
 
 
 /-- **Compositional AUIPC theorem — next-pc advance.** The next-pc
-    equals `pc + jmp_offset1`. Under `transpile_AUIPC`'s pinning
+    equals `pc + jmp_offset1`. Under AUIPC row-shape contract's pinning
     `jmp_offset1 = 4`, this gives `pc + 4`.
 
     Note that AUIPC's `jmp_offset2` carries the immediate, not the
-    fall-through offset — `transpile_AUIPC`'s `j(4, imm)` call inverts
+    fall-through offset — AUIPC row-shape contract's `j(4, imm)` call inverts
     the `j1/j2` assignment relative to JAL's `j(imm, 4)`. The PC
     handshake's `flag * (jmp_offset1 - jmp_offset2)` term cancels the
     `jmp_offset2` contribution, leaving `pc + jmp_offset1 = pc + 4`. -/
@@ -101,11 +101,11 @@ PC-plus-offset Sail sum. -/
        collapses to `pc + jmp_offset2`.
     2. `store_pc_lanes_match_lo` — the bus entry's lo half equals the
        same PIL expression.
-    3. `transpile_PC_for_AUIPC` — `(m.pc r).val = PC.toNat`.
+    3. AUIPC PC provenance contract — `(m.pc r).val = PC.toNat`.
     4. `h_offset_bridge` — caller-supplied bridge from the FGL-side
        `m.jmp_offset2 r` to the Sail-side `offset_bv.toNat` (this is
-       the transpile contract for AUIPC's offset routing,
-       `transpile_AUIPC` pins `jmp_offset2 = imm_offset` at the FGL
+       the row-shape contract for AUIPC's offset routing,
+       AUIPC row-shape contract pins `jmp_offset2 = imm_offset` at the FGL
        level; the BitVec ↔ FGL `.val ↔ .toNat` bridge is taken as
        hypothesis here).
     5. `WidePCNoWrap.fgl_pc_plus_offset_val_eq_lo_strict` — under

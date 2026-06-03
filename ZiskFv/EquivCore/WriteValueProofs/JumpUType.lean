@@ -31,7 +31,7 @@ parameter list. Parameter trust classes:
   with K3 `pc_plus4_bv64_of_bytes`.
 
 * For **LUI**: `lui_archetype_circuit_holds` + `register_write_lanes_match`
-  (ties `c_0`/`c_1` to entry bytes) + transpiler b-lane Nat pins (`h_imm_lo_nat`,
+  (ties `c_0`/`c_1` to entry bytes) + row-shape b-lane Nat pins (`h_imm_lo_nat`,
   `h_imm_hi_nat`, renamed from `h_b0_lo`/`h_b1_hi`) + K3
   `u64_toBV_of_imm20_lanes`. The `h_lo_is_lo` pure-math fact is now derived
   internally using `BitVec.toNat_signExtend`.
@@ -56,8 +56,8 @@ and the PIL bus-emission contract. The FGL store_value-to-entry-lo hypotheses
 (`h_entry_lo_eq`) are the interface point between Main's internal circuit
 constraints and the memory bus's byte emission. The Nat hi-half hypotheses
 (`h_entry_hi_nat`) capture the high 4 bytes of the 64-bit value; the
-transpiler b-lane Nat pins (`h_imm_lo_nat`, `h_imm_hi_nat`) tie Sail's
-`imm : BitVec 20` to Main's `b` columns (transpile-trusted surface).
+row-shape b-lane Nat pins (`h_imm_lo_nat`, `h_imm_hi_nat`) tie Sail's
+`imm : BitVec 20` to Main's `b` columns (row-shape provenance surface).
 -/
 
 set_option maxHeartbeats 800000
@@ -169,9 +169,9 @@ private lemma byte_sum_from_lo_hi
     * `h_circuit : jal_circuit_holds m r_main next_pc` — CIRCUIT-CONSTRAINT.
       Gives `jal_store_value` and the JAL-mode witnesses
       (`is_external_op = 0`, `op = OP_FLAG`) needed to invoke the
-      `transpile_PC_for_JAL` axiom internally.
+      JAL PC provenance contract axiom internally.
     * `h_jmp2 : m.jmp_offset2 r_main = 4` — TRANSPILE-PIN (from
-      `transpile_JAL`).
+      JAL row-shape contract).
     * `h_lane_lo : store_pc_lanes_match_lo m r_main e2` and
       `h_lane_hi : store_pc_lanes_match_hi m r_main e2` — LANE-MATCH
       (S4 produces these from a memory-bus emission witness via
@@ -186,7 +186,7 @@ private lemma byte_sum_from_lo_hi
       `pc < 2^32` invariant).
     * `h0..h7 : (byteAt e2 i).val < 256` — RANGE (per-byte range bounds).
 
-    **Proof chain.** `transpile_PC_for_JAL` (gated by mode witnesses
+    **Proof chain.** JAL PC provenance contract (gated by mode witnesses
     extracted from `h_circuit`) gives `(m.pc r_main).val = PC.toNat`.
     `jal_store_value_lo_bv` composes that with `h_circuit, h_jmp2,
     h_lane_lo, h_pc_bound, h_lo_bound` to deliver
@@ -342,8 +342,8 @@ lemma h_rd_val_jut_jalr
        `c_0 = b_0` and `c_1 = b_1` via `lui_archetype_store_value_lo/hi`.
     2. `h_lane_rd : register_write_lanes_match m r_main e2` — ties
        `c_0/c_1` to `memory_entry_lo/hi e2` (valid for LUI since `c = b = imm`).
-    3. `h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ 0#12).toNat` — transpiler b-lane pin.
-    4. `h_imm_hi_nat : (m.b_1 r_main).val = (BitVec.signExtend 64 (imm ++ 0#12)).toNat / 4294967296` — transpiler b-lane pin.
+    3. `h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ 0#12).toNat` — row-shape b-lane pin.
+    4. `h_imm_hi_nat : (m.b_1 r_main).val = (BitVec.signExtend 64 (imm ++ 0#12)).toNat / 4294967296` — row-shape b-lane pin.
     5. Per-byte range bounds on `e2`.
 
     The low-half identity `(sext 64 (imm ++ 0#12)).toNat % 2^32 = (imm ++ 0#12).toNat`
@@ -440,7 +440,7 @@ lemma h_rd_val_jut_lui
     from circuit primitives. AUIPC differs from JAL/JALR in two ways:
 
     1. The offset is `signExtend 64 (imm ++ 0#12)` rather than the
-       constant 4. The transpile contract (`transpile_AUIPC`) pins
+       constant 4. The row-shape contract (AUIPC row-shape contract) pins
        `m.jmp_offset2 r = imm_offset` for some FGL representative, but
        the BitVec-side lift requires the caller to supply
        `h_offset_bridge : (m.jmp_offset2 r_main).val = (signExtend 64 (imm ++ 0#12)).toNat`.

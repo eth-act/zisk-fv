@@ -21,7 +21,7 @@ import ZiskFv.Channels.MemoryBusBytes
 /-!
 End-to-end theorem for RV64M DIVUW (unsigned 32-bit divide).
 
-DIVUW is the W-variant sibling of DIVU. Both transpile through
+DIVUW is the W-variant sibling of DIVU. Both lower through
 `create_register_op` with `m32 = 1` for the 32-bit width. Sail-side,
 both call `execute_DIVW` with `is_unsigned = true`.
 

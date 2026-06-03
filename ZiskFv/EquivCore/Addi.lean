@@ -31,7 +31,7 @@ End-to-end theorem for RV64 ADDI.
 Mirrors `Equivalence.Sub` / `Equivalence.And` shape with
 `rop.<OP> → iop.ADDI` on the Sail side and `OP_SUB/AND → OP_ADD`
 on the circuit side. ADDI shares `OP_ADD` with ADD — the piggyback
-is transpiler-internal; the Main-AIR row carries the sign-extended
+is lowerer-internal; the Main-AIR row carries the sign-extended
 12-bit immediate through `(b_lo, b_hi)` rather than from `xreg(rs2)`.
 
 **Bus-shape note (inherited from SLLI precedent).** The equivalence

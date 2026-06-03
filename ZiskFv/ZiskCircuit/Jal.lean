@@ -10,7 +10,7 @@ import ZiskFv.Airs.OperationBus.OperationBus
 
 /-!
 Compositional JAL (jump-and-link) spec: given the named jump-subset Main
-constraints and the mode witnesses supplied by `transpile_JAL`
+constraints and the mode witnesses supplied by JAL row-shape contract
 (`op = OP_FLAG = 0`, `is_external_op = 0`, `m32 = 0`, `set_pc = 0`,
 `store_pc = 1`), the *next-row* `pc` cell equals `pc + jmp_offset1`
 (= `pc + imm`) and the store-value lane zero equals `pc + jmp_offset2`
@@ -32,7 +32,7 @@ extend `jal_store_value` (which ties the Main columns
 the **memory-bus entry** lanes via the `store_pc_lanes_match_*`
 predicates from `Airs/MemoryBus.lean`, composed with the wide-PC
 no-wrap toolkit (`Fundamentals/PackedBitVec/WidePCNoWrap.lean`) and
-the `transpile_PC_for_JAL` axiom.
+the JAL PC provenance contract axiom.
 
 The hi-half is structurally trivial under JAL's `store_pc = 1` mode:
 the PIL formula `(1 - store_pc) * c_1` collapses to `0`, so
@@ -66,7 +66,7 @@ def main_row_in_jal_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   ∧ m.store_pc r_main = 1
 
 /-- Hypotheses needed by `jal_compositional`. All four circuit-side
-    obligations are constraint witnesses plus the transpile-axiom's
+    obligations are constraint witnesses plus the row-shape provenance witness's
     mode witnesses — no external SM delegation needed (JAL is internal
     op 0). -/
 @[simp]
@@ -82,7 +82,7 @@ def jal_circuit_holds
     `op = 0`, `m32 = 0`, `set_pc = 0`, `store_pc = 1`), the next-row `pc`
     equals `pc + jmp_offset1`.
 
-    Composed with `transpile_JAL` (which pins `jmp_offset1 = imm`), this
+    Composed with JAL row-shape contract (which pins `jmp_offset1 = imm`), this
     says JAL advances PC to `pc + imm`, consistent with the RISC-V
     unconditional-jump semantics. -/
 lemma jal_pc_advance
@@ -101,7 +101,7 @@ lemma jal_pc_advance
     - c_0) + c_0` expression (`main.pil:311`) under JAL's mode
     witnesses (`store_pc = 1`, and `c_0 = 0` from constraint 8 with
     `is_external_op = 0, op = 0`) evaluates to `pc + jmp_offset2`.
-    With `transpile_JAL` pinning `jmp_offset2 = 4`, this is the
+    With JAL row-shape contract pinning `jmp_offset2 = 4`, this is the
     `pc + 4` return-address value written to rd. -/
 lemma jal_store_value
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
@@ -126,8 +126,8 @@ lemma jal_store_value
        to `pc + jmp_offset2`.
     2. `store_pc_lanes_match_lo` — the bus entry's lo half equals the
        same PIL expression `store_pc * (pc + jmp_offset2 - c_0) + c_0`.
-    3. `transpile_JAL`'s `jmp_offset2 = 4` pin.
-    4. `transpile_PC_for_JAL` — `(m.pc r).val = PC.toNat`.
+    3. JAL row-shape contract's `jmp_offset2 = 4` pin.
+    4. JAL PC provenance contract — `(m.pc r).val = PC.toNat`.
     5. `WidePCNoWrap.fgl_pc_plus_offset_val_eq_lo_strict` — under the
        no-wrap hypothesis (PC trajectory bound) and the lo-half range
        bound on the FGL sum, the FGL `(pc_fgl + 4).val` equals

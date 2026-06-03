@@ -46,7 +46,7 @@ trust/scripts/check-all-semantic.sh
 ```
 
 The full repository test path, including the pinned Aeneas production-backed
-transpiler extraction harness, is:
+lowering extraction harness, is:
 
 ```bash
 nix run .#test
@@ -89,7 +89,7 @@ load, and store helper families.
 
 The proof-side migration target is
 `ZiskFv.Compliance.MainRowProvenance`: it ties selected Main/ROM rows to
-row shapes produced by the decode/lower model. The former transpiler axiom
+row shapes produced by the decode/lower model. The former hand-written row-shape axiom
 surface is now retired from the Lean source ledger; dynamic immediate/PC and
 operand-lane obligations are explicit route facts.
 

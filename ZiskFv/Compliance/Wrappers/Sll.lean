@@ -73,7 +73,7 @@ open ZiskFv.EquivCore.Promises
     bounds from the exact Clean/static BinaryExtensionTable provider
     row, so its semantic closure no longer includes the generic
     retired range-bus axiom. The remaining opcode-specific trust is
-    `transpile_SLL` (class #1). Zero new axioms. -/
+    SLL row-shape contract (class #1). Zero new axioms. -/
 lemma equiv_SLL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)

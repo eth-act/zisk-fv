@@ -131,7 +131,7 @@ lemma load_bu_compositional_via_archetype
   rw [h_packed, memory_entry_toField_eq_byte h_zero]
 
 /-- **Next-PC for LBU.** Identical derivation to LD / LWU / LHU —
-    `jmp_offset1 = jmp_offset2 = 4` (from `transpile_LBU`) + `flag = 0`
+    `jmp_offset1 = jmp_offset2 = 4` (from LBU row-shape contract) + `flag = 0`
     (constraint 18) collapses the PC handshake to `pc + 4`. -/
 lemma load_bu_next_pc_concrete
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)

@@ -37,7 +37,7 @@ shape (a) — two-entry execution bus + three-entry memory bus
 `[source, source, dst]`.
 
 Routing note. ADDIW and ADDW share `OP_ADD_W` + `m32 = 1` at the
-operation-bus layer; they differ only in the transpile axiom's
+operation-bus layer; they differ only in the row-shape provenance bridge's
 `b`-lane shape (reg for ADDW, imm for ADDIW).
 -/
 
