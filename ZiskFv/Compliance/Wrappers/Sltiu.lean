@@ -49,6 +49,11 @@ lemma equiv_SLTIU
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_main_m32 : m.m32 r_main = 0)
+    (h_input_r1_row : sltiu_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -104,14 +109,9 @@ lemma equiv_SLTIU
   have h_matches :=
     ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
       row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_LTU h_bop h_bop_or_sext
-  obtain ⟨h_m32, _, _, _, _, _, _, _, _⟩ :=
-    transpile_SLTIU m r_main (regidx_to_fin r1) (regidx_to_fin rd)
-      (m.b_0 r_main) (m.b_1 r_main)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_sltiu
   have h_input_imm_v :=
     ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
-      m row r_main sltiu_input.imm h_matches h_m32 h_match h_sltiu_subset
+      m row r_main sltiu_input.imm h_matches h_main_m32 h_match h_sltiu_subset
   have h_input_imm_row : BitVec.signExtend 64 sltiu_input.imm
       = BitVec.ofNat 64
           ((row.bBytes.free_in_b_0).val + (row.bBytes.free_in_b_1).val * 256
@@ -125,6 +125,8 @@ lemma equiv_SLTIU
   exact ZiskFv.EquivCore.Sltiu.equiv_SLTIU_of_static_row
     state sltiu_input r1 rd imm m row r_main bus promises
     ⟨h_main_active, h_main_op_sltiu⟩
-    h_match h_core h_facts h_row_m32 h_bop h_lane_rd h_input_imm_row
+    h_match h_core h_facts h_row_m32 h_bop
+    (by simpa [row] using h_input_r1_row)
+    h_lane_rd h_input_imm_row
 
 end ZiskFv.Compliance

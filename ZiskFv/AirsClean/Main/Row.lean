@@ -94,7 +94,7 @@ structure MainRomRow (F : Type) where
   -- T4.0.5 additions: 4 memory-bus emission helper columns.
   /-- `a`-side memory access address (`main.pil:180,188,191`:
       `addr0 = a_offset_imm0 + a_use_sp_imm1*sp` in the precompiled path,
-      `addr0 = a_offset_imm0` otherwise). For the LD spike we treat
+      `addr0 = a_offset_imm0` otherwise). For the LD proof experiment we treat
       both branches uniformly as a witness column. -/
   addr0 : F
   /-- `b`-side memory access address (`main.pil:181,189,192`:

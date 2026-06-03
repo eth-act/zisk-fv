@@ -35,6 +35,10 @@ path = "build/sail-lean"
 name = "Clean"
 path = "build/clean-lean"
 
+[[require]]
+name = "aeneas"
+path = "tools/aeneas-rv64im-extraction/.aeneas-lean"
+
 [[lean_lib]]
 name = "ZiskFv"
 

@@ -101,27 +101,24 @@ lemma packed_lane_eq_of_read_xreg
   exact bv64_packed_eq_of_lanes h_a_lo h_a_hi
 
 /-- **ADD-shape input bridges (r1 + r2 in one call).** Specializes
-    `packed_lane_eq_of_read_xreg` to the `transpile_ADD` row contract.
-    Delivers both r1 and r2 packed-lane equations in a single axiom
-    application — consumed by `Bridge.BinaryAdd.add_discharge` to
-    replace its two caller-supplied `h_input_r{1,2}_main` *promise
-    hypotheses* with the Sail-form `read_xreg` facts that
-    `equiv_ADD` already carries. -/
+    `packed_lane_eq_of_read_xreg` to explicit Main source-lane facts.
+    Delivers both r1 and r2 packed-lane equations without consulting the
+    retired transpiler bridge. -/
 lemma add_input_bridges_of_read_xreg
 
     (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs1 rs2 : Fin 32) (r1_val r2_val : BitVec 64)
-    (h_active : m.is_external_op r_main = 1)
-    (h_op : m.op r_main = OP_ADD)
+    (h_a_lo : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
+    (h_a_hi : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
+    (h_b_lo : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
+    (h_b_hi : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
     r1_val
       = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296)
     ∧ r2_val
       = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) := by
-  obtain ⟨h_a_lo, h_a_hi, h_b_lo, h_b_hi, _, _, _, _, _⟩ :=
-    transpile_ADD m r_main (sail_to_rv64 state) rs1 rs2 h_active h_op
   refine ⟨?_, ?_⟩
   · exact packed_lane_eq_of_read_xreg state rs1 r1_val
       (m.a_0 r_main) (m.a_1 r_main) h_a_lo h_a_hi h_read_r1
@@ -129,28 +126,17 @@ lemma add_input_bridges_of_read_xreg
       (m.b_0 r_main) (m.b_1 r_main) h_b_lo h_b_hi h_read_r2
 
 /-- **ADDI-shape r1 input bridge.** Specializes
-    `packed_lane_eq_of_read_xreg` to the `transpile_ADDI` row contract
-    — single register read (`rs1`), with the b-lanes carrying an
-    immediate the axiom leaves caller-routed. Consumed by
-    `equiv_ADDI` to discharge `h_input_r1_circuit` after translating
-    Main lanes to BinaryAdd-row lanes via the existing
-    `matches_entry` projection inside `addi_circuit_holds_with_binaryadd`. -/
+    `packed_lane_eq_of_read_xreg` to explicit Main source-lane facts. -/
 lemma addi_input_r1_main_eq_of_read_xreg
 
     (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (rs1 rd_dummy : Fin 32) (r1_val : BitVec 64)
-    (h_active : m.is_external_op r_main = 1)
-    (h_op : m.op r_main = OP_ADD)
+    (rs1 : Fin 32) (r1_val : BitVec 64)
+    (h_a_lo : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
+    (h_a_hi : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state) :
     r1_val
       = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) := by
-  -- `transpile_ADDI`'s `imm_b_lo`/`imm_b_hi` are caller-routed; we
-  -- instantiate them to `m.b_0`/`m.b_1` so the unused b-conjuncts
-  -- become reflexive and we extract only the a-lane facts.
-  obtain ⟨_, _, _, _, _, _, h_a_lo, h_a_hi, _, _⟩ :=
-    transpile_ADDI m r_main rs1 rd_dummy
-      (m.b_0 r_main) (m.b_1 r_main) (sail_to_rv64 state) h_active h_op
   exact packed_lane_eq_of_read_xreg state rs1 r1_val
     (m.a_0 r_main) (m.a_1 r_main) h_a_lo h_a_hi h_read_r1
 

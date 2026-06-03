@@ -61,8 +61,9 @@ open ZiskFv.EquivCore.Promises
 
     W-mode primary-lane MUL discharge: `m32 = 1`, op = 182. Discharges
     mode pins + `h_byte_lo` + `h_chain` + sign-witness booleanity/XOR
-    from the trust ledger; passes through `h_sext_choice`, `h_rs1_value`,
-    `h_rs2_value` as W-form operand bridge obligations (analogous to DIVW). -/
+    from the trust ledger; passes through high-limb zero, `h_sext_choice`,
+    `h_rs1_value`, `h_rs2_value` as W-form operand bridge obligations
+    (analogous to DIVW). -/
 lemma equiv_MULW_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
@@ -86,6 +87,8 @@ lemma equiv_MULW_of_table
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
     -- Pass-through caller burdens (W-mode sign-extension + W-form operand bridges).
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
@@ -107,7 +110,7 @@ lemma equiv_MULW_of_table
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   have h_arith_table := arith_table.spec
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op_mulw⟩ := pins
+  obtain ⟨_h_main_active, h_main_op_mulw⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
   have h_m2_mult := promises.m2_mult
   have h_m2_as := promises.m2_as
@@ -116,7 +119,7 @@ lemma equiv_MULW_of_table
   have h_op_arith_mulw : v.op r_a = 182 := by
     rw [h_op_eq, h_main_op_mulw]; simp [OP_MUL_W]
   -- ============ Unpack matches_entry lane projections ============
-  obtain ⟨_h_a_lo_eq_FGL, h_a_hi_eq_FGL, _h_b_lo_eq_FGL, h_b_hi_eq_FGL,
+  obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
           h_c0_eq_FGL, _h_c1_eq_FGL⟩ :=
     arith_mul_primary_projections h_match_primary
   -- ============ Unpack extended row-constraint bundle ============
@@ -141,17 +144,11 @@ lemma equiv_MULW_of_table
   -- main_external_arith_emission_bundle 14-way disjunction
   -- (MULU, MULUH, MULSUH, MUL, MULH, MUL_W, …).
   have h_bundle := arith_mem.c_lane_vals
-  obtain ⟨h_m32_main, _h_sp1, _h_sp2, _h_off1, _h_off2,
-         _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
-    ZiskFv.Trusted.transpile_MULW
-      m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_mulw
   have h_arith_chunk_ranges := arith_chunk_ranges.ranges
   have h_arith_carry_ranges := arith_carry_ranges.ranges
   have h_arith_chunk_ranges_arg := h_arith_chunk_ranges
-  obtain ⟨_h_a0_lt, _h_a1_lt, h_a2_lt, h_a3_lt,
-          _h_b0_lt, _h_b1_lt, h_b2_lt, h_b3_lt,
+  obtain ⟨_h_a0_lt, _h_a1_lt, _h_a2_lt, _h_a3_lt,
+          _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
           h_c0_lt, h_c1_lt, _h_c2_lt, _h_c3_lt,
           _h_d0_lt, _h_d1_lt, _h_d2_lt, _h_d3_lt⟩ :=
     h_arith_chunk_ranges
@@ -163,10 +160,6 @@ lemma equiv_MULW_of_table
       rw [arith_h_pair_lift _ _ h_c0_lt h_c1_lt]
       omega
     rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_e2_lo_bound, h_bundle.1]
-  have h_a23 := arith_chunk_pair_eq_zero_of_m32_one
-    (m.a_1 r_main) (m.m32 r_main) h_a_hi_eq_FGL h_m32_main h_a2_lt h_a3_lt
-  have h_b23 := arith_chunk_pair_eq_zero_of_m32_one
-    (m.b_1 r_main) (m.m32 r_main) h_b_hi_eq_FGL h_m32_main h_b2_lt h_b3_lt
   -- Byte-lane lo equation via cross-AIR `arith_byte_lane_eq_of_match`.
   have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_c0_lt h_c1_lt
   -- ============ Delegate to `equiv_MULW` ============
@@ -203,6 +196,8 @@ lemma equiv_MULW
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
@@ -226,6 +221,6 @@ lemma equiv_MULW
     state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises arith_mem
     arith_table
     h_row_constraints arith_chunk_ranges arith_carry_ranges
-    h_sext_choice h_rs1_value h_rs2_value
+    h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value
 
 end ZiskFv.Compliance

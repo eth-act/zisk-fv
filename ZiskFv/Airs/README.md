@@ -49,10 +49,9 @@ Most AIR-side soundness axioms have been retired by the Clean/static routes.
 Use `trust/generated/baseline-axioms.txt` and `trust/generated/axiom-index.md` for the current
 live ledger; this directory now mostly contains definitions and proved bridges.
 
-(The remaining non-`Airs/` axioms are transpile contracts in
-`Trusted/Transpiler.lean`, 1 memory-state load bridge in
-`ZiskCircuit/MemModel.lean`, and 4 platform-scope axioms in
-`SailSpec/Auxiliaries.lean` — not in this directory.)
+(The remaining non-`Airs/` soundness axiom is the memory-state load bridge in
+`ZiskCircuit/MemModel.lean`; Clean completeness placeholders are tracked
+separately in the generated ledger.)
 
 The allowlist of files permitted to declare trust-surface constructs
 is `trust/allowed-axiom-files.txt`; see `trust/trusted-base.md`

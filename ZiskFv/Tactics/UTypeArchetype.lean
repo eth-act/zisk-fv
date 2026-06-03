@@ -136,8 +136,8 @@ private lemma c_1_eq_b_1_of_internal_op_one
   linear_combination -h16
 
 /-- **LUI archetype PC-advance theorem.** The next-pc equals
-    `pc + jmp_offset2`. Together with `transpile_LUI` pinning
-    `jmp_offset2 = 4`, this gives `next_pc = pc + 4`. -/
+    `pc + jmp_offset2`; the equivalence layer separately bridges the
+    LUI-specific `jmp_offset2 = 4` fact. -/
 lemma lui_archetype_pc_advance
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
@@ -154,7 +154,8 @@ lemma lui_archetype_pc_advance
 
 /-- **LUI archetype store-value (low lane).** With `store_pc = 0`,
     `store_value[0] = c_0`, and under internal-op-1 `c_0 = b_0`. So rd's
-    low lane equals `b_0 = imm_lo` (pinned by `transpile_LUI`). -/
+    low lane equals `b_0`; the equivalence layer separately bridges
+    `b_0 = imm_lo`. -/
 lemma lui_archetype_store_value_lo
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
@@ -173,7 +174,7 @@ lemma lui_archetype_store_value_lo
 
 /-- **LUI archetype store-value (high lane).** With `store_pc = 0`,
     the high lane is `(1 - store_pc) * c_1 = c_1`. Under internal-op-1,
-    `c_1 = b_1 = imm_hi` (pinned by `transpile_LUI`). -/
+    `c_1 = b_1`; the equivalence layer separately bridges `b_1 = imm_hi`. -/
 lemma lui_archetype_store_value_hi
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :

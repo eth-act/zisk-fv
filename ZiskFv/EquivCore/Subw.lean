@@ -21,6 +21,7 @@ import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.EquivCore.Promises.RType
+import ZiskFv.EquivCore.Addw
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Channels.MemoryBusBytes
 
@@ -118,6 +119,12 @@ lemma equiv_SUBW_of_wf
         c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 ≥ 2147483648))
     (h_match_clo : m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216)
     (h_match_chi : m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216)
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryValidA32 v r_binary % 2^32)
+    (h_input_r2_extract :
+      (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryValidB32 v r_binary % 2^32)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     (do
       Sail.writeReg Register.nextPC
@@ -158,90 +165,6 @@ lemma equiv_SUBW_of_wf
   have hb3 : (v.free_in_b_3 r_binary).val < 256 := by
     obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_3
     rw [← h_b]; exact h_wf.1.2.1
-  have h_input_r1_extract :
-      (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
-      = ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-          + (v.free_in_a_2 r_binary).val * 65536
-          + (v.free_in_a_3 r_binary).val * 16777216) % 2^32 := by
-    obtain ⟨_, _, _, _, _, _, h_a_lo_t, h_a_hi_t, _, _⟩ :=
-      transpile_SUBW m r_main (regidx_to_fin r1) (regidx_to_fin r2) (regidx_to_fin rd)
-        (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-        h_main_active h_main_op_subw
-    have h_r1_main :=
-      ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-        state (regidx_to_fin r1) subw_input.r1_val (m.a_0 r_main) (m.a_1 r_main)
-        h_a_lo_t h_a_hi_t h_input_r1
-    have h_lane_eqs := h_match
-    simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
-    obtain ⟨_, _, h_a_lo_m, _, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
-    have h_a0_val : (m.a_0 r_main).val =
-        (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-        + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216 := by
-      rw [h_a_lo_m]
-      have h_cast :
-          v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
-            + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary
-          = ((((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-                + (v.free_in_a_2 r_binary).val * 65536
-                + (v.free_in_a_3 r_binary).val * 16777216 : ℕ) : FGL)) := by
-        push_cast; ring
-      rw [h_cast, Fin.val_natCast]
-      apply Nat.mod_eq_of_lt
-      have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
-      omega
-    rw [h_r1_main]
-    have h_byte_lt : (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-                     + (v.free_in_a_2 r_binary).val * 65536
-                     + (v.free_in_a_3 r_binary).val * 16777216 < 4294967296 := by omega
-    simp only [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
-               BitVec.toNat_ofNat, BitVec.toNat_setWidth, Nat.shiftRight_zero,
-               show (31 - 0 + 1 : ℕ) = 32 from rfl,
-               show (2:ℕ)^32 = 4294967296 from rfl,
-               show (2:ℕ)^64 = 18446744073709551616 from rfl]
-    rw [h_a0_val]
-    omega
-  have h_input_r2_extract :
-      (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
-      = ((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
-          + (v.free_in_b_2 r_binary).val * 65536
-          + (v.free_in_b_3 r_binary).val * 16777216) % 2^32 := by
-    obtain ⟨_, _, _, _, _, _, _, _, h_b_lo_t, h_b_hi_t⟩ :=
-      transpile_SUBW m r_main (regidx_to_fin r1) (regidx_to_fin r2) (regidx_to_fin rd)
-        (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-        h_main_active h_main_op_subw
-    have h_r2_main :=
-      ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-        state (regidx_to_fin r2) subw_input.r2_val (m.b_0 r_main) (m.b_1 r_main)
-        h_b_lo_t h_b_hi_t h_input_r2
-    have h_lane_eqs := h_match
-    simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
-    obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
-    have h_b0_val : (m.b_0 r_main).val =
-        (v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
-        + (v.free_in_b_2 r_binary).val * 65536 + (v.free_in_b_3 r_binary).val * 16777216 := by
-      rw [h_b_lo_m]
-      have h_cast :
-          v.free_in_b_0 r_binary + 256 * v.free_in_b_1 r_binary
-            + 65536 * v.free_in_b_2 r_binary + 16777216 * v.free_in_b_3 r_binary
-          = ((((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
-                + (v.free_in_b_2 r_binary).val * 65536
-                + (v.free_in_b_3 r_binary).val * 16777216 : ℕ) : FGL)) := by
-        push_cast; ring
-      rw [h_cast, Fin.val_natCast]
-      apply Nat.mod_eq_of_lt
-      have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
-      omega
-    rw [h_r2_main]
-    have h_byte_lt : (v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
-                     + (v.free_in_b_2 r_binary).val * 65536
-                     + (v.free_in_b_3 r_binary).val * 16777216 < 4294967296 := by omega
-    simp only [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
-               BitVec.toNat_ofNat, BitVec.toNat_setWidth, Nat.shiftRight_zero,
-               show (31 - 0 + 1 : ℕ) = 32 from rfl,
-               show (2:ℕ)^32 = 4294967296 from rfl,
-               show (2:ℕ)^64 = 18446744073709551616 from rfl]
-    rw [h_b0_val]
-    omega
   set a32sum : ℕ := (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
                   + (v.free_in_a_2 r_binary).val * 65536
                   + (v.free_in_a_3 r_binary).val * 16777216 with h_a32_def
@@ -268,8 +191,8 @@ lemma equiv_SUBW_of_wf
   have h_bridge :=
     ZiskFv.EquivCore.WriteValueProofs.SailBridge.sail_subw_bridge
       subw_input.r1_val subw_input.r2_val a32sum b32sum
-      (h_input_r1_extract.trans (by rw [h_a32_def]))
-      (h_input_r2_extract.trans (by rw [h_b32_def]))
+      (h_input_r1_extract.trans (by rw [ZiskFv.EquivCore.Addw.binaryValidA32, h_a32_def]))
+      (h_input_r2_extract.trans (by rw [ZiskFv.EquivCore.Addw.binaryValidB32, h_b32_def]))
   have h_rd_val : U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
                               byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]
       = execute_RTYPEW_pure subw_input.r1_val subw_input.r2_val ropw.SUBW := by
@@ -324,6 +247,12 @@ lemma equiv_SUBW_of_static_row
           + row.cBytes.free_in_c_2.val * 65536
           + row.cBytes.free_in_c_3.val * 16777216 ≥ 2147483648))
     (h_carry_7_zero : row.chain.carry_7 = 0)
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32 row % 2^32)
+    (h_input_r2_extract :
+      (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowB32 row % 2^32)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     (do
       Sail.writeReg Register.nextPC
@@ -416,6 +345,13 @@ lemma equiv_SUBW_of_static_row
     out.c0_lt out.c1_lt out.c2_lt out.c3_lt hc4 hc5 hc6 hc7
     out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
     out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_eq
-    h_sext_choice_v h_match_clo h_match_chi h_lane_rd
+    h_sext_choice_v h_match_clo h_match_chi
+    (by simpa [v, ZiskFv.EquivCore.Addw.binaryValidA32,
+      ZiskFv.EquivCore.Addw.binaryRowA32, ZiskFv.AirsClean.Binary.validOfRow]
+      using h_input_r1_extract)
+    (by simpa [v, ZiskFv.EquivCore.Addw.binaryValidB32,
+      ZiskFv.EquivCore.Addw.binaryRowB32, ZiskFv.AirsClean.Binary.validOfRow]
+      using h_input_r2_extract)
+    h_lane_rd
 
 end ZiskFv.EquivCore.Subw

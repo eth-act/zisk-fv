@@ -91,6 +91,8 @@ theorem sb_eq_of_full_ensemble_main_c
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
         (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sb_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sb_input.r2_val)
     (h_m1 : state.mem[bus.e2.ptr.toNat + 1]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1 : BitVec 8))
     (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2 : BitVec 8))
     (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3 : BitVec 8))
@@ -107,7 +109,8 @@ theorem sb_eq_of_full_ensemble_main_c
   let w :=
     ZiskFv.EquivCore.Bridge.MemClean.sbCleanWitness_of_full_ensemble_main_c
       main r_main bus state sb_input h_main_row h_main_spec h_store_pc
-      h_main_c_match h_addr2 h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
+      h_main_c_match h_addr2 h_b0_value h_b1_value
+      h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
   exact equiv_SB state sb_input regs main r_main bus pins h_main_ind_width
     h_opcode_assumptions promises w
 

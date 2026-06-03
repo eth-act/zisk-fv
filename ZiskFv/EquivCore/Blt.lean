@@ -18,8 +18,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 BLT. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_BLT`),
+* explicit branch Main-row and control-flow route facts,
 * the compositional BLT spec
   (`ZiskFv.ZiskCircuit.BranchLessThan.branch_lt_compositional`, a thin
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at

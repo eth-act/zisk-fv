@@ -18,7 +18,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 BGEU. Combines:
 
-* `ZiskFv.Trusted.transpile_BGEU`,
+* explicit branch Main-row and control-flow route facts,
 * `ZiskFv.ZiskCircuit.BranchGreaterEqualUnsigned.branch_geu_compositional`
   (archetype at `opcode_lit = OP_LTU`),
 * `PureSpec.execute_BGEU_pure_equiv`.

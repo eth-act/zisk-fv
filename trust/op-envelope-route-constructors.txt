@@ -5,6 +5,8 @@
 
 add_via_binary:canonical route variant for ADD through Binary.staticLookupComponent
 addi_via_binary:canonical route variant for ADDI through Binary.staticLookupComponent
+auipc_x0:canonical route variant for AUIPC with rd=x0 and no memory-bus write
+jal_x0:canonical route variant for JAL with rd=x0 and no memory-bus write
 lb_via_static_match:canonical route variant for LB with BinaryExtension static-match witness
 lh_via_static_match:canonical route variant for LH with BinaryExtension static-match witness
 lw_via_static_match:canonical route variant for LW with BinaryExtension static-match witness

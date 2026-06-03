@@ -18,8 +18,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 BEQ. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_BEQ`),
+* explicit branch Main-row and control-flow route facts,
 * the compositional BEQ spec (`ZiskFv.ZiskCircuit.BranchEqual.branch_eq_compositional`),
 * the Sail pure-function equivalence (`PureSpec.execute_BEQ_pure_equiv`),
 

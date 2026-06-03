@@ -10,10 +10,6 @@
 # Each entry is a path relative to the repository root. Comments and
 # blank lines are ignored.
 
-# Transpiler trust-surface — RV→Zisk microinstruction contract,
-# platform assumptions (P1-P4), and store_pc=1 PC bridges (TP-*).
-ZiskFv/Trusted/Transpiler.lean
-
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
 ZiskFv/ZiskCircuit/MemModel.lean
 

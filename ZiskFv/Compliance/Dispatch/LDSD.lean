@@ -63,12 +63,12 @@ theorem zisk_riscv_compliant_program_bus_ldsd
     exact ZiskFv.Equivalence.Ld.equiv_LD
       state ld_input regs m mem r_main bus pins promises w
   | sd sd_input regs bus pins h_opcode_assumptions promises h_main_row
-      h_main_spec h_store_pc h_main_c_match h_addr2 =>
+      h_main_spec h_store_pc h_main_c_match h_addr2 h_b0_value h_b1_value =>
     simp only [OpEnvelope.exec_eq_ldsd]
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.sdCleanWitness_of_full_ensemble_main_c
       m r_main bus sd_input h_main_row h_main_spec h_store_pc
-      h_main_c_match h_addr2
+      h_main_c_match h_addr2 h_b0_value h_b1_value
     exact ZiskFv.Equivalence.Sd.equiv_SD
       state sd_input regs m r_main bus pins h_opcode_assumptions promises w
   | _ => simp only [OpEnvelope.exec_eq_ldsd]

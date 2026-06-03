@@ -18,8 +18,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 BGE. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_BGE`),
+* explicit branch Main-row and control-flow route facts,
 * the compositional BGE spec
   (`ZiskFv.ZiskCircuit.BranchGreaterEqual.branch_ge_compositional`, a thin
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at

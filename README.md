@@ -21,14 +21,14 @@ for each instruction. `lake build` typechecking is the formal check.
 ## Trust Boundary
 
 All trust-boundary documentation and all machine-checked trust ledgers live in
-[`trust/`](trust/README.md). The current source trust ledger contains 12
+[`trust/`](trust/README.md). The current source trust ledger contains 7
 Lean axiom declarations. The global compliance theorem's transitive project
-axiom closure contains 9 of those declarations, recorded in
-[`trust/baseline-zisk-riscv-compliant.txt`](trust/baseline-zisk-riscv-compliant.txt).
+axiom closure contains 1 of those declarations, recorded in
+[`trust/generated/baseline-zisk-riscv-compliant.txt`](trust/generated/baseline-zisk-riscv-compliant.txt).
 
 The narrative trust ledger is
 [`trust/trusted-base.md`](trust/trusted-base.md). The generated flat index is
-[`trust/axiom-index.md`](trust/axiom-index.md).
+[`trust/generated/axiom-index.md`](trust/generated/axiom-index.md).
 ## Build And Verify
 
 After a fresh clone, populate the generated inputs:
@@ -45,11 +45,36 @@ trust/scripts/check-all.sh
 trust/scripts/check-all-semantic.sh
 ```
 
-The full repository test path is:
+The full repository test path, including the pinned Aeneas transpiler
+extraction harness, is:
 
 ```bash
 nix run .#test
 ```
+
+The RV64IM transpiler Aeneas extraction harness is pinned by `flake.lock` and can
+be rerun with:
+
+```bash
+nix run .#aeneas-rv64im-extract
+```
+
+The direct-import compatibility probe for the main Lean 4.28 project is:
+
+```bash
+scripts/aeneas-rv64im-lean428-compat.sh
+```
+
+It rebuilds the pinned extraction and checks that the generated Aeneas bridge
+builds under Lean 4.28 with the documented compatibility patch. The extraction harness also
+hard-checks the generated manifest counts: 71 valid encoded-word cases, 3
+invalid decode cases, and 71 Aeneas-to-main-static equality theorems.
+
+The proof-side migration target is
+`ZiskFv.Compliance.MainStaticRowProvenance`: it ties selected Main/ROM rows to
+static rows produced by the decode/lower model. The former transpiler axiom
+surface is now retired from the Lean source ledger; dynamic immediate/PC and
+operand-lane obligations are explicit route facts.
 
 ## Layout
 

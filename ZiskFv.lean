@@ -128,4 +128,5 @@ import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.FullEnsemble.Balance
+import ZiskFv.Compliance.StaticRowProvenance
 import ZiskFv.Compliance

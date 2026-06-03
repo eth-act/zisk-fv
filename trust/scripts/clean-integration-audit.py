@@ -272,7 +272,9 @@ def main() -> None:
         (file, target) for file, target in targets
         if target.startswith("ZiskFv.Equivalence.") and re.search(r"\.equiv_[A-Z0-9]+$", target)
     ]
-    route_named_ctors = [ctor for ctor in ctors if "_via_" in ctor]
+    route_named_ctors = [
+        ctor for ctor in ctors if "_via_" in ctor or ctor.endswith("_x0")
+    ]
     helper_equivalence_theorems = [
         (path, name) for path, name in equivalence_theorems
         if name.startswith("equiv_") and not re.match(r"equiv_[A-Z0-9]+$", name)

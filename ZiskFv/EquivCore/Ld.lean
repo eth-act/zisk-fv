@@ -22,8 +22,7 @@ import ZiskFv.Channels.MemoryBusBytes
 /-!
 End-to-end theorem for RV64 LD (load doubleword). Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_LD`),
+* explicit LD Main-row, memory, and route facts,
 * the compositional LD spec
   (`ZiskFv.ZiskCircuit.LoadD.load_d_compositional`),
 * the Sail pure-function equivalence

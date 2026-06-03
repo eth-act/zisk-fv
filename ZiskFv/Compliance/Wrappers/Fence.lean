@@ -6,6 +6,7 @@ import ZiskFv.SailSpec.fence
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Compliance.AeneasRowProvenance
 
 /-!
 # `equiv_FENCE` Compliance wrapper — ControlFlow non-branch shape
@@ -108,6 +109,27 @@ lemma equiv_FENCE
     -- has no provider AIR).
     (_pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG)
     -- Structural promise bundle (6 fields, see Promises/Fence.lean).
+    (promises : ZiskFv.EquivCore.Promises.FencePromises
+        state fence_input.PC
+        (PureSpec.execute_FENCE_pure fence_input).nextPC
+        exec_row) :
+    execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
+      = (bus_effect exec_row [] state).2 :=
+  ZiskFv.EquivCore.Fence.equiv_FENCE
+    state fence_input fm pred succ rs rd exec_row promises
+
+/-- Aeneas-provenance route for FENCE. The core FENCE proof does not consume
+    Main mode pins; this route records that the selected Main row is the NOP
+    row emitted by the Aeneas FENCE lowerer instead of accepting ad hoc pins. -/
+lemma equiv_FENCE_of_aeneas_provenance
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (fence_input : PureSpec.FenceInput)
+    (fm pred succ : BitVec 4) (rs rd : regidx)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (_provenance :
+      Sigma fun inst : ZiskFv.Transpiler.Aeneas.Rv64imInst =>
+        ZiskFv.Compliance.MainAeneasFenceRowProvenance main r_main inst)
     (promises : ZiskFv.EquivCore.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC

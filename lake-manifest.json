@@ -3,6 +3,13 @@
  "packages":
  [{"type": "path",
    "scope": "",
+   "name": "aeneas",
+   "manifestFile": "lake-manifest.json",
+   "inherited": false,
+   "dir": "tools/aeneas-rv64im-extraction/.aeneas-lean",
+   "configFile": "lakefile.lean"},
+  {"type": "path",
+   "scope": "",
    "name": "Clean",
    "manifestFile": "lake-manifest.json",
    "inherited": false,

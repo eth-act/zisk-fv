@@ -40,28 +40,39 @@ theorem equiv_SUBW
       providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
     (h_table_spec : providerTable.Spec)
     (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match : ZiskFv.Airs.OperationBus.matches_entry
-      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+      (h_match : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (ZiskFv.AirsClean.Binary.opBusMessage
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow))) 1))
+      (h_input_r1_extract :
+        (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+          = ZiskFv.EquivCore.Addw.binaryRowA32
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow)) % 2^32)
+      (h_input_r2_extract :
+        (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+          = ZiskFv.EquivCore.Addw.binaryRowB32
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow)) % 2^32)
+      (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
         (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    : (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.RTYPEW (r2, r1, rd, ropw.SUBW))) state
-      = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_SUBW state subw_input r1 r2 rd m
-    providerTable providerRow r_main bus pins
-    h_component h_table_spec h_provider_row h_match h_lane_rd promises
+      : (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.RTYPEW (r2, r1, rd, ropw.SUBW))) state
+        = state_effect_via_channels
+            ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    exact ZiskFv.Compliance.equiv_SUBW state subw_input r1 r2 rd m
+      providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_extract h_input_r2_extract h_lane_rd promises
 
 /-- Row-native static-provider route for `equiv_SUBW`. Bypasses the
     Compliance wrapper and calls `EquivCore.Subw.equiv_SUBW_of_static_row`
@@ -96,23 +107,30 @@ lemma equiv_SUBW_of_static_row
         row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
           + row.cBytes.free_in_c_2.val * 65536
           + row.cBytes.free_in_c_3.val * 16777216 ≥ 2147483648))
-    (h_carry_7_zero : row.chain.carry_7 = 0)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+      (h_carry_7_zero : row.chain.carry_7 = 0)
+      (h_input_r1_extract :
+        (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+          = ZiskFv.EquivCore.Addw.binaryRowA32 row % 2^32)
+      (h_input_r2_extract :
+        (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+          = ZiskFv.EquivCore.Addw.binaryRowB32 row % 2^32)
+      (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
         (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    : (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.RTYPEW (r2, r1, rd, ropw.SUBW))) state
-      = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.EquivCore.Subw.equiv_SUBW_of_static_row
-    state subw_input r1 r2 rd m row r_main bus promises pins
-    h_match h_core h_facts h_mode32_one h_b_op
-    h_sext_choice h_carry_7_zero h_lane_rd
+      : (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.RTYPEW (r2, r1, rd, ropw.SUBW))) state
+        = state_effect_via_channels
+            ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    exact ZiskFv.EquivCore.Subw.equiv_SUBW_of_static_row
+      state subw_input r1 r2 rd m row r_main bus promises pins
+      h_match h_core h_facts h_mode32_one h_b_op
+      h_sext_choice h_carry_7_zero
+      h_input_r1_extract h_input_r2_extract h_lane_rd
 
 end ZiskFv.Equivalence.Subw

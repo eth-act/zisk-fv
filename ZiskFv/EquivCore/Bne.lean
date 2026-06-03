@@ -18,8 +18,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 BNE. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_BNE`),
+* explicit branch Main-row and control-flow route facts,
 * the compositional BNE spec
   (`ZiskFv.ZiskCircuit.BranchNotEqual.branch_ne_compositional`, which is
   a thin wrapper over the archetype macro

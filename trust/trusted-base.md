@@ -21,14 +21,16 @@ Current generated counts:
 
 | Surface                                                                | Count | Ledger                                                                                       |
 | ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 8     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 2     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations                                         | 7     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 1     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
 The difference is intentional: some checked-in trust declarations are retained
 for local components or completeness-direction placeholders but are not reached
 by the current global compliance theorem. The semantic trust gate checks the
 global closure against the source ledger modulo
-[`tolerated-completeness-axioms.txt`](tolerated-completeness-axioms.txt).
+[`tolerated-completeness-axioms.txt`](tolerated-completeness-axioms.txt),
+which now records documented source axioms that are intentionally absent from
+the global soundness closure.
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
@@ -38,44 +40,26 @@ Lean axiom ledger:
 
 ## Current Classes
 
-
 | Class                           | Declarations | In global closure | Removability                                                                                        |
 | ---                             | ---:         | ---:              | ---                                                                                                 |
-| Transpiler bridge               | 1            | 1                 | Removable by a verified Lean transpiler or checker that proves the same per-opcode contracts.       |
 | Memory state load bridge        | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
-| Platform profile lemmas         | 0            | 0                 | PMP, PMA, CLINT, and Zicfilp scope facts are now proved from profile/config hypotheses.             |
 | Clean completeness placeholders | 6            | 0                 | Completeness-direction placeholders retained for Clean component construction, not soundness.       |
 
 
-## Transpiler Bridge
+## Retired Transpiler Bridge
 
-Declaration:
+The former RV64-to-ZisK transpiler axiom surface has been removed from the
+active Lean trust ledger. `ZiskFv/Trusted/Transpiler.lean` is now only an
+axiom-free compatibility import; the live opcode literals, lane helpers,
+register-pointer decoding helper, and row/state helper structures live in
+`ZiskFv/Transpiler/Contract.lean`.
 
-```text
-ZiskFv.Trusted.transpiler_contract_sound
-```
-
-This is the remaining aggregate trust bridge between a Main AIR row accepted as
-a transpiler-derived row and the per-opcode semantic facts consumed by the
-compliance wrappers.
-
-Current evidence is the in-tree Lean static transpiler model plus the Rust
-differential harness in `tools/transpiler-diff`. That evidence checks the
-static RV64IM fields fixed by instruction bits and `ZiskInstBuilder`: source
-selectors, immediate chunks, store selectors and offsets, jump offsets,
-`store_pc`, `set_pc`, `ind_width`, `is_external_op`, `m32`, and row count. It
-does not prove runtime register contents, memory values, Main witness columns,
-Sail state, or ROM/Main/dataflow bridges.
-
-The former JALR/source-C special axioms are retired. The current JALR wrapper
-uses the same final-row `PC_for_JALR` link shape as the rest of the transpiler
-bridge. The unaligned row-1 ADD to final-row `lastc` relationship remains only
-as a pure helper requiring explicit caller facts; it is not in the global
-compliance theorem's trust closure.
-
-Retirement path: replace `transpiler_contract_sound` with a Lean
-implementation or independently checked certificate path that derives the same
-facts without an aggregate axiom.
+Canonical per-opcode theorem closures no longer mention any retired
+transpiler bridge names. The route obligations that used to be hidden behind
+that contract are now explicit caller/envelope facts or are derived from row
+provenance and provider rows: static mode/control pins from provenance,
+runtime source/data lanes from caller facts, and jump/PC facts from explicit
+route obligations.
 
 ## Memory State Load Bridge
 

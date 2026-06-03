@@ -48,6 +48,14 @@ lemma equiv_ORI
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : ori_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 ori_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -74,6 +82,9 @@ lemma equiv_ORI
   obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
   exact ZiskFv.EquivCore.Ori.equiv_ORI_of_static_row
     state ori_input r1 rd imm m row r_main bus promises pins
-    h_match h_row_spec h_core h_static_specs h_facts h_lane_rd h_ori_subset
+    h_match h_row_spec h_core h_static_specs h_facts
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_input_imm_row)
+    h_lane_rd h_ori_subset
 
 end ZiskFv.Compliance

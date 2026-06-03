@@ -22,8 +22,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 JALR. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_JALR`),
+* Aeneas/static-row provenance plus explicit JALR link-address bridge facts,
 * the compositional JALR spec (`ZiskFv.ZiskCircuit.Jalr.jalr_pc_advance`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_JALR_pure_equiv`, closed via the trusted
@@ -36,11 +35,11 @@ into a canonical theorem:
   `execute_instruction (.JALR (imm, rs1, rd)) state
     = (bus_effect exec_row mem_row state).2`.
 
-Like JAL (shape (c)), the bus-matching is discharged
-internally via `bus_effect_matches_sail_jump_rrw`, which handles any
-"two-exec-entry + one-rd-write-mem-entry" shape. JALR emits exactly
-that shape under the archetype-validation contract in `transpile_JALR`
-(internal-copyb, `store_pc = 1`, no operation-bus hop).
+Like JAL (shape (c)), the bus-matching is discharged internally via
+`bus_effect_matches_sail_jump_rrw`, which handles any
+"two-exec-entry + one-rd-write-mem-entry" shape. The canonical route supplies
+the final-row mode/circuit facts from Aeneas provenance and the link-address
+bridge as an explicit obligation.
 -/
 
 namespace ZiskFv.EquivCore.Jalr
@@ -149,6 +148,8 @@ lemma equiv_JALR
       = EStateM.Result.ok mseccfg state)
     -- Discharge parameters
     (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc)
+    (h_link_bridge :
+      (m.pc r_main + m.jmp_offset2 r_main).val = (jalr_input.PC + 4#64).toNat)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
     (do
@@ -175,6 +176,7 @@ lemma equiv_JALR
     ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_jalr
       jalr_input.PC m r_main next_pc e_rd
       h_circuit h_lane_lo h_lane_hi
+      h_link_bridge
       h_pc_bound h_pc_offset_lt_2_32
       hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
   rw [equiv_JALR_sail state jalr_input imm rs1 rd misa_val mseccfg

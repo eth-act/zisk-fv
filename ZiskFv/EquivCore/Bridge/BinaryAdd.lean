@@ -96,6 +96,14 @@ lemma add_discharge_with_match
     (h_c_range : c_chunks_in_range b r_binary)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs1 rs2 : Fin 32) (r1_val r2_val : BitVec 64)
+    (h_a_lo_t : m.a_0 r_main =
+      ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_a_hi_t : m.a_1 r_main =
+      ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_b_lo_t : m.b_0 r_main =
+      ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_b_hi_t : m.b_1 r_main =
+      ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs2))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
       add_circuit_holds m b r_main r_binary
@@ -127,7 +135,8 @@ lemma add_discharge_with_match
     congrArg Fin.val h_b_hi
   obtain ⟨h_input_r1_main, h_input_r2_main⟩ :=
     ZiskFv.EquivCore.Bridge.SailStateBridge.add_input_bridges_of_read_xreg
-      m r_main state rs1 rs2 r1_val r2_val h_active h_op h_read_r1 h_read_r2
+      m r_main state rs1 rs2 r1_val r2_val
+      h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_read_r1 h_read_r2
   have h_input_r1_circuit : r1_val
       = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296) := by
     rw [h_input_r1_main, h_a0_val, h_a1_val]

@@ -19,7 +19,6 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_FENCE`'s closur
 open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
-open ZiskFv.Trusted (OP_FLAG)
 
 namespace ZiskFv.Equivalence.Fence
 
@@ -30,7 +29,9 @@ theorem equiv_FENCE
     (fm pred succ : BitVec 4) (rs rd : regidx)
     (main : Valid_Main FGL FGL) (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (_pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG)
+    (provenance :
+      Sigma fun inst : ZiskFv.Transpiler.Aeneas.Rv64imInst =>
+        ZiskFv.Compliance.MainAeneasFenceRowProvenance main r_main inst)
     (promises : ZiskFv.EquivCore.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
@@ -38,6 +39,7 @@ theorem equiv_FENCE
     : execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
       = state_effect_via_channels ⟨exec_row, []⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_FENCE state fence_input fm pred succ rs rd main r_main exec_row _pins promises
+  exact ZiskFv.Compliance.equiv_FENCE_of_aeneas_provenance
+    state fence_input fm pred succ rs rd main r_main exec_row provenance promises
 
 end ZiskFv.Equivalence.Fence

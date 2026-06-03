@@ -46,6 +46,14 @@ theorem equiv_OR
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : or_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : or_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
@@ -73,7 +81,10 @@ theorem equiv_OR
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.EquivCore.Or.equiv_OR_of_static_row
     state or_input r1 r2 rd m row r_main bus promises pins
-    h_match h_row_spec h_core h_static_specs h_facts h_lane_rd
+    h_match h_row_spec h_core h_static_specs h_facts
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_input_r2_row)
+    h_lane_rd
 
 
 /-- Row-native static-provider route for `equiv_OR`. -/
@@ -95,6 +106,8 @@ lemma equiv_OR_of_static_row
     (h_row_spec : ZiskFv.AirsClean.Binary.Spec row)
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (h_input_r1_row : or_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 row)
+    (h_input_r2_row : or_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 row)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
@@ -110,7 +123,8 @@ lemma equiv_OR_of_static_row
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.EquivCore.Or.equiv_OR_of_static_row
     state or_input r1 r2 rd m row r_main bus promises pins
-    h_match h_row_spec h_core h_static h_facts h_lane_rd
+    h_match h_row_spec h_core h_static h_facts
+    h_input_r1_row h_input_r2_row h_lane_rd
 
 /-- Noncanonical C7 route for `OR` from a lookup-aware Clean Binary table
     row. The provider row's Binary core and static BinaryTable facts are
@@ -135,6 +149,14 @@ lemma equiv_OR_of_static_table_row
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : or_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : or_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
@@ -160,6 +182,9 @@ lemma equiv_OR_of_static_table_row
   rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
   obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
   exact equiv_OR_of_static_row state or_input r1 r2 rd m row r_main bus pins
-    h_match h_core h_row_spec h_static_specs h_facts h_lane_rd promises
+    h_match h_core h_row_spec h_static_specs h_facts
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_input_r2_row)
+    h_lane_rd promises
 
 end ZiskFv.Equivalence.Or

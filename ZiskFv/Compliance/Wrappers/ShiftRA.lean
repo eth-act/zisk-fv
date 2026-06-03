@@ -58,6 +58,15 @@ lemma equiv_SRAW
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row :
+      (Sail.BitVec.extractLsb sraw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowA32
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow)))
+    (h_shift_pin_row : sraw_input.r2_val.toNat % 32 =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
@@ -84,7 +93,10 @@ lemma equiv_SRAW
       m2_mult := h_m2_mult
       m2_as := h_m2_as
       rd_idx := h_rd_idx }
-    pins h_match h_shift_facts.1 h_shift_facts.2 h_lane_rd
+    pins h_match h_shift_facts.1 h_shift_facts.2
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_shift_pin_row)
+    h_lane_rd
 
 -- equiv_<OP>_of_static_lookup (alt route, op_bus_perm_sound) deleted in T4-purge P3.2.
 

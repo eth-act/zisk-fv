@@ -59,6 +59,14 @@ lemma equiv_ADD
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : add_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : add_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
@@ -90,6 +98,9 @@ lemma equiv_ADD
   exact ZiskFv.EquivCore.Add.equiv_ADD_of_static_row
     state add_input r1 r2 rd m row r_main bus promises
     ⟨h_main_active, h_main_op_add⟩
-    h_match h_core h_facts h_mode32_zero h_b_op h_lane_rd
+    h_match h_core h_facts h_mode32_zero h_b_op
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_input_r2_row)
+    h_lane_rd
 
 end ZiskFv.Compliance

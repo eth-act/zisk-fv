@@ -44,7 +44,7 @@ open ZiskFv.Trusted
 
 
 /-- **RV64IM opcode-set classifier.** Asserts that `m.op r_main` is one
-    of the 35 `OP_<X>` literals defined in `Trusted/Transpiler.lean`
+    of the 35 `OP_<X>` literals exposed by `ZiskFv.Transpiler.Contract`
     that Zisk uses to encode the 63 RV64IM opcodes (some Zisk OPs are
     shared across RTYPE / ITYPE variants).
 

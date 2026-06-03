@@ -18,7 +18,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 BLTU. Combines:
 
-* `ZiskFv.Trusted.transpile_BLTU`,
+* explicit branch Main-row and control-flow route facts,
 * `ZiskFv.ZiskCircuit.BranchLessThanUnsigned.branch_ltu_compositional`
   (archetype at `opcode_lit = OP_LTU`),
 * `PureSpec.execute_BLTU_pure_equiv`.

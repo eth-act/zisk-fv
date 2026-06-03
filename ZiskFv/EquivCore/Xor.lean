@@ -17,6 +17,7 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.EquivCore.WriteValueProofs.BinaryLogic
+import ZiskFv.EquivCore.Add
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Compliance.SharedBundles
 
@@ -82,6 +83,8 @@ lemma equiv_XOR_of_static_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (h_input_r1_row : xor_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 row)
+    (h_input_r2_row : xor_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 row)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     (do
       Sail.writeReg Register.nextPC
@@ -117,18 +120,6 @@ lemma equiv_XOR_of_static_row
   obtain ⟨h_match_clo, h_match_chi⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.match_clo_chi_XOR_row_of_static_facts
       m row r_main h_core h_facts h_match h_bop_or_sext
-  obtain ⟨_, h_m32, _, _, _, _, h_a_lo_t, h_a_hi_t, h_b_lo_t, h_b_hi_t⟩ :=
-    transpile_XOR m r_main (regidx_to_fin r1) (regidx_to_fin r2) (regidx_to_fin rd)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_xor
-  have h_input_r1_circuit :=
-    ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-      m row r_main (regidx_to_fin r1) xor_input.r1_val
-      h_byte_matches h_m32 h_a_lo_t h_a_hi_t h_match h_input_r1
-  have h_input_r2_circuit :=
-    ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
-      m row r_main (regidx_to_fin r2) xor_input.r2_val
-      h_byte_matches h_m32 h_b_lo_t h_b_hi_t h_match h_input_r2
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
   have h_match_clo_mem :
       row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
@@ -147,7 +138,7 @@ lemma equiv_XOR_of_static_row
       row e2 xor_input.r1_val xor_input.r2_val
       h_byte_matches h_match_clo_mem h_match_chi_mem
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_input_r1_circuit h_input_r2_circuit
+      h_input_r1_row h_input_r2_row
   rw [equiv_XOR_sail state xor_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

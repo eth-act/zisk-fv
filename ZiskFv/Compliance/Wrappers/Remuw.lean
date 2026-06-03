@@ -23,6 +23,8 @@ import ZiskFv.Compliance.SharedBundles
 > * `h_match_secondary` (ArithDiv secondary op-bus row).
 > * `h_byte_lo` lands on `d_0 + d_1 * 65536` (not `a_0 + a_1 * 65536`).
 > * `h_op_arith_remuw : v.op r_a = 189`.
+> * `h_b23` / `h_c23` high-limb zero facts are explicit W-mode
+>   route/provenance obligations.
 -/
 
 namespace ZiskFv.Compliance
@@ -63,6 +65,8 @@ lemma equiv_REMUW_of_table
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     -- Pass-through caller burdens (mirror DIVUW: bus encoding /
     -- operand bridge in W-form).
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
@@ -80,11 +84,11 @@ lemma equiv_REMUW_of_table
   have h_arith_table := arith_table.spec
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
-  obtain ⟨h_main_active, h_main_op_remuw⟩ := pins
+  obtain ⟨_h_main_active, h_main_op_remuw⟩ := pins
   have h_op_eq := arith_div_secondary_op_eq h_match_secondary
   have h_op_arith_remuw : v.op r_a = 189 := by
     rw [h_op_eq, h_main_op_remuw]; simp [OP_REMU_W]
-  obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
+  obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
           h_c0_eq_FGL, _h_c1_eq_FGL⟩ :=
     arith_div_secondary_projections h_match_secondary
   have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
@@ -92,17 +96,11 @@ lemma equiv_REMUW_of_table
   obtain ⟨h_na, h_nb, h_np, h_nr, h_m32, h_div⟩ :=
     ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_unsigned_w_basic_mode_pin
       v r_a h_arith_table (Or.inr h_op_arith_remuw)
-  obtain ⟨h_m32_main, _h_sp1, _h_sp2, _h_off1, _h_off2,
-         _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
-    ZiskFv.Trusted.transpile_REMUW
-      m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_remuw
   have h_bundle := arith_mem.c_lane_vals
   have h_arith_chunk_ranges := arith_chunk_ranges.ranges
   obtain ⟨_h_a0_lt, _h_a1_lt, _h_a2_lt, _h_a3_lt,
-          _h_b0_lt, _h_b1_lt, h_b2_lt, h_b3_lt,
-          _h_c0_lt, _h_c1_lt, h_c2_lt, h_c3_lt,
+          _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
+          _h_c0_lt, _h_c1_lt, _h_c2_lt, _h_c3_lt,
           h_d0_lt, h_d1_lt, _h_d2_lt, _h_d3_lt⟩ :=
     h_arith_chunk_ranges
   have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
@@ -114,10 +112,6 @@ lemma equiv_REMUW_of_table
       omega
     rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_e2_lo_bound, h_bundle.1]
   have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_d0_lt h_d1_lt
-  have h_b23 := arith_chunk_pair_eq_zero_of_m32_one
-    (m.b_1 r_main) (m.m32 r_main) h_b_hi_eq_FGL h_m32_main h_b2_lt h_b3_lt
-  have h_c23 := arith_chunk_pair_eq_zero_of_m32_one
-    (m.a_1 r_main) (m.m32 r_main) h_a_hi_eq_FGL h_m32_main h_c2_lt h_c3_lt
   exact ZiskFv.EquivCore.Remuw.equiv_REMUW
     state remuw_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
@@ -156,6 +150,8 @@ lemma equiv_REMUW
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     -- Pass-through caller burdens (mirror DIVUW: bus encoding /
     -- operand bridge in W-form).
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
@@ -173,7 +169,7 @@ lemma equiv_REMUW
   exact equiv_REMUW_of_table state remuw_input r1 r2 rd bus m r_main v r_a
     pins h_match_secondary promises arith_mem bounds arith_table h_row_constraints
     arith_chunk_ranges arith_carry_ranges remainder_bound
-    h_sext_choice h_rs1_value h_rs2_value
+    h_b23 h_c23 h_sext_choice h_rs1_value h_rs2_value
 
 
 end ZiskFv.Compliance

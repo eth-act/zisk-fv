@@ -6,11 +6,9 @@ in `ZiskFv/Compliance.lean` (one level up) case-splits on.
 
 - **`Wrappers/<Op>.lean`** — 63 wrappers (one per opcode). Each
   takes the canonical `equiv_<OP>` theorem (in `ZiskFv/Equivalence/`)
-  and discharges its **promise hypotheses** by appealing to the
-  trust ledger (`ZiskFv/Trusted/Transpiler.lean` for `transpile_*`
-  contracts, the axiom-bearing files under `ZiskFv/Airs/` for
-  range / bus / lookup-table soundness, and pure-Lean derivations
-  for everything else). The wrapper's parameter surface is the
+  and discharges its **promise hypotheses** using explicit route facts,
+  row/provider evidence, the remaining non-transpiler trust ledger entries,
+  and pure-Lean derivations. The wrapper's parameter surface is the
   *minimal* caller-burden remaining after discharge; that surface
   is drift-guarded by `trust/generated/baseline-wrapper-caller-burden.txt`.
 

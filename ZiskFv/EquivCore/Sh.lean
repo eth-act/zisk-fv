@@ -150,6 +150,8 @@ lemma equiv_SH_clean_provider
     (h_ind_width : main.ind_width r_main = 2)
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok sh_input.r1_val state)
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sh_input.r2_val state)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sh_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sh_input.r2_val)
     (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (byteAt bus.e2 2 : BitVec 8))
     (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (byteAt bus.e2 3 : BitVec 8))
     (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8))
@@ -167,6 +169,7 @@ lemma equiv_SH_clean_provider
       main r_main mainRow bus.e2 state rs1 rs2 sh_input
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
       h_active h_op_main h_ind_width h_read_r1 h_read_r2
+      h_b0_value h_b1_value
       h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
   exact equiv_SH state sh_input regs bus promises h_mem_eq
 
@@ -214,6 +217,7 @@ lemma equiv_SH_clean_provider_witness
     (regidx_to_fin (regidx.Regidx sh_input.r2))
     w.main_row w.main_spec w.store_pc w.main_c_match w.addr2
     pins.main_active pins.main_op h_main_ind_width h_read_r1' h_read_r2'
+    w.b0_value w.b1_value
     w.m2 w.m3 w.m4 w.m5 w.m6 w.m7
 
 end ZiskFv.EquivCore.Sh
