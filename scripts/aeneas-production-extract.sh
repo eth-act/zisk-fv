@@ -94,6 +94,45 @@ starts=(
   crate::aeneas_extract::extract_sd_from_inst
 )
 
+proof_shape_fields=(
+  paddr
+  op
+  aSrc
+  aUseSpImm1
+  aOffsetImm0
+  bSrc
+  bUseSpImm1
+  bOffsetImm0
+  store
+  storeOffset
+  storePc
+  setPc
+  indWidth
+  jmpOffset1
+  jmpOffset2
+  isExternalOp
+  m32
+)
+
+mapfile -t main_extracted_fields < <(
+  awk '
+    /^structure MainExtractedRow where/ { in_shape = 1; next }
+    in_shape && /^namespace ExtractedConst/ { exit }
+    in_shape && /^[[:space:]]+[A-Za-z][A-Za-z0-9_]*[[:space:]]*:/ {
+      gsub(/^[[:space:]]+/, "")
+      split($0, parts, /[[:space:]:]+/)
+      print parts[1]
+    }
+  ' "$ROOT/ZiskFv/Compliance/RowProvenance.lean"
+)
+
+if [[ "${proof_shape_fields[*]}" != "${main_extracted_fields[*]}" ]]; then
+  echo "Generated proof-row-shape check schema diverges from MainExtractedRow" >&2
+  echo "  ProofRowShape fields: ${proof_shape_fields[*]}" >&2
+  echo "  MainExtractedRow fields: ${main_extracted_fields[*]}" >&2
+  exit 1
+fi
+
 charon_starts=()
 for start in "${starts[@]}"; do
   charon_starts+=(--start-from "$start")
