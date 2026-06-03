@@ -37,11 +37,13 @@ AENEAS = ROOT / "zisk/core/src/aeneas_extract.rs"
 CONTEXT = ROOT / "zisk/core/src/riscv2zisk_context.rs"
 SINGLE_ROW = ROOT / "zisk/core/src/riscv2zisk_single_row.rs"
 FENCE_DECODE = ROOT / "zisk/riscv/src/fence_decode.rs"
+RV64IM_DECODE = ROOT / "zisk/riscv/src/rv64im_decode.rs"
 
 aeneas_text = AENEAS.read_text()
 context_text = CONTEXT.read_text()
 single_row_text = SINGLE_ROW.read_text()
 fence_decode_text = FENCE_DECODE.read_text()
+rv64im_decode_text = RV64IM_DECODE.read_text()
 
 wrapper_variants: dict[str, str] = {}
 
@@ -79,7 +81,15 @@ if unclassified_starts:
 non_start_extract_fns = sorted(
     name
     for name in re.findall(r"pub fn (extract_[a-z0-9_]+)\b", aeneas_text)
-    if not name.endswith("_from_inst") and name != "extract_fence_accepts_raw_inst"
+    if not name.endswith("_from_inst")
+    and name
+    not in {
+        "extract_fence_accepts_raw_inst",
+        "extract_decode_rv64im_raw",
+        "extract_rv64im_opcode_supported",
+        "extract_transpile_rv64im_raw",
+        "extract_transpile_rv64im_accepted_raw",
+    }
 )
 if non_start_extract_fns:
     fail(
@@ -115,11 +125,11 @@ helper_names = (
 )
 
 direct_production_calls = {
-    "Lui": r"self\.lui\(\s*riscv_instruction,\s*4\s*\)",
-    "Auipc": r"self\.auipc\(\s*riscv_instruction\s*\)",
-    "Jal": r"self\.jal\(\s*riscv_instruction,\s*4\s*\)",
-    "Jalr": r"self\.jalr\(\s*riscv_instruction,\s*4\s*\)",
-    "Fence": r"self\.nop\(\s*riscv_instruction,\s*4\s*\)",
+    "Lui": r"self\.lui\(\s*\&rv64im_input,\s*4\s*\)",
+    "Auipc": r"self\.auipc\(\s*\&rv64im_input\s*\)",
+    "Jal": r"self\.jal\(\s*\&rv64im_input,\s*4\s*\)",
+    "Jalr": r"self\.jalr\(\s*\&rv64im_input,\s*4\s*\)",
+    "Fence": r"self\.nop\(\s*\&rv64im_input,\s*4\s*\)",
     "Add": (
         r"\{\s*"
         r"if riscv_instruction\.rd == 0\s*"
@@ -129,9 +139,9 @@ direct_production_calls = {
         r"\} else if self\.input_precompile == Some\(SYSCALL_DMA_MEMCMP_ID as u32\) \{.*?"
         r"self\.create_precompiled_op\(\s*riscv_instruction,\s*\"dma_memcmp\".*?"
         r"\} else if riscv_instruction\.rs1 == 0 \{.*?"
-        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*2\s*\);.*?"
+        r"self\.copyb\(\s*\&rv64im_input,\s*4,\s*2\s*\);.*?"
         r"\} else if riscv_instruction\.rs2 == 0 \{.*?"
-        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*1\s*\);.*?"
+        r"self\.copyb\(\s*\&rv64im_input,\s*4,\s*1\s*\);.*?"
         r"\} else \{\s*"
         r"self\.create_register_op\(\s*riscv_instruction,\s*\"add\",\s*4\s*\);"
         r"\s*\}\s*"
@@ -140,9 +150,9 @@ direct_production_calls = {
     "Or": (
         r"\{\s*"
         r"if riscv_instruction\.rs1 == 0 \{.*?"
-        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*2\s*\);.*?"
+        r"self\.copyb\(\s*\&rv64im_input,\s*4,\s*2\s*\);.*?"
         r"\} else if riscv_instruction\.rs2 == 0 \{.*?"
-        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*1\s*\);.*?"
+        r"self\.copyb\(\s*\&rv64im_input,\s*4,\s*1\s*\);.*?"
         r"\} else \{\s*"
         r"self\.create_register_op\(\s*riscv_instruction,\s*\"or\",\s*4\s*\);"
         r"\s*\}\s*"
@@ -151,10 +161,10 @@ direct_production_calls = {
     "Addi": (
         r"\{\s*"
         r"if riscv_instruction\.rd == 0 \{.*?"
-        r"self\.nop\(\s*riscv_instruction,\s*4\s*\);.*?"
-        r"self\.hint\(\s*riscv_instruction,\s*4\s*\);.*?"
+        r"self\.nop\(\s*\&rv64im_input,\s*4\s*\);.*?"
+        r"self\.hint\(\s*\&rv64im_input,\s*4\s*\);.*?"
         r"\} else if riscv_instruction\.imm == 0 && riscv_instruction\.rs1 != 0 \{.*?"
-        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*1\s*\);.*?"
+        r"self\.copyb\(\s*\&rv64im_input,\s*4,\s*1\s*\);.*?"
         r"\} else \{\s*"
         r"self\.immediate_op_or_x0_copyb\(\s*riscv_instruction,\s*\"add\",\s*4\s*\);"
         r"\s*\}\s*"
@@ -166,7 +176,7 @@ direct_production_calls = {
         r"&& riscv_instruction\.rs1 == 0\s*"
         r"&& riscv_instruction\.imm == 0\s*"
         r"\{.*?"
-        r"self\.nop\(\s*riscv_instruction,\s*4\s*\);.*?"
+        r"self\.nop\(\s*\&rv64im_input,\s*4\s*\);.*?"
         r"\} else \{\s*"
         r"self\.immediate_op\(\s*riscv_instruction,\s*\"add_w\",\s*4\s*\);"
         r"\s*\}\s*"
@@ -212,8 +222,30 @@ if "pub fn decode_fence_raw(inst: u32) -> FenceDecode" not in fence_decode_text:
     fail("raw FENCE extraction start is not backed by the production decoder helper")
 
 riscv_interpreter_text = (ROOT / "zisk/riscv/src/riscv_interpreter.rs").read_text()
-if "let fence = decode_fence_raw(inst);" not in riscv_interpreter_text:
-    fail("production RISC-V interpreter does not use the shared FENCE decoder helper")
+if "let decoded = decode_32_core(inst);" not in riscv_interpreter_text:
+    fail("production RISC-V interpreter does not use the shared RV64IM decoder core")
+
+for required in (
+    '#[path = "../../riscv/src/rv64im_decode.rs"]',
+    "decode_extract_from_decoded(decode_32_core(raw))",
+    "decode_32_core(raw).is_supported_rv64im()",
+    "match lowering_opcode(decoded.opcode)",
+    "Rv64imLoweringInput::new(0, decoded.rd, decoded.rs1, decoded.rs2, decoded.imm)",
+    "ctx.lower_rv64im_single_row_input(&input, opcode, false)",
+    "pub fn extract_transpile_rv64im_accepted_raw(raw: u32) -> bool",
+    "lowering_opcode(decoded.opcode).is_some()",
+):
+    if required not in aeneas_text:
+        fail(f"generalized raw RV64IM extraction path is missing `{required}`")
+
+for required in (
+    "pub fn decode_32_core(inst: u32) -> DecodedRv64im",
+    "pub enum RiscvOpcode",
+    "pub enum RiscvFormat",
+    "pub struct DecodedRv64im",
+):
+    if required not in rv64im_decode_text:
+        fail(f"shared RV64IM decoder core is missing `{required}`")
 
 for mnemonic, variant in sorted(wrapper_variants.items()):
     direct_lower_pattern = re.compile(

@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKSPACE="$ROOT/build/aeneas-production-extraction"
 AENEAS_CHECK_LEAN="${AENEAS_CHECK_LEAN:-1}"
 AENEAS_CHECK_FENCE_COMPLETENESS="${AENEAS_CHECK_FENCE_COMPLETENESS:-0}"
+AENEAS_CHECK_RV64IM_COMPLETENESS="${AENEAS_CHECK_RV64IM_COMPLETENESS:-0}"
 
 if [[ -z "${AENEAS_FLAKE:-}" ]]; then
   aeneas_owner="$(jq -r '.nodes.aeneas.locked.owner' "$ROOT/flake.lock")"
@@ -14,7 +15,13 @@ if [[ -z "${AENEAS_FLAKE:-}" ]]; then
 fi
 
 mkdir -p "$WORKSPACE"
-rm -rf "$WORKSPACE/Lean" "$WORKSPACE/lean-check"
+rm -rf "$WORKSPACE/Lean"
+mkdir -p "$WORKSPACE/lean-check"
+rm -f \
+  "$WORKSPACE/lean-check/ProductionM2.lean" \
+  "$WORKSPACE/lean-check/GeneratedChecks.lean" \
+  "$WORKSPACE/lean-check/FenceCompleteness.lean" \
+  "$WORKSPACE/lean-check/Rv64imCompleteness.lean"
 rm -f "$WORKSPACE"/production_m*.llbc
 
 if [[ -f "$AENEAS_FLAKE/backends/lean/Aeneas.lean" ]]; then
@@ -42,10 +49,13 @@ if [[ "${#rust_extract_fns[@]}" -eq 0 ]]; then
   exit 1
 fi
 
-raw_extract_fns=()
-if grep -q '^pub fn extract_fence_accepts_raw_inst(' "$ROOT/zisk/core/src/aeneas_extract.rs"; then
-  raw_extract_fns+=(extract_fence_accepts_raw_inst)
-fi
+mapfile -t raw_extract_fns < <(
+  sed -nE \
+    -e 's/^pub fn (extract_[A-Za-z0-9_]+_raw(_inst)?)\(.*/\1/p' \
+    -e 's/^pub fn (extract_rv64im_opcode_supported)\(.*/\1/p' \
+    "$ROOT/zisk/core/src/aeneas_extract.rs" \
+    | sort -u
+)
 
 starts=()
 for fn in "${rust_extract_fns[@]}"; do
@@ -154,8 +164,11 @@ if [[ "$AENEAS_CHECK_LEAN" != 0 ]]; then
   lean_check="$WORKSPACE/lean-check"
   mkdir -p "$lean_check"
   cp "$generated" "$lean_check/ProductionM2.lean"
-  cp -R "$AENEAS_LEAN_SRC" "$lean_check/aeneas-lean"
-  chmod -R u+w "$lean_check/aeneas-lean"
+  if [[ ! -f "$lean_check/aeneas-lean/Aeneas.lean" ]]; then
+    rm -rf "$lean_check/aeneas-lean"
+    cp -R "$AENEAS_LEAN_SRC" "$lean_check/aeneas-lean"
+    chmod -R u+w "$lean_check/aeneas-lean"
+  fi
 
   cat > "$lean_check/lakefile.lean" <<'EOF'
 import Lake
@@ -168,7 +181,9 @@ package zisk_production_extraction_check
 @[default_target] lean_lib ProductionM2
 @[default_target] lean_lib GeneratedChecks
 lean_lib FenceCompleteness
+lean_lib Rv64imCompleteness
 EOF
+  rm -f "$lean_check/lean-toolchain"
   cp "$AENEAS_LEAN_SRC/lean-toolchain" "$lean_check/lean-toolchain"
 
   cat > "$lean_check/GeneratedChecks.lean" <<'EOF'
@@ -228,6 +243,48 @@ def rowReturned (result : Result aeneas_extract.ZiskInstExtract) : Bool :=
   | ok _ => true
   | fail _ => false
   | div => false
+
+def rawSupported (result : Result Bool) : Bool :=
+  match result with
+  | ok accepted => accepted
+  | fail _ => false
+  | div => false
+
+def rawDecodeSupported (result : Result aeneas_extract.Rv64imDecodeExtract) : Bool :=
+  match result with
+  | ok decoded => decoded.supported
+  | fail _ => false
+  | div => false
+
+def rawDecodeOpcodeId (result : Result aeneas_extract.Rv64imDecodeExtract) : Nat :=
+  match result with
+  | ok decoded => decoded.opcode_id.val
+  | fail _ => 0
+  | div => 0
+
+def rawTranspileAccepted (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
+  match result with
+  | ok summary => summary.accepted
+  | fail _ => false
+  | div => false
+
+def rawTranspileAcceptedFlag (result : Result Bool) : Bool :=
+  match result with
+  | ok accepted => accepted
+  | fail _ => false
+  | div => false
+
+def rawTranspileRowBSrc (result : Result aeneas_extract.Rv64imTranspileExtract) : Nat :=
+  match result with
+  | ok summary => summary.row.b_src.val
+  | fail _ => 0
+  | div => 0
+
+def rawTranspileRowBOffset (result : Result aeneas_extract.Rv64imTranspileExtract) : Nat :=
+  match result with
+  | ok summary => summary.row.b_offset_imm0.val
+  | fail _ => 0
+  | div => 0
 
 structure ProofRowShape where
   paddr : _root_.Nat
@@ -375,6 +432,126 @@ example :
     rawFenceAccepted (aeneas_extract.extract_fence_accepts_raw_inst 0x1000000F#u32) = false := by
   native_decide
 
+example :
+    rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw 0x00b50533#u32) = true := by
+  native_decide
+
+example :
+    rawDecodeOpcodeId (aeneas_extract.extract_decode_rv64im_raw 0x00b50533#u32) = 6 := by
+  native_decide
+
+example :
+    rawSupported (aeneas_extract.extract_rv64im_opcode_supported 0x00b50533#u32) = true := by
+  native_decide
+
+example :
+    rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw 0x00b50533#u32) = true := by
+  native_decide
+
+example :
+    rawTranspileAcceptedFlag (aeneas_extract.extract_transpile_rv64im_accepted_raw 0x00b50533#u32) = true := by
+  native_decide
+
+example :
+    rawTranspileRowBSrc (aeneas_extract.extract_transpile_rv64im_raw 0x00b50533#u32) = 6 := by
+  native_decide
+
+example :
+    rawTranspileRowBOffset (aeneas_extract.extract_transpile_rv64im_raw 0x00b50533#u32) = 11 := by
+  native_decide
+
+EOF
+
+  rv64im_raw_cases=(
+    "lui 0x123451B7 1"
+    "auipc 0x12345197 2"
+    "jal 0x100001EF 3"
+    "jalr 0x100281E7 4"
+    "fence 0x0000000F 5"
+    "add 0x007281B3 6"
+    "sub 0x407281B3 7"
+    "sll 0x007291B3 8"
+    "slt 0x0072A1B3 9"
+    "sltu 0x0072B1B3 10"
+    "xor 0x0072C1B3 11"
+    "srl 0x0072D1B3 12"
+    "sra 0x4072D1B3 13"
+    "or 0x0072E1B3 14"
+    "and 0x0072F1B3 15"
+    "addw 0x007281BB 16"
+    "subw 0x407281BB 17"
+    "sllw 0x007291BB 18"
+    "srlw 0x0072D1BB 19"
+    "sraw 0x4072D1BB 20"
+    "mul 0x027281B3 21"
+    "mulh 0x027291B3 22"
+    "mulhsu 0x0272A1B3 23"
+    "mulhu 0x0272B1B3 24"
+    "mulw 0x027281BB 25"
+    "div 0x0272C1B3 26"
+    "divu 0x0272D1B3 27"
+    "divw 0x0272C1BB 28"
+    "divuw 0x0272D1BB 29"
+    "rem 0x0272E1B3 30"
+    "remu 0x0272F1B3 31"
+    "remw 0x0272E1BB 32"
+    "remuw 0x0272F1BB 33"
+    "addi 0x12328193 34"
+    "slli 0x00729193 35"
+    "slti 0x1232A193 36"
+    "sltiu 0x1232B193 37"
+    "xori 0x1232C193 38"
+    "srli 0x0072D193 39"
+    "srai 0x4072D193 40"
+    "ori 0x1232E193 41"
+    "andi 0x1232F193 42"
+    "addiw 0x1232819B 43"
+    "slliw 0x0072919B 44"
+    "srliw 0x0072D19B 45"
+    "sraiw 0x4072D19B 46"
+    "beq 0x10728063 47"
+    "bne 0x10729063 48"
+    "blt 0x1072C063 49"
+    "bge 0x1072D063 50"
+    "bltu 0x1072E063 51"
+    "bgeu 0x1072F063 52"
+    "lb 0x02028183 53"
+    "lbu 0x0202C183 54"
+    "lh 0x02029183 55"
+    "lhu 0x0202D183 56"
+    "lw 0x0202A183 57"
+    "lwu 0x0202E183 58"
+    "ld 0x0202B183 59"
+    "sb 0x02728023 60"
+    "sh 0x02729023 61"
+    "sw 0x0272A023 62"
+    "sd 0x0272B023 63"
+  )
+
+  {
+    echo
+    echo "-- Representative raw encodings for the current 63-opcode RV64IM surface."
+    for case in "${rv64im_raw_cases[@]}"; do
+      read -r name raw opcode_id <<<"$case"
+      cat <<EOF_CASE
+
+example :
+    rawDecodeOpcodeId (aeneas_extract.extract_decode_rv64im_raw ${raw}#u32) = ${opcode_id} := by
+  native_decide
+
+example :
+    rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw ${raw}#u32) = true := by
+  native_decide
+
+example :
+    rawTranspileAcceptedFlag (aeneas_extract.extract_transpile_rv64im_accepted_raw ${raw}#u32) = true := by
+  native_decide
+EOF_CASE
+    done
+  } >> "$lean_check/GeneratedChecks.lean"
+
+  cat >> "$lean_check/GeneratedChecks.lean" <<'EOF'
+
 end zisk_core_generated_checks
 EOF
 
@@ -402,26 +579,211 @@ def SailGenericFenceEncoding (inst : Std.U32) : Prop :=
   fenceOpcode inst = ok 0x0F#u32 ∧
   fenceFunct3 inst = ok 0#u32
 
+def resultU32Eq (result : Result Std.U32) (expected : Std.U32) : Bool :=
+  match result with
+  | ok actual => actual == expected
+  | fail _ => false
+  | div => false
+
+def SailGenericFenceEncodingBool (inst : Std.U32) : Bool :=
+  inst != fenceTsoWord &&
+    resultU32Eq (fenceOpcode inst) 0x0F#u32 &&
+    resultU32Eq (fenceFunct3 inst) 0#u32
+
+def rawTranspileAccepted (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
+  match result with
+  | ok summary => summary.accepted
+  | fail _ => false
+  | div => false
+
+def rawDecodeSupported (result : Result aeneas_extract.Rv64imDecodeExtract) : Bool :=
+  match result with
+  | ok decoded => decoded.supported
+  | fail _ => false
+  | div => false
+
 def rawFenceAccepted (result : Result Bool) : Bool :=
   match result with
   | ok accepted => accepted
   | fail _ => false
   | div => false
 
-def ExtractedRawFenceCompleteness : Prop :=
-  ∀ raw, SailGenericFenceEncoding raw →
+def ExtractedRawFenceDecodeCompletenessBool : Prop :=
+  ∀ raw, SailGenericFenceEncodingBool raw = true →
+    rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) = true
+
+def ExtractedRawFenceGateCompletenessBool : Prop :=
+  ∀ raw, SailGenericFenceEncodingBool raw = true →
     rawFenceAccepted (aeneas_extract.extract_fence_accepts_raw_inst raw) = true
 
-theorem extracted_raw_fence_completeness :
-    ExtractedRawFenceCompleteness := by
+def ExtractedRawFenceCompletenessBool : Prop :=
+  ∀ raw, SailGenericFenceEncodingBool raw = true →
+    rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw raw) = true
+
+def genericFenceWithFm : Std.U32 := 0x1000000F#u32
+
+-- Concrete counterexample diagnostics. Keep commented out when we want the
+-- build error to show the direct generic completeness proof obligation.
+--
+-- theorem generic_fence_with_fm_has_spec_shape :
+--     SailGenericFenceEncodingBool genericFenceWithFm = true := by
+--   native_decide
+--
+-- theorem extracted_raw_fence_counterexample :
+--     rawTranspileAccepted
+--       (aeneas_extract.extract_transpile_rv64im_raw genericFenceWithFm) = false := by
+--   native_decide
+
+theorem extracted_raw_fence_decode_completeness :
+    ExtractedRawFenceDecodeCompletenessBool := by
   intro raw h_sail
-  rcases h_sail with ⟨_h_not_tso, h_opcode, h_funct3⟩
-  simp [rawFenceAccepted, aeneas_extract.extract_fence_accepts_raw_inst,
-    aeneas_extract.fence_decode.decode_fence_raw, fenceOpcode, fenceFunct3] at h_opcode h_funct3 ⊢
+  simp [rawDecodeSupported,
+    SailGenericFenceEncodingBool,
+    resultU32Eq,
+    fenceOpcode,
+    fenceFunct3] at h_sail ⊢
+
+-- Fence-specific gate completeness. This is downstream of the general
+-- extracted decode theorem above, so keep it commented while inspecting the
+-- first natural failure stage.
+--
+-- theorem extracted_raw_fence_gate_completeness :
+--     ExtractedRawFenceGateCompletenessBool := by
+--   intro raw h_sail
+--   simp [rawFenceAccepted,
+--     aeneas_extract.extract_fence_accepts_raw_inst,
+--     aeneas_extract.fence_decode.decode_fence_raw,
+--     aeneas_extract.fence_decode.FenceDecodeKind.Insts.CoreCmpPartialEqFenceDecodeKind.eq,
+--     SailGenericFenceEncodingBool,
+--     resultU32Eq,
+--     fenceOpcode,
+--     fenceFunct3] at h_sail ⊢
+
+-- Downstream full-transpiler completeness. This is implied only after the
+-- decoder-gate theorem above, so keep it commented while inspecting the
+-- narrower decoder failure.
+--
+-- theorem extracted_raw_fence_completeness :
+--     ExtractedRawFenceCompletenessBool := by
+--   intro raw h_sail
+--   simp [rawTranspileAccepted,
+--     aeneas_extract.extract_transpile_rv64im_raw,
+--     SailGenericFenceEncodingBool,
+--     resultU32Eq,
+--     fenceOpcode,
+--     fenceFunct3] at h_sail ⊢
 
 end zisk_core_generated_fence_completeness
 EOF
     nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks FenceCompleteness' bash "$lean_check"
+  elif [[ "$AENEAS_CHECK_RV64IM_COMPLETENESS" != 0 ]]; then
+    cat > "$lean_check/Rv64imCompleteness.lean" <<'EOF'
+import ProductionM2
+
+open Aeneas Aeneas.Std Result
+open zisk_core
+
+namespace zisk_core_generated_rv64im_completeness
+
+def rawDecodeSupported (result : Result aeneas_extract.Rv64imDecodeExtract) : Bool :=
+  match result with
+  | ok decoded => decoded.supported
+  | fail _ => false
+  | div => false
+
+def rawTranspileAccepted (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
+  match result with
+  | ok summary => summary.accepted
+  | fail _ => false
+  | div => false
+
+def rawTranspileAcceptedFlag (result : Result Bool) : Bool :=
+  match result with
+  | ok accepted => accepted
+  | fail _ => false
+  | div => false
+
+def rawTranspileRowBOffset (result : Result aeneas_extract.Rv64imTranspileExtract) : Nat :=
+  match result with
+  | ok summary => summary.row.b_offset_imm0.val
+  | fail _ => 0
+  | div => 0
+
+def rv64imOpcode (raw : Std.U32) (opcode : Std.U32) : Result Bool := do
+  let masked ← lift (raw &&& 0x7F#u32)
+  ok (masked = opcode)
+
+def rawFunct3 (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0x7000#u32)
+  masked >>> 12#i32
+
+def rawFunct7 (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0xFE000000#u32)
+  masked >>> 25#i32
+
+def SailAddEncoding (raw : Std.U32) : Prop :=
+  rv64imOpcode raw 0x33#u32 = ok true ∧
+  rawFunct3 raw = ok 0#u32 ∧
+  rawFunct7 raw = ok 0#u32
+
+def ExtractedRawRv64imCompletenessFor (sailExecutable : Std.U32 → Prop) : Prop :=
+  ∀ raw, sailExecutable raw →
+    rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw raw) = true
+
+def ExtractedRawAddCompleteness : Prop :=
+  ExtractedRawRv64imCompletenessFor SailAddEncoding
+
+def ExtractedDecodeSupportedCompleteness : Prop :=
+  ∀ raw,
+    rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) = true →
+    rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw raw) = true
+
+def ExtractedDecodeSupportedLowerableCompleteness : Prop :=
+  ∀ raw,
+    rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) = true →
+    rawTranspileAcceptedFlag (aeneas_extract.extract_transpile_rv64im_accepted_raw raw) = true
+
+theorem extracted_decode_supported_lowerable_completeness :
+    ExtractedDecodeSupportedLowerableCompleteness := by
+  intro raw h_supported
+  simp [rawDecodeSupported, rawTranspileAcceptedFlag,
+    aeneas_extract.extract_decode_rv64im_raw,
+    aeneas_extract.extract_transpile_rv64im_accepted_raw] at h_supported ⊢
+  cases h_decode : aeneas_extract.rv64im_decode.decode_32_core raw <;> simp [h_decode] at h_supported ⊢
+  rename_i decoded
+  cases decoded
+  case mk opcode format funct3 funct7 rd rs1 rs2 imm pred succ =>
+  cases opcode <;>
+  cases format <;>
+    simp [aeneas_extract.decode_extract_from_decoded,
+      aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im,
+      aeneas_extract.lowering_opcode,
+      aeneas_extract.opcode_id,
+      aeneas_extract.format_id] at h_supported ⊢
+
+example :
+    rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw 0x00b50533#u32) = true := by
+  native_decide
+
+example :
+    rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw 0x00b50533#u32) = true := by
+  native_decide
+
+example :
+    rawTranspileRowBOffset (aeneas_extract.extract_transpile_rv64im_raw 0x00b50533#u32) = 11 := by
+  native_decide
+
+example :
+    rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw 0x1000000F#u32) = false := by
+  native_decide
+
+example :
+    rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw 0x1000000F#u32) = false := by
+  native_decide
+
+end zisk_core_generated_rv64im_completeness
+EOF
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks Rv64imCompleteness' bash "$lean_check"
   else
     nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks' bash "$lean_check"
   fi
