@@ -62,7 +62,16 @@ nix run .#aeneas-production-extract
 It writes generated LLBC/Lean artifacts under `build/aeneas-production-extraction`
 and rejects unexpected trust markers such as generated axioms, opaques,
 sorries, string/format models, or `HashMap` models. It also checks that every
-configured extraction start appears as a generated Lean definition.
+configured extraction start appears as a generated Lean definition. By default
+it also stages a temporary Lake project under `build/`, copies the pinned
+Aeneas Lean runtime there, and typechecks the generated `ProductionM2.lean`
+without committing generated code. For extraction-only timing or debugging, run
+`AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract`.
+
+On 2026-06-03, a cold local run measured with GNU `time -v` took 3:03.88 wall
+time and 5,712,564 KiB maximum RSS with generated-Lean typechecking enabled.
+With `AENEAS_CHECK_LEAN=0`, the same harness took 4.52 seconds wall time and
+459,820 KiB maximum RSS; Aeneas reported 0.693848 seconds for Lean translation.
 The current extraction batch covers the production-backed LUI/AUIPC/JAL/JALR
 helpers, FENCE/NOP, and the RV64IM single-row register, immediate, branch,
 load, and store helper families.

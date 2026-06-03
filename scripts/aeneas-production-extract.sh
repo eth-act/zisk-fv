@@ -3,11 +3,30 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKSPACE="$ROOT/build/aeneas-production-extraction"
-AENEAS_FLAKE="${AENEAS_FLAKE:-github:AeneasVerif/aeneas}"
+AENEAS_CHECK_LEAN="${AENEAS_CHECK_LEAN:-1}"
+
+if [[ -z "${AENEAS_FLAKE:-}" ]]; then
+  aeneas_owner="$(jq -r '.nodes.aeneas.locked.owner' "$ROOT/flake.lock")"
+  aeneas_repo="$(jq -r '.nodes.aeneas.locked.repo' "$ROOT/flake.lock")"
+  aeneas_rev="$(jq -r '.nodes.aeneas.locked.rev' "$ROOT/flake.lock")"
+  AENEAS_FLAKE="github:$aeneas_owner/$aeneas_repo/$aeneas_rev"
+fi
 
 mkdir -p "$WORKSPACE"
-rm -rf "$WORKSPACE/Lean"
-rm -f "$WORKSPACE/production_m2.llbc"
+rm -rf "$WORKSPACE/Lean" "$WORKSPACE/lean-check"
+rm -f "$WORKSPACE"/production_m*.llbc
+
+if [[ -f "$AENEAS_FLAKE/backends/lean/Aeneas.lean" ]]; then
+  AENEAS_SRC="$AENEAS_FLAKE"
+else
+  AENEAS_SRC="$(nix flake metadata --json "$AENEAS_FLAKE" | jq -r '.path')"
+fi
+
+AENEAS_LEAN_SRC="$AENEAS_SRC/backends/lean"
+if [[ ! -f "$AENEAS_LEAN_SRC/Aeneas.lean" ]]; then
+  echo "Could not find pinned Aeneas Lean runtime under $AENEAS_LEAN_SRC" >&2
+  exit 1
+fi
 
 starts=(
   crate::aeneas_extract::extract_lui_from_inst
@@ -125,6 +144,28 @@ fi
 if grep -En '(^axiom|^opaque|sorry|unknown definitions|HashMap|alloc\.string|alloc\.fmt|Str\.|core\.fmt)' "$generated"; then
   echo "Production extraction generated an unexpected trust marker" >&2
   exit 1
+fi
+
+if [[ "$AENEAS_CHECK_LEAN" != 0 ]]; then
+  lean_check="$WORKSPACE/lean-check"
+  mkdir -p "$lean_check"
+  cp "$generated" "$lean_check/ProductionM2.lean"
+  cp -R "$AENEAS_LEAN_SRC" "$lean_check/aeneas-lean"
+  chmod -R u+w "$lean_check/aeneas-lean"
+
+  cat > "$lean_check/lakefile.lean" <<'EOF'
+import Lake
+open Lake DSL
+
+require aeneas from "aeneas-lean"
+
+package zisk_production_extraction_check
+
+@[default_target] lean_lib ProductionM2
+EOF
+  cp "$AENEAS_LEAN_SRC/lean-toolchain" "$lean_check/lean-toolchain"
+
+  nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2' bash "$lean_check"
 fi
 
 echo "Production-backed extraction succeeded: ${#starts[@]} starts, $decl_count declarations, $generated"
