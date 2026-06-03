@@ -94,6 +94,27 @@ starts=(
   crate::aeneas_extract::extract_sd_from_inst
 )
 
+mapfile -t configured_start_fns < <(
+  printf '%s\n' "${starts[@]}" | sed 's/.*:://' | sort -u
+)
+
+mapfile -t rust_extract_fns < <(
+  sed -nE \
+    -e 's/^pub fn (extract_[A-Za-z0-9_]+_from_inst)\(.*/\1/p' \
+    -e 's/^[a-z0-9_]+_extract!\((extract_[A-Za-z0-9_]+_from_inst),.*/\1/p' \
+    "$ROOT/zisk/core/src/aeneas_extract.rs" \
+    | sort -u
+)
+
+if ! diff -u \
+    <(printf '%s\n' "${rust_extract_fns[@]}") \
+    <(printf '%s\n' "${configured_start_fns[@]}"); then
+  echo "Configured Aeneas starts diverge from Rust extraction wrappers" >&2
+  echo "  Rust wrappers:       ${#rust_extract_fns[@]}" >&2
+  echo "  Configured starts:   ${#configured_start_fns[@]}" >&2
+  exit 1
+fi
+
 proof_shape_fields=(
   paddr
   op

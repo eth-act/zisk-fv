@@ -62,7 +62,8 @@ nix run .#aeneas-production-extract
 It writes generated LLBC/Lean artifacts under `build/aeneas-production-extraction`
 and rejects unexpected trust markers such as generated axioms, opaques,
 sorries, string/format models, or `HashMap` models. It also checks that every
-configured extraction start appears as a generated Lean definition. By default
+configured extraction start appears as a generated Lean definition and that the
+configured start set exactly matches the Rust extraction-wrapper surface. By default
 it also stages a temporary Lake project under `build/`, copies the pinned
 Aeneas Lean runtime there, and typechecks the generated `ProductionM2.lean`
 without committing generated code. The temporary project executes every
