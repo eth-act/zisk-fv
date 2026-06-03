@@ -43,10 +43,18 @@ jobs:
 
       - name: Check extraction wrappers match production convert
         run: |
+          nix develop --command bash <<'BASH'
+          set -euo pipefail
+          riscv_shims="$(mktemp -d)"
+          for tool in gcc ar as ld objdump; do
+            ln -s "$(command -v "riscv64-none-elf-$tool")" "$riscv_shims/riscv64-unknown-elf-$tool"
+          done
+          export PATH="$riscv_shims:$PATH"
           cd zisk/core
           cargo test --lib --features aeneas_extract \
             extraction_starts_match_production_convert_for_single_row_opcodes \
             --quiet
+          BASH
 
       - name: Regenerate production-backed extraction surface
         run: AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract

@@ -131,6 +131,8 @@
             python3
             jq
             git
+            gmp
+            pkgsCross.riscv64-embedded.stdenv.cc
           ];
         };
       });

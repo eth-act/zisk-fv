@@ -1,5 +1,5 @@
 { writeShellApplication, elan, cargo, rustc, protobuf, python3, jq, git
-, gcc, gnumake, nasm, gmp, nix, aeneas }:
+, gcc, gnumake, nasm, gmp, nix, pkgsCross, aeneas }:
 
 # Top-level test entry point. Single source of truth for "is the
 # project green?" Runs every check in dependency order so a clean
@@ -20,7 +20,20 @@ writeShellApplication {
   # are tracked via `overall` and surfaced in the final exit code.
   bashOptions = [ "nounset" "pipefail" ];
 
-  runtimeInputs = [ elan cargo rustc protobuf python3 jq git gcc gnumake nasm nix ];
+  runtimeInputs = [
+    elan
+    cargo
+    rustc
+    protobuf
+    python3
+    jq
+    git
+    gcc
+    gnumake
+    nasm
+    nix
+    pkgsCross.riscv64-embedded.stdenv.cc
+  ];
 
   text = ''
     cd "$(git rev-parse --show-toplevel)" || exit 1
@@ -29,6 +42,11 @@ writeShellApplication {
 
     export CPATH="${gmp.dev}/include''${CPATH:+:$CPATH}"
     export LIBRARY_PATH="${gmp.out}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
+    riscv_shims="$(mktemp -d)"
+    for tool in gcc ar as ld objdump; do
+      ln -s "$(command -v "riscv64-none-elf-$tool")" "$riscv_shims/riscv64-unknown-elf-$tool"
+    done
+    export PATH="$riscv_shims:$PATH"
 
     run() {
       local name=$1; shift
