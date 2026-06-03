@@ -108,9 +108,23 @@ if [[ ! -s "$generated" ]]; then
   exit 1
 fi
 
+missing_defs=()
+for start in "${starts[@]}"; do
+  fn="${start##*::}"
+  if ! grep -q "def aeneas_extract\\.$fn" "$generated"; then
+    missing_defs+=("$fn")
+  fi
+done
+
+if [[ "${#missing_defs[@]}" -ne 0 ]]; then
+  printf 'Generated Lean is missing expected extraction definitions:\n' >&2
+  printf '  %s\n' "${missing_defs[@]}" >&2
+  exit 1
+fi
+
 if grep -En '(^axiom|^opaque|sorry|unknown definitions|HashMap|alloc\.string|alloc\.fmt|Str\.|core\.fmt)' "$generated"; then
   echo "Production extraction generated an unexpected trust marker" >&2
   exit 1
 fi
 
-echo "Production-backed extraction succeeded: $decl_count declarations, $generated"
+echo "Production-backed extraction succeeded: ${#starts[@]} starts, $decl_count declarations, $generated"

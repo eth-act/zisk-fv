@@ -61,7 +61,8 @@ nix run .#aeneas-production-extract
 
 It writes generated LLBC/Lean artifacts under `build/aeneas-production-extraction`
 and rejects unexpected trust markers such as generated axioms, opaques,
-sorries, string/format models, or `HashMap` models.
+sorries, string/format models, or `HashMap` models. It also checks that every
+configured extraction start appears as a generated Lean definition.
 The current extraction batch covers the production-backed LUI/AUIPC/JAL/JALR
 helpers, FENCE/NOP, and the RV64IM single-row register, immediate, branch,
 load, and store helper families.
