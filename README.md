@@ -81,8 +81,8 @@ helpers, FENCE/NOP, and the RV64IM single-row register, immediate, branch,
 load, and store helper families.
 
 The proof-side migration target is
-`ZiskFv.Compliance.MainStaticRowProvenance`: it ties selected Main/ROM rows to
-static rows produced by the decode/lower model. The former transpiler axiom
+`ZiskFv.Compliance.MainRowProvenance`: it ties selected Main/ROM rows to
+row shapes produced by the decode/lower model. The former transpiler axiom
 surface is now retired from the Lean source ledger; dynamic immediate/PC and
 operand-lane obligations are explicit route facts.
 

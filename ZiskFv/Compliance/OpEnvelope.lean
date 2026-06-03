@@ -240,9 +240,8 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.lui)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.LuiRowMode provenance)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     (h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat)
     (h_imm_hi_nat : (m.b_1 r_main).val
@@ -259,10 +258,8 @@ inductive OpEnvelope
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (next_pc : FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.auipc)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
     (h_offset_bridge : (m.jmp_offset2 r_main).val
       = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
@@ -295,10 +292,8 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.jal)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.JalRowMode provenance)
     (h_jal_subset :
       ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
     (h_jmp2 : m.jmp_offset2 r_main = 4)

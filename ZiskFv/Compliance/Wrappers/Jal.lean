@@ -6,7 +6,7 @@ import ZiskFv.EquivCore.Promises.JumpHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
-import ZiskFv.Compliance.StaticRowProvenance
+import ZiskFv.Compliance.RowProvenance
 
 /-!
 # `equiv_JAL` Compliance wrapper — ControlFlow non-branch
@@ -87,11 +87,9 @@ lemma equiv_JAL
     promises h_input_imm h_not_throws
     h_circuit h_jmp2 h_pc_bridge h_pc_bound h_pc_offset_lt_2_32
 
-/-- Static-provenance wrapper for the JAL rd-write route. This avoids using
-    `transpile_JAL` to derive mode pins; those pins come from the selected
-    static row in `Static.transpile inst`. The `rd != 0` precondition matches
-    production/static `storeReg rd true`, which disables `storePc` for x0. -/
-lemma equiv_JAL_of_static_provenance
+/-- Row-provenance wrapper for the JAL rd-write route. The mode pins come from
+    a selected production-extracted row shape. -/
+lemma equiv_JAL_of_row_provenance
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
@@ -102,10 +100,8 @@ lemma equiv_JAL_of_static_provenance
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.jal)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.JalRowMode provenance)
     (h_jal_subset :
       ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
     (h_jmp2 : m.jmp_offset2 r_main = 4)
@@ -121,13 +117,9 @@ lemma equiv_JAL_of_static_provenance
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) :
     execute_instruction (instruction.JAL (imm, rd)) state
       = (bus_effect exec_row [e_rd] state).2 :=
-  have h_static :=
-    ZiskFv.Compliance.MainStaticRowProvenance.jal_static_mode_of_inst
-      provenance h_inst_op h_inst_rd_ne_zero
   have h_circuit :=
-    ZiskFv.EquivCore.Promises.jal_h_circuit_of_static_provenance
-      m r_main next_pc provenance h_static.1 h_static.2.1 h_static.2.2.1
-      h_static.2.2.2.1 h_static.2.2.2.2 h_jal_subset
+    ZiskFv.EquivCore.Promises.jal_h_circuit_of_row_provenance
+      m r_main next_pc provenance row_mode h_jal_subset
   ZiskFv.EquivCore.Jal.equiv_JAL state jal_input imm rd misa_val
     exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_input_imm h_not_throws

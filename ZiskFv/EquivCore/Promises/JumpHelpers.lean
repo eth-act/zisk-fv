@@ -5,7 +5,7 @@ import ZiskFv.ZiskCircuit.Jal
 import ZiskFv.ZiskCircuit.Jalr
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Compliance.StaticRowProvenance
+import ZiskFv.Compliance.RowProvenance
 
 /-!
 # `JumpPromises` companion helpers
@@ -42,34 +42,29 @@ def jal_h_circuit_of_main_constraints
     ⟨h_main_active, by rw [h_main_op_jal]; rfl, h_m32, h_set_pc, h_store_pc⟩
   ⟨h_jal_subset, h_jal_mode⟩
 
-/-- Assemble JAL's `h_circuit` from static-row provenance plus the per-row JAL
-    subset constraint. This avoids using `transpile_JAL` for mode pins. -/
-def jal_h_circuit_of_static_provenance
+/-- Assemble JAL's `h_circuit` from row-shape provenance plus the per-row JAL
+    subset constraint. -/
+def jal_h_circuit_of_row_provenance
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-    (p : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-    (h_static_op : p.staticRow.op = ZiskFv.Transpiler.Static.Const.opFlag)
-    (h_static_internal : p.staticRow.isExternalOp = false)
-    (h_static_m32 : p.staticRow.m32 = false)
-    (h_static_set_pc : p.staticRow.setPc = false)
-    (h_static_store_pc : p.staticRow.storePc = true)
+    (p : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (mode : ZiskFv.Compliance.MainRowProvenance.JalRowMode p)
     (h_jal_subset : ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc) :
     ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc :=
   let h_jal_mode : ZiskFv.ZiskCircuit.Jal.main_row_in_jal_mode m r_main :=
     ⟨by
-        rw [p.is_external_op_eq, h_static_internal]
+        rw [p.is_external_op_eq, mode.internal_eq]
         simp [ZiskFv.Compliance.boolF],
       by
-        rw [p.op_eq, h_static_op]
-        simp [ZiskFv.Compliance.natF, ZiskFv.Transpiler.Static.Const.opFlag],
+        rw [p.op_eq, mode.op_eq]
+        simp [ZiskFv.Compliance.natF, ZiskFv.Compliance.ExtractedConst.opFlag],
       by
-        rw [p.m32_eq, h_static_m32]
+        rw [p.m32_eq, mode.m32_eq]
         simp [ZiskFv.Compliance.boolF],
       by
-        rw [p.set_pc_eq, h_static_set_pc]
+        rw [p.set_pc_eq, mode.set_pc_eq]
         simp [ZiskFv.Compliance.boolF],
       by
-        rw [p.store_pc_eq, h_static_store_pc]
+        rw [p.store_pc_eq, mode.store_pc_eq]
         simp [ZiskFv.Compliance.boolF]⟩
   ⟨h_jal_subset, h_jal_mode⟩
 

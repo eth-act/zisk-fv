@@ -14,7 +14,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 
 ## Trust note
 
-The `rdWrite` route carries static-row provenance for the selected JAL row, so
+The `rdWrite` route carries row-shape provenance for the selected JAL row, so
 mode pins are derived from explicit row provenance. The
 `x0NoMemory` route delegates to the empty-memory JAL wrapper.
 -/
@@ -40,10 +40,8 @@ inductive JalRoute
       (nextPC_val : BitVec 64)
       (next_pc : FGL)
       (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-      {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-      (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-      (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.jal)
-      (h_inst_rd_ne_zero : inst.rd ≠ 0)
+      (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+      (row_mode : ZiskFv.Compliance.MainRowProvenance.JalRowMode provenance)
       (h_jal_subset : jump_subset_holds m r_main next_pc)
       (h_jmp2 : m.jmp_offset2 r_main = 4)
       (h_pc_bridge : (m.pc r_main).val = jal_input.PC.toNat)
@@ -98,16 +96,16 @@ theorem equiv_JAL
       = state_effect_via_channels (JalRoute.channels route) state := by
   cases route with
   | rdWrite exec_row e_rd nextPC_val next_pc store_pc_mem provenance
-      h_inst_op h_inst_rd_ne_zero h_jal_subset
+      row_mode h_jal_subset
       h_jmp2 h_pc_bridge
       promises h_input_imm h_not_throws h_pc_bound h_pc_offset_lt_2_32 =>
     change execute_instruction (instruction.JAL (imm, rd)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
     rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-    exact ZiskFv.Compliance.equiv_JAL_of_static_provenance
+    exact ZiskFv.Compliance.equiv_JAL_of_row_provenance
       state jal_input imm rd misa_val m r_main
       next_pc exec_row e_rd nextPC_val store_pc_mem
-      provenance h_inst_op h_inst_rd_ne_zero h_jal_subset h_jmp2 h_pc_bridge
+      provenance row_mode h_jal_subset h_jmp2 h_pc_bridge
       promises h_input_imm h_not_throws h_pc_bound h_pc_offset_lt_2_32
   | x0NoMemory exec_row nextPC_val promises h_input_imm h_not_throws =>
     change execute_instruction (instruction.JAL (imm, rd)) state

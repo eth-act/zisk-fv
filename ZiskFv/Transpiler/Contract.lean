@@ -1,6 +1,5 @@
 import Mathlib
 
-import ZiskFv.Transpiler.Static
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Main.Main
 

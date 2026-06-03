@@ -6,13 +6,13 @@ import ZiskFv.EquivCore.Promises.UTypeHelpers
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
-import ZiskFv.Compliance.StaticRowProvenance
+import ZiskFv.Compliance.RowProvenance
 
 /-!
 # AUIPC Compliance wrappers
 
-This file keeps the legacy pin-based wrapper and the newer static-provenance
-wrapper. The global compliance route uses the static-provenance wrapper for
+This file keeps the legacy pin-based wrapper and the newer row-provenance
+wrapper. The global compliance route uses the row-provenance wrapper for
 `rd != x0` and a separate no-memory wrapper for `rd = x0`.
 -/
 
@@ -84,13 +84,10 @@ lemma equiv_AUIPC
     exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_circuit h_offset_bridge h_pc_bridge h_no_wrap h_pc_offset_lt_2_32
 
-/-- Static-provenance wrapper for `equiv_AUIPC`. This avoids using the
-    residual AUIPC mode bridge; the mode pins come from a
-    selected static row in `Static.transpile inst`. The `rd != 0` precondition
-    reflects the production/static `storeReg rd true` behavior: `storePc` is
-    disabled for x0. The PC/offset dynamic facts are supplied explicitly by the
-    caller. -/
-lemma equiv_AUIPC_of_static_provenance
+/-- Row-provenance wrapper for `equiv_AUIPC`. The mode pins come from a
+    selected production-extracted row shape. The PC/offset dynamic facts are
+    supplied explicitly by the caller. -/
+lemma equiv_AUIPC_of_row_provenance
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)
@@ -100,10 +97,8 @@ lemma equiv_AUIPC_of_static_provenance
     (nextPC_val : BitVec 64)
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.auipc)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
     (h_offset_bridge : (m.jmp_offset2 r_main).val
       = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
@@ -120,14 +115,9 @@ lemma equiv_AUIPC_of_static_provenance
         < 4294967296) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = (bus_effect exec_row [e_rd] state).2 := by
-  obtain ⟨h_static_op, h_static_internal, h_static_m32,
-      h_static_set_pc, h_static_store_pc⟩ :=
-    ZiskFv.Compliance.MainStaticRowProvenance.auipc_static_mode_of_inst
-      provenance h_inst_op h_inst_rd_ne_zero
   have h_circuit :=
-    ZiskFv.EquivCore.Promises.auipc_h_circuit_of_static_provenance
-      m r_main next_pc provenance h_static_op h_static_internal h_static_m32
-      h_static_set_pc h_static_store_pc h_auipc_subset
+    ZiskFv.EquivCore.Promises.auipc_h_circuit_of_row_provenance
+      m r_main next_pc provenance row_mode h_auipc_subset
   exact ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
     exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_circuit h_offset_bridge h_pc_bridge h_no_wrap h_pc_offset_lt_2_32

@@ -13,7 +13,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 
 ## Trust note
 
-No new axioms. LUI mode pins are derived from explicit static-row provenance;
+No new axioms. LUI mode pins are derived from explicit row-shape provenance;
 the remaining dynamic immediate-lane bridge stays as a caller obligation.
 -/
 
@@ -35,9 +35,8 @@ theorem equiv_LUI
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.lui)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.LuiRowMode provenance)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     (h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat)
     (h_imm_hi_nat : (m.b_1 r_main).val
@@ -49,8 +48,8 @@ theorem equiv_LUI
     : execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_LUI_of_static_provenance
+  exact ZiskFv.Compliance.equiv_LUI_of_row_provenance
     state lui_input imm rd m r_main next_pc exec_row e_rd store_pc_mem
-    provenance h_inst_op h_lui_subset h_imm_lo_nat h_imm_hi_nat promises
+    provenance row_mode h_lui_subset h_imm_lo_nat h_imm_hi_nat promises
 
 end ZiskFv.Equivalence.Lui

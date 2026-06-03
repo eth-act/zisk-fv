@@ -34,7 +34,7 @@ def OpEnvelope.exec_eq_nomem
   | .lui _ imm rd _ exec_row e_rd _ _ _ _ _ _ _ =>
       execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
         = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
-  | .auipc _ imm rd exec_row e_rd _ _ _ _ _ _ _ _ _ _ _ _ =>
+  | .auipc _ imm rd exec_row e_rd _ _ _ _ _ _ _ _ _ _ _ =>
       execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
         = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
   | .auipc_x0 _ imm rd exec_row _ =>
@@ -51,20 +51,20 @@ theorem zisk_riscv_compliant_program_bus_nomem
     env.exec_eq_nomem := by
   cases env with
   | lui lui_input imm rd next_pc exec_row e_rd store_pc_mem provenance
-      h_inst_op h_lui_subset h_imm_lo_nat h_imm_hi_nat promises =>
+      row_mode h_lui_subset h_imm_lo_nat h_imm_hi_nat promises =>
     simp only [OpEnvelope.exec_eq_nomem]
     exact ZiskFv.Equivalence.Lui.equiv_LUI state lui_input imm rd m r_main next_pc
-      exec_row e_rd store_pc_mem provenance h_inst_op h_lui_subset h_imm_lo_nat
+      exec_row e_rd store_pc_mem provenance row_mode h_lui_subset h_imm_lo_nat
       h_imm_hi_nat promises
   | auipc auipc_input imm rd exec_row e_rd nextPC_val next_pc
-          store_pc_mem provenance h_inst_op h_inst_rd_ne_zero h_auipc_subset
+          store_pc_mem provenance row_mode h_auipc_subset
           h_offset_bridge h_pc_bridge
           promises h_no_wrap h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq_nomem]
     exact ZiskFv.Equivalence.Auipc.equiv_AUIPC state auipc_input imm rd
       m r_main next_pc
       (ZiskFv.Equivalence.Auipc.AuipcRoute.rdWrite exec_row e_rd nextPC_val
-        next_pc store_pc_mem provenance h_inst_op h_inst_rd_ne_zero
+        next_pc store_pc_mem provenance row_mode
         h_auipc_subset h_offset_bridge h_pc_bridge
         promises h_no_wrap h_pc_offset_lt_2_32)
   | auipc_x0 auipc_input imm rd exec_row promises =>

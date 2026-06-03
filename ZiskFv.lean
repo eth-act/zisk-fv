@@ -1,5 +1,4 @@
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Transpiler.Static
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Field.GoldilocksBridge
@@ -128,5 +127,5 @@ import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.FullEnsemble.Balance
-import ZiskFv.Compliance.StaticRowProvenance
+import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance

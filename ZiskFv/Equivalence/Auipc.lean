@@ -14,7 +14,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 
 ## Trust note
 
-No new axioms. The `rdWrite` route delegates to the static-provenance AUIPC
+No new axioms. The `rdWrite` route delegates to the row-provenance AUIPC
 wrapper, so it does not consume the legacy AUIPC mode-pin axiom. The
 `x0NoMemory` route delegates to the empty-memory AUIPC wrapper.
 -/
@@ -30,9 +30,8 @@ namespace ZiskFv.Equivalence.Auipc
 /-- The two production AUIPC bus shapes.
 
     `rdWrite` is the ordinary `rd != x0` shape with one memory-bus register
-    write. `x0NoMemory` is the `rd = x0` shape: the static/production
-    transpiler emits `storeNone`, so the channel output has an empty memory
-    bus. -/
+    write. `x0NoMemory` is the `rd = x0` shape: production lowering emits
+    `storeNone`, so the channel output has an empty memory bus. -/
 inductive AuipcRoute
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
@@ -45,10 +44,8 @@ inductive AuipcRoute
     (nextPC_val : BitVec 64)
     (next_pc : FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.auipc)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
     (h_offset_bridge : (m.jmp_offset2 r_main).val
       = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
@@ -100,14 +97,14 @@ theorem equiv_AUIPC
   have _next_pc_anchor : FGL := next_pc
   cases route with
   | rdWrite exec_row e_rd nextPC_val route_next_pc store_pc_mem provenance
-      h_inst_op h_inst_rd_ne_zero h_auipc_subset h_offset_bridge h_pc_bridge promises
+      row_mode h_auipc_subset h_offset_bridge h_pc_bridge promises
       h_no_wrap h_pc_offset_lt_2_32 =>
     change execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
     rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-    exact ZiskFv.Compliance.equiv_AUIPC_of_static_provenance
+    exact ZiskFv.Compliance.equiv_AUIPC_of_row_provenance
       state auipc_input imm rd exec_row e_rd nextPC_val m r_main route_next_pc
-      store_pc_mem provenance h_inst_op h_inst_rd_ne_zero h_auipc_subset
+      store_pc_mem provenance row_mode h_auipc_subset
       h_offset_bridge h_pc_bridge promises h_no_wrap h_pc_offset_lt_2_32
   | x0NoMemory exec_row promises =>
     change execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state

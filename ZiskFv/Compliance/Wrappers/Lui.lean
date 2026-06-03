@@ -7,7 +7,7 @@ import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
-import ZiskFv.Compliance.StaticRowProvenance
+import ZiskFv.Compliance.RowProvenance
 
 /-!
 # `equiv_LUI` Compliance wrapper
@@ -57,10 +57,10 @@ lemma equiv_LUI
     m r_main next_pc exec_row e_rd store_pc_mem (lui_input.PC + 4#64)
     promises h_imm_lo_nat h_imm_hi_nat h_circuit
 
-/-- Static-provenance wrapper for `equiv_LUI`. The mode pins come from a
-    selected row in `Static.transpile inst`; the dynamic immediate-lane facts
+/-- Row-provenance wrapper for `equiv_LUI`. The mode pins come from a
+    selected production-extracted row shape; the dynamic immediate-lane facts
     remain explicit caller obligations. -/
-lemma equiv_LUI_of_static_provenance
+lemma equiv_LUI_of_row_provenance
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
@@ -69,9 +69,8 @@ lemma equiv_LUI_of_static_provenance
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
-    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
-    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.lui)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.LuiRowMode provenance)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     (h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat)
     (h_imm_hi_nat : (m.b_1 r_main).val
@@ -82,14 +81,9 @@ lemma equiv_LUI_of_static_provenance
         imm rd exec_row e_rd (lui_input.PC + 4#64)) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = (bus_effect exec_row [e_rd] state).2 := by
-  obtain ⟨h_static_op, h_static_internal, h_static_m32,
-      h_static_set_pc, h_static_store_pc⟩ :=
-    ZiskFv.Compliance.MainStaticRowProvenance.lui_static_mode_of_inst
-      provenance h_inst_op
   have h_circuit :=
-    ZiskFv.EquivCore.Promises.lui_h_circuit_of_static_provenance
-      m r_main next_pc provenance h_static_op h_static_internal h_static_m32
-      h_static_set_pc h_static_store_pc h_lui_subset
+    ZiskFv.EquivCore.Promises.lui_h_circuit_of_row_provenance
+      m r_main next_pc provenance row_mode h_lui_subset
   exact ZiskFv.EquivCore.Lui.equiv_LUI state lui_input imm rd
     m r_main next_pc exec_row e_rd store_pc_mem (lui_input.PC + 4#64)
     promises h_imm_lo_nat h_imm_hi_nat h_circuit

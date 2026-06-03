@@ -22,7 +22,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 JALR. Combines:
 
-* Aeneas/static-row provenance plus explicit JALR link-address bridge facts,
+* Aeneas/row-shape provenance plus explicit JALR link-address bridge facts,
 * the compositional JALR spec (`ZiskFv.ZiskCircuit.Jalr.jalr_pc_advance`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_JALR_pure_equiv`, closed via the trusted
