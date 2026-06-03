@@ -34,8 +34,6 @@
 /scripts/aeneas-production-extract.sh                   @codygunton
 /ZiskFv/Compliance/RowProvenance.lean                   @codygunton
 /ZiskFv/RowShape/Contract.lean                          @codygunton
-/ZiskFv/Transpiler/Contract.lean                        @codygunton
-/ZiskFv/Trusted/Transpiler.lean                         @codygunton
 /zisk                                                     @codygunton
 /zisk/**                                                  @codygunton
 

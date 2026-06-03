@@ -1,5 +1,5 @@
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.SailSpec.BusEffect

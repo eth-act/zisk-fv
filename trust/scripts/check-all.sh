@@ -17,19 +17,20 @@ run() {
   echo
 }
 
-run "1/13 locality"               "$dir/check-locality.sh"
-run "2/13 baseline freshness"     "$dir/check-baseline.sh"
-run "3/13 forbidden param shapes" "$dir/check-no-output-eq.sh"
-run "4/13 floors + cross-witness" "$dir/check-floor.sh"
-run "5/13 zero sorry"             "$dir/check-no-sorry.sh"
-run "6/13 uniformity (canonical equivalence shape)" "$dir/check-uniformity.sh"
-run "7/13 hypothesis-count anti-laundering" "$dir/check-hypothesis-count.sh"
-run "8/13 caller-burden ledger (canonical)" "$dir/check-caller-burden.sh"
-run "9/13 caller-burden ledger (wrappers)"  "$dir/check-wrapper-caller-burden.sh"
-run "10/13 no new ArithTable opcode axioms" "$dir/check-arith-table-op-axioms.sh"
-run "11/13 Clean integration regressions" "$dir/check-clean-integration.sh"
-run "12/13 CODEOWNERS trust-boundary coverage" "$dir/check-codeowners.sh"
-run "13/13 shrinkage floor (axiom-count monotone)" "$dir/check-shrinkage.sh"
+run "1/14 locality"               "$dir/check-locality.sh"
+run "2/14 baseline freshness"     "$dir/check-baseline.sh"
+run "3/14 forbidden param shapes" "$dir/check-no-output-eq.sh"
+run "4/14 floors + cross-witness" "$dir/check-floor.sh"
+run "5/14 zero sorry"             "$dir/check-no-sorry.sh"
+run "6/14 uniformity (canonical equivalence shape)" "$dir/check-uniformity.sh"
+run "7/14 hypothesis-count anti-laundering" "$dir/check-hypothesis-count.sh"
+run "8/14 caller-burden ledger (canonical)" "$dir/check-caller-burden.sh"
+run "9/14 caller-burden ledger (wrappers)"  "$dir/check-wrapper-caller-burden.sh"
+run "10/14 no new ArithTable opcode axioms" "$dir/check-arith-table-op-axioms.sh"
+run "11/14 Clean integration regressions" "$dir/check-clean-integration.sh"
+run "12/14 CODEOWNERS trust-boundary coverage" "$dir/check-codeowners.sh"
+run "13/14 retired transpiler compatibility paths" "$dir/check-retired-transpiler-paths.sh"
+run "14/14 shrinkage floor (axiom-count monotone)" "$dir/check-shrinkage.sh"
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate: ALL CHECKS PASSED."

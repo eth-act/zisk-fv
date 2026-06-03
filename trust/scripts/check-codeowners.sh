@@ -34,8 +34,6 @@ for path in \
   scripts/aeneas-production-extract.sh \
   ZiskFv/Compliance/RowProvenance.lean \
   ZiskFv/RowShape/Contract.lean \
-  ZiskFv/Transpiler/Contract.lean \
-  ZiskFv/Trusted/Transpiler.lean \
   zisk \
   'zisk/**'
 do
