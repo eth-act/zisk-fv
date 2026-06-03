@@ -17,18 +17,19 @@ run() {
   echo
 }
 
-run "1/12 locality"               "$dir/check-locality.sh"
-run "2/12 baseline freshness"     "$dir/check-baseline.sh"
-run "3/12 forbidden param shapes" "$dir/check-no-output-eq.sh"
-run "4/12 floors + cross-witness" "$dir/check-floor.sh"
-run "5/12 zero sorry"             "$dir/check-no-sorry.sh"
-run "6/12 uniformity (canonical equivalence shape)" "$dir/check-uniformity.sh"
-run "7/12 hypothesis-count anti-laundering" "$dir/check-hypothesis-count.sh"
-run "8/12 caller-burden ledger (canonical)" "$dir/check-caller-burden.sh"
-run "9/12 caller-burden ledger (wrappers)"  "$dir/check-wrapper-caller-burden.sh"
-run "10/12 no new ArithTable opcode axioms" "$dir/check-arith-table-op-axioms.sh"
-run "11/12 Clean integration regressions" "$dir/check-clean-integration.sh"
-run "12/12 shrinkage floor (axiom-count monotone)" "$dir/check-shrinkage.sh"
+run "1/13 locality"               "$dir/check-locality.sh"
+run "2/13 baseline freshness"     "$dir/check-baseline.sh"
+run "3/13 forbidden param shapes" "$dir/check-no-output-eq.sh"
+run "4/13 floors + cross-witness" "$dir/check-floor.sh"
+run "5/13 zero sorry"             "$dir/check-no-sorry.sh"
+run "6/13 uniformity (canonical equivalence shape)" "$dir/check-uniformity.sh"
+run "7/13 hypothesis-count anti-laundering" "$dir/check-hypothesis-count.sh"
+run "8/13 caller-burden ledger (canonical)" "$dir/check-caller-burden.sh"
+run "9/13 caller-burden ledger (wrappers)"  "$dir/check-wrapper-caller-burden.sh"
+run "10/13 no new ArithTable opcode axioms" "$dir/check-arith-table-op-axioms.sh"
+run "11/13 Clean integration regressions" "$dir/check-clean-integration.sh"
+run "12/13 CODEOWNERS trust-boundary coverage" "$dir/check-codeowners.sh"
+run "13/13 shrinkage floor (axiom-count monotone)" "$dir/check-shrinkage.sh"
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate: ALL CHECKS PASSED."

@@ -31,8 +31,8 @@ when they are not trust policy or trust evidence.
 
 | Ledger                            | Count      | File                                                                                         |
 | ---                               | ---:        | ---                                                                                          |
-| Source Lean trust declarations    | 12         | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Global compliance theorem closure | 6          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations    | 7          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Global compliance theorem closure | 1          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 | Per-canonical-theorem closures    | 63 entries | [`generated/baseline-equiv-axiom-deps.txt`](generated/baseline-equiv-axiom-deps.txt)         |
 
 ## Generated Files
@@ -90,6 +90,8 @@ trust/scripts/regenerate.sh
 ```
 
 `lake build` is the formal-verification check. `check-all.sh` runs the fast
-syntactic gate. `check-all-semantic.sh` runs the olean-consuming semantic
-gate after a build. `regenerate.sh` refreshes every generated ledger after an
-intentional trust-boundary change.
+syntactic gate, including a CODEOWNERS drift check that keeps the live trust
+allowlist and production-backed extraction boundary owner-protected.
+`check-all-semantic.sh` runs the olean-consuming semantic gate after a build.
+`regenerate.sh` refreshes every generated ledger after an intentional
+trust-boundary change.
