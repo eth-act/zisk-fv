@@ -131,7 +131,10 @@
             python3
             jq
             git
+            gcc
             gmp
+            gnumake
+            nasm
             pkgsCross.riscv64-embedded.stdenv.cc
           ];
         };
