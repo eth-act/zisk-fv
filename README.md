@@ -65,11 +65,13 @@ sorries, string/format models, or `HashMap` models. It also checks that every
 configured extraction start appears as a generated Lean definition. By default
 it also stages a temporary Lake project under `build/`, copies the pinned
 Aeneas Lean runtime there, and typechecks the generated `ProductionM2.lean`
-without committing generated code. The temporary project also checks concrete
-generated row-shape facts for the production-backed LUI/AUIPC/JAL/ADDW helpers
-and the ADD `rs1 = x0` copyb special case: the generated Lean must compute the
-opcode, external-op flag, `m32`, `store_pc`, source/store selectors, and jump
-offsets expected by the proof-side mode pins.
+without committing generated code. The temporary project executes every
+configured generated start on a sample instruction and checks that all 63
+return a row. It also checks concrete generated row-shape facts for the
+production-backed LUI/AUIPC/JAL/ADDW helpers and the ADD `rs1 = x0` copyb
+special case: the generated Lean must compute the opcode, external-op flag,
+`m32`, `store_pc`, source/store selectors, and jump offsets expected by the
+proof-side mode pins.
 For extraction-only timing or debugging, run
 `AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract`.
 
