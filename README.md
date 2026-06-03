@@ -63,7 +63,7 @@ It writes generated LLBC/Lean artifacts under `build/aeneas-production-extractio
 and rejects unexpected trust markers such as generated axioms, opaques,
 sorries, string/format models, or `HashMap` models.
 The current extraction batch covers the production-backed LUI/AUIPC/JAL/JALR
-helpers, FENCE/NOP, and the RV64I single-row register, immediate, branch,
+helpers, FENCE/NOP, and the RV64IM single-row register, immediate, branch,
 load, and store helper families.
 
 The proof-side migration target is

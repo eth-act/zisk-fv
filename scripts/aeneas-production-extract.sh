@@ -30,6 +30,19 @@ starts=(
   crate::aeneas_extract::extract_sllw_from_inst
   crate::aeneas_extract::extract_srlw_from_inst
   crate::aeneas_extract::extract_sraw_from_inst
+  crate::aeneas_extract::extract_mul_from_inst
+  crate::aeneas_extract::extract_mulh_from_inst
+  crate::aeneas_extract::extract_mulhsu_from_inst
+  crate::aeneas_extract::extract_mulhu_from_inst
+  crate::aeneas_extract::extract_mulw_from_inst
+  crate::aeneas_extract::extract_div_from_inst
+  crate::aeneas_extract::extract_divu_from_inst
+  crate::aeneas_extract::extract_divw_from_inst
+  crate::aeneas_extract::extract_divuw_from_inst
+  crate::aeneas_extract::extract_rem_from_inst
+  crate::aeneas_extract::extract_remu_from_inst
+  crate::aeneas_extract::extract_remw_from_inst
+  crate::aeneas_extract::extract_remuw_from_inst
   crate::aeneas_extract::extract_addi_from_inst
   crate::aeneas_extract::extract_slli_from_inst
   crate::aeneas_extract::extract_slti_from_inst
