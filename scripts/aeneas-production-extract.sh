@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKSPACE="$ROOT/build/aeneas-production-extraction"
 AENEAS_CHECK_LEAN="${AENEAS_CHECK_LEAN:-1}"
+AENEAS_CHECK_FENCE_COMPLETENESS="${AENEAS_CHECK_FENCE_COMPLETENESS:-0}"
 
 if [[ -z "${AENEAS_FLAKE:-}" ]]; then
   aeneas_owner="$(jq -r '.nodes.aeneas.locked.owner' "$ROOT/flake.lock")"
@@ -41,8 +42,16 @@ if [[ "${#rust_extract_fns[@]}" -eq 0 ]]; then
   exit 1
 fi
 
+raw_extract_fns=()
+if grep -q '^pub fn extract_fence_accepts_raw_inst(' "$ROOT/zisk/core/src/aeneas_extract.rs"; then
+  raw_extract_fns+=(extract_fence_accepts_raw_inst)
+fi
+
 starts=()
 for fn in "${rust_extract_fns[@]}"; do
+  starts+=("crate::aeneas_extract::$fn")
+done
+for fn in "${raw_extract_fns[@]}"; do
   starts+=("crate::aeneas_extract::$fn")
 done
 
@@ -121,7 +130,11 @@ fi
 missing_defs=()
 for start in "${starts[@]}"; do
   fn="${start##*::}"
-  if ! grep -q "def aeneas_extract\\.$fn" "$generated"; then
+  if [[ "$start" == crate::* ]]; then
+    if ! grep -q "def aeneas_extract\\.$fn" "$generated"; then
+      missing_defs+=("$fn")
+    fi
+  elif ! grep -q "def .*\\.$fn" "$generated"; then
     missing_defs+=("$fn")
   fi
 done
@@ -154,6 +167,7 @@ package zisk_production_extraction_check
 
 @[default_target] lean_lib ProductionM2
 @[default_target] lean_lib GeneratedChecks
+lean_lib FenceCompleteness
 EOF
   cp "$AENEAS_LEAN_SRC/lean-toolchain" "$lean_check/lean-toolchain"
 
@@ -279,12 +293,17 @@ def rowShapeMatches
   | some actual => actual == expected
   | none => false
 
+def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
+  match result with
+  | ok accepted => accepted
+  | fail _ => false
+  | div => false
+
 def allConfiguredStartsReturnRows : Bool :=
 EOF
 
   first=1
-  for start in "${starts[@]}"; do
-    fn="${start##*::}"
+  for fn in "${rust_extract_fns[@]}"; do
     if [[ "$first" -eq 1 ]]; then
       printf '  rowReturned (aeneas_extract.%s sampleInst)\n' "$fn" >> "$lean_check/GeneratedChecks.lean"
       first=0
@@ -348,10 +367,64 @@ example :
       (proofRowShape 16 1 2 0 0 6 0 7 3 3 false false 0 4 4 false false) = true := by
   native_decide
 
+example :
+    rawFenceAccepted (aeneas_extract.extract_fence_accepts_raw_inst 0x0000000F#u32) = true := by
+  native_decide
+
+example :
+    rawFenceAccepted (aeneas_extract.extract_fence_accepts_raw_inst 0x1000000F#u32) = false := by
+  native_decide
+
 end zisk_core_generated_checks
 EOF
 
-  nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks' bash "$lean_check"
+  if [[ "$AENEAS_CHECK_FENCE_COMPLETENESS" != 0 ]]; then
+    cat > "$lean_check/FenceCompleteness.lean" <<'EOF'
+import ProductionM2
+
+open Aeneas Aeneas.Std Result
+open zisk_core
+
+namespace zisk_core_generated_fence_completeness
+
+def fenceTsoWord : Std.U32 := 0x8330000F#u32
+
+def fenceOpcode (inst : Std.U32) : Result Std.U32 := do
+  let masked ← lift (inst &&& 0x7F#u32)
+  ok masked
+
+def fenceFunct3 (inst : Std.U32) : Result Std.U32 := do
+  let masked ← lift (inst &&& 0x7000#u32)
+  masked >>> 12#i32
+
+def SailGenericFenceEncoding (inst : Std.U32) : Prop :=
+  inst ≠ fenceTsoWord ∧
+  fenceOpcode inst = ok 0x0F#u32 ∧
+  fenceFunct3 inst = ok 0#u32
+
+def rawFenceAccepted (result : Result Bool) : Bool :=
+  match result with
+  | ok accepted => accepted
+  | fail _ => false
+  | div => false
+
+def ExtractedRawFenceCompleteness : Prop :=
+  ∀ raw, SailGenericFenceEncoding raw →
+    rawFenceAccepted (aeneas_extract.extract_fence_accepts_raw_inst raw) = true
+
+theorem extracted_raw_fence_completeness :
+    ExtractedRawFenceCompleteness := by
+  intro raw h_sail
+  rcases h_sail with ⟨_h_not_tso, h_opcode, h_funct3⟩
+  simp [rawFenceAccepted, aeneas_extract.extract_fence_accepts_raw_inst,
+    aeneas_extract.fence_decode.decode_fence_raw, fenceOpcode, fenceFunct3] at h_opcode h_funct3 ⊢
+
+end zisk_core_generated_fence_completeness
+EOF
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks FenceCompleteness' bash "$lean_check"
+  else
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks' bash "$lean_check"
+  fi
 fi
 
 echo "Production-backed extraction succeeded: ${#starts[@]} starts, $decl_count declarations, $generated"

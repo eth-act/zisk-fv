@@ -6,7 +6,9 @@ opcode lowering they expose must stay the same production path used by
 Riscv2ZiskContext::convert. This check enforces that each extracted
 `extract_<mnemonic>_from_inst` start delegates to the shared
 `lower_rv64im_single_row` helper, and that `convert` delegates the same
-mnemonic to the same Rv64imSingleRowOpcode variant.
+mnemonic to the same Rv64imSingleRowOpcode variant either directly or through
+the production string helpers that dispatch 4-byte RV64IM instructions back to
+the shared single-row switch.
 """
 
 from __future__ import annotations
@@ -33,9 +35,13 @@ def fail(message: str) -> None:
 ROOT = repo_root()
 AENEAS = ROOT / "zisk/core/src/aeneas_extract.rs"
 CONTEXT = ROOT / "zisk/core/src/riscv2zisk_context.rs"
+SINGLE_ROW = ROOT / "zisk/core/src/riscv2zisk_single_row.rs"
+FENCE_DECODE = ROOT / "zisk/riscv/src/fence_decode.rs"
 
 aeneas_text = AENEAS.read_text()
 context_text = CONTEXT.read_text()
+single_row_text = SINGLE_ROW.read_text()
+fence_decode_text = FENCE_DECODE.read_text()
 
 wrapper_variants: dict[str, str] = {}
 
@@ -73,13 +79,100 @@ if unclassified_starts:
 non_start_extract_fns = sorted(
     name
     for name in re.findall(r"pub fn (extract_[a-z0-9_]+)\b", aeneas_text)
-    if not name.endswith("_from_inst")
+    if not name.endswith("_from_inst") and name != "extract_fence_accepts_raw_inst"
 )
 if non_start_extract_fns:
     fail(
         "aeneas_extract.rs exposes public extraction helpers outside the generated "
         "start surface: " + ", ".join(non_start_extract_fns)
     )
+
+single_row_variants: dict[str, str] = {}
+from_inst_match = re.search(
+    r"pub fn from_inst_name\(inst: &str\) -> Option<Self> \{\s*"
+    r"match inst \{(?P<body>.*?)\n\s*_ => None,",
+    single_row_text,
+    re.DOTALL,
+)
+if from_inst_match:
+    for names, variant in re.findall(
+        r'((?:"[^"]+"\s*(?:\|\s*)?)+)\s*=>\s*Some\(Self::([A-Za-z0-9]+)\)',
+        from_inst_match.group("body"),
+    ):
+        for name in re.findall(r'"([^"]+)"', names):
+            single_row_variants[name] = variant
+
+if not single_row_variants:
+    fail("Rv64imSingleRowOpcode::from_inst_name mappings were not found")
+
+helper_names = (
+    "create_register_op",
+    "immediate_op",
+    "immediate_op_or_x0_copyb",
+    "create_branch_op",
+    "load_op",
+    "store_op",
+)
+
+direct_production_calls = {
+    "Lui": r"self\.lui\(\s*riscv_instruction,\s*4\s*\)",
+    "Auipc": r"self\.auipc\(\s*riscv_instruction\s*\)",
+    "Jal": r"self\.jal\(\s*riscv_instruction,\s*4\s*\)",
+    "Jalr": r"self\.jalr\(\s*riscv_instruction,\s*4\s*\)",
+    "Fence": r"self\.nop\(\s*riscv_instruction,\s*4\s*\)",
+    "Add": (
+        r"\{\s*"
+        r"if riscv_instruction\.rd == 0\s*"
+        r"&& self\.input_precompile == Some\(SYSCALL_DMA_MEMCPY_ID as u32\)\s*"
+        r"\{.*?"
+        r"self\.create_precompiled_op\(\s*riscv_instruction,\s*\"dma_memcpy\".*?"
+        r"\} else if self\.input_precompile == Some\(SYSCALL_DMA_MEMCMP_ID as u32\) \{.*?"
+        r"self\.create_precompiled_op\(\s*riscv_instruction,\s*\"dma_memcmp\".*?"
+        r"\} else if riscv_instruction\.rs1 == 0 \{.*?"
+        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*2\s*\);.*?"
+        r"\} else if riscv_instruction\.rs2 == 0 \{.*?"
+        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*1\s*\);.*?"
+        r"\} else \{\s*"
+        r"self\.create_register_op\(\s*riscv_instruction,\s*\"add\",\s*4\s*\);"
+        r"\s*\}\s*"
+        r"\}"
+    ),
+    "Or": (
+        r"\{\s*"
+        r"if riscv_instruction\.rs1 == 0 \{.*?"
+        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*2\s*\);.*?"
+        r"\} else if riscv_instruction\.rs2 == 0 \{.*?"
+        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*1\s*\);.*?"
+        r"\} else \{\s*"
+        r"self\.create_register_op\(\s*riscv_instruction,\s*\"or\",\s*4\s*\);"
+        r"\s*\}\s*"
+        r"\}"
+    ),
+    "Addi": (
+        r"\{\s*"
+        r"if riscv_instruction\.rd == 0 \{.*?"
+        r"self\.nop\(\s*riscv_instruction,\s*4\s*\);.*?"
+        r"self\.hint\(\s*riscv_instruction,\s*4\s*\);.*?"
+        r"\} else if riscv_instruction\.imm == 0 && riscv_instruction\.rs1 != 0 \{.*?"
+        r"self\.copyb\(\s*riscv_instruction,\s*4,\s*1\s*\);.*?"
+        r"\} else \{\s*"
+        r"self\.immediate_op_or_x0_copyb\(\s*riscv_instruction,\s*\"add\",\s*4\s*\);"
+        r"\s*\}\s*"
+        r"\}"
+    ),
+    "Addiw": (
+        r"\{\s*"
+        r"if riscv_instruction\.rd == 0\s*"
+        r"&& riscv_instruction\.rs1 == 0\s*"
+        r"&& riscv_instruction\.imm == 0\s*"
+        r"\{.*?"
+        r"self\.nop\(\s*riscv_instruction,\s*4\s*\);.*?"
+        r"\} else \{\s*"
+        r"self\.immediate_op\(\s*riscv_instruction,\s*\"add_w\",\s*4\s*\);"
+        r"\s*\}\s*"
+        r"\}"
+    ),
+}
 
 for forbidden in (
     "ZiskInstBuilder::new",
@@ -99,8 +192,31 @@ for forbidden in (
             "extraction starts must stay thin wrappers"
         )
 
+raw_fence_start = re.search(
+    r"pub fn extract_fence_accepts_raw_inst\(raw: u32\) -> bool \{(?P<body>.*?)\n\}",
+    aeneas_text,
+    re.DOTALL,
+)
+if raw_fence_start is None:
+    fail("aeneas_extract.rs is missing the raw FENCE extraction start")
+
+raw_fence_body = raw_fence_start.group("body")
+for required in (
+    "decode_fence_raw(raw)",
+    "FenceDecodeKind::Fence",
+):
+    if required not in raw_fence_body:
+        fail(f"raw FENCE extraction start does not use `{required}`")
+
+if "pub fn decode_fence_raw(inst: u32) -> FenceDecode" not in fence_decode_text:
+    fail("raw FENCE extraction start is not backed by the production decoder helper")
+
+riscv_interpreter_text = (ROOT / "zisk/riscv/src/riscv_interpreter.rs").read_text()
+if "let fence = decode_fence_raw(inst);" not in riscv_interpreter_text:
+    fail("production RISC-V interpreter does not use the shared FENCE decoder helper")
+
 for mnemonic, variant in sorted(wrapper_variants.items()):
-    arm_pattern = re.compile(
+    direct_lower_pattern = re.compile(
         rf'"{re.escape(mnemonic)}"(?:\s*\|\s*"[^"]+")?\s*=>\s*'
         rf"self\.lower_rv64im_single_row\(\s*"
         rf"riscv_instruction,\s*"
@@ -109,7 +225,36 @@ for mnemonic, variant in sorted(wrapper_variants.items()):
         rf"\)",
         re.DOTALL,
     )
-    if not arm_pattern.search(context_text):
+    helper_pattern = re.compile(
+        rf'"{re.escape(mnemonic)}"(?:\s*\|\s*"[^"]+")?\s*=>\s*'
+        rf"self\.({'|'.join(helper_names)})\(\s*"
+        rf"riscv_instruction,\s*[^;]*,\s*4\s*\)",
+        re.DOTALL,
+    )
+    production_call = direct_production_calls.get(variant)
+    production_call_pattern = (
+        re.compile(
+            rf'"{re.escape(mnemonic)}"(?:\s*\|\s*"[^"]+")?\s*=>\s*'
+            rf"{production_call}",
+            re.DOTALL,
+        )
+        if production_call
+        else None
+    )
+    through_helper = (
+        single_row_variants.get(mnemonic) == variant
+        and helper_pattern.search(context_text)
+    )
+    direct_production = (
+        production_call_pattern is not None
+        and production_call_pattern.search(context_text)
+        and single_row_variants.get(mnemonic) == variant
+    )
+    if (
+        not direct_lower_pattern.search(context_text)
+        and not through_helper
+        and not direct_production
+    ):
         fail(
             f"`convert` does not delegate `{mnemonic}` to "
             f"Rv64imSingleRowOpcode::{variant}"
