@@ -28,76 +28,6 @@ if [[ ! -f "$AENEAS_LEAN_SRC/Aeneas.lean" ]]; then
   exit 1
 fi
 
-starts=(
-  crate::aeneas_extract::extract_lui_from_inst
-  crate::aeneas_extract::extract_auipc_from_inst
-  crate::aeneas_extract::extract_jal_from_inst
-  crate::aeneas_extract::extract_jalr_from_inst
-  crate::aeneas_extract::extract_fence_from_inst
-  crate::aeneas_extract::extract_add_from_inst
-  crate::aeneas_extract::extract_sub_from_inst
-  crate::aeneas_extract::extract_sll_from_inst
-  crate::aeneas_extract::extract_slt_from_inst
-  crate::aeneas_extract::extract_sltu_from_inst
-  crate::aeneas_extract::extract_xor_from_inst
-  crate::aeneas_extract::extract_srl_from_inst
-  crate::aeneas_extract::extract_sra_from_inst
-  crate::aeneas_extract::extract_or_from_inst
-  crate::aeneas_extract::extract_and_from_inst
-  crate::aeneas_extract::extract_addw_from_inst
-  crate::aeneas_extract::extract_subw_from_inst
-  crate::aeneas_extract::extract_sllw_from_inst
-  crate::aeneas_extract::extract_srlw_from_inst
-  crate::aeneas_extract::extract_sraw_from_inst
-  crate::aeneas_extract::extract_mul_from_inst
-  crate::aeneas_extract::extract_mulh_from_inst
-  crate::aeneas_extract::extract_mulhsu_from_inst
-  crate::aeneas_extract::extract_mulhu_from_inst
-  crate::aeneas_extract::extract_mulw_from_inst
-  crate::aeneas_extract::extract_div_from_inst
-  crate::aeneas_extract::extract_divu_from_inst
-  crate::aeneas_extract::extract_divw_from_inst
-  crate::aeneas_extract::extract_divuw_from_inst
-  crate::aeneas_extract::extract_rem_from_inst
-  crate::aeneas_extract::extract_remu_from_inst
-  crate::aeneas_extract::extract_remw_from_inst
-  crate::aeneas_extract::extract_remuw_from_inst
-  crate::aeneas_extract::extract_addi_from_inst
-  crate::aeneas_extract::extract_slli_from_inst
-  crate::aeneas_extract::extract_slti_from_inst
-  crate::aeneas_extract::extract_sltiu_from_inst
-  crate::aeneas_extract::extract_xori_from_inst
-  crate::aeneas_extract::extract_srli_from_inst
-  crate::aeneas_extract::extract_srai_from_inst
-  crate::aeneas_extract::extract_ori_from_inst
-  crate::aeneas_extract::extract_andi_from_inst
-  crate::aeneas_extract::extract_addiw_from_inst
-  crate::aeneas_extract::extract_slliw_from_inst
-  crate::aeneas_extract::extract_srliw_from_inst
-  crate::aeneas_extract::extract_sraiw_from_inst
-  crate::aeneas_extract::extract_beq_from_inst
-  crate::aeneas_extract::extract_bne_from_inst
-  crate::aeneas_extract::extract_blt_from_inst
-  crate::aeneas_extract::extract_bge_from_inst
-  crate::aeneas_extract::extract_bltu_from_inst
-  crate::aeneas_extract::extract_bgeu_from_inst
-  crate::aeneas_extract::extract_lb_from_inst
-  crate::aeneas_extract::extract_lbu_from_inst
-  crate::aeneas_extract::extract_lh_from_inst
-  crate::aeneas_extract::extract_lhu_from_inst
-  crate::aeneas_extract::extract_lw_from_inst
-  crate::aeneas_extract::extract_lwu_from_inst
-  crate::aeneas_extract::extract_ld_from_inst
-  crate::aeneas_extract::extract_sb_from_inst
-  crate::aeneas_extract::extract_sh_from_inst
-  crate::aeneas_extract::extract_sw_from_inst
-  crate::aeneas_extract::extract_sd_from_inst
-)
-
-mapfile -t configured_start_fns < <(
-  printf '%s\n' "${starts[@]}" | sed 's/.*:://' | sort -u
-)
-
 mapfile -t rust_extract_fns < <(
   sed -nE \
     -e 's/^pub fn (extract_[A-Za-z0-9_]+_from_inst)\(.*/\1/p' \
@@ -106,14 +36,15 @@ mapfile -t rust_extract_fns < <(
     | sort -u
 )
 
-if ! diff -u \
-    <(printf '%s\n' "${rust_extract_fns[@]}") \
-    <(printf '%s\n' "${configured_start_fns[@]}"); then
-  echo "Configured Aeneas starts diverge from Rust extraction wrappers" >&2
-  echo "  Rust wrappers:       ${#rust_extract_fns[@]}" >&2
-  echo "  Configured starts:   ${#configured_start_fns[@]}" >&2
+if [[ "${#rust_extract_fns[@]}" -eq 0 ]]; then
+  echo "Did not find any Rust extraction wrappers in zisk/core/src/aeneas_extract.rs" >&2
   exit 1
 fi
+
+starts=()
+for fn in "${rust_extract_fns[@]}"; do
+  starts+=("crate::aeneas_extract::$fn")
+done
 
 proof_shape_fields=(
   paddr
