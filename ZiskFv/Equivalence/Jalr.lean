@@ -13,8 +13,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 
 ## Trust note
 
-The canonical route consumes Aeneas provenance for the selected final JALR
-row, so mode pins do not come from `Trusted.transpile_JALR`.
+The canonical route consumes explicit pins for the selected final JALR row.
 -/
 
 open ZiskFv.Channels
@@ -38,9 +37,11 @@ theorem equiv_JALR
     (nextPC_val : BitVec 64)
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    (provenance :
-      Sigma fun inst : ZiskFv.Transpiler.Aeneas.Rv64imInst =>
-        ZiskFv.Compliance.MainAeneasJalrRowProvenance m r_main inst)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
+    (h_flag : m.flag r_main = 0)
+    (h_m32 : m.m32 r_main = 0)
+    (h_set_pc : m.set_pc r_main = 1)
+    (h_store_pc : m.store_pc r_main = 1)
     (h_jalr_subset :
       flag_boolean m r_main
       ∧ is_external_op_boolean m r_main
@@ -67,9 +68,10 @@ theorem equiv_JALR
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_JALR_of_aeneas_provenance state jalr_input imm rs1 rd
+  exact ZiskFv.Compliance.equiv_JALR state jalr_input imm rs1 rd
     misa_val mseccfg exec_row e_rd nextPC_val m r_main next_pc store_pc_mem
-    provenance h_jalr_subset promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
+    pins h_flag h_m32 h_set_pc h_store_pc h_jalr_subset
+    promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
     h_link_bridge h_pc_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Jalr

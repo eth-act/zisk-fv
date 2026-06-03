@@ -12,7 +12,7 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1163
+# Total rows: 1165
 # Total wrappers: 63
 # Category bridge: 119
 # Category bus_shape: 27
@@ -22,7 +22,7 @@
 # Category range: 3
 # Category row: 60
 # Category state: 73
-# Category transpile: 35
+# Category transpile: 37
 # Category validator: 80
 #
 ZiskFv.Compliance.Wrappers.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -439,12 +439,14 @@ ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 006 next_pc [other] FGL
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 008 e_rd [entry] Interaction.MemoryBusEntry FGL
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 009 store_pc_mem [other] ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 010 inst [other] ZiskFv.Transpiler.Aeneas.Rv64imInst
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 011 provenance [other] ZiskFv.Compliance.MainAeneasRowProvenance m r_main inst
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 012 h_lui_subset [other] lui_subset_holds m r_main next_pc
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 013 h_imm_lo_nat [other] (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 014 h_imm_hi_nat [other] (m.b_1 r_main).val = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 429
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 015 promises [transpile] ZiskFv.EquivCore.Promises.UTypePromises state lui_input.imm lui_input.rd lui_inp
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 011 h_m32 [other] m.m32 r_main = 0
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 012 h_set_pc [transpile] m.set_pc r_main = 0
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 013 h_store_pc [transpile] m.store_pc r_main = 0
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 014 h_lui_subset [other] lui_subset_holds m r_main next_pc
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 015 h_imm_lo_nat [other] (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 016 h_imm_hi_nat [other] (m.b_1 r_main).val = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 429
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 017 promises [transpile] ZiskFv.EquivCore.Promises.UTypePromises state lui_input.imm lui_input.rd lui_inp
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 001 lw_input [other] PureSpec.LwInput
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 002 regs [other] ZiskFv.Compliance.ModeRegsFull

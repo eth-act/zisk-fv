@@ -228,9 +228,7 @@ inductive OpEnvelope
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (provenance :
-      Sigma fun inst : ZiskFv.Transpiler.Aeneas.Rv64imInst =>
-        ZiskFv.Compliance.MainAeneasFenceRowProvenance m r_main inst)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (promises : ZiskFv.EquivCore.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
@@ -242,8 +240,9 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Aeneas.Rv64imInst}
-    (provenance : ZiskFv.Compliance.MainAeneasRowProvenance m r_main inst)
+    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
+    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
+    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.lui)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     (h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat)
     (h_imm_hi_nat : (m.b_1 r_main).val
@@ -260,9 +259,10 @@ inductive OpEnvelope
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (next_pc : FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Aeneas.Rv64imInst}
-    (provenance : ZiskFv.Compliance.MainAeneasAuipcRowProvenance m r_main inst)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0#u32)
+    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
+    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
+    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.auipc)
+    (h_inst_rd_ne_zero : inst.rd ≠ 0)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
     (h_offset_bridge : (m.jmp_offset2 r_main).val
       = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
@@ -295,9 +295,10 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    {inst : ZiskFv.Transpiler.Aeneas.Rv64imInst}
-    (provenance : ZiskFv.Compliance.MainAeneasJalRowProvenance m r_main inst)
-    (h_inst_rd_ne_zero : inst.rd ≠ 0#u32)
+    {inst : ZiskFv.Transpiler.Static.Rv64Inst}
+    (provenance : ZiskFv.Compliance.MainStaticRowProvenance m r_main inst)
+    (h_inst_op : inst.op = ZiskFv.Transpiler.Static.Rv64Op.jal)
+    (h_inst_rd_ne_zero : inst.rd ≠ 0)
     (h_jal_subset :
       ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
     (h_jmp2 : m.jmp_offset2 r_main = 4)
@@ -336,9 +337,11 @@ inductive OpEnvelope
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (next_pc : FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    (provenance :
-      Sigma fun inst : ZiskFv.Transpiler.Aeneas.Rv64imInst =>
-        ZiskFv.Compliance.MainAeneasJalrRowProvenance m r_main inst)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
+    (h_flag : m.flag r_main = 0)
+    (h_m32 : m.m32 r_main = 0)
+    (h_set_pc : m.set_pc r_main = 1)
+    (h_store_pc : m.store_pc r_main = 1)
     (h_jalr_subset :
       ZiskFv.Airs.Main.flag_boolean m r_main
       ∧ ZiskFv.Airs.Main.is_external_op_boolean m r_main

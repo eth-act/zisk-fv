@@ -491,7 +491,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       arith_chunk_ranges arith_carry_ranges remainder_bound h_b23 h_c23 h_sext_choice h_rs1_value h_rs2_value
   -- Jumps
   | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val store_pc_mem
-        provenance h_inst_rd_ne_zero h_jal_subset
+        provenance h_inst_op h_inst_rd_ne_zero h_jal_subset
         h_jmp2 h_pc_bridge
         promises h_input_imm h_not_throws
         h_pc_bound h_pc_offset_lt_2_32 =>
@@ -499,7 +499,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
     exact ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val m r_main
       (ZiskFv.Equivalence.Jal.JalRoute.rdWrite exec_row e_rd nextPC_val next_pc
-        store_pc_mem provenance h_inst_rd_ne_zero h_jal_subset h_jmp2
+        store_pc_mem provenance h_inst_op h_inst_rd_ne_zero h_jal_subset h_jmp2
         h_pc_bridge
         promises h_input_imm h_not_throws
         h_pc_bound h_pc_offset_lt_2_32)
@@ -510,7 +510,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       (ZiskFv.Equivalence.Jal.JalRoute.x0NoMemory exec_row nextPC_val promises
         h_input_imm h_not_throws)
   | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc store_pc_mem
-         provenance h_jalr_subset
+         pins h_flag h_m32 h_set_pc h_store_pc h_jalr_subset
          promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
          h_link_bridge h_pc_bound h_pc_offset_lt_2_32 =>
     change (do
@@ -519,7 +519,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
     exact ZiskFv.Equivalence.Jalr.equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg
       exec_row e_rd nextPC_val m r_main next_pc
-      store_pc_mem provenance h_jalr_subset
+      store_pc_mem pins h_flag h_m32 h_set_pc h_store_pc h_jalr_subset
       promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_link_bridge h_pc_bound h_pc_offset_lt_2_32
   | _ => trivial
@@ -818,7 +818,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       pins h_match_secondary promises arith_mem bounds arith_table h_row_constraints
       arith_chunk_ranges arith_carry_ranges remainder_bound h_b23 h_c23 h_sext_choice h_rs1_value h_rs2_value
   | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val store_pc_mem
-        provenance h_inst_rd_ne_zero h_jal_subset
+        provenance h_inst_op h_inst_rd_ne_zero h_jal_subset
         h_jmp2 h_pc_bridge
         promises h_input_imm h_not_throws
         h_pc_bound h_pc_offset_lt_2_32 =>
@@ -826,7 +826,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
     exact ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val m r_main
       (ZiskFv.Equivalence.Jal.JalRoute.rdWrite exec_row e_rd nextPC_val next_pc
-        store_pc_mem provenance h_inst_rd_ne_zero h_jal_subset h_jmp2
+        store_pc_mem provenance h_inst_op h_inst_rd_ne_zero h_jal_subset h_jmp2
         h_pc_bridge
         promises h_input_imm h_not_throws
         h_pc_bound h_pc_offset_lt_2_32)
@@ -837,7 +837,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       (ZiskFv.Equivalence.Jal.JalRoute.x0NoMemory exec_row nextPC_val promises
         h_input_imm h_not_throws)
   | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc store_pc_mem
-         provenance h_jalr_subset
+         pins h_flag h_m32 h_set_pc h_store_pc h_jalr_subset
          promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
          h_link_bridge h_pc_bound h_pc_offset_lt_2_32 =>
     change (do
@@ -846,7 +846,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
     exact ZiskFv.Equivalence.Jalr.equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg
       exec_row e_rd nextPC_val m r_main next_pc
-      store_pc_mem provenance h_jalr_subset
+      store_pc_mem pins h_flag h_m32 h_set_pc h_store_pc h_jalr_subset
       promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_link_bridge h_pc_bound h_pc_offset_lt_2_32
   | _ => trivial
