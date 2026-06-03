@@ -225,69 +225,20 @@ def rowReturned (result : Result aeneas_extract.ZiskInstExtract) : Bool :=
   | div => false
 
 def allConfiguredStartsReturnRows : Bool :=
-  rowReturned (aeneas_extract.extract_lui_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_auipc_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_jal_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_jalr_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_fence_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_add_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sub_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sll_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_slt_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sltu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_xor_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_srl_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sra_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_or_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_and_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_addw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_subw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sllw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_srlw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sraw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_mul_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_mulh_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_mulhsu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_mulhu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_mulw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_div_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_divu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_divw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_divuw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_rem_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_remu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_remw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_remuw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_addi_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_slli_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_slti_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sltiu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_xori_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_srli_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_srai_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_ori_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_andi_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_addiw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_slliw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_srliw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sraiw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_beq_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_bne_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_blt_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_bge_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_bltu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_bgeu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_lb_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_lbu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_lh_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_lhu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_lw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_lwu_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_ld_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sb_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sh_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sw_from_inst sampleInst)
-  && rowReturned (aeneas_extract.extract_sd_from_inst sampleInst)
+EOF
+
+  first=1
+  for start in "${starts[@]}"; do
+    fn="${start##*::}"
+    if [[ "$first" -eq 1 ]]; then
+      printf '  rowReturned (aeneas_extract.%s sampleInst)\n' "$fn" >> "$lean_check/GeneratedChecks.lean"
+      first=0
+    else
+      printf '  && rowReturned (aeneas_extract.%s sampleInst)\n' "$fn" >> "$lean_check/GeneratedChecks.lean"
+    fi
+  done
+
+  cat >> "$lean_check/GeneratedChecks.lean" <<'EOF'
 
 example : allConfiguredStartsReturnRows = true := by
   native_decide
