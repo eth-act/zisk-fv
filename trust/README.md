@@ -99,7 +99,19 @@ compatibility module paths from returning, and keep generated Lean/LLBC under
 `build/` rather than in the tracked tree. It also checks that each Aeneas
 extraction start is a thin wrapper over the shared production
 `lower_rv64im_single_row` helper and that `Riscv2ZiskContext::convert` delegates
-the same mnemonic to the same helper variant.
+the same mnemonic to the same helper variant. The same gate covers the raw
+RV64IM extraction wrappers used by the completeness pipeline: raw decoding must
+use the shared production decoder core, raw lowering must route through
+`lower_rv64im_single_row_input`, and raw materialization must report the row
+inserted by that production path. This records the extraction step as closed;
+Sail-domain containment and universal row-totality are separate proof
+obligations. The optional RV completeness harness also emits the concrete
+generated predicate set used by those later obligations:
+`ZiskDecodeSupportedRaw`, `ZiskTranspileAcceptedRaw`, `ZiskLowerableRaw`,
+`ZiskRowMaterializedRaw`, `KnownZiskDecodeGapRaw`,
+`KnownZiskRowMaterializationGapRaw`, `KnownZiskGapRaw`,
+`ZiskCircuitCoveredRaw`, `RvAvoidKnownBugsFor`, and
+`RvCompletenessAvoidingKnownBugsFor`.
 `check-all-semantic.sh` runs the olean-consuming semantic gate after a build.
 `regenerate.sh` refreshes every generated ledger after an intentional
 trust-boundary change.

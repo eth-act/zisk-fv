@@ -68,7 +68,14 @@ The trust gate additionally checks that each `extract_<op>_from_inst` wrapper
 delegates through `Riscv2ZiskContext::lower_rv64im_single_row`, and that
 `Riscv2ZiskContext::convert` delegates the same mnemonic to the same opcode
 variant, so the wrapper surface cannot drift into a second hand-written
-lowerer. By default it also stages a temporary Lake project under `build/`,
+lowerer. It also checks the raw RV64IM extraction path: raw decoding uses the
+shared production `rv64im_decode.rs` core, accepted/lowerable summaries route
+through `lower_rv64im_single_row_input`, and materialization observes whether
+that production lowering path inserted a row. This closes the extraction step
+for the RV completeness pipeline: the extracted Lean surface is backed by the
+production ZisK decode/lower/materialize path needed by the checked-in
+completeness interface, not by a parallel Rust lowerer. By default it also
+stages a temporary Lake project under `build/`,
 copies the pinned Aeneas Lean runtime there, and typechecks the generated
 `ProductionM2.lean` without committing generated code. The temporary project
 executes every configured generated start on a sample instruction and checks
@@ -77,6 +84,14 @@ manifest for production-backed row-shape facts across the covered RV64IM
 opcode surfaces: the generated Lean must compute the proof-facing row-shape
 projection, including opcode, external-op flag, `m32`, `store_pc`,
 source/store selectors, offsets, widths, and jump offsets.
+With `AENEAS_CHECK_RV_COMPLETENESS=1`, the temporary project also emits the
+RV-completeness predicate surface used by the checked-in completeness
+interface:
+`ZiskDecodeSupportedRaw`, `ZiskTranspileAcceptedRaw`, `ZiskLowerableRaw`,
+`ZiskRowMaterializedRaw`, `KnownZiskDecodeGapRaw`,
+`KnownZiskRowMaterializationGapRaw`, `KnownZiskGapRaw`,
+`ZiskCircuitCoveredRaw`, `RvAvoidKnownBugsFor`, and
+`RvCompletenessAvoidingKnownBugsFor`.
 For extraction-only timing or debugging, run
 `AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract`.
 

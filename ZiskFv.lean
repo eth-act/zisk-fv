@@ -129,3 +129,8 @@ import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.FullEnsemble.Balance
 import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance
+import ZiskFv.Completeness.Rv
+import ZiskFv.Completeness.Rv64imShapes
+import ZiskFv.Completeness.Rv64im
+import ZiskFv.Completeness.Fence
+import ZiskFv.Completeness.SailDecode
