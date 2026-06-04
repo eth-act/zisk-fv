@@ -1,7 +1,8 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: ADD/ADDI/ADDW Binary provider-route slice verified; preparing commit.
+Current focus: initial depth-first OpEnvelope bridge slices are committed.
 Blocking: none.
-Next step: commit the ADD/ADDI/ADDW slice if the worktree side effects are clean.
+Next step: reassess the next opcode-family slice before expanding beyond the
+current `aeneasBridgeTrust` branches.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -69,3 +70,4 @@ Notes:
   row-shape check; actual production row has `b_use_sp_imm1 = 0` and
   `b_offset_imm0 = 4096`, so the staged expectation was corrected.
 - `nix run .#aeneas-production-extract` passed for the ADD/ADDI/ADDW slice.
+- ADD/ADDI/ADDW slice committed as `caf568df Add ADD provider-route bridge slice`.
