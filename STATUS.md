@@ -1,5 +1,5 @@
 Plan: docs/ai/plan/PLAN_RV64IM_GLOBAL_COMPLETENESS.md
-Focus: Immediate ALU slice: add Sail containment for ADDI/SLLI/SLTI/SLTIU/XORI/SRLI/SRAI/ORI/ANDI.
+Focus: Immediate word ALU slice: add Sail containment for ADDIW/SLLIW/SRLIW/SRAIW.
 Blocking: Nothing currently blocking.
-Next step: Commit the verified M extension slice, then start Immediate ALU whitelist and raw-shape lemmas.
-Digression: M extension Sail containment is verified under the state-aware `Rv64imEnabledSailState` relation; Lake build and Aeneas production completeness both passed.
+Next step: Commit the verified Immediate ALU slice, then start Immediate word ALU whitelist and raw-shape lemmas.
+Digression: Immediate ALU Sail containment now covers ADDI/SLLI/SLTI/SLTIU/XORI/SRLI/SRAI/ORI/ANDI; Lake build and Aeneas production completeness both passed.
