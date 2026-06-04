@@ -111,7 +111,17 @@
           type = "app";
           program = "${pkgs.writeShellApplication {
             name = "aeneas-production-extract";
-            runtimeInputs = with pkgs; [ cargo clang elan git jq libclang.lib nix rustc ];
+            runtimeInputs = with pkgs; [
+              cargo
+              clang
+              elan
+              git
+              jq
+              libclang.lib
+              nix
+              pkgsCross.riscv64-embedded.stdenv.cc
+              rustc
+            ];
             text = ''
               cd "$(git rev-parse --show-toplevel)" || exit 1
               export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"

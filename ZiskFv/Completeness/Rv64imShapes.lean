@@ -142,6 +142,22 @@ def RTypeRegisterShape (raw : RawInstruction) : Prop :=
     rd ∈ allRvRegs ∧ rs1 ∈ allRvRegs ∧ rs2 ∈ allRvRegs ∧
     raw = rawRType funct7 rs2 rs1 funct3 rd opcode
 
+/-- Exact raw ADD shape: funct7 = 0, funct3 = 0, opcode = 0x33, with all
+register triples. -/
+def AddRawShape (raw : RawInstruction) : Prop :=
+  ∃ rd rs1 rs2,
+    rd ∈ allRvRegs ∧ rs1 ∈ allRvRegs ∧ rs2 ∈ allRvRegs ∧
+    raw = rawRType 0 rs2 rs1 0 rd 0x33
+
+theorem add_raw_shape_subset_r_type_register_shape
+    {raw : RawInstruction} (h : AddRawShape raw) :
+    RTypeRegisterShape raw := by
+  rcases h with ⟨rd, rs1, rs2, h_rd, h_rs1, h_rs2, h_raw⟩
+  exact
+    ⟨0, 0, 0x33, rd, rs1, rs2,
+      by simp [allRTypeOpcodeShapes],
+      h_rd, h_rs1, h_rs2, h_raw⟩
+
 def ITypeRegisterEdgeImmediateShape (raw : RawInstruction) : Prop :=
   ∃ rd rs1 imm funct3 opcode,
     rd ∈ allRvRegs ∧ rs1 ∈ allRvRegs ∧ imm ∈ edgeIImmediates ∧

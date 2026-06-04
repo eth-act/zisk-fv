@@ -159,13 +159,13 @@ theorem sail_encode_sub_eq_rawRType (rs2 rs1 rd : regidx) :
 
 /-- Constructor-level bridge for the ADD pilot.  The premises are generated Sail
 decode and generated Sail encode facts, not a hand-written raw decoder. -/
-theorem sail_decode_add_contained_in_rtype_shape
+theorem sail_decode_add_contained_in_add_shape
     {raw : RawInstruction} {rs2 rs1 rd : regidx}
     (_h_decode :
       SailDecodesTo raw (instruction.RTYPE (rs2, rs1, rd, rop.ADD)))
     (h_encode :
       SailEncodesTo (instruction.RTYPE (rs2, rs1, rd, rop.ADD)) raw) :
-    Rv64imShapes.RTypeRegisterShape raw := by
+    Rv64imShapes.AddRawShape raw := by
   have h_raw :
       raw =
         Rv64imShapes.rawRType 0
@@ -179,15 +179,25 @@ theorem sail_decode_add_contained_in_rtype_shape
     exact sailM_pure_injective h_encode.symm
   subst raw
   refine
-    ⟨0, 0, 0x33,
-      (regidx_to_fin rd).val,
+    ⟨(regidx_to_fin rd).val,
       (regidx_to_fin rs1).val,
       (regidx_to_fin rs2).val,
-      ?_, ?_, ?_, ?_, rfl⟩
-  · simp [Rv64imShapes.allRTypeOpcodeShapes]
+      ?_, ?_, ?_, rfl⟩
   · exact List.mem_range.mpr (regidx_to_fin rd).isLt
   · exact List.mem_range.mpr (regidx_to_fin rs1).isLt
   · exact List.mem_range.mpr (regidx_to_fin rs2).isLt
+
+/-- Broad R-type containment for the ADD pilot, derived from the exact ADD
+shape. -/
+theorem sail_decode_add_contained_in_rtype_shape
+    {raw : RawInstruction} {rs2 rs1 rd : regidx}
+    (h_decode :
+      SailDecodesTo raw (instruction.RTYPE (rs2, rs1, rd, rop.ADD)))
+    (h_encode :
+      SailEncodesTo (instruction.RTYPE (rs2, rs1, rd, rop.ADD)) raw) :
+    Rv64imShapes.RTypeRegisterShape raw :=
+  Rv64imShapes.add_raw_shape_subset_r_type_register_shape
+    (sail_decode_add_contained_in_add_shape h_decode h_encode)
 
 theorem sail_decode_sub_contained_in_rtype_shape
     {raw : RawInstruction} {rs2 rs1 rd : regidx}
@@ -219,17 +229,42 @@ theorem sail_decode_sub_contained_in_rtype_shape
   · exact List.mem_range.mpr (regidx_to_fin rs1).isLt
   · exact List.mem_range.mpr (regidx_to_fin rs2).isLt
 
-/-- Pilot Step 3 containment for ADD. -/
+/-- Pilot Step 3 exact-shape containment for ADD. -/
+theorem sail_add_executable_contained_in_add_shape :
+    ∀ raw,
+      SailAddExecutableRaw raw →
+      Rv64imShapes.AddRawShape raw := by
+  intro raw h_sail
+  rcases h_sail with ⟨rs2, rs1, rd, h_decode, h_encode⟩
+  exact
+    sail_decode_add_contained_in_add_shape
+      h_decode
+      h_encode
+
+/-- Pilot Step 3 broad-shape containment for ADD. -/
 theorem sail_add_executable_contained :
     ∀ raw,
       SailAddExecutableRaw raw →
       Rv64imShapes.RTypeRegisterShape raw := by
   intro raw h_sail
-  rcases h_sail with ⟨rs2, rs1, rd, h_decode, h_encode⟩
   exact
-    sail_decode_add_contained_in_rtype_shape
-      h_decode
-      h_encode
+    Rv64imShapes.add_raw_shape_subset_r_type_register_shape
+      (sail_add_executable_contained_in_add_shape raw h_sail)
+
+def AddCompleteness (iface : Rv.Interface) : Prop :=
+  ∀ raw, SailAddExecutableRaw raw → Rv.Interface.ziskCircuitCovered iface raw
+
+theorem add_completeness_of_shape_circuit_covered_known_good
+    (iface : Rv.Interface)
+    (h_covered :
+      Rv.Interface.ShapeCircuitCoveredKnownGood
+        iface
+        Rv64imShapes.AddRawShape) :
+    AddCompleteness iface := by
+  intro raw h_sail
+  exact
+    (h_covered raw
+      (sail_add_executable_contained_in_add_shape raw h_sail)).left
 
 theorem sail_register_pilot_executable_contained :
     ∀ raw inst,
