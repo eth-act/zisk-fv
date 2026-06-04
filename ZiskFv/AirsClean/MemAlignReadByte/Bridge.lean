@@ -14,9 +14,8 @@ caller-supplied promise.
 
 ## Trust note
 
-No axioms. The Component-routed bridge inherits `circuit`'s closure
-(`memAlignReadByte_circuit_completeness`) and its byte range fact comes
-from a lookup-aware witness for the Clean `lookup rangeTable8` operation.
+No axioms. The Component-routed bridge gets its byte range fact from a
+lookup-aware witness for the Clean `lookup rangeTable8` operation.
 -/
 
 namespace ZiskFv.AirsClean.MemAlignReadByte
@@ -155,8 +154,7 @@ caller-supplied promise hypothesis.
 that conjunct is supplied from the Clean `lookup rangeTable8` operation
 exposed by `RangeLookupWitness`. Routing through
 `MemAlignReadByte.spec_via_component` makes the Clean Component genuinely
-load-bearing for the load opcodes: their `#print axioms` reaches
-`memAlignReadByte_circuit_completeness`.
+load-bearing for the load opcodes without adding a completeness declaration.
 -/
 
 /-- **C2 re-root entry point.** From the MemAlignReadByte AIR's

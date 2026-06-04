@@ -72,8 +72,8 @@ def main (row : Var MemAlignByteRow FGL) : Circuit FGL Unit := do
 /-- The elaborated circuit for MemAlignByte's `main` — 9 `assertZero`
     constraints + the bus push, no fresh witnesses (`localLength = 0`,
     `unit` output). Lives here (next to `main`) rather than in
-    `Circuit.lean` so the completeness axiom (`Completeness.lean`, whose
-    type mentions this) can be declared without an import cycle. -/
+    `Circuit.lean` so the conditional completeness proof can name it
+    without an import cycle. -/
 @[reducible] def memAlignByteElaborated : ElaboratedCircuit FGL MemAlignByteRow unit where
   name := "MemAlignByte"
   main := main

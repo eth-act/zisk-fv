@@ -32,9 +32,8 @@ h_chain` before destructuring.
 ## Trust note
 
 No axioms added. This bridge routes the existing `Valid_ArithDiv`
-consumers through the Clean Component's `soundness`. Its trust closure
-is `arithDiv_circuit_completeness` (completeness-direction,
-non-security-critical) — NO new soundness axiom.
+consumers through the Clean Component's `soundness`; NO new soundness
+or completeness declarations are introduced.
 -/
 
 namespace ZiskFv.AirsClean.ArithDiv
