@@ -6,6 +6,8 @@ WORKSPACE="$ROOT/build/aeneas-production-extraction"
 AENEAS_CHECK_LEAN="${AENEAS_CHECK_LEAN:-1}"
 AENEAS_CHECK_FENCE_COMPLETENESS="${AENEAS_CHECK_FENCE_COMPLETENESS:-0}"
 AENEAS_CHECK_RV64IM_COMPLETENESS="${AENEAS_CHECK_RV64IM_COMPLETENESS:-0}"
+AENEAS_CHECK_RV_COMPLETENESS="${AENEAS_CHECK_RV_COMPLETENESS:-0}"
+AENEAS_CHECK_RV_WIDE_SHAPES="${AENEAS_CHECK_RV_WIDE_SHAPES:-0}"
 
 if [[ -z "${AENEAS_FLAKE:-}" ]]; then
   aeneas_owner="$(jq -r '.nodes.aeneas.locked.owner' "$ROOT/flake.lock")"
@@ -21,7 +23,8 @@ rm -f \
   "$WORKSPACE/lean-check/ProductionM2.lean" \
   "$WORKSPACE/lean-check/GeneratedChecks.lean" \
   "$WORKSPACE/lean-check/FenceCompleteness.lean" \
-  "$WORKSPACE/lean-check/Rv64imCompleteness.lean"
+  "$WORKSPACE/lean-check/Rv64imCompleteness.lean" \
+  "$WORKSPACE/lean-check/RvCompleteness.lean"
 rm -f "$WORKSPACE"/production_m*.llbc
 
 if [[ -f "$AENEAS_FLAKE/backends/lean/Aeneas.lean" ]]; then
@@ -182,6 +185,7 @@ package zisk_production_extraction_check
 @[default_target] lean_lib GeneratedChecks
 lean_lib FenceCompleteness
 lean_lib Rv64imCompleteness
+lean_lib RvCompleteness
 EOF
   rm -f "$lean_check/lean-toolchain"
   cp "$AENEAS_LEAN_SRC/lean-toolchain" "$lean_check/lean-toolchain"
@@ -273,6 +277,47 @@ def rawTranspileAcceptedFlag (result : Result Bool) : Bool :=
   | ok accepted => accepted
   | fail _ => false
   | div => false
+
+def rawTranspileMaterializedFlag (result : Result Bool) : Bool :=
+  match result with
+  | ok materialized => materialized
+  | fail _ => false
+  | div => false
+
+def resultU32Eq (result : Result Std.U32) (expected : Std.U32) : Bool :=
+  match result with
+  | ok actual => actual == expected
+  | fail _ => false
+  | div => false
+
+def rawOpcode (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0x7F#u32)
+  ok masked
+
+def rawFunct3 (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0x7000#u32)
+  masked >>> 12#i32
+
+def rawRd (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0xF80#u32)
+  masked >>> 7#i32
+
+def rawRs1 (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0xF8000#u32)
+  masked >>> 15#i32
+
+def KnownZiskDecodeGapRaw (raw : Std.U32) : Bool :=
+  resultU32Eq (rawOpcode raw) 0x0F#u32 &&
+  resultU32Eq (rawFunct3 raw) 0#u32 &&
+  !(rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw))
+
+def KnownZiskRowMaterializationGapRaw (raw : Std.U32) : Bool :=
+  rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) &&
+  !(rawTranspileMaterializedFlag
+      (aeneas_extract.extract_transpile_rv64im_materializes_raw raw))
+
+def KnownZiskGapRaw (raw : Std.U32) : Bool :=
+  KnownZiskDecodeGapRaw raw || KnownZiskRowMaterializationGapRaw raw
 
 def rawTranspileRowBSrc (result : Result aeneas_extract.Rv64imTranspileExtract) : Nat :=
   match result with
@@ -453,6 +498,11 @@ example :
   native_decide
 
 example :
+    rawTranspileMaterializedFlag
+      (aeneas_extract.extract_transpile_rv64im_materializes_raw 0x00b50533#u32) = true := by
+  native_decide
+
+example :
     rawTranspileRowBSrc (aeneas_extract.extract_transpile_rv64im_raw 0x00b50533#u32) = 6 := by
   native_decide
 
@@ -546,9 +596,512 @@ example :
 example :
     rawTranspileAcceptedFlag (aeneas_extract.extract_transpile_rv64im_accepted_raw ${raw}#u32) = true := by
   native_decide
+
+example :
+    rawTranspileMaterializedFlag
+      (aeneas_extract.extract_transpile_rv64im_materializes_raw ${raw}#u32) = true := by
+  native_decide
+
+example :
+    KnownZiskDecodeGapRaw ${raw}#u32 = false := by
+  native_decide
+
+example :
+    KnownZiskRowMaterializationGapRaw ${raw}#u32 = false := by
+  native_decide
+
+example :
+    KnownZiskGapRaw ${raw}#u32 = false := by
+  native_decide
 EOF_CASE
     done
   } >> "$lean_check/GeneratedChecks.lean"
+
+  rv64im_branch_cases=(
+    "add_rs1_zero_copy_rs2 0x007001B3 6"
+    "add_rs2_zero_copy_rs1 0x000281B3 6"
+    "or_rs1_zero_copy_rs2 0x007061B3 14"
+    "or_rs2_zero_copy_rs1 0x0002E1B3 14"
+    "addi_zero_zero_zero_nop 0x00000013 34"
+    "addi_rd_zero_nonzero_hint 0x00128013 34"
+    "addi_imm_zero_copy_rs1 0x00028193 34"
+    "addiw_zero_zero_zero_nop 0x0000001B 43"
+  )
+
+  {
+    echo
+    echo "-- Additional raw encodings for branchy lowering paths inside covered opcodes."
+    for case in "${rv64im_branch_cases[@]}"; do
+      read -r name raw opcode_id <<<"$case"
+      cat <<EOF_CASE
+
+example :
+    rawDecodeOpcodeId (aeneas_extract.extract_decode_rv64im_raw ${raw}#u32) = ${opcode_id} := by
+  native_decide
+
+example :
+    rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw ${raw}#u32) = true := by
+  native_decide
+
+example :
+    rawTranspileAcceptedFlag (aeneas_extract.extract_transpile_rv64im_accepted_raw ${raw}#u32) = true := by
+  native_decide
+
+example :
+    rawTranspileMaterializedFlag
+      (aeneas_extract.extract_transpile_rv64im_materializes_raw ${raw}#u32) = true := by
+  native_decide
+
+example :
+    KnownZiskDecodeGapRaw ${raw}#u32 = false := by
+  native_decide
+
+example :
+    KnownZiskRowMaterializationGapRaw ${raw}#u32 = false := by
+  native_decide
+
+example :
+    KnownZiskGapRaw ${raw}#u32 = false := by
+  native_decide
+EOF_CASE
+    done
+  } >> "$lean_check/GeneratedChecks.lean"
+
+  raw_hex_u32() {
+    printf '0x%08X#u32' "$(($1 & 0xffffffff))"
+  }
+
+  rv_r_raw() {
+    echo $((($1 << 25) | ($2 << 20) | ($3 << 15) | ($4 << 12) | ($5 << 7) | $6))
+  }
+
+  rv_i_raw() {
+    local imm=$(( $1 & 0xfff ))
+    echo $(((imm << 20) | ($2 << 15) | ($3 << 12) | ($4 << 7) | $5))
+  }
+
+  rv_s_raw() {
+    local imm=$(( $1 & 0xfff ))
+    echo $((((imm >> 5) << 25) | ($2 << 20) | ($3 << 15) | ($4 << 12) | ((imm & 0x1f) << 7) | 0x23))
+  }
+
+  rv_b_raw() {
+    local imm=$(( $1 & 0x1fff ))
+    echo $(((((imm >> 12) & 1) << 31) | (((imm >> 5) & 0x3f) << 25) | ($2 << 20) | ($3 << 15) | ($4 << 12) | (((imm >> 1) & 0xf) << 8) | (((imm >> 11) & 1) << 7) | 0x63))
+  }
+
+  rv_u_raw() {
+    echo $((($1 & 0xfffff000) | ($2 << 7) | $3))
+  }
+
+  rv_j_raw() {
+    local imm=$(( $1 & 0x1fffff ))
+    echo $(((((imm >> 20) & 1) << 31) | (((imm >> 1) & 0x3ff) << 21) | (((imm >> 11) & 1) << 20) | (((imm >> 12) & 0xff) << 12) | ($2 << 7) | 0x6f))
+  }
+
+  {
+    echo
+    echo "-- Small shape-grid raw encodings for broader extracted-Lean materialization coverage."
+    echo "def rawShapeGridCaseOk (raw : Std.U32) : Bool :="
+    echo "  rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) &&"
+    echo "  rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw raw) &&"
+    echo "  rawTranspileAcceptedFlag (aeneas_extract.extract_transpile_rv64im_accepted_raw raw) &&"
+    echo "  rawTranspileMaterializedFlag"
+    echo "    (aeneas_extract.extract_transpile_rv64im_materializes_raw raw) &&"
+    echo "  !KnownZiskGapRaw raw"
+    echo
+    echo "def rawShapeGridCases : List Std.U32 := ["
+
+    first=1
+    emit_shape_raw() {
+      local raw="$1"
+      if [[ "$first" -eq 1 ]]; then
+        printf '  %s' "$(raw_hex_u32 "$raw")"
+        first=0
+      else
+        printf ',\n  %s' "$(raw_hex_u32 "$raw")"
+      fi
+    }
+
+    regs=(0 5 31)
+    i_imms=(-1 0 1)
+    s_imms=(-4 0 4)
+    b_imms=(-4 0 4)
+    u_imms=(0 0x80000000)
+    j_imms=(-4 0 4)
+    shift64=(0 63)
+    shift32=(0 31)
+    r_ops=(
+      "0 0 0x33" "32 0 0x33" "0 1 0x33" "0 2 0x33" "0 3 0x33"
+      "0 4 0x33" "0 5 0x33" "32 5 0x33" "0 6 0x33" "0 7 0x33"
+      "0 0 0x3b" "32 0 0x3b" "0 1 0x3b" "0 5 0x3b" "32 5 0x3b"
+      "1 0 0x33" "1 1 0x33" "1 2 0x33" "1 3 0x33" "1 0 0x3b"
+      "1 4 0x33" "1 5 0x33" "1 4 0x3b" "1 5 0x3b" "1 6 0x33"
+      "1 7 0x33" "1 6 0x3b" "1 7 0x3b"
+    )
+
+    for op in "${r_ops[@]}"; do
+      read -r funct7 funct3 opcode <<<"$op"
+      for rd in "${regs[@]}"; do
+        for rs1 in "${regs[@]}"; do
+          for rs2 in "${regs[@]}"; do
+            emit_shape_raw "$(rv_r_raw "$funct7" "$rs2" "$rs1" "$funct3" "$rd" "$opcode")"
+          done
+        done
+      done
+    done
+
+    for rd in "${regs[@]}"; do
+      for imm in "${u_imms[@]}"; do
+        emit_shape_raw "$(rv_u_raw "$imm" "$rd" 0x37)"
+        emit_shape_raw "$(rv_u_raw "$imm" "$rd" 0x17)"
+      done
+      for imm in "${j_imms[@]}"; do
+        emit_shape_raw "$(rv_j_raw "$imm" "$rd")"
+      done
+      for rs1 in "${regs[@]}"; do
+        for imm in "${i_imms[@]}"; do
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 0 "$rd" 0x67)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 0 "$rd" 0x13)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 2 "$rd" 0x13)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 3 "$rd" 0x13)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 4 "$rd" 0x13)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 6 "$rd" 0x13)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 7 "$rd" 0x13)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 0 "$rd" 0x1b)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 0 "$rd" 0x03)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 1 "$rd" 0x03)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 2 "$rd" 0x03)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 3 "$rd" 0x03)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 4 "$rd" 0x03)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 5 "$rd" 0x03)"
+          emit_shape_raw "$(rv_i_raw "$imm" "$rs1" 6 "$rd" 0x03)"
+        done
+        for shamt in "${shift64[@]}"; do
+          emit_shape_raw "$(rv_i_raw "$shamt" "$rs1" 1 "$rd" 0x13)"
+          emit_shape_raw "$(rv_i_raw "$shamt" "$rs1" 5 "$rd" 0x13)"
+          emit_shape_raw "$(rv_i_raw "$((0x400 | shamt))" "$rs1" 5 "$rd" 0x13)"
+        done
+        for shamt in "${shift32[@]}"; do
+          emit_shape_raw "$(rv_i_raw "$shamt" "$rs1" 1 "$rd" 0x1b)"
+          emit_shape_raw "$(rv_i_raw "$shamt" "$rs1" 5 "$rd" 0x1b)"
+          emit_shape_raw "$(rv_i_raw "$((0x400 | shamt))" "$rs1" 5 "$rd" 0x1b)"
+        done
+      done
+    done
+
+    for rs1 in "${regs[@]}"; do
+      for rs2 in "${regs[@]}"; do
+        for imm in "${b_imms[@]}"; do
+          emit_shape_raw "$(rv_b_raw "$imm" "$rs2" "$rs1" 0)"
+          emit_shape_raw "$(rv_b_raw "$imm" "$rs2" "$rs1" 1)"
+          emit_shape_raw "$(rv_b_raw "$imm" "$rs2" "$rs1" 4)"
+          emit_shape_raw "$(rv_b_raw "$imm" "$rs2" "$rs1" 5)"
+          emit_shape_raw "$(rv_b_raw "$imm" "$rs2" "$rs1" 6)"
+          emit_shape_raw "$(rv_b_raw "$imm" "$rs2" "$rs1" 7)"
+        done
+        for imm in "${s_imms[@]}"; do
+          emit_shape_raw "$(rv_s_raw "$imm" "$rs2" "$rs1" 0)"
+          emit_shape_raw "$(rv_s_raw "$imm" "$rs2" "$rs1" 1)"
+          emit_shape_raw "$(rv_s_raw "$imm" "$rs2" "$rs1" 2)"
+          emit_shape_raw "$(rv_s_raw "$imm" "$rs2" "$rs1" 3)"
+        done
+      done
+    done
+
+    for pred in 0 15; do
+      for succ in 0 15; do
+        emit_shape_raw "$(((pred << 24) | (succ << 20) | 0x0f))"
+      done
+    done
+
+    echo
+    echo "]"
+    echo
+    echo "example : rawShapeGridCases.all rawShapeGridCaseOk = true := by"
+    echo "  native_decide"
+  } >> "$lean_check/GeneratedChecks.lean"
+
+  if [[ "$AENEAS_CHECK_RV_WIDE_SHAPES" != 0 ]]; then
+    cat >> "$lean_check/GeneratedChecks.lean" <<'EOF'
+
+/-!
+Optional wide extracted-Lean shape check.
+
+This is disabled by default because it asks `native_decide` to run the
+extracted production decode/lowering/materialization path for the broad
+register/edge-immediate grid below. It is still finite and reproducible, but
+currently costs several minutes; a measured run on the development machine was
+about 202s for `GeneratedChecks`, 170s for `RvCompleteness`, and 6m21s
+end-to-end.
+-/
+
+def rawOfNat32 (n : Nat) : Std.U32 :=
+  ⟨BitVec.ofNat 32 n⟩
+
+def rawRType (funct7 rs2 rs1 funct3 rd opcode : Nat) : Std.U32 :=
+  rawOfNat32
+    ((funct7 <<< 25) ||| (rs2 <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
+
+def allRvRegs : List Nat :=
+  List.range 32
+
+def allRTypeOpcodeShapes : List (Nat × Nat × Nat) := [
+  (0, 0, 0x33),  (32, 0, 0x33), (0, 1, 0x33),  (0, 2, 0x33),
+  (0, 3, 0x33),  (0, 4, 0x33),  (0, 5, 0x33),  (32, 5, 0x33),
+  (0, 6, 0x33),  (0, 7, 0x33),  (0, 0, 0x3b),  (32, 0, 0x3b),
+  (0, 1, 0x3b),  (0, 5, 0x3b),  (32, 5, 0x3b), (1, 0, 0x33),
+  (1, 1, 0x33),  (1, 2, 0x33),  (1, 3, 0x33),  (1, 0, 0x3b),
+  (1, 4, 0x33),  (1, 5, 0x33),  (1, 4, 0x3b),  (1, 5, 0x3b),
+  (1, 6, 0x33),  (1, 7, 0x33),  (1, 6, 0x3b),  (1, 7, 0x3b)
+]
+
+def allRTypeRegisterShapes (caseOk : Std.U32 → Bool) : Bool :=
+  allRTypeOpcodeShapes.all fun (funct7, funct3, opcode) =>
+    allRvRegs.all fun rd =>
+      allRvRegs.all fun rs1 =>
+        allRvRegs.all fun rs2 =>
+          caseOk (rawRType funct7 rs2 rs1 funct3 rd opcode)
+
+def allRTypeRegisterShapesMaterialize : Bool :=
+  allRTypeRegisterShapes rawShapeGridCaseOk
+
+theorem allRTypeRegisterShapesMaterialize_ok :
+    allRTypeRegisterShapesMaterialize = true := by
+  native_decide
+
+def rawIType (imm rs1 funct3 rd opcode : Nat) : Std.U32 :=
+  rawOfNat32
+    (((imm % 4096) <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
+
+def edgeIImmediates : List Nat := [
+  2048, -- -2048 sign-extended through the 12-bit immediate field
+  4095, -- -1
+  0,
+  1,
+  2047
+]
+
+def allITypeRegisterEdgeImmediates (caseOk : Std.U32 → Bool) : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      edgeIImmediates.all fun imm =>
+        caseOk (rawIType imm rs1 0 rd 0x67) && -- jalr
+        caseOk (rawIType imm rs1 0 rd 0x13) && -- addi
+        caseOk (rawIType imm rs1 2 rd 0x13) && -- slti
+        caseOk (rawIType imm rs1 3 rd 0x13) && -- sltiu
+        caseOk (rawIType imm rs1 4 rd 0x13) && -- xori
+        caseOk (rawIType imm rs1 6 rd 0x13) && -- ori
+        caseOk (rawIType imm rs1 7 rd 0x13) && -- andi
+        caseOk (rawIType imm rs1 0 rd 0x1b) && -- addiw
+        caseOk (rawIType imm rs1 0 rd 0x03) && -- lb
+        caseOk (rawIType imm rs1 1 rd 0x03) && -- lh
+        caseOk (rawIType imm rs1 2 rd 0x03) && -- lw
+        caseOk (rawIType imm rs1 3 rd 0x03) && -- ld
+        caseOk (rawIType imm rs1 4 rd 0x03) && -- lbu
+        caseOk (rawIType imm rs1 5 rd 0x03) && -- lhu
+        caseOk (rawIType imm rs1 6 rd 0x03)    -- lwu
+
+def allITypeRegisterEdgeImmediatesMaterialize : Bool :=
+  allITypeRegisterEdgeImmediates rawShapeGridCaseOk
+
+def shift64Amounts : List Nat :=
+  List.range 64
+
+def shift32Amounts : List Nat :=
+  List.range 32
+
+def allShiftRegisterShapes (caseOk : Std.U32 → Bool) : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      (shift64Amounts.all fun shamt =>
+        caseOk (rawIType shamt rs1 1 rd 0x13) &&
+        caseOk (rawIType shamt rs1 5 rd 0x13) &&
+        caseOk (rawIType (0x400 ||| shamt) rs1 5 rd 0x13)) &&
+      (shift32Amounts.all fun shamt =>
+        caseOk (rawIType shamt rs1 1 rd 0x1b) &&
+        caseOk (rawIType shamt rs1 5 rd 0x1b) &&
+        caseOk (rawIType (0x400 ||| shamt) rs1 5 rd 0x1b))
+
+def allShiftRegisterShapesMaterialize : Bool :=
+  allShiftRegisterShapes rawShapeGridCaseOk
+
+theorem allITypeRegisterEdgeImmediatesMaterialize_ok :
+    allITypeRegisterEdgeImmediatesMaterialize = true := by
+  native_decide
+
+theorem allShiftRegisterShapesMaterialize_ok :
+    allShiftRegisterShapesMaterialize = true := by
+  native_decide
+
+def rawSType (imm rs2 rs1 funct3 : Nat) : Std.U32 :=
+  let imm12 := imm % 4096
+  rawOfNat32
+    (((imm12 >>> 5) <<< 25) ||| (rs2 <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| ((imm12 &&& 0x1f) <<< 7) ||| 0x23)
+
+def rawBType (imm rs2 rs1 funct3 : Nat) : Std.U32 :=
+  let imm13 := imm % 8192
+  rawOfNat32
+    ((((imm13 >>> 12) &&& 1) <<< 31) |||
+      (((imm13 >>> 5) &&& 0x3f) <<< 25) |||
+      (rs2 <<< 20) ||| (rs1 <<< 15) ||| (funct3 <<< 12) |||
+      (((imm13 >>> 1) &&& 0xf) <<< 8) |||
+      (((imm13 >>> 11) &&& 1) <<< 7) ||| 0x63)
+
+def rawUType (imm rd opcode : Nat) : Std.U32 :=
+  rawOfNat32 ((imm &&& 0xfffff000) ||| (rd <<< 7) ||| opcode)
+
+def rawJType (imm rd : Nat) : Std.U32 :=
+  let imm21 := imm % 2097152
+  rawOfNat32
+    ((((imm21 >>> 20) &&& 1) <<< 31) |||
+      (((imm21 >>> 1) &&& 0x3ff) <<< 21) |||
+      (((imm21 >>> 11) &&& 1) <<< 20) |||
+      (((imm21 >>> 12) &&& 0xff) <<< 12) ||| (rd <<< 7) ||| 0x6f)
+
+def edgeSImmediates : List Nat := [
+  2048, -- -2048 sign-extended through the 12-bit immediate field
+  4088, -- -8
+  0,
+  7,
+  2047
+]
+
+def edgeBImmediates : List Nat := [
+  4096, -- -4096 sign-extended through the 13-bit immediate field
+  8188, -- -4
+  0,
+  4,
+  4094
+]
+
+def edgeUImmediates : List Nat := [
+  0,
+  0x1000,
+  0x7ffff000,
+  0x80000000,
+  0xfffff000
+]
+
+def edgeJImmediates : List Nat := [
+  1048576, -- -1048576 sign-extended through the 21-bit immediate field
+  2097148, -- -4
+  0,
+  4,
+  1048574
+]
+
+def allStoreRegisterEdgeImmediates (caseOk : Std.U32 → Bool) : Bool :=
+  allRvRegs.all fun rs1 =>
+    allRvRegs.all fun rs2 =>
+      edgeSImmediates.all fun imm =>
+        caseOk (rawSType imm rs2 rs1 0) &&
+        caseOk (rawSType imm rs2 rs1 1) &&
+        caseOk (rawSType imm rs2 rs1 2) &&
+        caseOk (rawSType imm rs2 rs1 3)
+
+def allStoreRegisterEdgeImmediatesMaterialize : Bool :=
+  allStoreRegisterEdgeImmediates rawShapeGridCaseOk
+
+def allBranchRegisterEdgeImmediates (caseOk : Std.U32 → Bool) : Bool :=
+  allRvRegs.all fun rs1 =>
+    allRvRegs.all fun rs2 =>
+      edgeBImmediates.all fun imm =>
+        caseOk (rawBType imm rs2 rs1 0) &&
+        caseOk (rawBType imm rs2 rs1 1) &&
+        caseOk (rawBType imm rs2 rs1 4) &&
+        caseOk (rawBType imm rs2 rs1 5) &&
+        caseOk (rawBType imm rs2 rs1 6) &&
+        caseOk (rawBType imm rs2 rs1 7)
+
+def allBranchRegisterEdgeImmediatesMaterialize : Bool :=
+  allBranchRegisterEdgeImmediates rawShapeGridCaseOk
+
+def allUpperAndJumpEdgeImmediates (caseOk : Std.U32 → Bool) : Bool :=
+  allRvRegs.all fun rd =>
+    (edgeUImmediates.all fun imm =>
+      caseOk (rawUType imm rd 0x37) &&
+      caseOk (rawUType imm rd 0x17)) &&
+    (edgeJImmediates.all fun imm =>
+      caseOk (rawJType imm rd))
+
+def allUpperAndJumpEdgeImmediatesMaterialize : Bool :=
+  allUpperAndJumpEdgeImmediates rawShapeGridCaseOk
+
+def allFencePredSuccShapes (caseOk : Std.U32 → Bool) : Bool :=
+  (List.range 16).all fun pred =>
+    (List.range 16).all fun succ =>
+      caseOk (rawOfNat32 ((pred <<< 24) ||| (succ <<< 20) ||| 0x0f))
+
+def allFencePredSuccShapesMaterialize : Bool :=
+  allFencePredSuccShapes rawShapeGridCaseOk
+
+theorem allStoreRegisterEdgeImmediatesMaterialize_ok :
+    allStoreRegisterEdgeImmediatesMaterialize = true := by
+  native_decide
+
+theorem allBranchRegisterEdgeImmediatesMaterialize_ok :
+    allBranchRegisterEdgeImmediatesMaterialize = true := by
+  native_decide
+
+theorem allUpperAndJumpEdgeImmediatesMaterialize_ok :
+    allUpperAndJumpEdgeImmediatesMaterialize = true := by
+  native_decide
+
+theorem allFencePredSuccShapesMaterialize_ok :
+    allFencePredSuccShapesMaterialize = true := by
+  native_decide
+
+def allWideRvShapeFamiliesMaterialize : Bool :=
+  allRTypeRegisterShapesMaterialize &&
+  allITypeRegisterEdgeImmediatesMaterialize &&
+  allShiftRegisterShapesMaterialize &&
+  allStoreRegisterEdgeImmediatesMaterialize &&
+  allBranchRegisterEdgeImmediatesMaterialize &&
+  allUpperAndJumpEdgeImmediatesMaterialize &&
+  allFencePredSuccShapesMaterialize
+
+def allExhaustiveRvShapeFamiliesMaterialize : Bool :=
+  allRTypeRegisterShapesMaterialize &&
+  allShiftRegisterShapesMaterialize &&
+  allFencePredSuccShapesMaterialize
+
+def allEdgeRvShapeFamiliesMaterialize : Bool :=
+  allITypeRegisterEdgeImmediatesMaterialize &&
+  allStoreRegisterEdgeImmediatesMaterialize &&
+  allBranchRegisterEdgeImmediatesMaterialize &&
+  allUpperAndJumpEdgeImmediatesMaterialize
+
+theorem allWideRvShapeFamiliesMaterialize_ok :
+    allWideRvShapeFamiliesMaterialize = true := by
+  simp [allWideRvShapeFamiliesMaterialize,
+    allRTypeRegisterShapesMaterialize_ok,
+    allITypeRegisterEdgeImmediatesMaterialize_ok,
+    allShiftRegisterShapesMaterialize_ok,
+    allStoreRegisterEdgeImmediatesMaterialize_ok,
+    allBranchRegisterEdgeImmediatesMaterialize_ok,
+    allUpperAndJumpEdgeImmediatesMaterialize_ok,
+    allFencePredSuccShapesMaterialize_ok]
+
+theorem allExhaustiveRvShapeFamiliesMaterialize_ok :
+    allExhaustiveRvShapeFamiliesMaterialize = true := by
+  simp [allExhaustiveRvShapeFamiliesMaterialize,
+    allRTypeRegisterShapesMaterialize_ok,
+    allShiftRegisterShapesMaterialize_ok,
+    allFencePredSuccShapesMaterialize_ok]
+
+theorem allEdgeRvShapeFamiliesMaterialize_ok :
+    allEdgeRvShapeFamiliesMaterialize = true := by
+  simp [allEdgeRvShapeFamiliesMaterialize,
+    allITypeRegisterEdgeImmediatesMaterialize_ok,
+    allStoreRegisterEdgeImmediatesMaterialize_ok,
+    allBranchRegisterEdgeImmediatesMaterialize_ok,
+    allUpperAndJumpEdgeImmediatesMaterialize_ok]
+EOF
+  fi
 
   cat >> "$lean_check/GeneratedChecks.lean" <<'EOF'
 
@@ -676,6 +1229,4210 @@ theorem extracted_raw_fence_decode_completeness :
 end zisk_core_generated_fence_completeness
 EOF
     nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks FenceCompleteness' bash "$lean_check"
+  elif [[ "$AENEAS_CHECK_RV_COMPLETENESS" != 0 ]]; then
+    cat > "$lean_check/RvCompleteness.lean" <<'EOF'
+import ProductionM2
+import GeneratedChecks
+
+open Aeneas Aeneas.Std Result
+open zisk_core
+
+namespace zisk_core_generated_rv_completeness
+
+/-!
+This module is the RV-completeness harness, distinct from Clean circuit
+`GeneralFormalCircuit.Completeness`.
+
+The target statement is:
+
+  every raw RV instruction accepted by Sail's decoder is accepted by the
+  Aeneas-extracted production ZisK decode/transpile path and maps to a
+  covered circuit/equivalence opcode.
+
+This generated Aeneas check is parameterized over the Sail executability
+predicate. The intended instantiation is Sail's `ext_decode`/execute model;
+that bridge is kept outside this Aeneas workspace because the pinned Aeneas
+Lean runtime and the current generated Sail-Lean tree use different Lean
+toolchains.
+-/
+
+def rawDecodeSupported (result : Result aeneas_extract.Rv64imDecodeExtract) : Bool :=
+  match result with
+  | ok decoded => decoded.supported
+  | fail _ => false
+  | div => false
+
+def rawDecodeOpcodeId (result : Result aeneas_extract.Rv64imDecodeExtract) : Nat :=
+  match result with
+  | ok decoded => decoded.opcode_id.val
+  | fail _ => 0
+  | div => 0
+
+def rawTranspileAccepted (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
+  match result with
+  | ok summary => summary.accepted
+  | fail _ => false
+  | div => false
+
+def rawTranspileAcceptedFlag (result : Result Bool) : Bool :=
+  match result with
+  | ok accepted => accepted
+  | fail _ => false
+  | div => false
+
+def rawTranspileMaterializedFlag (result : Result Bool) : Bool :=
+  match result with
+  | ok materialized => materialized
+  | fail _ => false
+  | div => false
+
+def resultU32Eq (result : Result Std.U32) (expected : Std.U32) : Bool :=
+  match result with
+  | ok actual => actual == expected
+  | fail _ => false
+  | div => false
+
+def rawOpcode (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0x7F#u32)
+  ok masked
+
+def rawFunct3 (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0x7000#u32)
+  masked >>> 12#i32
+
+def rawRd (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0xF80#u32)
+  masked >>> 7#i32
+
+def rawRs1 (raw : Std.U32) : Result Std.U32 := do
+  let masked ← lift (raw &&& 0xF8000#u32)
+  masked >>> 15#i32
+
+/-- ZisK production decoder support, from Aeneas-extracted production code. -/
+def ZiskDecodeSupportedRaw (raw : Std.U32) : Prop :=
+  rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) = true
+
+/-- ZisK production lowering/transpile acceptance, from Aeneas extraction. -/
+def ZiskTranspileAcceptedRaw (raw : Std.U32) : Prop :=
+  rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw raw) = true
+
+/-- ZisK production lowering support without row materialization. -/
+def ZiskLowerableRaw (raw : Std.U32) : Prop :=
+  rawTranspileAcceptedFlag (aeneas_extract.extract_transpile_rv64im_accepted_raw raw) = true
+
+/-- The extracted production lowering path actually emitted a row. -/
+def ZiskRowMaterializedRaw (raw : Std.U32) : Prop :=
+  rawTranspileMaterializedFlag
+    (aeneas_extract.extract_transpile_rv64im_materializes_raw raw) = true
+
+/-- Current known decode gap: Sail accepts generic FENCE-shaped raw words that
+the production ZisK decoder rejects. This predicate is intentionally defined
+from raw instruction fields plus the extracted ZisK decoder result, so it can
+be removed when ZisK's FENCE decoder is broadened. -/
+def KnownZiskDecodeGapRaw (raw : Std.U32) : Bool :=
+  resultU32Eq (rawOpcode raw) 0x0F#u32 &&
+  resultU32Eq (rawFunct3 raw) 0#u32 &&
+  !(rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw))
+
+/-- Extracted production lowering/materialization gap. This is deliberately
+definition-based rather than hand-enumerated: if the extracted production
+decoder accepts a raw instruction but the extracted production lowering path
+does not emit a row, the raw word is outside the avoiding-known-bugs theorem
+until the row-builder proof is closed or the production issue is fixed. -/
+def KnownZiskRowMaterializationGapRaw (raw : Std.U32) : Bool :=
+  rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) &&
+  !(rawTranspileMaterializedFlag
+      (aeneas_extract.extract_transpile_rv64im_materializes_raw raw))
+
+def KnownZiskGapRaw (raw : Std.U32) : Bool :=
+  KnownZiskDecodeGapRaw raw || KnownZiskRowMaterializationGapRaw raw
+
+/-- Current covered opcode-id surface. IDs are assigned by the extracted
+`opcode_id` wrapper and are checked by the generated representative examples
+in `GeneratedChecks.lean`. ID 1000 is the FENCE generic/unsupported marker. -/
+def coveredOpcodeId (opcodeId : Nat) : Bool :=
+  1 <= opcodeId && opcodeId <= 63
+
+/-- Circuit/equivalence coverage predicate for a raw word. -/
+def ZiskCircuitCoveredRaw (raw : Std.U32) : Prop :=
+  ZiskDecodeSupportedRaw raw ∧
+  ZiskLowerableRaw raw ∧
+  ZiskRowMaterializedRaw raw ∧
+  coveredOpcodeId (rawDecodeOpcodeId (aeneas_extract.extract_decode_rv64im_raw raw)) = true
+
+def RvAvoidKnownBugsFor (sailExecutableRaw : Std.U32 → Prop) : Prop :=
+  ∀ raw, sailExecutableRaw raw → KnownZiskGapRaw raw = false → ZiskDecodeSupportedRaw raw
+
+def RvLoweringCompleteness : Prop :=
+  ∀ raw, ZiskDecodeSupportedRaw raw → ZiskLowerableRaw raw
+
+def RvRowMaterializationCompleteness : Prop :=
+  ∀ raw, ZiskLowerableRaw raw → ZiskRowMaterializedRaw raw
+
+def RvOpcodeCoverageCompleteness : Prop :=
+  ∀ raw, ZiskDecodeSupportedRaw raw →
+    coveredOpcodeId (rawDecodeOpcodeId (aeneas_extract.extract_decode_rv64im_raw raw)) = true
+
+def RvCompletenessFor (sailExecutableRaw : Std.U32 → Prop) : Prop :=
+  ∀ raw, sailExecutableRaw raw → ZiskCircuitCoveredRaw raw
+
+def RvCompletenessAvoidingKnownBugsFor (sailExecutableRaw : Std.U32 → Prop) : Prop :=
+  ∀ raw, sailExecutableRaw raw → KnownZiskGapRaw raw = false → ZiskCircuitCoveredRaw raw
+
+/-- Empty extraction context used by builder-total lemmas. The production
+`aeneas_extract.extract_transpile_rv64im_materializes_raw` wrapper uses this
+same shape before calling `lower_rv64im_single_row_input`. -/
+def emptyExtractContext : riscv2zisk_context.Riscv2ZiskContext :=
+  {
+    extract_inst := none,
+    extract_marker := (),
+    input_precompile := none,
+    output_precompile := none,
+    input_precompile_reg := none,
+    output_precompile_reg := none
+  }
+
+def helperMaterializesResult
+    (f : riscv2zisk_context.Riscv2ZiskContext →
+      Result riscv2zisk_context.Riscv2ZiskContext) : Result Bool := do
+  let ctx ← f emptyExtractContext
+  ok ctx.extract_inst.isSome
+
+def helperMaterializesResultFlag
+    (f : riscv2zisk_context.Riscv2ZiskContext →
+      Result riscv2zisk_context.Riscv2ZiskContext) : Bool :=
+  match helperMaterializesResult f with
+  | ok true => true
+  | _ => false
+
+def builderOkFlag (result : Result zisk_inst_builder.ZiskInstBuilder) : Bool :=
+  match result with
+  | ok _ => true
+  | _ => false
+
+/-- First structural row-builder-total lemma. FENCE lowers through production
+`nop`, so this closes the helper used by the current known-good FENCE surface
+without relying on finite raw-word enumeration. -/
+theorem empty_nop_materializes_result
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) :
+    helperMaterializesResult (fun ctx => ctx.nop i 4#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.nop,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst]
+  rfl
+
+theorem one_u64_ne_zero : ¬ ((1#u64 : Std.U64) = 0#u64) := by
+  native_decide
+
+theorem one_u64_not_lt_regs_from :
+    ¬ ((1#u64 : Std.U64) < (UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_FROM)) := by
+  native_decide
+
+theorem regs_to_not_lt_one_u64 :
+    ¬ ((UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_TO) < (1#u64 : Std.U64)) := by
+  native_decide
+
+theorem one_i64_ne_zero : ¬ ((1#i64 : Std.I64) = 0#i64) := by
+  native_decide
+
+theorem one_i64_not_lt_regs_from :
+    ¬ ((1#i64 : Std.I64) < (UScalar.hcast .I64 zisk_registers.REGS_IN_MAIN_FROM)) := by
+  native_decide
+
+theorem regs_to_not_lt_one_i64 :
+    ¬ ((UScalar.hcast .I64 zisk_registers.REGS_IN_MAIN_TO) < (1#i64 : Std.I64)) := by
+  native_decide
+
+theorem one_u64_scalar_ne_zero : ¬ ((1#64#uscalar : Std.U64) = 0#u64) := by
+  native_decide
+
+theorem one_u64_scalar_not_lt_regs_from_set_width :
+    ¬ ((1#64#uscalar : Std.U64) <
+      (BitVec.setWidth 64 1#System.Platform.numBits#uscalar : Std.U64)) := by
+  native_decide
+
+theorem regs_to_set_width_not_lt_one_u64_scalar :
+    ¬ ((BitVec.setWidth 64 31#System.Platform.numBits#uscalar : Std.U64) <
+      (1#64#uscalar : Std.U64)) := by
+  native_decide
+
+theorem one_i64_scalar_ne_zero : ¬ ((1#64#iscalar : Std.I64) = 0#i64) := by
+  native_decide
+
+theorem i64_zero_eq_zero : (0#64#iscalar : Std.I64) = 0#i64 := by
+  native_decide
+
+theorem u64_zero_eq_zero : (0#64#uscalar : Std.U64) = 0#u64 := by
+  native_decide
+
+theorem u64_one_val_ne_zero : ¬ ((↑(1#64#uscalar : Std.U64) : Nat) = 0) := by
+  native_decide
+
+theorem u64_one_val_not_gt_regs_to : ¬ (31 < (↑(1#64#uscalar : Std.U64) : Nat)) := by
+  native_decide
+
+theorem u64_31_ne_zero : ¬ ((31#64#uscalar : Std.U64) = 0#u64) := by
+  native_decide
+
+theorem u64_31_val_ne_zero : ¬ ((↑(31#64#uscalar : Std.U64) : Nat) = 0) := by
+  native_decide
+
+theorem u64_31_val_not_gt_regs_to : ¬ (31 < (↑(31#64#uscalar : Std.U64) : Nat)) := by
+  native_decide
+
+theorem i64_one_val_not_lt_regs_from : ¬ ((↑(1#64#iscalar : Std.I64) : Int) < 1) := by
+  native_decide
+
+theorem i64_one_val_not_gt_regs_to : ¬ (31 < (↑(1#64#iscalar : Std.I64) : Int)) := by
+  native_decide
+
+theorem i64_31_ne_zero : ¬ ((31#64#iscalar : Std.I64) = 0#i64) := by
+  native_decide
+
+theorem i64_31_val_not_lt_regs_from : ¬ ((↑(31#64#iscalar : Std.I64) : Int) < 1) := by
+  native_decide
+
+theorem i64_31_val_not_gt_regs_to : ¬ (31 < (↑(31#64#iscalar : Std.I64) : Int)) := by
+  native_decide
+
+theorem one_i64_scalar_not_lt_regs_from_set_width :
+    ¬ ((1#64#iscalar : Std.I64) <
+      (BitVec.setWidth 64 1#System.Platform.numBits#iscalar : Std.I64)) := by
+  native_decide
+
+theorem regs_to_set_width_not_lt_one_i64_scalar :
+    ¬ ((BitVec.setWidth 64 31#System.Platform.numBits#iscalar : Std.I64) <
+      (1#64#iscalar : Std.I64)) := by
+  native_decide
+
+theorem one_u64_val_not_lt_regs_from_set_width :
+    ¬ ((↑(1#64#uscalar : Std.U64) : Nat) <
+      (↑(BitVec.setWidth 64 1#System.Platform.numBits#uscalar : Std.U64) : Nat)) := by
+  native_decide
+
+theorem regs_to_set_width_val_not_lt_one_u64 :
+    ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#uscalar : Std.U64) : Nat) <
+      (↑(1#64#uscalar : Std.U64) : Nat)) := by
+  native_decide
+
+theorem one_i64_val_not_lt_regs_from_set_width :
+    ¬ ((↑(1#64#iscalar : Std.I64) : Int) <
+      (↑(BitVec.setWidth 64 1#System.Platform.numBits#iscalar : Std.I64) : Int)) := by
+  native_decide
+
+theorem regs_to_set_width_val_not_lt_one_i64 :
+    ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#iscalar : Std.I64) : Int) <
+      (↑(1#64#iscalar : Std.I64) : Int)) := by
+  native_decide
+
+theorem one_nat_not_lt_regs_from_set_width :
+    ¬ (1 < (↑(BitVec.setWidth 64 1#System.Platform.numBits#uscalar : Std.U64) : Nat)) := by
+  native_decide
+
+theorem regs_to_set_width_nat_ne_zero :
+    ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#uscalar : Std.U64) : Nat) = 0) := by
+  native_decide
+
+theorem regs_from_set_width_u64_val_eq :
+    (↑(BitVec.setWidth 64 1#System.Platform.numBits#uscalar : Std.U64) : Nat) = 1 := by
+  native_decide
+
+theorem regs_to_set_width_u64_val_eq :
+    (↑(BitVec.setWidth 64 31#System.Platform.numBits#uscalar : Std.U64) : Nat) = 31 := by
+  native_decide
+
+theorem two_nat_not_lt_regs_from_set_width :
+    ¬ (2 < (↑(BitVec.setWidth 64 1#System.Platform.numBits#uscalar : Std.U64) : Nat)) := by
+  native_decide
+
+theorem regs_to_set_width_nat_not_le_one :
+    ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#uscalar : Std.U64) : Nat) ≤ 1) := by
+  native_decide
+
+theorem one_int_not_lt_regs_from_set_width :
+    ¬ (1 < (↑(BitVec.setWidth 64 1#System.Platform.numBits#iscalar : Std.I64) : Int)) := by
+  native_decide
+
+theorem regs_to_set_width_int_not_lt_one :
+    ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#iscalar : Std.I64) : Int) < 1) := by
+  native_decide
+
+theorem regs_from_set_width_i64_val_eq :
+    (↑(BitVec.setWidth 64 1#System.Platform.numBits#iscalar : Std.I64) : Int) = 1 := by
+  native_decide
+
+theorem regs_to_set_width_i64_val_eq :
+    (↑(BitVec.setWidth 64 31#System.Platform.numBits#iscalar : Std.I64) : Int) = 31 := by
+  native_decide
+
+theorem two_int_not_lt_regs_from_set_width :
+    ¬ (2 < (↑(BitVec.setWidth 64 1#System.Platform.numBits#iscalar : Std.I64) : Int)) := by
+  native_decide
+
+theorem regs_to_set_width_int_not_lt_two :
+    ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#iscalar : Std.I64) : Int) < 2) := by
+  native_decide
+
+theorem u64_1_eq_pattern : (1#u64 : Std.U64) = (1#64#uscalar : Std.U64) := by
+  apply UScalar.eq_of_val_eq
+  native_decide
+
+theorem u64_2_eq_pattern : (2#u64 : Std.U64) = (2#64#uscalar : Std.U64) := by
+  apply UScalar.eq_of_val_eq
+  native_decide
+
+theorem u64_4_eq_pattern : (4#u64 : Std.U64) = (4#64#uscalar : Std.U64) := by
+  apply UScalar.eq_of_val_eq
+  native_decide
+
+theorem u64_8_eq_pattern : (8#u64 : Std.U64) = (8#64#uscalar : Std.U64) := by
+  apply UScalar.eq_of_val_eq
+  native_decide
+
+theorem i32_32_nonnegative : (32#i32 : Std.I32).val ≥ 0 := by
+  native_decide
+
+theorem i32_32_toNat_lt_u64_numBits :
+    (32#i32 : Std.I32).toNat < UScalarTy.U64.numBits := by
+  native_decide
+
+theorem uscalar64_shift_right_i32_32_ok_true (x : Std.U64) :
+    (do
+      let _ ← x >>> 32#i32
+      ok true) = ok true := by
+  simp only [HShiftRight.hShiftRight,
+    UScalar.shiftRight_IScalar,
+    UScalar.shiftRight,
+    i32_32_nonnegative,
+    i32_32_toNat_lt_u64_numBits,
+    Bind.bind,
+    Std.bind,
+    ↓reduceIte]
+
+def allRvU64Regs : List Std.U64 :=
+  [0#u64, 1#u64, 2#u64, 3#u64, 4#u64, 5#u64, 6#u64, 7#u64,
+   8#u64, 9#u64, 10#u64, 11#u64, 12#u64, 13#u64, 14#u64, 15#u64,
+   16#u64, 17#u64, 18#u64, 19#u64, 20#u64, 21#u64, 22#u64, 23#u64,
+   24#u64, 25#u64, 26#u64, 27#u64, 28#u64, 29#u64, 30#u64, 31#u64]
+
+def allRvU32Regs : List Std.U32 :=
+  [0#u32, 1#u32, 2#u32, 3#u32, 4#u32, 5#u32, 6#u32, 7#u32,
+   8#u32, 9#u32, 10#u32, 11#u32, 12#u32, 13#u32, 14#u32, 15#u32,
+   16#u32, 17#u32, 18#u32, 19#u32, 20#u32, 21#u32, 22#u32, 23#u32,
+   24#u32, 25#u32, 26#u32, 27#u32, 28#u32, 29#u32, 30#u32, 31#u32]
+
+def edgeRvU32Regs : List Std.U32 := [0#u32, 1#u32, 31#u32]
+
+theorem src_a_imm_zero_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    builderOkFlag
+      (zisk_inst_builder.ZiskInstBuilder.src_a_imm zib 0#u64) = true := by
+  have h_shift := uscalar64_shift_right_i32_32_ok_true (0#u64 : Std.U64)
+  simp [builderOkFlag,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    lift] at h_shift ⊢
+  cases h : ((0#u64 : Std.U64) >>> 32#i32) <;> simp [h] at h_shift ⊢
+
+theorem src_b_imm_zero_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    builderOkFlag
+      (zisk_inst_builder.ZiskInstBuilder.src_b_imm zib 0#u64) = true := by
+  have h_shift := uscalar64_shift_right_i32_32_ok_true (0#u64 : Std.U64)
+  simp [builderOkFlag,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    lift] at h_shift ⊢
+  cases h : ((0#u64 : Std.U64) >>> 32#i32) <;> simp [h] at h_shift ⊢
+
+theorem src_b_imm_zero_ok_true
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    (match do
+      let _ ← zisk_inst_builder.ZiskInstBuilder.src_b_imm zib 0#u64
+      ok true with
+    | ok true => true
+    | _ => false) = true := by
+  have h := src_b_imm_zero_flag zib
+  simpa [builderOkFlag] using h
+
+def allRvI64Regs : List Std.I64 :=
+  [0#i64, 1#i64, 2#i64, 3#i64, 4#i64, 5#i64, 6#i64, 7#i64,
+   8#i64, 9#i64, 10#i64, 11#i64, 12#i64, 13#i64, 14#i64, 15#i64,
+   16#i64, 17#i64, 18#i64, 19#i64, 20#i64, 21#i64, 22#i64, 23#i64,
+   24#i64, 25#i64, 26#i64, 27#i64, 28#i64, 29#i64, 30#i64, 31#i64]
+
+/-- Non-enumerative row-builder-total milestone: with opcode/register routing
+fixed, production ADDI materializes a row for every extracted signed
+immediate. This keeps the immediate symbolic and exposes the remaining
+row-materialization work as finite routing/opcode case splits plus similar
+helper-total lemmas. -/
+theorem empty_addi_reg1_materializes_result
+    (imm : Std.I32) :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 4#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64,
+    uscalar64_shift_right_i32_32_ok_true]
+
+/-- Production ADDI wrapper milestone. The `addi` lowering path calls
+`immediate_op_or_x0_copyb_typed`, not just the plain immediate helper. With
+ordinary register routing fixed, this keeps the immediate symbolic while
+checking the production wrapper branch where `rs1 != x0`. -/
+theorem empty_addi_wrapper_reg1_materializes_result
+    (imm : Std.I32) :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 4#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64,
+    uscalar64_shift_right_i32_32_ok_true]
+
+/-- Production HINT helper milestone. This covers the ADDI-family branch where
+the destination is x0 and the instruction is not lowered as a NOP. -/
+theorem empty_hint_reg1_materializes_result
+    (imm : Std.I32) :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.hint
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := imm }
+          4#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.hint,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    uscalar64_shift_right_i32_32_ok_true]
+
+/-- Production R-type helper milestone for ordinary register routing. This
+covers the shared helper used by the register-register arithmetic/logical
+opcode surface. -/
+theorem empty_register_add_reg1_materializes_result :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.Add 4#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+/-- Production branch helper milestone for ordinary register routing, with a
+symbolic decoded branch offset. `neg = false` covers the fall-through/jump
+ordering used by equality-style branch lowering. -/
+theorem empty_branch_eq_reg1_materializes_result
+    (imm : Std.I32) :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := imm }
+          zisk_ops.ZiskOp.Eq false 4#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64]
+
+/-- Production branch helper milestone for the alternate jump ordering used
+when the branch condition is negated. -/
+theorem empty_branch_ne_reg1_materializes_result
+    (imm : Std.I32) :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := imm }
+          zisk_ops.ZiskOp.Eq true 4#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64]
+
+/-- Production copy helper milestone for fast paths copying rs1 into rd. -/
+theorem empty_copyb_rs1_reg1_materializes_result :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.copyb
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := 0#i32 }
+          4#u64 1#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.copyb,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64,
+    uscalar64_shift_right_i32_32_ok_true]
+
+/-- Production copy helper milestone for fast paths copying rs2 into rd. -/
+theorem empty_copyb_rs2_reg1_materializes_result :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.copyb
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := 0#i32 }
+          4#u64 2#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.copyb,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64,
+    uscalar64_shift_right_i32_32_ok_true]
+
+/-- Production LUI helper milestone with symbolic U-immediate payload. -/
+theorem empty_lui_reg1_materializes_result
+    (imm : Std.I32) :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.lui
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 0#u32,
+            rs2 := 0#u32, imm := imm }
+          4#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.lui,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.hcast,
+    IScalar.hcast,
+    lift,
+    one_i64_scalar_ne_zero,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64,
+    uscalar64_shift_right_i32_32_ok_true]
+
+/-- Production AUIPC helper milestone with symbolic U-immediate payload. -/
+theorem empty_auipc_reg1_materializes_result
+    (imm : Std.I32) :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.auipc
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 0#u32,
+            rs2 := 0#u32, imm := imm }) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.auipc,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_pc_reg,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.hcast,
+    IScalar.cast,
+    lift,
+    one_i64_scalar_ne_zero,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64,
+    uscalar64_shift_right_i32_32_ok_true]
+
+/-- Production JAL helper milestone with symbolic J-immediate payload. -/
+theorem empty_jal_reg1_materializes_result
+    (imm : Std.I32) :
+    helperMaterializesResult
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.jal
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 0#u32,
+            rs2 := 0#u32, imm := imm }
+          4#u64) = ok true := by
+  simp [helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.jal,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_pc_reg,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.hcast,
+    IScalar.cast,
+    lift,
+    one_i64_scalar_ne_zero,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64,
+    uscalar64_shift_right_i32_32_ok_true]
+
+/-- Production JALR aligned branch milestone. This evaluates the extracted
+production helper for an ordinary-register representative whose decoded
+immediate satisfies `imm % 4 = 0`. It is Boolean-shaped because Aeneas
+`Result` does not provide a convenient decidable equality for `native_decide`;
+the predicate still runs through `helperMaterializesResult`. -/
+theorem empty_jalr_aligned_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.jalr
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := 0#i32 }
+          4#u64) = true := by
+  native_decide
+
+/-- Production JALR unaligned branch milestone. This covers the extracted
+two-row path used when the decoded immediate does not satisfy `imm % 4 = 0`. -/
+theorem empty_jalr_unaligned_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.jalr
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := 1#i32 }
+          4#u64) = true := by
+  native_decide
+
+/-- Extracted `ZiskInstBuilder.ind_width` accepts the four memory widths used
+by RV64IM load/store helpers. These lemmas isolate the Aeneas scalar-pattern
+normalization step needed before proving the full symbolic load/store helper
+totality theorem. -/
+theorem ind_width_1_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    (match zisk_inst_builder.ZiskInstBuilder.ind_width zib 1#u64 with
+     | ok _ => true
+     | _ => false) = true := by
+  rw [u64_1_eq_pattern]
+  simp [zisk_inst_builder.ZiskInstBuilder.ind_width]
+
+theorem ind_width_2_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    (match zisk_inst_builder.ZiskInstBuilder.ind_width zib 2#u64 with
+     | ok _ => true
+     | _ => false) = true := by
+  rw [u64_2_eq_pattern]
+  simp [zisk_inst_builder.ZiskInstBuilder.ind_width]
+
+theorem ind_width_4_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    (match zisk_inst_builder.ZiskInstBuilder.ind_width zib 4#u64 with
+     | ok _ => true
+     | _ => false) = true := by
+  rw [u64_4_eq_pattern]
+  simp [zisk_inst_builder.ZiskInstBuilder.ind_width]
+
+theorem ind_width_8_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    (match zisk_inst_builder.ZiskInstBuilder.ind_width zib 8#u64 with
+     | ok _ => true
+     | _ => false) = true := by
+  rw [u64_8_eq_pattern]
+  simp [zisk_inst_builder.ZiskInstBuilder.ind_width]
+
+/-- Ordinary register-routing milestones for the extracted builder helpers.
+They isolate the register-bound comparisons that appear in most row-builder
+paths before those paths can be lifted from representative checks to symbolic
+helper-total theorems. -/
+theorem src_a_reg_one_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    builderOkFlag
+      (zisk_inst_builder.ZiskInstBuilder.src_a_reg zib 1#u64 false) = true := by
+  simp [builderOkFlag,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    UScalar.cast,
+    lift,
+    one_nat_not_lt_regs_from_set_width,
+    regs_to_set_width_nat_ne_zero]
+
+theorem src_b_reg_one_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    builderOkFlag
+      (zisk_inst_builder.ZiskInstBuilder.src_b_reg zib 1#u64 false) = true := by
+  simp [builderOkFlag,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    UScalar.cast,
+    lift,
+    one_nat_not_lt_regs_from_set_width,
+    regs_to_set_width_nat_ne_zero]
+
+theorem src_a_reg_two_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    builderOkFlag
+      (zisk_inst_builder.ZiskInstBuilder.src_a_reg zib 2#u64 false) = true := by
+  simp [builderOkFlag,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    UScalar.cast,
+    lift,
+    two_nat_not_lt_regs_from_set_width,
+    regs_to_set_width_nat_not_le_one]
+
+theorem src_b_reg_two_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    builderOkFlag
+      (zisk_inst_builder.ZiskInstBuilder.src_b_reg zib 2#u64 false) = true := by
+  simp [builderOkFlag,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    UScalar.cast,
+    lift,
+    two_nat_not_lt_regs_from_set_width,
+    regs_to_set_width_nat_not_le_one]
+
+theorem store_reg_one_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    builderOkFlag
+      (zisk_inst_builder.ZiskInstBuilder.store_reg zib 1#i64 false false) = true := by
+  simp [builderOkFlag,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    UScalar.hcast,
+    lift,
+    one_int_not_lt_regs_from_set_width,
+    regs_to_set_width_int_not_lt_one]
+
+theorem store_reg_two_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    builderOkFlag
+      (zisk_inst_builder.ZiskInstBuilder.store_reg zib 2#i64 false false) = true := by
+  simp [builderOkFlag,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    UScalar.hcast,
+    lift,
+    two_int_not_lt_regs_from_set_width,
+    regs_to_set_width_int_not_lt_two]
+
+theorem src_a_reg_all_rv_regs_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    allRvU64Regs.all
+      (fun reg =>
+        builderOkFlag
+          (zisk_inst_builder.ZiskInstBuilder.src_a_reg zib reg false)) = true := by
+  simp [allRvU64Regs,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    UScalar.cast,
+    lift,
+    src_a_imm_zero_flag,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq]
+  simp [builderOkFlag]
+
+theorem src_b_reg_all_rv_regs_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    allRvU64Regs.all
+      (fun reg =>
+        builderOkFlag
+          (zisk_inst_builder.ZiskInstBuilder.src_b_reg zib reg false)) = true := by
+  simp [allRvU64Regs,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    UScalar.cast,
+    lift,
+    src_b_imm_zero_flag,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq]
+  simp [builderOkFlag]
+
+theorem store_reg_all_rv_regs_flag
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    allRvI64Regs.all
+      (fun reg =>
+        builderOkFlag
+          (zisk_inst_builder.ZiskInstBuilder.store_reg zib reg false false)) = true := by
+  simp [allRvI64Regs,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    UScalar.hcast,
+    lift,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq]
+  simp [builderOkFlag]
+
+theorem u64_one_add_zero_ok :
+    ((1#64#uscalar : Std.U64) + 0#u64) = ok (1#64#uscalar : Std.U64) := by
+  rw [show ((1#64#uscalar : Std.U64) + 0#u64) =
+      UScalar.add (1#64#uscalar : Std.U64) 0#u64 by rfl]
+  unfold UScalar.add UScalar.tryMk Result.ofOption UScalar.tryMkOpt
+  simp
+  apply congrArg Result.ok
+  apply UScalar.eq_of_val_eq
+  native_decide
+
+theorem i64_one_add_zero_ok :
+    ((1#64#iscalar : Std.I64) + 0#i64) = ok (1#64#iscalar : Std.I64) := by
+  rw [show ((1#64#iscalar : Std.I64) + 0#i64) =
+      IScalar.add (1#64#iscalar : Std.I64) 0#i64 by rfl]
+  unfold IScalar.add IScalar.tryMk Result.ofOption IScalar.tryMkOpt
+  simp
+  apply congrArg Result.ok
+  apply IScalar.eq_of_val_eq
+  native_decide
+
+theorem i64_zero_val : (0#i64 : Std.I64).val = 0 := by
+  native_decide
+
+theorem u64_zero_val : (0#u64 : Std.U64).val = 0 := by
+  native_decide
+
+theorem i64_add_zero_ok (x : Std.I64) :
+    x + 0#i64 = ok x := by
+  have h := IScalar.add_equiv x (0#i64 : Std.I64)
+  cases h_add : x + 0#i64 <;> rw [h_add] at h
+  · rcases h with ⟨_h_bounds, h_val, _h_bv⟩
+    apply congrArg Result.ok
+    apply IScalar.eq_of_val_eq
+    simpa [i64_zero_val] using h_val
+  · exfalso
+    apply h
+    simpa [IScalar.inBounds, i64_zero_val] using x.hBounds
+  · exact False.elim h
+
+theorem u64_add_zero_ok (x : Std.U64) :
+    x + 0#u64 = ok x := by
+  have h := UScalar.add_equiv x (0#u64 : Std.U64)
+  cases h_add : x + 0#u64 <;> rw [h_add] at h
+  · rcases h with ⟨_h_bounds, h_val, _h_bv⟩
+    apply congrArg Result.ok
+    apply UScalar.eq_of_val_eq
+    simpa [u64_zero_val] using h_val
+  · exfalso
+    apply h
+    simpa [UScalar.inBounds, u64_zero_val] using x.hBounds
+  · exact False.elim h
+
+theorem u64_zero_shift_right_32_ok :
+    ((0#u64 : Std.U64) >>> (32#i32 : Std.I32)) = ok (0#u64 : Std.U64) := by
+  rw [show ((0#u64 : Std.U64) >>> (32#i32 : Std.I32)) =
+      UScalar.shiftRight_IScalar (0#u64 : Std.U64) (32#i32 : Std.I32) by rfl]
+  unfold UScalar.shiftRight_IScalar UScalar.shiftRight
+  simp
+  exact u64_zero_eq_zero
+
+theorem u64_mk_ofNat_val (n : Nat) :
+    (↑(Aeneas.Std.UScalar.mk (BitVec.ofNat 64 n) : Std.U64) : Nat) = n % 2 ^ 64 := by
+  simp [UScalar.val]
+
+theorem i64_mk_ofNat_val (n : Nat) :
+    (↑(Aeneas.Std.IScalar.mk (BitVec.ofNat 64 n) : Std.I64) : Int) =
+      (BitVec.ofNat 64 n).toInt := by
+  simp [IScalar.val]
+
+/-- Production load-helper materialization milestones for each indirect memory
+width used by RV64IM load opcodes. These are representative ordinary-register
+checks over the extracted production helper; signedness-specific behavior is
+handled by the opcode/circuit equivalence layer, while this proves the shared
+load row-builder path emits a row for each width. -/
+theorem empty_load_width1_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.Add 1#u64 4#u64) = true := by
+  native_decide
+
+theorem empty_load_width2_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.Add 2#u64 4#u64) = true := by
+  native_decide
+
+theorem empty_load_width4_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.Add 4#u64 4#u64) = true := by
+  native_decide
+
+theorem empty_load_width8_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.Add 8#u64 4#u64) = true := by
+  native_decide
+
+/- Finite all-register load-helper materialization at zero immediate. These
+cover every RV `rd × rs1` pair for each indirect memory width, complementing
+the symbolic-immediate representative-register milestones below. -/
+set_option maxHeartbeats 4000000 in
+theorem all_load_width1_zero_imm_materializes_result_flag :
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := 0#i32 }
+                  zisk_ops.ZiskOp.Add 1#u64 4#u64))) = true := by
+  native_decide
+
+set_option maxHeartbeats 4000000 in
+theorem all_load_width2_zero_imm_materializes_result_flag :
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := 0#i32 }
+                  zisk_ops.ZiskOp.Add 2#u64 4#u64))) = true := by
+  native_decide
+
+set_option maxHeartbeats 4000000 in
+theorem all_load_width4_zero_imm_materializes_result_flag :
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := 0#i32 }
+                  zisk_ops.ZiskOp.Add 4#u64 4#u64))) = true := by
+  native_decide
+
+set_option maxHeartbeats 4000000 in
+theorem all_load_width8_zero_imm_materializes_result_flag :
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := 0#i32 }
+                  zisk_ops.ZiskOp.Add 8#u64 4#u64))) = true := by
+  native_decide
+
+/- The symbolic-immediate load-helper materialization edge grid keeps `imm`
+universally quantified while covering zero, ordinary, and upper-edge registers. -/
+set_option maxHeartbeats 2000000 in
+theorem edge_load_width1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    edgeRvU32Regs.all
+      (fun rd =>
+        edgeRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 1#u64 4#u64))) = true := by
+  rw [u64_1_eq_pattern]
+  simp [edgeRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    UScalar.add,
+    IScalar.add,
+    UScalar.tryMk,
+    IScalar.tryMk,
+    UScalar.tryMkOpt,
+    IScalar.tryMkOpt,
+    Result.ofOption,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 2000000 in
+theorem edge_load_width2_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    edgeRvU32Regs.all
+      (fun rd =>
+        edgeRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 2#u64 4#u64))) = true := by
+  rw [u64_2_eq_pattern]
+  simp [edgeRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 2000000 in
+theorem edge_load_width4_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    edgeRvU32Regs.all
+      (fun rd =>
+        edgeRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 4#u64 4#u64))) = true := by
+  rw [u64_4_eq_pattern]
+  simp [edgeRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 2000000 in
+theorem edge_load_width8_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    edgeRvU32Regs.all
+      (fun rd =>
+        edgeRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 8#u64 4#u64))) = true := by
+  rw [u64_8_eq_pattern]
+  simp [edgeRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+/- Full `rd × rs1` symbolic-immediate grid for width-1 loads. This is the
+same extracted production helper as the edge-grid checks, with scalar literal
+branch decisions discharged by generic Aeneas scalar-value facts. -/
+set_option maxHeartbeats 2000000 in
+theorem all_load_width1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 1#u64 4#u64))) = true := by
+  rw [u64_1_eq_pattern]
+  simp [allRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    u64_mk_ofNat_val,
+    i64_mk_ofNat_val,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    UScalar.add,
+    IScalar.add,
+    UScalar.tryMk,
+    IScalar.tryMk,
+    UScalar.tryMkOpt,
+    IScalar.tryMkOpt,
+    Result.ofOption,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 2000000 in
+theorem all_load_width2_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 2#u64 4#u64))) = true := by
+  rw [u64_2_eq_pattern]
+  simp [allRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    u64_mk_ofNat_val,
+    i64_mk_ofNat_val,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    UScalar.add,
+    IScalar.add,
+    UScalar.tryMk,
+    IScalar.tryMk,
+    UScalar.tryMkOpt,
+    IScalar.tryMkOpt,
+    Result.ofOption,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 2000000 in
+theorem all_load_width4_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 4#u64 4#u64))) = true := by
+  rw [u64_4_eq_pattern]
+  simp [allRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    u64_mk_ofNat_val,
+    i64_mk_ofNat_val,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    UScalar.add,
+    IScalar.add,
+    UScalar.tryMk,
+    IScalar.tryMk,
+    UScalar.tryMkOpt,
+    IScalar.tryMkOpt,
+    Result.ofOption,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 2000000 in
+theorem all_load_width8_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 8#u64 4#u64))) = true := by
+  rw [u64_8_eq_pattern]
+  simp [allRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    u64_mk_ofNat_val,
+    i64_mk_ofNat_val,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    UScalar.add,
+    IScalar.add,
+    UScalar.tryMk,
+    IScalar.tryMk,
+    UScalar.tryMkOpt,
+    IScalar.tryMkOpt,
+    Result.ofOption,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+/-- The extracted load helper materializes a row for symbolic immediates on
+ordinary-register paths. This lifts the earlier representative checks past the
+generated scalar `rd + reg_offset` step. -/
+theorem empty_load_width1_reg1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 1#u64 4#u64) = true := by
+  rw [u64_1_eq_pattern]
+  simp [helperMaterializesResultFlag, helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    i64_one_add_zero_ok,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+theorem empty_load_width2_reg1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 2#u64 4#u64) = true := by
+  rw [u64_2_eq_pattern]
+  simp [helperMaterializesResultFlag, helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    i64_one_add_zero_ok,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+theorem empty_load_width4_reg1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 4#u64 4#u64) = true := by
+  rw [u64_4_eq_pattern]
+  simp [helperMaterializesResultFlag, helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    i64_one_add_zero_ok,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+theorem empty_load_width8_reg1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 0#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 8#u64 4#u64) = true := by
+  rw [u64_8_eq_pattern]
+  simp [helperMaterializesResultFlag, helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.hcast,
+    i64_one_add_zero_ok,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+/-- Production store-helper materialization milestones for each indirect memory
+width used by RV64IM store opcodes. -/
+theorem empty_store_width1_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.Add 1#u64 4#u64) = true := by
+  native_decide
+
+theorem empty_store_width2_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.Add 2#u64 4#u64) = true := by
+  native_decide
+
+theorem empty_store_width4_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.Add 4#u64 4#u64) = true := by
+  native_decide
+
+theorem empty_store_width8_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.Add 8#u64 4#u64) = true := by
+  native_decide
+
+/- Edge-register symbolic-immediate store-helper materialization. This probes
+both x0 routing and ordinary-register routing through the extracted production
+store helper without enumerating the full `rs1 × rs2` grid yet. -/
+set_option maxHeartbeats 2000000 in
+theorem edge_store_width1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    edgeRvU32Regs.all
+      (fun rs1 =>
+        edgeRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 1#u64 4#u64))) = true := by
+  rw [u64_1_eq_pattern]
+  simp [edgeRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    src_b_imm_zero_flag,
+    src_b_imm_zero_ok_true,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 2000000 in
+theorem edge_store_width2_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    edgeRvU32Regs.all
+      (fun rs1 =>
+        edgeRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 2#u64 4#u64))) = true := by
+  rw [u64_2_eq_pattern]
+  simp [edgeRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    src_b_imm_zero_flag,
+    src_b_imm_zero_ok_true,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 2000000 in
+theorem edge_store_width4_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    edgeRvU32Regs.all
+      (fun rs1 =>
+        edgeRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 4#u64 4#u64))) = true := by
+  rw [u64_4_eq_pattern]
+  simp [edgeRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    src_b_imm_zero_flag,
+    src_b_imm_zero_ok_true,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 2000000 in
+theorem edge_store_width8_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    edgeRvU32Regs.all
+      (fun rs1 =>
+        edgeRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 8#u64 4#u64))) = true := by
+  rw [u64_8_eq_pattern]
+  simp [edgeRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    src_b_imm_zero_flag,
+    src_b_imm_zero_ok_true,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+/- Full `rs1 × rs2` symbolic-immediate store-helper materialization. This
+extends the edge-register store checks across every RV source-register pair. -/
+set_option maxHeartbeats 4000000 in
+theorem all_store_width1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 1#u64 4#u64))) = true := by
+  rw [u64_1_eq_pattern]
+  simp [allRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    src_b_imm_zero_ok_true,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    u64_mk_ofNat_val,
+    i64_mk_ofNat_val,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 4000000 in
+theorem all_store_width2_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 2#u64 4#u64))) = true := by
+  rw [u64_2_eq_pattern]
+  simp [allRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    src_b_imm_zero_ok_true,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    u64_mk_ofNat_val,
+    i64_mk_ofNat_val,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 4000000 in
+theorem all_store_width4_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 4#u64 4#u64))) = true := by
+  rw [u64_4_eq_pattern]
+  simp [allRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    src_b_imm_zero_ok_true,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    u64_mk_ofNat_val,
+    i64_mk_ofNat_val,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+set_option maxHeartbeats 4000000 in
+theorem all_store_width8_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 8#u64 4#u64))) = true := by
+  rw [u64_8_eq_pattern]
+  simp [allRvU32Regs, helperMaterializesResultFlag, helperMaterializesResult,
+    emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    src_b_imm_zero_ok_true,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    u64_mk_ofNat_val,
+    i64_mk_ofNat_val,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    regs_from_set_width_u64_val_eq,
+    regs_to_set_width_u64_val_eq,
+    regs_from_set_width_i64_val_eq,
+    regs_to_set_width_i64_val_eq,
+    u64_add_zero_ok,
+    i64_add_zero_ok,
+    u64_zero_eq_zero,
+    u64_zero_shift_right_32_ok,
+    i64_zero_eq_zero,
+    one_u64_scalar_ne_zero,
+    one_i64_scalar_ne_zero,
+    u64_one_val_ne_zero,
+    u64_one_val_not_gt_regs_to,
+    u64_31_ne_zero,
+    u64_31_val_ne_zero,
+    u64_31_val_not_gt_regs_to,
+    i64_one_val_not_lt_regs_from,
+    i64_one_val_not_gt_regs_to,
+    i64_31_ne_zero,
+    i64_31_val_not_lt_regs_from,
+    i64_31_val_not_gt_regs_to,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64,
+    one_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_i64]
+
+/- Finite all-register store-helper materialization at zero immediate. These
+cover every RV `rs1 × rs2` pair for each indirect memory width, complementing
+the symbolic-immediate representative-register milestones below. -/
+set_option maxHeartbeats 4000000 in
+theorem all_store_width1_zero_imm_materializes_result_flag :
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := 0#i32 }
+                  zisk_ops.ZiskOp.Add 1#u64 4#u64))) = true := by
+  native_decide
+
+set_option maxHeartbeats 4000000 in
+theorem all_store_width2_zero_imm_materializes_result_flag :
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := 0#i32 }
+                  zisk_ops.ZiskOp.Add 2#u64 4#u64))) = true := by
+  native_decide
+
+set_option maxHeartbeats 4000000 in
+theorem all_store_width4_zero_imm_materializes_result_flag :
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := 0#i32 }
+                  zisk_ops.ZiskOp.Add 4#u64 4#u64))) = true := by
+  native_decide
+
+set_option maxHeartbeats 4000000 in
+theorem all_store_width8_zero_imm_materializes_result_flag :
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := 0#i32 }
+                  zisk_ops.ZiskOp.Add 8#u64 4#u64))) = true := by
+  native_decide
+
+/-- Full production-helper memory milestone: all extracted load row builders
+materialize for every RV destination/base-register pair and every extracted
+signed immediate, across all supported indirect memory widths.
+
+This is one layer below raw-instruction completeness: it proves the memory
+helper bodies used by production lowering are total once decode/lowering has
+routed to the helper. -/
+def LoadHelperSymbolicImmediateRowsComplete : Prop :=
+  ∀ imm : Std.I32,
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 1#u64 4#u64))) = true ∧
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 2#u64 4#u64))) = true ∧
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 4#u64 4#u64))) = true ∧
+    allRvU32Regs.all
+      (fun rd =>
+        allRvU32Regs.all
+          (fun rs1 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := rd, rs1 := rs1,
+                    rs2 := 0#u32, imm := imm }
+                  zisk_ops.ZiskOp.Add 8#u64 4#u64))) = true
+
+theorem load_helper_symbolic_immediate_rows_complete :
+    LoadHelperSymbolicImmediateRowsComplete := by
+  intro imm
+  exact
+    ⟨all_load_width1_symbolic_imm_materializes_result_flag imm,
+      all_load_width2_symbolic_imm_materializes_result_flag imm,
+      all_load_width4_symbolic_imm_materializes_result_flag imm,
+      all_load_width8_symbolic_imm_materializes_result_flag imm⟩
+
+/-- Full production-helper memory milestone: all extracted store row builders
+materialize for every RV base/source-register pair and every extracted signed
+immediate, across all supported indirect memory widths.
+
+As with the load milestone, this proves the production helper body itself; the
+remaining raw-completeness bridge is symbolic decode/lowering dispatch from
+raw S-format words into these helpers. -/
+def StoreHelperSymbolicImmediateRowsComplete : Prop :=
+  ∀ imm : Std.I32,
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 1#u64 4#u64))) = true ∧
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 2#u64 4#u64))) = true ∧
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 4#u64 4#u64))) = true ∧
+    allRvU32Regs.all
+      (fun rs1 =>
+        allRvU32Regs.all
+          (fun rs2 =>
+            helperMaterializesResultFlag
+              (fun ctx =>
+                riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+                  ctx
+                  { rom_address := 0#u64, rd := 0#u32, rs1 := rs1,
+                    rs2 := rs2, imm := imm }
+                  zisk_ops.ZiskOp.Add 8#u64 4#u64))) = true
+
+theorem store_helper_symbolic_immediate_rows_complete :
+    StoreHelperSymbolicImmediateRowsComplete := by
+  intro imm
+  exact
+    ⟨all_store_width1_symbolic_imm_materializes_result_flag imm,
+      all_store_width2_symbolic_imm_materializes_result_flag imm,
+      all_store_width4_symbolic_imm_materializes_result_flag imm,
+      all_store_width8_symbolic_imm_materializes_result_flag imm⟩
+
+def MemoryHelperSymbolicImmediateRowsComplete : Prop :=
+  LoadHelperSymbolicImmediateRowsComplete ∧
+  StoreHelperSymbolicImmediateRowsComplete
+
+theorem memory_helper_symbolic_immediate_rows_complete :
+    MemoryHelperSymbolicImmediateRowsComplete :=
+  ⟨load_helper_symbolic_immediate_rows_complete,
+    store_helper_symbolic_immediate_rows_complete⟩
+
+/-- The extracted store helper materializes a row for symbolic immediates on
+ordinary-register paths. This lifts the earlier representative checks past the
+generated scalar `rs2 + reg_offset` step. -/
+theorem empty_store_width1_reg1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 1#u64 4#u64) = true := by
+  rw [u64_1_eq_pattern]
+  simp [helperMaterializesResultFlag, helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    u64_one_add_zero_ok,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64]
+
+theorem empty_store_width2_reg1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 2#u64 4#u64) = true := by
+  rw [u64_2_eq_pattern]
+  simp [helperMaterializesResultFlag, helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    u64_one_add_zero_ok,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64]
+
+theorem empty_store_width4_reg1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 4#u64 4#u64) = true := by
+  rw [u64_4_eq_pattern]
+  simp [helperMaterializesResultFlag, helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    u64_one_add_zero_ok,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64]
+
+theorem empty_store_width8_reg1_symbolic_imm_materializes_result_flag
+    (imm : Std.I32) :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.store_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 0#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := imm }
+          zisk_ops.ZiskOp.Add 8#u64 4#u64) = true := by
+  rw [u64_8_eq_pattern]
+  simp [helperMaterializesResultFlag, helperMaterializesResult, emptyExtractContext,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
+    riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.ind_width,
+    zisk_inst_builder.ZiskInstBuilder.store_ind,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST,
+    mem.SYS_ADDR,
+    mem.RAM_ADDR,
+    UScalar.cast,
+    UScalar.hcast,
+    IScalar.cast,
+    u64_one_add_zero_ok,
+    lift,
+    one_u64_scalar_ne_zero,
+    one_u64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_one_u64]
+
+/-- Production precompile-helper materialization milestones for the DMA helper
+branches present in the extracted conversion surface. -/
+theorem empty_precompiled_dma_memcpy_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.create_precompiled_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.DmaMemCpy
+          1#u32
+          1#u32
+          4#u64) = true := by
+  native_decide
+
+theorem empty_precompiled_dma_memcmp_reg1_materializes_result_flag :
+    helperMaterializesResultFlag
+      (fun ctx =>
+        riscv2zisk_context.Riscv2ZiskContext.create_precompiled_op_typed
+          ctx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32,
+            rs2 := 1#u32, imm := 0#i32 }
+          zisk_ops.ZiskOp.DmaMemCmp
+          1#u32
+          1#u32
+          4#u64) = true := by
+  native_decide
+
+/-- A raw word accepted by the generated shape-grid checker is covered by the
+same production-backed circuit predicate used by the RV completeness theorem.
+The wide finite families in `GeneratedChecks.lean` prove their grids satisfy
+this checker with `native_decide`. -/
+def GeneratedShapeCaseOk (raw : Std.U32) : Prop :=
+  zisk_core_generated_checks.rawShapeGridCaseOk raw = true
+
+set_option maxHeartbeats 1000000 in
+/-- ZisK-internal stage: every production-decoder-supported RV64IM opcode is
+lowerable by the extracted production lowering function. -/
+theorem rv_lowering_completeness :
+    RvLoweringCompleteness := by
+  intro raw h_supported
+  simp [ZiskDecodeSupportedRaw,
+    ZiskLowerableRaw, rawDecodeSupported, rawTranspileAcceptedFlag,
+    aeneas_extract.extract_decode_rv64im_raw,
+    aeneas_extract.extract_transpile_rv64im_accepted_raw] at h_supported ⊢
+  cases h_decode : aeneas_extract.rv64im_decode.decode_32_core raw <;> simp [h_decode] at h_supported ⊢
+  rename_i decoded
+  cases decoded
+  case mk opcode format funct3 funct7 rd rs1 rs2 imm pred succ =>
+  cases opcode <;>
+  cases format <;>
+    simp [aeneas_extract.decode_extract_from_decoded,
+      aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im,
+      aeneas_extract.lowering_opcode,
+      aeneas_extract.opcode_id,
+      aeneas_extract.format_id] at h_supported ⊢
+
+/-- ZisK-internal stage: every production-decoder-supported opcode lands in the
+current 63-opcode circuit/equivalence surface. -/
+theorem rv_opcode_coverage_completeness :
+    RvOpcodeCoverageCompleteness := by
+  intro raw h_supported
+  simp [ZiskDecodeSupportedRaw, rawDecodeSupported, rawDecodeOpcodeId,
+    coveredOpcodeId,
+    aeneas_extract.extract_decode_rv64im_raw] at h_supported ⊢
+  cases h_decode : aeneas_extract.rv64im_decode.decode_32_core raw <;> simp [h_decode] at h_supported ⊢
+  rename_i decoded
+  cases decoded
+  case mk opcode format funct3 funct7 rd rs1 rs2 imm pred succ =>
+  cases opcode <;>
+  cases format <;>
+    simp [aeneas_extract.decode_extract_from_decoded,
+      aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im,
+      aeneas_extract.opcode_id,
+      aeneas_extract.format_id] at h_supported ⊢
+
+/-- RV-completeness for every Sail-executable raw instruction that is not one
+of the known Sail-valid/ZisK-rejected shapes. The hypothesis is deliberately
+named as an avoid-known-bugs boundary so a future ZisK decoder fix can remove
+it instead of weakening this theorem. -/
+theorem rv_completeness_avoiding_known_bugs
+    (sailExecutableRaw : Std.U32 → Prop)
+    (h_avoid_known_bugs : RvAvoidKnownBugsFor sailExecutableRaw) :
+    RvCompletenessAvoidingKnownBugsFor sailExecutableRaw := by
+  intro raw h_sail h_not_known_gap
+  have h_supported := h_avoid_known_bugs raw h_sail h_not_known_gap
+  have h_materialized : ZiskRowMaterializedRaw raw := by
+    simp [KnownZiskGapRaw, KnownZiskRowMaterializationGapRaw,
+      ZiskDecodeSupportedRaw, ZiskRowMaterializedRaw,
+      rawTranspileMaterializedFlag] at h_not_known_gap h_supported ⊢
+    exact h_not_known_gap.right h_supported
+  constructor
+  · exact h_supported
+  · constructor
+    · exact rv_lowering_completeness raw h_supported
+    · constructor
+      · exact h_materialized
+      · exact rv_opcode_coverage_completeness raw h_supported
+
+theorem generated_shape_case_completeness
+    (raw : Std.U32) (h_case : GeneratedShapeCaseOk raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  have h_parts := h_case
+  simp [GeneratedShapeCaseOk, zisk_core_generated_checks.rawShapeGridCaseOk,
+      zisk_core_generated_checks.rawDecodeSupported,
+      zisk_core_generated_checks.rawTranspileAccepted,
+      zisk_core_generated_checks.rawTranspileAcceptedFlag,
+      zisk_core_generated_checks.rawTranspileMaterializedFlag,
+      zisk_core_generated_checks.KnownZiskGapRaw] at h_parts
+  rcases h_parts with
+    ⟨h_decode, _h_transpile, h_lower, h_row, h_known_decode, h_known_row⟩
+  have h_supported : ZiskDecodeSupportedRaw raw := by
+    simpa [ZiskDecodeSupportedRaw, rawDecodeSupported] using h_decode
+  have h_lowerable : ZiskLowerableRaw raw := by
+    simpa [ZiskLowerableRaw, rawTranspileAcceptedFlag] using h_lower
+  have h_materialized : ZiskRowMaterializedRaw raw := by
+    simpa [ZiskRowMaterializedRaw, rawTranspileMaterializedFlag] using h_row
+  have h_generated_gap : zisk_core_generated_checks.KnownZiskGapRaw raw = false := by
+    simp [zisk_core_generated_checks.KnownZiskGapRaw,
+      h_known_decode, h_known_row]
+  have h_gap : KnownZiskGapRaw raw = false := by
+    simpa [KnownZiskGapRaw, KnownZiskDecodeGapRaw,
+      KnownZiskRowMaterializationGapRaw,
+      rawOpcode, rawFunct3, resultU32Eq, rawDecodeSupported,
+      rawTranspileMaterializedFlag,
+      zisk_core_generated_checks.KnownZiskGapRaw,
+      zisk_core_generated_checks.KnownZiskDecodeGapRaw,
+      zisk_core_generated_checks.KnownZiskRowMaterializationGapRaw,
+      zisk_core_generated_checks.rawOpcode,
+      zisk_core_generated_checks.rawFunct3,
+      zisk_core_generated_checks.resultU32Eq,
+      zisk_core_generated_checks.rawDecodeSupported,
+      zisk_core_generated_checks.rawTranspileMaterializedFlag] using h_generated_gap
+  exact
+    ⟨⟨h_supported, h_lowerable, h_materialized,
+        rv_opcode_coverage_completeness raw h_supported⟩,
+      h_gap⟩
+
+def GeneratedCircuitCoveredCaseOk (raw : Std.U32) : Bool :=
+  rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) &&
+  rawTranspileAcceptedFlag (aeneas_extract.extract_transpile_rv64im_accepted_raw raw) &&
+  rawTranspileMaterializedFlag
+    (aeneas_extract.extract_transpile_rv64im_materializes_raw raw) &&
+  coveredOpcodeId
+    (rawDecodeOpcodeId (aeneas_extract.extract_decode_rv64im_raw raw)) &&
+  !KnownZiskGapRaw raw
+
+def GeneratedShapeGridCircuitCompleteness : Bool :=
+  zisk_core_generated_checks.rawShapeGridCases.all GeneratedCircuitCoveredCaseOk
+
+theorem generated_shape_grid_circuit_completeness :
+    GeneratedShapeGridCircuitCompleteness = true := by
+  native_decide
+
+theorem generated_shape_grid_cases_circuit_covered
+    (raw : Std.U32)
+    (h_mem : raw ∈ zisk_core_generated_checks.rawShapeGridCases) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  apply generated_shape_case_completeness
+  have h_all :
+      zisk_core_generated_checks.rawShapeGridCases.all
+        zisk_core_generated_checks.rawShapeGridCaseOk = true := by
+    native_decide
+  exact (List.all_eq_true.mp h_all) raw h_mem
+
+EOF
+
+    if [[ "$AENEAS_CHECK_RV_WIDE_SHAPES" != 0 ]]; then
+      cat >> "$lean_check/RvCompleteness.lean" <<'EOF'
+
+/-!
+Wide-grid family closure.
+
+These theorems are generated only for the optional wide shape run, because the
+underlying native checks are intentionally more expensive than the default
+extraction smoke test. Each theorem is separated by family so a future
+production decoder/lowering/materialization regression reports the failing
+surface directly instead of only failing the aggregate grid.
+-/
+
+theorem generated_r_type_register_family_case_ok :
+    zisk_core_generated_checks.allRTypeRegisterShapesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allRTypeRegisterShapesMaterialize_ok
+
+theorem generated_r_type_register_case_circuit_covered
+    (funct7 funct3 opcode rd rs1 rs2 : Nat)
+    (h_op :
+      (funct7, funct3, opcode) ∈
+        zisk_core_generated_checks.allRTypeOpcodeShapes)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs2 : rs2 ∈ zisk_core_generated_checks.allRvRegs) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawRType
+          funct7 rs2 rs1 funct3 rd opcode) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawRType
+          funct7 rs2 rs1 funct3 rd opcode) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allRTypeRegisterShapesMaterialize_ok
+  simp [zisk_core_generated_checks.allRTypeRegisterShapesMaterialize,
+    zisk_core_generated_checks.allRTypeRegisterShapes] at h_all
+  exact h_all funct7 funct3 opcode h_op rd h_rd rs1 h_rs1 rs2 h_rs2
+
+theorem generated_i_type_register_edge_immediate_family_case_ok :
+    zisk_core_generated_checks.allITypeRegisterEdgeImmediatesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allITypeRegisterEdgeImmediatesMaterialize_ok
+
+theorem generated_i_type_register_edge_immediate_case_circuit_covered
+    (rd rs1 imm funct3 opcode : Nat)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_imm : imm ∈ zisk_core_generated_checks.edgeIImmediates)
+    (h_shape :
+      (funct3, opcode) ∈ [
+        (0, 0x67), (0, 0x13), (2, 0x13), (3, 0x13), (4, 0x13),
+        (6, 0x13), (7, 0x13), (0, 0x1b), (0, 0x03), (1, 0x03),
+        (2, 0x03), (3, 0x03), (4, 0x03), (5, 0x03), (6, 0x03)
+      ]) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawIType imm rs1 funct3 rd opcode) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawIType imm rs1 funct3 rd opcode) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allITypeRegisterEdgeImmediatesMaterialize_ok
+  simp [zisk_core_generated_checks.allITypeRegisterEdgeImmediatesMaterialize,
+    zisk_core_generated_checks.allITypeRegisterEdgeImmediates] at h_all
+  have h_cases := h_all rd h_rd rs1 h_rs1 imm h_imm
+  simp at h_shape
+  rcases h_shape with
+    h_shape | h_shape | h_shape | h_shape | h_shape |
+    h_shape | h_shape | h_shape | h_shape | h_shape |
+    h_shape | h_shape | h_shape | h_shape | h_shape
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left h_cases
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right h_cases)
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right h_cases))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right h_cases)))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right h_cases))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right (And.right h_cases)))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right (And.right (And.right h_cases))))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right (And.right (And.right (And.right h_cases)))))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right h_cases))))))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right h_cases)))))))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right h_cases))))))))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right h_cases)))))))))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right h_cases))))))))))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.left (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right h_cases)))))))))))))
+  · rcases h_shape with ⟨rfl, rfl⟩
+    exact And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right (And.right h_cases)))))))))))))
+
+theorem generated_shift_register_family_case_ok :
+    zisk_core_generated_checks.allShiftRegisterShapesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allShiftRegisterShapesMaterialize_ok
+
+theorem generated_slli_register_case_circuit_covered
+    (rd rs1 shamt : Nat)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_shamt : shamt ∈ zisk_core_generated_checks.shift64Amounts) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawIType shamt rs1 1 rd 0x13) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawIType shamt rs1 1 rd 0x13) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allShiftRegisterShapesMaterialize_ok
+  simp [zisk_core_generated_checks.allShiftRegisterShapesMaterialize,
+    zisk_core_generated_checks.allShiftRegisterShapes] at h_all
+  exact And.left (And.left (h_all rd h_rd rs1 h_rs1) shamt h_shamt)
+
+theorem generated_srli_register_case_circuit_covered
+    (rd rs1 shamt : Nat)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_shamt : shamt ∈ zisk_core_generated_checks.shift64Amounts) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawIType shamt rs1 5 rd 0x13) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawIType shamt rs1 5 rd 0x13) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allShiftRegisterShapesMaterialize_ok
+  simp [zisk_core_generated_checks.allShiftRegisterShapesMaterialize,
+    zisk_core_generated_checks.allShiftRegisterShapes] at h_all
+  exact And.left (And.right (And.left (h_all rd h_rd rs1 h_rs1) shamt h_shamt))
+
+theorem generated_srai_register_case_circuit_covered
+    (rd rs1 shamt : Nat)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_shamt : shamt ∈ zisk_core_generated_checks.shift64Amounts) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawIType (0x400 ||| shamt) rs1 5 rd 0x13) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawIType (0x400 ||| shamt) rs1 5 rd 0x13) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allShiftRegisterShapesMaterialize_ok
+  simp [zisk_core_generated_checks.allShiftRegisterShapesMaterialize,
+    zisk_core_generated_checks.allShiftRegisterShapes] at h_all
+  exact And.right (And.right (And.left (h_all rd h_rd rs1 h_rs1) shamt h_shamt))
+
+theorem generated_slliw_register_case_circuit_covered
+    (rd rs1 shamt : Nat)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_shamt : shamt ∈ zisk_core_generated_checks.shift32Amounts) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawIType shamt rs1 1 rd 0x1b) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawIType shamt rs1 1 rd 0x1b) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allShiftRegisterShapesMaterialize_ok
+  simp [zisk_core_generated_checks.allShiftRegisterShapesMaterialize,
+    zisk_core_generated_checks.allShiftRegisterShapes] at h_all
+  exact And.left (And.right (h_all rd h_rd rs1 h_rs1) shamt h_shamt)
+
+theorem generated_srliw_register_case_circuit_covered
+    (rd rs1 shamt : Nat)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_shamt : shamt ∈ zisk_core_generated_checks.shift32Amounts) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawIType shamt rs1 5 rd 0x1b) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawIType shamt rs1 5 rd 0x1b) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allShiftRegisterShapesMaterialize_ok
+  simp [zisk_core_generated_checks.allShiftRegisterShapesMaterialize,
+    zisk_core_generated_checks.allShiftRegisterShapes] at h_all
+  exact And.left (And.right (And.right (h_all rd h_rd rs1 h_rs1) shamt h_shamt))
+
+theorem generated_sraiw_register_case_circuit_covered
+    (rd rs1 shamt : Nat)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_shamt : shamt ∈ zisk_core_generated_checks.shift32Amounts) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawIType (0x400 ||| shamt) rs1 5 rd 0x1b) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawIType (0x400 ||| shamt) rs1 5 rd 0x1b) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allShiftRegisterShapesMaterialize_ok
+  simp [zisk_core_generated_checks.allShiftRegisterShapesMaterialize,
+    zisk_core_generated_checks.allShiftRegisterShapes] at h_all
+  exact And.right (And.right (And.right (h_all rd h_rd rs1 h_rs1) shamt h_shamt))
+
+theorem generated_store_register_edge_immediate_family_case_ok :
+    zisk_core_generated_checks.allStoreRegisterEdgeImmediatesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allStoreRegisterEdgeImmediatesMaterialize_ok
+
+theorem generated_store_register_edge_immediate_case_circuit_covered
+    (rs1 rs2 imm funct3 : Nat)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs2 : rs2 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_imm : imm ∈ zisk_core_generated_checks.edgeSImmediates)
+    (h_funct3 : funct3 ∈ [0, 1, 2, 3]) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawSType imm rs2 rs1 funct3) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawSType imm rs2 rs1 funct3) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allStoreRegisterEdgeImmediatesMaterialize_ok
+  simp [zisk_core_generated_checks.allStoreRegisterEdgeImmediatesMaterialize,
+    zisk_core_generated_checks.allStoreRegisterEdgeImmediates] at h_all
+  have h_cases := h_all rs1 h_rs1 rs2 h_rs2 imm h_imm
+  simp at h_funct3
+  rcases h_funct3 with h_funct3 | h_funct3 | h_funct3 | h_funct3
+  · subst funct3
+    exact And.left h_cases
+  · subst funct3
+    exact And.left (And.right h_cases)
+  · subst funct3
+    exact And.left (And.right (And.right h_cases))
+  · subst funct3
+    exact And.right (And.right (And.right h_cases))
+
+theorem generated_branch_register_edge_immediate_family_case_ok :
+    zisk_core_generated_checks.allBranchRegisterEdgeImmediatesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allBranchRegisterEdgeImmediatesMaterialize_ok
+
+theorem generated_branch_register_edge_immediate_case_circuit_covered
+    (rs1 rs2 imm funct3 : Nat)
+    (h_rs1 : rs1 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_rs2 : rs2 ∈ zisk_core_generated_checks.allRvRegs)
+    (h_imm : imm ∈ zisk_core_generated_checks.edgeBImmediates)
+    (h_funct3 : funct3 ∈ [0, 1, 4, 5, 6, 7]) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawBType imm rs2 rs1 funct3) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawBType imm rs2 rs1 funct3) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allBranchRegisterEdgeImmediatesMaterialize_ok
+  simp [zisk_core_generated_checks.allBranchRegisterEdgeImmediatesMaterialize,
+    zisk_core_generated_checks.allBranchRegisterEdgeImmediates] at h_all
+  have h_cases := h_all rs1 h_rs1 rs2 h_rs2 imm h_imm
+  simp at h_funct3
+  rcases h_funct3 with h_funct3 | h_funct3 | h_funct3 | h_funct3 | h_funct3 | h_funct3
+  · subst funct3
+    exact And.left h_cases
+  · subst funct3
+    exact And.left (And.right h_cases)
+  · subst funct3
+    exact And.left (And.right (And.right h_cases))
+  · subst funct3
+    exact And.left (And.right (And.right (And.right h_cases)))
+  · subst funct3
+    exact And.left (And.right (And.right (And.right (And.right h_cases))))
+  · subst funct3
+    exact And.right (And.right (And.right (And.right (And.right h_cases))))
+
+theorem generated_upper_and_jump_edge_immediate_family_case_ok :
+    zisk_core_generated_checks.allUpperAndJumpEdgeImmediatesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allUpperAndJumpEdgeImmediatesMaterialize_ok
+
+theorem generated_upper_edge_immediate_case_circuit_covered
+    (rd imm opcode : Nat)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_imm : imm ∈ zisk_core_generated_checks.edgeUImmediates)
+    (h_opcode : opcode ∈ [0x37, 0x17]) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawUType imm rd opcode) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawUType imm rd opcode) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allUpperAndJumpEdgeImmediatesMaterialize_ok
+  simp [zisk_core_generated_checks.allUpperAndJumpEdgeImmediatesMaterialize,
+    zisk_core_generated_checks.allUpperAndJumpEdgeImmediates] at h_all
+  have h_cases := And.left (h_all rd h_rd) imm h_imm
+  simp at h_opcode
+  rcases h_opcode with h_opcode | h_opcode
+  · subst opcode
+    exact And.left h_cases
+  · subst opcode
+    exact And.right h_cases
+
+theorem generated_jump_edge_immediate_case_circuit_covered
+    (rd imm : Nat)
+    (h_rd : rd ∈ zisk_core_generated_checks.allRvRegs)
+    (h_imm : imm ∈ zisk_core_generated_checks.edgeJImmediates) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawJType imm rd) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawJType imm rd) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allUpperAndJumpEdgeImmediatesMaterialize_ok
+  simp [zisk_core_generated_checks.allUpperAndJumpEdgeImmediatesMaterialize,
+    zisk_core_generated_checks.allUpperAndJumpEdgeImmediates] at h_all
+  exact And.right (h_all rd h_rd) imm h_imm
+
+theorem generated_supported_fence_pred_succ_family_case_ok :
+    zisk_core_generated_checks.allFencePredSuccShapesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allFencePredSuccShapesMaterialize_ok
+
+theorem generated_supported_fence_pred_succ_case_circuit_covered
+    (pred succ : Nat)
+    (h_pred : pred ∈ List.range 16)
+    (h_succ : succ ∈ List.range 16) :
+    ZiskCircuitCoveredRaw
+        (zisk_core_generated_checks.rawOfNat32
+          ((pred <<< 24) ||| (succ <<< 20) ||| 0x0f)) ∧
+      KnownZiskGapRaw
+        (zisk_core_generated_checks.rawOfNat32
+          ((pred <<< 24) ||| (succ <<< 20) ||| 0x0f)) = false := by
+  apply generated_shape_case_completeness
+  have h_all := zisk_core_generated_checks.allFencePredSuccShapesMaterialize_ok
+  simp [zisk_core_generated_checks.allFencePredSuccShapesMaterialize,
+    zisk_core_generated_checks.allFencePredSuccShapes] at h_all
+  exact h_all pred (List.mem_range.mp h_pred) succ (List.mem_range.mp h_succ)
+
+theorem generated_wide_rv_shape_families_case_ok :
+    zisk_core_generated_checks.allWideRvShapeFamiliesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allWideRvShapeFamiliesMaterialize_ok
+
+theorem generated_exhaustive_rv_shape_families_case_ok :
+    zisk_core_generated_checks.allExhaustiveRvShapeFamiliesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allExhaustiveRvShapeFamiliesMaterialize_ok
+
+theorem generated_edge_rv_shape_families_case_ok :
+    zisk_core_generated_checks.allEdgeRvShapeFamiliesMaterialize = true := by
+  simpa using zisk_core_generated_checks.allEdgeRvShapeFamiliesMaterialize_ok
+
+def GeneratedRTypeRegisterShape (raw : Std.U32) : Prop :=
+  ∃ funct7 funct3 opcode rd rs1 rs2,
+    (funct7, funct3, opcode) ∈ zisk_core_generated_checks.allRTypeOpcodeShapes ∧
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs2 ∈ zisk_core_generated_checks.allRvRegs ∧
+    raw = zisk_core_generated_checks.rawRType funct7 rs2 rs1 funct3 rd opcode
+
+def GeneratedITypeRegisterEdgeImmediateShape (raw : Std.U32) : Prop :=
+  ∃ rd rs1 imm funct3 opcode,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeIImmediates ∧
+    (funct3, opcode) ∈ [
+      (0, 0x67), (0, 0x13), (2, 0x13), (3, 0x13), (4, 0x13),
+      (6, 0x13), (7, 0x13), (0, 0x1b), (0, 0x03), (1, 0x03),
+      (2, 0x03), (3, 0x03), (4, 0x03), (5, 0x03), (6, 0x03)
+    ] ∧
+    raw = zisk_core_generated_checks.rawIType imm rs1 funct3 rd opcode
+
+def GeneratedJalrRegisterEdgeImmediateShape (raw : Std.U32) : Prop :=
+  ∃ rd rs1 imm,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeIImmediates ∧
+    raw = zisk_core_generated_checks.rawIType imm rs1 0 rd 0x67
+
+def GeneratedImmediateAluRegisterEdgeImmediateShape (raw : Std.U32) : Prop :=
+  ∃ rd rs1 imm funct3 opcode,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeIImmediates ∧
+    (funct3, opcode) ∈ [
+      (0, 0x13), (2, 0x13), (3, 0x13), (4, 0x13),
+      (6, 0x13), (7, 0x13), (0, 0x1b)
+    ] ∧
+    raw = zisk_core_generated_checks.rawIType imm rs1 funct3 rd opcode
+
+def GeneratedLoadRegisterEdgeImmediateShape (raw : Std.U32) : Prop :=
+  ∃ rd rs1 imm funct3,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeIImmediates ∧
+    funct3 ∈ [0, 1, 2, 3, 4, 5, 6] ∧
+    raw = zisk_core_generated_checks.rawIType imm rs1 funct3 rd 0x03
+
+def GeneratedShiftRegisterShape (raw : Std.U32) : Prop :=
+  (∃ rd rs1 shamt,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    shamt ∈ zisk_core_generated_checks.shift64Amounts ∧
+    raw = zisk_core_generated_checks.rawIType shamt rs1 1 rd 0x13) ∨
+  (∃ rd rs1 shamt,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    shamt ∈ zisk_core_generated_checks.shift64Amounts ∧
+    raw = zisk_core_generated_checks.rawIType shamt rs1 5 rd 0x13) ∨
+  (∃ rd rs1 shamt,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    shamt ∈ zisk_core_generated_checks.shift64Amounts ∧
+    raw = zisk_core_generated_checks.rawIType (0x400 ||| shamt) rs1 5 rd 0x13) ∨
+  (∃ rd rs1 shamt,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    shamt ∈ zisk_core_generated_checks.shift32Amounts ∧
+    raw = zisk_core_generated_checks.rawIType shamt rs1 1 rd 0x1b) ∨
+  (∃ rd rs1 shamt,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    shamt ∈ zisk_core_generated_checks.shift32Amounts ∧
+    raw = zisk_core_generated_checks.rawIType shamt rs1 5 rd 0x1b) ∨
+  (∃ rd rs1 shamt,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    shamt ∈ zisk_core_generated_checks.shift32Amounts ∧
+    raw = zisk_core_generated_checks.rawIType (0x400 ||| shamt) rs1 5 rd 0x1b)
+
+def GeneratedStoreRegisterEdgeImmediateShape (raw : Std.U32) : Prop :=
+  ∃ rs1 rs2 imm funct3,
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs2 ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeSImmediates ∧
+    funct3 ∈ [0, 1, 2, 3] ∧
+    raw = zisk_core_generated_checks.rawSType imm rs2 rs1 funct3
+
+def GeneratedBranchRegisterEdgeImmediateShape (raw : Std.U32) : Prop :=
+  ∃ rs1 rs2 imm funct3,
+    rs1 ∈ zisk_core_generated_checks.allRvRegs ∧
+    rs2 ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeBImmediates ∧
+    funct3 ∈ [0, 1, 4, 5, 6, 7] ∧
+    raw = zisk_core_generated_checks.rawBType imm rs2 rs1 funct3
+
+def GeneratedUpperAndJumpEdgeImmediateShape (raw : Std.U32) : Prop :=
+  (∃ rd imm opcode,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeUImmediates ∧
+    opcode ∈ [0x37, 0x17] ∧
+    raw = zisk_core_generated_checks.rawUType imm rd opcode) ∨
+  (∃ rd imm,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeJImmediates ∧
+    raw = zisk_core_generated_checks.rawJType imm rd)
+
+def GeneratedUpperRegisterEdgeImmediateShape (raw : Std.U32) : Prop :=
+  ∃ rd imm opcode,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeUImmediates ∧
+    opcode ∈ [0x37, 0x17] ∧
+    raw = zisk_core_generated_checks.rawUType imm rd opcode
+
+def GeneratedJumpRegisterEdgeImmediateShape (raw : Std.U32) : Prop :=
+  ∃ rd imm,
+    rd ∈ zisk_core_generated_checks.allRvRegs ∧
+    imm ∈ zisk_core_generated_checks.edgeJImmediates ∧
+    raw = zisk_core_generated_checks.rawJType imm rd
+
+def GeneratedSupportedFencePredSuccShape (raw : Std.U32) : Prop :=
+  ∃ pred succ,
+    pred ∈ List.range 16 ∧ succ ∈ List.range 16 ∧
+    raw = zisk_core_generated_checks.rawOfNat32
+      ((pred <<< 24) ||| (succ <<< 20) ||| 0x0f)
+
+def GeneratedExhaustiveCheckedShape (raw : Std.U32) : Prop :=
+  GeneratedRTypeRegisterShape raw ∨
+  GeneratedShiftRegisterShape raw ∨
+  GeneratedSupportedFencePredSuccShape raw
+
+def GeneratedEdgeCheckedShape (raw : Std.U32) : Prop :=
+  GeneratedITypeRegisterEdgeImmediateShape raw ∨
+  GeneratedStoreRegisterEdgeImmediateShape raw ∨
+  GeneratedBranchRegisterEdgeImmediateShape raw ∨
+  GeneratedUpperAndJumpEdgeImmediateShape raw
+
+def GeneratedRefinedEdgeCheckedShape (raw : Std.U32) : Prop :=
+  GeneratedJalrRegisterEdgeImmediateShape raw ∨
+  GeneratedImmediateAluRegisterEdgeImmediateShape raw ∨
+  GeneratedLoadRegisterEdgeImmediateShape raw ∨
+  GeneratedStoreRegisterEdgeImmediateShape raw ∨
+  GeneratedBranchRegisterEdgeImmediateShape raw ∨
+  GeneratedUpperRegisterEdgeImmediateShape raw ∨
+  GeneratedJumpRegisterEdgeImmediateShape raw
+
+def GeneratedWideCheckedShape (raw : Std.U32) : Prop :=
+  GeneratedExhaustiveCheckedShape raw ∨ GeneratedEdgeCheckedShape raw
+
+def GeneratedWideRefinedCheckedShape (raw : Std.U32) : Prop :=
+  GeneratedExhaustiveCheckedShape raw ∨ GeneratedRefinedEdgeCheckedShape raw
+
+theorem generated_r_type_register_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedRTypeRegisterShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with
+    ⟨funct7, funct3, opcode, rd, rs1, rs2,
+      h_op, h_rd, h_rs1, h_rs2, rfl⟩
+  exact generated_r_type_register_case_circuit_covered
+    funct7 funct3 opcode rd rs1 rs2 h_op h_rd h_rs1 h_rs2
+
+theorem generated_i_type_register_edge_immediate_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedITypeRegisterEdgeImmediateShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with
+    ⟨rd, rs1, imm, funct3, opcode,
+      h_rd, h_rs1, h_imm, h_shape, rfl⟩
+  exact generated_i_type_register_edge_immediate_case_circuit_covered
+    rd rs1 imm funct3 opcode h_rd h_rs1 h_imm h_shape
+
+theorem generated_jalr_register_edge_immediate_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedJalrRegisterEdgeImmediateShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with
+    ⟨rd, rs1, imm, h_rd, h_rs1, h_imm, rfl⟩
+  exact generated_i_type_register_edge_immediate_case_circuit_covered
+    rd rs1 imm 0 0x67 h_rd h_rs1 h_imm (by simp)
+
+theorem generated_immediate_alu_register_edge_immediate_shape_circuit_covered
+    {raw : Std.U32}
+    (h_shape : GeneratedImmediateAluRegisterEdgeImmediateShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with
+    ⟨rd, rs1, imm, funct3, opcode,
+      h_rd, h_rs1, h_imm, h_op, rfl⟩
+  exact generated_i_type_register_edge_immediate_case_circuit_covered
+    rd rs1 imm funct3 opcode h_rd h_rs1 h_imm
+      (by
+        simp at h_op ⊢
+        rcases h_op with
+          h_op | h_op | h_op | h_op | h_op | h_op | h_op <;>
+          rcases h_op with ⟨rfl, rfl⟩ <;>
+          simp)
+
+theorem generated_load_register_edge_immediate_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedLoadRegisterEdgeImmediateShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with
+    ⟨rd, rs1, imm, funct3, h_rd, h_rs1, h_imm, h_funct3, rfl⟩
+  apply generated_i_type_register_edge_immediate_case_circuit_covered
+    rd rs1 imm funct3 0x03 h_rd h_rs1 h_imm
+  simp at h_funct3 ⊢
+  rcases h_funct3 with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp
+
+theorem generated_shift_register_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedShiftRegisterShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with h_shape | h_shape | h_shape | h_shape | h_shape | h_shape
+  · rcases h_shape with ⟨rd, rs1, shamt, h_rd, h_rs1, h_shamt, rfl⟩
+    exact generated_slli_register_case_circuit_covered rd rs1 shamt h_rd h_rs1 h_shamt
+  · rcases h_shape with ⟨rd, rs1, shamt, h_rd, h_rs1, h_shamt, rfl⟩
+    exact generated_srli_register_case_circuit_covered rd rs1 shamt h_rd h_rs1 h_shamt
+  · rcases h_shape with ⟨rd, rs1, shamt, h_rd, h_rs1, h_shamt, rfl⟩
+    exact generated_srai_register_case_circuit_covered rd rs1 shamt h_rd h_rs1 h_shamt
+  · rcases h_shape with ⟨rd, rs1, shamt, h_rd, h_rs1, h_shamt, rfl⟩
+    exact generated_slliw_register_case_circuit_covered rd rs1 shamt h_rd h_rs1 h_shamt
+  · rcases h_shape with ⟨rd, rs1, shamt, h_rd, h_rs1, h_shamt, rfl⟩
+    exact generated_srliw_register_case_circuit_covered rd rs1 shamt h_rd h_rs1 h_shamt
+  · rcases h_shape with ⟨rd, rs1, shamt, h_rd, h_rs1, h_shamt, rfl⟩
+    exact generated_sraiw_register_case_circuit_covered rd rs1 shamt h_rd h_rs1 h_shamt
+
+theorem generated_store_register_edge_immediate_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedStoreRegisterEdgeImmediateShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with ⟨rs1, rs2, imm, funct3,
+    h_rs1, h_rs2, h_imm, h_funct3, rfl⟩
+  exact generated_store_register_edge_immediate_case_circuit_covered
+    rs1 rs2 imm funct3 h_rs1 h_rs2 h_imm h_funct3
+
+theorem generated_branch_register_edge_immediate_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedBranchRegisterEdgeImmediateShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with ⟨rs1, rs2, imm, funct3,
+    h_rs1, h_rs2, h_imm, h_funct3, rfl⟩
+  exact generated_branch_register_edge_immediate_case_circuit_covered
+    rs1 rs2 imm funct3 h_rs1 h_rs2 h_imm h_funct3
+
+theorem generated_upper_and_jump_edge_immediate_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedUpperAndJumpEdgeImmediateShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with h_upper | h_jump
+  · rcases h_upper with ⟨rd, imm, opcode, h_rd, h_imm, h_opcode, rfl⟩
+    exact generated_upper_edge_immediate_case_circuit_covered
+      rd imm opcode h_rd h_imm h_opcode
+  · rcases h_jump with ⟨rd, imm, h_rd, h_imm, rfl⟩
+    exact generated_jump_edge_immediate_case_circuit_covered rd imm h_rd h_imm
+
+theorem generated_upper_register_edge_immediate_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedUpperRegisterEdgeImmediateShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with ⟨rd, imm, opcode, h_rd, h_imm, h_opcode, rfl⟩
+  exact generated_upper_edge_immediate_case_circuit_covered
+    rd imm opcode h_rd h_imm h_opcode
+
+theorem generated_jump_register_edge_immediate_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedJumpRegisterEdgeImmediateShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with ⟨rd, imm, h_rd, h_imm, rfl⟩
+  exact generated_jump_edge_immediate_case_circuit_covered rd imm h_rd h_imm
+
+theorem generated_supported_fence_pred_succ_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedSupportedFencePredSuccShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with ⟨pred, succ, h_pred, h_succ, rfl⟩
+  exact generated_supported_fence_pred_succ_case_circuit_covered
+    pred succ h_pred h_succ
+
+theorem generated_exhaustive_checked_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedExhaustiveCheckedShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with h_r | h_shift | h_fence
+  · exact generated_r_type_register_shape_circuit_covered h_r
+  · exact generated_shift_register_shape_circuit_covered h_shift
+  · exact generated_supported_fence_pred_succ_shape_circuit_covered h_fence
+
+theorem generated_edge_checked_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedEdgeCheckedShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with h_i | h_store | h_branch | h_upper_jump
+  · exact generated_i_type_register_edge_immediate_shape_circuit_covered h_i
+  · exact generated_store_register_edge_immediate_shape_circuit_covered h_store
+  · exact generated_branch_register_edge_immediate_shape_circuit_covered h_branch
+  · exact generated_upper_and_jump_edge_immediate_shape_circuit_covered h_upper_jump
+
+theorem generated_refined_edge_checked_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedRefinedEdgeCheckedShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with
+    h_jalr | h_alu | h_load | h_store | h_branch | h_upper | h_jump
+  · exact generated_jalr_register_edge_immediate_shape_circuit_covered h_jalr
+  · exact generated_immediate_alu_register_edge_immediate_shape_circuit_covered h_alu
+  · exact generated_load_register_edge_immediate_shape_circuit_covered h_load
+  · exact generated_store_register_edge_immediate_shape_circuit_covered h_store
+  · exact generated_branch_register_edge_immediate_shape_circuit_covered h_branch
+  · exact generated_upper_register_edge_immediate_shape_circuit_covered h_upper
+  · exact generated_jump_register_edge_immediate_shape_circuit_covered h_jump
+
+theorem generated_wide_checked_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedWideCheckedShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with h_exhaustive | h_edge
+  · exact generated_exhaustive_checked_shape_circuit_covered h_exhaustive
+  · exact generated_edge_checked_shape_circuit_covered h_edge
+
+theorem generated_wide_refined_checked_shape_circuit_covered
+    {raw : Std.U32} (h_shape : GeneratedWideRefinedCheckedShape raw) :
+    ZiskCircuitCoveredRaw raw ∧ KnownZiskGapRaw raw = false := by
+  rcases h_shape with h_exhaustive | h_edge
+  · exact generated_exhaustive_checked_shape_circuit_covered h_exhaustive
+  · exact generated_refined_edge_checked_shape_circuit_covered h_edge
+
+def GeneratedRTypeRegisterCircuitCompleteness : Bool :=
+  zisk_core_generated_checks.allRTypeRegisterShapes GeneratedCircuitCoveredCaseOk
+
+def GeneratedITypeRegisterEdgeImmediateCircuitCompleteness : Bool :=
+  zisk_core_generated_checks.allITypeRegisterEdgeImmediates GeneratedCircuitCoveredCaseOk
+
+def GeneratedShiftRegisterCircuitCompleteness : Bool :=
+  zisk_core_generated_checks.allShiftRegisterShapes GeneratedCircuitCoveredCaseOk
+
+def GeneratedStoreRegisterEdgeImmediateCircuitCompleteness : Bool :=
+  zisk_core_generated_checks.allStoreRegisterEdgeImmediates GeneratedCircuitCoveredCaseOk
+
+def GeneratedBranchRegisterEdgeImmediateCircuitCompleteness : Bool :=
+  zisk_core_generated_checks.allBranchRegisterEdgeImmediates GeneratedCircuitCoveredCaseOk
+
+def GeneratedUpperAndJumpEdgeImmediateCircuitCompleteness : Bool :=
+  zisk_core_generated_checks.allUpperAndJumpEdgeImmediates GeneratedCircuitCoveredCaseOk
+
+def GeneratedSupportedFencePredSuccCircuitCompleteness : Bool :=
+  zisk_core_generated_checks.allFencePredSuccShapes GeneratedCircuitCoveredCaseOk
+
+def GeneratedExhaustiveRvShapeFamiliesCircuitCompleteness : Bool :=
+  GeneratedRTypeRegisterCircuitCompleteness &&
+  GeneratedShiftRegisterCircuitCompleteness &&
+  GeneratedSupportedFencePredSuccCircuitCompleteness
+
+def GeneratedEdgeRvShapeFamiliesCircuitCompleteness : Bool :=
+  GeneratedITypeRegisterEdgeImmediateCircuitCompleteness &&
+  GeneratedStoreRegisterEdgeImmediateCircuitCompleteness &&
+  GeneratedBranchRegisterEdgeImmediateCircuitCompleteness &&
+  GeneratedUpperAndJumpEdgeImmediateCircuitCompleteness
+
+def GeneratedRefinedEdgeRvShapeFamiliesCircuitCompleteness : Bool :=
+  GeneratedEdgeRvShapeFamiliesCircuitCompleteness
+
+def GeneratedWideRvShapeFamiliesCircuitCompleteness : Bool :=
+  GeneratedExhaustiveRvShapeFamiliesCircuitCompleteness &&
+  GeneratedEdgeRvShapeFamiliesCircuitCompleteness
+
+def GeneratedWideRefinedRvShapeFamiliesCircuitCompleteness : Bool :=
+  GeneratedExhaustiveRvShapeFamiliesCircuitCompleteness &&
+  GeneratedRefinedEdgeRvShapeFamiliesCircuitCompleteness
+
+theorem generated_r_type_register_family_circuit_completeness :
+    GeneratedRTypeRegisterCircuitCompleteness = true := by
+  native_decide
+
+theorem generated_i_type_register_edge_immediate_family_circuit_completeness :
+    GeneratedITypeRegisterEdgeImmediateCircuitCompleteness = true := by
+  native_decide
+
+theorem generated_shift_register_family_circuit_completeness :
+    GeneratedShiftRegisterCircuitCompleteness = true := by
+  native_decide
+
+theorem generated_store_register_edge_immediate_family_circuit_completeness :
+    GeneratedStoreRegisterEdgeImmediateCircuitCompleteness = true := by
+  native_decide
+
+theorem generated_branch_register_edge_immediate_family_circuit_completeness :
+    GeneratedBranchRegisterEdgeImmediateCircuitCompleteness = true := by
+  native_decide
+
+theorem generated_upper_and_jump_edge_immediate_family_circuit_completeness :
+    GeneratedUpperAndJumpEdgeImmediateCircuitCompleteness = true := by
+  native_decide
+
+theorem generated_supported_fence_pred_succ_family_circuit_completeness :
+    GeneratedSupportedFencePredSuccCircuitCompleteness = true := by
+  native_decide
+
+theorem generated_exhaustive_rv_shape_families_circuit_completeness :
+    GeneratedExhaustiveRvShapeFamiliesCircuitCompleteness = true := by
+  simp [GeneratedExhaustiveRvShapeFamiliesCircuitCompleteness,
+    generated_r_type_register_family_circuit_completeness,
+    generated_shift_register_family_circuit_completeness,
+    generated_supported_fence_pred_succ_family_circuit_completeness]
+
+theorem generated_edge_rv_shape_families_circuit_completeness :
+    GeneratedEdgeRvShapeFamiliesCircuitCompleteness = true := by
+  simp [GeneratedEdgeRvShapeFamiliesCircuitCompleteness,
+    generated_i_type_register_edge_immediate_family_circuit_completeness,
+    generated_store_register_edge_immediate_family_circuit_completeness,
+    generated_branch_register_edge_immediate_family_circuit_completeness,
+    generated_upper_and_jump_edge_immediate_family_circuit_completeness]
+
+theorem generated_refined_edge_rv_shape_families_circuit_completeness :
+    GeneratedRefinedEdgeRvShapeFamiliesCircuitCompleteness = true := by
+  simpa [GeneratedRefinedEdgeRvShapeFamiliesCircuitCompleteness]
+    using generated_edge_rv_shape_families_circuit_completeness
+
+theorem generated_wide_rv_shape_families_circuit_completeness :
+    GeneratedWideRvShapeFamiliesCircuitCompleteness = true := by
+  simp [GeneratedWideRvShapeFamiliesCircuitCompleteness,
+    generated_exhaustive_rv_shape_families_circuit_completeness,
+    generated_edge_rv_shape_families_circuit_completeness]
+
+theorem generated_wide_refined_rv_shape_families_circuit_completeness :
+    GeneratedWideRefinedRvShapeFamiliesCircuitCompleteness = true := by
+  simp [GeneratedWideRefinedRvShapeFamiliesCircuitCompleteness,
+    generated_exhaustive_rv_shape_families_circuit_completeness,
+    generated_refined_edge_rv_shape_families_circuit_completeness]
+
+EOF
+    fi
+
+    cat >> "$lean_check/RvCompleteness.lean" <<'EOF'
+
+-- Remaining ZisK-internal strengthening target. This asks whether every
+-- lowerable decoded opcode emits a row through production lowering. A direct
+-- proof by unfolding all row-builder branches currently times out after
+-- several minutes, so it needs helper-total row-builder lemmas rather than
+-- one monolithic `simp`.
+--
+-- Closed helper milestones:
+-- * symbolic ordinary-register helpers for NOP, ADDI/immediate wrapper, HINT,
+--   register ADD, branch EQ/NE, COPYB from rs1/rs2, LUI, AUIPC, and JAL;
+-- * representative boolean totality checks for aligned/unaligned JALR,
+--   load/store widths 1/2/4/8, and the DMA precompile helpers;
+-- * scalar-pattern normalization for the extracted `ind_width` width branch
+--   used by load/store helpers;
+-- * ordinary register-1/register-2 routing totality for extracted
+--   `src_a_reg`, `src_b_reg`, and `store_reg`;
+-- * all-register finite routing totality for extracted `src_a_reg`,
+--   `src_b_reg`, and `store_reg`;
+-- * wide generated raw-shape families covering all registers for R-type and
+--   shifts, all supported FENCE pred/succ shapes, and edge immediates for
+--   I/S/B/U/J-shaped instructions.
+--
+-- The remaining gap is the universal lift from representative/helper checks
+-- to `RvRowMaterializationCompleteness` for every lowerable raw instruction.
+-- The current blocker is Lean normalization of Aeneas-generated scalar code,
+-- especially all-register routing comparisons after `BitVec.setWidth`.
+--
+-- The next useful decomposition is:
+--
+-- * lift the finite routing facts into symbolic helper-total theorems for
+--   load/store/JALR and the remaining row builders;
+-- * discharge the remaining finite register/opcode splits.
+--
+-- theorem rv_row_materialization_completeness :
+--     RvRowMaterializationCompleteness := by
+--   intro raw h_lowerable
+--   exact ?row_builder_total_for_all_lowerable_shapes
+
+example :
+    rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw 0x00b50533#u32) = true := by
+  native_decide
+
+example :
+    coveredOpcodeId
+      (rawDecodeOpcodeId (aeneas_extract.extract_decode_rv64im_raw 0x00b50533#u32)) = true := by
+  native_decide
+
+example :
+    rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw 0x1000000F#u32) = false := by
+  native_decide
+
+example :
+    KnownZiskDecodeGapRaw 0x1000000F#u32 = true := by
+  native_decide
+
+example :
+    KnownZiskGapRaw 0x1000000F#u32 = true := by
+  native_decide
+
+example :
+    KnownZiskDecodeGapRaw 0x0000000F#u32 = false := by
+  native_decide
+
+example :
+    KnownZiskRowMaterializationGapRaw 0x0000000F#u32 = false := by
+  native_decide
+
+example :
+    KnownZiskGapRaw 0x0000000F#u32 = false := by
+  native_decide
+
+example :
+    KnownZiskDecodeGapRaw 0x0000800F#u32 = true := by
+  native_decide
+
+example :
+    KnownZiskDecodeGapRaw 0x0000008F#u32 = true := by
+  native_decide
+
+example :
+    KnownZiskDecodeGapRaw 0x00000013#u32 = false := by
+  native_decide
+
+example :
+    KnownZiskDecodeGapRaw 0x8330000F#u32 = true := by
+  native_decide
+
+-- Main target. Keep this stated here as the RV-completeness goal. It is not
+-- proved in this Aeneas-only module: generic FENCE encodings currently supply
+-- real counterexamples where Sail decodes but the extracted production ZisK
+-- decoder rejects.
+--
+-- theorem rv_completeness
+--     (sailExecutableRaw : Std.U32 → Prop)
+--     (h_no_known_bugs : ∀ raw, sailExecutableRaw raw → ZiskDecodeSupportedRaw raw)
+--     RvCompletenessFor sailExecutableRaw := by
+--   intro raw h_sail
+--   have h_not_known_gap : KnownZiskGapRaw raw = false := by
+--     exact ?no_known_gap_for_full_completeness
+--   exact rv_completeness_avoiding_known_bugs sailExecutableRaw
+--     (fun raw h_sail _ => h_no_known_bugs raw h_sail)
+--     raw h_sail h_not_known_gap
+
+end zisk_core_generated_rv_completeness
+EOF
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks RvCompleteness' bash "$lean_check"
   elif [[ "$AENEAS_CHECK_RV64IM_COMPLETENESS" != 0 ]]; then
     cat > "$lean_check/Rv64imCompleteness.lean" <<'EOF'
 import ProductionM2
