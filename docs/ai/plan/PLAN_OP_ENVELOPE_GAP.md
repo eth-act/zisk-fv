@@ -47,6 +47,23 @@ rd-write route.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: JALR
+
+Continue depth-first through U/J/control-flow evidence with the JALR final-row
+control pins. JALR does not currently use a dedicated `JalrRowMode` provenance
+structure; its `OpEnvelope` arm consumes `MainRowPins` plus explicit control
+pins.
+
+- [x] Add main-Lake helpers deriving JALR final-row `MainRowPins` and control pins from extracted-row constants.
+- [x] Add a JALR `OpEnvelope` constructor/bridge theorem that uses those helpers to fill the real pins/control fields.
+- [x] Add a staged Aeneas generated check for JALR control-pin evidence.
+- [x] Update extraction/trust docs to describe the JALR slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

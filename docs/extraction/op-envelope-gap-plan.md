@@ -150,6 +150,20 @@ pipeline.
      `OpEnvelope.aeneasBridgeTrust` from extracted row-shape equalities plus
      the remaining dynamic JAL facts.
 
+   JALR is a related but different proof slice because the current
+   `OpEnvelope.jalr` arm consumes `MainRowPins` and direct control pins instead
+   of a dedicated `JalrRowMode` provenance structure:
+
+   - the staged Aeneas harness proves that `extract_jalr_from_inst` computes
+     the final-row external `OP_AND` and control-pin constants;
+   - main Lake proves `MainRowProvenance.jalrPins_of_extracted_shape` and
+     `MainRowProvenance.jalrControl_of_extracted_shape`;
+   - main Lake exposes `OpEnvelope.jalrOfExtractedShape` and
+     `OpEnvelope.aeneasBridgeTrust_jalrOfExtractedShape`, which construct the
+     JALR envelope with derived pins/control fields and prove the JALR branch of
+     `OpEnvelope.aeneasBridgeTrust` from extracted row-shape equalities plus
+     the remaining dynamic JALR facts.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

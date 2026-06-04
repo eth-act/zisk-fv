@@ -78,6 +78,7 @@ def storeReg : Nat := 3
 
 def opFlag : Nat := 0
 def opCopyB : Nat := 1
+def opAnd : Nat := 14
 
 end ExtractedConst
 
@@ -209,6 +210,34 @@ theorem jalRowMode_of_extracted_shape
     m32_eq := h_m32
     set_pc_eq := h_set_pc
     store_pc_eq := h_store_pc }
+
+/-- Build the JALR final-row activation/opcode pins from the extracted
+row-shape constants. JALR's final architectural row is the external
+`OP_AND` row, so it does not use a dedicated row-mode structure. -/
+theorem jalrPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opAnd)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_AND :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opAnd, ZiskFv.Trusted.OP_AND, h_op] using p.op_eq }
+
+/-- Extract the JALR final-row control pins from row-shape provenance. -/
+theorem jalrControl_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_m32 : p.extractedRow.m32 = false)
+    (h_set_pc : p.extractedRow.setPc = true)
+    (h_store_pc : p.extractedRow.storePc = true) :
+    main.m32 r_main = 0
+  ∧ main.set_pc r_main = 1
+  ∧ main.store_pc r_main = 1 := by
+  exact ⟨by simpa [boolF, h_m32] using p.m32_eq,
+    by simpa [boolF, h_set_pc] using p.set_pc_eq,
+    by simpa [boolF, h_store_pc] using p.store_pc_eq⟩
 
 theorem pins
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}

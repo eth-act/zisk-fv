@@ -299,6 +299,106 @@ theorem OpEnvelope.aeneasBridgeTrust_jalOfExtractedShape
     h_jmp2,
     h_pc_bridge⟩
 
+/-- Construct the JALR envelope while deriving its final-row activation,
+opcode, and control pins from production-extracted row-shape equalities. -/
+def OpEnvelope.jalrOfExtractedShape
+    (jalr_input : PureSpec.JalrInput)
+    (imm : BitVec 12) (rs1 rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opAnd)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (h_m32_shape : provenance.extractedRow.m32 = false)
+    (h_set_pc_shape : provenance.extractedRow.setPc = true)
+    (h_store_pc_shape : provenance.extractedRow.storePc = true)
+    (h_flag : m.flag r_main = 0)
+    (h_jalr_subset :
+      ZiskFv.Airs.Main.flag_boolean m r_main
+      ∧ ZiskFv.Airs.Main.is_external_op_boolean m r_main
+      ∧ ZiskFv.Airs.Main.flag_set_pc_disjoint m r_main
+      ∧ ZiskFv.Airs.Main.pc_handshake_with_next_pc m r_main next_pc)
+    (promises : ZiskFv.EquivCore.Promises.JumpPromises
+        state jalr_input.PC jalr_input.rd misa_val
+        (PureSpec.execute_JALR_pure jalr_input).success
+        (PureSpec.execute_JALR_pure jalr_input).nextPC
+        rd exec_row e_rd nextPC_val)
+    (h_input_imm : jalr_input.imm = imm)
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok jalr_input.rs1_val state)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state)
+    (h_link_bridge :
+      (m.pc r_main + m.jmp_offset2 r_main).val = (jalr_input.PC + 4#64).toNat)
+    (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
+    (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
+    OpEnvelope state m r_main :=
+  let control := MainRowProvenance.jalrControl_of_extracted_shape provenance
+    h_m32_shape h_set_pc_shape h_store_pc_shape
+  OpEnvelope.jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd
+    nextPC_val next_pc store_pc_mem
+    (MainRowProvenance.jalrPins_of_extracted_shape provenance h_op h_external)
+    h_flag control.1 control.2.1 control.2.2 h_jalr_subset promises
+    h_input_imm h_input_rs1 h_cur_privilege h_mseccfg h_link_bridge h_pc_bound
+    h_pc_offset_lt_2_32
+
+/-- The JALR bridge predicate is derivable for the envelope constructed from
+extracted row-shape equalities and the remaining dynamic JALR facts. -/
+theorem OpEnvelope.aeneasBridgeTrust_jalrOfExtractedShape
+    (jalr_input : PureSpec.JalrInput)
+    (imm : BitVec 12) (rs1 rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opAnd)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (h_m32_shape : provenance.extractedRow.m32 = false)
+    (h_set_pc_shape : provenance.extractedRow.setPc = true)
+    (h_store_pc_shape : provenance.extractedRow.storePc = true)
+    (h_flag : m.flag r_main = 0)
+    (h_jalr_subset :
+      ZiskFv.Airs.Main.flag_boolean m r_main
+      ∧ ZiskFv.Airs.Main.is_external_op_boolean m r_main
+      ∧ ZiskFv.Airs.Main.flag_set_pc_disjoint m r_main
+      ∧ ZiskFv.Airs.Main.pc_handshake_with_next_pc m r_main next_pc)
+    (promises : ZiskFv.EquivCore.Promises.JumpPromises
+        state jalr_input.PC jalr_input.rd misa_val
+        (PureSpec.execute_JALR_pure jalr_input).success
+        (PureSpec.execute_JALR_pure jalr_input).nextPC
+        rd exec_row e_rd nextPC_val)
+    (h_input_imm : jalr_input.imm = imm)
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok jalr_input.rs1_val state)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state)
+    (h_link_bridge :
+      (m.pc r_main + m.jmp_offset2 r_main).val = (jalr_input.PC + 4#64).toNat)
+    (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
+    (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
+    (OpEnvelope.jalrOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc
+      store_pc_mem provenance
+      h_op h_external h_m32_shape h_set_pc_shape h_store_pc_shape
+      h_flag h_jalr_subset promises h_input_imm h_input_rs1 h_cur_privilege
+      h_mseccfg h_link_bridge h_pc_bound h_pc_offset_lt_2_32).aeneasBridgeTrust := by
+  let control := MainRowProvenance.jalrControl_of_extracted_shape provenance
+    h_m32_shape h_set_pc_shape h_store_pc_shape
+  unfold OpEnvelope.jalrOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  exact ⟨h_flag, control.1, control.2.1, control.2.2, h_link_bridge⟩
+
 /-- **Aeneas row-lowering bridge trust axiom.**
 
 The generated Aeneas extraction is checked in CI, but generated Aeneas Lean is

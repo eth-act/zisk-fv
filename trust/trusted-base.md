@@ -108,6 +108,14 @@ row-shape constants, and main Lake contains
 `OpEnvelope.jalOfExtractedShape`, and
 `OpEnvelope.aeneasBridgeTrust_jalOfExtractedShape`.
 
+Fourth proof-slice progress: JALR now has the matching final-row control-pin
+slice. The staged Aeneas harness checks the `extract_jalr_from_inst` external
+`OP_AND` and control-pin constants, and main Lake contains
+`MainRowProvenance.jalrPins_of_extracted_shape`,
+`MainRowProvenance.jalrControl_of_extracted_shape`,
+`OpEnvelope.jalrOfExtractedShape`, and
+`OpEnvelope.aeneasBridgeTrust_jalrOfExtractedShape`.
+
 Retirement path: import the generated Aeneas Lean row-lowering result into the
 main proof, prove the `OpEnvelope.aeneasBridgeTrust` predicate for each
 relevant arm, and replace `aeneas_bridge_trust` with the derived theorem.

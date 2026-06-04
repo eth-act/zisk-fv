@@ -27,7 +27,7 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `aeneas_bridge_trust` | 306 | **Aeneas row-lowering bridge trust axiom.** The generated Aeneas extraction is checked in CI, but generated Aeneas Lean is not yet imported to prove these bridge facts inside the main Lake theorem. |
+| 1 | `aeneas_bridge_trust` | 406 | **Aeneas row-lowering bridge trust axiom.** The generated Aeneas extraction is checked in CI, but generated Aeneas Lean is not yet imported to prove these bridge facts inside the main Lake theorem. |
 
 ## #C Clean-Component completeness (NON-SECURITY-CRITICAL) — `ZiskFv/AirsClean/Completeness.lean` (6)
 

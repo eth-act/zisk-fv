@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: JAL row-mode slice complete and verified.
+Current focus: JALR final-row control-pin slice complete and verified.
 Blocking: none.
-Next step: commit the JAL slice, then continue depth-first to the next U/J/control-flow row-mode slice.
+Next step: commit the JALR slice, then review whether FENCE has bridge evidence to derive or whether the next depth-first target should move to ADD/ADDI/ADDW provider evidence.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -35,3 +35,13 @@ Notes:
 - `trust/scripts/check-all.sh` passed for the JAL slice.
 - `trust/scripts/check-all-semantic.sh` passed for the JAL slice.
 - `nix run .#aeneas-production-extract` passed for the JAL slice.
+- JAL slice committed as `8d18277d Add JAL row-mode bridge slice`.
+- Added JALR equivalents: `MainRowProvenance.jalrPins_of_extracted_shape`,
+  `MainRowProvenance.jalrControl_of_extracted_shape`, staged
+  `jalrControlEvidenceMatches`, `OpEnvelope.jalrOfExtractedShape`, and
+  `OpEnvelope.aeneasBridgeTrust_jalrOfExtractedShape`.
+- `lake build ZiskFv.Compliance` passed for the JALR slice.
+- `trust/scripts/regenerate.sh` passed for the JALR slice.
+- `trust/scripts/check-all.sh` passed for the JALR slice.
+- `trust/scripts/check-all-semantic.sh` passed for the JALR slice.
+- `nix run .#aeneas-production-extract` passed for the JALR slice.
