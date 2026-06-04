@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.EquivCore.Andi
 import ZiskFv.EquivCore.Promises.IType
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -26,11 +26,11 @@ import ZiskFv.Compliance.SharedBundles
 ## Why ANDI
 
 ANDI is the Binary-provider ITYPE companion to AND: the same Binary
-state-machine handles both, distinguished only by the transpiler's
+state-machine handles both, distinguished only by row-shape provenance's
 `b`-lane routing — AND reads `xreg(rs2)` onto Main's b-lanes; ANDI
 routes the sign-extended 12-bit immediate. The Sail-level immediate
 must therefore appear in the canonical equiv as a structural pin
-(`itype_imm_subset_holds_main`) since `transpile_ANDI` leaves
+(`itype_imm_subset_holds_main`) since ANDI row-shape contract leaves
 `imm_b_lo`/`imm_b_hi` caller-routed.
 
 ## 5-category discharge applied
@@ -49,14 +49,14 @@ must therefore appear in the canonical equiv as a structural pin
   #6) + `memory_bus_entry_byte_range_perm_sound` (class #5b) —
   internalized by `equiv_ANDI`.
 * **Operand bridges.** `h_input_r1_circuit` and `h_input_imm_circuit`
-  internalized by `equiv_ANDI` via `transpile_ANDI` (class #1) +
+  internalized by `equiv_ANDI` via ANDI row-shape contract (class #1) +
   the two Binary bridges. The Main-form immediate pin
   (`h_andi_subset`) is the structural-unpacking parameter — passed
   through from caller.
 
 ## Anti-laundering report
 
-* **No new axioms.** Consumes only `transpile_ANDI` (class #1),
+* **No new axioms.** Consumes only ANDI row-shape contract (class #1),
   `op_bus_perm_sound_Binary` (class #4),
   `binary_b_op_or_sext_eq_OP_AND` (class #6),
   `memory_bus_entry_byte_range_perm_sound` (class #5b), plus
@@ -72,7 +72,7 @@ must therefore appear in the canonical equiv as a structural pin
 ## Cross-shape lessons
 
 Pattern transfers verbatim to ORI/XORI (Binary-provider ITYPE
-variants) — swap opcode literal, transpile axiom, and
+variants) — swap opcode literal, row-shape provenance bridge, and
 `binary_b_op_or_sext_eq_OP_*` mode-pin axiom.
 -/
 
@@ -106,6 +106,14 @@ lemma equiv_ANDI
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : andi_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 andi_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -132,6 +140,9 @@ lemma equiv_ANDI
   obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
   exact ZiskFv.EquivCore.Andi.equiv_ANDI_of_static_row
     state andi_input r1 rd imm m row r_main bus promises pins
-    h_match h_row_spec h_core h_static_specs h_facts h_lane_rd h_andi_subset
+    h_match h_row_spec h_core h_static_specs h_facts
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_input_imm_row)
+    h_lane_rd h_andi_subset
 
 end ZiskFv.Compliance

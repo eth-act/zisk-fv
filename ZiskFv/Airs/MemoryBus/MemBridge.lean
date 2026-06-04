@@ -4,7 +4,7 @@ import LeanRV64D
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Channels.MemoryBusBytes
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus

@@ -46,6 +46,16 @@ theorem equiv_ADDW
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb addw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
+    (h_input_r2_extract :
+      (Sail.BitVec.extractLsb addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowB32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC
@@ -61,7 +71,8 @@ theorem equiv_ADDW
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_ADDW state addw_input r1 r2 rd m
     providerTable providerRow r_main bus pins
-    h_component h_table_spec h_provider_row h_match h_lane_rd promises
+    h_component h_table_spec h_provider_row h_match
+    h_input_r1_extract h_input_r2_extract h_lane_rd promises
 
 /-- Row-native static-provider route for `equiv_ADDW`. Mirrors
     `equiv_SUBW_of_static_row` with OP_SUB → OP_ADD. -/
@@ -95,6 +106,12 @@ lemma equiv_ADDW_of_static_row
           + row.cBytes.free_in_c_2.val * 65536
           + row.cBytes.free_in_c_3.val * 16777216 ≥ 2147483648))
     (h_carry_7_zero : row.chain.carry_7 = 0)
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb addw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32 row % 2^32)
+    (h_input_r2_extract :
+      (Sail.BitVec.extractLsb addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowB32 row % 2^32)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC
@@ -111,6 +128,7 @@ lemma equiv_ADDW_of_static_row
   exact ZiskFv.EquivCore.Addw.equiv_ADDW_of_static_row
     state addw_input r1 r2 rd m row r_main bus promises pins
     h_match h_core h_facts h_mode32_one h_b_op
-    h_sext_choice h_carry_7_zero h_lane_rd
+    h_sext_choice h_carry_7_zero
+    h_input_r1_extract h_input_r2_extract h_lane_rd
 
 end ZiskFv.Equivalence.Addw

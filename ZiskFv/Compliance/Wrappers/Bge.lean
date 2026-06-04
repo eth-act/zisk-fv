@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Bge
 import ZiskFv.EquivCore.Promises.BranchHelpers
 import ZiskFv.SailSpec.bge
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
 

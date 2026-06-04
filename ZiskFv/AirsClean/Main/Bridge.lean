@@ -348,7 +348,7 @@ theorem internal_op1_copies_b1_of_spec_validOfRow
     `MemBridge.main_load_emission_bundle`, stated over a concrete Clean
     Main row and its PIL-shaped b/c memory messages.
 
-This deliberately excludes ptr/rd routing: those require ROM/transpile
+This deliberately excludes ptr/rd routing: those require ROM/row-shape
 pins and remain a separate adapter step. -/
 theorem load_emission_lane_copy_bundle_of_messages
     (row : MainRowWithRom FGL)
@@ -379,7 +379,7 @@ theorem load_emission_lane_copy_bundle_of_messages
 
 /-- Structural ptr/rd-routing adapter for Main load rows.
 
-The premises are the ROM/transpile pins that the old
+The premises are the ROM/row-shape pins that the old
 `MemBridge.main_load_emission_bundle` packaged together with lane facts:
 `addr1` is the memory-read address, and `addr2` is the register-write
 destination tag. Keeping these pins explicit prevents the Clean
@@ -409,7 +409,7 @@ theorem load_ptr_rd_bundle_of_message_pins
 its PIL memory messages.
 
 This is still a local adapter theorem, not a canonical-opcode discharge:
-callers must supply the structural ROM/transpile pins explicitly. -/
+callers must supply the structural ROM/row-shape pins explicitly. -/
 theorem load_emission_bundle_of_message_pins
     (row : MainRowWithRom FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -598,7 +598,7 @@ theorem store_emission_lane_bundle_of_message
 /-- Structural store-address adapter for Main store rows.
 
 The explicit `addr2` pin is the store-side analogue of the load
-`addr1` pin: it is the ROM/transpile fact connecting the PIL memory
+`addr1` pin: it is the ROM/row-shape fact connecting the PIL memory
 message address to Sail's `rs1 + signExt(imm)` address. -/
 theorem store_ptr_of_message_pin
     (row : MainRowWithRom FGL)

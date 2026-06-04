@@ -52,6 +52,8 @@ theorem equiv_DIVUW
       ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
@@ -69,7 +71,7 @@ theorem equiv_DIVUW
   exact ZiskFv.Compliance.equiv_DIVUW_of_table state divuw_input r1 r2 rd bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds arith_table h_row_constraints
     arith_chunk_ranges arith_carry_ranges remainder_bound
-    h_sext_choice h_rs1_value h_rs2_value
+    h_b23 h_c23 h_sext_choice h_rs1_value h_rs2_value
 
 
 end ZiskFv.Equivalence.Divuw

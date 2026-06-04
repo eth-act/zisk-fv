@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 
@@ -67,8 +67,8 @@ def branch_eq_circuit_holds
 
     The two branches come from case-splitting `flag_boolean`. The
     `jmp_offset1`/`jmp_offset2` values are populated by
-    `transpile_BEQ` (Trusted) as `imm`/`4` respectively — so this
-    theorem, once composed with the transpile axiom, states that BEQ
+    BEQ row-shape contract (Trusted) as `imm`/`4` respectively — so this
+    theorem, once composed with the row-shape provenance bridge, states that BEQ
     advances PC to `pc + imm` when taken and `pc + 4` when not taken.
 
     Caller (`Equivalence.BranchEqual`) supplies `h_flag_correct`:
@@ -86,7 +86,7 @@ lemma branch_eq_compositional
 
 /-- **Taken-branch case.** When `flag = 1` (the Binary SM signals
     `a == b`), the next-pc is `pc + jmp_offset1`. For BEQ,
-    `jmp_offset1 = imm` (from `transpile_BEQ`), so this corresponds
+    `jmp_offset1 = imm` (from BEQ row-shape contract), so this corresponds
     to `pc + imm`. -/
 lemma branch_eq_taken
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
@@ -98,7 +98,7 @@ lemma branch_eq_taken
   linear_combination this
 
 /-- **Not-taken case.** When `flag = 0`, the next-pc is
-    `pc + jmp_offset2 = pc + 4` (from `transpile_BEQ`'s
+    `pc + jmp_offset2 = pc + 4` (from BEQ row-shape contract's
     `jmp_offset2 = 4`). -/
 lemma branch_eq_not_taken
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)

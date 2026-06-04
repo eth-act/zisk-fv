@@ -52,18 +52,19 @@ def OpEnvelope.exec_eq_misc
         ))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   -- ADDI / ADDIW
-  | .addi_via_binary _ r1 rd imm bus _ _ _ _ _ _ _ _ _ _ =>
+  | .addi_via_binary _ r1 rd imm bus _ _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .addiw _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ =>
+  | .addiw _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.ADDIW (imm, r1, rd))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | _ => True
 
+set_option maxHeartbeats 800000
 theorem zisk_riscv_compliant_program_bus_misc
     (env : OpEnvelope state m r_main) :
     env.exec_eq_misc := by
@@ -72,7 +73,13 @@ theorem zisk_riscv_compliant_program_bus_misc
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr =>
-    simp only [OpEnvelope.exec_eq_misc]
+    change
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.LOAD (
+          lb_input.imm, regidx.Regidx lb_input.r1, regidx.Regidx lb_input.rd, false, 1
+        ))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
       m mem r_main r_mem bus lb_input.r1_val lb_input.imm lb_input.rd
@@ -86,7 +93,13 @@ theorem zisk_riscv_compliant_program_bus_misc
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr =>
-    simp only [OpEnvelope.exec_eq_misc]
+    change
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.LOAD (
+          lh_input.imm, regidx.Regidx lh_input.r1, regidx.Regidx lh_input.rd, false, 2
+        ))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
       m mem r_main r_mem bus lh_input.r1_val lh_input.imm lh_input.rd
@@ -100,7 +113,13 @@ theorem zisk_riscv_compliant_program_bus_misc
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr =>
-    simp only [OpEnvelope.exec_eq_misc]
+    change
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.LOAD (
+          lw_input.imm, regidx.Regidx lw_input.r1, regidx.Regidx lw_input.rd, false, 4
+        ))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
       m mem r_main r_mem bus lw_input.r1_val lw_input.imm lw_input.rd
@@ -111,19 +130,29 @@ theorem zisk_riscv_compliant_program_bus_misc
       state lw_input regs m mem r_main v r_binary offset env h_static
       h_match bus pins promises w
   | addi_via_binary addi_input r1 rd imm bus pins providerTable providerRow
-      h_component h_table_spec h_provider_row h_match_static h_addi_subset h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_misc]
+      h_component h_table_spec h_provider_row h_match_static h_addi_subset
+      h_input_r1_row h_input_imm_row h_lane_rd promises =>
+    change
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Addi.equiv_ADDI
       state addi_input r1 rd imm m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static h_addi_subset
-      h_lane_rd promises
+      h_input_r1_row h_input_imm_row h_lane_rd promises
   | addiw addiw_input r1 rd imm _v bus pins h_addiw_subset providerTable providerRow
-      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_misc]
+      h_component h_table_spec h_provider_row h_match_static h_input_r1_extract
+      h_lane_rd promises =>
+    change
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.ADDIW (imm, r1, rd))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Addiw.equiv_ADDIW
       state addiw_input r1 rd imm m providerTable providerRow r_main bus pins
       h_addiw_subset h_component h_table_spec h_provider_row h_match_static
-      h_lane_rd promises
+      h_input_r1_extract h_lane_rd promises
   | _ => trivial
 
 end ZiskFv.Compliance

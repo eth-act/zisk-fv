@@ -12,7 +12,7 @@
 #
 # Source-of-truth cross-check: this set must match the reachable
 # unqualified axiom names in `trust/generated/baseline-axioms.txt`, modulo
-# the explicit completeness-direction allowlist in
+# the explicit documented non-closure allowlist in
 # `trust/tolerated-completeness-axioms.txt`. The V2 trust gate's
 # `check-closure-vs-baseline` subcommand enforces that relation
 # mechanically; this file is a standalone audit document — readable
@@ -25,9 +25,8 @@
 #     > trust/generated/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-06-02.
+# artefacts under `.lake/build/`). Last regenerated: 2026-06-03.
 #
-# Total entries: 2
+# Total entries: 1
 #
-ZiskFv.Trusted.transpiler_contract_sound
 ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load

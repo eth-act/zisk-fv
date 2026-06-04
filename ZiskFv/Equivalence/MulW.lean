@@ -47,6 +47,8 @@ theorem equiv_MULW
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
@@ -66,6 +68,6 @@ theorem equiv_MULW
   exact ZiskFv.Compliance.equiv_MULW_of_table state mulw_input r1 r2 rd bus m r_main v r_a
     pins h_match_primary promises arith_mem arith_table h_row_constraints
     arith_chunk_ranges arith_carry_ranges
-    h_sext_choice h_rs1_value h_rs2_value
+    h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value
 
 end ZiskFv.Equivalence.MulW

@@ -46,10 +46,17 @@
       url = "github:codygunton/clean/ef6dfbcd353b4f6b15897c8113cf691d15b98b4c";
       flake = false;
     };
+
+    # Aeneas is used only by the RV64IM production-lowering extraction harness. It is
+    # intentionally kept out of the main Lean build until the Lean-toolchain
+    # mismatch is resolved, but the flake lock pins the exact Charon/Aeneas
+    # revision used for de-risking.
+    aeneas.url = "github:AeneasVerif/aeneas";
   };
 
   outputs = { self, nixpkgs, flake-utils, sail-src, sail-riscv-src,
-              zisk-src, pil2-compiler-src, pil2-proofman-src, clean-src }:
+              zisk-src, pil2-compiler-src, pil2-proofman-src, clean-src,
+              aeneas }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -94,9 +101,25 @@
 
         apps.test = {
           type = "app";
-          program = "${pkgs.callPackage ./nix/test.nix { }}/bin/test";
+          program = "${pkgs.callPackage ./nix/test.nix { inherit aeneas; }}/bin/test";
           meta = {
             description = "Run the full FV check: cargo + lake build + trust gate + flake repro.";
+          };
+        };
+
+        apps.aeneas-production-extract = {
+          type = "app";
+          program = "${pkgs.writeShellApplication {
+            name = "aeneas-production-extract";
+            runtimeInputs = with pkgs; [ cargo clang elan git jq libclang.lib nix rustc ];
+            text = ''
+              cd "$(git rev-parse --show-toplevel)" || exit 1
+              export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+              AENEAS_FLAKE="${aeneas}" scripts/aeneas-production-extract.sh
+            '';
+          }}/bin/aeneas-production-extract";
+          meta = {
+            description = "Run the pinned Aeneas production-backed lowering extraction harness.";
           };
         };
 
@@ -109,7 +132,17 @@
             python3
             jq
             git
+            clang
+            libclang.lib
+            gcc
+            gmp
+            gnumake
+            nasm
+            pkgsCross.riscv64-embedded.stdenv.cc
           ];
+          shellHook = ''
+            export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+          '';
         };
       });
 }

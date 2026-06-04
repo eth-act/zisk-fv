@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.Jal
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -12,7 +12,6 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
-import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
 import ZiskFv.EquivCore.Promises.Jump
 import ZiskFv.Compliance.SharedBundles
@@ -20,8 +19,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 JAL. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_JAL`),
+* explicit JAL Main-row, provenance, and PC route facts,
 * the compositional JAL spec (`ZiskFv.ZiskCircuit.Jal.jal_pc_advance`),
 * the Sail pure-function equivalence (`PureSpec.execute_JAL_pure_equiv`),
 
@@ -88,6 +86,45 @@ lemma equiv_JAL_sail
   PureSpec.execute_JAL_pure_equiv jal_input imm rd
     h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
 
+/-- JAL `rd = x0` no-memory shape. Production/static lowering emits
+    `storeNone` for x0, and Sail suppresses the x0 write, so the state effect
+    is carried only by the execution bus. -/
+lemma equiv_JAL_x0_no_memory
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jal_input : PureSpec.JalInput)
+    (imm : BitVec 21)
+    (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (nextPC_val : BitVec 64)
+    (promises : ZiskFv.EquivCore.Promises.JumpNoMemPromises
+        state jal_input.PC jal_input.rd misa_val
+        (PureSpec.execute_JAL_pure jal_input).success
+        (PureSpec.execute_JAL_pure jal_input).nextPC
+        rd exec_row nextPC_val)
+    (h_input_imm : jal_input.imm = imm)
+    (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false) :
+    execute_instruction (instruction.JAL (imm, rd)) state
+      = (bus_effect exec_row [] state).2 := by
+  obtain ⟨h_input_rd, h_input_rd_zero, h_input_pc, h_input_misa, h_misa_c,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_success, h_nextPC_option⟩ := promises
+  rw [equiv_JAL_sail state jal_input imm rd misa_val
+        h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c]
+  symm
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_jump_no_memory
+        state exec_row nextPC_val
+        (PureSpec.execute_JAL_pure jal_input).throws
+        (PureSpec.execute_JAL_pure jal_input).success
+        jal_input.PC (BitVec.signExtend 64 jal_input.imm)
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_not_throws h_success]
+  simp only [h_nextPC_option]
+  have h_rd_none :
+      (PureSpec.execute_JAL_pure jal_input).rd = none := by
+    simp [PureSpec.execute_JAL_pure, h_input_rd_zero]
+  simp [h_rd_none]
+
 /-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
     JAL equals the state computed by applying `bus_effect` to the
     circuit's execution and memory bus rows.
@@ -120,6 +157,8 @@ lemma equiv_JAL
     (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
     -- Discharge parameters
     (h_circuit : ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc)
+    (h_jmp2 : m.jmp_offset2 r_main = 4)
+    (h_pc_bridge : (m.pc r_main).val = jal_input.PC.toNat)
     (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296)
      :
@@ -128,20 +167,12 @@ lemma equiv_JAL
   obtain ⟨h_input_rd, h_input_pc, h_input_misa, h_misa_c, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches, h_rd_mult, h_rd_as,
           h_success, h_nextPC_option, h_rd_idx⟩ := promises
-  -- Discharge `h_jmp2` via `transpile_JAL` (class #1).
-  have h_jmp2 : m.jmp_offset2 r_main = 4 :=
-    ZiskFv.EquivCore.Bridge.ControlFlow.jal_discharge_full
-      m r_main next_pc h_circuit
   -- Discharge `h_lane_lo`/`h_lane_hi` from the selected Clean Main
   -- `cMemMessage` row, rather than through `main_store_pc_emission_bundle`.
   obtain ⟨h_lane_lo, h_lane_hi⟩ := store_pc_mem.lanes
   -- Derive `h_lo_bound : (m.pc + 4 : FGL).val < 2^32` from the PC bridge
   -- and the existing link-address bound, avoiding the legacy range bus.
   have h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296 := by
-    obtain ⟨_h_subset, h_mode⟩ := h_circuit
-    obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-    have h_pc_bridge : (m.pc r_main).val = jal_input.PC.toNat :=
-      ZiskFv.Trusted.transpile_PC_for_JAL m r_main jal_input.PC h_ext h_op
     have h4 : ((4 : FGL)).val = 4 := by decide
     have h_no_wrap : (m.pc r_main).val + ((4 : FGL)).val < GL_prime := by
       rw [h_pc_bridge, h4]
@@ -169,7 +200,7 @@ lemma equiv_JAL
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_jal
       jal_input.PC m r_main next_pc e_rd
-      h_circuit h_jmp2 h_lane_lo h_lane_hi
+      h_circuit h_jmp2 h_pc_bridge h_lane_lo h_lane_hi
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
       hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
   rw [equiv_JAL_sail state jal_input imm rd misa_val

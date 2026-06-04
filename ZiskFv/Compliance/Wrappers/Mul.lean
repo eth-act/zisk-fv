@@ -37,17 +37,10 @@ import ZiskFv.Compliance.SharedBundles
 >   `mul_bus_res1_eq_c_hi` consumes come from the second new class-#6b
 >   axiom `arith_table_op_mul_main_selector_pin` (mirror of
 >   `arith_table_op_div_rem_main_selector_pin`).
-> * Two **operand bridges** (`h_rs1_value`, `h_rs2_value`). Discharged via the
->   `packed_lane_eq_of_read_xreg` generic Sail-state bridge
->   (`Equivalence/Bridge/SailStateBridge.lean`) composed with
->   `transpile_MUL`'s Main-lane equalities and the matches_entry
->   projection of Main's `a`/`b` lanes to ArithMul's `a[]`/`b[]`
->   chunk packings. MUL's r1/r2 are consumed by `equiv_MUL` in
->   **unsigned** packed4 (`toNat`) form, so no signed-form bridge is
->   needed; in particular no `np = MSB(...)` / `nb = MSB(...)` pin
->   is consumed here (such pins ARE relevant to the future signed-half
->   MUL variants MULH / MULHU / MULHSU, which use the signed bridge —
->   see the within-shape authoring template below).
+> * Two **operand bridges** (`h_rs1_value`, `h_rs2_value`) are explicit
+>   route/provenance obligations. MUL's r1/r2 are consumed by `equiv_MUL`
+>   in **unsigned** packed4 (`toNat`) form, so no signed-form bridge is
+>   needed.
 >
 > Anti-laundering: C3.2-P retires the false all-zero
 > `arith_table_op_mul_mode_pin` use from this wrapper. The true static
@@ -86,8 +79,8 @@ open ZiskFv.EquivCore.Promises
     * `main_mul = 1, main_div = 0` from `arith_table_op_mul_main_selector_pin`.
     * `h_byte_lo` / `h_byte_hi` from `main_external_arith_emission_bundle`
        + op-bus projection + `mul_bus_res1_eq_c_hi` (hi side) + FGL→ℕ lift.
-    * `h_rs1_value` / `h_rs2_value` from `transpile_MUL` + op-bus projection
-       + `packed_lane_eq_of_read_xreg` + chunk-range bounds. -/
+    * `h_rs1_value` / `h_rs2_value` are passed through as explicit
+       unsigned operand bridge obligations. -/
 lemma equiv_MUL_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mul_input : PureSpec.MulInput)
@@ -112,6 +105,12 @@ lemma equiv_MUL_of_table
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mul_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mul_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
     (h_no_signed_mul_witness_defect : False)
     :
     (do
@@ -127,10 +126,10 @@ lemma equiv_MUL_of_table
   have h_arith_table := arith_table.spec
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
-  obtain ⟨h_main_active, h_main_op_mul⟩ := pins
+  obtain ⟨_h_main_active, h_main_op_mul⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
-  have h_input_r1 := promises.input_r1_eq
-  have h_input_r2 := promises.input_r2_eq
+  have _h_input_r1 := promises.input_r1_eq
+  have _h_input_r2 := promises.input_r2_eq
   have h_m2_mult := promises.m2_mult
   have h_m2_as := promises.m2_as
   -- ============ DERIVE arith-side opcode literal ============
@@ -138,7 +137,7 @@ lemma equiv_MUL_of_table
   have h_op_arith_mul : v.op r_a = 180 := by
     rw [h_op_eq, h_main_op_mul]; simp [OP_MUL]
   -- ============ Unpack matches_entry lane projections ============
-  obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
+  obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
           h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
     arith_mul_primary_projections h_match_primary
   -- ============ Unpack extended row-constraint bundle ============
@@ -166,8 +165,8 @@ lemma equiv_MUL_of_table
   have h_arith_chunk_ranges := arith_chunk_ranges.ranges
   have h_arith_carry_ranges := arith_carry_ranges.ranges
   have h_arith_chunk_ranges_arg := h_arith_chunk_ranges
-  obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt,
-          h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt,
+  obtain ⟨_h_a0_lt, _h_a1_lt, _h_a2_lt, _h_a3_lt,
+          _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
           h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt, _, _, _, _⟩ :=
     h_arith_chunk_ranges
   -- Hi lane via mul_bus_res1_eq_c_hi (bus_res1 → c[2..3]).
@@ -195,34 +194,7 @@ lemma equiv_MUL_of_table
   have h_c1_eq_FGL' : m.c_1 r_main = v.c_2 r_a + v.c_3 r_a * 65536 := by
     rw [h_c1_eq_FGL, h_bus_res1_eq]
   have h_byte_hi := arith_byte_lane_eq_of_match h_byte_hi_to_c1 h_c1_eq_FGL' h_c2_lt h_c3_lt
-  -- ============ DISCHARGE h_rs1_value / h_rs2_value (unsigned operand bridge) ============
-  obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
-         h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
-    ZiskFv.Trusted.transpile_MUL
-      m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_mul
-  have h_r1_packed_bv :
-      mul_input.r1_val
-        = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) :=
-    ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-      state (regidx_to_fin r1) mul_input.r1_val
-      (m.a_0 r_main) (m.a_1 r_main) h_main_a_lo h_main_a_hi h_input_r1
-  have h_r2_packed_bv :
-      mul_input.r2_val
-        = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) :=
-    ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-      state (regidx_to_fin r2) mul_input.r2_val
-      (m.b_0 r_main) (m.b_1 r_main) h_main_b_lo h_main_b_hi h_input_r2
-  -- End-to-end unsigned non-W operand bridge → r1/r2 toNat = packed4.
-  have h_rs1_value := arith_rs_toNat_eq_packed4_nonW
-    (m.a_0 r_main) (m.a_1 r_main) (m.m32 r_main)
-    h_a_lo_eq_FGL h_a_hi_eq_FGL _h_m32_m h_r1_packed_bv
-    h_a0_lt h_a1_lt h_a2_lt h_a3_lt
-  have h_rs2_value := arith_rs_toNat_eq_packed4_nonW
-    (m.b_0 r_main) (m.b_1 r_main) (m.m32 r_main)
-    h_b_lo_eq_FGL h_b_hi_eq_FGL _h_m32_m h_r2_packed_bv
-    h_b0_lt h_b1_lt h_b2_lt h_b3_lt
+  -- ============ Use explicit h_rs1_value / h_rs2_value operand bridges ============
   -- ============ Delegate to `equiv_MUL` ============
   rcases h_mul_split with h_np_xor_fgl | h_exception
   · have h_np_xor :
@@ -278,6 +250,12 @@ lemma equiv_MUL
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mul_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mul_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
     (h_no_signed_mul_witness_defect : False)
     :
     (do
@@ -293,6 +271,6 @@ lemma equiv_MUL
   equiv_MUL_of_table state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds h_row_constraints
     arith_table arith_chunk_ranges arith_carry_ranges
-    h_no_signed_mul_witness_defect
+    h_rs1_value h_rs2_value h_no_signed_mul_witness_defect
 
 end ZiskFv.Compliance

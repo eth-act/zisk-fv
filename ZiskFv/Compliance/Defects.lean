@@ -27,16 +27,21 @@ inductive DefectId where
   | fenceIncomplete
   deriving DecidableEq, Repr
 
-/-- Current modeled FENCE subset: Sail/ZisK-observable no-op behavior.
+/-- Register-zero shape used by ZisK's currently accepted FENCE subset. -/
+def IsX0Reg : regidx → Prop
+  | regidx.Regidx r => r = 0#5
 
-This predicate is intentionally `True` today. The known FENCE concern is that
-ZisK may reject some encodings that Sail would execute as no-ops; that is a
-completeness/coverage limitation, not a soundness counterexample. If triage
-finds an accepted FENCE row whose Sail-observable behavior is not `PC += 4`,
-this predicate should become the precise soundness-side exclusion. -/
-def FenceNopEquivalent
-    (_env : OpEnvelope state m r_main) : Prop :=
-  True
+/-- Current modeled FENCE subset accepted by ZisK's production decoder.
+
+The extracted decoder rejects generic FENCE encodings with a nonzero `fm`,
+`rs1`, or `rd` field. The known-bug gate therefore keeps only the known-good
+FENCE shape in the global theorem surface while completeness is being
+triaged. Non-FENCE envelopes are unaffected by this predicate. -/
+def FenceKnownGoodShape
+    : OpEnvelope state m r_main → Prop
+  | .fence _ fm _ _ rs rd _ _ _ =>
+      fm = 0#4 ∧ IsX0Reg rs ∧ IsX0Reg rd
+  | _ => True
 
 /-- Conservative marker for the malicious signed-MUL witness shape.
 
@@ -77,17 +82,17 @@ def Blocks (id : DefectId) (env : OpEnvelope state m r_main) : Prop :=
   | .arithDivDynamicWitnessSoundness =>
       ArithDivDynamicWitnessShape env
   | .fenceIncomplete =>
-      ¬ FenceNopEquivalent env
+      ¬ FenceKnownGoodShape env
 
 /-- Public theorem-side hypothesis: this envelope is outside every known
     defect region. -/
 def NoKnownDefect (env : OpEnvelope state m r_main) : Prop :=
   ∀ id, ¬ Blocks id env
 
-theorem fence_nop_equivalent_of_no_known_defect
+theorem fence_known_good_shape_of_no_known_defect
     {env : OpEnvelope state m r_main}
     (h_known_bugs : NoKnownDefect env) :
-    FenceNopEquivalent env := by
+    FenceKnownGoodShape env := by
   by_contra h_not
   exact h_known_bugs .fenceIncomplete h_not
 

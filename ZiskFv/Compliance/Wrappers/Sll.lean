@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Sll
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.BinaryExtensionHelpers
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -73,7 +73,7 @@ open ZiskFv.EquivCore.Promises
     bounds from the exact Clean/static BinaryExtensionTable provider
     row, so its semantic closure no longer includes the generic
     retired range-bus axiom. The remaining opcode-specific trust is
-    `transpile_SLL` (class #1). Zero new axioms. -/
+    SLL row-shape contract (class #1). Zero new axioms. -/
 lemma equiv_SLL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
@@ -103,6 +103,14 @@ lemma equiv_SLL
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : sll_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : sll_input.r2_val.toNat % 64 =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     -- Lane-match for the rd-write entry — caller-supplied; discharged
     -- downstream from `memory_bus_register_write_perm_sound`.
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
@@ -115,7 +123,10 @@ lemma equiv_SLL
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
   exact ZiskFv.EquivCore.Sll.equiv_SLL_of_static_row state sll_input r1 r2 rd
-    m row r_main bus promises pins h_match h_shift_facts.1 h_shift_facts.2 h_lane_rd
+    m row r_main bus promises pins h_match h_shift_facts.1
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_shift_pin_row)
+    h_shift_facts.2 h_lane_rd
 
 -- equiv_<OP>_of_static_lookup (alt route, op_bus_perm_sound) deleted in T4-purge P3.2.
 

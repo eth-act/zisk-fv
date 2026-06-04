@@ -3,17 +3,16 @@ import Mathlib
 import ZiskFv.EquivCore.Jalr
 import ZiskFv.EquivCore.Promises.Jump
 import ZiskFv.EquivCore.Promises.JumpHelpers
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_JALR` Compliance wrapper — ControlFlow non-branch
 
-The wrapper takes the structural `JumpPromises` bundle along with the
-upstream activation/opcode pins on Main and the per-row JALR subset
-constraint, and internally calls `jalr_h_circuit_of_main_constraints`
-(which transitively consumes `transpile_JALR`) to derive `h_circuit`.
+The compatibility wrapper takes the structural `JumpPromises` bundle along
+with upstream activation/opcode/mode pins on Main and internally calls
+`jalr_h_circuit_of_main_constraints`.
 -/
 
 namespace ZiskFv.Compliance
@@ -23,9 +22,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
 
-/-- **Compliance wrapper for `equiv_JALR`.** Derives `h_circuit` from
-    `jalr_h_circuit_of_main_constraints` (consuming `transpile_JALR`)
-    and delegates to canonical `equiv_JALR`. -/
+/-- **Compatibility wrapper for `equiv_JALR`.** Derives `h_circuit` from
+    explicit Main-row pins and delegates to canonical `equiv_JALR`. -/
 lemma equiv_JALR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jalr_input : PureSpec.JalrInput)
@@ -40,6 +38,10 @@ lemma equiv_JALR
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     -- Activation / opcode pins on Main + per-row subset constraint.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
+    (h_flag : m.flag r_main = 0)
+    (h_m32 : m.m32 r_main = 0)
+    (h_set_pc : m.set_pc r_main = 1)
+    (h_store_pc : m.store_pc r_main = 1)
     (h_jalr_subset :
       ZiskFv.Airs.Main.flag_boolean m r_main
       ∧ ZiskFv.Airs.Main.is_external_op_boolean m r_main
@@ -58,6 +60,8 @@ lemma equiv_JALR
       = EStateM.Result.ok Privilege.Machine state)
     (h_mseccfg : Sail.readReg Register.mseccfg state
       = EStateM.Result.ok mseccfg state)
+    (h_link_bridge :
+      (m.pc r_main + m.jmp_offset2 r_main).val = (jalr_input.PC + 4#64).toNat)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
     (do
@@ -66,11 +70,12 @@ lemma equiv_JALR
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
     ZiskFv.EquivCore.Promises.jalr_h_circuit_of_main_constraints
-      m r_main next_pc pins.main_active pins.main_op h_jalr_subset
+      m r_main next_pc pins.main_active pins.main_op
+      h_flag h_m32 h_set_pc h_store_pc h_jalr_subset
   ZiskFv.EquivCore.Jalr.equiv_JALR
     state jalr_input imm rs1 rd misa_val mseccfg
     exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
-    h_circuit h_pc_bound h_pc_offset_lt_2_32
+    h_circuit h_link_bridge h_pc_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

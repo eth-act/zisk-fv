@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.Add
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
@@ -28,8 +28,7 @@ import ZiskFv.Channels.MemoryBusBytes
 /-!
 End-to-end theorem for RV64 ADD. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_ADD`),
+* explicit ADD source-lane and Main-row mode facts,
 * the compositional ADD spec (`ZiskFv.ZiskCircuit.Add.add_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_RTYPE_add_pure_equiv`),
@@ -51,6 +50,42 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Add
+
+def binaryValidA64 (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) : BitVec 64 :=
+  BitVec.ofNat 64
+    ((v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
+      + (v.free_in_a_2 r).val * 65536 + (v.free_in_a_3 r).val * 16777216
+      + (v.free_in_a_4 r).val * 4294967296
+      + (v.free_in_a_5 r).val * 1099511627776
+      + (v.free_in_a_6 r).val * 281474976710656
+      + (v.free_in_a_7 r).val * 72057594037927936)
+
+def binaryValidB64 (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) : BitVec 64 :=
+  BitVec.ofNat 64
+    ((v.free_in_b_0 r).val + (v.free_in_b_1 r).val * 256
+      + (v.free_in_b_2 r).val * 65536 + (v.free_in_b_3 r).val * 16777216
+      + (v.free_in_b_4 r).val * 4294967296
+      + (v.free_in_b_5 r).val * 1099511627776
+      + (v.free_in_b_6 r).val * 281474976710656
+      + (v.free_in_b_7 r).val * 72057594037927936)
+
+def binaryRowA64 (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) : BitVec 64 :=
+  BitVec.ofNat 64
+    ((row.aBytes.free_in_a_0).val + (row.aBytes.free_in_a_1).val * 256
+      + (row.aBytes.free_in_a_2).val * 65536 + (row.aBytes.free_in_a_3).val * 16777216
+      + (row.aBytes.free_in_a_4).val * 4294967296
+      + (row.aBytes.free_in_a_5).val * 1099511627776
+      + (row.aBytes.free_in_a_6).val * 281474976710656
+      + (row.aBytes.free_in_a_7).val * 72057594037927936)
+
+def binaryRowB64 (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) : BitVec 64 :=
+  BitVec.ofNat 64
+    ((row.bBytes.free_in_b_0).val + (row.bBytes.free_in_b_1).val * 256
+      + (row.bBytes.free_in_b_2).val * 65536 + (row.bBytes.free_in_b_3).val * 16777216
+      + (row.bBytes.free_in_b_4).val * 4294967296
+      + (row.bBytes.free_in_b_5).val * 1099511627776
+      + (row.bBytes.free_in_b_6).val * 281474976710656
+      + (row.bBytes.free_in_b_7).val * 72057594037927936)
 
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an RV64
@@ -97,8 +132,8 @@ lemma equiv_ADD_sail
 
     Net reduction in the *anti-laundering metric* vs. origin/main
     pre-discharge: −2 binders. (Further reductions possible by
-    deriving `h_input_r{1,2}_main` from `transpile_ADD` + a state-
-    bridge, or by universalizing `h_main_subset` / `h_main_mode`
+    deriving `h_input_r{1,2}_main` from the narrow ADD operand bridge +
+    a state bridge, or by universalizing `h_main_subset` / `h_main_mode`
     from `Valid_Main` constraints.)
 
     Row-explicit variant of `equiv_ADD`: caller supplies the BinaryAdd
@@ -121,6 +156,14 @@ lemma equiv_ADD_with_match
     (h_main_mode : main_row_in_add_mode m r_main)
     (h_b_core : ZiskFv.Airs.BinaryAdd.core_every_row b r_binary)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_binary))
+    (h_a_lo_t : m.a_0 r_main =
+      ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
+    (h_a_hi_t : m.a_1 r_main =
+      ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
+    (h_b_lo_t : m.b_0 r_main =
+      ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
+    (h_b_hi_t : m.b_1 r_main =
+      ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
     (h_a_range : a_chunks_in_range b r_binary)
     (h_b_range : b_chunks_in_range b r_binary)
     (h_c_range : c_chunks_in_range b r_binary)
@@ -141,6 +184,7 @@ lemma equiv_ADD_with_match
       h_a_range h_b_range h_c_range
       state (regidx_to_fin r1) (regidx_to_fin r2)
       add_input.r1_val add_input.r2_val
+      h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t
       h_input_r1_sail h_input_r2_sail
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.Arith.h_rd_val_arith_add
@@ -169,8 +213,7 @@ lemma equiv_ADD_with_match
     Takes a Valid_Binary witness with an 8-byte chain at OP_ADD and the
     op-bus matches_entry against the Binary provider's emission. Mirrors
     `equiv_SUB_of_wf` with OP_SUB → OP_ADD and subtraction → addition;
-    uses `transpile_ADD` (different argument order from SUB) to derive
-    m32 = 0 and the source-register lane equalities. The Binary AIR
+    uses explicit `m32 = 0` and source-register lane equalities. The Binary AIR
     serves 64-bit ADD as an alternate provider to BinaryAdd
     (per `binary.pil:22`, OP_ADD = 0x0A is in Binary's coverage). -/
 lemma equiv_ADD_of_wf
@@ -229,6 +272,8 @@ lemma equiv_ADD_of_wf
     (h_pi6 : pi6.val ≠ 1) (h_pi7 : pi7.val = 1)
     (h_match_clo : m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216)
     (h_match_chi : m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216)
+    (h_input_r1_circuit : add_input.r1_val = binaryValidA64 v r_binary)
+    (h_input_r2_circuit : add_input.r2_val = binaryValidB64 v r_binary)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
@@ -289,120 +334,6 @@ lemma equiv_ADD_of_wf
   have hb7 : (v.free_in_b_7 r_binary).val < 256 := by
     obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_7
     rw [← h_b]; exact h_wf.1.2.1
-  -- transpile_ADD layout (different from SUB):
-  --   (a_0_lane, a_1_lane, b_0_lane, b_1_lane, m32, set_pc, store_pc, jmp1, jmp2)
-  have h_input_r1_circuit : add_input.r1_val
-      = BitVec.ofNat 64
-          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-            + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216
-            + (v.free_in_a_4 r_binary).val * 4294967296
-            + (v.free_in_a_5 r_binary).val * 1099511627776
-            + (v.free_in_a_6 r_binary).val * 281474976710656
-            + (v.free_in_a_7 r_binary).val * 72057594037927936) := by
-    obtain ⟨h_a_lo_t, h_a_hi_t, _, _, h_m32, _, _, _, _⟩ :=
-      transpile_ADD m r_main
-        (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-        (regidx_to_fin r1) (regidx_to_fin r2)
-        h_main_active h_main_op_add
-    have h_r1_main :=
-      ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-        state (regidx_to_fin r1) add_input.r1_val (m.a_0 r_main) (m.a_1 r_main)
-        h_a_lo_t h_a_hi_t h_input_r1
-    have h_lane_eqs := h_match
-    simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
-    obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
-    rw [h_m32] at h_a_hi_m
-    simp only [one_sub_zero_mul] at h_a_hi_m
-    have h_a0_val : (m.a_0 r_main).val =
-        (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-        + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216 := by
-      rw [h_a_lo_m]
-      have h_cast :
-          v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
-            + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary
-          = ((((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-                + (v.free_in_a_2 r_binary).val * 65536
-                + (v.free_in_a_3 r_binary).val * 16777216 : ℕ) : FGL)) := by
-        push_cast; ring
-      rw [h_cast, Fin.val_natCast]
-      apply Nat.mod_eq_of_lt
-      have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
-      omega
-    have h_a1_val : (m.a_1 r_main).val =
-        (v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
-        + (v.free_in_a_6 r_binary).val * 65536 + (v.free_in_a_7 r_binary).val * 16777216 := by
-      rw [h_a_hi_m]
-      have h_cast :
-          v.free_in_a_4 r_binary + 256 * v.free_in_a_5 r_binary
-            + 65536 * v.free_in_a_6 r_binary + 16777216 * v.free_in_a_7 r_binary
-          = ((((v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
-                + (v.free_in_a_6 r_binary).val * 65536
-                + (v.free_in_a_7 r_binary).val * 16777216 : ℕ) : FGL)) := by
-        push_cast; ring
-      rw [h_cast, Fin.val_natCast]
-      apply Nat.mod_eq_of_lt
-      have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
-      omega
-    rw [h_r1_main]
-    apply congrArg (BitVec.ofNat 64)
-    rw [h_a0_val, h_a1_val]
-    ring
-  have h_input_r2_circuit : add_input.r2_val
-      = BitVec.ofNat 64
-          ((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
-            + (v.free_in_b_2 r_binary).val * 65536 + (v.free_in_b_3 r_binary).val * 16777216
-            + (v.free_in_b_4 r_binary).val * 4294967296
-            + (v.free_in_b_5 r_binary).val * 1099511627776
-            + (v.free_in_b_6 r_binary).val * 281474976710656
-            + (v.free_in_b_7 r_binary).val * 72057594037927936) := by
-    obtain ⟨_, _, h_b_lo_t, h_b_hi_t, h_m32, _, _, _, _⟩ :=
-      transpile_ADD m r_main
-        (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-        (regidx_to_fin r1) (regidx_to_fin r2)
-        h_main_active h_main_op_add
-    have h_r2_main :=
-      ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-        state (regidx_to_fin r2) add_input.r2_val (m.b_0 r_main) (m.b_1 r_main)
-        h_b_lo_t h_b_hi_t h_input_r2
-    have h_lane_eqs := h_match
-    simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
-    obtain ⟨_, _, _, _, h_b_lo_m, h_b_hi_m, _, _, _, _, _, _⟩ := h_lane_eqs
-    rw [h_m32] at h_b_hi_m
-    simp only [one_sub_zero_mul] at h_b_hi_m
-    have h_b0_val : (m.b_0 r_main).val =
-        (v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
-        + (v.free_in_b_2 r_binary).val * 65536 + (v.free_in_b_3 r_binary).val * 16777216 := by
-      rw [h_b_lo_m]
-      have h_cast :
-          v.free_in_b_0 r_binary + 256 * v.free_in_b_1 r_binary
-            + 65536 * v.free_in_b_2 r_binary + 16777216 * v.free_in_b_3 r_binary
-          = ((((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
-                + (v.free_in_b_2 r_binary).val * 65536
-                + (v.free_in_b_3 r_binary).val * 16777216 : ℕ) : FGL)) := by
-        push_cast; ring
-      rw [h_cast, Fin.val_natCast]
-      apply Nat.mod_eq_of_lt
-      have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
-      omega
-    have h_b1_val : (m.b_1 r_main).val =
-        (v.free_in_b_4 r_binary).val + (v.free_in_b_5 r_binary).val * 256
-        + (v.free_in_b_6 r_binary).val * 65536 + (v.free_in_b_7 r_binary).val * 16777216 := by
-      rw [h_b_hi_m]
-      have h_cast :
-          v.free_in_b_4 r_binary + 256 * v.free_in_b_5 r_binary
-            + 65536 * v.free_in_b_6 r_binary + 16777216 * v.free_in_b_7 r_binary
-          = ((((v.free_in_b_4 r_binary).val + (v.free_in_b_5 r_binary).val * 256
-                + (v.free_in_b_6 r_binary).val * 65536
-                + (v.free_in_b_7 r_binary).val * 16777216 : ℕ) : FGL)) := by
-        push_cast; ring
-      rw [h_cast, Fin.val_natCast]
-      apply Nat.mod_eq_of_lt
-      have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
-      omega
-    rw [h_r2_main]
-    apply congrArg (BitVec.ofNat 64)
-    rw [h_b0_val, h_b1_val]
-    ring
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.Arith.h_rd_val_arith_add_of_wf
       m r_main e2 add_input.r1_val add_input.r2_val
@@ -465,6 +396,8 @@ lemma equiv_ADD_of_static_row
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_mode32_zero : row.mode.mode32 = 0)
     (h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD)
+    (h_input_r1_row : add_input.r1_val = binaryRowA64 row)
+    (h_input_r2_row : add_input.r2_val = binaryRowB64 row)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
@@ -525,7 +458,12 @@ lemma equiv_ADD_of_static_row
     out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
     out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_ne
     out.pi4_ne out.pi5_ne out.pi6_ne out.pi7_eq
-    h_match_clo h_match_chi h_lane_rd
+    h_match_clo h_match_chi
+    (by simpa [v, binaryValidA64, binaryRowA64, ZiskFv.AirsClean.Binary.validOfRow]
+      using h_input_r1_row)
+    (by simpa [v, binaryValidB64, binaryRowB64, ZiskFv.AirsClean.Binary.validOfRow]
+      using h_input_r2_row)
+    h_lane_rd
 
 /-- **BinaryAdd-arm row-native equiv_ADD** (T2.2b multi-provider migration).
     Takes a concrete Clean `BinaryAddRow` plus the four BinaryAdd row
@@ -555,6 +493,15 @@ lemma equiv_ADD_of_binaryadd_row
     (h_core : ZiskFv.Airs.BinaryAdd.core_every_row
       (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
     (h_main_subset : add_subset_holds m r_main)
+    (h_a_lo_t : m.a_0 r_main =
+      ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
+    (h_a_hi_t : m.a_1 r_main =
+      ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
+    (h_b_lo_t : m.b_0 r_main =
+      ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
+    (h_b_hi_t : m.b_1 r_main =
+      ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
+    (h_m32 : m.m32 r_main = 0)
     (h_a_range : a_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
     (h_b_range : b_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
     (h_c_range : c_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
@@ -576,11 +523,6 @@ lemma equiv_ADD_of_binaryadd_row
     have := h_match_b
     simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd] at this
     exact this.2.2.2.2.2.2.2.2.1
-  -- Derive m.m32 r_main = 0 from transpile_ADD.
-  have h_tr := ZiskFv.Trusted.transpile_ADD
-    m r_main ({ xreg := fun _ => 0#64, pc := 0#64 } : RV64State)
-    (0 : Fin 32) (0 : Fin 32) h_main_active h_main_op_add
-  obtain ⟨_, _, _, _, h_m32, _, _, _, _⟩ := h_tr
   have h_main_mode : main_row_in_add_mode m r_main :=
     ⟨h_main_active, h_main_op_add, h_m32, h_flag⟩
   -- Discharge the 8 e2 byte ranges via the chunk-byte projection lemma.
@@ -598,6 +540,7 @@ lemma equiv_ADD_of_binaryadd_row
     state add_input r1 r2 rd m b r_main 0
     ⟨exec_row, e0, e1, e2⟩
     promises h_main_subset h_main_mode h_core h_match_b
+    h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t
     h_a_range h_b_range h_c_range h_lane_rd
     ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 

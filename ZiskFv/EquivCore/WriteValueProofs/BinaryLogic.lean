@@ -35,7 +35,7 @@ Each lemma combines:
    `memory_entry_lo`/`memory_entry_hi`.
 4. **Transpile bridges (input side)** — pinning the Sail `r1_val`/`r2_val`
    to `Valid_Binary`'s packed 8-byte input sums. These bridges are the
-   transpile-trusted surface (CLAUDE.md), not new axioms — they capture
+   row-shape provenance surface (CLAUDE.md), not new axioms — they capture
    the same property the Spec/AND etc. lemmas would derive once Main↔Binary
    bus emission is wired through.
 

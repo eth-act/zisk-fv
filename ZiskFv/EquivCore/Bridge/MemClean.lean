@@ -171,7 +171,7 @@ bus path.
 This is the binder shape intended for the eventual canonical structural
 unpacking step: one explicit object collects the selected Clean Main row,
 the selected Clean Mem provider row, row-equality pins to the existing
-validators, ROM/transpile address and rd-routing pins, and legacy adapter
+validators, ROM/row-shape address and rd-routing pins, and legacy adapter
 matches. It deliberately contains no axiom and no universal promise. -/
 structure LdCleanWitness
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
@@ -264,7 +264,7 @@ This packages the two pieces needed to replace the old LD path:
 
 The structural pins are deliberately explicit. In the final T4 migration
 they must come from the memory-family witness, balance proof, row equality,
-and ROM/transpile facts, not from new canonical promise hypotheses. -/
+and ROM/row-shape facts, not from new canonical promise hypotheses. -/
 theorem ld_discharge_full_clean_provider
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
@@ -396,7 +396,7 @@ theorem ld_discharge_full_clean_provider_of_witness
 /-- Structural Clean witness for SD's Main store-side memory-bus path.
 
 The full-width store only needs the selected Clean Main c/store row: the
-byte payload comes from Main's copyb row plus the transpiler register-read
+byte payload comes from Main's copyb row plus the row-shape register-read
 bridge, and no MemAlign RMW provider is involved. -/
 structure SdCleanWitness
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
@@ -414,6 +414,8 @@ structure SdCleanWitness
   addr2 :
     mainRow.rom.addr2.toNat =
       (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat
+  b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sd_input.r2_val
+  b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sd_input.r2_val
 
 structure SbCleanWitness
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
@@ -432,6 +434,8 @@ structure SbCleanWitness
   addr2 :
     mainRow.rom.addr2.toNat =
       (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat
+  b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sb_input.r2_val
+  b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sb_input.r2_val
   m1 : state.mem[bus.e2.ptr.toNat + 1]? = some (byteAt bus.e2 1 : BitVec 8)
   m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (byteAt bus.e2 2 : BitVec 8)
   m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (byteAt bus.e2 3 : BitVec 8)
@@ -457,6 +461,8 @@ structure ShCleanWitness
   addr2 :
     mainRow.rom.addr2.toNat =
       (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat
+  b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sh_input.r2_val
+  b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sh_input.r2_val
   m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (byteAt bus.e2 2 : BitVec 8)
   m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (byteAt bus.e2 3 : BitVec 8)
   m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8)
@@ -481,6 +487,8 @@ structure SwCleanWitness
   addr2 :
     mainRow.rom.addr2.toNat =
       (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat
+  b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sw_input.r2_val
+  b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sw_input.r2_val
   m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8)
   m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (byteAt bus.e2 5 : BitVec 8)
   m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (byteAt bus.e2 6 : BitVec 8)
@@ -491,7 +499,7 @@ structure SwCleanWitness
 This is the store-side analogue of `ld_discharge_full_clean_provider` for
 the Main c/store message. The Clean row and message match provide the
 legacy lane and pointer facts; `Spec` provides the copyb constraints; the
-transpile/read-xreg bridge pins `b` to `rs2`; the private byte lemmas above
+row-shape/read-xreg bridge pins `b` to `rs2`; the private byte lemmas above
 turn the two 32-bit lanes into the byte equalities consumed by `equiv_SD`.
 
 This theorem has no new axioms and does not use
@@ -518,7 +526,9 @@ theorem sd_discharge_full_clean_provider
     (h_active : main.is_external_op r_main = 0)
     (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
     (_h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
-    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
+    (_h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
     e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
     ∧ (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
     ∧ (byteAt e_st 1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
@@ -546,14 +556,6 @@ theorem sd_discharge_full_clean_provider
     rw [h_main_row] at h1
     simpa [ZiskFv.AirsClean.Main.validOfRow, ZiskFv.AirsClean.Main.rowAt,
       ZiskFv.Airs.Main.internal_op1_copies_b1] using h1
-  have h_tr := ZiskFv.Trusted.transpile_SD
-    main r_main rs1 rs2 (0 : FGL)
-    (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-    h_active h_op_main
-  obtain ⟨_, _, _, _, _, h_a_lo_state, h_a_hi_state, h_b_lo_state, h_b_hi_state⟩ :=
-    h_tr
-  rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
-        state rs2 r2_val h_read_r2] at h_b_lo_state h_b_hi_state
   simp only [ZiskFv.Airs.Main.internal_op1_copies_b0] at h_copy0
   simp only [ZiskFv.Airs.Main.internal_op1_copies_b1] at h_copy1
   rw [h_active, h_op_main] at h_copy0 h_copy1
@@ -571,12 +573,12 @@ theorem sd_discharge_full_clean_provider
     calc
       e_st.value_0 = main.c_0 r_main := h_c0'.symm
       _ = main.b_0 r_main := h_bc0.symm
-      _ = ZiskFv.Trusted.lane_lo r2_val := h_b_lo_state
+      _ = ZiskFv.Trusted.lane_lo r2_val := h_b0_value
   have h_v1 : e_st.value_1 = ZiskFv.Trusted.lane_hi r2_val := by
     calc
       e_st.value_1 = main.c_1 r_main := h_c1'.symm
       _ = main.b_1 r_main := h_bc1.symm
-      _ = ZiskFv.Trusted.lane_hi r2_val := h_b_hi_state
+      _ = ZiskFv.Trusted.lane_hi r2_val := h_b1_value
   have hb0 : (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val := by
     change ((byteOf e_st.value_0 0 : FGL) : BitVec 8) = _
     rw [h_v0]
@@ -615,9 +617,9 @@ theorem sd_discharge_full_clean_provider
 preservation facts kept explicit.
 
 The pointer and low stored byte are derived from the Clean Main c/store
-message, `Spec`, and `transpile_SB`. The seven high-byte no-op facts are
-still the MemAlign RMW obligation; this theorem intentionally exposes them
-instead of hiding them behind `main_store_emission_bundle_subword`. -/
+message, `Spec`, and the narrow SB store-data bridge. The seven high-byte
+no-op facts are still the MemAlign RMW obligation; this theorem intentionally
+exposes them instead of hiding them behind `main_store_emission_bundle_subword`. -/
 theorem sb_discharge_full_clean_provider
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (r_main : ℕ)
@@ -641,7 +643,9 @@ theorem sb_discharge_full_clean_provider
     (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
     (_h_ind_width : main.ind_width r_main = 1)
     (_h_read_r1 : read_xreg rs1 state = EStateM.Result.ok sb_input.r1_val state)
-    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sb_input.r2_val state)
+    (_h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sb_input.r2_val state)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sb_input.r2_val)
+    (_h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sb_input.r2_val)
     (h_m1 : state.mem[e_st.ptr.toNat + 1]? = some (byteAt e_st 1 : BitVec 8))
     (h_m2 : state.mem[e_st.ptr.toNat + 2]? = some (byteAt e_st 2 : BitVec 8))
     (h_m3 : state.mem[e_st.ptr.toNat + 3]? = some (byteAt e_st 3 : BitVec 8))
@@ -671,13 +675,6 @@ theorem sb_discharge_full_clean_provider
     rw [h_main_row] at h0
     simpa [ZiskFv.AirsClean.Main.validOfRow, ZiskFv.AirsClean.Main.rowAt,
       ZiskFv.Airs.Main.internal_op1_copies_b0] using h0
-  have h_tr := ZiskFv.Trusted.transpile_SB
-    main r_main rs1 rs2 (0 : FGL)
-    (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-    h_active h_op_main
-  obtain ⟨_, _, _, _, _, _, _, h_b_lo_state, _⟩ := h_tr
-  rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
-        state rs2 sb_input.r2_val h_read_r2] at h_b_lo_state
   simp only [ZiskFv.Airs.Main.internal_op1_copies_b0] at h_copy0
   rw [h_active, h_op_main] at h_copy0
   simp only [ZiskFv.Trusted.OP_COPYB] at h_copy0
@@ -690,7 +687,7 @@ theorem sb_discharge_full_clean_provider
     calc
       e_st.value_0 = main.c_0 r_main := h_c0'.symm
       _ = main.b_0 r_main := h_bc0.symm
-      _ = ZiskFv.Trusted.lane_lo sb_input.r2_val := h_b_lo_state
+      _ = ZiskFv.Trusted.lane_lo sb_input.r2_val := h_b0_value
   have h_b0 : (byteAt e_st 0 : BitVec 8) =
       BitVec.extractLsb 7 0 sb_input.r2_val := by
     change ((byteOf e_st.value_0 0 : FGL) : BitVec 8) = _
@@ -731,7 +728,9 @@ theorem sh_discharge_full_clean_provider
     (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
     (_h_ind_width : main.ind_width r_main = 2)
     (_h_read_r1 : read_xreg rs1 state = EStateM.Result.ok sh_input.r1_val state)
-    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sh_input.r2_val state)
+    (_h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sh_input.r2_val state)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sh_input.r2_val)
+    (_h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sh_input.r2_val)
     (h_m2 : state.mem[e_st.ptr.toNat + 2]? = some (byteAt e_st 2 : BitVec 8))
     (h_m3 : state.mem[e_st.ptr.toNat + 3]? = some (byteAt e_st 3 : BitVec 8))
     (h_m4 : state.mem[e_st.ptr.toNat + 4]? = some (byteAt e_st 4 : BitVec 8))
@@ -763,13 +762,6 @@ theorem sh_discharge_full_clean_provider
     rw [h_main_row] at h0
     simpa [ZiskFv.AirsClean.Main.validOfRow, ZiskFv.AirsClean.Main.rowAt,
       ZiskFv.Airs.Main.internal_op1_copies_b0] using h0
-  have h_tr := ZiskFv.Trusted.transpile_SH
-    main r_main rs1 rs2 (0 : FGL)
-    (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-    h_active h_op_main
-  obtain ⟨_, _, _, _, _, _, _, h_b_lo_state, _⟩ := h_tr
-  rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
-        state rs2 sh_input.r2_val h_read_r2] at h_b_lo_state
   simp only [ZiskFv.Airs.Main.internal_op1_copies_b0] at h_copy0
   rw [h_active, h_op_main] at h_copy0
   simp only [ZiskFv.Trusted.OP_COPYB] at h_copy0
@@ -782,7 +774,7 @@ theorem sh_discharge_full_clean_provider
     calc
       e_st.value_0 = main.c_0 r_main := h_c0'.symm
       _ = main.b_0 r_main := h_bc0.symm
-      _ = ZiskFv.Trusted.lane_lo sh_input.r2_val := h_b_lo_state
+      _ = ZiskFv.Trusted.lane_lo sh_input.r2_val := h_b0_value
   have h_b0 : (byteAt e_st 0 : BitVec 8) =
       BitVec.extractLsb 7 0 sh_input.r2_val := by
     change ((byteOf e_st.value_0 0 : FGL) : BitVec 8) = _
@@ -831,7 +823,9 @@ theorem sw_discharge_full_clean_provider
     (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
     (_h_ind_width : main.ind_width r_main = 4)
     (_h_read_r1 : read_xreg rs1 state = EStateM.Result.ok sw_input.r1_val state)
-    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sw_input.r2_val state)
+    (_h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sw_input.r2_val state)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sw_input.r2_val)
+    (_h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sw_input.r2_val)
     (h_m4 : state.mem[e_st.ptr.toNat + 4]? = some (byteAt e_st 4 : BitVec 8))
     (h_m5 : state.mem[e_st.ptr.toNat + 5]? = some (byteAt e_st 5 : BitVec 8))
     (h_m6 : state.mem[e_st.ptr.toNat + 6]? = some (byteAt e_st 6 : BitVec 8))
@@ -867,13 +861,6 @@ theorem sw_discharge_full_clean_provider
     rw [h_main_row] at h0
     simpa [ZiskFv.AirsClean.Main.validOfRow, ZiskFv.AirsClean.Main.rowAt,
       ZiskFv.Airs.Main.internal_op1_copies_b0] using h0
-  have h_tr := ZiskFv.Trusted.transpile_SW
-    main r_main rs1 rs2 (0 : FGL)
-    (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-    h_active h_op_main
-  obtain ⟨_, _, _, _, _, _, _, h_b_lo_state, _⟩ := h_tr
-  rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
-        state rs2 sw_input.r2_val h_read_r2] at h_b_lo_state
   simp only [ZiskFv.Airs.Main.internal_op1_copies_b0] at h_copy0
   rw [h_active, h_op_main] at h_copy0
   simp only [ZiskFv.Trusted.OP_COPYB] at h_copy0
@@ -886,7 +873,7 @@ theorem sw_discharge_full_clean_provider
     calc
       e_st.value_0 = main.c_0 r_main := h_c0'.symm
       _ = main.b_0 r_main := h_bc0.symm
-      _ = ZiskFv.Trusted.lane_lo sw_input.r2_val := h_b_lo_state
+      _ = ZiskFv.Trusted.lane_lo sw_input.r2_val := h_b0_value
   have h_b0 : (byteAt e_st 0 : BitVec 8) =
       BitVec.extractLsb 7 0 sw_input.r2_val := by
     change ((byteOf e_st.value_0 0 : FGL) : BitVec 8) = _

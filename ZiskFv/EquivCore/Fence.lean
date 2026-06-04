@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -19,7 +19,7 @@ End-to-end theorem for RV64I FENCE.
 FENCE is a memory-ordering hint that, on ZisK's single-threaded
 zkVM, reduces to "advance PC by 4." The Sail body
 (`execute_FENCE`) is a no-op composition (barrier match arms all
-collapse to `pure ()` via `sail_barrier`). The ZisK transpiler
+collapse to `pure ()` via `sail_barrier`). The ZisK lowerer
 emits a single Internal-op row with all sources zeroed and
 `jmp_offset = 4` (`riscv2zisk_context.rs:228 → fn nop`).
 

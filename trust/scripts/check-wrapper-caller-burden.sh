@@ -9,8 +9,8 @@
 # side fails the gate.
 #
 # Why a separate baseline:
-# * Wrappers consume trust-ledger axioms (transpile, op_bus_perm_sound,
-#   byte-range, ...) to discharge a chunk of the canonical theorem's
+# * Wrappers consume row-shape route facts plus provider/bus facts to
+#   discharge a chunk of the canonical theorem's
 #   caller burden. Tracking them as their own ledger ensures that
 #   refactors which "move" hypothesis binders between the canonical
 #   surface and the wrapper layer produce a visible diff in at least

@@ -20,16 +20,22 @@
 /.github/workflows/             @codygunton
 /.github/CODEOWNERS             @codygunton
 
-# Files that hold the trust-surface declarations themselves. Each
-# axiom/opaque/constant in these files is part of the TCB, so any
-# change requires explicit reviewer ack.
-/ZiskFv/ZiskFv/Fundamentals/Transpiler.lean             @codygunton
-/ZiskFv/ZiskFv/Airs/MemoryBus/LaneMatch.lean            @codygunton
-/ZiskFv/ZiskFv/Airs/MemoryBus/MemBridge.lean            @codygunton
-/ZiskFv/ZiskFv/Airs/BinaryTable.lean                    @codygunton
-/ZiskFv/ZiskFv/Airs/BinaryExtensionTable.lean           @codygunton
-/ZiskFv/ZiskFv/Spec/MemModel.lean                       @codygunton
-/ZiskFv/ZiskFv/RV64D/Auxiliaries.lean                   @codygunton
+# Files that hold the current source trust declarations themselves.
+# Keep this in sync with `trust/allowed-axiom-files.txt`: each axiom,
+# opaque, constant, or unsafe/partial declaration in these files is
+# part of the TCB, so any change requires explicit reviewer ack.
+/ZiskFv/ZiskCircuit/MemModel.lean                       @codygunton
+/ZiskFv/SailSpec/Auxiliaries.lean                       @codygunton
+/ZiskFv/AirsClean/Completeness.lean                     @codygunton
+
+# Production-backed row-shape extraction boundary. These files do not
+# declare Lean axioms, but changes alter the evidence replacing the old
+# handwritten row-shape axiom surface.
+/scripts/aeneas-production-extract.sh                   @codygunton
+/ZiskFv/Compliance/RowProvenance.lean                   @codygunton
+/ZiskFv/RowShape/Contract.lean                          @codygunton
+/zisk                                                     @codygunton
+/zisk/**                                                  @codygunton
 
 # The trusted-base documentation should track the live ledger; changes
 # here are paired with axiom changes and must be reviewed together.

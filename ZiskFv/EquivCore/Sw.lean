@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.StoreD
 import ZiskFv.ZiskCircuit.StoreW
 import ZiskFv.ZiskCircuit.MemModel
@@ -82,7 +82,7 @@ lemma equiv_SW
     -- equals Sail's 4-insert chain (via `modify_memory_4` data
     -- fields). Bundles ptr-match + low-byte match + high-byte no-op
     -- match. Caller establishes via byte-bus high-zero witnesses +
-    -- ptr-match against `transpile_SW`.
+    -- ptr-match against SW row-shape contract.
     (h_mem_eq :
       (((((((state.mem.insert bus.e2.ptr.toNat (byteAt bus.e2 0)
           ).insert (bus.e2.ptr.toNat + 1) (byteAt bus.e2 1)
@@ -172,6 +172,8 @@ lemma equiv_SW_clean_provider
     (h_ind_width : main.ind_width r_main = 4)
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok sw_input.r1_val state)
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sw_input.r2_val state)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sw_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sw_input.r2_val)
     (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8))
     (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (byteAt bus.e2 5 : BitVec 8))
     (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (byteAt bus.e2 6 : BitVec 8))
@@ -187,6 +189,7 @@ lemma equiv_SW_clean_provider
       main r_main mainRow bus.e2 state rs1 rs2 sw_input
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
       h_active h_op_main h_ind_width h_read_r1 h_read_r2
+      h_b0_value h_b1_value
       h_m4 h_m5 h_m6 h_m7
   exact equiv_SW state sw_input regs bus promises h_mem_eq
 
@@ -234,6 +237,7 @@ lemma equiv_SW_clean_provider_witness
     (regidx_to_fin (regidx.Regidx sw_input.r2))
     w.main_row w.main_spec w.store_pc w.main_c_match w.addr2
     pins.main_active pins.main_op h_main_ind_width h_read_r1' h_read_r2'
+    w.b0_value w.b1_value
     w.m4 w.m5 w.m6 w.m7
 
 end ZiskFv.EquivCore.Sw

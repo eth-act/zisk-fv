@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.BranchLessThan
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -18,8 +18,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 BLT. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_BLT`),
+* explicit branch Main-row and control-flow route facts,
 * the compositional BLT spec
   (`ZiskFv.ZiskCircuit.BranchLessThan.branch_lt_compositional`, a thin
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at

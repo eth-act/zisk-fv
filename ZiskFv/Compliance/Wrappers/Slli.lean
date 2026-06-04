@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Slli
 import ZiskFv.EquivCore.Promises.ShiftImm
 import ZiskFv.EquivCore.Promises.BinaryExtensionHelpers
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -54,6 +54,14 @@ lemma equiv_SLLI
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : slli_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : slli_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
@@ -64,7 +72,10 @@ lemma equiv_SLLI
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
   exact ZiskFv.EquivCore.Slli.equiv_SLLI_of_static_row state slli_input r1 rd shamt
-    m row r_main bus promises pins h_match h_shift_facts.1 h_shift_facts.2 h_lane_rd
+    m row r_main bus promises pins h_match h_shift_facts.1 h_shift_facts.2
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_shift_pin_row)
+    h_lane_rd
 
 -- equiv_<OP>_of_static_lookup (alt route, op_bus_perm_sound) deleted in T4-purge P3.2.
 

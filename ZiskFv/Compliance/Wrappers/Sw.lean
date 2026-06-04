@@ -4,7 +4,7 @@ import ZiskFv.EquivCore.Sw
 import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.EquivCore.Bridge.MemCleanFullEnsemble
 import ZiskFv.EquivCore.Promises.Store
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Compliance.SharedBundles
@@ -90,6 +90,8 @@ theorem sw_eq_of_full_ensemble_main_c
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
         (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sw_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sw_input.r2_val)
     (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
     (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
     (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
@@ -103,7 +105,8 @@ theorem sw_eq_of_full_ensemble_main_c
   let w :=
     ZiskFv.EquivCore.Bridge.MemClean.swCleanWitness_of_full_ensemble_main_c
       main r_main bus state sw_input h_main_row h_main_spec h_store_pc
-      h_main_c_match h_addr2 h_m4 h_m5 h_m6 h_m7
+      h_main_c_match h_addr2 h_b0_value h_b1_value
+      h_m4 h_m5 h_m6 h_m7
   exact equiv_SW state sw_input regs main r_main bus pins h_main_ind_width
     h_opcode_assumptions promises w
 

@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.Mul
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
@@ -23,8 +23,7 @@ import ZiskFv.Channels.MemoryBusBytes
 /-!
 End-to-end theorem for RV64 MUL. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_MUL`),
+* explicit MUL Main-row, provider, and operand route facts,
 * the compositional MUL spec (`ZiskFv.ZiskCircuit.Mul.mul_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_MULH_mul_pure_equiv`),

@@ -47,6 +47,14 @@ theorem equiv_XORI
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : xori_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 xori_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -75,7 +83,10 @@ theorem equiv_XORI
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.EquivCore.Xori.equiv_XORI_of_static_row
     state xori_input r1 rd imm m row r_main bus promises pins
-    h_match h_row_spec h_core h_static_specs h_facts h_lane_rd h_xori_subset
+    h_match h_row_spec h_core h_static_specs h_facts
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_input_imm_row)
+    h_lane_rd h_xori_subset
 
 
 /-- Row-native static-provider route for `equiv_XORI`. -/
@@ -97,6 +108,9 @@ lemma equiv_XORI_of_static_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (h_input_r1_row : xori_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 row)
+    (h_input_imm_row :
+      BitVec.signExtend 64 xori_input.imm = ZiskFv.EquivCore.Add.binaryRowB64 row)
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -113,7 +127,8 @@ lemma equiv_XORI_of_static_row
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.EquivCore.Xori.equiv_XORI_of_static_row
     state xori_input r1 rd imm m row r_main bus promises pins
-    h_match h_row_spec h_core h_static h_facts h_lane_rd h_xori_subset
+    h_match h_row_spec h_core h_static h_facts
+    h_input_r1_row h_input_imm_row h_lane_rd h_xori_subset
 
 /-- Lookup-aware Clean table-row route for `XORI`. -/
 lemma equiv_XORI_of_static_table_row
@@ -136,6 +151,14 @@ lemma equiv_XORI_of_static_table_row
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : xori_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 xori_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -162,6 +185,9 @@ lemma equiv_XORI_of_static_table_row
   rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
   obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
   exact equiv_XORI_of_static_row state xori_input r1 rd imm m row r_main
-    bus pins h_match h_row_spec h_core h_static_specs h_facts h_xori_subset h_lane_rd promises
+    bus pins h_match h_row_spec h_core h_static_specs h_facts
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_input_imm_row)
+    h_xori_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Xori

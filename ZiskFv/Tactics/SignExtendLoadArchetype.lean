@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 
@@ -33,7 +33,7 @@ literal (`OP_SIGNEXTEND_B/H/W`) and the `m32` bit, asserts the
 standard load mode pins on the Main row, and derives the two
 bus-emission corollaries (`a_hi = b_hi = 0` when `m32 = 1`;
 pass-through when `m32 = 0`). The `a` lanes are not pinned by the
-transpile contract to a specific register-read here because the
+row-shape contract to a specific register-read here because the
 archetype focuses on the bus match rather than the full address
 chain; concrete opcodes pin `a` lanes at the equivalence layer.
 
@@ -43,7 +43,7 @@ chain; concrete opcodes pin `a` lanes at the equivalence layer.
   `OP_SIGNEXTEND_H = 40` (LH), `OP_SIGNEXTEND_B = 39` (LB).
 * `m32_val : FGL` — `1` for LW, `0` for LH / LB. The archetype lemmas
   fire for either value; callers pin one at the equivalence theorem
-  layer via the `transpile_L{W,H,B}` axiom witnesses.
+  layer via the L{W,H,B} row-shape provenance witnesses.
 
 ## Usage pattern
 

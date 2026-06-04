@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Fence
 import ZiskFv.EquivCore.Promises.Fence
 import ZiskFv.SailSpec.fence
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
 

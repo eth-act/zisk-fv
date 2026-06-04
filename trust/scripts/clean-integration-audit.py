@@ -188,8 +188,8 @@ def classify_theorem(theorem: str, binders: list[tuple[str, str, str]], deps: li
         provider = "legacy-valid-row / clean-witness hybrid: Mem"
         reasons.append("caller uses Valid_Mem without a visible canonical Clean component axiom")
     elif "Valid_Main" in snippets or "BranchInstrOperands" in snippets or "exec_row" in names:
-        provider = "transpiler/no-provider"
-        reasons.append("canonical surface uses Main/promise facts without a provider Clean component")
+        provider = "row-shape/no-clean-provider"
+        reasons.append("canonical surface uses Main/row-shape facts without a provider Clean component")
     else:
         provider = "unknown"
         reasons.append("no classification rule matched")
@@ -272,7 +272,9 @@ def main() -> None:
         (file, target) for file, target in targets
         if target.startswith("ZiskFv.Equivalence.") and re.search(r"\.equiv_[A-Z0-9]+$", target)
     ]
-    route_named_ctors = [ctor for ctor in ctors if "_via_" in ctor]
+    route_named_ctors = [
+        ctor for ctor in ctors if "_via_" in ctor or ctor.endswith("_x0")
+    ]
     helper_equivalence_theorems = [
         (path, name) for path, name in equivalence_theorems
         if name.startswith("equiv_") and not re.match(r"equiv_[A-Z0-9]+$", name)

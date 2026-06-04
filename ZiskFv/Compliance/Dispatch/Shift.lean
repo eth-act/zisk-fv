@@ -28,22 +28,22 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_shift
     : OpEnvelope state m r_main → Prop
-  | .sll _ r1 r2 rd _ _ bus _ _ _ _ _ _ _ =>
+  | .sll _ r1 r2 rd _ _ bus _ _ _ _ _ _ _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .srl _ r1 r2 rd _ _ bus _ _ _ _ _ _ _ =>
+  | .srl _ r1 r2 rd _ _ bus _ _ _ _ _ _ _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRL)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sra _ r1 r2 rd _ _ bus _ _ _ _ _ _ _ =>
+  | .sra _ r1 r2 rd _ _ bus _ _ _ _ _ _ _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .slli _ r1 rd shamt _ _ bus _ _ _ _ _ _ _ =>
+  | .slli _ r1 rd shamt _ _ bus _ _ _ _ _ _ _ _ _ =>
       execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .srli _ r1 rd shamt _ _ bus _ _ _ _ _ _ _ =>
+  | .srli _ r1 rd shamt _ _ bus _ _ _ _ _ _ _ _ _ =>
       execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRLI)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .srai _ r1 rd shamt _ _ bus _ _ _ _ _ _ _ =>
+  | .srai _ r1 rd shamt _ _ bus _ _ _ _ _ _ _ _ _ =>
       execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRAI)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | _ => True
@@ -53,41 +53,59 @@ theorem zisk_riscv_compliant_program_bus_shift
     env.exec_eq_shift := by
   cases env with
   | sll sll_input r1 r2 rd providerTable providerRow bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_shift]
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd =>
+    change execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Sll.equiv_SLL state sll_input r1 r2 rd
       m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
   | srl srl_input r1 r2 rd providerTable providerRow bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_shift]
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd =>
+    change execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRL)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Srl.equiv_SRL state srl_input r1 r2 rd
       m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
   | sra sra_input r1 r2 rd providerTable providerRow bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_shift]
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd =>
+    change execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Sra.equiv_SRA state sra_input r1 r2 rd
       m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
   | slli slli_input r1 rd shamt providerTable providerRow bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_shift]
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd =>
+    change execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Slli.equiv_SLLI state slli_input r1 rd shamt
       m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
   | srli srli_input r1 rd shamt providerTable providerRow bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_shift]
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd =>
+    change execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRLI)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Srli.equiv_SRLI state srli_input r1 rd shamt
       m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
   | srai srai_input r1 rd shamt providerTable providerRow bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_shift]
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd =>
+    change execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRAI)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Srai.equiv_SRAI state srai_input r1 rd shamt
       m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd
+      h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
   | _ => trivial
 
 end ZiskFv.Compliance

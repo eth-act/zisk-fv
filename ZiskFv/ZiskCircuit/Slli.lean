@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
@@ -12,7 +12,7 @@ immediate-variant sibling of SLL.
 
 SLLI shares SLL's Zisk opcode literal (`OP_SLL = 33`) and `m32 = 0`
 Main-AIR mode — the only difference between SLL and SLLI at the
-transpile layer is the `b` source (register read vs immediate-u64),
+row-shape layer is the `b` source (register read vs immediate-u64),
 which the Main-AIR bus emission is agnostic to (it treats `b_lo`/`b_hi`
 as data regardless of provenance). Consequently the compositional
 Spec body is structurally identical to `Circuit.Sll`; we duplicate the

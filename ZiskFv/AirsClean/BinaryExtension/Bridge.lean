@@ -470,6 +470,60 @@ def aHiValue (row : BinaryExtensionRow FGL) : FGL :=
     + 65536 * row.aCols.free_in_a_6 + 16777216 * row.aCols.free_in_a_7
 
 @[reducible]
+def validA64 (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r : ℕ) : BitVec 64 :=
+  BitVec.ofNat 64
+    ((v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
+      + (v.free_in_a_2 r).val * 65536
+      + (v.free_in_a_3 r).val * 16777216
+      + (v.free_in_a_4 r).val * 4294967296
+      + (v.free_in_a_5 r).val * 1099511627776
+      + (v.free_in_a_6 r).val * 281474976710656
+      + (v.free_in_a_7 r).val * 72057594037927936)
+
+@[reducible]
+def rowA64 (row : BinaryExtensionRow FGL) : BitVec 64 :=
+  BitVec.ofNat 64
+    ((row.aCols.free_in_a_0).val + (row.aCols.free_in_a_1).val * 256
+      + (row.aCols.free_in_a_2).val * 65536
+      + (row.aCols.free_in_a_3).val * 16777216
+      + (row.aCols.free_in_a_4).val * 4294967296
+      + (row.aCols.free_in_a_5).val * 1099511627776
+      + (row.aCols.free_in_a_6).val * 281474976710656
+      + (row.aCols.free_in_a_7).val * 72057594037927936)
+
+@[reducible]
+def validA32 (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r : ℕ) : ℕ :=
+  ((v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
+    + (v.free_in_a_2 r).val * 65536
+    + (v.free_in_a_3 r).val * 16777216) % 2^32
+
+@[reducible]
+def rowA32 (row : BinaryExtensionRow FGL) : ℕ :=
+  ((row.aCols.free_in_a_0).val + (row.aCols.free_in_a_1).val * 256
+    + (row.aCols.free_in_a_2).val * 65536
+    + (row.aCols.free_in_a_3).val * 16777216) % 2^32
+
+@[reducible]
+def validShiftAmount (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r : ℕ) : ℕ :=
+  (v.free_in_b r).val % 64
+
+@[reducible]
+def rowShiftAmount (row : BinaryExtensionRow FGL) : ℕ :=
+  row.flags.free_in_b.val % 64
+
+@[reducible]
+def validShiftAmount32 (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r : ℕ) : ℕ :=
+  (v.free_in_b r).val % 32
+
+@[reducible]
+def rowShiftAmount32 (row : BinaryExtensionRow FGL) : ℕ :=
+  row.flags.free_in_b.val % 32
+
+@[reducible]
 def opBusMessage (row : BinaryExtensionRow FGL) : OpBusMessage FGL :=
   { op := row.flags.op
     a_lo := row.flags.op_is_shift * (aLoValue row - row.flags.b_0) + row.flags.b_0

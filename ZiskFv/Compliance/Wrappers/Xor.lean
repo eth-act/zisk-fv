@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.EquivCore.Xor
 import ZiskFv.EquivCore.Promises.RType
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -46,6 +46,14 @@ lemma equiv_XOR
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : xor_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : xor_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state xor_input.r1_val xor_input.r2_val xor_input.rd xor_input.PC
@@ -71,6 +79,9 @@ lemma equiv_XOR
   obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
   exact ZiskFv.EquivCore.Xor.equiv_XOR_of_static_row
     state xor_input r1 r2 rd m row r_main bus promises pins
-    h_match h_row_spec h_core h_static_specs h_facts h_lane_rd
+    h_match h_row_spec h_core h_static_specs h_facts
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_input_r2_row)
+    h_lane_rd
 
 end ZiskFv.Compliance

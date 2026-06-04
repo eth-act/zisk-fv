@@ -4,7 +4,7 @@ import ZiskFv.EquivCore.Sd
 import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.EquivCore.Bridge.MemCleanFullEnsemble
 import ZiskFv.EquivCore.Promises.Store
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Compliance.SharedBundles
@@ -89,7 +89,9 @@ theorem sd_eq_of_full_ensemble_main_c
           (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 2))
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
-        (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat) :
+        (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sd_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sd_input.r2_val) :
     execute_instruction (instruction.STORE (
       sd_input.imm,
       regidx.Regidx sd_input.r2,
@@ -99,7 +101,7 @@ theorem sd_eq_of_full_ensemble_main_c
   let w :=
     ZiskFv.EquivCore.Bridge.MemClean.sdCleanWitness_of_full_ensemble_main_c
       main r_main bus sd_input h_main_row h_main_spec h_store_pc
-      h_main_c_match h_addr2
+      h_main_c_match h_addr2 h_b0_value h_b1_value
   exact equiv_SD state sd_input regs main r_main bus pins h_opcode_assumptions
     promises w
 

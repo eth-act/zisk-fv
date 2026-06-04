@@ -7,9 +7,9 @@ binder on the 63 `equiv_<OP>` Compliance wrapper lemmas under
 `ZiskFv/Compliance/Wrappers/*.lean`.
 
 Wrappers are the second half of the trust surface: they consume
-trust-ledger axioms (transpile/op_bus_perm_sound/byte-range/...) to
-discharge a chunk of the canonical theorem's caller burden, and what
-remains is what `Global.lean` is on the hook for. Tracking the
+row-shape route facts plus remaining provider/bus facts to discharge
+a chunk of the canonical theorem's caller burden, and what remains is
+what `Global.lean` is on the hook for. Tracking the
 wrapper signatures separately ensures refactors that "move" hypothesis
 binders between the canonical surface and the wrapper get a visible
 diff.
@@ -108,7 +108,7 @@ def main() -> int:
     print(f"# alongside the refactor.")
     print(f"#")
     print(f"# Categories: validator | state | entry | range | match | bridge |")
-    print(f"#             bus_shape | transpile | byte_chain | loose | row |")
+    print(f"#             bus_shape | row_shape | byte_chain | loose | row |")
     print(f"#             instance | other")
     print(f"#")
     rows = []

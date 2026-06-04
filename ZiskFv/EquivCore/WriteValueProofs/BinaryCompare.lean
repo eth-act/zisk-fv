@@ -37,7 +37,7 @@ Each lemma combines:
 2. **Operation-bus c-lane match** — the Binary SM emits the comparison
    result via `c[0] += cout` (where `cout = flags_7 % 2`); the c-bytes
    themselves are zero (per `wf_LTU` / `wf_LT`'s `c_byte = 0` clause).
-   The transpile bridge expresses this as
+   The row-shape bridge expresses this as
    `m.c_0 r_main = flags_7` and `m.c_1 r_main = 0`.
 
 3. **Memory-bus rd-write lane match** (`register_write_lanes_match`) —
@@ -306,7 +306,7 @@ private lemma compare_byte_sum_kernel
 /-- **SLTU `h_rd_val` derivation (Tier 1).**
     Concludes `U64.toBV #v[e2.x0..7] = if r1_val.ult r2_val then 1#64 else 0#64`
     from K1-B LTU lift, c-lane bus-match (cout-only), the rd-write lane
-    match, byte ranges, and transpile bridges identifying `r1_val`/`r2_val`
+    match, byte ranges, and row-shape bridges identifying `r1_val`/`r2_val`
     with the packed 8-byte chain inputs.
 
     The chain hypotheses use `consumer_byte_match_chain` against the
@@ -483,7 +483,7 @@ lemma h_rd_val_compare_sltu_of_wf
     `h_rd_val_compare_sltu`; SLTIU shares SLTU's Zisk opcode
     (`OP_LTU = 6`) at the Binary SM. The only difference is the source
     of `r2_val` on the Sail side (sign-extended immediate vs rs2
-    register read), which lives in the transpile bridge `h_input_r2`. -/
+    register read), which lives in the row-shape bridge `h_input_r2`. -/
 lemma h_rd_val_compare_sltiu_of_wf
     (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)

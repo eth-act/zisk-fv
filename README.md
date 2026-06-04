@@ -21,14 +21,14 @@ for each instruction. `lake build` typechecking is the formal check.
 ## Trust Boundary
 
 All trust-boundary documentation and all machine-checked trust ledgers live in
-[`trust/`](trust/README.md). The current source trust ledger contains 12
+[`trust/`](trust/README.md). The current source trust ledger contains 7
 Lean axiom declarations. The global compliance theorem's transitive project
-axiom closure contains 9 of those declarations, recorded in
-[`trust/baseline-zisk-riscv-compliant.txt`](trust/baseline-zisk-riscv-compliant.txt).
+axiom closure contains 1 of those declarations, recorded in
+[`trust/generated/baseline-zisk-riscv-compliant.txt`](trust/generated/baseline-zisk-riscv-compliant.txt).
 
 The narrative trust ledger is
 [`trust/trusted-base.md`](trust/trusted-base.md). The generated flat index is
-[`trust/axiom-index.md`](trust/axiom-index.md).
+[`trust/generated/axiom-index.md`](trust/generated/axiom-index.md).
 ## Build And Verify
 
 After a fresh clone, populate the generated inputs:
@@ -45,11 +45,58 @@ trust/scripts/check-all.sh
 trust/scripts/check-all-semantic.sh
 ```
 
-The full repository test path is:
+The full repository test path, including the pinned Aeneas production-backed
+lowering extraction harness, is:
 
 ```bash
 nix run .#test
 ```
+
+The production-backed Aeneas extraction harness is pinned by `flake.lock` and
+can be rerun with:
+
+```bash
+nix run .#aeneas-production-extract
+```
+
+It writes generated LLBC/Lean artifacts under `build/aeneas-production-extraction`
+and rejects unexpected trust markers such as generated axioms, opaques,
+sorries, string/format models, or `HashMap` models. It also checks that every
+configured extraction start appears as a generated Lean definition and that the
+configured start set exactly matches the Rust extraction-wrapper surface.
+The trust gate additionally checks that each `extract_<op>_from_inst` wrapper
+delegates through `Riscv2ZiskContext::lower_rv64im_single_row`, and that
+`Riscv2ZiskContext::convert` delegates the same mnemonic to the same opcode
+variant, so the wrapper surface cannot drift into a second hand-written
+lowerer. By default it also stages a temporary Lake project under `build/`,
+copies the pinned Aeneas Lean runtime there, and typechecks the generated
+`ProductionM2.lean` without committing generated code. The temporary project executes every
+configured generated start on a sample instruction and checks that all 63
+return a row. It also checks concrete generated row-shape facts for the
+production-backed LUI/AUIPC/JAL/ADDW helpers and the ADD `rs1 = x0` copyb
+special case: the generated Lean must compute the proof-facing row-shape
+projection, including opcode, external-op flag, `m32`, `store_pc`,
+source/store selectors, offsets, and jump offsets.
+For extraction-only timing or debugging, run
+`AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract`.
+
+On 2026-06-03, a cold local run measured with GNU `time -v` took 3:03.88 wall
+time and 5,712,564 KiB maximum RSS with generated-Lean typechecking enabled.
+With `AENEAS_CHECK_LEAN=0`, the current shared-helper batch measured with
+GNU `time -v` took 6.03 seconds wall time and 632,800 KiB maximum RSS; Aeneas
+reported 2.242405 seconds for Lean translation of 157 declarations. After
+rebasing the extraction submodule onto the same upstream ZisK `v0.17.0` revision
+as the flake-pinned source, the extraction-only run reported 2.267235 seconds
+for Lean translation of 159 declarations.
+The current extraction batch covers the production-backed LUI/AUIPC/JAL/JALR
+helpers, FENCE/NOP, and the RV64IM single-row register, immediate, branch,
+load, and store helper families.
+
+The proof-side migration target is
+`ZiskFv.Compliance.MainRowProvenance`: it ties selected Main/ROM rows to
+row shapes produced by the decode/lower model. The former hand-written row-shape axiom
+surface is now retired from the Lean source ledger; dynamic immediate/PC and
+operand-lane obligations are explicit route facts.
 
 ## Layout
 
@@ -62,7 +109,7 @@ nix run .#test
 | `tools/`                          | Auxiliary repository tooling, including trust-ledger index generation.                                  |
 | `docs/extraction/`                | Non-trust notes for `pil-extract`, pilout structure, and AIR inventory.                                 |
 | `nix/`, `flake.nix`, `flake.lock` | Reproducible build definitions and pinned upstream inputs.                                              |
-| `zisk/`                           | ZisK source submodule used as a citation surface. The pilout is built from the flake-pinned input.      |
+| `zisk/`                           | ZisK source submodule for the Aeneas extraction branch, based on the same upstream `v0.17.0` revision as the flake-pinned ZisK input. |
 
 ## Pipeline
 

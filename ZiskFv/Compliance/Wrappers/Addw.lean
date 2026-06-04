@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Addw
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.AirsClean.BinaryFamily.Balance
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -49,6 +49,16 @@ lemma equiv_ADDW
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb addw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
+    (h_input_r2_extract :
+      (Sail.BitVec.extractLsb addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowB32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC
@@ -90,6 +100,9 @@ lemma equiv_ADDW
     state addw_input r1 r2 rd m row r_main bus promises
     ⟨h_main_active, h_main_op_addw⟩
     h_match h_core h_facts h_mode32_one h_b_op
-    h_sext_choice_row h_carry_7_zero_row h_lane_rd
+    h_sext_choice_row h_carry_7_zero_row
+    (by simpa [row] using h_input_r1_extract)
+    (by simpa [row] using h_input_r2_extract)
+    h_lane_rd
 
 end ZiskFv.Compliance

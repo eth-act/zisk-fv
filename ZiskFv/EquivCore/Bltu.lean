@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.BranchLessThanUnsigned
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -18,7 +18,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 BLTU. Combines:
 
-* `ZiskFv.Trusted.transpile_BLTU`,
+* explicit branch Main-row and control-flow route facts,
 * `ZiskFv.ZiskCircuit.BranchLessThanUnsigned.branch_ltu_compositional`
   (archetype at `opcode_lit = OP_LTU`),
 * `PureSpec.execute_BLTU_pure_equiv`.

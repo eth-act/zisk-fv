@@ -73,7 +73,7 @@ def route_named_constructors() -> set[str]:
     text = read(OPENVELOPE)
     body = text.split("inductive OpEnvelope", 1)[1].split("\nend ZiskFv.Compliance", 1)[0]
     ctors = set(re.findall(r"^\s*\|\s+([a-zA-Z0-9_]+)\b", body, flags=re.M))
-    return {ctor for ctor in ctors if "_via_" in ctor}
+    return {ctor for ctor in ctors if "_via_" in ctor or ctor.endswith("_x0")}
 
 
 def route_classifications() -> set[str]:

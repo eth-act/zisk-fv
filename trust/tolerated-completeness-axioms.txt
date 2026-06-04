@@ -1,19 +1,17 @@
-# Tolerated completeness-direction axioms (V2 gate allowlist)
+# Tolerated non-closure axioms (V2 gate allowlist)
 #
-# These axioms live in `ZiskFv/AirsClean/Completeness.lean` as the
-# `circuit.completeness` field of each Clean `GeneralFormalCircuit`.
-# Clean requires both a soundness and a completeness proof for every
-# component; zisk-fv is a soundness-only verification project, so
-# completeness for non-trivial circuits is declared as a documented
-# axiom rather than proved.
+# Most entries here are completeness-direction axioms. They live in
+# `ZiskFv/AirsClean/Completeness.lean` as the `circuit.completeness`
+# field of each Clean `GeneralFormalCircuit`. Clean requires both a
+# soundness and a completeness proof for every component; zisk-fv is a
+# soundness-only verification project, so completeness for non-trivial
+# circuits is declared as a documented axiom rather than proved.
 #
-# These axioms are in the project's documented class C
-# (see `trust/trusted-base.md`). The V2
-# `check-closure-vs-baseline` gate treats their absence from the
-# global theorem's transitive axiom closure as expected, rather than
-# as dead trust — proper handling requires either retiring the entire
-# Clean component (no longer reaches the axiom) or producing a real
-# completeness proof, both deferred.
+# The V2 `check-closure-vs-baseline` gate treats entries in this file as
+# source trust declarations whose absence from the global theorem's
+# transitive axiom closure is expected, rather than as accidental dead
+# trust. Every non-completeness entry must be documented in
+# `trust/trusted-base.md`.
 #
 # Adding new entries to this allowlist requires CODEOWNER review (the
 # `/trust/` path is in `.github/CODEOWNERS`).
