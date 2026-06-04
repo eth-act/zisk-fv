@@ -389,6 +389,17 @@ def auipcRowModeEvidenceMatches
       && row.storePc == true
   | none => false
 
+def jalRowModeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 0
+      && row.isExternalOp == false
+      && row.m32 == false
+      && row.setPc == false
+      && row.storePc == true
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -449,6 +460,10 @@ example :
 example :
     rowShapeMatches (aeneas_extract.extract_jal_from_inst sampleInst)
       (proofRowShape 16 0 2 0 0 2 0 0 3 3 true false 0 4096 4 false false) = true := by
+  native_decide
+
+example :
+    jalRowModeEvidenceMatches (aeneas_extract.extract_jal_from_inst sampleInst) = true := by
   native_decide
 
 example :

@@ -139,6 +139,17 @@ pipeline.
      of `OpEnvelope.aeneasBridgeTrust` from extracted row-shape equalities plus
      the remaining dynamic AUIPC facts.
 
+   The same shape now covers the JAL rd-write route:
+
+   - the staged Aeneas harness proves that `extract_jal_from_inst` computes the
+     row-shape constants needed for `MainRowProvenance.JalRowMode`;
+   - main Lake proves `MainRowProvenance.jalRowMode_of_extracted_shape`;
+   - main Lake exposes `OpEnvelope.jalOfExtractedShape` and
+     `OpEnvelope.aeneasBridgeTrust_jalOfExtractedShape`, which construct the
+     JAL envelope with that derived row-mode field and prove the JAL branch of
+     `OpEnvelope.aeneasBridgeTrust` from extracted row-shape equalities plus
+     the remaining dynamic JAL facts.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

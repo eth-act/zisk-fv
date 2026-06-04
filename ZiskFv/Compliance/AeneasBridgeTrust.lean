@@ -221,6 +221,84 @@ theorem OpEnvelope.aeneasBridgeTrust_auipcOfExtractedShape
     h_offset_bridge,
     h_pc_bridge⟩
 
+/-- Construct the JAL envelope while deriving its row-mode field from
+production-extracted row-shape equalities. -/
+def OpEnvelope.jalOfExtractedShape
+    (jal_input : PureSpec.JalInput)
+    (imm : BitVec 21) (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (next_pc : FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opFlag)
+    (h_internal : provenance.extractedRow.isExternalOp = false)
+    (h_m32 : provenance.extractedRow.m32 = false)
+    (h_set_pc : provenance.extractedRow.setPc = false)
+    (h_store_pc : provenance.extractedRow.storePc = true)
+    (h_jal_subset : ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
+    (h_jmp2 : m.jmp_offset2 r_main = 4)
+    (h_pc_bridge : (m.pc r_main).val = jal_input.PC.toNat)
+    (promises : ZiskFv.EquivCore.Promises.JumpPromises
+        state jal_input.PC jal_input.rd misa_val
+        (PureSpec.execute_JAL_pure jal_input).success
+        (PureSpec.execute_JAL_pure jal_input).nextPC
+        rd exec_row e_rd nextPC_val)
+    (h_input_imm : jal_input.imm = imm)
+    (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
+    (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
+    (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) :
+    OpEnvelope state m r_main :=
+  OpEnvelope.jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val
+    store_pc_mem provenance
+    (MainRowProvenance.jalRowMode_of_extracted_shape provenance
+      h_op h_internal h_m32 h_set_pc h_store_pc)
+    h_jal_subset h_jmp2 h_pc_bridge promises h_input_imm h_not_throws
+    h_pc_bound h_pc_offset_lt_2_32
+
+/-- The JAL bridge predicate is derivable for the envelope constructed from
+extracted row-shape equalities and the remaining dynamic JAL facts. -/
+theorem OpEnvelope.aeneasBridgeTrust_jalOfExtractedShape
+    (jal_input : PureSpec.JalInput)
+    (imm : BitVec 21) (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (next_pc : FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opFlag)
+    (h_internal : provenance.extractedRow.isExternalOp = false)
+    (h_m32 : provenance.extractedRow.m32 = false)
+    (h_set_pc : provenance.extractedRow.setPc = false)
+    (h_store_pc : provenance.extractedRow.storePc = true)
+    (h_jal_subset : ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
+    (h_jmp2 : m.jmp_offset2 r_main = 4)
+    (h_pc_bridge : (m.pc r_main).val = jal_input.PC.toNat)
+    (promises : ZiskFv.EquivCore.Promises.JumpPromises
+        state jal_input.PC jal_input.rd misa_val
+        (PureSpec.execute_JAL_pure jal_input).success
+        (PureSpec.execute_JAL_pure jal_input).nextPC
+        rd exec_row e_rd nextPC_val)
+    (h_input_imm : jal_input.imm = imm)
+    (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
+    (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
+    (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) :
+    (OpEnvelope.jalOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val
+      store_pc_mem provenance
+      h_op h_internal h_m32 h_set_pc h_store_pc
+      h_jal_subset h_jmp2 h_pc_bridge promises h_input_imm h_not_throws
+      h_pc_bound h_pc_offset_lt_2_32).aeneasBridgeTrust := by
+  unfold OpEnvelope.jalOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  exact ⟨⟨provenance⟩,
+    MainRowProvenance.jalRowMode_of_extracted_shape provenance
+      h_op h_internal h_m32 h_set_pc h_store_pc,
+    h_jmp2,
+    h_pc_bridge⟩
+
 /-- **Aeneas row-lowering bridge trust axiom.**
 
 The generated Aeneas extraction is checked in CI, but generated Aeneas Lean is

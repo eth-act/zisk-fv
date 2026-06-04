@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: AUIPC row-mode slice complete and verified.
+Current focus: JAL row-mode slice complete and verified.
 Blocking: none.
-Next step: commit the AUIPC slice, then continue depth-first to the next U/J/control-flow row-mode slice.
+Next step: commit the JAL slice, then continue depth-first to the next U/J/control-flow row-mode slice.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -26,3 +26,12 @@ Notes:
 - `trust/scripts/check-all.sh` passed for the AUIPC slice.
 - `trust/scripts/check-all-semantic.sh` passed for the AUIPC slice.
 - `nix run .#aeneas-production-extract` passed for the AUIPC slice.
+- AUIPC slice committed as `cf245ab3 Add AUIPC row-mode bridge slice`.
+- Added JAL equivalents: `MainRowProvenance.jalRowMode_of_extracted_shape`,
+  `OpEnvelope.jalOfExtractedShape`, staged `jalRowModeEvidenceMatches`, and
+  `OpEnvelope.aeneasBridgeTrust_jalOfExtractedShape`.
+- `lake build ZiskFv.Compliance` passed for the JAL slice.
+- `trust/scripts/regenerate.sh` passed for the JAL slice.
+- `trust/scripts/check-all.sh` passed for the JAL slice.
+- `trust/scripts/check-all-semantic.sh` passed for the JAL slice.
+- `nix run .#aeneas-production-extract` passed for the JAL slice.

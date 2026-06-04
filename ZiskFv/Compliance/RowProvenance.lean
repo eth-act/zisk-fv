@@ -194,6 +194,22 @@ structure JalRowMode
   set_pc_eq : p.extractedRow.setPc = false
   store_pc_eq : p.extractedRow.storePc = true
 
+/-- Build the JAL row-mode proof from the extracted row-shape constants. -/
+theorem jalRowMode_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opFlag)
+    (h_internal : p.extractedRow.isExternalOp = false)
+    (h_m32 : p.extractedRow.m32 = false)
+    (h_set_pc : p.extractedRow.setPc = false)
+    (h_store_pc : p.extractedRow.storePc = true) :
+    JalRowMode p :=
+  { op_eq := h_op
+    internal_eq := h_internal
+    m32_eq := h_m32
+    set_pc_eq := h_set_pc
+    store_pc_eq := h_store_pc }
+
 theorem pins
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
     (p : MainRowProvenance main r_main) :
