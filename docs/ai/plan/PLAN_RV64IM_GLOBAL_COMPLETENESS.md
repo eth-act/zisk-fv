@@ -111,7 +111,7 @@ the corresponding checked-in and generated builds have passed.
 | ADD pilot | ADD | done | done | done | done | none |
 | Register ALU | ADD SUB SLL SLT SLTU XOR SRL SRA OR AND | done | done | done | done | none |
 | Register word ALU | ADDW SUBW SLLW SRLW SRAW | done | done | done | done | none |
-| Sail relation infrastructure | n/a | pending | pending | pending | n/a | enables extension-gated Sail constructors |
+| Sail relation infrastructure | n/a | done | done | done | n/a | enables extension-gated Sail constructors |
 | M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | pending | pending | pending | pending | none; requires state-aware Sail encoder relation |
 | Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | pending | pending | pending | pending | none expected |
 | Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | pending | pending | pending | pending | none expected |
@@ -135,7 +135,7 @@ the corresponding checked-in and generated builds have passed.
 - [x] Register ALU: run all verification commands, update matrix/status, commit.
 - [x] Register word ALU: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
-- [ ] Sail relation infrastructure: add state-aware encode/decode relation and
+- [x] Sail relation infrastructure: add state-aware encode/decode relation and
   compatibility lemmas for already-closed unconditional families.
 - [ ] M extension: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.

@@ -17,6 +17,16 @@ namespace ZiskFv.Completeness.SailDecode
 open ZiskFv.Completeness
 
 abbrev RawInstruction := Rv.RawInstruction
+abbrev SailState := PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+
+def SailReturns {α : Type} (action : SailM α) (state : SailState) (value : α) : Prop :=
+  action state = EStateM.Result.ok value state
+
+def Rv64imEnabledSailState (state : SailState) : Prop :=
+  LeanRV64D.Functions.currentlyEnabled extension.Ext_M state =
+    EStateM.Result.ok true state ∧
+  LeanRV64D.Functions.currentlyEnabled extension.Ext_Zmmul state =
+    EStateM.Result.ok false state
 
 /-- Sail raw decode, from the generated Sail `ext_decode` entrypoint. -/
 def SailDecodesTo (raw : RawInstruction) (inst : instruction) : Prop :=
@@ -25,6 +35,35 @@ def SailDecodesTo (raw : RawInstruction) (inst : instruction) : Prop :=
 /-- Sail raw encoding, from the generated Sail `encdec_forwards` entrypoint. -/
 def SailEncodesTo (inst : instruction) (raw : RawInstruction) : Prop :=
   LeanRV64D.Functions.encdec_forwards inst = pure raw
+
+/-- State-aware Sail raw decode, for generated Sail branches that consult
+extension state before returning a decoded constructor. -/
+def SailDecodesToIn (state : SailState) (raw : RawInstruction) (inst : instruction) : Prop :=
+  SailReturns (LeanRV64D.Functions.ext_decode raw) state inst
+
+/-- State-aware Sail raw encoding, for generated Sail branches that consult
+extension state before returning a raw word. -/
+def SailEncodesToIn (state : SailState) (inst : instruction) (raw : RawInstruction) : Prop :=
+  SailReturns (LeanRV64D.Functions.encdec_forwards inst) state raw
+
+theorem sail_returns_of_pure {α : Type} {action : SailM α} {value : α}
+    (h : action = pure value) :
+    ∀ state, SailReturns action state value := by
+  intro state
+  rw [h]
+  rfl
+
+theorem sail_decodes_to_in_of_pure
+    {raw : RawInstruction} {inst : instruction}
+    (h : SailDecodesTo raw inst) :
+    ∀ state, SailDecodesToIn state raw inst :=
+  sail_returns_of_pure h
+
+theorem sail_encodes_to_in_of_pure
+    {raw : RawInstruction} {inst : instruction}
+    (h : SailEncodesTo inst raw) :
+    ∀ state, SailEncodesToIn state inst raw :=
+  sail_returns_of_pure h
 
 theorem sailM_pure_injective {α : Type} {a b : α}
     (h : (pure a : SailM α) = pure b) : a = b := by
@@ -76,6 +115,22 @@ def SailRv64imInstruction (inst : instruction) : Prop :=
 def SailRv64imExecutableRaw (raw : RawInstruction) : Prop :=
   ∃ inst, SailDecodesTo raw inst ∧ SailEncodesTo inst raw ∧
     SailRv64imInstruction inst
+
+def SailRv64imExecutableRawIn (state : SailState) (raw : RawInstruction) : Prop :=
+  ∃ inst, SailDecodesToIn state raw inst ∧ SailEncodesToIn state inst raw ∧
+    SailRv64imInstruction inst
+
+theorem sail_rv64im_executable_raw_in_of_pure
+    {raw : RawInstruction}
+    (h : SailRv64imExecutableRaw raw) :
+    ∀ state, SailRv64imExecutableRawIn state raw := by
+  intro state
+  rcases h with ⟨inst, h_decode, h_encode, h_inst⟩
+  exact
+    ⟨inst,
+      sail_decodes_to_in_of_pure h_decode state,
+      sail_encodes_to_in_of_pure h_encode state,
+      h_inst⟩
 
 theorem sail_add_executable_implies_rv64im_executable
     {raw : RawInstruction} :
@@ -930,6 +985,73 @@ theorem sail_decode_rtypew_contained_in_rtype_shape
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       (List.mem_range.mpr (regidx_to_fin rs2).isLt)
 
+theorem sail_encode_rawRType_contained_in_rtype_shape_in
+    {raw : RawInstruction} {inst : instruction} {state : SailState}
+    {funct7 funct3 opcode rd rs1 rs2 : Nat}
+    (h_encode : SailEncodesToIn state inst raw)
+    (h_encode_op :
+      SailEncodesToIn state inst
+        (Rv64imShapes.rawRType funct7 rs2 rs1 funct3 rd opcode))
+    (h_mem : (funct7, funct3, opcode) ∈ Rv64imShapes.allRTypeOpcodeShapes)
+    (h_rd : rd ∈ Rv64imShapes.allRvRegs)
+    (h_rs1 : rs1 ∈ Rv64imShapes.allRvRegs)
+    (h_rs2 : rs2 ∈ Rv64imShapes.allRvRegs) :
+    Rv64imShapes.RTypeRegisterShape raw := by
+  have h_raw : raw = Rv64imShapes.rawRType funct7 rs2 rs1 funct3 rd opcode := by
+    dsimp [SailEncodesToIn, SailReturns] at h_encode h_encode_op
+    rw [h_encode_op] at h_encode
+    simpa using h_encode.symm
+  subst raw
+  exact rawRType_mem_contained_in_rtype_shape h_mem h_rd h_rs1 h_rs2
+
+theorem sail_decode_rtype_contained_in_rtype_shape_in
+    {raw : RawInstruction} {state : SailState} {rs2 rs1 rd : regidx}
+    (h_encode :
+      SailEncodesToIn state (instruction.RTYPE (rs2, rs1, rd, op)) raw)
+    (h_encode_op :
+      LeanRV64D.Functions.encdec_forwards
+          (instruction.RTYPE (rs2, rs1, rd, op)) =
+        pure
+          (Rv64imShapes.rawRType funct7
+            (regidx_to_fin rs2).val
+            (regidx_to_fin rs1).val
+            funct3
+            (regidx_to_fin rd).val
+            opcode))
+    (h_mem : (funct7, funct3, opcode) ∈ Rv64imShapes.allRTypeOpcodeShapes) :
+    Rv64imShapes.RTypeRegisterShape raw :=
+  sail_encode_rawRType_contained_in_rtype_shape_in
+    h_encode
+    (sail_encodes_to_in_of_pure h_encode_op state)
+    h_mem
+    (List.mem_range.mpr (regidx_to_fin rd).isLt)
+    (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+    (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+
+theorem sail_decode_rtypew_contained_in_rtype_shape_in
+    {raw : RawInstruction} {state : SailState} {rs2 rs1 rd : regidx}
+    (h_encode :
+      SailEncodesToIn state (instruction.RTYPEW (rs2, rs1, rd, op)) raw)
+    (h_encode_op :
+      LeanRV64D.Functions.encdec_forwards
+          (instruction.RTYPEW (rs2, rs1, rd, op)) =
+        pure
+          (Rv64imShapes.rawRType funct7
+            (regidx_to_fin rs2).val
+            (regidx_to_fin rs1).val
+            funct3
+            (regidx_to_fin rd).val
+            opcode))
+    (h_mem : (funct7, funct3, opcode) ∈ Rv64imShapes.allRTypeOpcodeShapes) :
+    Rv64imShapes.RTypeRegisterShape raw :=
+  sail_encode_rawRType_contained_in_rtype_shape_in
+    h_encode
+    (sail_encodes_to_in_of_pure h_encode_op state)
+    h_mem
+    (List.mem_range.mpr (regidx_to_fin rd).isLt)
+    (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+    (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+
 /-- Pilot Step 3 exact-shape containment for ADD. -/
 theorem sail_add_executable_contained_in_add_shape :
     ∀ raw,
@@ -1074,6 +1196,99 @@ theorem sail_register_word_alu_executable_contained :
       (sail_encode_sraw_eq_rawRType rs2 rs1 rd)
       (by simp [Rv64imShapes.allRTypeOpcodeShapes])
 
+theorem sail_register_alu_executable_contained_in :
+    ∀ state raw inst,
+      SailDecodesToIn state raw inst →
+      SailEncodesToIn state inst raw →
+      SailRegisterAluInstruction inst →
+      Rv64imShapes.RTypeRegisterShape raw := by
+  intro state raw inst _h_decode h_encode h_inst
+  rcases h_inst with
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_add_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_sub_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_sll_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_slt_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_sltu_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_xor_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_srl_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_sra_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_or_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtype_contained_in_rtype_shape_in h_encode
+      (sail_encode_and_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+
+theorem sail_register_word_alu_executable_contained_in :
+    ∀ state raw inst,
+      SailDecodesToIn state raw inst →
+      SailEncodesToIn state inst raw →
+      SailRegisterWordAluInstruction inst →
+      Rv64imShapes.RTypeRegisterShape raw := by
+  intro state raw inst _h_decode h_encode h_inst
+  rcases h_inst with
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtypew_contained_in_rtype_shape_in h_encode
+      (sail_encode_addw_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtypew_contained_in_rtype_shape_in h_encode
+      (sail_encode_subw_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtypew_contained_in_rtype_shape_in h_encode
+      (sail_encode_sllw_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtypew_contained_in_rtype_shape_in h_encode
+      (sail_encode_srlw_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+  · rw [h_eq] at h_encode
+    exact sail_decode_rtypew_contained_in_rtype_shape_in h_encode
+      (sail_encode_sraw_eq_rawRType rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+
 theorem sail_rv64im_executable_contained_in_supported_decode :
     ∀ raw,
       SailRv64imExecutableRaw raw →
@@ -1093,5 +1308,19 @@ theorem sail_rv64im_executable_contained_in_supported_decode_pilot :
       SailRv64imExecutableRaw raw →
       Rv64imShapes.SupportedDecodeShape raw :=
   sail_rv64im_executable_contained_in_supported_decode
+
+theorem sail_rv64im_executable_contained_in_supported_decode_in :
+    ∀ state raw,
+      SailRv64imExecutableRawIn state raw →
+      Rv64imShapes.SupportedDecodeShape raw := by
+  intro state raw h_sail
+  rcases h_sail with ⟨inst, h_decode, h_encode, h_inst⟩
+  rcases h_inst with h_register_alu | h_register_word_alu
+  · exact .inl
+      (sail_register_alu_executable_contained_in
+        state raw inst h_decode h_encode h_register_alu)
+  · exact .inl
+      (sail_register_word_alu_executable_contained_in
+        state raw inst h_decode h_encode h_register_word_alu)
 
 end ZiskFv.Completeness.SailDecode
