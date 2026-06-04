@@ -17,6 +17,21 @@ Implement the first depth-first proof slice for the `OpEnvelope` evidence gap. T
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: AUIPC
+
+Continue depth-first in the U/control-flow family by extending the same proof
+shape to AUIPC row-mode evidence.
+
+- [x] Add a main-Lake helper deriving `AuipcRowMode` from extracted-row constants.
+- [x] Add an AUIPC `OpEnvelope` constructor/bridge theorem that uses the helper to fill the real `row_mode` field.
+- [x] Add or confirm a staged Aeneas generated check for AUIPC row-mode evidence.
+- [x] Update extraction/trust docs to describe the AUIPC slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

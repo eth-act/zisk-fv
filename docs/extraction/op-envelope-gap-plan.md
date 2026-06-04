@@ -128,6 +128,17 @@ pipeline.
    the generated facts are imported or otherwise connected for every
    soundness-relevant envelope field.
 
+   The same shape now extends to AUIPC row-mode evidence:
+
+   - the staged Aeneas harness proves that `extract_auipc_from_inst` computes
+     the row-shape constants needed for `MainRowProvenance.AuipcRowMode`;
+   - main Lake proves `MainRowProvenance.auipcRowMode_of_extracted_shape`;
+   - main Lake exposes `OpEnvelope.auipcOfExtractedShape` and
+     `OpEnvelope.aeneasBridgeTrust_auipcOfExtractedShape`, which construct the
+     AUIPC envelope with that derived row-mode field and prove the AUIPC branch
+     of `OpEnvelope.aeneasBridgeTrust` from extracted row-shape equalities plus
+     the remaining dynamic AUIPC facts.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

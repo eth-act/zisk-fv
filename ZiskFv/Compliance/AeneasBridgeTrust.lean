@@ -141,6 +141,86 @@ theorem OpEnvelope.aeneasBridgeTrust_luiOfExtractedShape
     h_imm_lo_nat,
     h_imm_hi_nat⟩
 
+/-- Construct the AUIPC envelope while deriving its row-mode field from
+production-extracted row-shape equalities. -/
+def OpEnvelope.auipcOfExtractedShape
+    (auipc_input : PureSpec.AuipcInput)
+    (imm : BitVec 20) (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opFlag)
+    (h_internal : provenance.extractedRow.isExternalOp = false)
+    (h_m32 : provenance.extractedRow.m32 = false)
+    (h_set_pc : provenance.extractedRow.setPc = false)
+    (h_store_pc : provenance.extractedRow.storePc = true)
+    (h_auipc_subset : ZiskFv.Tactics.UTypeArchetype.auipc_subset_holds m r_main next_pc)
+    (h_offset_bridge : (m.jmp_offset2 r_main).val
+      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
+    (promises : ZiskFv.EquivCore.Promises.UTypePromises
+        state auipc_input.imm auipc_input.rd auipc_input.PC
+        (PureSpec.execute_AUIPC_pure auipc_input).nextPC
+        imm rd exec_row e_rd nextPC_val)
+    (h_no_wrap : auipc_input.PC.toNat
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < GL_prime)
+    (h_pc_offset_lt_2_32 :
+      (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < 4294967296) :
+    OpEnvelope state m r_main :=
+  OpEnvelope.auipc auipc_input imm rd exec_row e_rd nextPC_val next_pc
+    store_pc_mem provenance
+    (MainRowProvenance.auipcRowMode_of_extracted_shape provenance
+      h_op h_internal h_m32 h_set_pc h_store_pc)
+    h_auipc_subset h_offset_bridge h_pc_bridge promises
+    h_no_wrap h_pc_offset_lt_2_32
+
+/-- The AUIPC bridge predicate is derivable for the envelope constructed from
+extracted row-shape equalities and the remaining dynamic AUIPC facts. -/
+theorem OpEnvelope.aeneasBridgeTrust_auipcOfExtractedShape
+    (auipc_input : PureSpec.AuipcInput)
+    (imm : BitVec 20) (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opFlag)
+    (h_internal : provenance.extractedRow.isExternalOp = false)
+    (h_m32 : provenance.extractedRow.m32 = false)
+    (h_set_pc : provenance.extractedRow.setPc = false)
+    (h_store_pc : provenance.extractedRow.storePc = true)
+    (h_auipc_subset : ZiskFv.Tactics.UTypeArchetype.auipc_subset_holds m r_main next_pc)
+    (h_offset_bridge : (m.jmp_offset2 r_main).val
+      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
+    (promises : ZiskFv.EquivCore.Promises.UTypePromises
+        state auipc_input.imm auipc_input.rd auipc_input.PC
+        (PureSpec.execute_AUIPC_pure auipc_input).nextPC
+        imm rd exec_row e_rd nextPC_val)
+    (h_no_wrap : auipc_input.PC.toNat
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < GL_prime)
+    (h_pc_offset_lt_2_32 :
+      (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < 4294967296) :
+    (OpEnvelope.auipcOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      auipc_input imm rd exec_row e_rd nextPC_val next_pc
+      store_pc_mem provenance
+      h_op h_internal h_m32 h_set_pc h_store_pc
+      h_auipc_subset h_offset_bridge h_pc_bridge promises
+      h_no_wrap h_pc_offset_lt_2_32).aeneasBridgeTrust := by
+  unfold OpEnvelope.auipcOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  exact ⟨⟨provenance⟩,
+    MainRowProvenance.auipcRowMode_of_extracted_shape provenance
+      h_op h_internal h_m32 h_set_pc h_store_pc,
+    h_offset_bridge,
+    h_pc_bridge⟩
+
 /-- **Aeneas row-lowering bridge trust axiom.**
 
 The generated Aeneas extraction is checked in CI, but generated Aeneas Lean is

@@ -95,6 +95,12 @@ closure yet because generated Aeneas Lean remains staged under `build/` and the
 rest of the `OpEnvelope` evidence surface is still covered by
 `aeneas_bridge_trust`.
 
+Second proof-slice progress: the same row-mode pattern now covers AUIPC. The
+staged Aeneas harness checks the `extract_auipc_from_inst` row-shape constants,
+and main Lake contains `MainRowProvenance.auipcRowMode_of_extracted_shape`,
+`OpEnvelope.auipcOfExtractedShape`, and
+`OpEnvelope.aeneasBridgeTrust_auipcOfExtractedShape`.
+
 Retirement path: import the generated Aeneas Lean row-lowering result into the
 main proof, prove the `OpEnvelope.aeneasBridgeTrust` predicate for each
 relevant arm, and replace `aeneas_bridge_trust` with the derived theorem.
