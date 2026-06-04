@@ -105,7 +105,7 @@ the corresponding checked-in and generated builds have passed.
 | Planning trail | n/a | n/a | n/a | n/a | n/a | done |
 | ADD pilot | ADD | done | done | done | done | none |
 | Register ALU | ADD SUB SLL SLT SLTU XOR SRL SRA OR AND | done | done | done | done | none |
-| Register word ALU | ADDW SUBW SLLW SRLW SRAW | pending | pending | pending | pending | none expected |
+| Register word ALU | ADDW SUBW SLLW SRLW SRAW | done | done | done | done | none |
 | M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | pending | pending | pending | pending | none expected |
 | Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | pending | pending | pending | pending | none expected |
 | Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | pending | pending | pending | pending | none expected |
@@ -127,7 +127,7 @@ the corresponding checked-in and generated builds have passed.
 - [x] Register ALU: verify generated Aeneas production coverage for the full
   family.
 - [x] Register ALU: run all verification commands, update matrix/status, commit.
-- [ ] Register word ALU: close whitelist, raw-shape lemma, global theorem shape,
+- [x] Register word ALU: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
 - [ ] M extension: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
