@@ -21,9 +21,9 @@ for each instruction. `lake build` typechecking is the formal check.
 ## Trust Boundary
 
 All trust-boundary documentation and all machine-checked trust ledgers live in
-[`trust/`](trust/README.md). The current source trust ledger contains 7
+[`trust/`](trust/README.md). The current source trust ledger contains 8
 Lean axiom declarations. The global compliance theorem's transitive project
-axiom closure contains 1 of those declarations, recorded in
+axiom closure contains 2 of those declarations, recorded in
 [`trust/generated/baseline-zisk-riscv-compliant.txt`](trust/generated/baseline-zisk-riscv-compliant.txt).
 
 The narrative trust ledger is
@@ -94,9 +94,11 @@ load, and store helper families.
 
 The proof-side migration target is
 `ZiskFv.Compliance.MainRowProvenance`: it ties selected Main/ROM rows to
-row shapes produced by the decode/lower model. The former hand-written row-shape axiom
-surface is now retired from the Lean source ledger; dynamic immediate/PC and
-operand-lane obligations are explicit route facts.
+row shapes produced by the decode/lower model. The former hand-written
+row-shape axiom surface is now retired from the Lean source ledger; dynamic
+immediate/PC and operand-lane obligations are explicit route facts, with the
+remaining Aeneas-backed bridge boundary named by
+`ZiskFv.Compliance.aeneas_bridge_trust`.
 
 ## Layout
 

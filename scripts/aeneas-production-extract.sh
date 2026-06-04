@@ -49,6 +49,23 @@ if [[ "${#rust_extract_fns[@]}" -eq 0 ]]; then
   exit 1
 fi
 
+TOOL_SHIMS="$WORKSPACE/tool-shims"
+mkdir -p "$TOOL_SHIMS"
+for tool in gcc as ar ld; do
+  if command -v "riscv64-none-elf-$tool" >/dev/null 2>&1; then
+    ln -sf "$(command -v "riscv64-none-elf-$tool")" \
+      "$TOOL_SHIMS/riscv64-unknown-elf-$tool"
+  fi
+done
+export PATH="$TOOL_SHIMS:$PATH"
+
+# `zisk-core` embeds this ELF with `include_bytes!`, while Cargo may compile
+# zisk-core in parallel with lib-float's build script. Build it up front so the
+# extraction harness is not sensitive to Cargo scheduling.
+if [[ ! -f "$ROOT/zisk/lib-float/c/lib/ziskfloat.elf" ]]; then
+  make -C "$ROOT/zisk/lib-float/c"
+fi
+
 mapfile -t raw_extract_fns < <(
   sed -nE \
     -e 's/^pub fn (extract_[A-Za-z0-9_]+_raw(_inst)?)\(.*/\1/p' \
@@ -350,6 +367,17 @@ def rowShapeMatches
   | some actual => actual == expected
   | none => false
 
+def luiRowModeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 1
+      && row.isExternalOp == false
+      && row.m32 == false
+      && row.setPc == false
+      && row.storePc == false
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -382,6 +410,10 @@ example :
 example :
     rowShapeMatches (aeneas_extract.extract_lui_from_inst sampleInst)
       (proofRowShape 16 1 2 0 0 2 0 4096 3 3 false false 0 4 4 false false) = true := by
+  native_decide
+
+example :
+    luiRowModeEvidenceMatches (aeneas_extract.extract_lui_from_inst sampleInst) = true := by
   native_decide
 
 example :

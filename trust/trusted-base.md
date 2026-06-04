@@ -21,8 +21,8 @@ Current generated counts:
 
 | Surface                                                                | Count | Ledger                                                                                       |
 | ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 7     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 1     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations                                         | 8     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 2     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
 The difference is intentional: some checked-in trust declarations are retained
 for local components or completeness-direction placeholders but are not reached
@@ -43,6 +43,7 @@ Lean axiom ledger:
 | Class                           | Declarations | In global closure | Removability                                                                                        |
 | ---                             | ---:         | ---:              | ---                                                                                                 |
 | Memory state load bridge        | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
+| Aeneas row-lowering bridge      | 1            | 1                 | Removable by importing generated Aeneas Lean into the main proof and deriving the bridge facts.     |
 | Clean completeness placeholders | 6            | 0                 | Completeness-direction placeholders retained for Clean component construction, not soundness.       |
 
 
@@ -59,6 +60,44 @@ that contract are now explicit caller/envelope facts or are derived from row
 provenance and provider rows: static mode/control pins from provenance,
 runtime source/data lanes from caller facts, and jump/PC facts from explicit
 route obligations.
+
+## Aeneas Row-Lowering Bridge
+
+Declaration:
+
+```text
+ZiskFv.Compliance.aeneas_bridge_trust
+```
+
+The production-backed Aeneas extraction is checked by the repository test path,
+but the generated Aeneas Lean is not yet imported by the main Lake proof to
+derive every row-provenance, row-mode, source-lane, immediate, PC, and link
+bridge fact consumed by the compliance wrappers. The global theorem therefore
+depends on this single named axiom so the trust boundary is visible in the
+axiom closure instead of existing only as caller-burden entries.
+
+The existing wrapper and `OpEnvelope` signatures still expose those fields
+because the dispatch proofs pass them to the current wrapper layer. The
+generated caller-burden ledgers remain the mechanical inventory for the later
+refactor that removes those parameters after generated Aeneas Lean supplies
+proofs inside Lake.
+
+First proof-slice progress: the staged Aeneas harness now checks that
+`extract_lui_from_inst` computes the LUI row-shape constants needed for
+`MainRowProvenance.LuiRowMode`, and main Lake contains
+`MainRowProvenance.luiRowMode_of_extracted_shape`, which states that those
+constants discharge the `OpEnvelope.lui` row-mode field. Main Lake also
+contains `OpEnvelope.luiOfExtractedShape` and
+`OpEnvelope.aeneasBridgeTrust_luiOfExtractedShape`, which construct the LUI
+envelope with the derived row-mode field and prove the LUI branch of this
+bridge predicate without using the axiom. This does not shrink the global axiom
+closure yet because generated Aeneas Lean remains staged under `build/` and the
+rest of the `OpEnvelope` evidence surface is still covered by
+`aeneas_bridge_trust`.
+
+Retirement path: import the generated Aeneas Lean row-lowering result into the
+main proof, prove the `OpEnvelope.aeneasBridgeTrust` predicate for each
+relevant arm, and replace `aeneas_bridge_trust` with the derived theorem.
 
 ## Memory State Load Bridge
 

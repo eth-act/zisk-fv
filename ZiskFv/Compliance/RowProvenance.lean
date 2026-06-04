@@ -139,6 +139,27 @@ structure LuiRowMode
   set_pc_eq : p.extractedRow.setPc = false
   store_pc_eq : p.extractedRow.storePc = false
 
+/-- Build the LUI row-mode proof from the extracted row-shape constants.
+
+This is the main-Lake mirror of the staged Aeneas generated check: Aeneas
+computes the concrete row-shape projection, while this theorem states exactly
+which extracted-row equalities are sufficient for the `OpEnvelope.lui`
+`row_mode` field. -/
+theorem luiRowMode_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opCopyB)
+    (h_internal : p.extractedRow.isExternalOp = false)
+    (h_m32 : p.extractedRow.m32 = false)
+    (h_set_pc : p.extractedRow.setPc = false)
+    (h_store_pc : p.extractedRow.storePc = false) :
+    LuiRowMode p :=
+  { op_eq := h_op
+    internal_eq := h_internal
+    m32_eq := h_m32
+    set_pc_eq := h_set_pc
+    store_pc_eq := h_store_pc }
+
 structure AuipcRowMode
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
     (p : MainRowProvenance main r_main) : Prop where

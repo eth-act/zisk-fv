@@ -31,8 +31,8 @@ when they are not trust policy or trust evidence.
 
 | Ledger                            | Count      | File                                                                                         |
 | ---                               | ---:        | ---                                                                                          |
-| Source Lean trust declarations    | 7          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Global compliance theorem closure | 1          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations    | 8          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Global compliance theorem closure | 2          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 | Per-canonical-theorem closures    | 63 entries | [`generated/baseline-equiv-axiom-deps.txt`](generated/baseline-equiv-axiom-deps.txt)         |
 
 ## Generated Files
@@ -70,8 +70,10 @@ merged weakening must be represented as an explicit defect-scoped theorem
 change and documented in [`defects.md`](defects.md).
 
 A legitimate trust change must update the Lean declaration, generated ledgers,
-and [`trusted-base.md`](trusted-base.md) together. A known bug must update the
-defect ledger and theorem claim boundary together.
+and [`trusted-base.md`](trusted-base.md) together. Trust that appears as a
+caller/envelope proof field must be either discharged or represented by a named
+source axiom in the global closure. A known bug must update the defect ledger
+and theorem claim boundary together.
 
 The anti-laundering rule is unchanged: promise discharge must visibly reduce
 the generated hypothesis-count and caller-burden ledgers, unless a documented

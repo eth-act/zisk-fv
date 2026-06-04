@@ -24,3 +24,8 @@ ZiskFv/SailSpec/Auxiliaries.lean
 # verification; Clean's `GeneralFormalCircuit` makes `completeness` a
 # mandatory field, so it is filled by a declared axiom.
 ZiskFv/AirsClean/Completeness.lean
+
+# Aeneas-backed production-lowering bridge. Generated Aeneas Lean is not
+# imported into the main Lake proof yet, so the global theorem explicitly
+# depends on this named bridge trust boundary.
+ZiskFv/Compliance/AeneasBridgeTrust.lean
