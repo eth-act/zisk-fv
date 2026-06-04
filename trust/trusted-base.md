@@ -116,6 +116,13 @@ slice. The staged Aeneas harness checks the `extract_jalr_from_inst` external
 `OpEnvelope.jalrOfExtractedShape`, and
 `OpEnvelope.aeneasBridgeTrust_jalrOfExtractedShape`.
 
+Fifth proof-slice progress: FENCE now has the matching activation/opcode pin
+slice. The staged Aeneas harness checks the `extract_fence_from_inst` internal
+`OP_FLAG` constants, and main Lake contains
+`MainRowProvenance.fencePins_of_extracted_shape`,
+`OpEnvelope.fenceOfExtractedShape`, and
+`OpEnvelope.aeneasBridgeTrust_fenceOfExtractedShape`.
+
 Retirement path: import the generated Aeneas Lean row-lowering result into the
 main proof, prove the `OpEnvelope.aeneasBridgeTrust` predicate for each
 relevant arm, and replace `aeneas_bridge_trust` with the derived theorem.

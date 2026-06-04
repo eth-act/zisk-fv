@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: U/J/control-flow bridge slices through JALR are complete and committed.
+Current focus: FENCE activation/opcode pin slice verified; preparing commit.
 Blocking: none.
-Next step: review whether FENCE has bridge evidence to derive or whether the next depth-first target should move to ADD/ADDI/ADDW provider evidence.
+Next step: commit the FENCE slice, then continue to the BinaryAdd provider-evidence group.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -46,3 +46,11 @@ Notes:
 - `trust/scripts/check-all-semantic.sh` passed for the JALR slice.
 - `nix run .#aeneas-production-extract` passed for the JALR slice.
 - JALR slice committed as `82386cc7 Add JALR control-pin bridge slice`.
+- Added FENCE equivalents: `MainRowProvenance.fencePins_of_extracted_shape`,
+  staged `fencePinsEvidenceMatches`, `OpEnvelope.fenceOfExtractedShape`, and
+  `OpEnvelope.aeneasBridgeTrust_fenceOfExtractedShape`.
+- `lake build ZiskFv.Compliance` passed for the FENCE slice.
+- `trust/scripts/regenerate.sh` passed for the FENCE slice.
+- `trust/scripts/check-all.sh` passed for the FENCE slice.
+- `trust/scripts/check-all-semantic.sh` passed for the FENCE slice.
+- `nix run .#aeneas-production-extract` passed for the FENCE slice.

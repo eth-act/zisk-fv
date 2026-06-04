@@ -239,6 +239,19 @@ theorem jalrControl_of_extracted_shape
     by simpa [boolF, h_set_pc] using p.set_pc_eq,
     by simpa [boolF, h_store_pc] using p.store_pc_eq⟩
 
+/-- Build the FENCE activation/opcode pins from the extracted row-shape
+constants. Production FENCE lowers to the internal `OP_FLAG` nop row. -/
+theorem fencePins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opFlag)
+    (h_internal : p.extractedRow.isExternalOp = false) :
+    MainRowPins main r_main 0 ZiskFv.Trusted.OP_FLAG :=
+  { main_active := by
+      simpa [boolF, h_internal] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opFlag, ZiskFv.Trusted.OP_FLAG, h_op] using p.op_eq }
+
 theorem pins
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
     (p : MainRowProvenance main r_main) :

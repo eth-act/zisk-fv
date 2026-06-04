@@ -164,6 +164,17 @@ pipeline.
      `OpEnvelope.aeneasBridgeTrust` from extracted row-shape equalities plus
      the remaining dynamic JALR facts.
 
+   FENCE completes the first U/J/control-flow proof-slice group:
+
+   - the staged Aeneas harness proves that `extract_fence_from_inst` computes
+     the internal `OP_FLAG` activation/opcode constants;
+   - main Lake proves `MainRowProvenance.fencePins_of_extracted_shape`;
+   - main Lake exposes `OpEnvelope.fenceOfExtractedShape` and
+     `OpEnvelope.aeneasBridgeTrust_fenceOfExtractedShape`, which construct the
+     FENCE envelope with derived activation/opcode pins and prove the FENCE
+     branch of `OpEnvelope.aeneasBridgeTrust` from extracted row-shape
+     equalities plus the remaining dynamic FENCE facts.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

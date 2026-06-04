@@ -411,6 +411,14 @@ def jalrControlEvidenceMatches
       && row.storePc == true
   | none => false
 
+def fencePinsEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 0
+      && row.isExternalOp == false
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -507,6 +515,15 @@ example :
 
 example :
     rawFenceAccepted (aeneas_extract.extract_fence_accepts_raw_inst 0x1000000F#u32) = false := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_fence_from_inst sampleInst)
+      (proofRowShape 16 0 2 0 0 2 0 0 0 0 false false 0 4 4 false false) = true := by
+  native_decide
+
+example :
+    fencePinsEvidenceMatches (aeneas_extract.extract_fence_from_inst sampleInst) = true := by
   native_decide
 
 example :

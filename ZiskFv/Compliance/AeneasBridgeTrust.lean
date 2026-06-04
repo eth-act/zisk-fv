@@ -399,6 +399,44 @@ theorem OpEnvelope.aeneasBridgeTrust_jalrOfExtractedShape
   unfold OpEnvelope.jalrOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨h_flag, control.1, control.2.1, control.2.2, h_link_bridge⟩
 
+/-- Construct the FENCE envelope while deriving its activation/opcode pins from
+production-extracted row-shape equalities. -/
+def OpEnvelope.fenceOfExtractedShape
+    (fence_input : PureSpec.FenceInput)
+    (fm pred succ : BitVec 4) (rs rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opFlag)
+    (h_internal : provenance.extractedRow.isExternalOp = false)
+    (promises : ZiskFv.EquivCore.Promises.FencePromises
+        state fence_input.PC
+        (PureSpec.execute_FENCE_pure fence_input).nextPC
+        exec_row) :
+    OpEnvelope state m r_main :=
+  OpEnvelope.fence fence_input fm pred succ rs rd exec_row
+    (MainRowProvenance.fencePins_of_extracted_shape provenance h_op h_internal)
+    promises
+
+/-- The FENCE bridge predicate is trivial, but this theorem records that the
+real FENCE envelope pins can be filled from extracted row-shape equalities. -/
+theorem OpEnvelope.aeneasBridgeTrust_fenceOfExtractedShape
+    (fence_input : PureSpec.FenceInput)
+    (fm pred succ : BitVec 4) (rs rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opFlag)
+    (h_internal : provenance.extractedRow.isExternalOp = false)
+    (promises : ZiskFv.EquivCore.Promises.FencePromises
+        state fence_input.PC
+        (PureSpec.execute_FENCE_pure fence_input).nextPC
+        exec_row) :
+    (OpEnvelope.fenceOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      fence_input fm pred succ rs rd exec_row provenance h_op h_internal
+      promises).aeneasBridgeTrust := by
+  unfold OpEnvelope.fenceOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  trivial
+
 /-- **Aeneas row-lowering bridge trust axiom.**
 
 The generated Aeneas extraction is checked in CI, but generated Aeneas Lean is
