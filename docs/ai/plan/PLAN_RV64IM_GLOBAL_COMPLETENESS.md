@@ -114,7 +114,7 @@ the corresponding checked-in and generated builds have passed.
 | Sail relation infrastructure | n/a | done | done | done | n/a | enables extension-gated Sail constructors |
 | M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | done | done | done | done | none |
 | Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | done | done | done | done | none |
-| Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | pending | pending | pending | pending | none expected |
+| Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | done | done | done | done | none |
 | Branches | BEQ BNE BLT BGE BLTU BGEU | pending | pending | pending | pending | none expected |
 | Loads | LB LBU LH LHU LW LWU LD | pending | pending | pending | pending | none expected |
 | Stores | SB SH SW SD | pending | pending | pending | pending | none expected |
@@ -141,7 +141,7 @@ the corresponding checked-in and generated builds have passed.
   generated coverage, verification, docs, commit.
 - [x] Immediate ALU: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
-- [ ] Immediate word ALU: close whitelist, raw-shape lemma, global theorem shape,
+- [x] Immediate word ALU: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
 - [ ] Branches: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.

@@ -1,5 +1,5 @@
 Plan: docs/ai/plan/PLAN_RV64IM_GLOBAL_COMPLETENESS.md
-Focus: Immediate word ALU slice: add Sail containment for ADDIW/SLLIW/SRLIW/SRAIW.
+Focus: Branches slice: add Sail containment for BEQ/BNE/BLT/BGE/BLTU/BGEU.
 Blocking: Nothing currently blocking.
-Next step: Commit the verified Immediate ALU slice, then start Immediate word ALU whitelist and raw-shape lemmas.
-Digression: Immediate ALU Sail containment now covers ADDI/SLLI/SLTI/SLTIU/XORI/SRLI/SRAI/ORI/ANDI; Lake build and Aeneas production completeness both passed.
+Next step: Commit the verified Immediate word ALU slice, then start Branch whitelist and raw-shape lemmas.
+Digression: Immediate word ALU Sail containment now covers ADDIW/SLLIW/SRLIW/SRAIW; Lake build and Aeneas production completeness both passed.
