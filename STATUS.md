@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: JALR final-row control-pin slice complete and verified.
+Current focus: U/J/control-flow bridge slices through JALR are complete and committed.
 Blocking: none.
-Next step: commit the JALR slice, then review whether FENCE has bridge evidence to derive or whether the next depth-first target should move to ADD/ADDI/ADDW provider evidence.
+Next step: review whether FENCE has bridge evidence to derive or whether the next depth-first target should move to ADD/ADDI/ADDW provider evidence.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -45,3 +45,4 @@ Notes:
 - `trust/scripts/check-all.sh` passed for the JALR slice.
 - `trust/scripts/check-all-semantic.sh` passed for the JALR slice.
 - `nix run .#aeneas-production-extract` passed for the JALR slice.
+- JALR slice committed as `82386cc7 Add JALR control-pin bridge slice`.
