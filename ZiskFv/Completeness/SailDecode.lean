@@ -53,6 +53,13 @@ theorem sail_returns_of_pure {α : Type} {action : SailM α} {value : α}
   rw [h]
   rfl
 
+theorem sailM_bind_ok {α β : Type} {state : SailState}
+    {action : SailM α} {next : α → SailM β} {a : α} {b : β}
+    (h_action : action state = EStateM.Result.ok a state)
+    (h_next : next a state = EStateM.Result.ok b state) :
+    (action >>= next) state = EStateM.Result.ok b state := by
+  simp [bind, h_action, h_next]
+
 theorem sail_decodes_to_in_of_pure
     {raw : RawInstruction} {inst : instruction}
     (h : SailDecodesTo raw inst) :
@@ -100,6 +107,38 @@ def SailRegisterWordAluInstruction (inst : instruction) : Prop :=
   (∃ rs2 rs1 rd, inst = instruction.RTYPEW (rs2, rs1, rd, ropw.SRLW)) ∨
   (∃ rs2 rs1 rd, inst = instruction.RTYPEW (rs2, rs1, rd, ropw.SRAW))
 
+/-- Sail M-extension constructor surface implemented by ZisK RV64IM. -/
+def SailMExtensionInstruction (inst : instruction) : Prop :=
+  (∃ rs2 rs1 rd,
+    inst = instruction.MUL (rs2, rs1, rd,
+      { result_part := VectorHalf.Low,
+        signed_rs1 := Signedness.Signed,
+        signed_rs2 := Signedness.Signed })) ∨
+  (∃ rs2 rs1 rd,
+    inst = instruction.MUL (rs2, rs1, rd,
+      { result_part := VectorHalf.High,
+        signed_rs1 := Signedness.Signed,
+        signed_rs2 := Signedness.Signed })) ∨
+  (∃ rs2 rs1 rd,
+    inst = instruction.MUL (rs2, rs1, rd,
+      { result_part := VectorHalf.High,
+        signed_rs1 := Signedness.Signed,
+        signed_rs2 := Signedness.Unsigned })) ∨
+  (∃ rs2 rs1 rd,
+    inst = instruction.MUL (rs2, rs1, rd,
+      { result_part := VectorHalf.High,
+        signed_rs1 := Signedness.Unsigned,
+        signed_rs2 := Signedness.Unsigned })) ∨
+  (∃ rs2 rs1 rd, inst = instruction.MULW (rs2, rs1, rd)) ∨
+  (∃ rs2 rs1 rd, inst = instruction.DIV (rs2, rs1, rd, false)) ∨
+  (∃ rs2 rs1 rd, inst = instruction.DIV (rs2, rs1, rd, true)) ∨
+  (∃ rs2 rs1 rd, inst = instruction.DIVW (rs2, rs1, rd, false)) ∨
+  (∃ rs2 rs1 rd, inst = instruction.DIVW (rs2, rs1, rd, true)) ∨
+  (∃ rs2 rs1 rd, inst = instruction.REM (rs2, rs1, rd, false)) ∨
+  (∃ rs2 rs1 rd, inst = instruction.REM (rs2, rs1, rd, true)) ∨
+  (∃ rs2 rs1 rd, inst = instruction.REMW (rs2, rs1, rd, false)) ∨
+  (∃ rs2 rs1 rd, inst = instruction.REMW (rs2, rs1, rd, true))
+
 /-- Compatibility name for the already-closed ADD/SUB pilot surface. -/
 def SailRegisterPilotInstruction (inst : instruction) : Prop :=
   (∃ rs2 rs1 rd, inst = instruction.RTYPE (rs2, rs1, rd, rop.ADD)) ∨
@@ -109,12 +148,17 @@ def SailRegisterPilotInstruction (inst : instruction) : Prop :=
 register/immediate/load/store/branch/upper/jump/FENCE constructor families. -/
 def SailRv64imInstruction (inst : instruction) : Prop :=
   SailRegisterAluInstruction inst ∨
+  SailRegisterWordAluInstruction inst ∨
+  SailMExtensionInstruction inst
+
+def SailPureRv64imInstruction (inst : instruction) : Prop :=
+  SailRegisterAluInstruction inst ∨
   SailRegisterWordAluInstruction inst
 
 /-- Sail-executable raw word for the currently covered RV64IM pilot surface. -/
 def SailRv64imExecutableRaw (raw : RawInstruction) : Prop :=
   ∃ inst, SailDecodesTo raw inst ∧ SailEncodesTo inst raw ∧
-    SailRv64imInstruction inst
+    SailPureRv64imInstruction inst
 
 def SailRv64imExecutableRawIn (state : SailState) (raw : RawInstruction) : Prop :=
   ∃ inst, SailDecodesToIn state raw inst ∧ SailEncodesToIn state inst raw ∧
@@ -130,7 +174,7 @@ theorem sail_rv64im_executable_raw_in_of_pure
     ⟨inst,
       sail_decodes_to_in_of_pure h_decode state,
       sail_encodes_to_in_of_pure h_encode state,
-      h_inst⟩
+      h_inst.elim (fun h => .inl h) (fun h => .inr (.inl h))⟩
 
 theorem sail_add_executable_implies_rv64im_executable
     {raw : RawInstruction} :
@@ -404,6 +448,248 @@ theorem sail_sraw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
         (regidx_to_fin rs2).val
         (regidx_to_fin rs1).val
         5
+        (regidx_to_fin rd).val
+        0x3b := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_mul_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (0b000#3 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rd ++
+              0b0110011#7)))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        0
+        (regidx_to_fin rd).val
+        0x33 := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_mulh_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (0b001#3 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rd ++
+              0b0110011#7)))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        1
+        (regidx_to_fin rd).val
+        0x33 := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_mulhsu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (0b010#3 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rd ++
+              0b0110011#7)))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        2
+        (regidx_to_fin rd).val
+        0x33 := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_mulhu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (0b011#3 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rd ++
+              0b0110011#7)))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        3
+        (regidx_to_fin rd).val
+        0x33 := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_mulw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (0b000#3 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rd ++
+              0b0111011#7)))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        0
+        (regidx_to_fin rd).val
+        0x3b := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_div_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (2#2 ++
+            (LeanRV64D.Functions.bool_bits_forwards false ++
+              (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                51#7))))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        4
+        (regidx_to_fin rd).val
+        0x33 := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_divu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (2#2 ++
+            (LeanRV64D.Functions.bool_bits_forwards true ++
+              (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                51#7))))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        5
+        (regidx_to_fin rd).val
+        0x33 := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_divw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (2#2 ++
+            (LeanRV64D.Functions.bool_bits_forwards false ++
+              (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                59#7))))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        4
+        (regidx_to_fin rd).val
+        0x3b := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_divuw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (2#2 ++
+            (LeanRV64D.Functions.bool_bits_forwards true ++
+              (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                59#7))))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        5
+        (regidx_to_fin rd).val
+        0x3b := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_rem_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (3#2 ++
+            (LeanRV64D.Functions.bool_bits_forwards false ++
+              (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                51#7))))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        6
+        (regidx_to_fin rd).val
+        0x33 := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_remu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (3#2 ++
+            (LeanRV64D.Functions.bool_bits_forwards true ++
+              (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                51#7))))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        7
+        (regidx_to_fin rd).val
+        0x33 := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_remw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (3#2 ++
+            (LeanRV64D.Functions.bool_bits_forwards false ++
+              (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                59#7))))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        6
+        (regidx_to_fin rd).val
+        0x3b := by
+  cases rs2 with | Regidx rs2 =>
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_remuw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
+    ((0b0000001#7 ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+        (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+          (3#2 ++
+            (LeanRV64D.Functions.bool_bits_forwards true ++
+              (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                59#7))))) : RawInstruction)) =
+      Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        7
         (regidx_to_fin rd).val
         0x3b := by
   cases rs2 with | Regidx rs2 =>
@@ -831,6 +1117,546 @@ theorem sail_encode_sraw_eq_rawRType (rs2 rs1 rd : regidx) :
           (regidx_to_fin rd).val
           0x3b)
   rw [sail_sraw_concat_eq_rawRType rs2 rs1 rd]
+
+theorem sail_encode_mul_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.MUL (rs2, rs1, rd,
+          { result_part := VectorHalf.Low,
+            signed_rs1 := Signedness.Signed,
+            signed_rs2 := Signedness.Signed }))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          0
+          (regidx_to_fin rd).val
+          0x33) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      (LeanRV64D.Functions.currentlyEnabled extension.Ext_Zmmul >>= fun __do_lift_1 =>
+      if (__do_lift || __do_lift_1) = true then
+        (LeanRV64D.Functions.encdec_mul_op_forwards
+          { result_part := VectorHalf.Low,
+            signed_rs1 := Signedness.Signed,
+            signed_rs2 := Signedness.Signed } >>= fun __do_lift =>
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (__do_lift ++
+                  (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                    0b0110011#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit)) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        0
+        (regidx_to_fin rd).val
+        0x33) state
+  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_zmmul
+  simp [LeanRV64D.Functions.encdec_mul_op_forwards]
+  simpa using sail_mul_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_mulh_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.MUL (rs2, rs1, rd,
+          { result_part := VectorHalf.High,
+            signed_rs1 := Signedness.Signed,
+            signed_rs2 := Signedness.Signed }))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          1
+          (regidx_to_fin rd).val
+          0x33) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      (LeanRV64D.Functions.currentlyEnabled extension.Ext_Zmmul >>= fun __do_lift_1 =>
+      if (__do_lift || __do_lift_1) = true then
+        (LeanRV64D.Functions.encdec_mul_op_forwards
+          { result_part := VectorHalf.High,
+            signed_rs1 := Signedness.Signed,
+            signed_rs2 := Signedness.Signed } >>= fun __do_lift =>
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (__do_lift ++
+                  (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                    0b0110011#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit)) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        1
+        (regidx_to_fin rd).val
+        0x33) state
+  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_zmmul
+  simp [LeanRV64D.Functions.encdec_mul_op_forwards]
+  simpa using sail_mulh_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_mulhsu_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.MUL (rs2, rs1, rd,
+          { result_part := VectorHalf.High,
+            signed_rs1 := Signedness.Signed,
+            signed_rs2 := Signedness.Unsigned }))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          2
+          (regidx_to_fin rd).val
+          0x33) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      (LeanRV64D.Functions.currentlyEnabled extension.Ext_Zmmul >>= fun __do_lift_1 =>
+      if (__do_lift || __do_lift_1) = true then
+        (LeanRV64D.Functions.encdec_mul_op_forwards
+          { result_part := VectorHalf.High,
+            signed_rs1 := Signedness.Signed,
+            signed_rs2 := Signedness.Unsigned } >>= fun __do_lift =>
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (__do_lift ++
+                  (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                    0b0110011#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit)) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        2
+        (regidx_to_fin rd).val
+        0x33) state
+  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_zmmul
+  simp [LeanRV64D.Functions.encdec_mul_op_forwards]
+  simpa using sail_mulhsu_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_mulhu_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.MUL (rs2, rs1, rd,
+          { result_part := VectorHalf.High,
+            signed_rs1 := Signedness.Unsigned,
+            signed_rs2 := Signedness.Unsigned }))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          3
+          (regidx_to_fin rd).val
+          0x33) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      (LeanRV64D.Functions.currentlyEnabled extension.Ext_Zmmul >>= fun __do_lift_1 =>
+      if (__do_lift || __do_lift_1) = true then
+        (LeanRV64D.Functions.encdec_mul_op_forwards
+          { result_part := VectorHalf.High,
+            signed_rs1 := Signedness.Unsigned,
+            signed_rs2 := Signedness.Unsigned } >>= fun __do_lift =>
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (__do_lift ++
+                  (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                    0b0110011#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit)) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        3
+        (regidx_to_fin rd).val
+        0x33) state
+  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_zmmul
+  simp [LeanRV64D.Functions.encdec_mul_op_forwards]
+  simpa using sail_mulhu_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_mulw_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.MULW (rs2, rs1, rd))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          0
+          (regidx_to_fin rd).val
+          0x3b) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      (LeanRV64D.Functions.currentlyEnabled extension.Ext_Zmmul >>= fun __do_lift_1 =>
+      if (LeanRV64D.Functions.xlen == 64 && (__do_lift || __do_lift_1)) = true then
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (0b000#3 ++
+                  (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                    0b0111011#7)))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit)) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        0
+        (regidx_to_fin rd).val
+        0x3b) state
+  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_zmmul
+  simp
+  simpa using sail_mulw_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_div_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.DIV (rs2, rs1, rd, false))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          4
+          (regidx_to_fin rd).val
+          0x33) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, _h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      if __do_lift = true then
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (2#2 ++
+                  (LeanRV64D.Functions.bool_bits_forwards false ++
+                    (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                      51#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        4
+        (regidx_to_fin rd).val
+        0x33) state
+  apply sailM_bind_ok h_m
+  simp
+  simpa using sail_div_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_divu_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.DIV (rs2, rs1, rd, true))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          5
+          (regidx_to_fin rd).val
+          0x33) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, _h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      if __do_lift = true then
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (2#2 ++
+                  (LeanRV64D.Functions.bool_bits_forwards true ++
+                    (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                      51#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        5
+        (regidx_to_fin rd).val
+        0x33) state
+  apply sailM_bind_ok h_m
+  simp
+  simpa using sail_divu_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_divw_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.DIVW (rs2, rs1, rd, false))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          4
+          (regidx_to_fin rd).val
+          0x3b) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, _h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      if (LeanRV64D.Functions.xlen == 64 && __do_lift) = true then
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (2#2 ++
+                  (LeanRV64D.Functions.bool_bits_forwards false ++
+                    (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                      59#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        4
+        (regidx_to_fin rd).val
+        0x3b) state
+  apply sailM_bind_ok h_m
+  simp
+  simpa using sail_divw_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_divuw_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.DIVW (rs2, rs1, rd, true))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          5
+          (regidx_to_fin rd).val
+          0x3b) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, _h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      if (LeanRV64D.Functions.xlen == 64 && __do_lift) = true then
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (2#2 ++
+                  (LeanRV64D.Functions.bool_bits_forwards true ++
+                    (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                      59#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        5
+        (regidx_to_fin rd).val
+        0x3b) state
+  apply sailM_bind_ok h_m
+  simp
+  simpa using sail_divuw_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_rem_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.REM (rs2, rs1, rd, false))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          6
+          (regidx_to_fin rd).val
+          0x33) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, _h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      if __do_lift = true then
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (3#2 ++
+                  (LeanRV64D.Functions.bool_bits_forwards false ++
+                    (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                      51#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        6
+        (regidx_to_fin rd).val
+        0x33) state
+  apply sailM_bind_ok h_m
+  simp
+  simpa using sail_rem_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_remu_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.REM (rs2, rs1, rd, true))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          7
+          (regidx_to_fin rd).val
+          0x33) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, _h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      if __do_lift = true then
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (3#2 ++
+                  (LeanRV64D.Functions.bool_bits_forwards true ++
+                    (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                      51#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        7
+        (regidx_to_fin rd).val
+        0x33) state
+  apply sailM_bind_ok h_m
+  simp
+  simpa using sail_remu_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_remw_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.REMW (rs2, rs1, rd, false))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          6
+          (regidx_to_fin rd).val
+          0x3b) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, _h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      if (LeanRV64D.Functions.xlen == 64 && __do_lift) = true then
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (3#2 ++
+                  (LeanRV64D.Functions.bool_bits_forwards false ++
+                    (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                      59#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        6
+        (regidx_to_fin rd).val
+        0x3b) state
+  apply sailM_bind_ok h_m
+  simp
+  simpa using sail_remw_concat_eq_rawRType rs2 rs1 rd
+
+theorem sail_encode_remuw_eq_rawRType_in
+    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (rs2 rs1 rd : regidx) :
+    SailEncodesToIn state
+        (instruction.REMW (rs2, rs1, rd, true))
+        (Rv64imShapes.rawRType 1
+          (regidx_to_fin rs2).val
+          (regidx_to_fin rs1).val
+          7
+          (regidx_to_fin rd).val
+          0x3b) := by
+  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  rcases h_state with ⟨h_m, _h_zmmul⟩
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
+      if (LeanRV64D.Functions.xlen == 64 && __do_lift) = true then
+        pure
+          (0b0000001#7 ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
+              (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+                (3#2 ++
+                  (LeanRV64D.Functions.bool_bits_forwards true ++
+                    (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                      59#7))))))
+      else do
+        Sail.assert false "Pattern match failure at unknown location"
+        throw Sail.Error.Exit) state =
+    EStateM.Result.ok
+      (Rv64imShapes.rawRType 1
+        (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val
+        7
+        (regidx_to_fin rd).val
+        0x3b) state
+  apply sailM_bind_ok h_m
+  simp
+  simpa using sail_remuw_concat_eq_rawRType rs2 rs1 rd
 
 /-- Constructor-level bridge for the ADD pilot.  The premises are generated Sail
 decode and generated Sail encode facts, not a hand-written raw decoder. -/
@@ -1289,6 +2115,120 @@ theorem sail_register_word_alu_executable_contained_in :
       (sail_encode_sraw_eq_rawRType rs2 rs1 rd)
       (by simp [Rv64imShapes.allRTypeOpcodeShapes])
 
+theorem sail_m_extension_executable_contained_in :
+    ∀ state raw inst,
+      Rv64imEnabledSailState state →
+      SailDecodesToIn state raw inst →
+      SailEncodesToIn state inst raw →
+      SailMExtensionInstruction inst →
+      Rv64imShapes.RTypeRegisterShape raw := by
+  intro state raw inst h_state _h_decode h_encode h_inst
+  rcases h_inst with
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩ |
+    ⟨rs2, rs1, rd, h_eq⟩
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_mul_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_mulh_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_mulhsu_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_mulhu_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_mulw_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_div_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_divu_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_divw_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_divuw_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_rem_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_remu_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_remw_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawRType_contained_in_rtype_shape_in h_encode
+      (sail_encode_remuw_eq_rawRType_in state h_state rs2 rs1 rd)
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+
 theorem sail_rv64im_executable_contained_in_supported_decode :
     ∀ raw,
       SailRv64imExecutableRaw raw →
@@ -1311,16 +2251,21 @@ theorem sail_rv64im_executable_contained_in_supported_decode_pilot :
 
 theorem sail_rv64im_executable_contained_in_supported_decode_in :
     ∀ state raw,
+      Rv64imEnabledSailState state →
       SailRv64imExecutableRawIn state raw →
       Rv64imShapes.SupportedDecodeShape raw := by
-  intro state raw h_sail
+  intro state raw h_state h_sail
   rcases h_sail with ⟨inst, h_decode, h_encode, h_inst⟩
-  rcases h_inst with h_register_alu | h_register_word_alu
+  rcases h_inst with h_register_alu | h_tail
   · exact .inl
       (sail_register_alu_executable_contained_in
         state raw inst h_decode h_encode h_register_alu)
+  rcases h_tail with h_register_word_alu | h_m_extension
   · exact .inl
       (sail_register_word_alu_executable_contained_in
         state raw inst h_decode h_encode h_register_word_alu)
+  · exact .inl
+      (sail_m_extension_executable_contained_in
+        state raw inst h_state h_decode h_encode h_m_extension)
 
 end ZiskFv.Completeness.SailDecode
