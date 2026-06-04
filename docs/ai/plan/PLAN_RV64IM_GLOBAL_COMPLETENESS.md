@@ -104,7 +104,7 @@ the corresponding checked-in and generated builds have passed.
 | --- | --- | --- | --- | --- | --- | --- |
 | Planning trail | n/a | n/a | n/a | n/a | n/a | done |
 | ADD pilot | ADD | done | done | done | done | none |
-| Register ALU | ADD SUB SLL SLT SLTU XOR SRL SRA OR AND | pending | pending | pending | pending | none expected |
+| Register ALU | ADD SUB SLL SLT SLTU XOR SRL SRA OR AND | done | done | done | done | none |
 | Register word ALU | ADDW SUBW SLLW SRLW SRAW | pending | pending | pending | pending | none expected |
 | M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | pending | pending | pending | pending | none expected |
 | Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | pending | pending | pending | pending | none expected |
@@ -120,13 +120,13 @@ the corresponding checked-in and generated builds have passed.
 - [x] Agree on depth-first family execution order.
 - [x] Create normalized project trail files for this worktree.
 - [x] Commit the planning/setup slice.
-- [ ] Preserve the existing ADD theorem as the first closed slice.
-- [ ] Register ALU: extend Sail whitelist and per-opcode constructor predicates.
-- [ ] Register ALU: prove Sail encodings imply `RTypeRegisterShape`.
-- [ ] Register ALU: compose shape into the checked-in supported-decode theorem.
-- [ ] Register ALU: verify generated Aeneas production coverage for the full
+- [x] Preserve the existing ADD theorem as the first closed slice.
+- [x] Register ALU: extend Sail whitelist and per-opcode constructor predicates.
+- [x] Register ALU: prove Sail encodings imply `RTypeRegisterShape`.
+- [x] Register ALU: compose shape into the checked-in supported-decode theorem.
+- [x] Register ALU: verify generated Aeneas production coverage for the full
   family.
-- [ ] Register ALU: run all verification commands, update matrix/status, commit.
+- [x] Register ALU: run all verification commands, update matrix/status, commit.
 - [ ] Register word ALU: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
 - [ ] M extension: close whitelist, raw-shape lemma, global theorem shape,
