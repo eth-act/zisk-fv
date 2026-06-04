@@ -5,7 +5,7 @@ import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.EquivCore.Bridge.MemCleanFullEnsemble
 import ZiskFv.EquivCore.Promises.Load
 import ZiskFv.EquivCore.Promises.BinaryExtensionHelpers
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
@@ -22,7 +22,7 @@ Post-T4-purge canonical: takes BinaryExtension row witness +
 matches_entry + static lookup soundness directly. The legacy BinaryAdd-arm
 route was retired in T4-purge.
 
-Trust footprint: `transpile_*`, MemBridge facts, plus BinaryExtension
+Trust footprint: row-shape provenance, MemBridge facts, plus BinaryExtension
 `circuit` (static-table lookup soundness via `StaticLookupSoundness`).
 Notably absent:
 `op_bus_permutation_sound`, `bin_ext_table_consumer_wf`.

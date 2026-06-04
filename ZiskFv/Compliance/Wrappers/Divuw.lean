@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.SailSpec.divuw
 import ZiskFv.SailSpec.BusEffect
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -29,9 +29,8 @@ import ZiskFv.Compliance.SharedBundles
 > * Lane-match low (`h_byte_lo`) via
 >   `main_external_arith_emission_bundle` (class #4) + op-bus
 >   `matches_entry` projection on the primary lane.
-> * `h_c23 : c_2.val = 0 ∧ c_3.val = 0` derived from the W-mode
->   `matches_entry` projection of `(1 - m32) * a_1` (which collapses
->   to `0 = v.c_2 + v.c_3 * 65536` under `m32 = 1`).
+> * `h_b23` / `h_c23` high-limb zero facts are explicit W-mode
+>   route/provenance obligations.
 > * `h_d_lt_b` via the new `arith_div_remainder_bound_unsigned_w`
 >   composed with `h_rs2_value` (passed through).
 >
@@ -83,6 +82,8 @@ lemma equiv_DIVUW_of_table
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     -- Pass-through caller burdens (not class #6b — bus encoding /
     -- operand bridge in W-form).
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
@@ -100,11 +101,11 @@ lemma equiv_DIVUW_of_table
   have h_arith_table := arith_table.spec
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
-  obtain ⟨h_main_active, h_main_op_divuw⟩ := pins
+  obtain ⟨_h_main_active, h_main_op_divuw⟩ := pins
   have h_op_eq := arith_div_primary_op_eq h_match_primary
   have h_op_arith_divuw : v.op r_a = 188 := by
     rw [h_op_eq, h_main_op_divuw]; simp [OP_DIVU_W]
-  obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
+  obtain ⟨h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
           h_c0_eq_FGL, _h_c1_eq_FGL⟩ :=
     arith_div_primary_projections h_match_primary
   have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
@@ -112,17 +113,11 @@ lemma equiv_DIVUW_of_table
   obtain ⟨h_na, h_nb, h_np, h_nr, h_m32, h_div⟩ :=
     ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_unsigned_w_basic_mode_pin
       v r_a h_arith_table (Or.inl h_op_arith_divuw)
-  obtain ⟨h_m32_main, _h_sp1, _h_sp2, _h_off1, _h_off2,
-         _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
-    ZiskFv.Trusted.transpile_DIVUW
-      m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_divuw
   have h_bundle := arith_mem.c_lane_vals
   have h_arith_chunk_ranges := arith_chunk_ranges.ranges
   obtain ⟨h_a0_lt, h_a1_lt, _h_a2_lt, _h_a3_lt,
-          _h_b0_lt, _h_b1_lt, h_b2_lt, h_b3_lt,
-          h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt,
+          _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
+          h_c0_lt, h_c1_lt, _h_c2_lt, _h_c3_lt,
           _h_d0_lt, _h_d1_lt, _h_d2_lt, _h_d3_lt⟩ :=
     h_arith_chunk_ranges
   have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
@@ -134,10 +129,6 @@ lemma equiv_DIVUW_of_table
       omega
     rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_e2_lo_bound, h_bundle.1]
   have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_a0_lt h_a1_lt
-  have h_b23 := arith_chunk_pair_eq_zero_of_m32_one
-    (m.b_1 r_main) (m.m32 r_main) h_b_hi_eq_FGL h_m32_main h_b2_lt h_b3_lt
-  have h_c23 := arith_chunk_pair_eq_zero_of_m32_one
-    (m.a_1 r_main) (m.m32 r_main) h_a_hi_eq_FGL h_m32_main h_c2_lt h_c3_lt
   exact ZiskFv.EquivCore.Divuw.equiv_DIVUW
     state divuw_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
@@ -176,6 +167,8 @@ lemma equiv_DIVUW
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     -- Pass-through caller burdens (not class #6b — bus encoding /
     -- operand bridge in W-form).
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
@@ -193,7 +186,7 @@ lemma equiv_DIVUW
   exact equiv_DIVUW_of_table state divuw_input r1 r2 rd bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds arith_table h_row_constraints
     arith_chunk_ranges arith_carry_ranges remainder_bound
-    h_sext_choice h_rs1_value h_rs2_value
+    h_b23 h_c23 h_sext_choice h_rs1_value h_rs2_value
 
 
 end ZiskFv.Compliance

@@ -8,20 +8,20 @@ per-row range bounds + carry-pin (caller-supplied or provided by a
 parent range channel); **Spec** is the proved relation
 `cPacked = (packed32 a + packed32 b) % 2^64`.
 
-Adapted from the spike branch's `ZiskFvClean/BinaryAdd/Soundness.lean`,
+Adapted from the extraction harness branch's `ZiskFvClean/BinaryAdd/Soundness.lean`,
 specialized from generic `F p` to `FGL` (Goldilocks `p ≈ 2^64`).
 
 ## Adaptation note — pGt
 
-The spike used `[Fact (p > 2^65)]` so that `4 * 2^32 + 2^16 < p`
+The extraction harness used `[Fact (p > 2^65)]` so that `4 * 2^32 + 2^16 < p`
 (needed for `ZMod.val_add_of_lt` to fire on the carry-chain
 equations). For Goldilocks p = `2^64 - 2^32 + 1`, we instead use:
 
 * `2 * 2^32 + 2^16 = 8590000128 < p` — well under p
-* `2 * 2^32 < p / 2`                 — tighter than the spike
+* `2 * 2^32 < p / 2`                 — tighter than the extraction harness
 
 The Soundness proof's range-discharging steps need to use these
-Goldilocks-specific bounds instead of the spike's pGt.
+Goldilocks-specific bounds instead of the extraction harness's pGt.
 
 ## Trust note
 

@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Tactics.BranchArchetype
@@ -15,7 +15,7 @@ microinstruction level, BNE uses the *same* Zisk opcode as BEQ
 (`OP_EQ = 9`) because ZisK's `create_branch_op` helper takes a
 separate `neg` flag. For BNE, `neg = 1`, which swaps
 `jmp_offset1` (taken offset) and `jmp_offset2` (not-taken
-fall-through) in the Zisk microinstruction emitted by the transpiler:
+fall-through) in the Zisk microinstruction emitted by row-shape provenance:
 
 * for BEQ: `jmp_offset1 = imm`, `jmp_offset2 = 4`, `flag = 1` is taken;
 * for BNE: `jmp_offset1 = 4`, `jmp_offset2 = imm`, `flag = 1` is still
@@ -32,8 +32,8 @@ The Main-AIR's PC handshake is still
 next_pc = pc + jmp_offset2 + flag * (jmp_offset1 - jmp_offset2)
 ```
 
-— the polarity is entirely encoded in the per-opcode transpile axiom
-(`transpile_BNE`). The circuit-side theorem is literally the same as
+— the polarity is entirely encoded in the per-opcode row-shape provenance bridge
+(BNE row-shape contract). The circuit-side theorem is literally the same as
 BEQ's, parameterized on the opcode literal. This is the validation
 check for the `BranchArchetype` macro: we consume
 `branch_archetype_pc_dispatch` directly.
@@ -55,9 +55,9 @@ open ZiskFv.Tactics.BranchArchetype
 
 /-- The Main row at `r_main` is in BNE-execution mode. **Same shape as
     `main_row_in_beq_mode`** — ZisK emits `op = OP_EQ = 9` for both
-    BEQ and BNE (see `transpile_BNE` / `transpile_BEQ`); only the
+    BEQ and BNE (see BNE row-shape contract / BEQ row-shape contract); only the
     `jmp_offset1`/`jmp_offset2` assignment differs, which is captured
-    by the transpile axiom, not the mode predicate. -/
+    by the row-shape provenance bridge, not the mode predicate. -/
 @[simp]
 def main_row_in_bne_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
@@ -82,7 +82,7 @@ def branch_ne_circuit_holds
     Given the branch-subset Main constraints + BNE mode witnesses,
     the next-row `pc` satisfies the flag-dispatched handshake
     formula. Per-BNE polarity (flag=0 taken, flag=1 not-taken)
-    emerges from composing this with `transpile_BNE`'s
+    emerges from composing this with BNE row-shape contract's
     `jmp_offset1 = 4, jmp_offset2 = imm` assignment. -/
 lemma branch_ne_compositional
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
@@ -99,12 +99,12 @@ lemma branch_ne_compositional
 
 /-- **BNE taken case.** When `flag = 0` (the Binary SM signals
     `a ≠ b`), the next-pc is `pc + jmp_offset2`. For BNE,
-    `jmp_offset2 = imm` (from `transpile_BNE` — the swap versus BEQ),
+    `jmp_offset2 = imm` (from BNE row-shape contract — the swap versus BEQ),
     so this corresponds to `pc + imm` — the taken branch.
 
     Note the polarity inversion relative to `branch_eq_taken`:
     BNE-taken is `flag = 0`, not `flag = 1`. This is the whole
-    point of BNE's `neg = 1` transpile path. -/
+    point of BNE's `neg = 1` row-shape path. -/
 lemma branch_ne_taken
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ne_circuit_holds m r_main next_pc)
@@ -114,7 +114,7 @@ lemma branch_ne_taken
     ⟨h.1, h.2⟩ h_flag
 
 /-- **BNE not-taken case.** When `flag = 1` (`a == b`), the
-    next-pc is `pc + jmp_offset1 = pc + 4` (from `transpile_BNE`'s
+    next-pc is `pc + jmp_offset1 = pc + 4` (from BNE row-shape contract's
     swap). -/
 lemma branch_ne_not_taken
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)

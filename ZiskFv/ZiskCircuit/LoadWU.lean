@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.ZiskCircuit.LoadD
@@ -132,7 +132,7 @@ lemma load_wu_compositional_via_archetype
   rw [h_packed, memory_entry_toField_eq_lo h_zero]
 
 /-- **Next-PC for LWU.** Identical derivation to LD — `jmp_offset1 =
-    jmp_offset2 = 4` (from `transpile_LWU`) + `flag = 0` (constraint
+    jmp_offset2 = 4` (from LWU row-shape contract) + `flag = 0` (constraint
     18) collapses the PC handshake to `pc + 4`. -/
 lemma load_wu_next_pc_concrete
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)

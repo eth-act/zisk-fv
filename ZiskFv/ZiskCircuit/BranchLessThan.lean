@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Tactics.BranchArchetype
@@ -74,7 +74,7 @@ lemma branch_lt_compositional
 
 /-- **BLT taken case.** When `flag = 1` (Binary SM signals `a <s b`),
     the next-pc is `pc + jmp_offset1`. For BLT, `jmp_offset1 = imm`
-    (from `transpile_BLT`), so this is `pc + imm` — the taken branch
+    (from BLT row-shape contract), so this is `pc + imm` — the taken branch
     (BEQ polarity). -/
 lemma branch_lt_taken
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)

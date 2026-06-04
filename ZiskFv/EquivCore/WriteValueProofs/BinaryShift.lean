@@ -54,7 +54,7 @@ No new axioms; no `sorry`; no output-equality residual hypothesis.
 ZisK's `BinaryExtension` SM dispatches SLL and SLLI through the same
 opcode literal (`OP_SLL = 33`); they differ only on the Sail side in the
 shift-amount source (register vs immediate). The Tier-1 lemma is the
-same shape; only the `h_input_imm` form of the shift-amount transpile
+same shape; only the `h_input_imm` form of the shift-amount row-shape
 bridge differs for the I-variant. Same for SRL/SRLI.
 
 ## Note on BinaryExtension's c-cell layout
@@ -183,7 +183,7 @@ private lemma memory_entry_hi_bound_of_shift_sum
     Concludes `U64.toBV #v[(byteAt e2 0)..7] = r1_val <<< (shift % 64)` from K1-C SLL
     lift, Main↔BinaryExtension bus c-lane match (the two c lanes equal the
     sums of the lo/hi byte halves of `Valid_BinaryExtension`), the rd-write
-    lane match, byte ranges, and a transpile bridge identifying `r1_val`
+    lane match, byte ranges, and a row-shape bridge identifying `r1_val`
     with the packed 8-byte input sum.
 
     The shift amount is taken from `(v.free_in_b r_binary).val % 64` directly
@@ -985,7 +985,7 @@ lemma h_rd_val_shift_srai_of_wf
     bits of `r2_val`, sign-extend the 32-bit result back to 64. Uses K1-C
     SRLW lift `binary_extension_srlw_chunks_eq_bv_ushr_w`.
 
-    The lemma takes `r1_val_lo32 : BitVec 32` directly with a transpile
+    The lemma takes `r1_val_lo32 : BitVec 32` directly with a row-shape
     bridge to `BitVec.ofNat 32 (sum a_lo)`. The shift amount on the Sail
     side equals `(v.free_in_b r_binary).val % 32` — RV64 SRLW pre-masks
     the rs2 register read to 5 bits. -/
@@ -1240,7 +1240,7 @@ lemma h_rd_val_shift_srliw_of_wf
     `r2_val`, sign-extend the 32-bit result back to 64. Uses K1-C SLLW
     lift `binary_extension_sllw_chunks_eq_bv_shl_w`.
 
-    The lemma takes `r1_val_lo32 : BitVec 32` directly with a transpile
+    The lemma takes `r1_val_lo32 : BitVec 32` directly with a row-shape
     bridge to `BitVec.ofNat 32 (sum a_lo)`. The shift amount on the Sail
     side equals `(v.free_in_b r_binary).val % 32` — RV64 SLLW pre-masks
     the rs2 register read to 5 bits. -/
@@ -1495,7 +1495,7 @@ lemma h_rd_val_shift_slliw_of_wf
     5 bits of `r2_val`, sign-extend the 32-bit result back to 64. Uses
     K1-C SRAW lift `binary_extension_sraw_chunks_eq_bv_sshr_w`.
 
-    The lemma takes `r1_val_lo32 : BitVec 32` directly with a transpile
+    The lemma takes `r1_val_lo32 : BitVec 32` directly with a row-shape
     bridge to `BitVec.ofNat 32 (sum a_lo)`. The shift amount on the Sail
     side equals `(v.free_in_b r_binary).val % 32` — RV64 SRAW pre-masks
     the rs2 register read to 5 bits. -/

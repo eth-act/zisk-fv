@@ -18,8 +18,8 @@ The category classification is a heuristic (regex over type text):
 - `match`      — cross-AIR matching equations (`m.<col> = <expr>`).
 - `bridge`     — Sail-input bridges (`sail_input.r*_val = BitVec...`).
 - `bus_shape`  — bus-protocol shape (`.multiplicity`, `.as.val`).
-- `transpile`  — transpile pins (`h_input_rd`, `h_input_pc`,
-                  `h_rd_idx`, `h_nextPC_matches`).
+- `row_shape`  — row-shape/route pins (`h_input_rd`, `h_input_pc`,
+                   `h_rd_idx`, `h_nextPC_matches`).
 - `byte_chain` — `consumer_byte_match_chain` / `ByteLookupHypotheses`.
 - `loose`      — anonymous field elements (`(a0 b0 c0 : FGL)`).
 - `row`        — row index (`r_main`, `r_binary`, etc.).
@@ -63,7 +63,7 @@ CATEGORY_RULES = [
     ("byte_chain", re.compile(r"consumer_byte_match|ByteLookupHypotheses")),
     ("bridge", re.compile(r"\.r[12]_val\s*=\s*BitVec\.ofNat|input\.r[12]_val")),
     ("bus_shape", re.compile(r"\.multiplicity\s*=|\.as\.val|exec_row\.length")),
-    ("transpile", re.compile(r"wrap_to_regidx|nextPC|regidx_to_fin|store_pc|set_pc|jmp_offset")),
+    ("row_shape", re.compile(r"wrap_to_regidx|nextPC|regidx_to_fin|store_pc|set_pc|jmp_offset")),
     ("match", re.compile(r"m\.[a-z_]+\s+r_main\s*=|main\.[a-z_]+\s+r_main\s*=|\.c_0\s+r_main\b|\.c_1\s+r_main\b")),
     ("instance", re.compile(r"^\s*Field\s+|^\s*Circuit\s+|^\s*\[")),
 ]
@@ -124,7 +124,7 @@ def main() -> int:
     print(f"# the gate.")
     print(f"#")
     print(f"# Categories: validator | state | entry | range | match | bridge |")
-    print(f"#             bus_shape | transpile | byte_chain | loose | row |")
+    print(f"#             bus_shape | row_shape | byte_chain | loose | row |")
     print(f"#             instance | other")
     print(f"#")
     rows = []

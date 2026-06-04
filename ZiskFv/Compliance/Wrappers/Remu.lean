@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.SailSpec.remu
 import ZiskFv.SailSpec.BusEffect
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -21,7 +21,8 @@ import ZiskFv.Compliance.SharedBundles
 > Mirrors `DivuExemplar` (unsigned mode) but on the **secondary** lane:
 > opcode = 0xb9 = 185, byte lanes target `d[]` (remainder), hi-lane via
 > `rem_bus_res1_eq_d_hi`, selector pin pins `main_mul = main_div = 0`.
-> Uses the secondary op-bus row `opBus_row_ArithDivSecondary`.
+> Uses the secondary op-bus row `opBus_row_ArithDivSecondary`; operand
+> bridges are explicit unsigned route/provenance obligations.
 -/
 
 namespace ZiskFv.Compliance
@@ -59,7 +60,13 @@ lemma equiv_REMU_of_table
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a) :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+    (h_rs1_value : remu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+          (v.c_2 r_a).val (v.c_3 r_a).val)
+    (h_rs2_value : remu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -68,13 +75,13 @@ lemma equiv_REMU_of_table
   have h_arith_table := arith_table.spec
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
-  obtain ⟨h_main_active, h_main_op_remu⟩ := pins
-  have h_input_r1 := promises.input_r1_eq
-  have h_input_r2 := promises.input_r2_eq
+  obtain ⟨_h_main_active, h_main_op_remu⟩ := pins
+  have _h_input_r1 := promises.input_r1_eq
+  have _h_input_r2 := promises.input_r2_eq
   have h_op_eq := arith_div_secondary_op_eq h_match_secondary
   have h_op_arith_remu : v.op r_a = 185 := by
     rw [h_op_eq, h_main_op_remu]; simp [OP_REMU]
-  obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
+  obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
           h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
     arith_div_secondary_projections h_match_secondary
   have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
@@ -93,7 +100,7 @@ lemma equiv_REMU_of_table
   have h_arith_carry_ranges := arith_carry_ranges.ranges
   have h_arith_chunk_ranges_arg := h_arith_chunk_ranges
   obtain ⟨_, _, _, _,
-          h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt,
+          _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
           h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt,
           h_d0_lt, h_d1_lt, h_d2_lt, h_d3_lt⟩ :=
     h_arith_chunk_ranges
@@ -120,32 +127,7 @@ lemma equiv_REMU_of_table
   have h_c1_eq_FGL' : m.c_1 r_main = v.d_2 r_a + v.d_3 r_a * 65536 := by
     rw [h_c1_eq_FGL, h_bus_res1_eq]
   have h_byte_hi := arith_byte_lane_eq_of_match h_byte_hi_to_c1 h_c1_eq_FGL' h_d2_lt h_d3_lt
-  obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
-         h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
-    ZiskFv.Trusted.transpile_REMU
-      m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_remu
-  have h_r1_packed_bv :
-      remu_input.r1_val
-        = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) :=
-    ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-      state (regidx_to_fin r1) remu_input.r1_val
-      (m.a_0 r_main) (m.a_1 r_main) h_main_a_lo h_main_a_hi h_input_r1
-  have h_r2_packed_bv :
-      remu_input.r2_val
-        = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) :=
-    ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-      state (regidx_to_fin r2) remu_input.r2_val
-      (m.b_0 r_main) (m.b_1 r_main) h_main_b_lo h_main_b_hi h_input_r2
-  have h_rs1_value := arith_rs_toNat_eq_packed4_nonW
-    (m.a_0 r_main) (m.a_1 r_main) (m.m32 r_main)
-    h_a_lo_eq_FGL h_a_hi_eq_FGL _h_m32_m h_r1_packed_bv
-    h_c0_lt h_c1_lt h_c2_lt h_c3_lt
-  have h_rs2_value := arith_rs_toNat_eq_packed4_nonW
-    (m.b_0 r_main) (m.b_1 r_main) (m.m32 r_main)
-    h_b_lo_eq_FGL h_b_hi_eq_FGL _h_m32_m h_r2_packed_bv
-    h_b0_lt h_b1_lt h_b2_lt h_b3_lt
+  -- Use explicit h_rs1_value / h_rs2_value operand bridges.
   exact ZiskFv.EquivCore.Remu.equiv_REMU
     state remu_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
@@ -180,7 +162,13 @@ lemma equiv_REMU
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a) :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+    (h_rs1_value : remu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+          (v.c_2 r_a).val (v.c_3 r_a).val)
+    (h_rs2_value : remu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -188,7 +176,7 @@ lemma equiv_REMU
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact equiv_REMU_of_table state remu_input r1 r2 rd bus m r_main v r_a
     pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-    arith_chunk_ranges arith_carry_ranges remainder_bound
+    arith_chunk_ranges arith_carry_ranges remainder_bound h_rs1_value h_rs2_value
 
 
 end ZiskFv.Compliance

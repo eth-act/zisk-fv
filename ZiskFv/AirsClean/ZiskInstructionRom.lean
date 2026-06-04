@@ -6,7 +6,7 @@ import ZiskFv.Field.Goldilocks
 # ZiskInstructionRom — Clean `StaticTable` provider side (Phase T4.0)
 
 ZisK's instruction ROM (`zisk/state-machines/rom/pil/rom.pil`) holds the
-transpiled program: each row stores the 11-column instruction tuple at
+lowered program: each row stores the 11-column instruction tuple at
 `line = pc`. Unlike the BinaryTable / BinaryExtensionTable / ArithTable
 static providers (whose row content is a deterministic function of the
 row index), the ZisK ROM is **program-parameterised**: a different
@@ -41,7 +41,7 @@ namespace ZiskFv.AirsClean.ZiskInstructionRom
 open Goldilocks
 open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
 
-/-- A ZisK transpiled program: a finite-length sequence of instructions,
+/-- A ZisK lowered program: a finite-length sequence of instructions,
     each as a `ZiskRomMessage FGL`. The instruction at position `i` is
     the row Main looks up when `pc = i`.
 

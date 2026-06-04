@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Tactics.BranchArchetype
@@ -12,7 +12,7 @@ Compositional BGE (branch-if-greater-or-equal, signed) spec —
 `opcode_lit = OP_LT`.
 
 BGE uses the same Zisk opcode as BLT (`OP_LT = 7`, Binary-SM signed
-less-than) — the transpiler's `create_branch_op` helper takes a
+less-than) — the production lowerer's `create_branch_op` helper takes a
 separate `neg` flag which, for BGE, swaps `jmp_offset1` (taken) and
 `jmp_offset2` (fall-through), making the PC-handshake interpret
 `flag = 0` (i.e. the Binary-SM says `a ≥s b`) as the taken direction.
@@ -27,7 +27,7 @@ Concretely:
   - `flag = 1` (a <s b) → BGE NOT-TAKEN  → `next_pc = pc + jmp_offset1 = pc + 4`
 
 The Main-AIR PC handshake is identical to BLT/BNE/BEQ's — only the
-opcode literal (`OP_LT`) and the offset-swap (`transpile_BGE`'s
+opcode literal (`OP_LT`) and the offset-swap (BGE row-shape contract's
 polarity) distinguish BGE.
 -/
 
@@ -43,7 +43,7 @@ open ZiskFv.Tactics.BranchArchetype
 /-- The Main row at `r_main` is in BGE-execution mode. **Same shape as
     `main_row_in_blt_mode`** — ZisK emits `op = OP_LT = 7` for both BLT
     and BGE; only the `jmp_offset1`/`jmp_offset2` assignment differs,
-    which the transpile axiom captures, not the mode predicate. -/
+    which the row-shape provenance bridge captures, not the mode predicate. -/
 @[simp]
 def main_row_in_bge_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
@@ -64,7 +64,7 @@ def branch_ge_circuit_holds
     `BranchArchetype`).** Instantiates the archetype macro's
     `branch_archetype_pc_dispatch` at `opcode_lit = OP_LT`. The
     BGE-specific polarity (flag=0 taken, flag=1 not-taken) emerges
-    from composing with `transpile_BGE`'s `jmp_offset1 = 4,
+    from composing with BGE row-shape contract's `jmp_offset1 = 4,
     jmp_offset2 = imm` assignment. -/
 lemma branch_ge_compositional
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
@@ -78,7 +78,7 @@ lemma branch_ge_compositional
 
 /-- **BGE taken case.** When `flag = 0` (the Binary SM signals
     `a ≥s b`, i.e. NOT `a <s b`), the next-pc is `pc + jmp_offset2`.
-    For BGE, `jmp_offset2 = imm` (from `transpile_BGE`'s swap versus
+    For BGE, `jmp_offset2 = imm` (from BGE row-shape contract's swap versus
     BLT), so this is `pc + imm` — the taken branch.
 
     Note the polarity inversion relative to `branch_lt_taken`:
@@ -92,7 +92,7 @@ lemma branch_ge_taken
     ⟨h.1, h.2⟩ h_flag
 
 /-- **BGE not-taken case.** When `flag = 1` (`a <s b`), the next-pc is
-    `pc + jmp_offset1 = pc + 4` (from `transpile_BGE`'s swap). -/
+    `pc + jmp_offset1 = pc + 4` (from BGE row-shape contract's swap). -/
 lemma branch_ge_not_taken
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ge_circuit_holds m r_main next_pc)

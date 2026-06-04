@@ -52,6 +52,12 @@ theorem equiv_DIVU
       ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+    (h_rs1_value : divu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+          (v.c_2 r_a).val (v.c_3 r_a).val)
+    (h_rs2_value : divu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
     : (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -61,7 +67,7 @@ theorem equiv_DIVU
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_DIVU_of_table state divu_input r1 r2 rd bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-    arith_chunk_ranges arith_carry_ranges remainder_bound
+    arith_chunk_ranges arith_carry_ranges remainder_bound h_rs1_value h_rs2_value
 
 
 end ZiskFv.Equivalence.Divu

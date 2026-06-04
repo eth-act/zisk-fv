@@ -7,7 +7,7 @@ open LeanRV64D.Functions
 ## RV64M DIVUW — pure spec + Sail equivalence
 
 DIVUW is the unsigned 32-bit divide. Per
-`riscv2zisk_context.rs:251`, RV64 `divuw` transpiles via
+`riscv2zisk_context.rs:251`, RV64 `divuw` lowers via
 `create_register_op(..., "divu_w", 4)`, emitting a single Arith-bus
 row with `op = OP_DIVU_W = 0xbc = 188`, `m32 = 1`.
 

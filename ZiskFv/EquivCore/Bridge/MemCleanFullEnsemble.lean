@@ -20,7 +20,7 @@ open ZiskFv.Channels.MemoryBus
     Mem provider rows.
 
 The caller still supplies the structural pins tying the selected Clean rows
-to the legacy validators and ROM/transpile facts.  The provider-side
+to the legacy validators and ROM/row-shape facts.  The provider-side
 `matches_memory_payload` field is derived here from full-ensemble
 same-message evidence, preventing it from becoming a separate promise. -/
 @[reducible]
@@ -190,14 +190,18 @@ def sdCleanWitness_of_full_ensemble_main_c
           (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 2))
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
-        (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat) :
+        (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sd_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sd_input.r2_val) :
     SdCleanWitness main r_main bus sd_input :=
   { mainRow := eval mainEnv mainRowVar
     main_row := h_main_row
     main_spec := h_main_spec
     store_pc := h_store_pc
     main_c_match := h_main_c_match
-    addr2 := h_addr2 }
+    addr2 := h_addr2
+    b0_value := h_b0_value
+    b1_value := h_b1_value }
 
 /-- Build the SB store witness from a selected full-ensemble Main `c` row. -/
 @[reducible]
@@ -221,6 +225,8 @@ def sbCleanWitness_of_full_ensemble_main_c
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
         (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sb_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sb_input.r2_val)
     (h_m1 : state.mem[bus.e2.ptr.toNat + 1]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1 : BitVec 8))
     (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2 : BitVec 8))
     (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3 : BitVec 8))
@@ -235,6 +241,8 @@ def sbCleanWitness_of_full_ensemble_main_c
     store_pc := h_store_pc
     main_c_match := h_main_c_match
     addr2 := h_addr2
+    b0_value := h_b0_value
+    b1_value := h_b1_value
     m1 := h_m1
     m2 := h_m2
     m3 := h_m3
@@ -265,6 +273,8 @@ def shCleanWitness_of_full_ensemble_main_c
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
         (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sh_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sh_input.r2_val)
     (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2 : BitVec 8))
     (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3 : BitVec 8))
     (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
@@ -278,6 +288,8 @@ def shCleanWitness_of_full_ensemble_main_c
     store_pc := h_store_pc
     main_c_match := h_main_c_match
     addr2 := h_addr2
+    b0_value := h_b0_value
+    b1_value := h_b1_value
     m2 := h_m2
     m3 := h_m3
     m4 := h_m4
@@ -307,6 +319,8 @@ def swCleanWitness_of_full_ensemble_main_c
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
         (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sw_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sw_input.r2_val)
     (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
     (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
     (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
@@ -318,6 +332,8 @@ def swCleanWitness_of_full_ensemble_main_c
     store_pc := h_store_pc
     main_c_match := h_main_c_match
     addr2 := h_addr2
+    b0_value := h_b0_value
+    b1_value := h_b1_value
     m4 := h_m4
     m5 := h_m5
     m6 := h_m6

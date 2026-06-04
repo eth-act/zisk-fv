@@ -5,7 +5,7 @@ import ZiskFv.Bits.Execution
 ## RV64I FENCE — pure spec + Sail equivalence
 
 FENCE is a memory-ordering hint. Per `riscv2zisk_context.rs:228`, ZisK's
-transpiler maps `"fence"` to `self.nop()` (line 772), which emits a
+production lowerer maps `"fence"` to `self.nop()` (line 772), which emits a
 single Zisk microinstruction:
 - `op = OP_FLAG = 0` (Internal),
 - `is_external_op = 0`,

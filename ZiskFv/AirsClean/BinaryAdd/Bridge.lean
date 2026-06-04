@@ -24,7 +24,7 @@ The bridge:
 
 No axioms added. This is the bridge that Phase 5's
 the Compliance dispatch layer will use to dispatch via the Clean Component's
-Soundness instead of the spike's bespoke per-AIR proofs.
+Soundness instead of the extraction harness's bespoke per-AIR proofs.
 
 The old `binary_add_columns_in_range` axiom is retired by concrete
 Clean/static lookup witnesses in the full ensemble path. This bridge

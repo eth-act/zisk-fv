@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.Andi
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -17,6 +17,7 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.EquivCore.WriteValueProofs.BinaryLogic
+import ZiskFv.EquivCore.Add
 import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.Compliance.SharedBundles
 
@@ -86,6 +87,9 @@ lemma equiv_ANDI_of_static_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (h_input_r1_row : andi_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 row)
+    (h_input_imm_row :
+      BitVec.signExtend 64 andi_input.imm = ZiskFv.EquivCore.Add.binaryRowB64 row)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_andi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
@@ -126,18 +130,6 @@ lemma equiv_ANDI_of_static_row
   obtain ⟨h_match_clo, h_match_chi⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.match_clo_chi_AND_row_of_static_facts
       m row r_main h_core h_facts h_match h_bop_or_sext
-  obtain ⟨_, h_main_m32, _, _, _, _, h_a_lo_t, h_a_hi_t, _, _⟩ :=
-    transpile_ANDI m r_main (regidx_to_fin r1) (regidx_to_fin rd)
-      (m.b_0 r_main) (m.b_1 r_main)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_andi
-  have h_input_r1_circuit :=
-    ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-      m row r_main (regidx_to_fin r1) andi_input.r1_val
-      h_matches h_main_m32 h_a_lo_t h_a_hi_t h_match h_input_r1
-  have h_input_imm_circuit :=
-    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
-      m row r_main andi_input.imm h_matches h_main_m32 h_match h_andi_subset
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
   have h_match_clo_mem :
       row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
@@ -158,7 +150,7 @@ lemma equiv_ANDI_of_static_row
       row e2 andi_input.r1_val (BitVec.signExtend 64 andi_input.imm)
       h_matches h_match_clo_mem h_match_chi_mem
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_input_r1_circuit h_input_imm_circuit
+      h_input_r1_row h_input_imm_row
   rw [equiv_ANDI_sail state andi_input r1 rd imm
         h_input_r1 h_input_imm h_input_rd h_input_pc]
   symm

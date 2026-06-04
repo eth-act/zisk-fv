@@ -38,6 +38,14 @@ theorem equiv_ADDI
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
+    (h_input_r1_row : addi_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 addi_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -51,6 +59,7 @@ theorem equiv_ADDI
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_ADDI
     state addi_input r1 rd imm m providerTable providerRow r_main bus pins
-    h_component h_table_spec h_provider_row h_match h_addi_subset h_lane_rd promises
+    h_component h_table_spec h_provider_row h_match h_addi_subset
+    h_input_r1_row h_input_imm_row h_lane_rd promises
 
 end ZiskFv.Equivalence.Addi

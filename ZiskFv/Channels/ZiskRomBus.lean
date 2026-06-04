@@ -8,7 +8,7 @@ import ZiskFv.Field.Goldilocks
 
 ZisK's instruction ROM bus (`bus_id = ROM_BUS_ID`,
 `zisk/state-machines/rom/pil/rom.pil:6`). Main consumes the bus per row
-to look up the transpiled instruction at the current `pc`; the ROM AIR
+to look up the lowered instruction at the current `pc`; the ROM AIR
 (a `StaticTable` parameterized by the user's compiled program) provides
 the 11-slot tuple.
 

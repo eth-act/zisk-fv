@@ -4,7 +4,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Main.OpcodeClassification
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Compliance.Wrappers.Lui
 import ZiskFv.Compliance.Wrappers.Auipc
 import ZiskFv.Compliance.Wrappers.Jal
@@ -73,7 +73,7 @@ import ZiskFv.Compliance.Wrappers.Sd
 /-!
 # OpEnvelope.lean — the per-opcode input bundle for RV64IM
 
-This file defines `OpEnvelope`, the 63-arm sum type whose constructors
+This file defines `OpEnvelope`, the sum type whose constructors
 bundle, per Zisk opcode, the inputs and hypotheses the corresponding
 `equiv_<OP>` wrapper requires. It is consumed by the per-family dispatchers in
 `Compliance/Dispatch/` and, through them, by the global
@@ -240,8 +240,12 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.LuiRowMode provenance)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
+    (h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat)
+    (h_imm_hi_nat : (m.b_1 r_main).val
+      = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 4294967296)
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state lui_input.imm lui_input.rd lui_input.PC
         (PureSpec.execute_LUI_pure lui_input).nextPC
@@ -254,8 +258,12 @@ inductive OpEnvelope
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (next_pc : FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
+    (h_offset_bridge : (m.jmp_offset2 r_main).val
+      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
@@ -266,6 +274,15 @@ inductive OpEnvelope
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) : OpEnvelope state m r_main
+  -- ============================ AUIPC x0 (no mem) ======================
+  | auipc_x0
+    (auipc_input : PureSpec.AuipcInput)
+    (imm : BitVec 20) (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (promises : ZiskFv.EquivCore.Promises.UTypeNoMemPromises
+        state auipc_input.imm auipc_input.rd auipc_input.PC
+        (PureSpec.execute_AUIPC_pure auipc_input).nextPC
+        imm rd exec_row) : OpEnvelope state m r_main
   -- ============================ JAL (1 mem entry) =======================
   | jal
     (jal_input : PureSpec.JalInput)
@@ -275,9 +292,12 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (row_mode : ZiskFv.Compliance.MainRowProvenance.JalRowMode provenance)
     (h_jal_subset :
       ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
+    (h_jmp2 : m.jmp_offset2 r_main = 4)
+    (h_pc_bridge : (m.pc r_main).val = jal_input.PC.toNat)
     (promises : ZiskFv.EquivCore.Promises.JumpPromises
         state jal_input.PC jal_input.rd misa_val
         (PureSpec.execute_JAL_pure jal_input).success
@@ -287,6 +307,21 @@ inductive OpEnvelope
     (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
     (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) : OpEnvelope state m r_main
+  -- ============================ JAL x0 (no mem) ========================
+  | jal_x0
+    (jal_input : PureSpec.JalInput)
+    (imm : BitVec 21) (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (nextPC_val : BitVec 64)
+    (promises : ZiskFv.EquivCore.Promises.JumpNoMemPromises
+        state jal_input.PC jal_input.rd misa_val
+        (PureSpec.execute_JAL_pure jal_input).success
+        (PureSpec.execute_JAL_pure jal_input).nextPC
+        rd exec_row nextPC_val)
+    (h_input_imm : jal_input.imm = imm)
+    (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
+      : OpEnvelope state m r_main
   -- ============================ JALR (1 mem entry, do-block) ============
   | jalr
     (jalr_input : PureSpec.JalrInput)
@@ -298,6 +333,10 @@ inductive OpEnvelope
     (next_pc : FGL)
     (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
+    (h_flag : m.flag r_main = 0)
+    (h_m32 : m.m32 r_main = 0)
+    (h_set_pc : m.set_pc r_main = 1)
+    (h_store_pc : m.store_pc r_main = 1)
     (h_jalr_subset :
       ZiskFv.Airs.Main.flag_boolean m r_main
       ∧ ZiskFv.Airs.Main.is_external_op_boolean m r_main
@@ -315,6 +354,8 @@ inductive OpEnvelope
       = EStateM.Result.ok Privilege.Machine state)
     (h_mseccfg : Sail.readReg Register.mseccfg state
       = EStateM.Result.ok mseccfg state)
+    (h_link_bridge :
+      (m.pc r_main + m.jmp_offset2 r_main).val = (jalr_input.PC + 4#64).toNat)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) : OpEnvelope state m r_main
   -- ============================ ADD via Binary arm (sole provider after T4-purge) =
@@ -334,6 +375,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : add_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : add_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
@@ -357,6 +406,14 @@ inductive OpEnvelope
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
+    (h_input_r1_row : addi_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 addi_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
@@ -380,6 +437,16 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb addw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
+    (h_input_r2_extract :
+      (Sail.BitVec.extractLsb addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowB32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC
@@ -397,13 +464,23 @@ inductive OpEnvelope
       providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
     (h_table_spec : providerTable.Spec)
     (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
-      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+      (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (ZiskFv.AirsClean.Binary.opBusMessage
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow))) 1))
+      (h_input_r1_extract :
+        (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+          = ZiskFv.EquivCore.Addw.binaryRowA32
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow)) % 2^32)
+      (h_input_r2_extract :
+        (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+          = ZiskFv.EquivCore.Addw.binaryRowB32
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow)) % 2^32)
+      (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
         (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
@@ -427,6 +504,11 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addiw_input.r1_val addiw_input.imm addiw_input.rd addiw_input.PC
@@ -444,13 +526,21 @@ inductive OpEnvelope
       providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
     (h_table_spec : providerTable.Spec)
     (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
-      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
+      (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (ZiskFv.AirsClean.Binary.opBusMessage
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow))) 1))
+      (h_input_r1_row : sub_input.r1_val =
+        ZiskFv.EquivCore.Add.binaryRowA64
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+            (providerTable.environment providerRow)))
+      (h_input_r2_row : sub_input.r2_val =
+        ZiskFv.EquivCore.Add.binaryRowB64
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)))
+      (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
         (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
@@ -473,6 +563,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : and_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : and_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state and_input.r1_val and_input.r2_val and_input.rd and_input.PC
@@ -496,6 +594,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : or_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : or_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
@@ -519,6 +625,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : xor_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : xor_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state xor_input.r1_val xor_input.r2_val xor_input.rd xor_input.PC
@@ -542,6 +656,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : slt_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : slt_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state slt_input.r1_val slt_input.r2_val slt_input.rd slt_input.PC
@@ -565,6 +687,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : sltu_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : sltu_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sltu_input.r1_val sltu_input.r2_val sltu_input.rd sltu_input.PC
@@ -588,6 +718,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : andi_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 andi_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -612,6 +750,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : ori_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 ori_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -636,6 +782,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : xori_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 xori_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -660,6 +814,11 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_main_m32 : m.m32 r_main = 0)
+    (h_input_r1_row : slti_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -684,6 +843,11 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_main_m32 : m.m32 r_main = 0)
+    (h_input_r1_row : sltiu_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -711,6 +875,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : sll_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : sll_input.r2_val.toNat % 64 =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRL ====================================
@@ -734,6 +906,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : srl_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : srl_input.r2_val.toNat % 64 =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRA ====================================
@@ -757,6 +937,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : sra_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : sra_input.r2_val.toNat % 64 =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SLLI ====================================
@@ -780,6 +968,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : slli_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : slli_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRLI ====================================
@@ -803,6 +999,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : srli_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : srli_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRAI ====================================
@@ -826,6 +1030,14 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : srai_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : srai_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SLLW ====================================
@@ -861,6 +1073,15 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row :
+      (Sail.BitVec.extractLsb sllw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowA32
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow)))
+    (h_shift_pin_row : sllw_input.r2_val.toNat % 32 =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRLW ====================================
@@ -896,6 +1117,15 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row :
+      (Sail.BitVec.extractLsb srlw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowA32
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow)))
+    (h_shift_pin_row : srlw_input.r2_val.toNat % 32 =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRAW ====================================
@@ -931,6 +1161,15 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row :
+      (Sail.BitVec.extractLsb sraw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowA32
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow)))
+    (h_shift_pin_row : sraw_input.r2_val.toNat % 32 =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SLLIW ===================================
@@ -954,6 +1193,15 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row :
+      (Sail.BitVec.extractLsb slliw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowA32
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow)))
+    (h_shift_pin_row : slliw_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRLIW ===================================
@@ -977,6 +1225,15 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row :
+      (Sail.BitVec.extractLsb srliw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowA32
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow)))
+    (h_shift_pin_row : srliw_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRAIW ===================================
@@ -1000,6 +1257,15 @@ inductive OpEnvelope
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_input_r1_row :
+      (Sail.BitVec.extractLsb sraiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowA32
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow)))
+    (h_shift_pin_row : sraiw_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SB (store, Main-only) ===================
@@ -1029,6 +1295,8 @@ inductive OpEnvelope
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
         (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat)
+    (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sb_input.r2_val)
+    (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sb_input.r2_val)
     (h_m1 : state.mem[bus.e2.ptr.toNat + 1]? = some (byteAt bus.e2 1 : BitVec 8))
     (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (byteAt bus.e2 2 : BitVec 8))
     (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (byteAt bus.e2 3 : BitVec 8))
@@ -1064,6 +1332,8 @@ inductive OpEnvelope
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
         (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat)
+    (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sh_input.r2_val)
+    (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sh_input.r2_val)
     (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (byteAt bus.e2 2 : BitVec 8))
     (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (byteAt bus.e2 3 : BitVec 8))
     (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8))
@@ -1098,6 +1368,8 @@ inductive OpEnvelope
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
         (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat)
+    (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sw_input.r2_val)
+    (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sw_input.r2_val)
     (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8))
     (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (byteAt bus.e2 5 : BitVec 8))
     (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (byteAt bus.e2 6 : BitVec 8))
@@ -1128,7 +1400,9 @@ inductive OpEnvelope
           (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 2))
     (h_addr2 :
       (eval mainEnv mainRowVar).rom.addr2.toNat =
-        (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat) :
+        (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat)
+    (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sd_input.r2_val)
+    (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sd_input.r2_val) :
       OpEnvelope state m r_main
   -- ============================ LD (load doubleword) ====================
   | ld
@@ -1573,7 +1847,13 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a) :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mul_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mul_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     OpEnvelope state m r_main
   -- ============================ MULH ====================================
   | mulh
@@ -1613,7 +1893,13 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a) :
+      ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulhu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulhu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     OpEnvelope state m r_main
   -- ============================ MULHSU ==================================
   | mulhsu
@@ -1653,6 +1939,8 @@ inductive OpEnvelope
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
@@ -1717,7 +2005,13 @@ inductive OpEnvelope
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a) :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+    (h_rs1_value : divu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+          (v.c_2 r_a).val (v.c_3 r_a).val)
+    (h_rs2_value : divu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     OpEnvelope state m r_main
   -- ============================ DIVW ====================================
   | divw
@@ -1784,6 +2078,8 @@ inductive OpEnvelope
       ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
@@ -1844,7 +2140,13 @@ inductive OpEnvelope
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a) :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+    (h_rs1_value : remu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+          (v.c_2 r_a).val (v.c_3 r_a).val)
+    (h_rs2_value : remu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     OpEnvelope state m r_main
   -- ============================ REMW ====================================
   | remw
@@ -1911,6 +2213,8 @@ inductive OpEnvelope
       ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨

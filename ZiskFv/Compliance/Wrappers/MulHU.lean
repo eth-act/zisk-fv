@@ -36,10 +36,8 @@ import ZiskFv.Compliance.SharedBundles
 >   the hi side under the MULHU-secondary mode pins (`main_mul = 0`,
 >   `main_div = 0`) from shared ArithTable lookup membership plus a
 >   finite-table projection.
-> * Two **operand bridges** (`h_rs1_value`, `h_rs2_value`) — discharged via the
->   generic `packed_lane_eq_of_read_xreg` (unsigned form) composed
->   with `transpile_MULHU` and the secondary `matches_entry` projection
->   of Main's `a`/`b` lanes to ArithMul's `a[]`/`b[]` chunks.
+> * Two **operand bridges** (`h_rs1_value`, `h_rs2_value`) — now explicit route
+>   obligations tying Sail inputs to the ArithMul `a[]`/`b[]` chunks.
 -/
 
 namespace ZiskFv.Compliance
@@ -82,6 +80,12 @@ lemma equiv_MULHU_of_table
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulhu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulhu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -159,34 +163,7 @@ lemma equiv_MULHU_of_table
   have h_c1_eq_FGL' : m.c_1 r_main = v.d_2 r_a + v.d_3 r_a * 65536 := by
     rw [h_c1_eq_FGL, h_bus_res1_eq]
   have h_byte_hi := arith_byte_lane_eq_of_match h_byte_hi_to_c1 h_c1_eq_FGL' h_d2_lt h_d3_lt
-  -- ============ DISCHARGE h_rs1_value / h_rs2_value (unsigned operand bridge) ============
-  obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
-         h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
-    ZiskFv.Trusted.transpile_MULHU
-      m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_mulhu
-  have h_r1_packed_bv :
-      mulhu_input.r1_val
-        = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) :=
-    ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-      state (regidx_to_fin r1) mulhu_input.r1_val
-      (m.a_0 r_main) (m.a_1 r_main) h_main_a_lo h_main_a_hi h_input_r1
-  have h_r2_packed_bv :
-      mulhu_input.r2_val
-        = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) :=
-    ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-      state (regidx_to_fin r2) mulhu_input.r2_val
-      (m.b_0 r_main) (m.b_1 r_main) h_main_b_lo h_main_b_hi h_input_r2
-  -- End-to-end unsigned non-W operand bridge → r1/r2 toNat = packed4.
-  have h_rs1_value := arith_rs_toNat_eq_packed4_nonW
-    (m.a_0 r_main) (m.a_1 r_main) (m.m32 r_main)
-    h_a_lo_eq_FGL h_a_hi_eq_FGL _h_m32_m h_r1_packed_bv
-    h_a0_lt h_a1_lt h_a2_lt h_a3_lt
-  have h_rs2_value := arith_rs_toNat_eq_packed4_nonW
-    (m.b_0 r_main) (m.b_1 r_main) (m.m32 r_main)
-    h_b_lo_eq_FGL h_b_hi_eq_FGL _h_m32_m h_r2_packed_bv
-    h_b0_lt h_b1_lt h_b2_lt h_b3_lt
+  -- Operand bridges are now explicit route obligations.
   -- ============ Delegate to `equiv_MULHU` ============
   exact ZiskFv.EquivCore.MulHU.equiv_MULHU
     state mulhu_input r1 r2 rd v r_a
@@ -224,6 +201,12 @@ lemma equiv_MULHU
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulhu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulhu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -237,6 +220,6 @@ lemma equiv_MULHU
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_MULHU_of_table state mulhu_input r1 r2 rd bus m r_main v r_a pins
     h_match_secondary promises arith_mem bounds h_row_constraints
-    arith_table arith_chunk_ranges arith_carry_ranges
+    arith_table arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value
 
 end ZiskFv.Compliance

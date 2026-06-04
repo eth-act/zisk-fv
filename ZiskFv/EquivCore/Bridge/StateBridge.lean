@@ -2,21 +2,21 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Field.GoldilocksBridge
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 
 /-!
 # Shared *discharge bridge* helper — packed-lane BitVec reconstruction
 
 Opcode-independent packed-lane arithmetic. Distinct from
 `SailStateBridge.lean`: that file materialises the Sail-state and
-instantiates the `transpile_<OP>` axioms, while this file holds the
+instantiates the per-op row-shape contract axioms, while this file holds the
 pure-arithmetic step that turns two lane equalities into a packed
 `BitVec`.
 
 When discharging the per-opcode `h_input_r1_main` / `h_input_r2_main`
 *promise hypotheses* — currently of the form
 `add_input.r1_val = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 2^32)`
-— the *trust ledger*'s `transpile_<OP>` axioms supply the lane
+— the *trust ledger*'s per-op row-shape contract axioms supply the lane
 equalities `m.a_0 r_main = lane_lo (state.xreg rs1)` and
 `m.a_1 r_main = lane_hi (state.xreg rs1)`. The arithmetic step that
 converts those two lane equalities into the packed-BitVec form is
@@ -29,7 +29,7 @@ h_input_r1_sail   →   state.xreg rs1 = add_input.r1_val
                           (Sail-state semantics — caller-supplied or
                            derived from `read_xreg`'s definition)
 
-transpile_<OP>    →   m.a_0 r_main = lane_lo (state.xreg rs1)
+per-op row-shape contract    →   m.a_0 r_main = lane_lo (state.xreg rs1)
                   →   m.a_1 r_main = lane_hi (state.xreg rs1)
 
 bv64_packed_eq_of_lanes (this helper)
@@ -63,7 +63,7 @@ open ZiskFv.Trusted
 
     This is the opcode-independent arithmetic step shared by every
     discharge bridge's input-bridge derivation. The two hypotheses
-    come from a `transpile_<OP>` axiom's conclusion (`m.a_0 = lane_lo
+    come from a per-op row-shape contract axiom's conclusion (`m.a_0 = lane_lo
     (state.xreg rs)`, `m.a_1 = lane_hi (state.xreg rs)`); the
     conclusion gives the packed form `r1_val` is expected in.
 

@@ -11,7 +11,7 @@ Proves that the four BinaryAdd constraints (declared in
 
 ## Adaptation insight
 
-The spike's proof used the `ZMod.val_add_of_lt` / `ZMod.val_mul`
+The extraction harness's proof used the `ZMod.val_add_of_lt` / `ZMod.val_mul`
 machinery with `[Fact (p > 2^65)]`. Specializing to `FGL = Fin GL_prime`
 exposed a `Fin.val` ↔ `ZMod.val` pattern-matching gap.
 
@@ -19,7 +19,7 @@ exposed a `Fin.val` ↔ `ZMod.val` pattern-matching gap.
 *reduces definitionally* — `(a + b : Fin n).val = (a.val + b.val) % n`
 and `(a * b : Fin n).val = (a.val * b.val) % n` are both `rfl`.
 Combined with `Nat.mod_eq_of_lt`, this gives the same Nat-level
-carry-chain equations the spike derived, but without going through
+carry-chain equations the extraction harness derived, but without going through
 the `ZMod.val_*` lemma surface at all.
 
 ## Trust note

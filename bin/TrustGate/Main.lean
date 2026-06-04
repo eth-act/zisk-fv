@@ -145,12 +145,11 @@ def loadBaselineAxioms (path : System.FilePath) : IO (Array String) := do
       out := out.push last
   return out
 
-/-- Load one-axiom-name-per-line file (#-comments and blank lines
-    ignored). Used by the V2 gate's tolerated-completeness allowlist:
-    completeness-direction axioms (`<air>_circuit_completeness`) that
-    the soundness proof intentionally does not reach but which still
-    live in the source tree because the corresponding Clean
-    `circuit.completeness` field requires them. -/
+/-- Load one-axiom-name-per-line file (#-comments and blank lines ignored).
+    Used by the V2 gate's tolerated non-closure allowlist: source trust
+    declarations that the soundness proof intentionally does not reach but
+    which still live in the source tree for a documented local/legacy or
+    completeness-only surface. -/
 def loadAxiomList (path : System.FilePath) : IO (Array String) := do
   if !(← System.FilePath.pathExists path) then return #[]
   let content ← IO.FS.readFile path
@@ -163,12 +162,12 @@ def loadAxiomList (path : System.FilePath) : IO (Array String) := do
 
 /-- Subcommand: check that the project-axiom closure of
 `zisk_riscv_compliant_program_bus` exactly matches the unqualified
-names in `trust/generated/baseline-axioms.txt`, modulo the tolerated-completeness
-allowlist at `trust/tolerated-completeness-axioms.txt`. Catches the
+names in `trust/generated/baseline-axioms.txt`, modulo the tolerated
+non-closure allowlist at `trust/tolerated-completeness-axioms.txt`. Catches the
 kind of drift that the per-theorem `equiv_<OP>` axiom-dep baseline
 cannot see — i.e., axioms that survive in the trust ledger but are
 no longer reachable from the uber-theorem (dead trust) AND aren't
-explicitly tolerated as completeness-direction trust. -/
+explicitly tolerated as documented non-global trust. -/
 def cmdCheckClosureVsBaseline (env : Environment) (path : String)
     (theoremName : Name) : IO UInt32 := do
   if (env.find? theoremName).isNone then
@@ -195,7 +194,7 @@ def cmdCheckClosureVsBaseline (env : Environment) (path : String)
   let missingFromBaselineSorted := missingFromBaseline.qsort (· < ·)
   let missingFromClosureSorted := missingFromClosure.qsort (· < ·)
   if missingFromBaselineSorted.isEmpty && missingFromClosureSorted.isEmpty then
-    IO.println s!"trust-gate (V2): uber-theorem axiom closure matches generated/baseline-axioms.txt modulo tolerated completeness ({closureLast.size} names)."
+    IO.println s!"trust-gate (V2): uber-theorem axiom closure matches generated/baseline-axioms.txt modulo tolerated non-closure axioms ({closureLast.size} names)."
     return 0
   IO.eprintln "trust-gate (V2): uber-theorem axiom closure DIVERGES from generated/baseline-axioms.txt."
   IO.eprintln s!"  Theorem:   {theoremName}"

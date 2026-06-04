@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.Sltiu
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -21,6 +21,7 @@ import ZiskFv.Airs.Binary.Binary
 import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Channels.MemoryBusBytes
+import ZiskFv.EquivCore.Add
 
 /-!
 End-to-end theorem for RV64 SLTIU. Consumes
@@ -118,6 +119,7 @@ lemma equiv_SLTIU_of_wf
     (h_cin7 : cin7.val = fl6.val % 2)
     (h_match_clo : m.c_0 r_main = fl7)
     (h_match_chi : m.c_1 r_main = 0)
+    (h_input_r1_circuit : sltiu_input.r1_val = ZiskFv.EquivCore.Add.binaryValidA64 v r_binary)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_fl7_lt_2 : fl7.val < 2)
     (h_input_imm_circuit : BitVec.signExtend 64 sltiu_input.imm
@@ -178,59 +180,6 @@ lemma equiv_SLTIU_of_wf
     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_6
   have hb7 : (v.free_in_b_7 r_binary).val < 256 :=
     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_7
-  have h_input_r1_circuit : sltiu_input.r1_val
-      = BitVec.ofNat 64
-          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-            + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216
-            + (v.free_in_a_4 r_binary).val * 4294967296
-            + (v.free_in_a_5 r_binary).val * 1099511627776
-            + (v.free_in_a_6 r_binary).val * 281474976710656
-            + (v.free_in_a_7 r_binary).val * 72057594037927936) := by
-    obtain ⟨h_m32, _, _, _, _, h_a_lo_t, h_a_hi_t, _, _⟩ :=
-      transpile_SLTIU m r_main (regidx_to_fin r1) (regidx_to_fin rd)
-        (m.b_0 r_main) (m.b_1 r_main)
-        (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-        h_main_active h_main_op_sltiu
-    have h_r1_main :=
-      ZiskFv.EquivCore.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
-        state (regidx_to_fin r1) sltiu_input.r1_val (m.a_0 r_main) (m.a_1 r_main)
-        h_a_lo_t h_a_hi_t h_input_r1
-    have h_lane_eqs := h_match
-    simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
-    obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
-    rw [h_m32] at h_a_hi_m
-    simp only [one_sub_zero_mul] at h_a_hi_m
-    have h_a0_val : (m.a_0 r_main).val =
-        (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-        + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216 := by
-      rw [h_a_lo_m]
-      have h_cast :
-          v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
-            + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary
-          = ((((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-                + (v.free_in_a_2 r_binary).val * 65536
-                + (v.free_in_a_3 r_binary).val * 16777216 : ℕ) : FGL)) := by push_cast; ring
-      rw [h_cast, Fin.val_natCast]
-      apply Nat.mod_eq_of_lt
-      have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
-      omega
-    have h_a1_val : (m.a_1 r_main).val =
-        (v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
-        + (v.free_in_a_6 r_binary).val * 65536 + (v.free_in_a_7 r_binary).val * 16777216 := by
-      rw [h_a_hi_m]
-      have h_cast :
-          v.free_in_a_4 r_binary + 256 * v.free_in_a_5 r_binary
-            + 65536 * v.free_in_a_6 r_binary + 16777216 * v.free_in_a_7 r_binary
-          = ((((v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
-                + (v.free_in_a_6 r_binary).val * 65536
-                + (v.free_in_a_7 r_binary).val * 16777216 : ℕ) : FGL)) := by push_cast; ring
-      rw [h_cast, Fin.val_natCast]
-      apply Nat.mod_eq_of_lt
-      have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
-      omega
-    rw [h_r1_main]
-    apply congrArg (BitVec.ofNat 64)
-    rw [h_a0_val, h_a1_val]; ring
   have h_rd_val_bv :=
     ZiskFv.EquivCore.WriteValueProofs.BinaryCompare.h_rd_val_compare_sltiu_of_wf
       m r_main e2 sltiu_input.r1_val sltiu_input.imm
@@ -306,6 +255,7 @@ lemma equiv_SLTIU_of_static_row
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_mode32_zero : row.mode.mode32 = 0)
     (h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU)
+    (h_input_r1_row : sltiu_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 row)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_input_imm_circuit : BitVec.signExtend 64 sltiu_input.imm
       = BitVec.ofNat 64
@@ -377,6 +327,10 @@ lemma equiv_SLTIU_of_static_row
     out.chain_4 out.chain_5 out.chain_6 h_chain_7
     out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
     out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
-    h_match_clo h_match_chi h_lane_rd h_fl7_lt_2 h_input_imm_v
+    h_match_clo h_match_chi
+    (by simpa [v, ZiskFv.EquivCore.Add.binaryValidA64,
+        ZiskFv.EquivCore.Add.binaryRowA64, ZiskFv.AirsClean.Binary.validOfRow]
+      using h_input_r1_row)
+    h_lane_rd h_fl7_lt_2 h_input_imm_v
 
 end ZiskFv.EquivCore.Sltiu

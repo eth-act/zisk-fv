@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.EquivCore.Bridge.StateBridge
@@ -14,14 +14,14 @@ every ALU-shape *discharge bridge*. Distinct from `StateBridge.lean`:
 that file holds the **opcode-independent packed-lane arithmetic**
 (`bv64_packed_eq_of_lanes`), while this file holds the **Sail-state
 materialisation** that turns a Sail `read_xreg` fact into a `RV64State`
-suitable for instantiating the `transpile_<OP>` axioms.
+suitable for instantiating the per-op row-shape contract axioms.
 
-The bridge takes a Sail register-read fact and the `transpile_<OP>`
+The bridge takes a Sail register-read fact and the per-op row-shape contract
 lane equalities and produces the packed-lane form of `r_val`:
 
 ```
 read_xreg rs state = .ok r_val state          (caller-supplied; Sail-form)
-transpile_<OP> at (sail_to_rv64 state) rs     (trust-ledger)
+per-op row-shape contract at (sail_to_rv64 state) rs     (trust-ledger)
   → m.a_0 r_main = lane_lo r_val
   → m.a_1 r_main = lane_hi r_val
 bv64_packed_eq_of_lanes
@@ -29,16 +29,16 @@ bv64_packed_eq_of_lanes
 ```
 
 The trust footprint is unchanged: this module adds no axioms. The
-universal-over-`RV64State` shape of the `transpile_<OP>` axioms makes
+universal-over-`RV64State` shape of the per-op row-shape contract axioms makes
 the instantiation at `sail_to_rv64 state` go through — we materialize
 the RV64 state whose `xreg` agrees with Sail's `read_xreg`, instantiate
 the axiom there, and recover the lane equalities at `r_val`.
 
-(The universal-over-state shape of the `transpile_<OP>` family is a
+(The universal-over-state shape of the per-op row-shape contract family is a
 known *trust-ledger* coarsening — a sound formulation would
 existentially quantify the state. This module extracts exactly the
 state-instantiation that the sound formulation would deliver, so
-narrowing `transpile_<OP>` to existential form later would not
+narrowing per-op row-shape contract to existential form later would not
 affect this module's API.)
 -/
 
@@ -51,7 +51,7 @@ open ZiskFv.EquivCore.Bridge.StateBridge
 /-- Materialize the `RV64State` whose `xreg` accessor pulls each
     register slot through Sail's `read_xreg`. The `pc` field is
     irrelevant to the input-bridge derivation in every ALU-shape
-    *discharge bridge* — those consume only `transpile_<OP>`'s
+    *discharge bridge* — those consume only per-op row-shape contract's
     a/b-lane conjuncts, not its pc-related conjuncts — so we fix it
     to `0#64` rather than threading a `Sail.readReg Register.PC`
     unwrap.
@@ -87,7 +87,7 @@ lemma sail_to_rv64_xreg_eq_of_read_xreg
 
     Composes `sail_to_rv64_xreg_eq_of_read_xreg` (above) with
     `bv64_packed_eq_of_lanes`. Opcode-independent — every
-    `transpile_<OP>` lane-equality pair has this shape after the rs
+    per-op row-shape contract lane-equality pair has this shape after the rs
     is the right register. -/
 lemma packed_lane_eq_of_read_xreg
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -101,27 +101,24 @@ lemma packed_lane_eq_of_read_xreg
   exact bv64_packed_eq_of_lanes h_a_lo h_a_hi
 
 /-- **ADD-shape input bridges (r1 + r2 in one call).** Specializes
-    `packed_lane_eq_of_read_xreg` to the `transpile_ADD` row contract.
-    Delivers both r1 and r2 packed-lane equations in a single axiom
-    application — consumed by `Bridge.BinaryAdd.add_discharge` to
-    replace its two caller-supplied `h_input_r{1,2}_main` *promise
-    hypotheses* with the Sail-form `read_xreg` facts that
-    `equiv_ADD` already carries. -/
+    `packed_lane_eq_of_read_xreg` to explicit Main source-lane facts.
+    Delivers both r1 and r2 packed-lane equations without consulting the
+    retired row-shape bridge. -/
 lemma add_input_bridges_of_read_xreg
 
     (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs1 rs2 : Fin 32) (r1_val r2_val : BitVec 64)
-    (h_active : m.is_external_op r_main = 1)
-    (h_op : m.op r_main = OP_ADD)
+    (h_a_lo : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
+    (h_a_hi : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
+    (h_b_lo : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
+    (h_b_hi : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
     r1_val
       = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296)
     ∧ r2_val
       = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) := by
-  obtain ⟨h_a_lo, h_a_hi, h_b_lo, h_b_hi, _, _, _, _, _⟩ :=
-    transpile_ADD m r_main (sail_to_rv64 state) rs1 rs2 h_active h_op
   refine ⟨?_, ?_⟩
   · exact packed_lane_eq_of_read_xreg state rs1 r1_val
       (m.a_0 r_main) (m.a_1 r_main) h_a_lo h_a_hi h_read_r1
@@ -129,28 +126,17 @@ lemma add_input_bridges_of_read_xreg
       (m.b_0 r_main) (m.b_1 r_main) h_b_lo h_b_hi h_read_r2
 
 /-- **ADDI-shape r1 input bridge.** Specializes
-    `packed_lane_eq_of_read_xreg` to the `transpile_ADDI` row contract
-    — single register read (`rs1`), with the b-lanes carrying an
-    immediate the axiom leaves caller-routed. Consumed by
-    `equiv_ADDI` to discharge `h_input_r1_circuit` after translating
-    Main lanes to BinaryAdd-row lanes via the existing
-    `matches_entry` projection inside `addi_circuit_holds_with_binaryadd`. -/
+    `packed_lane_eq_of_read_xreg` to explicit Main source-lane facts. -/
 lemma addi_input_r1_main_eq_of_read_xreg
 
     (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (rs1 rd_dummy : Fin 32) (r1_val : BitVec 64)
-    (h_active : m.is_external_op r_main = 1)
-    (h_op : m.op r_main = OP_ADD)
+    (rs1 : Fin 32) (r1_val : BitVec 64)
+    (h_a_lo : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
+    (h_a_hi : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state) :
     r1_val
       = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) := by
-  -- `transpile_ADDI`'s `imm_b_lo`/`imm_b_hi` are caller-routed; we
-  -- instantiate them to `m.b_0`/`m.b_1` so the unused b-conjuncts
-  -- become reflexive and we extract only the a-lane facts.
-  obtain ⟨_, _, _, _, _, _, h_a_lo, h_a_hi, _, _⟩ :=
-    transpile_ADDI m r_main rs1 rd_dummy
-      (m.b_0 r_main) (m.b_1 r_main) (sail_to_rv64 state) h_active h_op
   exact packed_lane_eq_of_read_xreg state rs1 r1_val
     (m.a_0 r_main) (m.a_1 r_main) h_a_lo h_a_hi h_read_r1
 

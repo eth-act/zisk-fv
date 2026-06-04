@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Addi
 import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.AirsClean.BinaryFamily.Balance
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -55,6 +55,14 @@ lemma equiv_ADDI
     (h_addi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main addi_input.imm)
+    (h_input_r1_row : addi_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_imm_row : BitVec.signExtend 64 addi_input.imm =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
@@ -90,6 +98,9 @@ lemma equiv_ADDI
   exact ZiskFv.EquivCore.Addi.equiv_ADDI_of_static_row
     state addi_input r1 rd imm m row r_main bus promises
     ⟨h_main_active, h_main_op_add⟩
-    h_match h_addi_subset h_core h_facts h_mode32_zero h_b_op h_lane_rd
+    h_match h_addi_subset h_core h_facts h_mode32_zero h_b_op
+    (by simpa [row] using h_input_r1_row)
+    (by simpa [row] using h_input_imm_row)
+    h_lane_rd
 
 end ZiskFv.Compliance

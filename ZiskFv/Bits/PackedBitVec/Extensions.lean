@@ -295,7 +295,7 @@ lemma signExtend_imm20_nat_lanes
     byte-sum, `U64.toBV [bytes]` equals `BitVec.signExtend 64 (imm ++ 0#12)`.
 
     Callers establish:
-    - `e_rd.x0..x3` byte-decompose `b_0` (the lo lane from the transpiler contract)
+    - `e_rd.x0..x3` byte-decompose `b_0` (the lo lane from the row-shape contract)
     - `e_rd.x4..x7` byte-decompose `b_1` (the hi lane / sign-extension word)
     - The byte-sum matches the Nat lanes. -/
 lemma u64_toBV_of_imm20_lanes
@@ -336,7 +336,7 @@ leg (the byte-sum is directly the `BitVec 64` `.toNat`).
     `PC + 4`.
 
     Callers invoke this after establishing that the bus bytes
-    decompose the ZisK-emitted `store_pc` value (which the transpiler
+    decompose the ZisK-emitted `store_pc` value (which the production lowerer
     contract pins to `(pc + 4 : FGL)` in 32-bit lane form). -/
 lemma pc_plus4_bv64_of_bytes
     (PC : BitVec 64)

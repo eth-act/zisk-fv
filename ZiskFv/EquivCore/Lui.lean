@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.LoadUpperImmediate
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -12,7 +12,6 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
-import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
 import ZiskFv.EquivCore.Promises.UType
 import ZiskFv.Compliance.SharedBundles
@@ -20,12 +19,12 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 LUI. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_LUI`),
+* circuit mode/control evidence supplied by the caller's `h_circuit`,
 * the compositional LUI spec
   (`ZiskFv.ZiskCircuit.LoadUpperImmediate.lui_pc_advance` +
   `lui_store_value_lo`/`_hi`),
 * the Sail pure-function equivalence (`PureSpec.execute_LUI_pure_equiv`),
+* the remaining LUI dynamic immediate-lane bridge,
 
 into a canonical theorem:
 
@@ -101,6 +100,9 @@ lemma equiv_LUI
         state lui_input.imm lui_input.rd lui_input.PC
         (PureSpec.execute_LUI_pure lui_input).nextPC
         imm rd exec_row e_rd nextPC_val)
+    (h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat)
+    (h_imm_hi_nat : (m.b_1 r_main).val
+      = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 4294967296)
     -- Discharge parameters
     (h_circuit : ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
@@ -108,10 +110,6 @@ lemma equiv_LUI
   obtain ⟨h_input_imm, h_input_rd, h_input_pc, h_exec_len, h_e0_mult,
           h_e1_mult, h_nextPC_matches, h_rd_mult, h_rd_as, h_nextPC_eq,
           h_rd_idx⟩ := promises
-  -- Discharge `h_imm_lo_nat` / `h_imm_hi_nat` via `transpile_LUI` (class #1).
-  obtain ⟨h_imm_lo_nat, h_imm_hi_nat⟩ :=
-    ZiskFv.EquivCore.Bridge.ControlFlow.lui_discharge_full
-      m r_main next_pc imm h_circuit
   -- Discharge `h_lane_rd` from the selected Clean Main `cMemMessage`
   -- row, rather than through `main_store_pc_emission_bundle`.
   have h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e_rd := by

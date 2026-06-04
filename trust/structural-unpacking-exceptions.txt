@@ -42,7 +42,7 @@
 # memory-channel structure: a Clean memory-channel/full-ensemble witness, the
 # `MemBusChannel` balance proof, selected Main/provider component rows,
 # row-equality pins tying the Clean Main row to the existing `Valid_Main`
-# row, and ROM/transpile pins for `addr1`, `addr2`, `main_step`,
+# row, and ROM/row-shape pins for `addr1`, `addr2`, `main_step`,
 # source/store selectors, `store_offset`, and width selectors.
 #
 # This is structural unpacking, not promise laundering, because the added
@@ -160,11 +160,11 @@ ADDED: same structural shape as SB with width pin `ind_width = 4`
 # (h_byte_lo, h_byte_hi) + Sail-input packing (h_op1, h_op2). These
 # ~14 added parameters are exactly the structural-unpacking shape:
 # each is either a `Valid_<AIR>` instance, a universal-over-rows
-# constraint, or a transpile-derived pin — none is a new promise
+# constraint, or a row-shape-derived pin — none is a new promise
 # hypothesis. In `Compliance.lean` the validator and chain-holds
 # parameters are taken ONCE per provider AIR (shared across all
-# Arith opcodes), and the mode pins follow from `transpile_<OP>`'s
-# row-shape contract.
+# Arith opcodes), and the mode pins follow from the per-op row-shape
+# contract.
 #
 # PIL-BASIS for all 9 entries below:
 #   * arith.pil:280 — `arith_range_table_assumes(ARITH_RANGE_CARRY, carry[index])`
@@ -757,11 +757,11 @@ ADDED: store_pc_mem
 #
 # The ITYPE opcodes (ADDI/ANDI/ORI/XORI — currently ADDI in this
 # round) each route a sign-extended 12-bit immediate onto Main's
-# `(b_0, b_1)` lanes via the transpiler. `transpile_<OP>I` witnesses
-# the routing column-by-column but leaves the immediate VALUE as a
+# `(b_0, b_1)` lanes via row-shape provenance. The per-op ITYPE row-shape
+# contract witnesses the routing column-by-column but leaves the immediate VALUE as a
 # caller-routed parameter (`imm_b_lo`/`imm_b_hi`) — the actual
 # Sail-level immediate is a program-level structural fact, not
-# something the transpile axiom can witness.
+# something the row-shape provenance bridge can witness.
 #
 # The pre-refactor canonical ADDI accepted this fact as the loose
 # *promise hypothesis* `h_input_imm_circuit` in BinaryAdd-row form.
@@ -784,8 +784,8 @@ ADDED: store_pc_mem
 # per-program structural pin shared across all ADDI rows.
 #
 # PIL-BASIS:
-#   * `transpile_ADDI` row contract — caller routes `imm_b_lo`/
-#     `imm_b_hi` (`Transpiler.lean:1922`).
+#   * ADDI row-shape contract — caller routes `imm_b_lo`/`imm_b_hi`
+#     through the production-backed row-shape boundary.
 #   * `binary_add.pil:25` — `proves_operation(op: OP_ADD, ...)`
 #     pins the BinaryAdd opcode literal, justifying the
 #     `matches_entry` `b`-lane projection that translates Main→

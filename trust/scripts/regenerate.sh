@@ -55,7 +55,7 @@ if [ -d .lake/build ]; then
     echo "#"
     echo "# Source-of-truth cross-check: this set must match the reachable"
     echo "# unqualified axiom names in \`trust/generated/baseline-axioms.txt\`, modulo"
-    echo "# the explicit completeness-direction allowlist in"
+    echo "# the explicit documented non-closure allowlist in"
     echo "# \`trust/tolerated-completeness-axioms.txt\`. The V2 trust gate's"
     echo "# \`check-closure-vs-baseline\` subcommand enforces that relation"
     echo "# mechanically; this file is a standalone audit document — readable"

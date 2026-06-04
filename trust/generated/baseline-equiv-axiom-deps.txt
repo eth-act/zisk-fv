@@ -1,10 +1,10 @@
-ZiskFv.Equivalence.Add.equiv_ADD: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Addi.equiv_ADDI: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.And.equiv_AND: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Andi.equiv_ANDI: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Auipc.equiv_AUIPC: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Add.equiv_ADD:
+ZiskFv.Equivalence.Addi.equiv_ADDI:
+ZiskFv.Equivalence.Addiw.equiv_ADDIW:
+ZiskFv.Equivalence.Addw.equiv_ADDW:
+ZiskFv.Equivalence.And.equiv_AND:
+ZiskFv.Equivalence.Andi.equiv_ANDI:
+ZiskFv.Equivalence.Auipc.equiv_AUIPC:
 ZiskFv.Equivalence.Beq.equiv_BEQ:
 ZiskFv.Equivalence.Bge.equiv_BGE:
 ZiskFv.Equivalence.Bgeu.equiv_BGEU:
@@ -12,52 +12,52 @@ ZiskFv.Equivalence.Blt.equiv_BLT:
 ZiskFv.Equivalence.Bltu.equiv_BLTU:
 ZiskFv.Equivalence.Bne.equiv_BNE:
 ZiskFv.Equivalence.Div.equiv_DIV:
-ZiskFv.Equivalence.Divu.equiv_DIVU: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Divuw.equiv_DIVUW: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Divu.equiv_DIVU:
+ZiskFv.Equivalence.Divuw.equiv_DIVUW:
 ZiskFv.Equivalence.Divw.equiv_DIVW:
 ZiskFv.Equivalence.Fence.equiv_FENCE:
-ZiskFv.Equivalence.Jal.equiv_JAL: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Jalr.equiv_JALR: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Jal.equiv_JAL:
+ZiskFv.Equivalence.Jalr.equiv_JALR:
 ZiskFv.Equivalence.Lb.equiv_LB: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Lbu.equiv_LBU: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Ld.equiv_LD: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Lh.equiv_LH: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Lhu.equiv_LHU: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Lui.equiv_LUI: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Lui.equiv_LUI:
 ZiskFv.Equivalence.Lw.equiv_LW: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Lwu.equiv_LWU: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Mul.equiv_MUL: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Mul.equiv_MUL:
 ZiskFv.Equivalence.MulH.equiv_MULH:
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU:
-ZiskFv.Equivalence.MulHU.equiv_MULHU: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.MulW.equiv_MULW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Or.equiv_OR: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Ori.equiv_ORI: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.MulHU.equiv_MULHU:
+ZiskFv.Equivalence.MulW.equiv_MULW:
+ZiskFv.Equivalence.Or.equiv_OR:
+ZiskFv.Equivalence.Ori.equiv_ORI:
 ZiskFv.Equivalence.Rem.equiv_REM:
-ZiskFv.Equivalence.Remu.equiv_REMU: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Remuw.equiv_REMUW: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Remu.equiv_REMU:
+ZiskFv.Equivalence.Remuw.equiv_REMUW:
 ZiskFv.Equivalence.Remw.equiv_REMW:
-ZiskFv.Equivalence.Sb.equiv_SB: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sd.equiv_SD: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sh.equiv_SH: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sll.equiv_SLL: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Slli.equiv_SLLI: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Slliw.equiv_SLLIW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sllw.equiv_SLLW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Slt.equiv_SLT: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Slti.equiv_SLTI: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sltu.equiv_SLTU: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sra.equiv_SRA: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Srai.equiv_SRAI: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sraiw.equiv_SRAIW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sraw.equiv_SRAW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Srl.equiv_SRL: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Srli.equiv_SRLI: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Srliw.equiv_SRLIW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Srlw.equiv_SRLW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sub.equiv_SUB: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Subw.equiv_SUBW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Sw.equiv_SW: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Xor.equiv_XOR: ZiskFv.Trusted.transpiler_contract_sound
-ZiskFv.Equivalence.Xori.equiv_XORI: ZiskFv.Trusted.transpiler_contract_sound
+ZiskFv.Equivalence.Sb.equiv_SB:
+ZiskFv.Equivalence.Sd.equiv_SD:
+ZiskFv.Equivalence.Sh.equiv_SH:
+ZiskFv.Equivalence.Sll.equiv_SLL:
+ZiskFv.Equivalence.Slli.equiv_SLLI:
+ZiskFv.Equivalence.Slliw.equiv_SLLIW:
+ZiskFv.Equivalence.Sllw.equiv_SLLW:
+ZiskFv.Equivalence.Slt.equiv_SLT:
+ZiskFv.Equivalence.Slti.equiv_SLTI:
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU:
+ZiskFv.Equivalence.Sltu.equiv_SLTU:
+ZiskFv.Equivalence.Sra.equiv_SRA:
+ZiskFv.Equivalence.Srai.equiv_SRAI:
+ZiskFv.Equivalence.Sraiw.equiv_SRAIW:
+ZiskFv.Equivalence.Sraw.equiv_SRAW:
+ZiskFv.Equivalence.Srl.equiv_SRL:
+ZiskFv.Equivalence.Srli.equiv_SRLI:
+ZiskFv.Equivalence.Srliw.equiv_SRLIW:
+ZiskFv.Equivalence.Srlw.equiv_SRLW:
+ZiskFv.Equivalence.Sub.equiv_SUB:
+ZiskFv.Equivalence.Subw.equiv_SUBW:
+ZiskFv.Equivalence.Sw.equiv_SW:
+ZiskFv.Equivalence.Xor.equiv_XOR:
+ZiskFv.Equivalence.Xori.equiv_XORI:

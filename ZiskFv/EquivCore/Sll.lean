@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Bits.Execution
 import ZiskFv.ZiskCircuit.Sll
 import ZiskFv.Airs.Main.Main
@@ -111,6 +111,11 @@ lemma equiv_SLL_of_wf
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_input_r1_circuit :
+      sll_input.r1_val = ZiskFv.AirsClean.BinaryExtension.validA64 v r_binary)
+    (h_shift_pin :
+      sll_input.r2_val.toNat % 64 =
+        ZiskFv.AirsClean.BinaryExtension.validShiftAmount v r_binary)
     (h_b0_range : (v.b_0 r_binary).val < 2 ^ 24) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
@@ -127,13 +132,6 @@ lemma equiv_SLL_of_wf
       m v r_main r_binary h_match
   have h_op : (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL := by
     rw [← h_op_fgl, h_main_op]; decide
-  -- Discharge h_input_r1_circuit via the SailStateBridge + transpile_SLL
-  -- + matches_entry's `a_lo`/`a_hi` projection (with m32 = 0 collapse and
-  -- op_is_shift = 1 collapse).
-  obtain ⟨_, h_m32, _, _, _, _, h_a_lo_t, h_a_hi_t, h_b_lo_t, h_b_hi_t⟩ :=
-    transpile_SLL m r_main (regidx_to_fin r1) (regidx_to_fin r2) (regidx_to_fin rd)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op
   have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary := by
     obtain ⟨e0, h0, e1, h1, e2, h2, e3, h3, e4, h4, e5, h5, e6, h6, e7, h7⟩ :=
       h_bytes
@@ -146,16 +144,6 @@ lemma equiv_SLL_of_wf
       by simpa [h5.2.2.2.1] using h_wfs.2.2.2.2.2.1.1.1,
       by simpa [h6.2.2.2.1] using h_wfs.2.2.2.2.2.2.1.1.1,
       by simpa [h7.2.2.2.1] using h_wfs.2.2.2.2.2.2.2.1.1 ⟩
-  have h_input_r1_circuit :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.packed_a_eq_of_shift_match_m32_0_of_a_range
-      m v r_main r_binary (regidx_to_fin r1) sll_input.r1_val
-      h_m32 h_a_lo_t h_a_hi_t h_input_r1 h_op_is_shift h_match
-      h_a_range
-  have h_shift_pin :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_eq_of_shift_match_m32_0_of_b0_range
-      m v r_main r_binary (regidx_to_fin r2) sll_input.r2_val
-      h_m32 h_b_lo_t h_b_hi_t h_input_r2 h_op_is_shift h_match
-      h_bytes h_wfs h_b0_range
   -- Derive 8 e2 byte ranges from `byteAt_val_lt_256` (chunk-shape
   -- replacement for the retired memory_bus_entry_byte_range_perm_sound
   -- axiom). Net **−8 binders** on `equiv_SLL`.
@@ -227,6 +215,10 @@ lemma equiv_SLL_of_static_row
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (ZiskFv.AirsClean.BinaryExtension.opBusMessage row) 1))
     (h_facts : ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts row)
+    (h_input_r1_row : sll_input.r1_val = ZiskFv.AirsClean.BinaryExtension.rowA64 row)
+    (h_shift_pin_row :
+      sll_input.r2_val.toNat % 64 =
+        ZiskFv.AirsClean.BinaryExtension.rowShiftAmount row)
     (h_b0_range : ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact row)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
@@ -256,7 +248,16 @@ lemma equiv_SLL_of_static_row
       v 0 h_wfs).1 (Or.inl h_op_v_eq)
   exact equiv_SLL_of_wf state sll_input r1 r2 rd m v r_main 0 bus
     promises ⟨h_main_active, h_main_op⟩ h_match_v h_lane_rd
-    h_bytes h_wfs h_op_is_shift (by simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
+    h_bytes h_wfs h_op_is_shift
+    (by simpa [v, ZiskFv.AirsClean.BinaryExtension.validA64,
+        ZiskFv.AirsClean.BinaryExtension.rowA64,
+        ZiskFv.AirsClean.BinaryExtension.validOfRow]
+      using h_input_r1_row)
+    (by simpa [v, ZiskFv.AirsClean.BinaryExtension.validShiftAmount,
+        ZiskFv.AirsClean.BinaryExtension.rowShiftAmount,
+        ZiskFv.AirsClean.BinaryExtension.validOfRow]
+      using h_shift_pin_row)
+    (by simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact] using h_b0_range)
 
 end ZiskFv.EquivCore.Sll

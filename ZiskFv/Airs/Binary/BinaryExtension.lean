@@ -47,7 +47,7 @@ After D6 (the completion marker), the canonical AIR view is the Clean
 `ZiskFv/AirsClean/BinaryExtension/Bridge.lean` provides the v1-compatibility shim.
 
 Note: Lean 4 does not permit `@[deprecated]` attributes on structure
-fields (verified via spike), so this notice is documentation-only.
+fields (verified via the proof experiment), so this notice is documentation-only.
 -/
 
 /-- Named accessors for one row of ZisK's `BinaryExtension` AIR.

@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -172,13 +172,13 @@ lemma arith_byte_lane_eq_of_match
 /-! ## Helper 6: end-to-end unsigned operand bridge (non-W mode)
 
 For the non-W Arith opcodes (MUL/MULH/MULHU/MULHSU/DIV/DIVU/REM/REMU),
-the operand bridge collapses every step from the post-`transpile_<OP>`
+the operand bridge collapses every step from the post-per-op row-shape contract
 + post-`matches_entry` FGL equations down to the canonical's
 `r_val.toNat = packed4 x0.val x1.val x2.val x3.val` form.
 
 The matches_entry projection for the hi lane delivers
 `(1 - m.m32) * m.a_1 = x2 + x3 * 65536`. Under non-W mode
-`m.m32 = 0` (from transpile), so `(1 - 0) * m.a_1 = m.a_1`, and
+`m.m32 = 0` (from row-shape provenance), so `(1 - 0) * m.a_1 = m.a_1`, and
 we get the desired collapsed form `m.a_1 = x2 + x3 * 65536`. -/
 
 /-! ## Helper 6b: W-mode (1 - m32) * a_hi → chunk zero
@@ -186,7 +186,7 @@ we get the desired collapsed form `m.a_1 = x2 + x3 * 65536`. -/
 For the W-mode Arith opcodes (MULW/DIVW/DIVUW/REMW/REMUW), the
 `(1 - m.m32) * m.a_1 = x2 + x3 * 65536` matches_entry projection
 collapses to `0 = x2 + x3 * 65536` under `m.m32 = 1` (delivered by
-`transpile_<OP>`). Combined with the 16-bit range bounds on x2 and
+per-op row-shape contract). Combined with the 16-bit range bounds on x2 and
 x3, this forces `x2.val = 0` and `x3.val = 0` — the `h_c23` /
 `h_a23` slot many W-mode canonicals consume. -/
 
@@ -210,7 +210,7 @@ lemma arith_chunk_pair_eq_zero_of_m32_one
   refine ⟨?_, ?_⟩ <;> omega
 
 /-- End-to-end unsigned operand bridge for non-W Arith wrappers.
-    Consumes the FGL-form projections produced by transpile_<OP> +
+    Consumes the FGL-form projections produced by per-op row-shape contract +
     matches_entry + the m32 = 0 pin, and produces the canonical's
     `r_val.toNat = packed4` form. -/
 lemma arith_rs_toNat_eq_packed4_nonW

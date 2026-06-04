@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.SailSpec.Auxiliaries
 
@@ -78,5 +78,37 @@ structure UTypePromises
   nextPC_eq : input_nextPC = nextPC_val
   /-- The input's `rd` agrees with the rd-write entry's `wrap_to_regidx`. -/
   rd_idx : input_rd = Transpiler.wrap_to_regidx e_rd.ptr
+
+/-- Structural promise bundle for the AUIPC `rd = x0` shape.
+
+    In this shape the production/static lowerer emits no memory-bus
+    register write: `storeReg 0 true` lowers to `storeNone, storePc = false`.
+    The bundle therefore contains only the Sail input bridges and execution
+    bus nextPC shape. -/
+structure UTypeNoMemPromises
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (input_imm : BitVec 20) (input_rd : Fin 32) (input_pc : BitVec 64)
+    (input_nextPC : BitVec 64)
+    (imm : BitVec 20) (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL)) where
+  /-- The opcode's input record's `imm` field equals the AST's `imm`. -/
+  input_imm_eq : input_imm = imm
+  /-- The opcode's input record's `rd` field equals the AST's `rd`
+      coerced to `Fin 32`. -/
+  input_rd_eq : input_rd = regidx_to_fin rd
+  /-- The Sail state's PC register equals the input record's `PC`. -/
+  input_pc_eq : state.regs.get? Register.PC = .some input_pc
+  /-- The instruction writes x0, so Sail's pure AUIPC output has no rd write. -/
+  input_rd_zero : input_rd = 0
+  /-- The execution bus has exactly two entries (consumer + producer). -/
+  exec_len : exec_row.length = 2
+  /-- The first execution-bus entry is a consumer (`multiplicity = -1`). -/
+  e0_mult : exec_row[0]!.multiplicity = -1
+  /-- The second execution-bus entry is a producer (`multiplicity = 1`). -/
+  e1_mult : exec_row[1]!.multiplicity = 1
+  /-- The producer entry's PC field equals the pure-spec `nextPC`. -/
+  nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+      = input_nextPC
 
 end ZiskFv.EquivCore.Promises

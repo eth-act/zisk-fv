@@ -48,6 +48,12 @@ theorem equiv_MUL
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mul_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mul_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
     (h_no_signed_mul_witness_defect : False)
     : (do
       Sail.writeReg Register.nextPC
@@ -62,6 +68,6 @@ theorem equiv_MUL
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_MUL_of_table state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-    arith_chunk_ranges arith_carry_ranges h_no_signed_mul_witness_defect
+    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_no_signed_mul_witness_defect
 
 end ZiskFv.Equivalence.Mul

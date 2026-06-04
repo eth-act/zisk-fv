@@ -6,7 +6,7 @@ import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Bits.PackedBitVec.Extensions
 import ZiskFv.Bits.PackedBitVec.NoWrap
 import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
@@ -24,14 +24,14 @@ from circuit primitives directly. No output-equality residuals survive in any
 parameter list. Parameter trust classes:
 
 * For **JAL/JALR**: `jal_circuit_holds` / `jalr_circuit_holds` (field-level
-  `store_value = pc + jmp_offset2`) + transpiler pin `jmp_offset2 = 4` +
+  `store_value = pc + jmp_offset2`) + explicit link-address bridge facts +
   FGL store_value-to-entry-lo match (`h_entry_lo_eq`) + hi-lane Nat match
   (`h_entry_hi_nat`) + PC-lo FGL Nat alignment (`h_pc_fgl_lo_nat`).
   The proof derives `h_byte_sum` internally via FGL→Nat lifting and closes
   with K3 `pc_plus4_bv64_of_bytes`.
 
 * For **LUI**: `lui_archetype_circuit_holds` + `register_write_lanes_match`
-  (ties `c_0`/`c_1` to entry bytes) + transpiler b-lane Nat pins (`h_imm_lo_nat`,
+  (ties `c_0`/`c_1` to entry bytes) + row-shape b-lane Nat pins (`h_imm_lo_nat`,
   `h_imm_hi_nat`, renamed from `h_b0_lo`/`h_b1_hi`) + K3
   `u64_toBV_of_imm20_lanes`. The `h_lo_is_lo` pure-math fact is now derived
   internally using `BitVec.toNat_signExtend`.
@@ -56,8 +56,8 @@ and the PIL bus-emission contract. The FGL store_value-to-entry-lo hypotheses
 (`h_entry_lo_eq`) are the interface point between Main's internal circuit
 constraints and the memory bus's byte emission. The Nat hi-half hypotheses
 (`h_entry_hi_nat`) capture the high 4 bytes of the 64-bit value; the
-transpiler b-lane Nat pins (`h_imm_lo_nat`, `h_imm_hi_nat`) tie Sail's
-`imm : BitVec 20` to Main's `b` columns (transpile-trusted surface).
+row-shape b-lane Nat pins (`h_imm_lo_nat`, `h_imm_hi_nat`) tie Sail's
+`imm : BitVec 20` to Main's `b` columns (row-shape provenance surface).
 -/
 
 set_option maxHeartbeats 800000
@@ -169,9 +169,9 @@ private lemma byte_sum_from_lo_hi
     * `h_circuit : jal_circuit_holds m r_main next_pc` — CIRCUIT-CONSTRAINT.
       Gives `jal_store_value` and the JAL-mode witnesses
       (`is_external_op = 0`, `op = OP_FLAG`) needed to invoke the
-      `transpile_PC_for_JAL` axiom internally.
+      JAL PC provenance contract axiom internally.
     * `h_jmp2 : m.jmp_offset2 r_main = 4` — TRANSPILE-PIN (from
-      `transpile_JAL`).
+      JAL row-shape contract).
     * `h_lane_lo : store_pc_lanes_match_lo m r_main e2` and
       `h_lane_hi : store_pc_lanes_match_hi m r_main e2` — LANE-MATCH
       (S4 produces these from a memory-bus emission witness via
@@ -186,7 +186,7 @@ private lemma byte_sum_from_lo_hi
       `pc < 2^32` invariant).
     * `h0..h7 : (byteAt e2 i).val < 256` — RANGE (per-byte range bounds).
 
-    **Proof chain.** `transpile_PC_for_JAL` (gated by mode witnesses
+    **Proof chain.** JAL PC provenance contract (gated by mode witnesses
     extracted from `h_circuit`) gives `(m.pc r_main).val = PC.toNat`.
     `jal_store_value_lo_bv` composes that with `h_circuit, h_jmp2,
     h_lane_lo, h_pc_bound, h_lo_bound` to deliver
@@ -206,6 +206,7 @@ lemma h_rd_val_jut_jal
     (h_circuit : jal_circuit_holds m r_main next_pc)
     -- TRANSPILE-PIN
     (h_jmp2 : m.jmp_offset2 r_main = 4)
+    (h_pc_bridge : (m.pc r_main).val = PC.toNat)
     -- LANE-MATCH (lo + hi)
     (h_lane_lo : store_pc_lanes_match_lo m r_main e2)
     (h_lane_hi : store_pc_lanes_match_hi m r_main e2)
@@ -223,12 +224,6 @@ lemma h_rd_val_jut_jal
                 (byteAt e2 4 : BitVec 8), (byteAt e2 5 : BitVec 8),
                 (byteAt e2 6 : BitVec 8), (byteAt e2 7 : BitVec 8)]
       = PC + 4 := by
-  -- Extract JAL mode witnesses from h_circuit and apply S1's
-  -- transpile_PC_for_JAL axiom to derive the FGL→BitVec PC bridge.
-  have h_mode := h_circuit.2
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-  have h_pc_bridge : (m.pc r_main).val = PC.toNat :=
-    transpile_PC_for_JAL m r_main PC h_ext h_op
   -- Apply S3's lo/hi BitVec bridges.
   have h_lo_val : (memory_entry_lo e2).val = (PC + 4#64).toNat % 4294967296 :=
     jal_store_value_lo_bv m r_main next_pc PC e2
@@ -267,10 +262,9 @@ lemma h_rd_val_jut_jal
     Identical shape to JAL — JALR also writes `PC + 4` as the link
     value; only the underlying circuit-hypothesis predicate differs
     (`jalr_circuit_holds` instead of `jal_circuit_holds`). Uses S3's
-    `store_pc_lanes_match_lo` / `_hi` directly. The link-address bridge
-    is established internally via `transpile_PC_for_JALR`, which pins
-    `pc + jmp_offset2 = PC + 4` for JALR's final production `OP_AND`
-    row.
+    `store_pc_lanes_match_lo` / `_hi` directly. The caller supplies the
+    link-address bridge `pc + jmp_offset2 = PC + 4` for JALR's final
+    production row.
 
     Parameter classes match `h_rd_val_jut_jal` exactly:
     {CIRCUIT-CONSTRAINT, TRANSPILE-PIN, LANE-MATCH, RANGE}. -/
@@ -284,6 +278,7 @@ lemma h_rd_val_jut_jalr
     -- LANE-MATCH (lo + hi)
     (h_lane_lo : store_pc_lanes_match_lo m r_main e2)
     (h_lane_hi : store_pc_lanes_match_hi m r_main e2)
+    (h_link_bridge : (m.pc r_main + m.jmp_offset2 r_main).val = (PC + 4#64).toNat)
     -- RANGE: PC trajectory + 32-bit link-addr bound
     (_h_pc_bound : PC.toNat < GL_prime - 4)
     (h_pc_offset_lt_2_32 : (PC + 4#64).toNat < 4294967296)
@@ -297,14 +292,11 @@ lemma h_rd_val_jut_jalr
                 (byteAt e2 4 : BitVec 8), (byteAt e2 5 : BitVec 8),
                 (byteAt e2 6 : BitVec 8), (byteAt e2 7 : BitVec 8)]
       = PC + 4 := by
-  -- Extract JALR mode witnesses + apply transpile_PC_for_JALR.
-  have h_circuit_full := h_circuit
-  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode⟩ := h_circuit
-  obtain ⟨h_ext, h_op, _h_flag, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
-  have h_link_bridge : (m.pc r_main + m.jmp_offset2 r_main).val = (PC + 4#64).toNat :=
-    transpile_PC_for_JALR m r_main PC h_ext h_op
   -- The final row's store_pc lane formula writes `pc + jmp_offset2`
   -- into the lo lane and zero into the hi lane.
+  have h_circuit_full := h_circuit
+  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_pc, h_mode⟩ := h_circuit
+  obtain ⟨_h_ext, _h_op, _h_flag, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
   have h_lo_val : (memory_entry_lo e2).val = (PC + 4#64).toNat % 4294967296 :=
     by
       simp only [store_pc_lanes_match_lo] at h_lane_lo
@@ -350,8 +342,8 @@ lemma h_rd_val_jut_jalr
        `c_0 = b_0` and `c_1 = b_1` via `lui_archetype_store_value_lo/hi`.
     2. `h_lane_rd : register_write_lanes_match m r_main e2` — ties
        `c_0/c_1` to `memory_entry_lo/hi e2` (valid for LUI since `c = b = imm`).
-    3. `h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ 0#12).toNat` — transpiler b-lane pin.
-    4. `h_imm_hi_nat : (m.b_1 r_main).val = (BitVec.signExtend 64 (imm ++ 0#12)).toNat / 4294967296` — transpiler b-lane pin.
+    3. `h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ 0#12).toNat` — row-shape b-lane pin.
+    4. `h_imm_hi_nat : (m.b_1 r_main).val = (BitVec.signExtend 64 (imm ++ 0#12)).toNat / 4294967296` — row-shape b-lane pin.
     5. Per-byte range bounds on `e2`.
 
     The low-half identity `(sext 64 (imm ++ 0#12)).toNat % 2^32 = (imm ++ 0#12).toNat`
@@ -448,13 +440,12 @@ lemma h_rd_val_jut_lui
     from circuit primitives. AUIPC differs from JAL/JALR in two ways:
 
     1. The offset is `signExtend 64 (imm ++ 0#12)` rather than the
-       constant 4. The transpile contract (`transpile_AUIPC`) pins
+       constant 4. The row-shape contract (AUIPC row-shape contract) pins
        `m.jmp_offset2 r = imm_offset` for some FGL representative, but
        the BitVec-side lift requires the caller to supply
        `h_offset_bridge : (m.jmp_offset2 r_main).val = (signExtend 64 (imm ++ 0#12)).toNat`.
-    2. The PC bridge is gated by AUIPC's mode witnesses
-       (`is_external_op = 0`, `op = OP_FLAG`) — extracted from
-       `h_circuit` and combined with `transpile_PC_for_AUIPC`.
+    2. The caller supplies the PC bridge
+       `(m.pc r_main).val = PC.toNat`.
 
     Parameter classes: {CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE,
     TRANSPILE-BRIDGE}. Note: there is no JAL-style "jmp2 = 4"
@@ -472,6 +463,7 @@ lemma h_rd_val_jut_auipc
     -- TRANSPILE-BRIDGE: jmp_offset2 lifts to (sext (imm ++ 0#12)).toNat
     (h_offset_bridge : (m.jmp_offset2 r_main).val
       = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat)
+    (h_pc_bridge : (m.pc r_main).val = PC.toNat)
     -- LANE-MATCH (lo + hi)
     (h_lane_lo : store_pc_lanes_match_lo m r_main e2)
     (h_lane_hi : store_pc_lanes_match_hi m r_main e2)
@@ -492,11 +484,6 @@ lemma h_rd_val_jut_auipc
                 (byteAt e2 4 : BitVec 8), (byteAt e2 5 : BitVec 8),
                 (byteAt e2 6 : BitVec 8), (byteAt e2 7 : BitVec 8)]
       = PC + BitVec.signExtend 64 (imm ++ (0 : BitVec 12)) := by
-  -- Extract AUIPC mode witnesses + apply transpile_PC_for_AUIPC.
-  have h_mode := h_circuit.2
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-  have h_pc_bridge : (m.pc r_main).val = PC.toNat :=
-    transpile_PC_for_AUIPC m r_main PC h_ext h_op
   -- Apply S3's lo/hi BitVec bridges (AUIPC variants).
   set offset_bv : BitVec 64 := BitVec.signExtend 64 (imm ++ (0 : BitVec 12)) with h_offset_def
   have h_lo_val : (memory_entry_lo e2).val = (PC + offset_bv).toNat % 4294967296 :=

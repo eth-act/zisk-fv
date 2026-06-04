@@ -26,7 +26,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_divu
     : OpEnvelope state m r_main → Prop
-  | .divu _ r1 r2 rd bus _ _ _ _ _ _ _ _ _ _ _ _ =>
+  | .divu _ r1 r2 rd bus _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -41,11 +41,11 @@ theorem zisk_riscv_compliant_program_bus_divu
   cases env with
   | divu divu_input r1 r2 rd bus v r_a
          pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-         arith_chunk_ranges arith_carry_ranges remainder_bound =>
+         arith_chunk_ranges arith_carry_ranges remainder_bound h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq_divu]
     exact ZiskFv.Equivalence.Divu.equiv_DIVU state divu_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges remainder_bound
+      arith_chunk_ranges arith_carry_ranges remainder_bound h_rs1_value h_rs2_value
   | _ => trivial
 
 /-- Defect-aware DIVU dispatcher.
@@ -59,11 +59,11 @@ theorem zisk_riscv_compliant_program_bus_divu_except_known_defects
   cases env with
   | divu divu_input r1 r2 rd bus v r_a
          pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-         arith_chunk_ranges arith_carry_ranges remainder_bound =>
+         arith_chunk_ranges arith_carry_ranges remainder_bound h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq_divu]
     exact ZiskFv.Equivalence.Divu.equiv_DIVU state divu_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges remainder_bound
+      arith_chunk_ranges arith_carry_ranges remainder_bound h_rs1_value h_rs2_value
   | _ => trivial
 
 end ZiskFv.Compliance

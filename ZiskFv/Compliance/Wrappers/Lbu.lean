@@ -4,7 +4,7 @@ import ZiskFv.EquivCore.Lbu
 import ZiskFv.EquivCore.Promises.Load
 import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.EquivCore.Bridge.MemCleanFullEnsemble
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
@@ -86,7 +86,7 @@ lemma equiv_LBU
 This is the unsigned-byte-load analogue of
 `ld_eq_of_full_ensemble_mem_provider`: the Mem provider payload match is
 derived from Clean same-message evidence, while the row-equality,
-ROM/transpile, width, alignment, and legacy Main-side bus-entry pins remain
+ROM/row-shape, width, alignment, and legacy Main-side bus-entry pins remain
 explicit structural facts. -/
 theorem lbu_eq_of_full_ensemble_mem_provider
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

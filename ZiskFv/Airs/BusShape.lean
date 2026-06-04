@@ -185,7 +185,7 @@ def bus_shape_main_at_m32_one_conclusion
 Each lemma below takes the same three mode hypotheses as
 `bus_shape_for_ADD` (op-literal equality, `is_external_op = 1`, the
 opcode's `m32` value) and yields the fully-resolved bus-tuple shape.
-Names follow the `OP_*` constants in `Fundamentals.Transpiler`.
+Names follow the `OP_*` constants in `ZiskFv.RowShape.Contract`.
 
 The three groups correspond to the two parametric shapes above:
 * **64-bit ALU / branch / load / store / jump / mul / div** — `m32 = 0`,
@@ -259,7 +259,7 @@ lemma bus_shape_for_SLTU
   exact bus_shape_for_main_at_m32_zero m row 6 h_op h_ext h_m32
 
 /-- ADDI — same as ADD; the I-type immediate is folded into `b` by the
-    transpiler before the row reaches Main. -/
+    lowerer before the row reaches Main. -/
 lemma bus_shape_for_ADDI
     (h_op : m.op row = (10 : F))
     (h_ext : m.is_external_op row = 1)

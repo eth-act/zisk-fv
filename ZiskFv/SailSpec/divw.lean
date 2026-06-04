@@ -7,7 +7,7 @@ open LeanRV64D.Functions
 ## RV64M DIVW — pure spec + Sail equivalence
 
 DIVW is the signed 32-bit divide. Per `riscv2zisk_context.rs:250`,
-RV64 `divw` transpiles via `create_register_op(..., "div_w", 4)`,
+RV64 `divw` lowers via `create_register_op(..., "div_w", 4)`,
 op = OP_DIV_W = 0xbe = 190, m32 = 1, sa = sb = 1 (signed).
 
 Sail (`InstsEnd.lean:69371`): `execute_DIVW (...) (is_unsigned :=

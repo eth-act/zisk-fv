@@ -26,7 +26,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_itype_binary
     : OpEnvelope state m r_main → Prop
-  | .andi _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ =>
+  | .andi _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -34,7 +34,7 @@ def OpEnvelope.exec_eq_itype_binary
           (instruction.ITYPE (imm, r1, rd, iop.ANDI))) state
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .ori _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ =>
+  | .ori _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -42,7 +42,7 @@ def OpEnvelope.exec_eq_itype_binary
           (instruction.ITYPE (imm, r1, rd, iop.ORI))) state
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .xori _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ =>
+  | .xori _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -50,7 +50,7 @@ def OpEnvelope.exec_eq_itype_binary
           (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .slti _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ =>
+  | .slti _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -58,7 +58,7 @@ def OpEnvelope.exec_eq_itype_binary
           (instruction.ITYPE (imm, r1, rd, iop.SLTI))) state
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sltiu _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ =>
+  | .sltiu _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -73,45 +73,86 @@ theorem zisk_riscv_compliant_program_bus_itype_binary
     env.exec_eq_itype_binary := by
   cases env with
   | andi andi_input r1 rd imm v bus pins providerTable providerRow
-      h_component h_table_spec h_provider_row h_match_static h_andi_subset
+      h_component h_table_spec h_provider_row h_match_static
+      h_input_r1_row h_input_imm_row h_andi_subset
       h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_itype_binary]
+    change
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.ITYPE (imm, r1, rd, iop.ANDI))) state
+        = state_effect_via_channels
+            ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Andi.equiv_ANDI
       state andi_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static h_andi_subset
+      h_component h_table_spec h_provider_row h_match_static
+      h_input_r1_row h_input_imm_row h_andi_subset
       h_lane_rd promises
   | ori ori_input r1 rd imm v bus pins providerTable providerRow
-      h_component h_table_spec h_provider_row h_match_static h_ori_subset
+      h_component h_table_spec h_provider_row h_match_static
+      h_input_r1_row h_input_imm_row h_ori_subset
       h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_itype_binary]
+    change
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.ITYPE (imm, r1, rd, iop.ORI))) state
+        = state_effect_via_channels
+            ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Ori.equiv_ORI
       state ori_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static h_ori_subset
+      h_component h_table_spec h_provider_row h_match_static
+      h_input_r1_row h_input_imm_row h_ori_subset
       h_lane_rd promises
   | xori xori_input r1 rd imm v bus pins providerTable providerRow
-      h_component h_table_spec h_provider_row h_match_static h_xori_subset
+      h_component h_table_spec h_provider_row h_match_static
+      h_input_r1_row h_input_imm_row h_xori_subset
       h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_itype_binary]
+    change
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
+        = state_effect_via_channels
+            ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Xori.equiv_XORI
       state xori_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static h_xori_subset
+      h_component h_table_spec h_provider_row h_match_static
+      h_input_r1_row h_input_imm_row h_xori_subset
       h_lane_rd promises
   | slti slti_input r1 rd imm v bus pins providerTable providerRow
-      h_component h_table_spec h_provider_row h_match_static h_slti_subset
-      h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_itype_binary]
+      h_component h_table_spec h_provider_row h_match_static
+      h_main_m32 h_input_r1_row h_slti_subset h_lane_rd promises =>
+    change
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.ITYPE (imm, r1, rd, iop.SLTI))) state
+        = state_effect_via_channels
+            ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Slti.equiv_SLTI
       state slti_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static h_slti_subset
-      h_lane_rd promises
+      h_component h_table_spec h_provider_row h_match_static
+      h_main_m32 h_input_r1_row h_slti_subset h_lane_rd promises
   | sltiu sltiu_input r1 rd imm v bus pins providerTable providerRow
-      h_component h_table_spec h_provider_row h_match_static h_sltiu_subset
-      h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_itype_binary]
+      h_component h_table_spec h_provider_row h_match_static
+      h_main_m32 h_input_r1_row h_sltiu_subset h_lane_rd promises =>
+    change
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.ITYPE (imm, r1, rd, iop.SLTIU))) state
+        = state_effect_via_channels
+            ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Sltiu.equiv_SLTIU
       state sltiu_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static h_sltiu_subset
-      h_lane_rd promises
+      h_component h_table_spec h_provider_row h_match_static
+      h_main_m32 h_input_r1_row h_sltiu_subset h_lane_rd promises
   | _ => trivial
 
 end ZiskFv.Compliance

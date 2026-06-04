@@ -4,7 +4,7 @@ import ZiskFv.EquivCore.Ld
 import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.EquivCore.Bridge.MemCleanFullEnsemble
 import ZiskFv.EquivCore.Promises.Load
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
@@ -110,11 +110,11 @@ further:
   (`ind_width` selector pinned by the MemAlign* path for sub-doubleword
   loads), not on the Main row.
 * **Zero-extended narrow loads (LBU / LHU / LWU)** generalize from
-  LD mechanically: swap `transpile_LD` for `transpile_<LBU,LHU,LWU>`
+  LD mechanically: swap LD row-shape contract for corresponding row-shape contracts
   and consume `memalign_subdoubleword_load_high_bytes_zero` (a pure
   Lean derivation, already in place) to pin the high byte lanes to
   zero. The wrapper-level work is ~30 lines apiece (essentially a
-  copy of this file with the width-specific `transpile_<OP>` and
+  copy of this file with the width-specific per-op row-shape contract and
   zero-pad invocation).
 * **Signed narrow loads (LB / LH / LW)** take a different path
   through the BinaryExtension AIR's `OP_SIGNEXTEND_{B,H,W}` rows.
@@ -162,7 +162,7 @@ open ZiskFv.Airs.MemoryBus
 
     Trust footprint: canonical LD no longer reaches the retired
     load-side Main/provider memory axioms. Its remaining closure is the
-    platform scope, range-bus, Sail-state load bridge, and transpiler
+    platform scope, range-bus, Sail-state load bridge, and row-shape provenance
     trust already tracked in the regenerated baselines. -/
 lemma equiv_LD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -201,7 +201,7 @@ lemma equiv_LD
 This is the migration target for the LD `OpEnvelope` arm: callers expose the
 selected full-ensemble row evaluations and same-message evidence, while the
 Mem provider payload match inside `LdCleanWitness` is derived by the
-reducible full-ensemble constructor. The row-equality, ROM/transpile, and
+reducible full-ensemble constructor. The row-equality, ROM/row-shape, and
 legacy Main-side bus-entry pins remain explicit structural facts. -/
 theorem ld_eq_of_full_ensemble_mem_provider
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

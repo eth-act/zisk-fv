@@ -306,7 +306,7 @@ lemma h_rd_val_arith_add
     to `Spec/Add::add_compositional`.
 
     ADDI shares ADD's bus opcode literal (`OP_ADD = 10`); the BinaryAdd
-    AIR cannot distinguish them. The transpile axiom (CLAUDE.md trusted
+    AIR cannot distinguish them. The row-shape provenance bridge (CLAUDE.md trusted
     surface) is what pins ADDI's `b` lanes to the sign-extended
     immediate rather than rs2 — that's reflected here in `h_input_imm`.
 
@@ -339,7 +339,7 @@ lemma h_rd_val_arith_addi
     (h_input_r1 : r1_val
       = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
     -- TRANSPILE-BRIDGE: signExtend imm matches BinaryAdd's b-side packing
-    -- (transpile_ADDI pins the immediate into Main's b lanes, which the
+    -- (ADDI row-shape provenance pins the immediate into Main's b lanes, which the
     -- bus match propagates to BinaryAdd's b lanes)
     (h_input_imm : BitVec.signExtend 64 imm
       = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
@@ -634,7 +634,7 @@ lemma h_rd_val_arith_addiw_of_wf
 /-- **SUB h_rd_val derivation (Tier 1).**
     Produces `U64.toBV #v[(byteAt e2 0), ..., (byteAt e2 7)] = r1_val - r2_val` from K1-B
     SUB chain lift, c-lane bus-match, lane-match, byte ranges, and
-    transpile bridges. No `h_input_val` residual.
+    row-shape bridges. No `h_input_val` residual.
 
     SUB routes through `OP_SUB = 11` via `ALURTypeArchetype` on the
     Main side; the Binary AIR consumes 8 byte-chains at `OP_SUB` with

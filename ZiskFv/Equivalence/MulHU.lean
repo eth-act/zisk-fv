@@ -46,6 +46,12 @@ theorem equiv_MULHU
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulhu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulhu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -54,6 +60,6 @@ theorem equiv_MULHU
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_MULHU_of_table state mulhu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-    arith_chunk_ranges arith_carry_ranges
+    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value
 
 end ZiskFv.Equivalence.MulHU

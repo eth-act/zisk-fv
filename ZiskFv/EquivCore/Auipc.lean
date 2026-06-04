@@ -2,7 +2,6 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
 import ZiskFv.ZiskCircuit.AddUpperImmediatePC
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -13,7 +12,6 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Tactics.UTypeArchetype
-import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
 import ZiskFv.EquivCore.Promises.UType
 import ZiskFv.Compliance.SharedBundles
@@ -21,8 +19,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 End-to-end theorem for RV64 AUIPC. Combines:
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_AUIPC`),
+* explicit AUIPC Main-row PC/offset bridge facts supplied by the caller,
 * the compositional AUIPC spec
   (`ZiskFv.ZiskCircuit.AddUpperImmediatePC.auipc_pc_advance` +
   `auipc_store_value_lo`/`_hi`),
@@ -51,7 +48,6 @@ namespace ZiskFv.EquivCore.Auipc
 open Goldilocks
 open Interaction
 open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf_val_lt_256)
-open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.AddUpperImmediatePC
@@ -84,6 +80,36 @@ lemma equiv_AUIPC_sail
   PureSpec.execute_AUIPC_pure_equiv auipc_input imm rd
     h_input_imm h_input_rd h_input_pc
 
+/-- **AUIPC x0 equivalence.** When `rd = x0`, Sail emits no x-register
+    write and the production/static lowerer emits no Main memory-bus
+    register write. The state effect is therefore the empty-memory-bus
+    execution shape: only `nextPC` is written. -/
+lemma equiv_AUIPC_x0_no_memory
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (auipc_input : PureSpec.AuipcInput)
+    (imm : BitVec 20)
+    (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (promises : ZiskFv.EquivCore.Promises.UTypeNoMemPromises
+        state auipc_input.imm auipc_input.rd auipc_input.PC
+        (PureSpec.execute_AUIPC_pure auipc_input).nextPC
+        imm rd exec_row) :
+    execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
+      = (bus_effect exec_row [] state).2 := by
+  obtain ⟨h_input_imm, h_input_rd, h_input_pc, h_input_rd_zero,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches⟩ := promises
+  rw [equiv_AUIPC_sail state auipc_input imm rd
+        h_input_imm h_input_rd h_input_pc]
+  symm
+  have h_bus_eq := ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_jump_no_memory
+    state exec_row
+    (PureSpec.execute_AUIPC_pure auipc_input).nextPC
+    false true
+    (0#64) (0#64)
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches rfl rfl
+  rw [h_bus_eq]
+  simp [PureSpec.execute_AUIPC_pure, h_input_rd_zero]
+
 /-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
     AUIPC equals the state computed by applying `bus_effect` to the
     circuit's execution and memory bus rows.
@@ -111,6 +137,9 @@ lemma equiv_AUIPC
     -- Discharge parameters
     (h_circuit :
       ZiskFv.Tactics.UTypeArchetype.auipc_archetype_circuit_holds m r_main next_pc)
+    (h_offset_bridge : (m.jmp_offset2 r_main).val
+      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
     (h_no_wrap : auipc_input.PC.toNat
       + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < GL_prime)
@@ -126,26 +155,10 @@ lemma equiv_AUIPC
   -- Discharge `h_lane_lo`/`h_lane_hi` from the selected Clean Main
   -- `cMemMessage` row, rather than through `main_store_pc_emission_bundle`.
   obtain ⟨h_lane_lo, h_lane_hi⟩ := store_pc_mem.lanes
-  -- Discharge `h_offset_bridge` via `transpile_AUIPC` (trust class #1).
-  -- `h_no_wrap` gives `PC + signExt < GL_prime`; since `PC.toNat ≥ 0`,
-  -- we deduce `signExt < GL_prime` (the no-wrap bound on the offset
-  -- alone) and feed it to `auipc_offset_discharge`.
-  have h_no_wrap_offset :
-      (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat < GL_prime := by
-    have := Nat.lt_of_le_of_lt (Nat.le_add_left _ _) h_no_wrap
-    exact this
-  have h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat :=
-    ZiskFv.EquivCore.Bridge.ControlFlow.auipc_offset_discharge
-      m r_main next_pc auipc_input.imm h_circuit h_no_wrap_offset
   -- Derive `h_lo_bound` from the PC/offset bridges and the existing
   -- 32-bit result bound, avoiding the legacy range bus.
   have h_lo_bound :
       (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296 := by
-    obtain ⟨_h_subset, h_mode⟩ := h_circuit
-    obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-    have h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat :=
-      ZiskFv.Trusted.transpile_PC_for_AUIPC m r_main auipc_input.PC h_ext h_op
     have h_no_wrap_fgl :
         (m.pc r_main).val + (m.jmp_offset2 r_main).val < GL_prime := by
       rw [h_pc_bridge, h_offset_bridge]
@@ -188,7 +201,7 @@ lemma equiv_AUIPC
     have hb7 : (byteAt e_rd 7).val < 256 := byteOf_val_lt_256 e_rd.value_1 3
     exact ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_auipc
       auipc_input.PC auipc_input.imm m r_main next_pc e_rd
-      h_circuit h_offset_bridge h_lane_lo h_lane_hi
+      h_circuit h_offset_bridge h_pc_bridge h_lane_lo h_lane_hi
       h_no_wrap h_lo_bound h_pc_offset_lt_2_32
       hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
   rw [equiv_AUIPC_sail state auipc_input imm rd

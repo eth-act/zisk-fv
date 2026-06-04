@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Tactics.ALURTypeArchetype
@@ -65,7 +65,7 @@ def main_row_in_alu_itype_mode
 /-- **Archetype circuit-holds (ITYPE).** Alias for
     `ALURTypeArchetype.alu_rtype_archetype_circuit_holds`. Same
     Main-side boolean / disjointness booleans + bus-match; the
-    difference from RTYPE is purely in the *transpile* axiom (which
+    difference from RTYPE is purely in the *row-shape* axiom (which
     governs the b lanes the caller is expected to thread through the
     bus entry), not in the Main-AIR column predicates this archetype
     references. -/
@@ -82,7 +82,7 @@ def alu_itype_archetype_circuit_holds
     `ALURTypeArchetype.alu_rtype_archetype_c_bus_match` — the proof is
     bit-for-bit identical. The Binary SM's internal correctness (that
     `c_lo`/`c_hi` pack the signed/unsigned/logical opcode's result on
-    the `a`/`b` lanes the transpile axiom pinned) is a separate audit
+    the `a`/`b` lanes the row-shape provenance bridge pinned) is a separate audit
     obligation. -/
 lemma alu_itype_archetype_c_bus_match
     (m : Valid_Main FGL FGL) (r_main : ℕ)
@@ -97,8 +97,8 @@ lemma alu_itype_archetype_c_bus_match
 
 The four ITYPE opcodes (ADDI/ANDI/ORI/XORI) each carry an immediate
 operand whose 12-bit sign-extended value is routed onto Main's `b`
-lanes by the transpiler (`transpile_<OP>`'s `imm_b_lo`/`imm_b_hi`
-caller-routed columns). The `transpile` axiom witnesses the routing
+lanes by row-shape provenance (per-op row-shape contract's `imm_b_lo`/`imm_b_hi`
+caller-routed columns). The row-shape provenance witness witnesses the routing
 relationship but cannot witness *which* value the immediate carries —
 that is a program-level invariant.
 

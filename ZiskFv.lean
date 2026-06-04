@@ -1,6 +1,5 @@
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Transpiler.Static
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.SailSpec.BusEffect
@@ -128,4 +127,5 @@ import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.FullEnsemble.Balance
+import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance

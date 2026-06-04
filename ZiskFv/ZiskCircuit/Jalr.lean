@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
@@ -32,7 +32,7 @@ open ZiskFv.PackedBitVec.WidePCNoWrap
 
 /-- The final Main row for production JALR: external `OP_AND`, full
     64-bit width, `set_pc = 1`, and `store_pc = 1`. The `flag = 0`
-    pin is part of the ordinary `OP_AND` transpiler contract and makes
+    pin is part of the ordinary `OP_AND` row-shape contract and makes
     the PC handshake reduce to the set-PC branch. -/
 @[simp]
 def main_row_in_jalr_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
@@ -44,7 +44,7 @@ def main_row_in_jalr_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   ∧ m.store_pc r_main = 1
 
 /-- Hypotheses needed by `jalr_compositional`. All four circuit-side
-    obligations are constraint witnesses plus the transpile-axiom's
+    obligations are constraint witnesses plus the row-shape provenance witness's
     mode witnesses for the final production `OP_AND` row. -/
 @[simp]
 def jalr_circuit_holds
@@ -58,7 +58,7 @@ def jalr_circuit_holds
 
 /-- **Compositional JALR (next-pc) theorem.** On the final production
     row, `set_pc = 1` and `flag = 0`, so the PC handshake reduces to
-    `next_pc = c_0 + jmp_offset1`. For aligned JALR the transpiler pins
+    `next_pc = c_0 + jmp_offset1`. For aligned JALR the production lowerer pins
     `jmp_offset1 = imm`; for unaligned JALR the final row pins
     `jmp_offset1 = 0` and receives the add row's result through `lastc`. -/
 lemma jalr_pc_advance
@@ -140,7 +140,7 @@ lemma jalr_unaligned_add_lastc_and_chain_of_facts
     - c_0) + c_0` expression (`main.pil:311`) under JALR's mode
     witnesses (`store_pc = 1`) evaluates to `pc + jmp_offset2`
     (independent of `c_0` thanks to the `store_pc = 1` cancellation).
-    The separate `transpile_PC_for_JALR` bridge pins this row-level
+    The separate JALR PC provenance contract bridge pins this row-level
     expression to Sail's link address `PC + 4`, covering both aligned
     and unaligned production lowerings. -/
 lemma jalr_store_value

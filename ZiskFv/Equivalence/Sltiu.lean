@@ -47,6 +47,11 @@ theorem equiv_SLTIU
         (ZiskFv.AirsClean.Binary.opBusMessage
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
+    (h_main_m32 : m.m32 r_main = 0)
+    (h_input_r1_row : sltiu_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -63,6 +68,7 @@ theorem equiv_SLTIU
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_SLTIU
     state sltiu_input r1 rd imm m providerTable providerRow r_main bus pins
-    h_component h_table_spec h_provider_row h_match h_sltiu_subset h_lane_rd promises
+    h_component h_table_spec h_provider_row h_match
+    h_main_m32 h_input_r1_row h_sltiu_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Sltiu

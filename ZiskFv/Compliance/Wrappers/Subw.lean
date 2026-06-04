@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Subw
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.AirsClean.BinaryFamily.Balance
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -48,13 +48,23 @@ lemma equiv_SUBW
       providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
     (h_table_spec : providerTable.Spec)
     (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match : matches_entry
-      (opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+      (h_match : matches_entry
+        (opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (ZiskFv.AirsClean.Binary.opBusMessage
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow))) 1))
+      (h_input_r1_extract :
+        (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+          = ZiskFv.EquivCore.Addw.binaryRowA32
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow)) % 2^32)
+      (h_input_r2_extract :
+        (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+          = ZiskFv.EquivCore.Addw.binaryRowB32
+            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+              (providerTable.environment providerRow)) % 2^32)
+      (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
         (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
@@ -92,9 +102,12 @@ lemma equiv_SUBW
     ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
       row h_spec_facts h_facts h_core h_mode32_one (Or.inr h_b_op)
   exact ZiskFv.EquivCore.Subw.equiv_SUBW_of_static_row
-    state subw_input r1 r2 rd m row r_main bus promises
-    ⟨h_main_active, h_main_op_subw⟩
-    h_match h_core h_facts h_mode32_one h_b_op
-    h_sext_choice_row h_carry_7_zero_row h_lane_rd
+      state subw_input r1 r2 rd m row r_main bus promises
+      ⟨h_main_active, h_main_op_subw⟩
+      h_match h_core h_facts h_mode32_one h_b_op
+      h_sext_choice_row h_carry_7_zero_row
+      (by simpa [row] using h_input_r1_extract)
+      (by simpa [row] using h_input_r2_extract)
+      h_lane_rd
 
 end ZiskFv.Compliance

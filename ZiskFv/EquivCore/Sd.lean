@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
+import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.StoreD
 import ZiskFv.ZiskCircuit.MemModel
 import ZiskFv.Airs.Main.Main
@@ -153,7 +153,9 @@ lemma equiv_SD_clean_provider
     (h_active : main.is_external_op r_main = 0)
     (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok sd_input.r1_val state)
-    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sd_input.r2_val state) :
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sd_input.r2_val state)
+    (h_b0_value : main.b_0 r_main = ZiskFv.Trusted.lane_lo sd_input.r2_val)
+    (h_b1_value : main.b_1 r_main = ZiskFv.Trusted.lane_hi sd_input.r2_val) :
     execute_instruction (instruction.STORE (
       sd_input.imm,
       regidx.Regidx sd_input.r2,
@@ -165,7 +167,7 @@ lemma equiv_SD_clean_provider
       main r_main mainRow bus.e2 state rs1 rs2
       sd_input.r1_val sd_input.r2_val sd_input.imm
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
-      h_active h_op_main h_read_r1 h_read_r2
+      h_active h_op_main h_read_r1 h_read_r2 h_b0_value h_b1_value
   exact equiv_SD state sd_input regs bus promises
     h_ptr hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
 
@@ -217,5 +219,6 @@ lemma equiv_SD_clean_provider_witness
     (regidx_to_fin (regidx.Regidx sd_input.r2))
     w.main_row w.main_spec w.store_pc w.main_c_match w.addr2
     pins.main_active pins.main_op h_read_r1' h_read_r2'
+    w.b0_value w.b1_value
 
 end ZiskFv.EquivCore.Sd
