@@ -1,5 +1,5 @@
 Plan: docs/ai/plan/PLAN_RV64IM_GLOBAL_COMPLETENESS.md
-Focus: M extension slice: add Sail containment for MUL/DIV/REM register and word opcodes using the state-aware Sail relation.
+Focus: Immediate ALU slice: add Sail containment for ADDI/SLLI/SLTI/SLTIU/XORI/SRLI/SRAI/ORI/ANDI.
 Blocking: Nothing currently blocking.
-Next step: Prove M constructor state-aware encoder facts under `Rv64imEnabledSailState`, then map them into `RTypeRegisterShape`.
-Digression: Sail relation infrastructure now supports extension-gated Sail constructors and preserves the closed Register ALU / Register word ALU containment path.
+Next step: Commit the verified M extension slice, then start Immediate ALU whitelist and raw-shape lemmas.
+Digression: M extension Sail containment is verified under the state-aware `Rv64imEnabledSailState` relation; Lake build and Aeneas production completeness both passed.

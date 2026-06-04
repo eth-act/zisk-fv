@@ -112,7 +112,7 @@ the corresponding checked-in and generated builds have passed.
 | Register ALU | ADD SUB SLL SLT SLTU XOR SRL SRA OR AND | done | done | done | done | none |
 | Register word ALU | ADDW SUBW SLLW SRLW SRAW | done | done | done | done | none |
 | Sail relation infrastructure | n/a | done | done | done | n/a | enables extension-gated Sail constructors |
-| M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | pending | pending | pending | pending | none; requires state-aware Sail encoder relation |
+| M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | done | done | done | done | none |
 | Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | pending | pending | pending | pending | none expected |
 | Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | pending | pending | pending | pending | none expected |
 | Branches | BEQ BNE BLT BGE BLTU BGEU | pending | pending | pending | pending | none expected |
@@ -137,7 +137,7 @@ the corresponding checked-in and generated builds have passed.
   generated coverage, verification, docs, commit.
 - [x] Sail relation infrastructure: add state-aware encode/decode relation and
   compatibility lemmas for already-closed unconditional families.
-- [ ] M extension: close whitelist, raw-shape lemma, global theorem shape,
+- [x] M extension: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
 - [ ] Immediate ALU: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
