@@ -2459,6 +2459,38 @@ def ZiskCircuitCoveredRaw (raw : Std.U32) : Prop :=
   ZiskRowMaterializedRaw raw ∧
   coveredOpcodeId (rawDecodeOpcodeId (aeneas_extract.extract_decode_rv64im_raw raw)) = true
 
+def rawOfNat32 (n : Nat) : Std.U32 :=
+  ⟨BitVec.ofNat 32 n⟩
+
+def rawRType (funct7 rs2 rs1 funct3 rd opcode : Nat) : Std.U32 :=
+  rawOfNat32
+    ((funct7 <<< 25) ||| (rs2 <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
+
+def allRvRegs : List Nat :=
+  List.range 32
+
+/-- Boolean counterpart of ADD raw-shape circuit coverage. This is deliberately
+defined from the Aeneas-extracted production raw decoder/lowering wrappers. -/
+def AddRawShapeCircuitCoveredBool (raw : Std.U32) : Bool :=
+  rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) &&
+  (rawDecodeOpcodeId (aeneas_extract.extract_decode_rv64im_raw raw) == 6) &&
+  rawTranspileAccepted (aeneas_extract.extract_transpile_rv64im_raw raw) &&
+  rawTranspileAcceptedFlag (aeneas_extract.extract_transpile_rv64im_accepted_raw raw) &&
+  rawTranspileMaterializedFlag
+    (aeneas_extract.extract_transpile_rv64im_materializes_raw raw) &&
+  !KnownZiskGapRaw raw
+
+def allAddRawShapesCircuitCovered : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allRvRegs.all fun rs2 =>
+        AddRawShapeCircuitCoveredBool (rawRType 0 rs2 rs1 0 rd 0x33)
+
+theorem allAddRawShapesCircuitCovered_ok :
+    allAddRawShapesCircuitCovered = true := by
+  native_decide
+
 def RvAvoidKnownBugsFor (sailExecutableRaw : Std.U32 → Prop) : Prop :=
   ∀ raw, sailExecutableRaw raw → KnownZiskGapRaw raw = false → ZiskDecodeSupportedRaw raw
 
