@@ -1,16 +1,6 @@
 name: aeneas extraction
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/aeneas-production-extract.sh'
-      - 'zisk'
-      - 'zisk/**'
-      - 'flake.nix'
-      - 'flake.lock'
-      - 'nix/**'
-      - '.github/workflows/aeneas-extraction.yml'
   push:
     branches: [main]
     paths:
