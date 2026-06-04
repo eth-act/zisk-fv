@@ -419,6 +419,42 @@ def fencePinsEvidenceMatches
       && row.isExternalOp == false
   | none => false
 
+def addViaBinaryShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 10
+      && row.isExternalOp == true
+      && row.m32 == false
+      && row.aSrc == 6
+      && row.bSrc == 6
+      && row.store == 3
+  | none => false
+
+def addiViaBinaryShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 10
+      && row.isExternalOp == true
+      && row.m32 == false
+      && row.aSrc == 6
+      && row.bSrc == 2
+      && row.store == 3
+  | none => false
+
+def addwShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 26
+      && row.isExternalOp == true
+      && row.m32 == true
+      && row.aSrc == 6
+      && row.bSrc == 6
+      && row.store == 3
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -500,6 +536,24 @@ example :
   native_decide
 
 example :
+    addwShapeEvidenceMatches (aeneas_extract.extract_addw_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowModeMatches (aeneas_extract.extract_add_from_inst sampleInst)
+      10 true false false 6 6 3 4 4 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_add_from_inst sampleInst)
+      (proofRowShape 16 10 6 0 5 6 0 7 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    addViaBinaryShapeEvidenceMatches (aeneas_extract.extract_add_from_inst sampleInst) = true := by
+  native_decide
+
+example :
     rowModeMatches (aeneas_extract.extract_add_from_inst sampleRs1ZeroInst)
       1 false false false 2 6 3 4 4 = true := by
   native_decide
@@ -507,6 +561,20 @@ example :
 example :
     rowShapeMatches (aeneas_extract.extract_add_from_inst sampleRs1ZeroInst)
       (proofRowShape 16 1 2 0 0 6 0 7 3 3 false false 0 4 4 false false) = true := by
+  native_decide
+
+example :
+    rowModeMatches (aeneas_extract.extract_addi_from_inst sampleInst)
+      10 true false false 6 2 3 4 4 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_addi_from_inst sampleInst)
+      (proofRowShape 16 10 6 0 5 2 0 4096 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    addiViaBinaryShapeEvidenceMatches (aeneas_extract.extract_addi_from_inst sampleInst) = true := by
   native_decide
 
 example :

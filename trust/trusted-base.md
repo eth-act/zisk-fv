@@ -123,6 +123,17 @@ slice. The staged Aeneas harness checks the `extract_fence_from_inst` internal
 `OpEnvelope.fenceOfExtractedShape`, and
 `OpEnvelope.aeneasBridgeTrust_fenceOfExtractedShape`.
 
+Sixth proof-slice progress: ADD, ADDI, and ADDW now cover the first Binary
+provider-route pins. The staged Aeneas harness checks that regular ADD and ADDI
+lower to external `OP_ADD` rows and ADDW lowers to an external `OP_ADD_W` row,
+and main Lake contains `MainRowProvenance.addPins_of_extracted_shape`,
+`MainRowProvenance.addwPins_of_extracted_shape`,
+`OpEnvelope.addViaBinaryOfExtractedShape`,
+`OpEnvelope.addiViaBinaryOfExtractedShape`,
+`OpEnvelope.addwOfExtractedShape`, and the matching
+`OpEnvelope.aeneasBridgeTrust_*OfExtractedShape` theorems. The provider-row
+source-lane equalities are still explicit envelope fields.
+
 Retirement path: import the generated Aeneas Lean row-lowering result into the
 main proof, prove the `OpEnvelope.aeneasBridgeTrust` predicate for each
 relevant arm, and replace `aeneas_bridge_trust` with the derived theorem.

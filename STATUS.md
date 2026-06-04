@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: FENCE activation/opcode pin slice verified; preparing commit.
+Current focus: ADD/ADDI/ADDW Binary provider-route slice verified; preparing commit.
 Blocking: none.
-Next step: commit the FENCE slice, then continue to the BinaryAdd provider-evidence group.
+Next step: commit the ADD/ADDI/ADDW slice if the worktree side effects are clean.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -54,3 +54,18 @@ Notes:
 - `trust/scripts/check-all.sh` passed for the FENCE slice.
 - `trust/scripts/check-all-semantic.sh` passed for the FENCE slice.
 - `nix run .#aeneas-production-extract` passed for the FENCE slice.
+- FENCE slice committed as `2b5765d5 Add FENCE pin bridge slice`.
+- Regular extraction probes show ADD/ADDI lower to external `OP_ADD`; ADDW
+  lowers to external `OP_ADD_W`.
+- Added `MainRowProvenance.addPins_of_extracted_shape` and
+  `MainRowProvenance.addwPins_of_extracted_shape`.
+- Added ADD/ADDI/ADDW `OpEnvelope.*OfExtractedShape` constructors and bridge
+  theorems, plus staged external provider-route row-shape checks.
+- `lake build ZiskFv.Compliance` passed for the ADD/ADDI/ADDW slice.
+- `trust/scripts/regenerate.sh` passed for the ADD/ADDI/ADDW slice.
+- `trust/scripts/check-all.sh` passed for the ADD/ADDI/ADDW slice.
+- `trust/scripts/check-all-semantic.sh` passed for the ADD/ADDI/ADDW slice.
+- First `nix run .#aeneas-production-extract` failed on the new ADDI full
+  row-shape check; actual production row has `b_use_sp_imm1 = 0` and
+  `b_offset_imm0 = 4096`, so the staged expectation was corrected.
+- `nix run .#aeneas-production-extract` passed for the ADD/ADDI/ADDW slice.

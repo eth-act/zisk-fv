@@ -80,6 +80,23 @@ no dedicated bridge predicate payload, but its `OpEnvelope` arm still consumes
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: ADD/ADDI/ADDW
+
+Continue depth-first into the Binary provider-route group. These arms consume
+external Main opcode pins plus provider-row source-lane equalities; this slice
+derives the Main pins from production row-shape provenance and proves the
+current `aeneasBridgeTrust` branches from the existing provider-lane fields.
+
+- [x] Add main-Lake helpers deriving ADD/ADDI and ADDW `MainRowPins` from extracted-row constants.
+- [x] Add ADD, ADDI, and ADDW `OpEnvelope` constructors/bridge theorems that use those helpers to fill the real pins fields.
+- [x] Add staged Aeneas generated checks for ADD, ADDI, and ADDW external provider-route row shapes.
+- [x] Update extraction/trust docs to describe the ADD/ADDI/ADDW slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

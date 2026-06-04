@@ -78,7 +78,9 @@ def storeReg : Nat := 3
 
 def opFlag : Nat := 0
 def opCopyB : Nat := 1
+def opAdd : Nat := 10
 def opAnd : Nat := 14
+def opAddW : Nat := 26
 
 end ExtractedConst
 
@@ -251,6 +253,32 @@ theorem fencePins_of_extracted_shape
       simpa [boolF, h_internal] using p.is_external_op_eq
     main_op := by
       simpa [natF, ExtractedConst.opFlag, ZiskFv.Trusted.OP_FLAG, h_op] using p.op_eq }
+
+/-- Build the external `OP_ADD` activation/opcode pins from extracted
+row-shape constants. This covers the Binary provider route for ADD and ADDI. -/
+theorem addPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opAdd)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_ADD :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opAdd, ZiskFv.Trusted.OP_ADD, h_op] using p.op_eq }
+
+/-- Build the external `OP_ADD_W` activation/opcode pins from extracted
+row-shape constants. -/
+theorem addwPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opAddW)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_ADD_W :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opAddW, ZiskFv.Trusted.OP_ADD_W, h_op] using p.op_eq }
 
 theorem pins
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}

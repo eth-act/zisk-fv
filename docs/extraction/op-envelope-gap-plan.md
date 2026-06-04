@@ -175,6 +175,21 @@ pipeline.
      branch of `OpEnvelope.aeneasBridgeTrust` from extracted row-shape
      equalities plus the remaining dynamic FENCE facts.
 
+   The next slice enters the Binary provider-route group for ADD, ADDI, and
+   ADDW:
+
+   - the staged Aeneas harness proves that regular ADD and ADDI lower to
+     external `OP_ADD` rows, while ADDW lowers to an external `OP_ADD_W` row;
+   - main Lake proves `MainRowProvenance.addPins_of_extracted_shape` and
+     `MainRowProvenance.addwPins_of_extracted_shape`;
+   - main Lake exposes `OpEnvelope.addViaBinaryOfExtractedShape`,
+     `OpEnvelope.addiViaBinaryOfExtractedShape`, and
+     `OpEnvelope.addwOfExtractedShape`, plus matching
+     `OpEnvelope.aeneasBridgeTrust_*OfExtractedShape` theorems. These
+     constructors derive the Main activation/opcode pins from row-shape
+     equalities and prove the current bridge branches from the existing
+     provider-row source-lane equalities.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:
