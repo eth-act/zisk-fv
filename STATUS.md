@@ -1,5 +1,5 @@
 Plan: docs/ai/plan/PLAN_RV64IM_GLOBAL_COMPLETENESS.md
-Focus: Register word ALU slice verified; prepare commit and move to M extension next.
-Blocking: Nothing currently blocking.
-Next step: Commit the Register word ALU slice, then start M extension Sail containment and generated coverage.
-Digression: Generated Aeneas check previously hit stale Cargo build-script artifacts with an old worktree path; `cargo clean -p lib-float -p lib-c` fixed the environment cache.
+Focus: Sail relation infrastructure needed before the M extension slice.
+Blocking: Nothing external; the next proof step is to make Sail encode/decode state-aware for extension-gated constructors.
+Next step: Add a state-aware SailM return relation and lift the closed unconditional families into it, then resume M extension containment.
+Digression: Register word ALU was verified and committed as `472522e4`.

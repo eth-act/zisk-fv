@@ -42,15 +42,17 @@ Family order:
 Per-family closure loop:
 
 1. Extend `SailRv64imInstruction` with only the current family.
-2. Add family-specific Sail predicates and raw encoding lemmas.
-3. Prove the family containment theorem into the existing `Rv64imShapes`
+2. For extension-gated families, first use a state-aware SailM return
+   predicate under an RV64IM-enabled Sail state assumption.
+3. Add family-specific Sail predicates and raw encoding lemmas.
+4. Prove the family containment theorem into the existing `Rv64imShapes`
    family shape.
-4. Compose the containment into the checked-in supported-decode theorem.
-5. Extend generated Aeneas RV completeness coverage only as much as needed for
+5. Compose the containment into the checked-in supported-decode theorem.
+6. Extend generated Aeneas RV completeness coverage only as much as needed for
    the current family.
-6. Run verification.
-7. Update this plan matrix and `STATUS.md`.
-8. Commit the semantic slice.
+7. Run verification.
+8. Update this plan matrix and `STATUS.md`.
+9. Commit the semantic slice.
 
 ## Scope
 
@@ -79,7 +81,10 @@ Out of scope:
 The proof stays split into three layers:
 
 1. Checked-in Sail-side Lean proves that Sail RV64IM executable raw words land
-   in the appropriate raw instruction shape families.
+   in the appropriate raw instruction shape families. For extension-gated Sail
+   constructors such as M instructions, the Sail encode/decode relation is
+   evaluated under an RV64IM-enabled Sail state rather than treated as an
+   unconditional equality to `pure`.
 2. Generated Aeneas Lean proves that the extracted production ZisK path covers
    those raw shape families.
 3. Checked-in abstract RV completeness theorems compose the Sail containment
@@ -106,7 +111,8 @@ the corresponding checked-in and generated builds have passed.
 | ADD pilot | ADD | done | done | done | done | none |
 | Register ALU | ADD SUB SLL SLT SLTU XOR SRL SRA OR AND | done | done | done | done | none |
 | Register word ALU | ADDW SUBW SLLW SRLW SRAW | done | done | done | done | none |
-| M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | pending | pending | pending | pending | none expected |
+| Sail relation infrastructure | n/a | pending | pending | pending | n/a | enables extension-gated Sail constructors |
+| M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | pending | pending | pending | pending | none; requires state-aware Sail encoder relation |
 | Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | pending | pending | pending | pending | none expected |
 | Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | pending | pending | pending | pending | none expected |
 | Branches | BEQ BNE BLT BGE BLTU BGEU | pending | pending | pending | pending | none expected |
@@ -129,6 +135,8 @@ the corresponding checked-in and generated builds have passed.
 - [x] Register ALU: run all verification commands, update matrix/status, commit.
 - [x] Register word ALU: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
+- [ ] Sail relation infrastructure: add state-aware encode/decode relation and
+  compatibility lemmas for already-closed unconditional families.
 - [ ] M extension: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
 - [ ] Immediate ALU: close whitelist, raw-shape lemma, global theorem shape,
