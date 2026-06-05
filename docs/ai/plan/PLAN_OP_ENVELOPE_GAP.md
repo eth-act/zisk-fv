@@ -176,6 +176,22 @@ R-type second-register shift amount.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: SLLW/SRLW/SRAW
+
+Continue through BinaryExtension with the 32-bit R-type shift forms. These use
+the same shift provider component but select the W opcodes and bridge
+`rowA32` plus `rowShiftAmount32`.
+
+- [x] Add main-Lake helpers deriving SLLW, SRLW, and SRAW `MainRowPins` from extracted-row constants.
+- [x] Extend `aeneasBridgeTrust` and add SLLW, SRLW, and SRAW `OpEnvelope` constructors/bridge theorems.
+- [x] Add staged Aeneas generated checks for SLLW, SRLW, and SRAW external shift-provider row shapes.
+- [x] Update extraction/trust docs to describe the R-type W shift slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

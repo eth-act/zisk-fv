@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: SLLI/SRLI/SRAI BinaryExtension immediate shift slice verified; preparing commit.
+Current focus: SLLW/SRLW/SRAW BinaryExtension 32-bit R-type shift slice verified; preparing commit.
 Blocking: none.
-Next step: commit the SLLI/SRLI/SRAI slice, then continue with SLLW/SRLW/SRAW.
+Next step: commit the SLLW/SRLW/SRAW slice, then continue with SLLIW/SRLIW/SRAIW.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -124,4 +124,15 @@ Notes:
 - `trust/scripts/check-all.sh` passed for the SLLI/SRLI/SRAI slice.
 - `trust/scripts/check-all-semantic.sh` passed for the SLLI/SRLI/SRAI slice.
 - `nix run .#aeneas-production-extract` passed for the SLLI/SRLI/SRAI slice.
+- Generated trust diffs are only the expected `aeneas_bridge_trust` line-number shift.
+- SLLI/SRLI/SRAI slice committed as `446b96e7 Add immediate shift bridge slice`.
+- Entering SLLW/SRLW/SRAW next; these use `rowA32` and
+  `rowShiftAmount32` with distinct Main opcodes 36/37/38.
+- Added SLLW/SRLW/SRAW extracted opcode pin helpers, bridge predicates,
+  constructors, bridge theorems, and staged production row-shape checks.
+- `lake build ZiskFv.Compliance` passed for the SLLW/SRLW/SRAW slice.
+- `trust/scripts/regenerate.sh` passed for the SLLW/SRLW/SRAW slice.
+- `trust/scripts/check-all.sh` passed for the SLLW/SRLW/SRAW slice.
+- `trust/scripts/check-all-semantic.sh` passed for the SLLW/SRLW/SRAW slice.
+- `nix run .#aeneas-production-extract` passed for the SLLW/SRLW/SRAW slice.
 - Generated trust diffs are only the expected `aeneas_bridge_trust` line-number shift.

@@ -255,6 +255,18 @@ pipeline.
    - the matching bridge theorems prove the immediate shift predicates by
      connecting `r1_val` to `rowA64` and `shamt.toNat` to `rowShiftAmount`.
 
+   The R-type W shift forms SLLW, SRLW, and SRAW are the 32-bit counterpart:
+
+   - the staged Aeneas harness proves that SLLW, SRLW, and SRAW lower to
+     external `OP_SLL_W`, `OP_SRL_W`, and `OP_SRA_W` rows with `m32 = true`;
+   - main Lake proves `MainRowProvenance.sllwPins_of_extracted_shape`,
+     `MainRowProvenance.srlwPins_of_extracted_shape`, and
+     `MainRowProvenance.srawPins_of_extracted_shape`;
+   - main Lake exposes `OpEnvelope.sllwOfExtractedShape`,
+     `OpEnvelope.srlwOfExtractedShape`, and `OpEnvelope.srawOfExtractedShape`,
+     whose bridge theorems connect low-32-bit `r1_val` to `rowA32` and
+     `r2_val % 32` to `rowShiftAmount32`.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:
