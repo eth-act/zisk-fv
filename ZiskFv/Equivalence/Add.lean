@@ -6,8 +6,8 @@ import ZiskFv.Channels.StateEffect
 
 Post-T4-purge canonical: ADD routes through the lookup-aware Binary
 provider (`Compliance.equiv_ADD`). The legacy BinaryAdd-arm path was
-retired in T4-purge (op_bus_permutation_sound + binaryAdd_circuit_completeness
-no longer in this theorem's closure).
+retired in T4-purge, and the former BinaryAdd completeness placeholder
+has since been removed from the source ledger.
 -/
 
 open ZiskFv.Channels

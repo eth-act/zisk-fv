@@ -1,6 +1,5 @@
 import ZiskFv.AirsClean.ArithMul.Constraints
 import ZiskFv.AirsClean.ArithMul.Soundness
-import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -11,29 +10,24 @@ Packages ZisK's Arith AIR (MUL-mode carry-chain view) as a Clean
 `Air.Flat.Component`:
 
 * `arithMulElaborated` — the `ElaboratedCircuit` over `main` — lives in
-  `Constraints.lean` (so the completeness axiom can name it). Its `main`
+  `Constraints.lean` (so the conditional completeness proof can name it). Its `main`
   emits the 11 `assertZero` carry-chain constraints (named-form `6/7/8`
   + `31..38`) and the operation-bus proves-side `push`.
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` (plan D-2:
   a Component carries no soundness-assumptions — the ArithMul `soundness`
   proof needs none; the 11-clause carry-chain `Spec` follows from the 11
   definitional `assertZero` constraints alone, by `linear_combination`).
-  `soundness` discharges the ArithMul carry-chain relation
-  (`ArithMul.soundness`). `completeness` is the declared axiom
-  `arithMul_circuit_completeness` (`AirsClean/Completeness.lean`; plan
-  D-COMPLETE — zisk-fv is soundness-only).
+  `soundness` discharges the ArithMul carry-chain relation and conditional
+  `completeness` replays the same relation as prover assumptions.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
-Axioms in the closure: `arithMul_circuit_completeness` (completeness-
-direction, non-security-critical). NO new soundness axiom — the `soundness`
-field is genuinely proved: every `Spec` clause is a syntactic
-re-expression of the corresponding `assertZero` constraint, closed by
-`linear_combination`, with no range reasoning (hence no `range_bus_sound`).
-No `sorry`.
+No axioms. Every `Spec` clause is a syntactic re-expression of the
+corresponding `assertZero` constraint, closed by `linear_combination`,
+with no range reasoning. No `sorry`.
 -/
 
 namespace ZiskFv.AirsClean.ArithMul
@@ -55,7 +49,7 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
   { arithMulElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun _ _ _ => True
+    ProverAssumptions := fun row _ _ => Spec row
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -79,7 +73,22 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
       · -- the op-bus push's requirement: `OpBusChannel.Guarantees` is `True`.
         intro _
         trivial
-    completeness := arithMul_circuit_completeness }
+    completeness := by
+      circuit_proof_start [OpBusChannel]
+      obtain ⟨h_c6, h_c7, h_c8, h_c31, h_c32, h_c33, h_c34,
+              h_c35, h_c36, h_c37, h_c38⟩ := h_assumptions
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · linear_combination h_c6
+      · linear_combination h_c7
+      · linear_combination h_c8
+      · linear_combination h_c31
+      · linear_combination h_c32
+      · linear_combination h_c33
+      · linear_combination h_c34
+      · linear_combination h_c35
+      · linear_combination h_c36
+      · linear_combination h_c37
+      · linear_combination h_c38 }
 
 /-- ArithMul as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
