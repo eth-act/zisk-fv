@@ -5,8 +5,8 @@ import ZiskFv.Completeness.SailDecode
 
 This checked-in module records the architecture of the JALR completeness slice
 without importing the Aeneas-generated production extractor. The generated
-workspace exercises concrete lowered JALR rows and the extracted shared JALR
-mask constant required by the existing JALR soundness path.
+workspace must show that extracted JALR lowerings satisfy the row-local input
+expected by the existing JALR soundness path.
 -/
 
 namespace ZiskFv.Completeness.JalrSoundnessRoute
@@ -17,12 +17,16 @@ open ZiskFv.Completeness.SailDecode
 abbrev RawInstruction := Rv.RawInstruction
 
 /-- Abstract production-ZisK side of the JALR route. In the generated Aeneas
-workspace this route is backed by `extract_transpile_rv64im_raw` row checks and
-the extracted shared JALR mask constant. -/
+workspace this is backed by `extract_transpile_rv64im_raw` row checks against
+the JALR soundness-input predicate, not by a hand-picked regression constant. -/
 structure Interface where
-  ziskJalrSoundnessRoute : RawInstruction → Prop
+  ziskJalrSoundnessInput : RawInstruction → Prop
 
 namespace Interface
+
+abbrev ziskJalrSoundnessRoute
+    (iface : Interface) (raw : RawInstruction) : Prop :=
+  iface.ziskJalrSoundnessInput raw
 
 /-- Sail accepts the raw word as a JALR instruction, with the encode bridge
 making the raw I-type fields available to the checked-in shape theorem. -/
@@ -37,7 +41,7 @@ I-format decode surface. This is a ZisK-side implementation lemma, not the
 source of truth for instruction validity. -/
 def ShapeRouteComplete
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.ziskJalrSoundnessRoute raw
+  ∀ raw, shape raw → iface.ziskJalrSoundnessInput raw
 
 /-- Sail-to-ZisK JALR route completeness before adding the RV64IM state
 assumption. Sail remains the source of valid raw JALR words; the raw I-shape
@@ -45,7 +49,7 @@ formula is derived below only to connect into generated ZisK coverage. -/
 def SailRouteComplete (iface : Interface) : Prop :=
   ∀ state raw,
     SailJalrExecutableIn state raw →
-    iface.ziskJalrSoundnessRoute raw
+    iface.ziskJalrSoundnessInput raw
 
 /-- Sail-to-ZisK JALR route completeness. This is the narrow theorem shape:
 Sail is the source of valid JALR raw words, and ZisK must expose the static row
@@ -54,7 +58,7 @@ def Complete (iface : Interface) : Prop :=
   ∀ state raw,
     Rv64imEnabledSailState state →
     SailJalrExecutableIn state raw →
-    iface.ziskJalrSoundnessRoute raw
+    iface.ziskJalrSoundnessInput raw
 
 /-- The raw I-format JALR shape is recovered from the Sail encode/decode
 relation. This keeps the public route theorem Sail-first while still reusing

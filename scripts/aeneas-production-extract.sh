@@ -2449,7 +2449,22 @@ def allBEncodedImmediates : List Nat := List.range 4096
 end zisk_core_generated_rv_decode_common
 EOF
 
-    cat > "$lean_check/RvDecodeJalr.lean" <<'EOF'
+    jalr_target_mask_hex="$(
+      awk '
+        /def jalrTargetMask[[:space:]]*:/ {
+          getline
+          gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+          print
+          exit
+        }
+      ' "$ROOT/ZiskFv/SailSpec/jalr.lean"
+    )"
+    if [[ -z "$jalr_target_mask_hex" ]]; then
+      echo "Could not extract PureSpec.jalrTargetMask from ZiskFv/SailSpec/jalr.lean" >&2
+      exit 1
+    fi
+
+    cat > "$lean_check/RvDecodeJalr.lean" <<EOF
 import RvDecodeCommon
 
 open Aeneas Aeneas.Std Result
@@ -2468,7 +2483,21 @@ def allJalrRawShapesDecodeSupported : Bool :=
           (aeneas_extract.extract_decode_rv64im_raw
             (rawIType imm rs1 0 rd 0x67))
 
-def rawTranspileJalrSoundnessRoute
+def jalrSoundnessTargetMaskNat : Nat :=
+  $jalr_target_mask_hex
+
+def rowCarriesJalrSoundnessTarget
+    (row : aeneas_extract.ZiskInstExtract) : Bool :=
+  row.a_src.val == 2 &&
+  row.a_offset_imm0.val + row.a_use_sp_imm1.val * 4294967296 ==
+    jalrSoundnessTargetMaskNat
+
+/-- Extracted production-row facts needed to route a lowered JALR row toward
+the checked-in JALR soundness interface. This intentionally names the
+soundness input, not the historical regression: the target mask comes from
+\`PureSpec.jalrTargetMask\`, read from the checked-in Sail-side JALR semantics
+when this generated check is emitted. -/
+def rawTranspileJalrSoundnessInput
     (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
   match result with
   | ok summary =>
@@ -2480,36 +2509,28 @@ def rawTranspileJalrSoundnessRoute
       !summary.row.m32 &&
       summary.row.set_pc &&
       summary.row.store_pc == (summary.decode.rd.val != 0) &&
-      summary.row.a_src.val == 2 &&
-      summary.row.a_offset_imm0.val == 4294967294 &&
-      summary.row.a_use_sp_imm1.val == 4294967295
+      rowCarriesJalrSoundnessTarget summary.row
   | fail _ => false
   | div => false
 
-def jalrMaskConstantOk : Bool :=
-  riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK.val ==
-    18446744073709551614
-
-def jalrRepresentativeRowsRouteToSoundness : Bool :=
-  rawTranspileJalrSoundnessRoute
+def jalrRepresentativeRowsSatisfySoundnessInput : Bool :=
+  rawTranspileJalrSoundnessInput
     (aeneas_extract.extract_transpile_rv64im_raw
       (rawIType 0 0 0 0 0x67)) &&
-  rawTranspileJalrSoundnessRoute
+  rawTranspileJalrSoundnessInput
     (aeneas_extract.extract_transpile_rv64im_raw
       (rawIType 0 1 0 1 0x67)) &&
-  rawTranspileJalrSoundnessRoute
+  rawTranspileJalrSoundnessInput
     (aeneas_extract.extract_transpile_rv64im_raw
       (rawIType 1 1 0 1 0x67))
 
 /-- Full JALR route check over all register pairs and 12-bit I-immediate
-encodings. Full raw-surface coverage comes from the decode check; the route
-computation is then tied to the extracted lowering constant and representative
-aligned/unaligned rows so the proof catches the historical missing `& ~1`
-target-mask regression without re-running the full transpiler grid. -/
-def allJalrRawShapesRouteToSoundness : Bool :=
+encodings. Full raw-surface coverage comes from the decode check; the lowered
+representatives must satisfy the JALR soundness-input predicate, whose target
+mask is sourced from the checked-in Sail-side pure spec. -/
+def allJalrRawShapesSatisfySoundnessInput : Bool :=
   allJalrRawShapesDecodeSupported &&
-  jalrMaskConstantOk &&
-  jalrRepresentativeRowsRouteToSoundness
+  jalrRepresentativeRowsSatisfySoundnessInput
 
 set_option maxHeartbeats 4000000 in
 theorem allJalrRawShapesDecodeSupported_ok :
@@ -2517,8 +2538,8 @@ theorem allJalrRawShapesDecodeSupported_ok :
   native_decide
 
 set_option maxHeartbeats 12000000 in
-theorem allJalrRawShapesRouteToSoundness_ok :
-    allJalrRawShapesRouteToSoundness = true := by
+theorem allJalrRawShapesSatisfySoundnessInput_ok :
+    allJalrRawShapesSatisfySoundnessInput = true := by
   native_decide
 
 end zisk_core_generated_rv_decode_jalr

@@ -17,14 +17,17 @@ namespace PureSpec
     -- result
     success : Bool
 
+  /-- RISC-V JALR target-address mask: clear bit 0 before jumping. -/
+  def jalrTargetMask : BitVec 64 :=
+    0xFFFFFFFFFFFFFFFE
+
   def execute_JALR_pure (input : JalrInput) : JalrOutput :=
     let bit1_valid := (BitVec.ofBool (input.rs1_val + BitVec.signExtend 64 input.imm)[1]! == 0#1)
-    let mask := 0xFFFFFFFFFFFFFFFE
     {
       nextPC :=
         if (!bit1_valid)
         then (.some (input.PC + 4))
-        else (.some (mask &&& (input.rs1_val + BitVec.signExtend 64 input.imm)))
+        else (.some (jalrTargetMask &&& (input.rs1_val + BitVec.signExtend 64 input.imm)))
       rd := if h: (!bit1_valid) || input.rd = 0
       then .none
       else (
@@ -72,7 +75,7 @@ namespace PureSpec
       if !output.success then
         pure (
           ExecutionResult.Memory_Exception (
-            (virtaddr.Virtaddr (0xFFFFFFFFFFFFFFFE &&& (input.rs1_val + BitVec.signExtend 64 input.imm))),
+            (virtaddr.Virtaddr (jalrTargetMask &&& (input.rs1_val + BitVec.signExtend 64 input.imm))),
             (ExceptionType.E_Fetch_Addr_Align ())
           )
         )
@@ -142,7 +145,7 @@ namespace PureSpec
       simp [h_bit1, execute_JALR_pure, h_input_imm]
       -- The virtaddr in Sail is `Sail.BitVec.update (...) 0 0#1`; pure-spec writes
       -- `0xFFFFFFFFFFFFFFFE &&& (...)`. These are equal.
-      simp [Sail.BitVec.update, Sail.BitVec.updateSubrange']
+      simp [jalrTargetMask, Sail.BitVec.update, Sail.BitVec.updateSubrange']
     . -- Aligned: Retire_Success, write nextPC := masked target, optional
       -- link-address write to rd.
       have h_bit1_zero : BitVec.ofBool (input.rs1_val + BitVec.signExtend 64 imm)[1] = 0#1 := by
@@ -151,8 +154,8 @@ namespace PureSpec
       -- Bridge the write_reg_state nextPC with the masked target.
       have h_mask_eq :
         Sail.BitVec.update (input.rs1_val + BitVec.signExtend 64 imm) 0 0#1 =
-        18446744073709551614#64 &&& (input.rs1_val + BitVec.signExtend 64 imm) := by
-        simp [Sail.BitVec.update, Sail.BitVec.updateSubrange']
+        jalrTargetMask &&& (input.rs1_val + BitVec.signExtend 64 imm) := by
+        simp [jalrTargetMask, Sail.BitVec.update, Sail.BitVec.updateSubrange']
       rw [h_mask_eq]
       -- case-split on whether rd = 0.
       by_cases h_rd_0 : input.rd = 0 <;> simp [h_rd_0]
