@@ -1,5 +1,5 @@
 Plan: docs/ai/plan/PLAN_RV64IM_GLOBAL_COMPLETENESS.md
-Focus: Upper/jump slice: start Sail containment for LUI/AUIPC/JAL/JALR.
+Focus: Fence slice: close supported FENCE theorem surface while preserving generic FENCE restrictions.
 Blocking: none.
-Next step: Inspect Sail upper/jump constructors and existing U/J/JALR raw-shape helpers before extending the whitelist.
-Digression: Stores slice passed Lake build and Aeneas production completeness.
+Next step: Inspect current FENCE shape predicates and known-gap wiring before extending the checked-in global theorem.
+Digression: Upper/jump slice passed Lake build and Aeneas production completeness.

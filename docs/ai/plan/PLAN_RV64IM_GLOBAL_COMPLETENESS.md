@@ -118,7 +118,7 @@ the corresponding checked-in and generated builds have passed.
 | Branches | BEQ BNE BLT BGE BLTU BGEU | done | done | done | done | none |
 | Loads | LB LBU LH LHU LW LWU LD | done | done | done | done | none |
 | Stores | SB SH SW SD | done | done | done | done | none |
-| Upper/jump | LUI AUIPC JAL JALR | pending | pending | pending | pending | none expected |
+| Upper/jump | LUI AUIPC JAL JALR | done | done | done | done | none |
 | Fence | FENCE | partial | partial | pending | partial | generic FENCE restrictions |
 
 ## Implementation Checklist
@@ -149,7 +149,7 @@ the corresponding checked-in and generated builds have passed.
   coverage, verification, docs, commit.
 - [x] Stores: close whitelist, raw-shape lemma, global theorem shape, generated
   coverage, verification, docs, commit.
-- [ ] Upper/jump: close whitelist, raw-shape lemma, global theorem shape,
+- [x] Upper/jump: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
 - [ ] Fence: close supported-FENCE theorem surface while keeping generic FENCE
   restrictions as explicit known gaps.
