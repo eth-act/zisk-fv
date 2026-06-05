@@ -219,6 +219,18 @@ pipeline.
      `OpEnvelope.sltOfExtractedShape`, and
      `OpEnvelope.sltuOfExtractedShape` plus matching bridge theorems.
 
+   The I-type logic/comparison immediates complete that Binary group:
+
+   - the staged Aeneas harness proves that ANDI, ORI, XORI, SLTI, and SLTIU use
+     the same external Binary opcodes as the R-type forms, with the second
+     source lane supplied by the sign-extended immediate row shape;
+   - main Lake reuses the same extracted opcode pin helpers and exposes
+     `OpEnvelope.andiOfExtractedShape`, `OpEnvelope.oriOfExtractedShape`,
+     `OpEnvelope.xoriOfExtractedShape`, `OpEnvelope.sltiOfExtractedShape`, and
+     `OpEnvelope.sltiuOfExtractedShape` plus matching bridge theorems;
+   - SLTI and SLTIU additionally derive the `m.m32 r_main = 0` envelope field
+     from extracted `m32 = false` row-shape provenance.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

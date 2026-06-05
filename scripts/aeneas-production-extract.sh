@@ -551,6 +551,66 @@ def sltuShapeEvidenceMatches
       && row.store == 3
   | none => false
 
+def andiShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 14
+      && row.isExternalOp == true
+      && row.m32 == false
+      && row.aSrc == 6
+      && row.bSrc == 2
+      && row.store == 3
+  | none => false
+
+def oriShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 15
+      && row.isExternalOp == true
+      && row.m32 == false
+      && row.aSrc == 6
+      && row.bSrc == 2
+      && row.store == 3
+  | none => false
+
+def xoriShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 16
+      && row.isExternalOp == true
+      && row.m32 == false
+      && row.aSrc == 6
+      && row.bSrc == 2
+      && row.store == 3
+  | none => false
+
+def sltiShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 7
+      && row.isExternalOp == true
+      && row.m32 == false
+      && row.aSrc == 6
+      && row.bSrc == 2
+      && row.store == 3
+  | none => false
+
+def sltiuShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 6
+      && row.isExternalOp == true
+      && row.m32 == false
+      && row.aSrc == 6
+      && row.bSrc == 2
+      && row.store == 3
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -743,6 +803,51 @@ example :
 
 example :
     sltuShapeEvidenceMatches (aeneas_extract.extract_sltu_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_andi_from_inst sampleInst)
+      (proofRowShape 16 14 6 0 5 2 0 4096 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    andiShapeEvidenceMatches (aeneas_extract.extract_andi_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_ori_from_inst sampleInst)
+      (proofRowShape 16 15 6 0 5 2 0 4096 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    oriShapeEvidenceMatches (aeneas_extract.extract_ori_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_xori_from_inst sampleInst)
+      (proofRowShape 16 16 6 0 5 2 0 4096 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    xoriShapeEvidenceMatches (aeneas_extract.extract_xori_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_slti_from_inst sampleInst)
+      (proofRowShape 16 7 6 0 5 2 0 4096 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    sltiShapeEvidenceMatches (aeneas_extract.extract_slti_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_sltiu_from_inst sampleInst)
+      (proofRowShape 16 6 6 0 5 2 0 4096 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    sltiuShapeEvidenceMatches (aeneas_extract.extract_sltiu_from_inst sampleInst) = true := by
   native_decide
 
 example :
