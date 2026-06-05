@@ -2,9 +2,9 @@
 """Generate the Clean integration audit.
 
 This is an investigation aid, not a trust gate.  It summarizes which Clean
-integration style each canonical theorem currently uses, which Clean
-completeness axioms leak into the global/canonical closure, and which Clean
-components appear to be canonical, helper-only, or scaffold.
+integration style each canonical theorem currently uses, whether retired Clean
+completeness declarations leak into the global/canonical closure, and which
+Clean components appear to be canonical, helper-only, or scaffold.
 """
 
 from __future__ import annotations
@@ -25,14 +25,7 @@ EQUIVALENCE = ROOT / "ZiskFv/Equivalence"
 EQUIVCORE = ROOT / "ZiskFv/EquivCore"
 WRAPPERS = ROOT / "ZiskFv/Compliance/Wrappers"
 
-COMPLETENESS = {
-    "ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness",
-    "ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness",
-    "ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness",
-    "ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness",
-    "ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness",
-    "ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness",
-}
+COMPLETENESS: set[str] = set()
 
 COMPONENTS = [
     ("BinaryAdd.component", "ZiskFv.AirsClean.BinaryAdd.component"),
@@ -53,14 +46,7 @@ COMPONENTS = [
     ("MemAlign.component", "ZiskFv.AirsClean.MemAlign.component"),
 ]
 
-COMPONENT_COMPLETENESS = {
-    "ArithMul.component": "ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness",
-    "ArithDiv.component": "ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness",
-    "BinaryAdd.component": "ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness",
-    "Main.componentWithRomAndMemBus": "ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness",
-    "MemAlignByte.component": "ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness",
-    "MemAlignReadByte.component": "ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness",
-}
+COMPONENT_COMPLETENESS: dict[str, str] = {}
 
 SOURCE_ALIASES = {
     "Main.componentWithRomAndMemBus": ["componentWithRomAndMemBus"],
@@ -226,9 +212,9 @@ def component_rows(theorems: dict[str, list[tuple[str, str, str]]], deps: dict[s
         elif short == "BinaryExtension.staticLookupComponent" and "BinaryExtension.StaticLookupSoundness" in all_snippets:
             reach = "canonical surface"
         elif in_canonical_closure:
-            reach = "canonical theorem closure by related completeness axiom"
+            reach = "canonical theorem closure by related completeness declaration"
         elif in_global_closure:
-            reach = "global closure by related completeness axiom"
+            reach = "global closure by related completeness declaration"
         elif hits:
             reach = "helper/scaffold source reference"
         else:
@@ -343,7 +329,7 @@ def main() -> None:
         for ax in global_leaks:
             print(f"- `{ax}`")
     else:
-        print("No `*_circuit_completeness` declarations are in the global closure.")
+        print("No retired Clean completeness declarations are in the global closure.")
     print()
     print("## Canonical Provider Map")
     print()

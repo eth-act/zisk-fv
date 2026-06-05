@@ -15,12 +15,9 @@ predicate directly.
 
 ## Trust note
 
-No axioms. The Component-routed bridge inherits `circuit`'s closure
-(`arithMul_circuit_completeness`, completeness-direction — see plan
-D-COMPLETE). No new soundness axiom: the re-root routes the *same*
-11 carry-chain equations through `circuit.soundness` (genuinely
-proved), so the trust surface is unchanged and `circuit` becomes
-load-bearing for the MUL family.
+No axioms. The re-root routes the *same* 11 carry-chain equations
+through `circuit.soundness` (genuinely proved), so the trust surface is
+unchanged and `circuit` becomes load-bearing for the MUL family.
 -/
 
 namespace ZiskFv.AirsClean.ArithMul
@@ -342,12 +339,10 @@ theorem spec_of_carry_chain_via_component
 
     The output type equals the input type; the point of the routing is
     the **dependency graph**: any consumer of this lemma genuinely
-    depends on `circuit`, so `#print axioms` of the MUL-family
-    `equiv_<OP>` theorems reaches `arithMul_circuit_completeness`,
-    making `AirsClean/ArithMul/` load-bearing (plan V-4). The trust
-    surface is unchanged — the 11 carry-chain equations are still the
-    AIR-fidelity hypothesis; they are now routed through
-    `circuit.soundness` (genuinely proved, no new soundness axiom). -/
+    depends on `circuit`, making `AirsClean/ArithMul/` load-bearing
+    (plan V-4). The trust surface is unchanged — the 11 carry-chain
+    equations are still the AIR-fidelity hypothesis; they are now routed
+    through `circuit.soundness` (genuinely proved, no new soundness axiom). -/
 theorem mul_carry_chain_holds_via_component
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r) :

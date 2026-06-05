@@ -1,6 +1,5 @@
 import ZiskFv.AirsClean.MemAlignReadByte.Constraints
 import ZiskFv.AirsClean.MemAlignReadByte.Soundness
-import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -10,29 +9,19 @@ import Clean.Utils.Tactics
 Packages ZisK's MemAlignReadByte AIR as a Clean `Air.Flat.Component`:
 
 * `memAlignReadByteElaborated` — the `ElaboratedCircuit` over `main` —
-  lives in `Constraints.lean` (so the completeness axiom can name it).
+  lives in `Constraints.lean` (so the conditional completeness proof can name it).
   Its `main` emits the 4 `assertZero` algebraic constraints and the
   memory-bus proves-side `push`.
-* `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` (plan D-2:
-  a Component carries no soundness-assumptions — the MemAlignReadByte
-  `soundness` proof needs none; the algebraic Spec clause follows from the
-  definitional `composed_value` constraint alone). `soundness` discharges
-  the MemAlignReadByte algebraic relation (`MemAlignReadByte.soundness`),
-  drawing the `byte_value` `bits(8)` range bound from a Clean static lookup.
-  `completeness` is the declared axiom `memAlignReadByte_circuit_completeness`
-  (`AirsClean/Completeness.lean`; plan D-COMPLETE — zisk-fv is
-  soundness-only).
+* `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` for
+  soundness; the prover-side completeness predicate states the exact row
+  facts needed to satisfy the lookup and four algebraic constraints.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
-Axioms in the closure: `memAlignReadByte_circuit_completeness` (completeness-
-direction, non-security-critical). NO new soundness axiom — the `soundness`
-field is genuinely proved (the algebraic relation follows from the
-definitional `assertZero` with the single range clause from a Clean static
-lookup). No `sorry`.
+No axioms. The `soundness` and conditional `completeness` fields are proved.
 -/
 
 namespace ZiskFv.AirsClean.MemAlignReadByte
@@ -40,6 +29,18 @@ namespace ZiskFv.AirsClean.MemAlignReadByte
 open Goldilocks
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open Air.Flat
+
+/-- Prover-side assumptions for conditional Clean completeness. These are
+    exactly the lookup fact and assert-zero equations emitted by `main`. -/
+def ProverConstraints (row : MemAlignReadByteRow FGL) : Prop :=
+  row.byte_value.val < 2 ^ 8
+  ∧ row.sel_high_4b * (1 - row.sel_high_4b) = 0
+  ∧ row.sel_high_2b * (1 - row.sel_high_2b) = 0
+  ∧ row.sel_high_b * (1 - row.sel_high_b) = 0
+  ∧ row.composed_value
+      - (row.byte_value * byte_value_factor row.sel_high_2b row.sel_high_b
+        + row.value_8b * value_8b_factor row.sel_high_2b row.sel_high_b
+        + row.value_16b * value_16b_factor row.sel_high_2b) = 0
 
 set_option maxHeartbeats 1000000 in
 /-- MemAlignReadByte as a Clean `GeneralFormalCircuit`. `Assumptions := True`
@@ -58,7 +59,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
   { memAlignReadByteElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun _ _ _ => True
+    ProverAssumptions := fun row _ _ => ProverConstraints row
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -77,7 +78,10 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
         -- is `True`.
         intro _
         trivial
-    completeness := memAlignReadByte_circuit_completeness }
+    completeness := by
+      circuit_proof_start [MemBusChannel]
+      simpa [ProverConstraints, byte_value_factor, value_8b_factor,
+        value_16b_factor, sub_eq_add_neg] using h_assumptions }
 
 /-- MemAlignReadByte as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩

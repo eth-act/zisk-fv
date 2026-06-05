@@ -760,8 +760,8 @@ fn render_constraints_file(
         "/-- The elaborated circuit for {}'s `main` — {} `assertZero`\n    \
          constraints + the bus push, no fresh witnesses (`localLength = 0`,\n    \
          `unit` output). Lives here (next to `main`) rather than in\n    \
-         `Circuit.lean` so the completeness axiom (`Completeness.lean`, whose\n    \
-         type mentions this) can be declared without an import cycle. -/\n",
+         `Circuit.lean` so the conditional completeness proof can name it\n    \
+         without an import cycle. -/\n",
         air_name,
         assertions.len()
     ));

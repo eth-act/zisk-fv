@@ -14,8 +14,7 @@ caller-supplied promise.
 
 ## Trust note
 
-No axioms. The Component-routed bridge inherits `circuit`'s closure
-(`memAlignByte_circuit_completeness`) and its range facts come from a
+No axioms. The Component-routed bridge gets its range facts from a
 lookup-aware witness for the Clean `lookup rangeTable*` operations.
 -/
 
@@ -189,8 +188,7 @@ caller-supplied promise hypothesis.
 that conjunct is supplied from the Clean `lookup rangeTable*` operations
 exposed by `RangeLookupWitness`. Routing through
 `MemAlignByte.spec_via_component` makes the Clean Component genuinely
-load-bearing for the load opcodes: their `#print axioms` reaches
-`memAlignByte_circuit_completeness`.
+load-bearing for the load opcodes without adding a completeness declaration.
 -/
 
 /-- **C1 re-root entry point.** From the MemAlignByte AIR's

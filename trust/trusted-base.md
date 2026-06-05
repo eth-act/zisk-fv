@@ -88,28 +88,16 @@ C disabled in `misa`, and `mseccfg` readability.
 These facts still define the verification target, but they are no longer in
 the trusted axiom ledger.
 
-## Clean Completeness Placeholders
+## Clean Completeness
 
-Declarations live under `ZiskFv/AirsClean/Completeness.lean`.
+The former Clean component completeness placeholders have been retired. The
+old dedicated completeness-axiom module no longer exists, and the six former
+declarations are no longer source-ledger entries.
 
-These are completeness-direction placeholders for clean-table components. They
-assert that a satisfying clean component witness exists for the relevant row
-facts. They do not state per-opcode output equality.
-
-None are currently reached by the global compliance closure. All six are
-source-ledger entries retained for Clean component construction:
-
-```text
-ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness
-ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
-ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness
-ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
-ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
-ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness
-```
-
-Retirement path: prove the corresponding clean component constructibility from
-extracted constraints and witness definitions.
+Clean components still expose `GeneralFormalCircuit.completeness`, but those
+fields are now ordinary Lean proofs conditional on explicit prover-side row
+facts. They do not add trust declarations and they still do not state
+per-opcode output equality.
 
 ## ArithTable And DIV/REM Audit Conclusions
 
