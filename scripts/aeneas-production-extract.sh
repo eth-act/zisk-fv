@@ -2575,6 +2575,95 @@ EOF
     write_rv_decode_ialu_module RvDecodeIAluOri zisk_core_generated_rv_decode_ialu_ori ori_raw_shapes_decode_supported_ok 6
     write_rv_decode_ialu_module RvDecodeIAluAndi zisk_core_generated_rv_decode_ialu_andi andi_raw_shapes_decode_supported_ok 7
 
+    cat > "$lean_check/RvDecodeIAluAndi.lean" <<'EOF'
+import RvDecodeCommon
+
+open Aeneas Aeneas.Std Result
+open zisk_core
+open zisk_core_generated_rv_decode_common
+
+namespace zisk_core_generated_rv_decode_ialu_andi
+
+def nonShiftIAluFunct3RawShapesDecodeSupported (funct3 : Nat) : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allIImmediates.all fun imm =>
+        rawDecodeSupported
+          (aeneas_extract.extract_decode_rv64im_raw
+            (rawIType imm rs1 funct3 rd 0x13))
+
+def signExtend12To64Nat (imm : Nat) : Nat :=
+  if imm < 2048 then imm else 18446744073709551616 - (4096 - imm)
+
+def rowCarriesImm64OnB
+    (row : aeneas_extract.ZiskInstExtract) (imm : Nat) : Bool :=
+  row.b_offset_imm0.val + row.b_use_sp_imm1.val * 4294967296 ==
+    signExtend12To64Nat imm
+
+def rowStoresAndiDestination
+    (row : aeneas_extract.ZiskInstExtract) (rd : Nat) : Bool :=
+  if rd == 0 then
+    row.store.val == 0 && row.store_offset.val == 0
+  else
+    row.store.val == 3 && row.store_offset.val == Int.ofNat rd
+
+def rowCarriesAndiSourceA
+    (row : aeneas_extract.ZiskInstExtract) (rs1 : Nat) : Bool :=
+  if rs1 == 0 then
+    row.a_src.val == 2 &&
+    row.a_use_sp_imm1.val == 0 &&
+    row.a_offset_imm0.val == 0
+  else
+    row.a_src.val == 6 &&
+    row.a_use_sp_imm1.val == 0 &&
+    row.a_offset_imm0.val == rs1
+
+/-- Extracted production-row facts needed to route a lowered ANDI row toward
+the checked-in ANDI soundness interface. This is a class-level analogue of the
+JALR route check: the expected opcode/source/store pins come from the existing
+ANDI soundness theorem surface, while the raw instruction set is generated from
+the full Sail I-format shape. -/
+def rawTranspileAndiSoundnessInput
+    (rd rs1 imm : Nat)
+    (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
+  match result with
+  | ok summary =>
+      summary.accepted &&
+      summary.decode.supported &&
+      summary.decode.opcode_id.val == 42 &&
+      summary.decode.rd.val == rd &&
+      summary.decode.rs1.val == rs1 &&
+      summary.row.is_external_op &&
+      summary.row.op.val == 14 &&
+      !summary.row.m32 &&
+      !summary.row.set_pc &&
+      !summary.row.store_pc &&
+      rowCarriesAndiSourceA summary.row rs1 &&
+      summary.row.b_src.val == 2 &&
+      rowCarriesImm64OnB summary.row imm &&
+      rowStoresAndiDestination summary.row rd
+  | fail _ => false
+  | div => false
+
+def allAndiRawShapesSatisfySoundnessInput : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allIImmediates.all fun imm =>
+        rawTranspileAndiSoundnessInput rd rs1 imm
+          (aeneas_extract.extract_transpile_rv64im_raw
+            (rawIType imm rs1 7 rd 0x13))
+
+set_option maxHeartbeats 3000000 in
+theorem andi_raw_shapes_decode_supported_ok :
+    nonShiftIAluFunct3RawShapesDecodeSupported 7 = true := by native_decide
+
+set_option maxHeartbeats 40000000 in
+theorem allAndiRawShapesSatisfySoundnessInput_ok :
+    allAndiRawShapesSatisfySoundnessInput = true := by native_decide
+
+end zisk_core_generated_rv_decode_ialu_andi
+EOF
+
     cat > "$lean_check/RvDecodeIAlu.lean" <<'EOF'
 import RvDecodeIAluAddi
 import RvDecodeIAluSlti
