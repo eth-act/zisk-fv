@@ -102,6 +102,14 @@ def opMulH : Nat := 181
 def opMulUH : Nat := 177
 def opMulSUH : Nat := 179
 def opMulW : Nat := 182
+def opDivU : Nat := 184
+def opRemU : Nat := 185
+def opDiv : Nat := 186
+def opRem : Nat := 187
+def opDivUW : Nat := 188
+def opRemUW : Nat := 189
+def opDivW : Nat := 190
+def opRemW : Nat := 191
 
 end ExtractedConst
 
@@ -631,8 +639,113 @@ theorem mulWPins_of_extracted_shape
     main_op := by
       simpa [natF, ExtractedConst.opMulW, ZiskFv.Trusted.OP_MUL_W, h_op] using p.op_eq }
 
-/-- Extract the MUL-family row-control pins from row-shape provenance. -/
-theorem mulControl_of_extracted_shape
+/-- Build the external `OP_DIV` activation/opcode pins from extracted
+row-shape constants. -/
+theorem divPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opDiv)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_DIV :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opDiv, ZiskFv.Trusted.OP_DIV, h_op] using p.op_eq }
+
+/-- Build the external `OP_DIVU` activation/opcode pins from extracted
+row-shape constants. -/
+theorem divUPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opDivU)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_DIVU :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opDivU, ZiskFv.Trusted.OP_DIVU, h_op] using p.op_eq }
+
+/-- Build the external `OP_DIV_W` activation/opcode pins from extracted
+row-shape constants. -/
+theorem divWPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opDivW)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_DIV_W :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opDivW, ZiskFv.Trusted.OP_DIV_W, h_op] using p.op_eq }
+
+/-- Build the external `OP_DIVU_W` activation/opcode pins from extracted
+row-shape constants. -/
+theorem divUWPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opDivUW)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_DIVU_W :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opDivUW, ZiskFv.Trusted.OP_DIVU_W, h_op] using p.op_eq }
+
+/-- Build the external `OP_REM` activation/opcode pins from extracted
+row-shape constants. -/
+theorem remPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opRem)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_REM :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opRem, ZiskFv.Trusted.OP_REM, h_op] using p.op_eq }
+
+/-- Build the external `OP_REMU` activation/opcode pins from extracted
+row-shape constants. -/
+theorem remUPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opRemU)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_REMU :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opRemU, ZiskFv.Trusted.OP_REMU, h_op] using p.op_eq }
+
+/-- Build the external `OP_REM_W` activation/opcode pins from extracted
+row-shape constants. -/
+theorem remWPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opRemW)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_REM_W :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opRemW, ZiskFv.Trusted.OP_REM_W, h_op] using p.op_eq }
+
+/-- Build the external `OP_REMU_W` activation/opcode pins from extracted
+row-shape constants. -/
+theorem remUWPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opRemUW)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_REMU_W :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opRemUW, ZiskFv.Trusted.OP_REMU_W, h_op] using p.op_eq }
+
+/-- Extract the shared external register-provider fall-through control pins
+from row-shape provenance. -/
+theorem externalFallthroughControl_of_extracted_shape
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
     (p : MainRowProvenance main r_main)
     {m32 : Bool}
@@ -651,6 +764,24 @@ theorem mulControl_of_extracted_shape
     by simpa [boolF, h_store_pc] using p.store_pc_eq,
     by simpa [intF, h_jmp_offset1] using p.jmp_offset1_eq,
     by simpa [intF, h_jmp_offset2] using p.jmp_offset2_eq⟩
+
+/-- Extract the MUL-family row-control pins from row-shape provenance. -/
+theorem mulControl_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    {m32 : Bool}
+    (h_m32 : p.extractedRow.m32 = m32)
+    (h_set_pc : p.extractedRow.setPc = false)
+    (h_store_pc : p.extractedRow.storePc = false)
+    (h_jmp_offset1 : p.extractedRow.jmpOffset1 = 4)
+    (h_jmp_offset2 : p.extractedRow.jmpOffset2 = 4) :
+    main.m32 r_main = boolF m32
+  ∧ main.set_pc r_main = 0
+  ∧ main.store_pc r_main = 0
+  ∧ main.jmp_offset1 r_main = 4
+  ∧ main.jmp_offset2 r_main = 4 :=
+  externalFallthroughControl_of_extracted_shape p h_m32 h_set_pc h_store_pc
+    h_jmp_offset1 h_jmp_offset2
 
 /-- Derive the Main `ind_width` column from extracted row-shape constants. -/
 theorem indWidth_of_extracted_shape

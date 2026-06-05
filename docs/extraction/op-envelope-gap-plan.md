@@ -356,6 +356,25 @@ pipeline.
      operation-bus, memory, range, and operand-lane facts remain explicit
      dynamic ArithMul obligations.
 
+   DIV, DIVU, DIVW, DIVUW, REM, REMU, REMW, and REMUW finish the ArithDiv side
+   of the Mul/Div/Rem tail group:
+
+   - the staged Aeneas harness proves that all DIV/REM-family operations lower
+     to external ArithDiv rows with register/register source routing, register
+     destination store, no PC controls, and fall-through jump offsets;
+   - the checks record the opcode and mode split: `OP_DIV`, `OP_DIVU`,
+     `OP_REM`, and `OP_REMU` use `m32 = false`, while `OP_DIV_W`,
+     `OP_DIVU_W`, `OP_REM_W`, and `OP_REMU_W` use `m32 = true`;
+   - main Lake exposes DIV/REM-family Main pin/control helpers plus
+     `OpEnvelope.divOfExtractedShape`, `OpEnvelope.divuOfExtractedShape`,
+     `OpEnvelope.divwOfExtractedShape`, `OpEnvelope.divuwOfExtractedShape`,
+     `OpEnvelope.remOfExtractedShape`, `OpEnvelope.remuOfExtractedShape`,
+     `OpEnvelope.remwOfExtractedShape`, and
+     `OpEnvelope.remuwOfExtractedShape`. Their bridge theorems prove the
+     current ArithDiv predicates from derived Main facts while provider-table,
+     operation-bus, memory, range, overflow, and operand-lane facts remain
+     explicit dynamic ArithDiv obligations.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

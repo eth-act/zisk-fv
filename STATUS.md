@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: MUL/MULH/MULHU/MULHSU/MULW ArithMul slice complete.
+Current focus: DIV/DIVU/DIVW/DIVUW/REM/REMU/REMW/REMUW ArithDiv slice complete.
 Blocking: none.
-Next step: enter the next remaining OpEnvelope gap slice.
+Next step: audit remaining OpEnvelope gap acceptance criteria and trust-axiom retirement state.
 
 Recent completed slices:
 - LUI/AUIPC/JAL/JALR/FENCE row-mode/control-pin slices are committed.
@@ -32,3 +32,26 @@ Current slice notes:
   expected `aeneas_bridge_trust` line-number shift.
 - `trust/scripts/check-all-semantic.sh` passed.
 - Final `nix run .#aeneas-production-extract` passed.
+- `trust/scripts/check-all.sh` passed; generated trust diff is only the
+  expected `aeneas_bridge_trust` line-number shift.
+- `trust/scripts/check-all-semantic.sh` passed.
+- Final `nix run .#aeneas-production-extract` passed.
+
+Current slice notes:
+- DIV/DIVU/REM/REMU lower to external ArithDiv opcodes with `m32 = 0`.
+- DIVW/DIVUW/REMW/REMUW lower to external W ArithDiv opcodes with `m32 = 1`.
+- This slice should derive only Main opcode/control facts from row-shape
+  provenance; dynamic ArithDiv provider, range, overflow, and operand facts
+  remain explicit.
+- Added DIV/REM-family provenance constants and pin/control helpers.
+- Added explicit `aeneasBridgeTrust` cases for all DIV/REM-family arms.
+- Added `DIV` and `DIVU` extracted-shape constructors/bridge theorems; focused
+  `lake build ZiskFv.Compliance.AeneasBridgeTrust` passed.
+- Added `DIVW`, `DIVUW`, `REM`, `REMU`, `REMW`, and `REMUW`
+  extracted-shape constructors/bridge theorems; focused
+  `lake build ZiskFv.Compliance.AeneasBridgeTrust` passed.
+- Added staged extraction checks for all DIV/REM-family row shapes; `nix run
+  .#aeneas-production-extract` passed.
+- Updated extraction docs for the DIV/REM-family slice.
+- `lake build ZiskFv.Compliance` passed.
+- `trust/scripts/regenerate.sh` passed.

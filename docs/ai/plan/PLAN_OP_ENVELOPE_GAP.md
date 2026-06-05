@@ -295,6 +295,23 @@ and use `m32 = 1` only for MULW.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: DIV/DIVU/DIVW/DIVUW/REM/REMU/REMW/REMUW
+
+Finish the Mul/Div/Rem tail group with the ArithDiv provider route. These arms
+share external ArithDiv Main-row routing and fall-through controls; the
+unsigned/signed and quotient/remainder split selects opcode literals, while the
+W forms use `m32 = 1`.
+
+- [x] Add main-Lake helpers deriving DIV/REM-family Main pins and row-control facts from extracted-row constants.
+- [x] Extend `aeneasBridgeTrust` and add DIV, DIVU, DIVW, DIVUW, REM, REMU, REMW, and REMUW `OpEnvelope` constructors/bridge theorems using those derived Main facts.
+- [x] Add staged Aeneas generated checks for DIV/REM-family row shapes.
+- [x] Update extraction/trust docs to describe the DIV/REM-family slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Verification
 
 Required commands:
