@@ -245,6 +245,23 @@ slice.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: LB/LH/LW
+
+Continue through the signed-load BinaryExtension route. LB, LH, and LW share
+the Clean Main/Mem load path with the zero-extension loads, but use external
+`OP_SIGNEXTEND_B`, `OP_SIGNEXTEND_H`, and `OP_SIGNEXTEND_W` Main pins plus the
+existing BinaryExtension static lookup/match witnesses.
+
+- [x] Add main-Lake helpers deriving signed-load Main pins and width/control facts from extracted-row constants.
+- [x] Extend `aeneasBridgeTrust` and add LB, LH, and LW `OpEnvelope` constructors/bridge theorems using derived sign-extension pins, width, and Clean `store_pc` helpers.
+- [x] Add staged Aeneas generated checks for LB, LH, and LW signed-load row shapes.
+- [x] Update extraction/trust docs to describe the signed-load provider slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Verification
 
 Required commands:

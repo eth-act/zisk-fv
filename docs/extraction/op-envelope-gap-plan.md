@@ -301,12 +301,26 @@ pipeline.
      carried in `bOffsetImm0`;
    - main Lake reuses the store-slice `OP_COPYB`, `ind_width`, and Clean
      `store_pc = 0` provenance helpers;
-   - main Lake exposes `OpEnvelope.ldOfExtractedShape`,
-     `OpEnvelope.lbuOfExtractedShape`, `OpEnvelope.lhuOfExtractedShape`, and
-     `OpEnvelope.lwuOfExtractedShape`, whose bridge theorems prove the current
-     zero-extension load predicates from derived width. Signed LB, LH, and LW
-     lower to external sign-extension opcodes and remain a separate provider
-     slice.
+  - main Lake exposes `OpEnvelope.ldOfExtractedShape`,
+    `OpEnvelope.lbuOfExtractedShape`, `OpEnvelope.lhuOfExtractedShape`, and
+    `OpEnvelope.lwuOfExtractedShape`, whose bridge theorems prove the current
+    zero-extension load predicates from derived width. Signed LB, LH, and LW
+    lower to external sign-extension opcodes and remain a separate provider
+    slice.
+
+   LB, LH, and LW now cover that signed-load provider route:
+
+   - the staged Aeneas harness proves that the signed loads lower to external
+     `OP_SIGNEXTEND_B`, `OP_SIGNEXTEND_H`, and `OP_SIGNEXTEND_W` rows with the
+     same load address/destination routing as the zero-extension load group and
+     widths `1`, `2`, and `4`;
+   - main Lake exposes sign-extension Main pin helpers for the extracted
+     opcodes and reuses the existing width and Clean `store_pc = 0` helpers;
+   - main Lake exposes `OpEnvelope.lbOfExtractedShape`,
+     `OpEnvelope.lhOfExtractedShape`, and `OpEnvelope.lwOfExtractedShape`.
+     Their bridge theorems prove the current signed-load predicates from
+     derived width while the BinaryExtension static lookup/match witnesses
+     remain explicit dynamic provider facts.
 
 4. **Prove constructor-specific envelope evidence lemmas.**
 

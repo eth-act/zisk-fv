@@ -93,6 +93,9 @@ def opSra : Nat := 35
 def opSllW : Nat := 36
 def opSrlW : Nat := 37
 def opSraW : Nat := 38
+def opSignextendB : Nat := 39
+def opSignextendH : Nat := 40
+def opSignextendW : Nat := 41
 
 end ExtractedConst
 
@@ -460,6 +463,45 @@ theorem srawPins_of_extracted_shape
       simpa [boolF, h_external] using p.is_external_op_eq
     main_op := by
       simpa [natF, ExtractedConst.opSraW, ZiskFv.Trusted.OP_SRA_W, h_op] using p.op_eq }
+
+/-- Build the external `OP_SIGNEXTEND_B` activation/opcode pins from extracted
+row-shape constants. -/
+theorem signextendBPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opSignextendB)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opSignextendB, ZiskFv.Trusted.OP_SIGNEXTEND_B, h_op] using p.op_eq }
+
+/-- Build the external `OP_SIGNEXTEND_H` activation/opcode pins from extracted
+row-shape constants. -/
+theorem signextendHPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opSignextendH)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opSignextendH, ZiskFv.Trusted.OP_SIGNEXTEND_H, h_op] using p.op_eq }
+
+/-- Build the external `OP_SIGNEXTEND_W` activation/opcode pins from extracted
+row-shape constants. -/
+theorem signextendWPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opSignextendW)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opSignextendW, ZiskFv.Trusted.OP_SIGNEXTEND_W, h_op] using p.op_eq }
 
 /-- Build internal `OP_COPYB` activation/opcode pins from extracted
 row-shape constants. This is the Main-only route for integer stores and

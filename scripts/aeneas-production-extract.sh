@@ -801,6 +801,30 @@ def loadShapeEvidenceMatches
       && row.jmpOffset2 == 4
   | none => false
 
+def signedLoadShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract)
+    (op width : _root_.Nat)
+    (m32 : _root_.Bool) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == op
+      && row.isExternalOp == true
+      && row.m32 == m32
+      && row.aSrc == 6
+      && row.aUseSpImm1 == 0
+      && row.aOffsetImm0 == 5
+      && row.bSrc == 5
+      && row.bUseSpImm1 == 0
+      && row.bOffsetImm0 == 4096
+      && row.store == 3
+      && row.storeOffset == 3
+      && row.storePc == false
+      && row.setPc == false
+      && row.indWidth == width
+      && row.jmpOffset1 == 4
+      && row.jmpOffset2 == 4
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -1218,6 +1242,33 @@ example :
 
 example :
     loadShapeEvidenceMatches (aeneas_extract.extract_lwu_from_inst sampleInst) 4 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_lb_from_inst sampleInst)
+      (proofRowShape 16 39 6 0 5 5 0 4096 3 3 false false 1 4 4 true false) = true := by
+  native_decide
+
+example :
+    signedLoadShapeEvidenceMatches (aeneas_extract.extract_lb_from_inst sampleInst) 39 1 false = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_lh_from_inst sampleInst)
+      (proofRowShape 16 40 6 0 5 5 0 4096 3 3 false false 2 4 4 true false) = true := by
+  native_decide
+
+example :
+    signedLoadShapeEvidenceMatches (aeneas_extract.extract_lh_from_inst sampleInst) 40 2 false = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_lw_from_inst sampleInst)
+      (proofRowShape 16 41 6 0 5 5 0 4096 3 3 false false 4 4 4 true true) = true := by
+  native_decide
+
+example :
+    signedLoadShapeEvidenceMatches (aeneas_extract.extract_lw_from_inst sampleInst) 41 4 true = true := by
   native_decide
 
 example :
