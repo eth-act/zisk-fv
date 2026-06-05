@@ -301,12 +301,12 @@ pipeline.
      carried in `bOffsetImm0`;
    - main Lake reuses the store-slice `OP_COPYB`, `ind_width`, and Clean
      `store_pc = 0` provenance helpers;
-  - main Lake exposes `OpEnvelope.ldOfExtractedShape`,
-    `OpEnvelope.lbuOfExtractedShape`, `OpEnvelope.lhuOfExtractedShape`, and
-    `OpEnvelope.lwuOfExtractedShape`, whose bridge theorems prove the current
-    zero-extension load predicates from derived width. Signed LB, LH, and LW
-    lower to external sign-extension opcodes and remain a separate provider
-    slice.
+   - main Lake exposes `OpEnvelope.ldOfExtractedShape`,
+     `OpEnvelope.lbuOfExtractedShape`, `OpEnvelope.lhuOfExtractedShape`, and
+     `OpEnvelope.lwuOfExtractedShape`, whose bridge theorems prove the current
+     zero-extension load predicates from derived width. Signed LB, LH, and LW
+     lower to external sign-extension opcodes and remain a separate provider
+     slice.
 
    LB, LH, and LW now cover that signed-load provider route:
 
@@ -321,6 +321,23 @@ pipeline.
      Their bridge theorems prove the current signed-load predicates from
      derived width while the BinaryExtension static lookup/match witnesses
      remain explicit dynamic provider facts.
+
+   BEQ, BNE, BLT, BGE, BLTU, and BGEU now cover the branch route:
+
+   - the staged Aeneas harness proves that branches lower to external
+     `OP_EQ`, `OP_LT`, or `OP_LTU` rows with register/register source routing,
+     no store, `m32 = 0`, `set_pc = 0`, and `store_pc = 0`;
+   - the same checks record the production lowerer's polarity split:
+     BEQ/BLT/BLTU use `jmp_offset2 = 4`, while BNE/BGE/BGEU are negated and
+     use `jmp_offset1 = 4`;
+   - main Lake exposes branch Main pin/control/fall-through helpers plus
+     `OpEnvelope.beqOfExtractedShape`, `OpEnvelope.bneOfExtractedShape`,
+     `OpEnvelope.bltOfExtractedShape`, `OpEnvelope.bgeOfExtractedShape`,
+     `OpEnvelope.bltuOfExtractedShape`, and
+     `OpEnvelope.bgeuOfExtractedShape`. Their bridge theorems prove the
+     current branch predicates from derived opcode/control/fall-through facts.
+     Dynamic branch immediates remain outside this slice because branch
+     `OpEnvelope` arms do not yet carry a Main-row provenance field.
 
 4. **Prove constructor-specific envelope evidence lemmas.**
 

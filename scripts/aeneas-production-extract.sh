@@ -825,6 +825,30 @@ def signedLoadShapeEvidenceMatches
       && row.jmpOffset2 == 4
   | none => false
 
+def branchShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract)
+    (op : _root_.Nat)
+    (jmpOffset1 jmpOffset2 : _root_.Int) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == op
+      && row.isExternalOp == true
+      && row.m32 == false
+      && row.aSrc == 6
+      && row.aUseSpImm1 == 0
+      && row.aOffsetImm0 == 5
+      && row.bSrc == 6
+      && row.bUseSpImm1 == 0
+      && row.bOffsetImm0 == 7
+      && row.store == 0
+      && row.storeOffset == 0
+      && row.storePc == false
+      && row.setPc == false
+      && row.indWidth == 0
+      && row.jmpOffset1 == jmpOffset1
+      && row.jmpOffset2 == jmpOffset2
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -1269,6 +1293,60 @@ example :
 
 example :
     signedLoadShapeEvidenceMatches (aeneas_extract.extract_lw_from_inst sampleInst) 41 4 true = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_beq_from_inst sampleInst)
+      (proofRowShape 16 9 6 0 5 6 0 7 0 0 false false 0 4096 4 true false) = true := by
+  native_decide
+
+example :
+    branchShapeEvidenceMatches (aeneas_extract.extract_beq_from_inst sampleInst) 9 4096 4 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_bne_from_inst sampleInst)
+      (proofRowShape 16 9 6 0 5 6 0 7 0 0 false false 0 4 4096 true false) = true := by
+  native_decide
+
+example :
+    branchShapeEvidenceMatches (aeneas_extract.extract_bne_from_inst sampleInst) 9 4 4096 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_blt_from_inst sampleInst)
+      (proofRowShape 16 7 6 0 5 6 0 7 0 0 false false 0 4096 4 true false) = true := by
+  native_decide
+
+example :
+    branchShapeEvidenceMatches (aeneas_extract.extract_blt_from_inst sampleInst) 7 4096 4 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_bge_from_inst sampleInst)
+      (proofRowShape 16 7 6 0 5 6 0 7 0 0 false false 0 4 4096 true false) = true := by
+  native_decide
+
+example :
+    branchShapeEvidenceMatches (aeneas_extract.extract_bge_from_inst sampleInst) 7 4 4096 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_bltu_from_inst sampleInst)
+      (proofRowShape 16 6 6 0 5 6 0 7 0 0 false false 0 4096 4 true false) = true := by
+  native_decide
+
+example :
+    branchShapeEvidenceMatches (aeneas_extract.extract_bltu_from_inst sampleInst) 6 4096 4 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_bgeu_from_inst sampleInst)
+      (proofRowShape 16 6 6 0 5 6 0 7 0 0 false false 0 4 4096 true false) = true := by
+  native_decide
+
+example :
+    branchShapeEvidenceMatches (aeneas_extract.extract_bgeu_from_inst sampleInst) 6 4 4096 = true := by
   native_decide
 
 example :

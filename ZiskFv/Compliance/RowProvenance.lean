@@ -80,6 +80,7 @@ def opFlag : Nat := 0
 def opCopyB : Nat := 1
 def opAdd : Nat := 10
 def opSub : Nat := 11
+def opEq : Nat := 9
 def opLtu : Nat := 6
 def opLt : Nat := 7
 def opAnd : Nat := 14
@@ -385,6 +386,49 @@ theorem ltuPins_of_extracted_shape
       simpa [boolF, h_external] using p.is_external_op_eq
     main_op := by
       simpa [natF, ExtractedConst.opLtu, ZiskFv.Trusted.OP_LTU, h_op] using p.op_eq }
+
+/-- Build the external `OP_EQ` activation/opcode pins from extracted
+row-shape constants. This opcode is shared by BEQ and BNE. -/
+theorem eqPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opEq)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_EQ :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opEq, ZiskFv.Trusted.OP_EQ, h_op] using p.op_eq }
+
+/-- Extract the branch-family control pins from row-shape provenance. -/
+theorem branchControl_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_m32 : p.extractedRow.m32 = false)
+    (h_set_pc : p.extractedRow.setPc = false)
+    (h_store_pc : p.extractedRow.storePc = false) :
+    main.m32 r_main = 0
+  ∧ main.set_pc r_main = 0
+  ∧ main.store_pc r_main = 0 := by
+  exact ⟨by simpa [boolF, h_m32] using p.m32_eq,
+    by simpa [boolF, h_set_pc] using p.set_pc_eq,
+    by simpa [boolF, h_store_pc] using p.store_pc_eq⟩
+
+/-- Extract the normal branch fall-through offset from row-shape provenance. -/
+theorem jmpOffset2_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_jmp_offset2 : p.extractedRow.jmpOffset2 = 4) :
+    main.jmp_offset2 r_main = 4 := by
+  exact by simpa [intF, h_jmp_offset2] using p.jmp_offset2_eq
+
+/-- Extract the negated branch fall-through offset from row-shape provenance. -/
+theorem jmpOffset1_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_jmp_offset1 : p.extractedRow.jmpOffset1 = 4) :
+    main.jmp_offset1 r_main = 4 := by
+  exact by simpa [intF, h_jmp_offset1] using p.jmp_offset1_eq
 
 /-- Build the external `OP_SLL` activation/opcode pins from extracted
 row-shape constants. -/

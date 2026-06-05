@@ -262,6 +262,23 @@ existing BinaryExtension static lookup/match witnesses.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: BEQ/BNE/BLT/BGE/BLTU/BGEU
+
+Continue through the branch route. Branch `OpEnvelope` arms do not currently
+carry explicit Main-row pin fields, so this slice makes the Aeneas bridge
+predicate expose the branch opcode/control pins and the fall-through jump
+offset side that distinguishes normal branches from negated branches.
+
+- [x] Add main-Lake helpers deriving branch Main pins, branch controls, and fall-through jump-offset facts from extracted-row constants.
+- [x] Extend `aeneasBridgeTrust` and add BEQ, BNE, BLT, BGE, BLTU, and BGEU `OpEnvelope` constructors/bridge theorems using those derived branch facts.
+- [x] Add staged Aeneas generated checks for branch row shapes.
+- [x] Update extraction/trust docs to describe the branch slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Verification
 
 Required commands:
