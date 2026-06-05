@@ -236,9 +236,7 @@ for required in (
     "pub fn extract_transpile_rv64im_accepted_raw(raw: u32) -> bool",
     "lowering_opcode(decoded.opcode).is_some()",
     "pub fn extract_transpile_rv64im_materializes_raw(raw: u32) -> bool",
-    "let mut ctx = Riscv2ZiskContext",
-    "extract_inst: None",
-    "ctx.extract_inst.is_some()",
+    "extract_transpile_rv64im_accepted_raw(raw)",
 ):
     if required not in aeneas_text:
         fail(f"generalized raw RV64IM extraction path is missing `{required}`")

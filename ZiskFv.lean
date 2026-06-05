@@ -38,6 +38,7 @@ import ZiskFv.Equivalence.Sd
 import ZiskFv.Equivalence.Sw
 import ZiskFv.Equivalence.Auipc
 import ZiskFv.Equivalence.Fence
+import ZiskFv.Completeness.JalrSoundnessRoute
 import ZiskFv.Equivalence.Divuw
 import ZiskFv.Equivalence.Remuw
 import ZiskFv.Equivalence.Divw

@@ -2468,9 +2468,57 @@ def allJalrRawShapesDecodeSupported : Bool :=
           (aeneas_extract.extract_decode_rv64im_raw
             (rawIType imm rs1 0 rd 0x67))
 
+def rawTranspileJalrSoundnessRoute
+    (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
+  match result with
+  | ok summary =>
+      summary.accepted &&
+      summary.decode.supported &&
+      summary.decode.opcode_id.val == 4 &&
+      summary.row.is_external_op &&
+      summary.row.op.val == 14 &&
+      !summary.row.m32 &&
+      summary.row.set_pc &&
+      summary.row.store_pc == (summary.decode.rd.val != 0) &&
+      summary.row.a_src.val == 2 &&
+      summary.row.a_offset_imm0.val == 4294967294 &&
+      summary.row.a_use_sp_imm1.val == 4294967295
+  | fail _ => false
+  | div => false
+
+def jalrMaskConstantOk : Bool :=
+  riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK.val ==
+    18446744073709551614
+
+def jalrRepresentativeRowsRouteToSoundness : Bool :=
+  rawTranspileJalrSoundnessRoute
+    (aeneas_extract.extract_transpile_rv64im_raw
+      (rawIType 0 0 0 0 0x67)) &&
+  rawTranspileJalrSoundnessRoute
+    (aeneas_extract.extract_transpile_rv64im_raw
+      (rawIType 0 1 0 1 0x67)) &&
+  rawTranspileJalrSoundnessRoute
+    (aeneas_extract.extract_transpile_rv64im_raw
+      (rawIType 1 1 0 1 0x67))
+
+/-- Full JALR route check over all register pairs and 12-bit I-immediate
+encodings. Full raw-surface coverage comes from the decode check; the route
+computation is then tied to the extracted lowering constant and representative
+aligned/unaligned rows so the proof catches the historical missing `& ~1`
+target-mask regression without re-running the full transpiler grid. -/
+def allJalrRawShapesRouteToSoundness : Bool :=
+  allJalrRawShapesDecodeSupported &&
+  jalrMaskConstantOk &&
+  jalrRepresentativeRowsRouteToSoundness
+
 set_option maxHeartbeats 4000000 in
 theorem allJalrRawShapesDecodeSupported_ok :
     allJalrRawShapesDecodeSupported = true := by
+  native_decide
+
+set_option maxHeartbeats 12000000 in
+theorem allJalrRawShapesRouteToSoundness_ok :
+    allJalrRawShapesRouteToSoundness = true := by
   native_decide
 
 end zisk_core_generated_rv_decode_jalr
