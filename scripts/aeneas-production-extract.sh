@@ -2513,31 +2513,24 @@ def rawTranspileJalrSoundnessInput
   | fail _ => false
   | div => false
 
-def jalrRepresentativeRowsSatisfySoundnessInput : Bool :=
-  rawTranspileJalrSoundnessInput
-    (aeneas_extract.extract_transpile_rv64im_raw
-      (rawIType 0 0 0 0 0x67)) &&
-  rawTranspileJalrSoundnessInput
-    (aeneas_extract.extract_transpile_rv64im_raw
-      (rawIType 0 1 0 1 0x67)) &&
-  rawTranspileJalrSoundnessInput
-    (aeneas_extract.extract_transpile_rv64im_raw
-      (rawIType 1 1 0 1 0x67))
-
 /-- Full JALR route check over all register pairs and 12-bit I-immediate
-encodings. Full raw-surface coverage comes from the decode check; the lowered
-representatives must satisfy the JALR soundness-input predicate, whose target
-mask is sourced from the checked-in Sail-side pure spec. -/
+encodings. Every extracted lowering must satisfy the JALR soundness-input
+predicate, whose target mask is sourced from the checked-in Sail-side pure
+spec. -/
 def allJalrRawShapesSatisfySoundnessInput : Bool :=
-  allJalrRawShapesDecodeSupported &&
-  jalrRepresentativeRowsSatisfySoundnessInput
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allIImmediates.all fun imm =>
+        rawTranspileJalrSoundnessInput
+          (aeneas_extract.extract_transpile_rv64im_raw
+            (rawIType imm rs1 0 rd 0x67))
 
 set_option maxHeartbeats 4000000 in
 theorem allJalrRawShapesDecodeSupported_ok :
     allJalrRawShapesDecodeSupported = true := by
   native_decide
 
-set_option maxHeartbeats 12000000 in
+set_option maxHeartbeats 40000000 in
 theorem allJalrRawShapesSatisfySoundnessInput_ok :
     allJalrRawShapesSatisfySoundnessInput = true := by
   native_decide
