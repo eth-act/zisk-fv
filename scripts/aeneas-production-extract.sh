@@ -849,11 +849,46 @@ def rawIType (imm rs1 funct3 rd opcode : Nat) : Std.U32 :=
     (((imm % 4096) <<< 20) ||| (rs1 <<< 15) |||
       (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
 
+def rawSType (imm rs2 rs1 funct3 : Nat) : Std.U32 :=
+  let imm12 := imm % 4096
+  rawOfNat32
+    (((imm12 >>> 5) <<< 25) ||| (rs2 <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| ((imm12 &&& 0x1f) <<< 7) ||| 0x23)
+
+def rawBType (imm rs2 rs1 funct3 : Nat) : Std.U32 :=
+  let imm13 := imm % 8192
+  rawOfNat32
+    ((((imm13 >>> 12) &&& 1) <<< 31) |||
+      (((imm13 >>> 5) &&& 0x3f) <<< 25) |||
+      (rs2 <<< 20) ||| (rs1 <<< 15) ||| (funct3 <<< 12) |||
+      (((imm13 >>> 1) &&& 0xf) <<< 8) |||
+      (((imm13 >>> 11) &&& 1) <<< 7) ||| 0x63)
+
+def rawUType (uimm rd opcode : Nat) : Std.U32 :=
+  rawOfNat32 (((uimm % 1048576) <<< 12) ||| (rd <<< 7) ||| opcode)
+
+def rawJType (jimm rd : Nat) : Std.U32 :=
+  let imm21 := (jimm % 1048576) <<< 1
+  rawOfNat32
+    ((((imm21 >>> 20) &&& 1) <<< 31) |||
+      (((imm21 >>> 1) &&& 0x3ff) <<< 21) |||
+      (((imm21 >>> 11) &&& 1) <<< 20) |||
+      (((imm21 >>> 12) &&& 0xff) <<< 12) ||| (rd <<< 7) ||| 0x6f)
+
 def allRvRegs : List Nat :=
   List.range 32
 
 def allIImmediates : List Nat :=
   List.range 4096
+
+def allBEncodedImmediates : List Nat :=
+  List.range 4096
+
+def allUEncodedImmediates : List Nat :=
+  List.range 1048576
+
+def allJEncodedImmediates : List Nat :=
+  List.range 1048576
 
 def allRTypeOpcodeShapes : List (Nat × Nat × Nat) := [
   (0, 0, 0x33),  (32, 0, 0x33), (0, 1, 0x33),  (0, 2, 0x33),
@@ -1376,11 +1411,46 @@ def rawIType (imm rs1 funct3 rd opcode : Nat) : Std.U32 :=
     (((imm % 4096) <<< 20) ||| (rs1 <<< 15) |||
       (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
 
+def rawSType (imm rs2 rs1 funct3 : Nat) : Std.U32 :=
+  let imm12 := imm % 4096
+  rawOfNat32
+    (((imm12 >>> 5) <<< 25) ||| (rs2 <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| ((imm12 &&& 0x1f) <<< 7) ||| 0x23)
+
+def rawBType (imm rs2 rs1 funct3 : Nat) : Std.U32 :=
+  let imm13 := imm % 8192
+  rawOfNat32
+    ((((imm13 >>> 12) &&& 1) <<< 31) |||
+      (((imm13 >>> 5) &&& 0x3f) <<< 25) |||
+      (rs2 <<< 20) ||| (rs1 <<< 15) ||| (funct3 <<< 12) |||
+      (((imm13 >>> 1) &&& 0xf) <<< 8) |||
+      (((imm13 >>> 11) &&& 1) <<< 7) ||| 0x63)
+
+def rawUType (uimm rd opcode : Nat) : Std.U32 :=
+  rawOfNat32 (((uimm % 1048576) <<< 12) ||| (rd <<< 7) ||| opcode)
+
+def rawJType (jimm rd : Nat) : Std.U32 :=
+  let imm21 := (jimm % 1048576) <<< 1
+  rawOfNat32
+    ((((imm21 >>> 20) &&& 1) <<< 31) |||
+      (((imm21 >>> 1) &&& 0x3ff) <<< 21) |||
+      (((imm21 >>> 11) &&& 1) <<< 20) |||
+      (((imm21 >>> 12) &&& 0xff) <<< 12) ||| (rd <<< 7) ||| 0x6f)
+
 def allRvRegs : List Nat :=
   List.range 32
 
 def allIImmediates : List Nat :=
   List.range 4096
+
+def allBEncodedImmediates : List Nat :=
+  List.range 4096
+
+def allUEncodedImmediates : List Nat :=
+  List.range 1048576
+
+def allJEncodedImmediates : List Nat :=
+  List.range 1048576
 
 /-- Boolean counterpart of ADD raw-shape circuit coverage. This is deliberately
 defined from the Aeneas-extracted production raw decoder/lowering wrappers. -/
@@ -1490,6 +1560,118 @@ theorem addiw_raw_shape_decode_supported
   have h_all := allAddiwRawShapesDecodeSupported_ok
   simp [allAddiwRawShapesDecodeSupported] at h_all
   simpa [ZiskDecodeSupportedRaw] using h_all rd h_rd rs1 h_rs1 imm h_imm
+
+def loadFunct3s : List Nat := [
+  0, -- LB
+  1, -- LH
+  2, -- LW
+  3, -- LD
+  4, -- LBU
+  5, -- LHU
+  6  -- LWU
+]
+
+/-- Full load decode acceptance over every architectural register pair and
+every 12-bit I-immediate encoding. -/
+def allLoadRawShapesDecodeSupported : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allIImmediates.all fun imm =>
+        loadFunct3s.all fun funct3 =>
+          rawDecodeSupported
+            (aeneas_extract.extract_decode_rv64im_raw
+              (rawIType imm rs1 funct3 rd 0x03))
+
+set_option maxHeartbeats 12000000 in
+theorem allLoadRawShapesDecodeSupported_ok :
+    allLoadRawShapesDecodeSupported = true := by
+  native_decide
+
+theorem load_raw_shape_decode_supported
+    (rd rs1 imm funct3 : Nat)
+    (h_rd : rd ∈ allRvRegs)
+    (h_rs1 : rs1 ∈ allRvRegs)
+    (h_imm : imm ∈ allIImmediates)
+    (h_funct3 : funct3 ∈ loadFunct3s) :
+    ZiskDecodeSupportedRaw (rawIType imm rs1 funct3 rd 0x03) := by
+  have h_all := allLoadRawShapesDecodeSupported_ok
+  simp [allLoadRawShapesDecodeSupported] at h_all
+  simpa [ZiskDecodeSupportedRaw] using
+    h_all rd h_rd rs1 h_rs1 imm h_imm funct3 h_funct3
+
+def storeFunct3s : List Nat := [
+  0, -- SB
+  1, -- SH
+  2, -- SW
+  3  -- SD
+]
+
+/-- Full store decode acceptance over every architectural register pair and
+every 12-bit S-immediate encoding. -/
+def allStoreRawShapesDecodeSupported : Bool :=
+  allRvRegs.all fun rs1 =>
+    allRvRegs.all fun rs2 =>
+      allIImmediates.all fun imm =>
+        storeFunct3s.all fun funct3 =>
+          rawDecodeSupported
+            (aeneas_extract.extract_decode_rv64im_raw
+              (rawSType imm rs2 rs1 funct3))
+
+set_option maxHeartbeats 8000000 in
+theorem allStoreRawShapesDecodeSupported_ok :
+    allStoreRawShapesDecodeSupported = true := by
+  native_decide
+
+theorem store_raw_shape_decode_supported
+    (rs1 rs2 imm funct3 : Nat)
+    (h_rs1 : rs1 ∈ allRvRegs)
+    (h_rs2 : rs2 ∈ allRvRegs)
+    (h_imm : imm ∈ allIImmediates)
+    (h_funct3 : funct3 ∈ storeFunct3s) :
+    ZiskDecodeSupportedRaw (rawSType imm rs2 rs1 funct3) := by
+  have h_all := allStoreRawShapesDecodeSupported_ok
+  simp [allStoreRawShapesDecodeSupported] at h_all
+  simpa [ZiskDecodeSupportedRaw] using
+    h_all rs1 h_rs1 rs2 h_rs2 imm h_imm funct3 h_funct3
+
+def branchFunct3s : List Nat := [
+  0, -- BEQ
+  1, -- BNE
+  4, -- BLT
+  5, -- BGE
+  6, -- BLTU
+  7  -- BGEU
+]
+
+/-- Full branch decode acceptance over every architectural register pair and
+every encoded B-immediate bit pattern. `rawBType (bimm <<< 1)` covers the
+architectural even-offset B-immediate encodings without duplicate low-bit
+aliases. -/
+def allBranchRawShapesDecodeSupported : Bool :=
+  allRvRegs.all fun rs1 =>
+    allRvRegs.all fun rs2 =>
+      allBEncodedImmediates.all fun bimm =>
+        branchFunct3s.all fun funct3 =>
+          rawDecodeSupported
+            (aeneas_extract.extract_decode_rv64im_raw
+              (rawBType (bimm <<< 1) rs2 rs1 funct3))
+
+set_option maxHeartbeats 12000000 in
+theorem allBranchRawShapesDecodeSupported_ok :
+    allBranchRawShapesDecodeSupported = true := by
+  native_decide
+
+theorem branch_raw_shape_decode_supported
+    (rs1 rs2 bimm funct3 : Nat)
+    (h_rs1 : rs1 ∈ allRvRegs)
+    (h_rs2 : rs2 ∈ allRvRegs)
+    (h_bimm : bimm ∈ allBEncodedImmediates)
+    (h_funct3 : funct3 ∈ branchFunct3s) :
+    ZiskDecodeSupportedRaw (rawBType (bimm <<< 1) rs2 rs1 funct3) := by
+  have h_all := allBranchRawShapesDecodeSupported_ok
+  simp [allBranchRawShapesDecodeSupported] at h_all
+  simpa [ZiskDecodeSupportedRaw] using
+    h_all rs1 h_rs1 rs2 h_rs2 bimm h_bimm funct3 h_funct3
 
 def RvAvoidKnownBugsFor (sailExecutableRaw : Std.U32 → Prop) : Prop :=
   ∀ raw, sailExecutableRaw raw → KnownZiskGapRaw raw = false → ZiskDecodeSupportedRaw raw

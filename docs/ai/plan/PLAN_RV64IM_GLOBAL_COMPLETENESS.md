@@ -118,9 +118,9 @@ the corresponding checked-in and generated builds have passed.
 | M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | done | done | done | done | none |
 | Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | done | done | partial | non-shift full decode; shift full shamt; edge materialization | full circuit coverage/global composition open |
 | Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | done | done | partial | ADDIW full decode; shift full shamt; edge materialization | full circuit coverage/global composition open |
-| Branches | BEQ BNE BLT BGE BLTU BGEU | done | done | partial | edge-grid only | full branch immediate coverage open |
-| Loads | LB LBU LH LHU LW LWU LD | done | done | partial | edge-grid only | full load immediate coverage open |
-| Stores | SB SH SW SD | done | done | partial | edge-grid only | full store immediate coverage open |
+| Branches | BEQ BNE BLT BGE BLTU BGEU | done | done | partial | full decode; edge materialization | full circuit coverage/global composition open |
+| Loads | LB LBU LH LHU LW LWU LD | done | done | partial | full decode; edge materialization | full circuit coverage/global composition open |
+| Stores | SB SH SW SD | done | done | partial | full decode; edge materialization | full circuit coverage/global composition open |
 | Upper/jump | LUI AUIPC JAL JALR | done | done | partial | JALR full decode; others edge-grid only | full upper/jump immediate coverage open except JALR decode |
 | Fence | FENCE | done | done | done | done | generic FENCE restrictions |
 
@@ -153,10 +153,16 @@ the corresponding checked-in and generated builds have passed.
   all `rd`, `rs1`, and 12-bit I-immediate encodings.
 - [ ] Branches: close whitelist, raw-shape lemma, global theorem shape,
   full generated coverage, verification, docs, commit.
+- [x] Branches: add generated full decode-acceptance proof over all register
+  pairs and encoded B-immediate bit patterns.
 - [ ] Loads: close whitelist, raw-shape lemma, global theorem shape, full
   generated coverage, verification, docs, commit.
+- [x] Loads: add generated full decode-acceptance proof over all `rd`, `rs1`,
+  and 12-bit I-immediate encodings.
 - [ ] Stores: close whitelist, raw-shape lemma, global theorem shape, full
   generated coverage, verification, docs, commit.
+- [x] Stores: add generated full decode-acceptance proof over all register
+  pairs and 12-bit S-immediate encodings.
 - [ ] Upper/jump: close whitelist, raw-shape lemma, global theorem shape,
   full generated coverage, verification, docs, commit.
 - [x] Upper/jump/JALR: add generated full decode-acceptance proof over all
