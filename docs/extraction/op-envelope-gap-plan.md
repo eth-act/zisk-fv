@@ -286,11 +286,27 @@ pipeline.
      immediate;
    - main Lake exposes store provenance helpers for `OP_COPYB` pins,
      `ind_width`, and `store_pc = 0`;
-   - main Lake exposes `OpEnvelope.sbOfExtractedShape`,
-     `OpEnvelope.shOfExtractedShape`, `OpEnvelope.swOfExtractedShape`, and
-     `OpEnvelope.sdOfExtractedShape`, whose bridge theorems prove the current
-     store payload from derived width plus the existing store-value lane
-     witnesses.
+  - main Lake exposes `OpEnvelope.sbOfExtractedShape`,
+    `OpEnvelope.shOfExtractedShape`, `OpEnvelope.swOfExtractedShape`, and
+    `OpEnvelope.sdOfExtractedShape`, whose bridge theorems prove the current
+    store payload from derived width plus the existing store-value lane
+    witnesses.
+
+   LD, LBU, LHU, and LWU cover the zero-extension Main/Mem load route:
+
+   - the staged Aeneas harness proves that each load lowers to internal
+     `OP_COPYB` with register/immediate address sources, load destination
+     routing (`bSrc = 5`), `store_pc = false`, and width `8`, `1`, `2`, or
+     `4`; the concrete full-row checks also record that the sample immediate is
+     carried in `bOffsetImm0`;
+   - main Lake reuses the store-slice `OP_COPYB`, `ind_width`, and Clean
+     `store_pc = 0` provenance helpers;
+   - main Lake exposes `OpEnvelope.ldOfExtractedShape`,
+     `OpEnvelope.lbuOfExtractedShape`, `OpEnvelope.lhuOfExtractedShape`, and
+     `OpEnvelope.lwuOfExtractedShape`, whose bridge theorems prove the current
+     zero-extension load predicates from derived width. Signed LB, LH, and LW
+     lower to external sign-extension opcodes and remain a separate provider
+     slice.
 
 4. **Prove constructor-specific envelope evidence lemmas.**
 

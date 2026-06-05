@@ -236,14 +236,14 @@ memory-bus witness path and widths `8`, `1`, `2`, and `4`. Signed LB/LH/LW use
 external BinaryExtension sign-extension opcodes and remain a separate provider
 slice.
 
-- [ ] Extend `aeneasBridgeTrust` and add LD, LBU, LHU, and LWU `OpEnvelope` constructors/bridge theorems using store-slice `OP_COPYB`, width, and Clean `store_pc` helpers.
-- [ ] Add staged Aeneas generated checks for LD, LBU, LHU, and LWU load row shapes.
-- [ ] Update extraction/trust docs to describe the zero-extension load slice.
-- [ ] Run `lake build ZiskFv.Compliance`.
-- [ ] Run `trust/scripts/regenerate.sh`.
-- [ ] Run `trust/scripts/check-all.sh`.
-- [ ] Run `trust/scripts/check-all-semantic.sh`.
-- [ ] Run `nix run .#aeneas-production-extract`.
+- [x] Extend `aeneasBridgeTrust` and add LD, LBU, LHU, and LWU `OpEnvelope` constructors/bridge theorems using store-slice `OP_COPYB`, width, and Clean `store_pc` helpers.
+- [x] Add staged Aeneas generated checks for LD, LBU, LHU, and LWU load row shapes.
+- [x] Update extraction/trust docs to describe the zero-extension load slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
 
 ## Verification
 
