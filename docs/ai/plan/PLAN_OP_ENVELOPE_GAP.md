@@ -352,6 +352,145 @@ longer proves that predicate by axiom.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Caller-Burden Audit: Residual Structural Obligations
+
+After the broad axiom was retired, the global axiom closure is smaller but the
+canonical and wrapper caller-burden ledgers still expose explicit
+soundness-relevant obligations. The remaining nonzero categories are:
+`bridge = 119`, canonical `row_shape = 27`, wrapper `row_shape = 37`, and
+`bus_shape = 27`.
+
+Initial classification:
+
+- U/control-flow and memory `promises` bundles are semantic state/bus inputs;
+  they should not be hidden by repackaging without imported generated proof
+  evidence.
+- Binary/shift/mul/div/rem bridge equalities tie decoded Sail inputs to
+  provider-row values; those need production extraction/provider proofs, not
+  signature-only reshaping.
+- The W-shift trio (`SLLW`, `SRLW`, `SRAW`) still carries explicit execution
+  and memory-bus shape binders plus destination-register shape facts. These
+  look like the narrowest structural reduction candidate because they mirror a
+  bundleable bus-channel shape already consumed as ordinary proof data.
+
+- [x] Re-read `STATUS.md`, this plan, and the generated caller-burden ledgers.
+- [x] Classify residual `bridge`, `row_shape`, and `bus_shape` categories.
+- [x] Inspect the W-shift wrapper/canonical proofs for an honest internalized
+      shape witness.
+- [x] If feasible, refactor the W-shift trio to consume a single documented
+      structural witness instead of individual bus/row-shape binders.
+- [x] Regenerate ledgers and verify that the diff is a real reduction or a
+      documented structural boundary, not semantic laundering.
+- [x] Run required build/trust/extraction checks.
+- [x] Commit the reduction slice.
+
+Ledger result: the W-shift refactor is a structural consolidation, not a
+semantic discharge. It removes all 27 explicit `bus_shape` caller-burden rows
+and reduces `row_shape` by 9 rows in both canonical/wrapper ledgers, while
+adding 3 `bridge` rows because `SLLW`, `SRLW`, and `SRAW` now expose one
+`RTypePromises` bundle each. Total canonical rows dropped from 1104 to 1062;
+wrapper rows dropped from 1165 to 1123.
+
+## Phase 2: Caller-Burden Reduction
+
+Continue beyond opcode coverage by shrinking or reclassifying the remaining
+caller-supplied proof obligations only when the new boundary is a real proof
+source or a documented structural witness. The goal is not to game the ledger:
+renaming or hiding semantic assumptions under opaque bundles is not progress.
+
+Current acceptance target for this phase:
+
+- Structural shape obligations should either be derived from existing row/bus
+  evidence or grouped under documented witness types whose source is explicit.
+- Semantic bridge obligations should remain visible until they are discharged
+  by production extraction/provider proofs.
+- Promise obligations should remain visible unless they are derived from Sail
+  state, decoded instruction data, and bus/effect facts already available at
+  the theorem boundary.
+- Every reduction must land with regenerated ledgers and a note explaining what
+  moved and why the trust boundary did not get less honest.
+
+Work queue:
+
+- [x] Finish the W-shift (`SLLW`/`SRLW`/`SRAW`) structural cleanup using the
+      existing `RTypePromises` shape where appropriate.
+- [x] Regenerate caller-burden ledgers and compare `bridge`, `row_shape`, and
+      `bus_shape` counts before/after the W-shift cleanup.
+- [ ] Audit U/control-flow (`LUI`, `AUIPC`, `JAL`, `JALR`, `FENCE`) residual
+      row-shape and promise obligations and separate structural facts from
+      semantic promise facts.
+- [ ] Audit load/store residual `LoadPromises`/`StorePromises` and
+      `LoadCleanWitness` obligations against the Clean Main/Mem bridge
+      witnesses already present in `OpEnvelope`.
+- [ ] Audit Binary/BinaryExtension/Arith provider bridge equalities by family
+      and record which require generated production proofs rather than local
+      refactors.
+- [ ] For each honest reduction slice, update docs, run build/trust/extraction
+      checks, and commit.
+
+## Phase 3: Generated Proof Integration
+
+The opcode-family slices currently validate generated Aeneas facts in a staged
+extraction harness while main Lake consumes hand-written extracted-shape
+helpers. To close the original `witness rows -> OpEnvelope` gap, the generated
+proof facts need a maintained path into the proof boundary.
+
+Acceptance target:
+
+- Generated/production-backed facts used to construct `OpEnvelope` evidence are
+  checked as part of the normal verification flow, not only as an external
+  staged artifact.
+- The proof boundary makes clear which facts come from decoded instruction
+  data, lowerer/transpiler output, Main rows, bus rows, provider rows, memory
+  rows, and Sail state assumptions.
+- Residual caller-burden entries that remain after this phase are documented as
+  deliberate public theorem inputs, not accidental opcode-specific proof holes.
+
+Work queue:
+
+- [ ] Decide the integration path for generated Aeneas Lean: import into main
+      Lake, checked generated module, or a documented verified bridge artifact.
+- [ ] Wire the first production-backed generated fact into main verification for
+      one already-covered family, starting with the smallest row-shape case.
+- [ ] Extend the integration pattern across the U/control-flow row-shape facts.
+- [ ] Extend the integration pattern across Binary/BinaryExtension provider
+      source-lane facts where the production extraction already computes the
+      required row constants.
+- [ ] Extend or explicitly defer memory/load/store generated facts depending on
+      available production proof coverage.
+- [ ] Update trust scripts so generated-proof integration regressions are
+      visible in CI-style checks.
+
+## Phase 4: Final Boundary Verification
+
+Once caller-burden reductions and generated-proof integration have landed, the
+final pass verifies that the public theorem boundary matches the documented
+target and that the remaining trust surface is intentional.
+
+Acceptance target:
+
+- `zisk_riscv_compliant_program_bus` no longer depends on broad temporary
+  envelope-evidence axioms.
+- Caller-burden ledgers contain only documented theorem inputs or explicitly
+  deferred assumptions.
+- Global axiom closure matches the expected trust baseline.
+- Extraction, semantic trust checks, and main Lake builds all pass from a clean
+  worktree.
+
+Work queue:
+
+- [ ] Re-run and review all caller-burden ledgers after the final reduction
+      slice.
+- [ ] Update `docs/extraction/op-envelope-gap-plan.md`,
+      `docs/ai/PROJECTS.md`, and `trust/trusted-base.md` with the final
+      theorem boundary.
+- [ ] Run `lake build ZiskFv.Compliance`.
+- [ ] Run `trust/scripts/regenerate.sh`.
+- [ ] Run `trust/scripts/check-all.sh`.
+- [ ] Run `trust/scripts/check-all-semantic.sh`.
+- [ ] Run `nix run .#aeneas-production-extract`.
+- [ ] Commit the final boundary-verification slice.
+
 ## Verification
 
 Required commands:

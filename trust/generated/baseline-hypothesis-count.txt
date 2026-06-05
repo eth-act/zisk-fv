@@ -8,8 +8,8 @@
 # requires explicit reviewer ack via a baseline diff.
 #
 # Total theorems: 63
-# Aggregate total binders: 1104
-# Aggregate hypothesis binders: 364
+# Aggregate total binders: 1062
+# Aggregate hypothesis binders: 319
 #
 ZiskFv.Equivalence.Add.equiv_ADD total=19 hypothesis=7
 ZiskFv.Equivalence.Addi.equiv_ADDI total=20 hypothesis=8
@@ -56,7 +56,7 @@ ZiskFv.Equivalence.Sh.equiv_SH total=11 hypothesis=2
 ZiskFv.Equivalence.Sll.equiv_SLL total=19 hypothesis=7
 ZiskFv.Equivalence.Slli.equiv_SLLI total=19 hypothesis=7
 ZiskFv.Equivalence.Slliw.equiv_SLLIW total=18 hypothesis=7
-ZiskFv.Equivalence.Sllw.equiv_SLLW total=33 hypothesis=22
+ZiskFv.Equivalence.Sllw.equiv_SLLW total=19 hypothesis=7
 ZiskFv.Equivalence.Slt.equiv_SLT total=19 hypothesis=7
 ZiskFv.Equivalence.Slti.equiv_SLTI total=20 hypothesis=8
 ZiskFv.Equivalence.Sltiu.equiv_SLTIU total=20 hypothesis=8
@@ -64,11 +64,11 @@ ZiskFv.Equivalence.Sltu.equiv_SLTU total=19 hypothesis=7
 ZiskFv.Equivalence.Sra.equiv_SRA total=19 hypothesis=7
 ZiskFv.Equivalence.Srai.equiv_SRAI total=19 hypothesis=7
 ZiskFv.Equivalence.Sraiw.equiv_SRAIW total=18 hypothesis=7
-ZiskFv.Equivalence.Sraw.equiv_SRAW total=33 hypothesis=22
+ZiskFv.Equivalence.Sraw.equiv_SRAW total=19 hypothesis=7
 ZiskFv.Equivalence.Srl.equiv_SRL total=19 hypothesis=7
 ZiskFv.Equivalence.Srli.equiv_SRLI total=19 hypothesis=7
 ZiskFv.Equivalence.Srliw.equiv_SRLIW total=18 hypothesis=7
-ZiskFv.Equivalence.Srlw.equiv_SRLW total=33 hypothesis=22
+ZiskFv.Equivalence.Srlw.equiv_SRLW total=19 hypothesis=7
 ZiskFv.Equivalence.Sub.equiv_SUB total=19 hypothesis=7
 ZiskFv.Equivalence.Subw.equiv_SUBW total=19 hypothesis=7
 ZiskFv.Equivalence.Sw.equiv_SW total=11 hypothesis=2
