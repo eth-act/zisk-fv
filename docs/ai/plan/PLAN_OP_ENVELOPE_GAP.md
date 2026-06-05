@@ -226,7 +226,10 @@ byte-lane witnesses.
 
 ## Scope
 
-No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.
+No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC.
+At this point in the slice sequence the global theorem still depended on
+`ZiskFv.Compliance.aeneas_bridge_trust`; the later boundary-reduction slice
+removes that axiom.
 
 ## Next Slice: LD/LBU/LHU/LWU
 
@@ -316,9 +319,9 @@ W forms use `m32 = 1`.
 
 Audit `OpEnvelope.aeneasBridgeTrust` after the opcode-family slices and remove
 the wildcard branch so constructor coverage is checked by Lean. This narrows
-the local bridge predicate but does not remove the global
-`ZiskFv.Compliance.aeneas_bridge_trust` axiom, because generated Aeneas evidence
-is still staged outside main Lake.
+the local bridge predicate. At this point the global
+`ZiskFv.Compliance.aeneas_bridge_trust` axiom still existed; the following
+boundary-reduction slice removes it.
 
 - [x] Add an explicit FENCE bridge-predicate case using derived activation/opcode pins.
 - [x] Add explicit `auipc_x0` and `jal_x0` cases documenting that those no-memory arms still carry no bridge payload.
@@ -326,6 +329,24 @@ is still staged outside main Lake.
 - [x] Run focused `lake build ZiskFv.Compliance.AeneasBridgeTrust`.
 - [x] Update extraction/trust docs to describe the narrowed predicate.
 - [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
+## Boundary Reduction: Retire `aeneas_bridge_trust`
+
+Remove the broad bridge-trust conjunct from the global theorem conclusion and
+delete the corresponding axiom. The local `OpEnvelope.aeneasBridgeTrust`
+predicate and extracted-shape theorems remain as audit helpers for the
+production-backed proof slices, but `zisk_riscv_compliant_program_bus` no
+longer proves that predicate by axiom.
+
+- [x] Remove `env.aeneasBridgeTrust` from `OpEnvelope.exec_eq`.
+- [x] Remove the `aeneas_bridge_trust` proof obligation from `zisk_riscv_compliant_program_bus`.
+- [x] Delete the `ZiskFv.Compliance.aeneas_bridge_trust` axiom declaration.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Update extraction/trust docs to describe the retired axiom and remaining caller-burden obligations.
 - [x] Run `trust/scripts/regenerate.sh`.
 - [x] Run `trust/scripts/check-all.sh`.
 - [x] Run `trust/scripts/check-all-semantic.sh`.

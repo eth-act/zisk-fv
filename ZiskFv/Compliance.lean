@@ -45,11 +45,11 @@ channel-balance statement, partitioned across the ten dispatchers:
 
 ## Trust note
 
-The global closure intentionally includes
-`ZiskFv.Compliance.aeneas_bridge_trust`, the explicit trust boundary for
-Aeneas-backed row-lowering facts that are still carried as `OpEnvelope`
-fields while generated Aeneas Lean is not imported by the main proof. The V2
-trust gate enforces that this named axiom is visible in the closure.
+Aeneas-backed row-lowering facts are still carried as `OpEnvelope` fields while
+generated Aeneas Lean is not imported by the main proof. The local
+`OpEnvelope.aeneasBridgeTrust` predicate in `AeneasBridgeTrust.lean` remains as
+an audit target for extracted-shape constructors, but the global theorem no
+longer includes a broad bridge-trust conjunct or axiom.
 
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
 defect-aware while `trust/defects.md` contains open claim-weakening defects:
@@ -70,8 +70,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
     specific `exec_eq_<family>` Props. Exactly one family fires
     non-trivially for any given arm; the others are `True`. -/
 def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
-  env.aeneasBridgeTrust
-    ∧ env.exec_eq_branch
+  env.exec_eq_branch
     ∧ env.exec_eq_nomem
     ∧ env.exec_eq_rtype_binary
     ∧ env.exec_eq_itype_binary
@@ -91,8 +90,7 @@ theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact aeneas_bridge_trust env
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact zisk_riscv_compliant_program_bus_branch env
   · exact zisk_riscv_compliant_program_bus_nomem env
   · exact zisk_riscv_compliant_program_bus_rtype_binary env

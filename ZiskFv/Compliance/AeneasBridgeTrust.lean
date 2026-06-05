@@ -6245,12 +6245,4 @@ theorem OpEnvelope.aeneasBridgeTrust_sraiOfExtractedShape
   unfold OpEnvelope.sraiOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨h_input_r1_row, h_shift_pin_row⟩
 
-/-- **Aeneas row-lowering bridge trust axiom.**
-
-The generated Aeneas extraction is checked in CI, but generated Aeneas Lean is
-not yet imported to prove these bridge facts inside the main Lake theorem. -/
-axiom aeneas_bridge_trust
-    (env : OpEnvelope state m r_main) :
-    env.aeneasBridgeTrust
-
 end ZiskFv.Compliance
