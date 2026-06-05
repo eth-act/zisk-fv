@@ -1,7 +1,8 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
 Current focus: final boundary verification is complete.
 Blocking: none.
-Next step: commit the final boundary-verification slice.
+Next step: none for this plan; continue only if starting the next
+generated/full-ensemble provider-row export stream.
 
 Recent state:
 - Opcode-family slices through MUL and DIV/REM are committed.
@@ -33,3 +34,4 @@ Recent state:
 - Final docs record 7 source trust declarations, 1 global-closure project
   axiom, zero `bus_shape` caller burden, and remaining bridge/row-shape/promise
   entries as generated/full-ensemble integration boundaries.
+- Final boundary docs committed as `163dfc39`.
