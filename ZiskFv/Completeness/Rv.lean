@@ -76,13 +76,30 @@ def ShapeAvoidKnownBugs
   ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownGap raw →
     iface.ziskDecodeSupported raw
 
+/-- Boundary obligation after excluding only known decode gaps. This is the
+acceptance-focused RV completeness boundary: row materialization is handled by
+the ZisK-side row theorem rather than by weakening the Sail acceptance domain. -/
+def ShapeAvoidKnownDecodeBugs
+    (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
+  ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
+    iface.ziskDecodeSupported raw
+
 def CompletenessAvoidingKnownBugs (iface : Interface) : Prop :=
   ∀ raw, iface.sailExecutable raw → ¬ iface.knownGap raw →
+    iface.ziskCircuitCovered raw
+
+def CompletenessAvoidingKnownDecodeBugs (iface : Interface) : Prop :=
+  ∀ raw, iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
     iface.ziskCircuitCovered raw
 
 def ShapeCompletenessAvoidingKnownBugs
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
   ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownGap raw →
+    iface.ziskCircuitCovered raw
+
+def ShapeCompletenessAvoidingKnownDecodeBugs
+    (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
+  ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
     iface.ziskCircuitCovered raw
 
 /-- Sail-side domain bridge: every Sail-executable raw instruction is in the
@@ -136,6 +153,25 @@ theorem completeness_avoiding_known_bugs
   exact ⟨h_supported, h_lowerable, h_rows raw h_lowerable,
     h_opcode raw h_supported⟩
 
+/-- Acceptance-focused abstract composition theorem. The only excluded Sail
+raw words are known decode gaps; row materialization must be proved universally
+for all lowerable raw words. -/
+theorem completeness_avoiding_known_decode_bugs
+    (iface : Interface)
+    (shape : RawInstruction → Prop)
+    (h_sail_subset : SailExecutableContainedIn iface shape)
+    (h_avoid : ShapeAvoidKnownDecodeBugs iface shape)
+    (h_lower : LoweringComplete iface)
+    (h_rows : RowMaterializationComplete iface)
+    (h_opcode : OpcodeCoverageComplete iface) :
+    CompletenessAvoidingKnownDecodeBugs iface := by
+  intro raw h_sail h_not_decode_gap
+  have h_shape := h_sail_subset raw h_sail
+  have h_supported := h_avoid raw h_shape h_sail h_not_decode_gap
+  have h_lowerable := h_lower raw h_supported
+  exact ⟨h_supported, h_lowerable, h_rows raw h_lowerable,
+    h_opcode raw h_supported⟩
+
 /-- Main abstract composition theorem for the generated Aeneas proof shape:
 known decode gaps are excluded before decode support, and known row gaps are
 excluded before row materialization. -/
@@ -169,6 +205,13 @@ theorem shape_avoid_known_bugs
     ShapeAvoidKnownBugs iface shape := by
   intro raw _h_shape h_sail h_not_gap
   exact h_avoid raw h_sail h_not_gap
+
+theorem shape_completeness_avoiding_known_decode_bugs
+    (iface : Interface) (shape : RawInstruction → Prop)
+    (h_complete : CompletenessAvoidingKnownDecodeBugs iface) :
+    ShapeCompletenessAvoidingKnownDecodeBugs iface shape := by
+  intro raw _h_shape h_sail h_not_decode_gap
+  exact h_complete raw h_sail h_not_decode_gap
 
 theorem shape_completeness_mono
     (iface : Interface)
