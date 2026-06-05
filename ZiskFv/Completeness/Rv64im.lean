@@ -40,6 +40,16 @@ def Rv64imCompletenessAvoidingKnownBugs
     (iface : Rv.Interface) : Prop :=
   Rv.Interface.CompletenessAvoidingKnownBugs iface
 
+def Rv64imCompletenessAvoidingKnownDecodeBugs
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.CompletenessAvoidingKnownDecodeBugs iface
+
+def SupportedDecodeAvoidKnownDecodeBugs
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeAvoidKnownDecodeBugs
+    iface
+    Rv64imShapes.SupportedDecodeShape
+
 def MemoryRefinedSupportedDecodeCompletenessAvoidingKnownBugs
     (iface : Rv.Interface) : Prop :=
   Rv.Interface.ShapeCompletenessAvoidingKnownBugs
@@ -323,6 +333,30 @@ theorem rv64im_completeness_of_supported_decode_circuit_covered_known_good
     Rv64imShapes.SupportedDecodeShape
     h_sail_subset
     h_covered
+
+/-- Acceptance-focused RV64IM completeness target.
+
+This theorem is the checked-in counterpart of the generated
+`rv_completeness_avoiding_known_decode_bugs` Aeneas theorem: Sail is the source
+of truth for the raw instruction domain, the only excluded raw words are known
+decode gaps, and row materialization is a ZisK-side universal obligation rather
+than a way to narrow the Sail acceptance set. -/
+theorem rv64im_completeness_of_supported_decode_avoid_known_decode_bugs
+    (iface : Rv.Interface)
+    (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
+    (h_supported : SupportedDecodeAvoidKnownDecodeBugs iface)
+    (h_lower : Rv.Interface.LoweringComplete iface)
+    (h_rows : Rv.Interface.RowMaterializationComplete iface)
+    (h_opcode : Rv.Interface.OpcodeCoverageComplete iface) :
+    Rv64imCompletenessAvoidingKnownDecodeBugs iface :=
+  Rv.Interface.completeness_avoiding_known_decode_bugs
+    iface
+    Rv64imShapes.SupportedDecodeShape
+    h_sail_subset
+    h_supported
+    h_lower
+    h_rows
+    h_opcode
 
 theorem rv64im_completeness_of_memory_refined_supported_decode_shape
     (iface : Rv.Interface)
@@ -5733,6 +5767,29 @@ theorem rv64im_global_completeness_avoiding_known_bugs
     h_upper_rows
     h_jump_rows
     h_fence_rows
+    h_opcode
+
+/-- Stable acceptance-focused global theorem.
+
+Unlike `rv64im_global_completeness_avoiding_known_bugs`, this proof path does
+not require per-family edge-grid row premises. The Sail-side containment
+identifies the full supported-decode raw domain; the generated production
+harness supplies decode support outside explicit decode gaps, universal
+lowering, universal row materialization, and opcode coverage. -/
+theorem rv64im_global_completeness_avoiding_known_decode_bugs
+    (iface : Rv.Interface)
+    (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
+    (h_supported : SupportedDecodeAvoidKnownDecodeBugs iface)
+    (h_lower : Rv.Interface.LoweringComplete iface)
+    (h_rows : Rv.Interface.RowMaterializationComplete iface)
+    (h_opcode : Rv.Interface.OpcodeCoverageComplete iface) :
+    Rv64imCompletenessAvoidingKnownDecodeBugs iface :=
+  rv64im_completeness_of_supported_decode_avoid_known_decode_bugs
+    iface
+    h_sail_subset
+    h_supported
+    h_lower
+    h_rows
     h_opcode
 
 theorem rv64im_completeness_of_memory_refined_family_avoid_no_gap_sail_and_rows

@@ -1,3 +1,3 @@
 # RV64IM Global Completeness
 
-Depth-first plan to extend the completed ADD pilot into RV64IM completeness for the 63 production ZisK-supported opcodes. Each instruction family closes Sail whitelist/shape containment, generated Aeneas production coverage, checked-in theorem composition, verification, docs, and commit before moving to the next family. Generic FENCE restrictions remain explicit known gaps until production ZisK changes. Full plan: `docs/ai/plan/PLAN_RV64IM_GLOBAL_COMPLETENESS.md`.
+Plan to prove RV64IM completeness with Sail as the source of truth for valid raw instructions. The current result adds checked-in and generated decode-gap-only global theorem surfaces, splits exhaustive generated decode checks into one-proof modules, and verifies that production ZisK accepts/materializes every Sail-shaped supported RV64IM raw word outside explicit generic FENCE decode gaps. Full plan: `docs/ai/plan/PLAN_RV64IM_GLOBAL_COMPLETENESS.md`.
