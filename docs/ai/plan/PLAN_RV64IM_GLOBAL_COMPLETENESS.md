@@ -117,7 +117,7 @@ the corresponding checked-in and generated builds have passed.
 | Sail relation infrastructure | n/a | done | done | done | n/a | enables extension-gated Sail constructors |
 | M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | done | done | done | done | none |
 | Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | done | done | partial | non-shift full decode; shift full shamt; edge materialization | full circuit coverage/global composition open |
-| Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | done | done | partial | edge-grid/shift full | ADDIW full immediate coverage open |
+| Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | done | done | partial | ADDIW full decode; shift full shamt; edge materialization | full circuit coverage/global composition open |
 | Branches | BEQ BNE BLT BGE BLTU BGEU | done | done | partial | edge-grid only | full branch immediate coverage open |
 | Loads | LB LBU LH LHU LW LWU LD | done | done | partial | edge-grid only | full load immediate coverage open |
 | Stores | SB SH SW SD | done | done | partial | edge-grid only | full store immediate coverage open |
@@ -149,6 +149,8 @@ the corresponding checked-in and generated builds have passed.
   I-immediate encodings.
 - [ ] Immediate word ALU: close whitelist, raw-shape lemma, global theorem shape,
   full generated coverage, verification, docs, commit.
+- [x] Immediate word ALU/ADDIW: add generated full decode-acceptance proof over
+  all `rd`, `rs1`, and 12-bit I-immediate encodings.
 - [ ] Branches: close whitelist, raw-shape lemma, global theorem shape,
   full generated coverage, verification, docs, commit.
 - [ ] Loads: close whitelist, raw-shape lemma, global theorem shape, full

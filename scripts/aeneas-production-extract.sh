@@ -1466,6 +1466,31 @@ theorem non_shift_i_alu_raw_shape_decode_supported
   simpa [ZiskDecodeSupportedRaw] using
     h_all rd h_rd rs1 h_rs1 imm h_imm funct3 h_funct3
 
+/-- Full ADDIW decode acceptance over every architectural register pair and
+every 12-bit immediate encoding. -/
+def allAddiwRawShapesDecodeSupported : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allIImmediates.all fun imm =>
+        rawDecodeSupported
+          (aeneas_extract.extract_decode_rv64im_raw
+            (rawIType imm rs1 0 rd 0x1b))
+
+set_option maxHeartbeats 4000000 in
+theorem allAddiwRawShapesDecodeSupported_ok :
+    allAddiwRawShapesDecodeSupported = true := by
+  native_decide
+
+theorem addiw_raw_shape_decode_supported
+    (rd rs1 imm : Nat)
+    (h_rd : rd ∈ allRvRegs)
+    (h_rs1 : rs1 ∈ allRvRegs)
+    (h_imm : imm ∈ allIImmediates) :
+    ZiskDecodeSupportedRaw (rawIType imm rs1 0 rd 0x1b) := by
+  have h_all := allAddiwRawShapesDecodeSupported_ok
+  simp [allAddiwRawShapesDecodeSupported] at h_all
+  simpa [ZiskDecodeSupportedRaw] using h_all rd h_rd rs1 h_rs1 imm h_imm
+
 def RvAvoidKnownBugsFor (sailExecutableRaw : Std.U32 → Prop) : Prop :=
   ∀ raw, sailExecutableRaw raw → KnownZiskGapRaw raw = false → ZiskDecodeSupportedRaw raw
 
