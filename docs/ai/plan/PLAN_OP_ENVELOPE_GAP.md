@@ -207,6 +207,23 @@ but bridge `ShiftWImmPromises` and immediate shift amounts.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: SB/SH/SW/SD
+
+Move into the store-family Main-only shape. Stores are larger than the shift
+provider slices: they use internal `OP_COPYB`, carry store width/`store_pc`
+facts, and include Clean Main-row, memory-bus, address, store-value, and
+byte-lane witnesses.
+
+- [ ] Add main-Lake helpers deriving store `OP_COPYB` pins and width/control facts from extracted-row constants.
+- [ ] Extend `aeneasBridgeTrust` and add SB, SH, SW, and SD `OpEnvelope` constructors/bridge theorems.
+- [ ] Add staged Aeneas generated checks for SB, SH, SW, and SD store row shapes.
+- [ ] Update extraction/trust docs to describe the store-family slice.
+- [ ] Run `lake build ZiskFv.Compliance`.
+- [ ] Run `trust/scripts/regenerate.sh`.
+- [ ] Run `trust/scripts/check-all.sh`.
+- [ ] Run `trust/scripts/check-all-semantic.sh`.
+- [ ] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

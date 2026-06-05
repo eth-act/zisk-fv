@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: SLLIW/SRLIW/SRAIW BinaryExtension 32-bit immediate shift slice verified; preparing commit.
+Current focus: store-family slice planning/entry point after completing BinaryExtension shifts.
 Blocking: none.
-Next step: commit the SLLIW/SRLIW/SRAIW slice, then assess the next opcode family.
+Next step: start SB/SH/SW/SD by deriving internal `OP_COPYB` store pins/width facts from row-shape provenance, then run the full verification ladder.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -147,3 +147,8 @@ Notes:
 - `trust/scripts/check-all-semantic.sh` passed for the SLLIW/SRLIW/SRAIW slice.
 - `nix run .#aeneas-production-extract` passed for the SLLIW/SRLIW/SRAIW slice.
 - Generated trust diffs are only the expected `aeneas_bridge_trust` line-number shift.
+- SLLIW/SRLIW/SRAIW slice committed as `a0e3cfea Add immediate W shift bridge slice`.
+- Branch arms do not currently carry Main-row/provider evidence in
+  `OpEnvelope`; the next higher-impact family is stores, whose constructors
+  carry `MainRowPins`, width, Clean Main-row, memory-bus, address, and
+  store-value witnesses.
