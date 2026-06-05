@@ -1,5 +1,5 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: final boundary verification is complete.
+Current focus: completion audit cleanup is verified.
 Blocking: none.
 Next step: none for this plan; continue only if starting the next
 generated/full-ensemble provider-row export stream.
@@ -35,3 +35,9 @@ Recent state:
   axiom, zero `bus_shape` caller burden, and remaining bridge/row-shape/promise
   entries as generated/full-ensemble integration boundaries.
 - Final boundary docs committed as `163dfc39`.
+- Completion audit found and fixed stale README/module-doc wording that still
+  described the retired broad Aeneas bridge boundary as active. Verification
+  passed again: `lake build ZiskFv.Compliance`, `trust/scripts/regenerate.sh`,
+  `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+  `nix run .#aeneas-production-extract`, and the generated-bridge manifest
+  gate after extraction.

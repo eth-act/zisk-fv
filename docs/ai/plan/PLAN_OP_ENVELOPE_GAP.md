@@ -576,6 +576,30 @@ at 7 and 1 entries respectively, `bus_shape` caller burden is zero, and the
 remaining bridge/row-shape/promise obligations are documented as
 generated/full-ensemble integration boundaries.
 
+## Completion Audit Cleanup
+
+After the final boundary-verification commit, a completion audit found stale
+public/module documentation that still described the retired broad Aeneas
+bridge boundary as active. The live code and ledgers already matched the final
+plan; this cleanup aligns the remaining narrative docs with that state.
+
+- [x] Update `README.md` trust counts and extraction coverage wording.
+- [x] Update `ZiskFv/Compliance/AeneasBridgeTrust.lean` module docs so
+      `OpEnvelope.aeneasBridgeTrust` is described as a local audit predicate,
+      not a global trust axiom.
+- [x] Confirm the plan has no unchecked slices.
+- [x] Confirm the generated ledgers report 7 source trust declarations, 1
+      global closure entry, 63 canonical/wrapper surfaces, 1062 canonical
+      caller-burden rows, 1117 wrapper caller-burden rows, and no `bus_shape`
+      category.
+- [x] Re-run `lake build ZiskFv.Compliance`.
+- [x] Re-run `trust/scripts/regenerate.sh`.
+- [x] Re-run `trust/scripts/check-all.sh`.
+- [x] Re-run `trust/scripts/check-all-semantic.sh`.
+- [x] Re-run `nix run .#aeneas-production-extract`.
+- [x] Re-run `trust/scripts/check-aeneas-generated-bridge-manifest.sh` after
+      extraction.
+
 ## Verification
 
 Required commands:

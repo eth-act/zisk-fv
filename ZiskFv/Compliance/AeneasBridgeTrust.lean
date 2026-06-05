@@ -1,14 +1,15 @@
 import ZiskFv.Compliance.OpEnvelope
 
 /-!
-# Explicit Aeneas bridge trust
+# Aeneas bridge audit predicate
 
 The main Lake proof does not yet import generated Aeneas Lean and derive every
 row-provenance/source-lane field from the extracted production lowerer.  The
 corresponding facts are carried by `OpEnvelope` constructors as ordinary proof
-fields.  This file records that gap as an explicit trust axiom, so the global
-theorem's axiom closure names the Aeneas bridge boundary instead of leaving it
-only in caller-burden ledgers.
+fields.  This file keeps the representative bridge predicate and
+extracted-shape constructors available for audit and generated-row-shape
+integration, but the former broad `aeneas_bridge_trust` axiom is retired from
+the global theorem boundary.
 -/
 
 namespace ZiskFv.Compliance
@@ -21,11 +22,11 @@ variable {m : Valid_Main FGL FGL} {r_main : Nat}
 
 /-- The Aeneas-backed row-lowering facts currently carried by `OpEnvelope`.
 
-This predicate makes the representative bridge facts that replaced the retired
-hand-written Lean transpiler visible in the global theorem's trusted surface.
-The existing wrappers still take their full proof-field parameter lists, so the
-caller-burden ledgers remain the mechanical inventory of fields that a later
-wrapper refactor can remove. -/
+This predicate makes representative bridge facts that replaced the retired
+hand-written Lean transpiler visible for local audit. The existing wrappers
+still take their full proof-field parameter lists, so the caller-burden ledgers
+remain the mechanical inventory of fields that generated/full-ensemble proof
+integration can later remove. -/
 def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
   | .beq .. =>
       m.is_external_op r_main = 1
