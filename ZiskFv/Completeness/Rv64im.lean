@@ -5626,6 +5626,115 @@ theorem rv64im_completeness_of_memory_refined_family_avoid_and_rows
       h_fence_rows
       h_opcode)
 
+/-- Stable name for the checked-in global RV64IM completeness theorem.
+
+This is the same proof surface as
+`rv64im_completeness_of_memory_refined_family_avoid_and_rows`: Sail raw words
+are first contained in the checked RV64IM supported-decode shape, then the
+production ZisK family obligations establish completeness outside explicit
+known gaps such as generic FENCE restrictions. -/
+theorem rv64im_global_completeness_avoiding_known_bugs
+    (iface : Rv.Interface)
+    (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
+    (h_r_avoid :
+      Rv.Interface.ShapeAvoidKnownBugs
+        iface
+        Rv64imShapes.RTypeRegisterShape)
+    (h_jalr_avoid :
+      Rv.Interface.ShapeAvoidKnownBugs
+        iface
+        Rv64imShapes.JalrRegisterImmediateShape)
+    (h_alu_avoid :
+      Rv.Interface.ShapeAvoidKnownBugs
+        iface
+        Rv64imShapes.ImmediateAluRegisterShape)
+    (h_memory_avoid :
+      Rv.Interface.ShapeAvoidKnownBugs
+        iface
+        Rv64imShapes.MemoryRegisterImmediateShape)
+    (h_shift_avoid :
+      Rv.Interface.ShapeAvoidKnownBugs
+        iface
+        Rv64imShapes.ShiftRegisterShape)
+    (h_branch_avoid :
+      Rv.Interface.ShapeAvoidKnownBugs
+        iface
+        Rv64imShapes.BranchRegisterImmediateShape)
+    (h_upper_avoid :
+      Rv.Interface.ShapeAvoidKnownBugs
+        iface
+        Rv64imShapes.UpperRegisterImmediateShape)
+    (h_jump_avoid :
+      Rv.Interface.ShapeAvoidKnownBugs
+        iface
+        Rv64imShapes.JumpRegisterImmediateShape)
+    (h_fence_avoid :
+      Rv.Interface.ShapeAvoidKnownBugs
+        iface
+        Rv64imShapes.SupportedFencePredSuccShape)
+    (h_lower : Rv.Interface.LoweringComplete iface)
+    (h_r_rows :
+      Rv.Interface.ShapeRowMaterializationComplete
+        iface
+        Rv64imShapes.RTypeRegisterShape)
+    (h_jalr_rows :
+      Rv.Interface.ShapeRowMaterializationComplete
+        iface
+        Rv64imShapes.JalrRegisterImmediateShape)
+    (h_alu_rows :
+      Rv.Interface.ShapeRowMaterializationComplete
+        iface
+        Rv64imShapes.ImmediateAluRegisterShape)
+    (h_memory_rows :
+      Rv.Interface.ShapeRowMaterializationComplete
+        iface
+        Rv64imShapes.MemoryRegisterImmediateShape)
+    (h_shift_rows :
+      Rv.Interface.ShapeRowMaterializationComplete
+        iface
+        Rv64imShapes.ShiftRegisterShape)
+    (h_branch_rows :
+      Rv.Interface.ShapeRowMaterializationComplete
+        iface
+        Rv64imShapes.BranchRegisterImmediateShape)
+    (h_upper_rows :
+      Rv.Interface.ShapeRowMaterializationComplete
+        iface
+        Rv64imShapes.UpperRegisterImmediateShape)
+    (h_jump_rows :
+      Rv.Interface.ShapeRowMaterializationComplete
+        iface
+        Rv64imShapes.JumpRegisterImmediateShape)
+    (h_fence_rows :
+      Rv.Interface.ShapeRowMaterializationComplete
+        iface
+        Rv64imShapes.SupportedFencePredSuccShape)
+    (h_opcode : Rv.Interface.OpcodeCoverageComplete iface) :
+    Rv64imCompletenessAvoidingKnownBugs iface :=
+  rv64im_completeness_of_memory_refined_family_avoid_and_rows
+    iface
+    h_sail_subset
+    h_r_avoid
+    h_jalr_avoid
+    h_alu_avoid
+    h_memory_avoid
+    h_shift_avoid
+    h_branch_avoid
+    h_upper_avoid
+    h_jump_avoid
+    h_fence_avoid
+    h_lower
+    h_r_rows
+    h_jalr_rows
+    h_alu_rows
+    h_memory_rows
+    h_shift_rows
+    h_branch_rows
+    h_upper_rows
+    h_jump_rows
+    h_fence_rows
+    h_opcode
+
 theorem rv64im_completeness_of_memory_refined_family_avoid_no_gap_sail_and_rows
     (iface : Rv.Interface)
     (h_sail_subset : SailExecutableContainedInMemoryRefinedSupportedDecode iface)

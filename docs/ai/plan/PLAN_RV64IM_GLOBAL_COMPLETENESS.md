@@ -153,12 +153,12 @@ the corresponding checked-in and generated builds have passed.
   generated coverage, verification, docs, commit.
 - [x] Fence: close supported-FENCE theorem surface while keeping generic FENCE
   restrictions as explicit known gaps.
-- [ ] State the checked-in global theorem in
+- [x] State the checked-in global theorem in
   `ZiskFv/Completeness/Rv64im.lean`, for example
   `rv64im_global_completeness_avoiding_known_bugs`.
-- [ ] State the generated production theorem in the generated
-  `RvCompleteness.lean` workspace.
-- [ ] Update this matrix after every completed family.
+- [x] State the generated production theorem in the generated
+  `RvCompleteness.lean` workspace as `rv_completeness_avoiding_known_bugs`.
+- [x] Update this matrix after every completed family.
 
 ## Verification Commands
 
