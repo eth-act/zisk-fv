@@ -171,9 +171,9 @@ pipeline.
    - main Lake proves `MainRowProvenance.fencePins_of_extracted_shape`;
    - main Lake exposes `OpEnvelope.fenceOfExtractedShape` and
      `OpEnvelope.aeneasBridgeTrust_fenceOfExtractedShape`, which construct the
-     FENCE envelope with derived activation/opcode pins and prove the FENCE
-     branch of `OpEnvelope.aeneasBridgeTrust` from extracted row-shape
-     equalities plus the remaining dynamic FENCE facts.
+     FENCE envelope with derived activation/opcode pins and prove the explicit
+     FENCE branch of `OpEnvelope.aeneasBridgeTrust` from extracted row-shape
+     equalities.
 
    The next slice enters the Binary provider-route group for ADD, ADDI, and
    ADDW:
@@ -400,6 +400,13 @@ pipeline.
 
    The expansion should be tracked by shrinking caller-burden categories, not by
    local proof churn alone.
+
+   After the opcode-family expansion, the local
+   `OpEnvelope.aeneasBridgeTrust` predicate no longer has a wildcard
+   `| _ => True` branch. FENCE is explicit, and the no-memory `auipc_x0` and
+   `jal_x0` arms are explicitly documented as carrying no bridge payload. This
+   is a narrowing of the bridge predicate, not retirement of the global
+   `ZiskFv.Compliance.aeneas_bridge_trust` axiom.
 
 6. **Retire the temporary trust axiom.**
 

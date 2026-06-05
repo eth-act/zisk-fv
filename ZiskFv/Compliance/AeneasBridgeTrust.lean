@@ -69,6 +69,9 @@ def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
       ∧ m.set_pc r_main = 0
       ∧ m.store_pc r_main = 0
       ∧ m.jmp_offset1 r_main = 4
+  | .fence .. =>
+      m.is_external_op r_main = 0
+      ∧ m.op r_main = ZiskFv.Trusted.OP_FLAG
   | .lui _ imm _ _ _ _ _ provenance _ _ _ _ _ =>
       Nonempty (MainRowProvenance m r_main)
       ∧ MainRowProvenance.LuiRowMode provenance
@@ -81,11 +84,15 @@ def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
       ∧ (m.jmp_offset2 r_main).val
           = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
       ∧ (m.pc r_main).val = auipc_input.PC.toNat
+  | .auipc_x0 .. =>
+      True
   | .jal jal_input _ _ _ _ _ _ _ _ provenance _ _ _ _ _ _ _ _ _ =>
       Nonempty (MainRowProvenance m r_main)
       ∧ MainRowProvenance.JalRowMode provenance
       ∧ m.jmp_offset2 r_main = 4
       ∧ (m.pc r_main).val = jal_input.PC.toNat
+  | .jal_x0 .. =>
+      True
   | .jalr jalr_input _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
       m.flag r_main = 0
       ∧ m.m32 r_main = 0
@@ -467,7 +474,6 @@ def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
       ∧ m.store_pc r_main = 0
       ∧ m.jmp_offset1 r_main = 4
       ∧ m.jmp_offset2 r_main = 4
-  | _ => True
 
 /-- Construct the BEQ branch envelope while deriving its branch row-shape facts
 from extracted-row equalities. -/
@@ -1143,7 +1149,8 @@ theorem OpEnvelope.aeneasBridgeTrust_fenceOfExtractedShape
       fence_input fm pred succ rs rd exec_row provenance h_op h_internal
       promises).aeneasBridgeTrust := by
   unfold OpEnvelope.fenceOfExtractedShape OpEnvelope.aeneasBridgeTrust
-  trivial
+  let pins := MainRowProvenance.fencePins_of_extracted_shape provenance h_op h_internal
+  exact ⟨pins.main_active, pins.main_op⟩
 
 /-- Transport the Main AIR `store_pc = 0` fact from extracted row-shape
 provenance to the Clean row consumed by store wrappers. -/

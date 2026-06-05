@@ -312,6 +312,25 @@ W forms use `m32 = 1`.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Final Hardening: Exhaustive Bridge Predicate
+
+Audit `OpEnvelope.aeneasBridgeTrust` after the opcode-family slices and remove
+the wildcard branch so constructor coverage is checked by Lean. This narrows
+the local bridge predicate but does not remove the global
+`ZiskFv.Compliance.aeneas_bridge_trust` axiom, because generated Aeneas evidence
+is still staged outside main Lake.
+
+- [x] Add an explicit FENCE bridge-predicate case using derived activation/opcode pins.
+- [x] Add explicit `auipc_x0` and `jal_x0` cases documenting that those no-memory arms still carry no bridge payload.
+- [x] Remove the wildcard `| _ => True` branch from `OpEnvelope.aeneasBridgeTrust`.
+- [x] Run focused `lake build ZiskFv.Compliance.AeneasBridgeTrust`.
+- [x] Update extraction/trust docs to describe the narrowed predicate.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Verification
 
 Required commands:
