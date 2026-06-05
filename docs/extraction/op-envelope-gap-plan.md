@@ -286,11 +286,11 @@ pipeline.
      immediate;
    - main Lake exposes store provenance helpers for `OP_COPYB` pins,
      `ind_width`, and `store_pc = 0`;
-  - main Lake exposes `OpEnvelope.sbOfExtractedShape`,
-    `OpEnvelope.shOfExtractedShape`, `OpEnvelope.swOfExtractedShape`, and
-    `OpEnvelope.sdOfExtractedShape`, whose bridge theorems prove the current
-    store payload from derived width plus the existing store-value lane
-    witnesses.
+   - main Lake exposes `OpEnvelope.sbOfExtractedShape`,
+     `OpEnvelope.shOfExtractedShape`, `OpEnvelope.swOfExtractedShape`, and
+     `OpEnvelope.sdOfExtractedShape`, whose bridge theorems prove the current
+     store payload from derived width plus the existing store-value lane
+     witnesses.
 
    LD, LBU, LHU, and LWU cover the zero-extension Main/Mem load route:
 
@@ -338,6 +338,23 @@ pipeline.
      current branch predicates from derived opcode/control/fall-through facts.
      Dynamic branch immediates remain outside this slice because branch
      `OpEnvelope` arms do not yet carry a Main-row provenance field.
+
+   MUL, MULH, MULHU, MULHSU, and MULW start the ArithMul provider route:
+
+   - the staged Aeneas harness proves that the MUL family lowers to external
+     ArithMul rows with register/register source routing, register destination
+     store, no PC controls, and fall-through jump offsets;
+   - the checks record the concrete opcode split: `OP_MUL`, `OP_MULH`,
+     `OP_MULUH`, `OP_MULSUH`, and `OP_MUL_W`, with `m32 = true` only for
+     MULW;
+   - main Lake exposes MUL-family Main pin/control helpers plus
+     `OpEnvelope.mulOfExtractedShape`, `OpEnvelope.mulhOfExtractedShape`,
+     `OpEnvelope.mulhuOfExtractedShape`,
+     `OpEnvelope.mulhsuOfExtractedShape`, and
+     `OpEnvelope.mulwOfExtractedShape`. Their bridge theorems prove the
+     current ArithMul predicates from derived Main facts while provider-table,
+     operation-bus, memory, range, and operand-lane facts remain explicit
+     dynamic ArithMul obligations.
 
 4. **Prove constructor-specific envelope evidence lemmas.**
 

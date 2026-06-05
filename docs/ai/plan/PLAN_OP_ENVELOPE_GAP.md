@@ -279,6 +279,22 @@ offset side that distinguishes normal branches from negated branches.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: MUL/MULH/MULHU/MULHSU/MULW
+
+Enter the Mul/Div/Rem tail group with the ArithMul provider route. These arms
+share external ArithMul Main-row routing, but select different opcode literals
+and use `m32 = 1` only for MULW.
+
+- [x] Add main-Lake helpers deriving MUL-family Main pins and row-control facts from extracted-row constants.
+- [x] Extend `aeneasBridgeTrust` and add MUL, MULH, MULHU, MULHSU, and MULW `OpEnvelope` constructors/bridge theorems using those derived Main facts.
+- [x] Add staged Aeneas generated checks for MUL-family row shapes.
+- [x] Update extraction/trust docs to describe the MUL-family slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Verification
 
 Required commands:

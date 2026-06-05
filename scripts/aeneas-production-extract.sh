@@ -849,6 +849,30 @@ def branchShapeEvidenceMatches
       && row.jmpOffset2 == jmpOffset2
   | none => false
 
+def mulShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract)
+    (op : _root_.Nat)
+    (m32 : _root_.Bool) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == op
+      && row.isExternalOp == true
+      && row.m32 == m32
+      && row.aSrc == 6
+      && row.aUseSpImm1 == 0
+      && row.aOffsetImm0 == 5
+      && row.bSrc == 6
+      && row.bUseSpImm1 == 0
+      && row.bOffsetImm0 == 7
+      && row.store == 3
+      && row.storeOffset == 3
+      && row.storePc == false
+      && row.setPc == false
+      && row.indWidth == 0
+      && row.jmpOffset1 == 4
+      && row.jmpOffset2 == 4
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -1347,6 +1371,51 @@ example :
 
 example :
     branchShapeEvidenceMatches (aeneas_extract.extract_bgeu_from_inst sampleInst) 6 4 4096 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_mul_from_inst sampleInst)
+      (proofRowShape 16 180 6 0 5 6 0 7 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    mulShapeEvidenceMatches (aeneas_extract.extract_mul_from_inst sampleInst) 180 false = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_mulh_from_inst sampleInst)
+      (proofRowShape 16 181 6 0 5 6 0 7 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    mulShapeEvidenceMatches (aeneas_extract.extract_mulh_from_inst sampleInst) 181 false = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_mulhu_from_inst sampleInst)
+      (proofRowShape 16 177 6 0 5 6 0 7 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    mulShapeEvidenceMatches (aeneas_extract.extract_mulhu_from_inst sampleInst) 177 false = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_mulhsu_from_inst sampleInst)
+      (proofRowShape 16 179 6 0 5 6 0 7 3 3 false false 0 4 4 true false) = true := by
+  native_decide
+
+example :
+    mulShapeEvidenceMatches (aeneas_extract.extract_mulhsu_from_inst sampleInst) 179 false = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_mulw_from_inst sampleInst)
+      (proofRowShape 16 182 6 0 5 6 0 7 3 3 false false 0 4 4 true true) = true := by
+  native_decide
+
+example :
+    mulShapeEvidenceMatches (aeneas_extract.extract_mulw_from_inst sampleInst) 182 true = true := by
   native_decide
 
 example :

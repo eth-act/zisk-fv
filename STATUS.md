@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: BEQ/BNE/BLT/BGE/BLTU/BGEU branch slice complete.
+Current focus: MUL/MULH/MULHU/MULHSU/MULW ArithMul slice complete.
 Blocking: none.
-Next step: continue to the next planned opcode group.
+Next step: enter the next remaining OpEnvelope gap slice.
 
 Recent completed slices:
 - LUI/AUIPC/JAL/JALR/FENCE row-mode/control-pin slices are committed.
@@ -11,24 +11,24 @@ Recent completed slices:
 - Store and zero-extension load slices are committed.
 - Signed LB/LH/LW load slice is committed as
   `32360574 Add signed load bridge slice`.
+- Branch slice is committed as `db9f0f2f Add branch bridge slice`.
 
 Current slice notes:
-- Branches lower to external EQ/LT/LTU opcodes with `m32 = 0`,
-  `set_pc = 0`, and `store_pc = 0`.
-- BEQ/BLT/BLTU use `jmp_offset2 = 4`; BNE/BGE/BGEU are negated and use
-  `jmp_offset1 = 4`.
-- Added branch provenance helpers for EQ pins, branch controls, and
-  fall-through jump offsets.
-- Added `aeneasBridgeTrust` branch cases plus extracted-shape constructors and
-  bridge theorems for all six branch opcodes.
-- Added staged Aeneas branch row-shape checks; production extraction confirmed
-  the expected row snapshots.
-- Updated extraction/trust docs for the branch route.
-- `lake build ZiskFv.Compliance` passed for this slice.
-- `trust/scripts/regenerate.sh` passed; generated trust diff is the expected
-  `aeneas_bridge_trust` line-number shift.
-- `trust/scripts/check-all.sh` passed.
+- MUL/MULH/MULHU/MULHSU lower to external ArithMul opcodes with `m32 = 0`.
+- MULW lowers to external `OP_MUL_W` with `m32 = 1`.
+- All MUL-family rows should have register/register sources, register store,
+  `store_pc = 0`, `set_pc = 0`, and fall-through `jmp_offset1/2 = 4`.
+- Added MUL-family provenance helpers for opcode pins and row controls.
+- Added `aeneasBridgeTrust` MUL-family cases plus extracted-shape constructors
+  and bridge theorems.
+- Added staged extraction checks for MUL-family row shape, external routing,
+  register/register sources, register store, no PC controls, fall-through
+  jumps, and MULW-only `m32`.
+- Updated extraction docs for the MUL-family slice.
+- `nix run .#aeneas-production-extract` passed for the new staged checks.
+- `lake build ZiskFv.Compliance` passed.
+- `trust/scripts/regenerate.sh` passed.
+- `trust/scripts/check-all.sh` passed; generated trust diff is only the
+  expected `aeneas_bridge_trust` line-number shift.
 - `trust/scripts/check-all-semantic.sh` passed.
-- `nix run .#aeneas-production-extract` passed: 68 starts, 201 declarations.
-- Dynamic branch immediates remain outside this slice because branch
-  `OpEnvelope` arms do not carry a Main-row provenance field.
+- Final `nix run .#aeneas-production-extract` passed.
