@@ -461,6 +461,37 @@ theorem srawPins_of_extracted_shape
     main_op := by
       simpa [natF, ExtractedConst.opSraW, ZiskFv.Trusted.OP_SRA_W, h_op] using p.op_eq }
 
+/-- Build internal `OP_COPYB` activation/opcode pins from extracted
+row-shape constants. This is the Main-only route for integer stores and
+zero-extension loads. -/
+theorem copybPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opCopyB)
+    (h_internal : p.extractedRow.isExternalOp = false) :
+    MainRowPins main r_main 0 ZiskFv.Trusted.OP_COPYB :=
+  { main_active := by
+      simpa [boolF, h_internal] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opCopyB, ZiskFv.Trusted.OP_COPYB, h_op] using p.op_eq }
+
+/-- Derive the Main `ind_width` column from extracted row-shape constants. -/
+theorem indWidth_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main) {width : Nat}
+    (h_width : p.extractedRow.indWidth = width) :
+    main.ind_width r_main = natF width := by
+  simpa [natF, h_width] using p.ind_width_eq
+
+/-- Derive the Main `store_pc = 0` control pin from extracted row-shape
+constants. -/
+theorem storePcZero_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_store_pc : p.extractedRow.storePc = false) :
+    main.store_pc r_main = 0 := by
+  simpa [boolF, h_store_pc] using p.store_pc_eq
+
 theorem pins
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
     (p : MainRowProvenance main r_main) :

@@ -277,6 +277,21 @@ pipeline.
    - the bridge theorems connect low-32-bit `r1_val` to `rowA32` and
      `shamt.toNat` to `rowShiftAmount32`.
 
+   SB, SH, SW, and SD start the Main-only store family:
+
+   - the staged Aeneas harness proves that each store lowers to internal
+     `OP_COPYB` with register/register address/value sources, indirect store
+     mode, `store_pc = false`, and width `1`, `2`, `4`, or `8`; the concrete
+     full-row checks also record that `store_offset` carries the sample
+     immediate;
+   - main Lake exposes store provenance helpers for `OP_COPYB` pins,
+     `ind_width`, and `store_pc = 0`;
+   - main Lake exposes `OpEnvelope.sbOfExtractedShape`,
+     `OpEnvelope.shOfExtractedShape`, `OpEnvelope.swOfExtractedShape`, and
+     `OpEnvelope.sdOfExtractedShape`, whose bridge theorems prove the current
+     store payload from derived width plus the existing store-value lane
+     witnesses.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

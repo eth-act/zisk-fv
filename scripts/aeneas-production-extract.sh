@@ -755,6 +755,29 @@ def sraiwShapeEvidenceMatches
       && row.store == 3
   | none => false
 
+def storeShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract)
+    (width : _root_.Nat) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 1
+      && row.isExternalOp == false
+      && row.m32 == false
+      && row.aSrc == 6
+      && row.aUseSpImm1 == 0
+      && row.aOffsetImm0 == 5
+      && row.bSrc == 6
+      && row.bUseSpImm1 == 0
+      && row.bOffsetImm0 == 7
+      && row.store == 2
+      && row.storeOffset == 4096
+      && row.storePc == false
+      && row.setPc == false
+      && row.indWidth == width
+      && row.jmpOffset1 == 4
+      && row.jmpOffset2 == 4
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -1100,6 +1123,42 @@ example :
 
 example :
     sraiwShapeEvidenceMatches (aeneas_extract.extract_sraiw_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_sb_from_inst sampleInst)
+      (proofRowShape 16 1 6 0 5 6 0 7 2 4096 false false 1 4 4 false false) = true := by
+  native_decide
+
+example :
+    storeShapeEvidenceMatches (aeneas_extract.extract_sb_from_inst sampleInst) 1 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_sh_from_inst sampleInst)
+      (proofRowShape 16 1 6 0 5 6 0 7 2 4096 false false 2 4 4 false false) = true := by
+  native_decide
+
+example :
+    storeShapeEvidenceMatches (aeneas_extract.extract_sh_from_inst sampleInst) 2 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_sw_from_inst sampleInst)
+      (proofRowShape 16 1 6 0 5 6 0 7 2 4096 false false 4 4 4 false false) = true := by
+  native_decide
+
+example :
+    storeShapeEvidenceMatches (aeneas_extract.extract_sw_from_inst sampleInst) 4 = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_sd_from_inst sampleInst)
+      (proofRowShape 16 1 6 0 5 6 0 7 2 4096 false false 8 4 4 false false) = true := by
+  native_decide
+
+example :
+    storeShapeEvidenceMatches (aeneas_extract.extract_sd_from_inst sampleInst) 8 = true := by
   native_decide
 
 example :

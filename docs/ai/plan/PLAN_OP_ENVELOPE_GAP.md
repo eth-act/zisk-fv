@@ -214,15 +214,15 @@ provider slices: they use internal `OP_COPYB`, carry store width/`store_pc`
 facts, and include Clean Main-row, memory-bus, address, store-value, and
 byte-lane witnesses.
 
-- [ ] Add main-Lake helpers deriving store `OP_COPYB` pins and width/control facts from extracted-row constants.
-- [ ] Extend `aeneasBridgeTrust` and add SB, SH, SW, and SD `OpEnvelope` constructors/bridge theorems.
-- [ ] Add staged Aeneas generated checks for SB, SH, SW, and SD store row shapes.
-- [ ] Update extraction/trust docs to describe the store-family slice.
-- [ ] Run `lake build ZiskFv.Compliance`.
-- [ ] Run `trust/scripts/regenerate.sh`.
-- [ ] Run `trust/scripts/check-all.sh`.
-- [ ] Run `trust/scripts/check-all-semantic.sh`.
-- [ ] Run `nix run .#aeneas-production-extract`.
+- [x] Add main-Lake helpers deriving store `OP_COPYB` pins and width/control facts from extracted-row constants.
+- [x] Extend `aeneasBridgeTrust` and add SB, SH, SW, and SD `OpEnvelope` constructors/bridge theorems.
+- [x] Add staged Aeneas generated checks for SB, SH, SW, and SD store row shapes.
+- [x] Update extraction/trust docs to describe the store-family slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
 
 ## Scope
 
