@@ -119,7 +119,7 @@ the corresponding checked-in and generated builds have passed.
 | Loads | LB LBU LH LHU LW LWU LD | done | done | done | done | none |
 | Stores | SB SH SW SD | done | done | done | done | none |
 | Upper/jump | LUI AUIPC JAL JALR | done | done | done | done | none |
-| Fence | FENCE | partial | partial | pending | partial | generic FENCE restrictions |
+| Fence | FENCE | done | done | done | done | generic FENCE restrictions |
 
 ## Implementation Checklist
 
@@ -151,7 +151,7 @@ the corresponding checked-in and generated builds have passed.
   coverage, verification, docs, commit.
 - [x] Upper/jump: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
-- [ ] Fence: close supported-FENCE theorem surface while keeping generic FENCE
+- [x] Fence: close supported-FENCE theorem surface while keeping generic FENCE
   restrictions as explicit known gaps.
 - [ ] State the checked-in global theorem in
   `ZiskFv/Completeness/Rv64im.lean`, for example

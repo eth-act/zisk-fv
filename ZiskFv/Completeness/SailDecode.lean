@@ -212,6 +212,14 @@ def SailUpperJumpInstruction (inst : instruction) : Prop :=
     inst = instruction.JAL (imm, rd)) ∨
   (∃ imm rs1 rd, inst = instruction.JALR (imm, rs1, rd))
 
+/-- Current production-ZisK FENCE subset: Sail generic FENCE with `fm = 0`,
+`rs1 = x0`, and `rd = x0`; only pred/succ vary. -/
+def SailSupportedFenceInstruction (inst : instruction) : Prop :=
+  ∃ pred succ,
+    inst =
+      instruction.FENCE
+        (0#4, pred, succ, regidx.Regidx 0#5, regidx.Regidx 0#5)
+
 /-- Compatibility name for the already-closed ADD/SUB pilot surface. -/
 def SailRegisterPilotInstruction (inst : instruction) : Prop :=
   (∃ rs2 rs1 rd, inst = instruction.RTYPE (rs2, rs1, rd, rop.ADD)) ∨
@@ -229,7 +237,8 @@ def SailRv64imInstruction (inst : instruction) : Prop :=
   SailBranchInstruction inst ∨
   SailLoadInstruction inst ∨
   SailStoreInstruction inst ∨
-  SailUpperJumpInstruction inst
+  SailUpperJumpInstruction inst ∨
+  SailSupportedFenceInstruction inst
 
 def SailPureRv64imInstruction (inst : instruction) : Prop :=
   SailRegisterAluInstruction inst ∨
@@ -1027,6 +1036,49 @@ theorem sail_jalr_concat_eq_rawIType
   simpa [LeanRV64D.Functions.encdec_reg_forwards, zero_extend,
     Sail.BitVec.zeroExtend, BitVec.zeroExtend, regidx_to_fin] using
     sail_itype_bitvec_concat_eq_rawIType imm rs1 0b000#3 rd 0b1100111#7
+
+theorem sail_fence_pred_component_eq (pred : BitVec 4) :
+    BitVec.ofNat 32 (pred.toNat <<< 24) =
+      (0#4 ++ (pred ++ 0#24) : BitVec 32) := by
+  native_decide +revert
+
+theorem sail_fence_succ_component_eq (succ : BitVec 4) :
+    BitVec.ofNat 32 (succ.toNat <<< 20) =
+      (0#8 ++ (succ ++ 0#20) : BitVec 32) := by
+  native_decide +revert
+
+theorem sail_fence_opcode_component_eq :
+    BitVec.ofNat 32 0x0f = (0#25 ++ 0b0001111#7 : BitVec 32) := by
+  native_decide
+
+theorem sail_fence_bitvec_concat_eq_rawSupportedFence
+    (pred succ : BitVec 4) :
+    (((0#4 ++
+      (pred ++
+        (succ ++
+          (0#5 ++
+            (0#3 ++
+              (0#5 ++ 0b0001111#7)))))) : RawInstruction)) =
+      Rv64imShapes.rawSupportedFence pred.toNat succ.toNat := by
+  dsimp [Rv64imShapes.rawSupportedFence, Rv64imShapes.rawOfNat32]
+  rw [BitVec.ofNat_or, BitVec.ofNat_or]
+  rw [sail_fence_pred_component_eq, sail_fence_succ_component_eq,
+    sail_fence_opcode_component_eq]
+  bv_decide
+
+theorem sail_fence_concat_eq_rawSupportedFence
+    (pred succ : BitVec 4) :
+    ((0#4 ++
+      (pred ++
+        (succ ++
+          (LeanRV64D.Functions.encdec_reg_forwards (regidx.Regidx 0#5) ++
+            (0b000#3 ++
+              (LeanRV64D.Functions.encdec_reg_forwards (regidx.Regidx 0#5) ++
+                0b0001111#7)))))) : RawInstruction) =
+      Rv64imShapes.rawSupportedFence pred.toNat succ.toNat := by
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend] using
+    sail_fence_bitvec_concat_eq_rawSupportedFence pred succ
 
 theorem sail_jal_align_toNat_mod_two
     (imm : BitVec 21)
@@ -2636,6 +2688,26 @@ theorem sail_encode_jalr_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
           0x67)
   rw [sail_jalr_concat_eq_rawIType imm rs1 rd]
 
+theorem sail_encode_supported_fence_eq_rawSupportedFence
+    (pred succ : BitVec 4) :
+    LeanRV64D.Functions.encdec_forwards
+        (instruction.FENCE
+          (0#4, pred, succ, regidx.Regidx 0#5, regidx.Regidx 0#5)) =
+      pure
+        (Rv64imShapes.rawSupportedFence pred.toNat succ.toNat) := by
+  unfold LeanRV64D.Functions.encdec_forwards
+  change
+    pure
+        (((0#4 ++
+          (pred ++
+            (succ ++
+              (LeanRV64D.Functions.encdec_reg_forwards (regidx.Regidx 0#5) ++
+                (0b000#3 ++
+                  (LeanRV64D.Functions.encdec_reg_forwards (regidx.Regidx 0#5) ++
+                    0b0001111#7)))))) : RawInstruction)) =
+      pure (Rv64imShapes.rawSupportedFence pred.toNat succ.toNat)
+  rw [sail_fence_concat_eq_rawSupportedFence pred succ]
+
 theorem sail_encode_jal_eq_rawJType
     (imm : BitVec 21) (rd : regidx)
     (h_align : (Sail.BitVec.extractLsb imm 0 0 == (0#1 : BitVec 1)) = true) :
@@ -3153,6 +3225,23 @@ theorem sail_encode_rawIType_contained_in_jalr_shape_in
     simpa using h_encode.symm
   subst raw
   exact ⟨rd, rs1, imm, h_rd, h_rs1, h_imm, rfl⟩
+
+theorem sail_encode_rawSupportedFence_contained_in_supported_fence_shape_in
+    {raw : RawInstruction} {inst : instruction} {state : SailState}
+    {pred succ : Nat}
+    (h_encode : SailEncodesToIn state inst raw)
+    (h_encode_op :
+      SailEncodesToIn state inst
+        (Rv64imShapes.rawSupportedFence pred succ))
+    (h_pred : pred ∈ List.range 16)
+    (h_succ : succ ∈ List.range 16) :
+    Rv64imShapes.SupportedFencePredSuccShape raw := by
+  have h_raw : raw = Rv64imShapes.rawSupportedFence pred succ := by
+    dsimp [SailEncodesToIn, SailReturns] at h_encode h_encode_op
+    rw [h_encode_op] at h_encode
+    simpa using h_encode.symm
+  subst raw
+  exact ⟨pred, succ, h_pred, h_succ, rfl⟩
 
 theorem sail_encode_shiftI_contained_in_shift_shape_in
     {raw : RawInstruction} {inst : instruction} {state : SailState}
@@ -4036,6 +4125,23 @@ theorem sail_upper_jump_executable_contained_in_supported_decode :
         (List.mem_range.mpr (regidx_to_fin rs1).isLt)
         imm.isLt)
 
+theorem sail_supported_fence_executable_contained_in_supported_decode :
+    ∀ state raw inst,
+      SailDecodesToIn state raw inst →
+      SailEncodesToIn state inst raw →
+      SailSupportedFenceInstruction inst →
+      Rv64imShapes.SupportedDecodeShape raw := by
+  intro state raw inst _h_decode h_encode h_inst
+  rcases h_inst with ⟨pred, succ, h_eq⟩
+  rw [h_eq] at h_encode
+  exact .inr (.inr (.inr (.inr (.inr (.inr
+    (sail_encode_rawSupportedFence_contained_in_supported_fence_shape_in
+      h_encode
+      (sail_encodes_to_in_of_pure
+        (sail_encode_supported_fence_eq_rawSupportedFence pred succ) state)
+      (List.mem_range.mpr pred.isLt)
+      (List.mem_range.mpr succ.isLt)))))))
+
 theorem sail_rv64im_executable_contained_in_supported_decode :
     ∀ raw,
       SailRv64imExecutableRaw raw →
@@ -4102,11 +4208,14 @@ theorem sail_rv64im_executable_contained_in_supported_decode_in :
       (Rv64imShapes.load_register_immediate_shape_subset
         (sail_load_executable_contained_in
           state raw inst h_decode h_encode h_load)))
-  rcases h_tail with h_store | h_upper_jump
+  rcases h_tail with h_store | h_tail
   · exact .inr (.inr (.inr (.inl
       (sail_store_executable_contained_in
         state raw inst h_decode h_encode h_store))))
+  rcases h_tail with h_upper_jump | h_fence
   · exact sail_upper_jump_executable_contained_in_supported_decode
       state raw inst h_decode h_encode h_upper_jump
+  · exact sail_supported_fence_executable_contained_in_supported_decode
+      state raw inst h_decode h_encode h_fence
 
 end ZiskFv.Completeness.SailDecode
