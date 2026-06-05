@@ -192,6 +192,21 @@ the same shift provider component but select the W opcodes and bridge
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: SLLIW/SRLIW/SRAIW
+
+Finish the BinaryExtension W-shift group with the 32-bit immediate shift forms.
+These reuse the W opcode pins and shift provider component from SLLW/SRLW/SRAW,
+but bridge `ShiftWImmPromises` and immediate shift amounts.
+
+- [x] Extend `aeneasBridgeTrust` and add SLLIW, SRLIW, and SRAIW `OpEnvelope` constructors/bridge theorems.
+- [x] Add staged Aeneas generated checks for SLLIW, SRLIW, and SRAIW external shift-provider row shapes.
+- [x] Update extraction/trust docs to describe the immediate W shift slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

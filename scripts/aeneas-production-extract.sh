@@ -719,6 +719,42 @@ def srawShapeEvidenceMatches
       && row.store == 3
   | none => false
 
+def slliwShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 36
+      && row.isExternalOp == true
+      && row.m32 == true
+      && row.aSrc == 6
+      && row.bSrc == 2
+      && row.store == 3
+  | none => false
+
+def srliwShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 37
+      && row.isExternalOp == true
+      && row.m32 == true
+      && row.aSrc == 6
+      && row.bSrc == 2
+      && row.store == 3
+  | none => false
+
+def sraiwShapeEvidenceMatches
+    (result : Result aeneas_extract.ZiskInstExtract) : _root_.Bool :=
+  match proofRowShapeProjection result with
+  | some row =>
+      row.op == 38
+      && row.isExternalOp == true
+      && row.m32 == true
+      && row.aSrc == 6
+      && row.bSrc == 2
+      && row.store == 3
+  | none => false
+
 def rawFenceAccepted (result : Result _root_.Bool) : _root_.Bool :=
   match result with
   | ok accepted => accepted
@@ -1037,6 +1073,33 @@ example :
 
 example :
     srawShapeEvidenceMatches (aeneas_extract.extract_sraw_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_slliw_from_inst sampleInst)
+      (proofRowShape 16 36 6 0 5 2 0 4096 3 3 false false 0 4 4 true true) = true := by
+  native_decide
+
+example :
+    slliwShapeEvidenceMatches (aeneas_extract.extract_slliw_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_srliw_from_inst sampleInst)
+      (proofRowShape 16 37 6 0 5 2 0 4096 3 3 false false 0 4 4 true true) = true := by
+  native_decide
+
+example :
+    srliwShapeEvidenceMatches (aeneas_extract.extract_srliw_from_inst sampleInst) = true := by
+  native_decide
+
+example :
+    rowShapeMatches (aeneas_extract.extract_sraiw_from_inst sampleInst)
+      (proofRowShape 16 38 6 0 5 2 0 4096 3 3 false false 0 4 4 true true) = true := by
+  native_decide
+
+example :
+    sraiwShapeEvidenceMatches (aeneas_extract.extract_sraiw_from_inst sampleInst) = true := by
   native_decide
 
 example :

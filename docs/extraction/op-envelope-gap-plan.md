@@ -267,6 +267,16 @@ pipeline.
      whose bridge theorems connect low-32-bit `r1_val` to `rowA32` and
      `r2_val % 32` to `rowShiftAmount32`.
 
+   SLLIW, SRLIW, and SRAIW finish the BinaryExtension W-shift group:
+
+   - the staged Aeneas harness proves that the immediate W shift forms use the
+     same external W opcodes with immediate-source row shape;
+   - main Lake reuses the W opcode pin helpers and exposes
+     `OpEnvelope.slliwOfExtractedShape`, `OpEnvelope.srliwOfExtractedShape`,
+     and `OpEnvelope.sraiwOfExtractedShape`;
+   - the bridge theorems connect low-32-bit `r1_val` to `rowA32` and
+     `shamt.toNat` to `rowShiftAmount32`.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:
