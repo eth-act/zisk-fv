@@ -1,7 +1,8 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: SB/SH/SW/SD store-family extracted-shape slice is implemented and verified; preparing commit.
+Current focus: entering LD/LBU/LHU/LWU zero-extension load extracted-shape slice.
 Blocking: none.
-Next step: review the diff and commit the completed store slice.
+Next step: add load bridge predicates/constructors using existing `OP_COPYB`,
+width, and Clean `store_pc` helpers.
 
 Recent completed slices:
 - LUI/AUIPC/JAL/JALR/FENCE row-mode/control-pin slices are committed.
@@ -24,3 +25,9 @@ Verification passed:
 - `trust/scripts/check-all.sh`
 - `trust/scripts/check-all-semantic.sh`
 - `nix run .#aeneas-production-extract`
+
+Current slice notes:
+- Aeneas probe showed LD/LBU/LHU/LWU lower to internal `OP_COPYB` with
+  `ind_width` 8/1/2/4.
+- Signed LB/LH/LW lower to external sign-extension opcodes 39/40/41 and are a
+  separate provider slice.

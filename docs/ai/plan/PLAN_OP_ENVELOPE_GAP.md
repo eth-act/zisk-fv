@@ -228,6 +228,23 @@ byte-lane witnesses.
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.
 
+## Next Slice: LD/LBU/LHU/LWU
+
+Continue through the Main/Mem load route with LD plus zero-extension loads.
+These share the internal `OP_COPYB` Main row with stores, but use the load
+memory-bus witness path and widths `8`, `1`, `2`, and `4`. Signed LB/LH/LW use
+external BinaryExtension sign-extension opcodes and remain a separate provider
+slice.
+
+- [ ] Extend `aeneasBridgeTrust` and add LD, LBU, LHU, and LWU `OpEnvelope` constructors/bridge theorems using store-slice `OP_COPYB`, width, and Clean `store_pc` helpers.
+- [ ] Add staged Aeneas generated checks for LD, LBU, LHU, and LWU load row shapes.
+- [ ] Update extraction/trust docs to describe the zero-extension load slice.
+- [ ] Run `lake build ZiskFv.Compliance`.
+- [ ] Run `trust/scripts/regenerate.sh`.
+- [ ] Run `trust/scripts/check-all.sh`.
+- [ ] Run `trust/scripts/check-all-semantic.sh`.
+- [ ] Run `nix run .#aeneas-production-extract`.
+
 ## Verification
 
 Required commands:
