@@ -231,6 +231,18 @@ pipeline.
    - SLTI and SLTIU additionally derive the `m.m32 r_main = 0` envelope field
      from extracted `m32 = false` row-shape provenance.
 
+   The BinaryExtension shift provider-route group begins with SLL, SRL, and
+   SRA:
+
+   - the staged Aeneas harness proves that SLL, SRL, and SRA lower to external
+     `OP_SLL`, `OP_SRL`, and `OP_SRA` rows;
+   - main Lake proves `MainRowProvenance.sllPins_of_extracted_shape`,
+     `MainRowProvenance.srlPins_of_extracted_shape`, and
+     `MainRowProvenance.sraPins_of_extracted_shape`;
+   - main Lake exposes `OpEnvelope.sllOfExtractedShape`,
+     `OpEnvelope.srlOfExtractedShape`, and `OpEnvelope.sraOfExtractedShape`
+     plus matching bridge theorems for `rowA64` and `rowShiftAmount`.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

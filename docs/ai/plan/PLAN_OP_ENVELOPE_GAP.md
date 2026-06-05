@@ -143,6 +143,23 @@ equalities; SLTI/SLTIU additionally consume the Main `m32 = 0` row-control pin.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: SLL/SRL/SRA
+
+Enter the BinaryExtension shift provider-route group with the R-type 64-bit
+shift forms. These use the shift static lookup component and bridge
+`rowA64` plus `rowShiftAmount`, so they are a separate provider family from
+the Binary arithmetic/logical operations.
+
+- [x] Add main-Lake helpers deriving SLL, SRL, and SRA `MainRowPins` from extracted-row constants.
+- [x] Extend `aeneasBridgeTrust` and add SLL, SRL, and SRA `OpEnvelope` constructors/bridge theorems.
+- [x] Add staged Aeneas generated checks for SLL, SRL, and SRA external shift-provider row shapes.
+- [x] Update extraction/trust docs to describe the R-type shift slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

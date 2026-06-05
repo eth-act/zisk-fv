@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: ANDI/ORI/XORI/SLTI/SLTIU Binary immediate provider-route slice verified; preparing commit.
+Current focus: SLL/SRL/SRA BinaryExtension provider-route slice verified; preparing commit.
 Blocking: none.
-Next step: commit the ANDI/ORI/XORI/SLTI/SLTIU slice, then continue with BinaryExtension shifts.
+Next step: commit the SLL/SRL/SRA slice, then continue with SLLI/SRLI/SRAI.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -102,4 +102,15 @@ Notes:
 - `trust/scripts/check-all.sh` passed for the ANDI/ORI/XORI/SLTI/SLTIU slice.
 - `trust/scripts/check-all-semantic.sh` passed for the ANDI/ORI/XORI/SLTI/SLTIU slice.
 - `nix run .#aeneas-production-extract` passed for the ANDI/ORI/XORI/SLTI/SLTIU slice.
+- Generated trust diffs are only the expected `aeneas_bridge_trust` line-number shift.
+- ANDI/ORI/XORI/SLTI/SLTIU slice committed as `79736f23 Add I-type binary logic bridge slice`.
+- Production probes show SLL/SRL/SRA lower to external BinaryExtension opcodes
+  33/34/35 with reg/reg/store-reg row shape.
+- Added SLL/SRL/SRA pin helpers, bridge predicates, constructors, bridge
+  theorems, and staged production row-shape checks.
+- `lake build ZiskFv.Compliance` passed for the SLL/SRL/SRA slice.
+- `trust/scripts/regenerate.sh` passed for the SLL/SRL/SRA slice.
+- `trust/scripts/check-all.sh` passed for the SLL/SRL/SRA slice.
+- `trust/scripts/check-all-semantic.sh` passed for the SLL/SRL/SRA slice.
+- `nix run .#aeneas-production-extract` passed for the SLL/SRL/SRA slice.
 - Generated trust diffs are only the expected `aeneas_bridge_trust` line-number shift.
