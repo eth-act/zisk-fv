@@ -432,8 +432,23 @@ aeneas_bridge_trust removed
 The remaining long-term shrinkage target is:
 
 ```text
-caller-burden bridge/row_shape/bus_shape/promises categories reduced
+caller-burden bridge/row_shape/promises categories reduced
 ```
+
+Current caller-burden state after Phase 2/3 classification:
+
+- canonical total rows: 1062
+- wrapper total rows: 1117
+- `bridge`: 122 in both ledgers
+- `row_shape`: 18 canonical, 22 wrapper
+- `bus_shape`: 0 in both ledgers
+
+Generated Aeneas row-shape checks are now tracked by
+`trust/aeneas-generated-bridge-manifest.txt` and included in
+`trust/scripts/check-all.sh`. Remaining provider source-lane, arithmetic
+operand, memory, and promise facts require generated/full-ensemble artifacts
+that export provider/Mem row values and same-message evidence into the main
+proof boundary.
 
 The desired end state is that the global theorem closure contains only stable
 external assumptions, such as extraction trust, memory/bus soundness boundaries,
@@ -459,10 +474,12 @@ uniform and explicit as OpenVM FV's `axiomsPerRow` /
 ## Acceptance Criteria
 
 - The global theorem no longer depends on caller-supplied opcode-specific
-  `OpEnvelope` bridge facts.
-- `bridge`, `row_shape`, `bus_shape`, and `promises` caller-burden categories
-  shrink to zero, or to explicitly scoped inputs that are documented as
-  non-soundness or external-boundary assumptions.
+  `OpEnvelope` bridge-trust axiom. Remaining opcode-specific wrapper/envelope
+  bridge fields are ordinary theorem inputs and are inventoried in the
+  caller-burden ledgers.
+- `bus_shape` caller-burden has shrunk to zero. Remaining `bridge`,
+  `row_shape`, and promise caller-burden categories are explicitly scoped
+  generated/full-ensemble integration boundaries.
 - The global axiom closure no longer contains a broad temporary `OpEnvelope`
   evidence trust axiom. This criterion is satisfied for the former
   `aeneas_bridge_trust` axiom.

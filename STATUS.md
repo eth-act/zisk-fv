@@ -1,9 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: Phase 3 generated-proof bridge manifest is implemented and
-verified.
+Current focus: final boundary verification is complete.
 Blocking: none.
-Next step: commit the generated-bridge manifest slice, then continue Phase 3
-with provider source-lane export feasibility.
+Next step: commit the final boundary-verification slice.
 
 Recent state:
 - Opcode-family slices through MUL and DIV/REM are committed.
@@ -25,3 +23,13 @@ Recent state:
   `lake build ZiskFv.Compliance`, `trust/scripts/regenerate.sh`,
   `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
   `nix run .#aeneas-production-extract`.
+- Generated row-shape facts are guarded by the manifest. Provider source-lane
+  and memory witness facts are explicitly deferred until generated/full-ensemble
+  artifacts export provider/Mem row values into the main boundary.
+- Final Phase 4 verification passed: `lake build ZiskFv.Compliance`,
+  `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+  `trust/scripts/check-all-semantic.sh`, and
+  `nix run .#aeneas-production-extract`.
+- Final docs record 7 source trust declarations, 1 global-closure project
+  axiom, zero `bus_shape` caller burden, and remaining bridge/row-shape/promise
+  entries as generated/full-ensemble integration boundaries.

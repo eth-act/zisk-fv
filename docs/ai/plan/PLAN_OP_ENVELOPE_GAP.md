@@ -489,10 +489,10 @@ Work queue:
 - [x] Wire the first production-backed generated fact into main verification for
       one already-covered family, starting with the smallest row-shape case.
 - [x] Extend the integration pattern across the U/control-flow row-shape facts.
-- [ ] Extend the integration pattern across Binary/BinaryExtension provider
+- [x] Extend the integration pattern across Binary/BinaryExtension provider
       source-lane facts where the production extraction already computes the
       required row constants.
-- [ ] Extend or explicitly defer memory/load/store generated facts depending on
+- [x] Extend or explicitly defer memory/load/store generated facts depending on
       available production proof coverage.
 - [x] Update trust scripts so generated-proof integration regressions are
       visible in CI-style checks.
@@ -525,6 +525,21 @@ facts, not only Main row-shape constants. Those remain Phase 3 work until the
 generated artifact carries provider row values or a full-ensemble provider-row
 selection proof into the main boundary.
 
+Binary/BinaryExtension source-lane result: there is no additional honest local
+extension with the current extraction surface. `ZiskInstExtract` exposes
+row-shape fields (`a_src`, `b_src`, `store`, op/mode/control columns, jump
+offsets, and width), while the remaining source-lane bridges relate Sail input
+values to selected provider-row data. Those are runtime state/provider facts,
+not instruction-row constants. They are therefore explicitly deferred to a
+future generated/full-ensemble provider-row value export.
+
+Memory/load/store generated-fact result: the manifest covers load/store
+row-shape checks, and the existing Clean constructors can derive selected
+memory witness fields once full-ensemble same-message facts are supplied. The
+remaining memory promise and Clean witness inputs are explicitly deferred until
+the generated/full-ensemble artifact exports the selected Main/Mem rows and
+same-message evidence into the main theorem boundary.
+
 ## Phase 4: Final Boundary Verification
 
 Once caller-burden reductions and generated-proof integration have landed, the
@@ -543,17 +558,23 @@ Acceptance target:
 
 Work queue:
 
-- [ ] Re-run and review all caller-burden ledgers after the final reduction
+- [x] Re-run and review all caller-burden ledgers after the final reduction
       slice.
-- [ ] Update `docs/extraction/op-envelope-gap-plan.md`,
+- [x] Update `docs/extraction/op-envelope-gap-plan.md`,
       `docs/ai/PROJECTS.md`, and `trust/trusted-base.md` with the final
       theorem boundary.
-- [ ] Run `lake build ZiskFv.Compliance`.
-- [ ] Run `trust/scripts/regenerate.sh`.
-- [ ] Run `trust/scripts/check-all.sh`.
-- [ ] Run `trust/scripts/check-all-semantic.sh`.
-- [ ] Run `nix run .#aeneas-production-extract`.
-- [ ] Commit the final boundary-verification slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+- [x] Commit the final boundary-verification slice.
+
+Final verification result: the broad `aeneas_bridge_trust` axiom remains
+retired from the global theorem boundary, the source/global trust ledgers are
+at 7 and 1 entries respectively, `bus_shape` caller burden is zero, and the
+remaining bridge/row-shape/promise obligations are documented as
+generated/full-ensemble integration boundaries.
 
 ## Verification
 

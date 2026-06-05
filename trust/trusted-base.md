@@ -21,8 +21,8 @@ Current generated counts:
 
 | Surface                                                                | Count | Ledger                                                                                       |
 | ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 8     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 2     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations                                         | 7     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 1     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
 The difference is intentional: some checked-in trust declarations are retained
 for local components or completeness-direction placeholders but are not reached
@@ -134,9 +134,19 @@ and main Lake contains `MainRowProvenance.subPins_of_extracted_shape`,
 `OpEnvelope.addiwOfExtractedShape`, and the matching
 `OpEnvelope.aeneasBridgeTrust_*OfExtractedShape` theorems.
 
-Remaining path: import the generated Aeneas Lean row-lowering result into the
-main proof and use it to remove the remaining caller-burden bridge, row-shape,
-bus-shape, and promise fields from wrapper and `OpEnvelope` boundaries.
+Generated-bridge manifest: generated Aeneas Lean remains reproducible build
+output under `build/aeneas-production-extraction`. The maintained trust-gate
+artifact is [`aeneas-generated-bridge-manifest.txt`](aeneas-generated-bridge-manifest.txt),
+checked by `trust/scripts/check-aeneas-generated-bridge-manifest.sh` and by
+`trust/scripts/check-all.sh`. It keeps the generated row-shape predicates and
+Lean examples aligned with the generator template, and checks generated output
+when present, without committing generated Lean.
+
+Remaining path: export provider-row values, selected memory rows, and
+full-ensemble same-message facts into the main proof boundary. Those artifacts
+are needed to remove the remaining caller-burden bridge, row-shape, and
+promise fields from wrapper and `OpEnvelope` boundaries. The `bus_shape`
+category is already zero after the W-shift structural cleanup.
 
 ## Memory State Load Bridge
 
@@ -226,6 +236,17 @@ The generated anti-laundering ledgers are:
 Promise discharge must visibly reduce caller burden, unless a documented
 structural-unpacking exception explains why added structural witnesses collapse
 into shared global-theorem evidence.
+
+Current caller-burden summary:
+
+- Canonical total rows: 1062.
+- Wrapper total rows: 1117.
+- `bridge`: 122 in both ledgers.
+- `row_shape`: 18 canonical, 22 wrapper.
+- `bus_shape`: 0 in both ledgers.
+
+The remaining `bridge` and `row_shape` entries are documented as generated or
+full-ensemble integration boundaries, not as hidden global axioms.
 
 ## Not In This Ledger
 
