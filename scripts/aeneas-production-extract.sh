@@ -24,7 +24,8 @@ rm -f \
   "$WORKSPACE/lean-check/GeneratedChecks.lean" \
   "$WORKSPACE/lean-check/FenceCompleteness.lean" \
   "$WORKSPACE/lean-check/Rv64imCompleteness.lean" \
-  "$WORKSPACE/lean-check/RvCompleteness.lean"
+  "$WORKSPACE/lean-check/RvCompleteness.lean" \
+  "$WORKSPACE/lean-check/RvUpperJumpCompleteness.lean"
 rm -f "$WORKSPACE"/production_m*.llbc
 
 if [[ -f "$AENEAS_FLAKE/backends/lean/Aeneas.lean" ]]; then
@@ -186,6 +187,7 @@ package zisk_production_extraction_check
 lean_lib FenceCompleteness
 lean_lib Rv64imCompleteness
 lean_lib RvCompleteness
+lean_lib RvUpperJumpCompleteness
 EOF
   rm -f "$lean_check/lean-toolchain"
   cp "$AENEAS_LEAN_SRC/lean-toolchain" "$lean_check/lean-toolchain"
@@ -5745,7 +5747,106 @@ example :
 
 end zisk_core_generated_rv_completeness
 EOF
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks RvCompleteness' bash "$lean_check"
+    cat > "$lean_check/RvUpperJumpCompleteness.lean" <<'EOF'
+import ProductionM2
+import Std.Tactic.BVDecide
+
+open Aeneas Aeneas.Std Result
+open zisk_core
+
+namespace zisk_core_generated_rv_upper_jump_completeness
+
+/-!
+Symbolic full decode-acceptance checks for 20-bit upper-immediate shapes.
+These cover every architectural `rd` and every encoded 20-bit immediate
+without enumerating the 2^20 domain.
+-/
+
+def rawDecodeSupported (result : Result aeneas_extract.Rv64imDecodeExtract) : Bool :=
+  match result with
+  | ok decoded => decoded.supported
+  | fail _ => false
+  | div => false
+
+def ZiskDecodeSupportedRaw (raw : Std.U32) : Prop :=
+  rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) = true
+
+def rawUTypeBV (uimm : BitVec 20) (rd : BitVec 5) (opcode : BitVec 7) : Std.U32 :=
+  ⟨(uimm.zeroExtend 32 <<< 12) ||| (rd.zeroExtend 32 <<< 7) |||
+    opcode.zeroExtend 32⟩
+
+theorem i32_7_nonnegative : (7#i32 : Std.I32).val ≥ 0 := by
+  native_decide
+
+theorem i32_7_lt_u32_numBits :
+    (7#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
+  native_decide
+
+theorem i32_12_nonnegative : (12#i32 : Std.I32).val ≥ 0 := by
+  native_decide
+
+theorem i32_12_lt_u32_numBits :
+    (12#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
+  native_decide
+
+lemma rawUTypeBV_opcode_lui (rd : BitVec 5) (uimm : BitVec 20) :
+    rawUTypeBV uimm rd 0x37#7 &&& 127#u32 = 55#u32 := by
+  rw [U32.eq_equiv_bv_eq]
+  simp [rawUTypeBV]
+  bv_decide
+
+lemma rawUTypeBV_opcode_auipc (rd : BitVec 5) (uimm : BitVec 20) :
+    rawUTypeBV uimm rd 0x17#7 &&& 127#u32 = 23#u32 := by
+  rw [U32.eq_equiv_bv_eq]
+  simp [rawUTypeBV]
+  bv_decide
+
+lemma decode_32_core_lui (raw : Std.U32) (h : raw &&& 127#u32 = 55#u32) :
+    aeneas_extract.rv64im_decode.decode_32_core raw =
+      aeneas_extract.rv64im_decode.decode_u raw
+        aeneas_extract.rv64im_decode.RiscvOpcode.Lui := by
+  simp [aeneas_extract.rv64im_decode.decode_32_core, h, lift]
+  rfl
+
+lemma decode_32_core_auipc (raw : Std.U32) (h : raw &&& 127#u32 = 23#u32) :
+    aeneas_extract.rv64im_decode.decode_32_core raw =
+      aeneas_extract.rv64im_decode.decode_u raw
+        aeneas_extract.rv64im_decode.RiscvOpcode.Auipc := by
+  simp [aeneas_extract.rv64im_decode.decode_32_core, h, lift]
+  rfl
+
+macro "upper_simp" : tactic => `(tactic|
+  simp only [ZiskDecodeSupportedRaw, rawDecodeSupported,
+    aeneas_extract.extract_decode_rv64im_raw,
+    aeneas_extract.rv64im_decode.decode_u,
+    aeneas_extract.rv64im_decode.DecodedRv64im.new,
+    aeneas_extract.decode_extract_from_decoded,
+    aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im,
+    aeneas_extract.opcode_id, aeneas_extract.format_id, lift,
+    HShiftRight.hShiftRight, HShiftLeft.hShiftLeft,
+    UScalar.shiftRight_IScalar, UScalar.shiftLeft_IScalar,
+    UScalar.shiftRight, UScalar.shiftLeft,
+    i32_7_nonnegative, i32_7_lt_u32_numBits,
+    i32_12_nonnegative, i32_12_lt_u32_numBits,
+    Bind.bind, Std.bind, ↓reduceIte])
+
+theorem lui_raw_shape_decode_supported (rd : BitVec 5) (uimm : BitVec 20) :
+    ZiskDecodeSupportedRaw (rawUTypeBV uimm rd 0x37#7) := by
+  unfold ZiskDecodeSupportedRaw
+  simp only [aeneas_extract.extract_decode_rv64im_raw]
+  rw [decode_32_core_lui _ (rawUTypeBV_opcode_lui rd uimm)]
+  upper_simp
+
+theorem auipc_raw_shape_decode_supported (rd : BitVec 5) (uimm : BitVec 20) :
+    ZiskDecodeSupportedRaw (rawUTypeBV uimm rd 0x17#7) := by
+  unfold ZiskDecodeSupportedRaw
+  simp only [aeneas_extract.extract_decode_rv64im_raw]
+  rw [decode_32_core_auipc _ (rawUTypeBV_opcode_auipc rd uimm)]
+  upper_simp
+
+end zisk_core_generated_rv_upper_jump_completeness
+EOF
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks RvCompleteness RvUpperJumpCompleteness' bash "$lean_check"
   elif [[ "$AENEAS_CHECK_RV64IM_COMPLETENESS" != 0 ]]; then
     cat > "$lean_check/Rv64imCompleteness.lean" <<'EOF'
 import ProductionM2
