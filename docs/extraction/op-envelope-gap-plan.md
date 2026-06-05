@@ -243,6 +243,18 @@ pipeline.
      `OpEnvelope.srlOfExtractedShape`, and `OpEnvelope.sraOfExtractedShape`
      plus matching bridge theorems for `rowA64` and `rowShiftAmount`.
 
+   The immediate 64-bit shift forms SLLI, SRLI, and SRAI reuse that
+   BinaryExtension route:
+
+   - the staged Aeneas harness proves that SLLI, SRLI, and SRAI lower to the
+     same external `OP_SLL`, `OP_SRL`, and `OP_SRA` provider rows, but with an
+     immediate shift source row shape;
+   - main Lake reuses the same extracted opcode pin helpers and exposes
+     `OpEnvelope.slliOfExtractedShape`, `OpEnvelope.srliOfExtractedShape`, and
+     `OpEnvelope.sraiOfExtractedShape`;
+   - the matching bridge theorems prove the immediate shift predicates by
+     connecting `r1_val` to `rowA64` and `shamt.toNat` to `rowShiftAmount`.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

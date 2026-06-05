@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: SLLI/SRLI/SRAI BinaryExtension immediate shift slice.
+Current focus: SLLI/SRLI/SRAI BinaryExtension immediate shift slice verified; preparing commit.
 Blocking: none.
-Next step: probe production row shapes, add immediate shift bridge constructors/checks, then run full verification.
+Next step: commit the SLLI/SRLI/SRAI slice, then continue with SLLW/SRLW/SRAW.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -115,3 +115,13 @@ Notes:
 - `nix run .#aeneas-production-extract` passed for the SLL/SRL/SRA slice.
 - Generated trust diffs are only the expected `aeneas_bridge_trust` line-number shift.
 - SLL/SRL/SRA slice committed as `7ac7438a Add R-type shift bridge slice`.
+- Production probes show SLLI/SRLI/SRAI lower to external BinaryExtension
+  opcodes 33/34/35 with immediate-source shift row shape.
+- Added SLLI/SRLI/SRAI bridge predicates, constructors, bridge theorems, and
+  staged production row-shape checks.
+- `lake build ZiskFv.Compliance` passed for the SLLI/SRLI/SRAI slice.
+- `trust/scripts/regenerate.sh` passed for the SLLI/SRLI/SRAI slice.
+- `trust/scripts/check-all.sh` passed for the SLLI/SRLI/SRAI slice.
+- `trust/scripts/check-all-semantic.sh` passed for the SLLI/SRLI/SRAI slice.
+- `nix run .#aeneas-production-extract` passed for the SLLI/SRLI/SRAI slice.
+- Generated trust diffs are only the expected `aeneas_bridge_trust` line-number shift.

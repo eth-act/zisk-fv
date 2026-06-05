@@ -211,6 +211,33 @@ def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))
+  | .slli slli_input _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ _ =>
+      slli_input.r1_val =
+        ZiskFv.AirsClean.BinaryExtension.rowA64
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))
+      ∧ slli_input.shamt.toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))
+  | .srli srli_input _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ _ =>
+      srli_input.r1_val =
+        ZiskFv.AirsClean.BinaryExtension.rowA64
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))
+      ∧ srli_input.shamt.toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))
+  | .srai srai_input _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ _ =>
+      srai_input.r1_val =
+        ZiskFv.AirsClean.BinaryExtension.rowA64
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))
+      ∧ srai_input.shamt.toNat =
+        ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))
   | _ => True
 
 /-- Construct the LUI envelope while deriving its row-mode field from
@@ -2114,6 +2141,234 @@ theorem OpEnvelope.aeneasBridgeTrust_sraOfExtractedShape
       h_external promises h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd).aeneasBridgeTrust := by
   unfold OpEnvelope.sraOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  exact ⟨h_input_r1_row, h_shift_pin_row⟩
+
+def OpEnvelope.slliOfExtractedShape
+    (slli_input : PureSpec.SlliInput) (r1 rd : regidx) (shamt : BitVec 6)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSll)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
+        state slli_input.r1_val slli_input.shamt slli_input.rd slli_input.PC
+        (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
+        r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : slli_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : slli_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    OpEnvelope state m r_main :=
+  OpEnvelope.slli slli_input r1 rd shamt providerTable providerRow bus promises
+    (MainRowProvenance.sllPins_of_extracted_shape provenance h_op h_external)
+    h_component h_table_spec h_provider_row h_match h_input_r1_row
+    h_shift_pin_row h_lane_rd
+
+theorem OpEnvelope.aeneasBridgeTrust_slliOfExtractedShape
+    (slli_input : PureSpec.SlliInput) (r1 rd : regidx) (shamt : BitVec 6)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSll)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
+        state slli_input.r1_val slli_input.shamt slli_input.rd slli_input.PC
+        (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
+        r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : slli_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : slli_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    (OpEnvelope.slliOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      slli_input r1 rd shamt providerTable providerRow bus provenance h_op
+      h_external promises h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd).aeneasBridgeTrust := by
+  unfold OpEnvelope.slliOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  exact ⟨h_input_r1_row, h_shift_pin_row⟩
+
+def OpEnvelope.srliOfExtractedShape
+    (srli_input : PureSpec.SrliInput) (r1 rd : regidx) (shamt : BitVec 6)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSrl)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
+        state srli_input.r1_val srli_input.shamt srli_input.rd srli_input.PC
+        (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC
+        r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : srli_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : srli_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    OpEnvelope state m r_main :=
+  OpEnvelope.srli srli_input r1 rd shamt providerTable providerRow bus promises
+    (MainRowProvenance.srlPins_of_extracted_shape provenance h_op h_external)
+    h_component h_table_spec h_provider_row h_match h_input_r1_row
+    h_shift_pin_row h_lane_rd
+
+theorem OpEnvelope.aeneasBridgeTrust_srliOfExtractedShape
+    (srli_input : PureSpec.SrliInput) (r1 rd : regidx) (shamt : BitVec 6)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSrl)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
+        state srli_input.r1_val srli_input.shamt srli_input.rd srli_input.PC
+        (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC
+        r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : srli_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : srli_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    (OpEnvelope.srliOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      srli_input r1 rd shamt providerTable providerRow bus provenance h_op
+      h_external promises h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd).aeneasBridgeTrust := by
+  unfold OpEnvelope.srliOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  exact ⟨h_input_r1_row, h_shift_pin_row⟩
+
+def OpEnvelope.sraiOfExtractedShape
+    (srai_input : PureSpec.SraiInput) (r1 rd : regidx) (shamt : BitVec 6)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSra)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
+        state srai_input.r1_val srai_input.shamt srai_input.rd srai_input.PC
+        (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC
+        r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : srai_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : srai_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    OpEnvelope state m r_main :=
+  OpEnvelope.srai srai_input r1 rd shamt providerTable providerRow bus promises
+    (MainRowProvenance.sraPins_of_extracted_shape provenance h_op h_external)
+    h_component h_table_spec h_provider_row h_match h_input_r1_row
+    h_shift_pin_row h_lane_rd
+
+theorem OpEnvelope.aeneasBridgeTrust_sraiOfExtractedShape
+    (srai_input : PureSpec.SraiInput) (r1 rd : regidx) (shamt : BitVec 6)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSra)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
+        state srai_input.r1_val srai_input.shamt srai_input.rd srai_input.PC
+        (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC
+        r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : srai_input.r1_val =
+      ZiskFv.AirsClean.BinaryExtension.rowA64
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_shift_pin_row : srai_input.shamt.toNat =
+      ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    (OpEnvelope.sraiOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      srai_input r1 rd shamt providerTable providerRow bus provenance h_op
+      h_external promises h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd).aeneasBridgeTrust := by
+  unfold OpEnvelope.sraiOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨h_input_r1_row, h_shift_pin_row⟩
 
 /-- **Aeneas row-lowering bridge trust axiom.**
