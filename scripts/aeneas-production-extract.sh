@@ -844,8 +844,16 @@ def rawRType (funct7 rs2 rs1 funct3 rd opcode : Nat) : Std.U32 :=
     ((funct7 <<< 25) ||| (rs2 <<< 20) ||| (rs1 <<< 15) |||
       (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
 
+def rawIType (imm rs1 funct3 rd opcode : Nat) : Std.U32 :=
+  rawOfNat32
+    (((imm % 4096) <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
+
 def allRvRegs : List Nat :=
   List.range 32
+
+def allIImmediates : List Nat :=
+  List.range 4096
 
 def allRTypeOpcodeShapes : List (Nat × Nat × Nat) := [
   (0, 0, 0x33),  (32, 0, 0x33), (0, 1, 0x33),  (0, 2, 0x33),
@@ -870,11 +878,6 @@ def allRTypeRegisterShapesMaterialize : Bool :=
 theorem allRTypeRegisterShapesMaterialize_ok :
     allRTypeRegisterShapesMaterialize = true := by
   native_decide
-
-def rawIType (imm rs1 funct3 rd opcode : Nat) : Std.U32 :=
-  rawOfNat32
-    (((imm % 4096) <<< 20) ||| (rs1 <<< 15) |||
-      (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
 
 def edgeIImmediates : List Nat := [
   2048, -- -2048 sign-extended through the 12-bit immediate field
@@ -1368,8 +1371,16 @@ def rawRType (funct7 rs2 rs1 funct3 rd opcode : Nat) : Std.U32 :=
     ((funct7 <<< 25) ||| (rs2 <<< 20) ||| (rs1 <<< 15) |||
       (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
 
+def rawIType (imm rs1 funct3 rd opcode : Nat) : Std.U32 :=
+  rawOfNat32
+    (((imm % 4096) <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
+
 def allRvRegs : List Nat :=
   List.range 32
+
+def allIImmediates : List Nat :=
+  List.range 4096
 
 /-- Boolean counterpart of ADD raw-shape circuit coverage. This is deliberately
 defined from the Aeneas-extracted production raw decoder/lowering wrappers. -/
@@ -1391,6 +1402,69 @@ def allAddRawShapesCircuitCovered : Bool :=
 theorem allAddRawShapesCircuitCovered_ok :
     allAddRawShapesCircuitCovered = true := by
   native_decide
+
+/-- Full JALR decode-acceptance check. This is deliberately exhaustive over
+all architectural register pairs and all 12-bit I-immediate encodings, so a
+FENCE-like production rejection in this family breaks the generated proof. -/
+def allJalrRawShapesDecodeSupported : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allIImmediates.all fun imm =>
+        rawDecodeSupported
+          (aeneas_extract.extract_decode_rv64im_raw
+            (rawIType imm rs1 0 rd 0x67))
+
+set_option maxHeartbeats 4000000 in
+theorem allJalrRawShapesDecodeSupported_ok :
+    allJalrRawShapesDecodeSupported = true := by
+  native_decide
+
+theorem jalr_raw_shape_decode_supported
+    (rd rs1 imm : Nat)
+    (h_rd : rd ∈ allRvRegs)
+    (h_rs1 : rs1 ∈ allRvRegs)
+    (h_imm : imm ∈ allIImmediates) :
+    ZiskDecodeSupportedRaw (rawIType imm rs1 0 rd 0x67) := by
+  have h_all := allJalrRawShapesDecodeSupported_ok
+  simp [allJalrRawShapesDecodeSupported] at h_all
+  simpa [ZiskDecodeSupportedRaw] using h_all rd h_rd rs1 h_rs1 imm h_imm
+
+def nonShiftIAluFunct3s : List Nat := [
+  0, -- ADDI
+  2, -- SLTI
+  3, -- SLTIU
+  4, -- XORI
+  6, -- ORI
+  7  -- ANDI
+]
+
+/-- Full non-shift I-type ALU decode acceptance over every architectural
+register pair and every 12-bit immediate encoding. -/
+def allNonShiftIAluRawShapesDecodeSupported : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allIImmediates.all fun imm =>
+        nonShiftIAluFunct3s.all fun funct3 =>
+          rawDecodeSupported
+            (aeneas_extract.extract_decode_rv64im_raw
+              (rawIType imm rs1 funct3 rd 0x13))
+
+set_option maxHeartbeats 12000000 in
+theorem allNonShiftIAluRawShapesDecodeSupported_ok :
+    allNonShiftIAluRawShapesDecodeSupported = true := by
+  native_decide
+
+theorem non_shift_i_alu_raw_shape_decode_supported
+    (rd rs1 imm funct3 : Nat)
+    (h_rd : rd ∈ allRvRegs)
+    (h_rs1 : rs1 ∈ allRvRegs)
+    (h_imm : imm ∈ allIImmediates)
+    (h_funct3 : funct3 ∈ nonShiftIAluFunct3s) :
+    ZiskDecodeSupportedRaw (rawIType imm rs1 funct3 rd 0x13) := by
+  have h_all := allNonShiftIAluRawShapesDecodeSupported_ok
+  simp [allNonShiftIAluRawShapesDecodeSupported] at h_all
+  simpa [ZiskDecodeSupportedRaw] using
+    h_all rd h_rd rs1 h_rs1 imm h_imm funct3 h_funct3
 
 def RvAvoidKnownBugsFor (sailExecutableRaw : Std.U32 → Prop) : Prop :=
   ∀ raw, sailExecutableRaw raw → KnownZiskGapRaw raw = false → ZiskDecodeSupportedRaw raw

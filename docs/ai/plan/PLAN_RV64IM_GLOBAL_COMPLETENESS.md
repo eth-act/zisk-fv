@@ -2,14 +2,16 @@
 
 ## Target
 
-Extend the completed ADD pilot into a global RV64IM completeness result for
-the production ZisK-supported instruction surface:
+Extend the completed ADD pilot into a global RV64IM completeness result where
+the RV64IM-enabled Sail model is the source of truth for valid raw
+instructions:
 
-For every raw 32-bit instruction word that the generated Sail model accepts as
-a ZisK-supported RV64IM instruction, the Aeneas-extracted production ZisK
-decoder/lowering/materialization path accepts it and maps it to a
-circuit-covered opcode, except for explicit known ZisK restrictions such as
-generic FENCE forms.
+For every raw 32-bit instruction word that the generated Sail model accepts in
+the RV64IM domain, the Aeneas-extracted production ZisK
+decoder/lowering/materialization path must accept it and map it to a
+circuit-covered opcode. The existing generic-FENCE handling remains explicit
+and unchanged; the strengthened work is about ensuring every other RV64IM
+family would expose a FENCE-like acceptance bug.
 
 This targets the 63 production ZisK RV64IM opcodes extracted through
 `zisk/core/src/aeneas_extract.rs`. It does not target every Sail constructor
@@ -86,7 +88,8 @@ The proof stays split into three layers:
    evaluated under an RV64IM-enabled Sail state rather than treated as an
    unconditional equality to `pure`.
 2. Generated Aeneas Lean proves that the extracted production ZisK path covers
-   those raw shape families.
+   those full raw shape families. Finite edge-immediate grids may remain as
+   diagnostics, but they must not discharge the global theorem.
 3. Checked-in abstract RV completeness theorems compose the Sail containment
    theorem and generated ZisK shape coverage into global completeness avoiding
    known bugs.
@@ -113,12 +116,12 @@ the corresponding checked-in and generated builds have passed.
 | Register word ALU | ADDW SUBW SLLW SRLW SRAW | done | done | done | done | none |
 | Sail relation infrastructure | n/a | done | done | done | n/a | enables extension-gated Sail constructors |
 | M extension | MUL MULH MULHSU MULHU MULW DIV DIVU DIVW DIVUW REM REMU REMW REMUW | done | done | done | done | none |
-| Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | done | done | done | done | none |
-| Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | done | done | done | done | none |
-| Branches | BEQ BNE BLT BGE BLTU BGEU | done | done | done | done | none |
-| Loads | LB LBU LH LHU LW LWU LD | done | done | done | done | none |
-| Stores | SB SH SW SD | done | done | done | done | none |
-| Upper/jump | LUI AUIPC JAL JALR | done | done | done | done | none |
+| Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | done | done | partial | non-shift full decode; shift full shamt; edge materialization | full circuit coverage/global composition open |
+| Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | done | done | partial | edge-grid/shift full | ADDIW full immediate coverage open |
+| Branches | BEQ BNE BLT BGE BLTU BGEU | done | done | partial | edge-grid only | full branch immediate coverage open |
+| Loads | LB LBU LH LHU LW LWU LD | done | done | partial | edge-grid only | full load immediate coverage open |
+| Stores | SB SH SW SD | done | done | partial | edge-grid only | full store immediate coverage open |
+| Upper/jump | LUI AUIPC JAL JALR | done | done | partial | JALR full decode; others edge-grid only | full upper/jump immediate coverage open except JALR decode |
 | Fence | FENCE | done | done | done | done | generic FENCE restrictions |
 
 ## Implementation Checklist
@@ -139,26 +142,33 @@ the corresponding checked-in and generated builds have passed.
   compatibility lemmas for already-closed unconditional families.
 - [x] M extension: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
-- [x] Immediate ALU: close whitelist, raw-shape lemma, global theorem shape,
+- [ ] Immediate ALU: close whitelist, raw-shape lemma, global theorem shape,
+  full generated coverage, verification, docs, commit.
+- [x] Immediate ALU/non-shift: add generated full decode-acceptance proof for
+  ADDI, SLTI, SLTIU, XORI, ORI, and ANDI over all `rd`, `rs1`, and 12-bit
+  I-immediate encodings.
+- [ ] Immediate word ALU: close whitelist, raw-shape lemma, global theorem shape,
+  full generated coverage, verification, docs, commit.
+- [ ] Branches: close whitelist, raw-shape lemma, global theorem shape,
+  full generated coverage, verification, docs, commit.
+- [ ] Loads: close whitelist, raw-shape lemma, global theorem shape, full
   generated coverage, verification, docs, commit.
-- [x] Immediate word ALU: close whitelist, raw-shape lemma, global theorem shape,
+- [ ] Stores: close whitelist, raw-shape lemma, global theorem shape, full
   generated coverage, verification, docs, commit.
-- [x] Branches: close whitelist, raw-shape lemma, global theorem shape,
-  generated coverage, verification, docs, commit.
-- [x] Loads: close whitelist, raw-shape lemma, global theorem shape, generated
-  coverage, verification, docs, commit.
-- [x] Stores: close whitelist, raw-shape lemma, global theorem shape, generated
-  coverage, verification, docs, commit.
-- [x] Upper/jump: close whitelist, raw-shape lemma, global theorem shape,
-  generated coverage, verification, docs, commit.
+- [ ] Upper/jump: close whitelist, raw-shape lemma, global theorem shape,
+  full generated coverage, verification, docs, commit.
+- [x] Upper/jump/JALR: add generated full decode-acceptance proof over all
+  `rd`, `rs1`, and 12-bit I-immediate encodings.
 - [x] Fence: close supported-FENCE theorem surface while keeping generic FENCE
   restrictions as explicit known gaps.
-- [x] State the checked-in global theorem in
+- [ ] State the checked-in global theorem in
   `ZiskFv/Completeness/Rv64im.lean`, for example
   `rv64im_global_completeness_avoiding_known_bugs`.
-- [x] State the generated production theorem in the generated
+- [ ] State the generated production theorem in the generated
   `RvCompleteness.lean` workspace as `rv_completeness_avoiding_known_bugs`.
-- [x] Update this matrix after every completed family.
+- [ ] Remove edge-grid shapes from the global completeness proof path; keep
+  them only as diagnostics.
+- [ ] Update this matrix after every completed family.
 
 ## Verification Commands
 
@@ -186,8 +196,8 @@ cargo test -p zisk-core raw_rv64im_extraction_uses_general_decoder_gate --featur
 - `STATUS.md` points to this plan and names the current family/focus.
 - The Sail-side RV64IM domain covers all 63 ZisK-supported RV64IM opcodes.
 - Every opcode family has checked-in Sail raw-shape containment.
-- Every opcode family has generated Aeneas production coverage, or an explicit
-  known-gap/blocker entry.
+- Every non-FENCE opcode family has full generated Aeneas production coverage
+  over the Sail-valid raw shape, not merely edge-immediate samples.
 - The final theorem is stated as completeness avoiding known ZisK gaps.
 - The checked-in Lake build passes.
 - The generated Aeneas completeness check passes.
