@@ -4,6 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.SailSpec.Auxiliaries
+import ZiskFv.ZiskCircuit.MemTrace
 
 /-!
 # `LoadPromises` — structural bundle for zero-extended LOAD opcodes
@@ -44,6 +45,9 @@ structure LoadPromises
   m0_as : e0.as.val = 1
   m1_mult : e1.multiplicity = -1
   m1_as : e1.as.val = 2
+  mem_trace_agreement :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1)
   m2_mult : e2.multiplicity = 1
   m2_as : e2.as.val = 1
 

@@ -148,7 +148,7 @@ lemma equiv_LD_of_discharged
   obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_mem_trace_agreement, h_m2_mult, h_m2_as⟩ := promises
   -- Step 1. Reduce LHS via Sail-level equivalence.
   rw [equiv_LD_sail state ld_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
@@ -296,7 +296,7 @@ lemma equiv_LD_clean_provider
       h_main_row h_mem_row h_main_spec h_store_pc
       h_main_b_match h_main_c_match h_mem_match
       h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_legacy_addr h_mem_wr
+      h_mem_sel h_mem_legacy_addr h_mem_wr promises.mem_trace_agreement
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
           h_rd_idx, h_copy0, h_copy1⟩ := h_bundle
   exact equiv_LD_of_discharged state ld_input regs bus promises main r_main pins
@@ -332,7 +332,7 @@ lemma equiv_LD_clean_provider_witness
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨h_bundle, h_mem⟩ :=
     ZiskFv.EquivCore.Bridge.MemClean.ld_discharge_full_clean_provider_of_witness
-      main mem r_main bus state ld_input w
+      main mem r_main bus state ld_input w promises.mem_trace_agreement
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
           h_rd_idx, h_copy0, h_copy1⟩ := h_bundle
   exact equiv_LD_of_discharged state ld_input regs bus promises main r_main pins

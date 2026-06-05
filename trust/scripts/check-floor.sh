@@ -6,12 +6,11 @@ set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 # Floor 1: total number of axiom/opaque/constant declarations in the
-# baseline must be nonzero. This catches a sabotaged regenerate.py
-# that produces empty output, or an allowlist edited to empty, without
-# blocking legitimate trust-ledger shrinkage. The monotone upper bound
-# lives in check-shrinkage.sh.
-MIN_AXIOMS=1
-axiom_count=$(grep -cE '^[0-9a-f]{16}  ' trust/generated/baseline-axioms.txt 2>/dev/null || echo 0)
+# baseline may now legitimately be zero. The monotone upper bound lives in
+# check-shrinkage.sh; the cross-witness below still catches hidden
+# trust-surface declarations excluded from the allowlist.
+MIN_AXIOMS=0
+axiom_count=$(grep -cE '^[0-9a-f]{16}  ' trust/generated/baseline-axioms.txt 2>/dev/null || true)
 if [ "$axiom_count" -lt "$MIN_AXIOMS" ]; then
   echo "trust-gate: FLOOR FAILURE — only $axiom_count axioms in baseline (expected >= $MIN_AXIOMS)."
   echo "  This can happen if regenerate.py was sabotaged or the allowlist was emptied."

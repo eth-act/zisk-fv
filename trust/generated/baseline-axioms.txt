@@ -2,6 +2,5 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 1
+# Total entries: 0
 #
-b4ad9615202917eb  ZiskFv/ZiskCircuit/MemModel.lean:121  axiom     row_models_sail_state_load

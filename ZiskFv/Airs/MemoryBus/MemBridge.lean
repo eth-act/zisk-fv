@@ -98,6 +98,18 @@ def mem_row_matches_entry
   ∧ e.as = 2
   ∧ entry_packs_mem_row_value mem r_mem e
 
+/-- Byte-addressed Mem row matches a bus entry.  This is the PIL-shaped
+provider relation: Mem's raw `addr` column is word-addressed and the memory
+bus carries the byte pointer `addr * 8`. -/
+@[simp]
+def mem_row_byte_addr_matches_entry
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
+  mem.sel r_mem = 1
+  ∧ mem.addr r_mem * 8 = e.ptr
+  ∧ mem.step r_mem = e.timestamp
+  ∧ e.as = 2
+  ∧ entry_packs_mem_row_value mem r_mem e
+
 /-! ## Trusted-surface: memory-bus permutation soundness
 
 Mirrors `OperationBus.matches_entry` (operation-bus `bus_id = 5000`)

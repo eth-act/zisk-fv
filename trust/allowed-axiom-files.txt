@@ -10,9 +10,6 @@
 # Each entry is a path relative to the repository root. Comments and
 # blank lines are ignored.
 
-# Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
-ZiskFv/ZiskCircuit/MemModel.lean
-
 # Small Sail-side simp helpers (locally proven; mirrors openvm-fv's
 # RV32D/Auxiliaries.lean pattern).
 ZiskFv/SailSpec/Auxiliaries.lean

@@ -18,14 +18,14 @@ ZiskFv.Equivalence.Divw.equiv_DIVW:
 ZiskFv.Equivalence.Fence.equiv_FENCE:
 ZiskFv.Equivalence.Jal.equiv_JAL:
 ZiskFv.Equivalence.Jalr.equiv_JALR:
-ZiskFv.Equivalence.Lb.equiv_LB: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Lbu.equiv_LBU: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Ld.equiv_LD: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Lh.equiv_LH: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Lhu.equiv_LHU: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
+ZiskFv.Equivalence.Lb.equiv_LB:
+ZiskFv.Equivalence.Lbu.equiv_LBU:
+ZiskFv.Equivalence.Ld.equiv_LD:
+ZiskFv.Equivalence.Lh.equiv_LH:
+ZiskFv.Equivalence.Lhu.equiv_LHU:
 ZiskFv.Equivalence.Lui.equiv_LUI:
-ZiskFv.Equivalence.Lw.equiv_LW: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Lwu.equiv_LWU: ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
+ZiskFv.Equivalence.Lw.equiv_LW:
+ZiskFv.Equivalence.Lwu.equiv_LWU:
 ZiskFv.Equivalence.Mul.equiv_MUL:
 ZiskFv.Equivalence.MulH.equiv_MULH:
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU:

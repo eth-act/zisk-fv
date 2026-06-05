@@ -118,6 +118,31 @@ theorem mem_row_matches_entry_of_payload_match_valid
       ZiskFv.Airs.MemoryBus.MemBridge.entry_packs_mem_row_value,
       ZiskFv.Airs.MemoryBus.memory_entry_hi] using h_v1.symm
 
+/-- Byte-addressed counterpart of `mem_row_matches_entry_of_payload_match_valid`.
+This is the active load-side adapter: Clean Mem provider messages use
+`ptr = addr * 8`, matching the PIL memory bus directly. -/
+theorem mem_row_byte_addr_matches_entry_of_payload_match_valid
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r_mem : ℕ)
+    (row : MemRow FGL) (e : Interaction.MemoryBusEntry FGL)
+    (h_row : row = rowAt mem r_mem)
+    (h_sel : mem.sel r_mem = 1)
+    (h_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_payload e
+        (MemBusMessage.toEntry (memBusMessage row) 1 2)) :
+    ZiskFv.Airs.MemoryBus.MemBridge.mem_row_byte_addr_matches_entry
+      mem r_mem e := by
+  obtain ⟨h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
+  rw [h_row] at h_ptr h_v0 h_v1 h_ts
+  refine ⟨h_sel, ?_, ?_, h_as, ?_, ?_⟩
+  · simpa [rowAt, memBusMessage, MemBusMessage.toEntry] using h_ptr.symm
+  · simpa [rowAt, memBusMessage, MemBusMessage.toEntry] using h_ts.symm
+  · simpa [rowAt, memBusMessage, MemBusMessage.toEntry,
+      ZiskFv.Airs.MemoryBus.MemBridge.entry_packs_mem_row_value,
+      ZiskFv.Airs.MemoryBus.memory_entry_lo] using h_v0.symm
+  · simpa [rowAt, memBusMessage, MemBusMessage.toEntry,
+      ZiskFv.Airs.MemoryBus.MemBridge.entry_packs_mem_row_value,
+      ZiskFv.Airs.MemoryBus.memory_entry_hi] using h_v1.symm
+
 /-- Clean Mem provider messages use byte addresses (`addr * 8`), while the
 legacy `mem_row_matches_entry` predicate currently stores the raw Mem
 `addr` column in its `addr = ptr` field. The `h_legacy_addr` premise is

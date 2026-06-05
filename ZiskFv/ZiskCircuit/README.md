@@ -16,9 +16,9 @@ out the Add behaviour from `Airs/Main/Main.lean` +
 
 ## Notable shared files
 
-- **`MemModel.lean`** — bridges Mem-AIR rows tagged `wr=0` to Sail's
-  byte-addressable memory model. Carries the single class #2 axiom
-  in the trust ledger (`load_byte_zero_lhs_eq_state_mem`).
+- **`MemModel.lean`** — bridges byte-addressed Mem-AIR provider rows tagged
+  `wr=0` to Sail's byte-addressable memory model by consuming explicit
+  `MemTrace.MemoryTraceAgreement`. No source axiom is declared here.
 - **`LoadDerivation.lean`** — per-byte equality between read-entry
   and rd-write-entry bytes for the copyb family (LD, LBU, LHU, LWU),
   derived from Main's `(1 - is_external_op) * op * (b - c) = 0`

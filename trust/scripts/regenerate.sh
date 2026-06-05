@@ -72,7 +72,7 @@ if [ -d .lake/build ]; then
     echo "#"
     body=$(lake exe trust-gate print-axiom-closure \
       ZiskFv.Compliance.zisk_riscv_compliant_program_bus)
-    n=$(echo "$body" | wc -l)
+    n=$(printf "%s\n" "$body" | awk 'NF { n++ } END { print n+0 }')
     echo "# Total entries: $n"
     echo "#"
     echo "$body"

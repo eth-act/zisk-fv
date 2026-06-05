@@ -21,16 +21,11 @@ Current generated counts:
 
 | Surface                                                                | Count | Ledger                                                                                       |
 | ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 7     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 1     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations                                         | 0     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 0     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
-The difference is intentional: some checked-in trust declarations are retained
-for local components or completeness-direction placeholders but are not reached
-by the current global compliance theorem. The semantic trust gate checks the
-global closure against the source ledger modulo
-[`tolerated-completeness-axioms.txt`](tolerated-completeness-axioms.txt),
-which now records documented source axioms that are intentionally absent from
-the global soundness closure.
+The semantic trust gate checks the global closure against the source ledger
+modulo [`tolerated-completeness-axioms.txt`](tolerated-completeness-axioms.txt).
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
@@ -39,12 +34,6 @@ Lean axiom ledger:
 - ZisK RV64IM circuit-to-Lean extraction from flake-pinned ZisK/PIL inputs.
 
 ## Current Classes
-
-| Class                           | Declarations | In global closure | Removability                                                                                        |
-| ---                             | ---:         | ---:              | ---                                                                                                 |
-| Memory state load bridge        | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
-| Clean completeness placeholders | 6            | 0                 | Completeness-direction placeholders retained for Clean component construction, not soundness.       |
-
 
 ## Retired Row-Shape Bridge
 
@@ -60,21 +49,14 @@ provenance and provider rows: static mode/control pins from provenance,
 runtime source/data lanes from caller facts, and jump/PC facts from explicit
 route obligations.
 
-## Memory State Load Bridge
+## Retired Memory State Load Bridge
 
-Declaration:
-
-```text
-ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-```
-
-This bridge says that the memory row selected by the circuit-side memory model
-loads the same bytes as the Sail state memory. It is an unproved
-model-fidelity boundary, not a known bug.
-
-Retirement path: prove the end-to-end connection from extracted Mem AIR
-constraints, memory-bus matching, byte assembly, and Sail memory
-representation.
+The former source axiom
+`ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load` has been removed.
+Load correctness now consumes an explicit
+`ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement` premise threaded through
+the load trace context, and `MemModel.lean` only projects the resulting byte
+facts.
 
 ## Platform Profile
 
