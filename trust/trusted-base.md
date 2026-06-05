@@ -21,16 +21,12 @@ Current generated counts:
 
 | Surface                                                                | Count | Ledger                                                                                       |
 | ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 7     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Source Lean trust declarations                                         | 1     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
 | Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 1     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
-The difference is intentional: some checked-in trust declarations are retained
-for local components or completeness-direction placeholders but are not reached
-by the current global compliance theorem. The semantic trust gate checks the
-global closure against the source ledger modulo
-[`tolerated-completeness-axioms.txt`](tolerated-completeness-axioms.txt),
-which now records documented source axioms that are intentionally absent from
-the global soundness closure.
+The source trust ledger and global theorem closure now match: the only active
+Lean trust declaration is the memory state load bridge reached by the global
+compliance theorem.
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
@@ -40,10 +36,9 @@ Lean axiom ledger:
 
 ## Current Classes
 
-| Class                           | Declarations | In global closure | Removability                                                                                        |
-| ---                             | ---:         | ---:              | ---                                                                                                 |
-| Memory state load bridge        | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
-| Clean completeness placeholders | 6            | 0                 | Completeness-direction placeholders retained for Clean component construction, not soundness.       |
+| Class                    | Declarations | In global closure | Removability                                                                                        |
+| ---                      | ---:         | ---:              | ---                                                                                                 |
+| Memory state load bridge | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
 
 
 ## Retired Row-Shape Bridge
@@ -59,6 +54,94 @@ that contract are now explicit caller/envelope facts or are derived from row
 provenance and provider rows: static mode/control pins from provenance,
 runtime source/data lanes from caller facts, and jump/PC facts from explicit
 route obligations.
+
+## Retired Aeneas Row-Lowering Bridge
+
+The production-backed Aeneas extraction is checked by the repository test path,
+but the generated Aeneas Lean is not yet imported by the main Lake proof to
+derive every row-provenance, row-mode, source-lane, immediate, PC, and link
+bridge fact consumed by the compliance wrappers. Earlier slices exposed this
+gap through the broad `ZiskFv.Compliance.aeneas_bridge_trust` axiom; that axiom
+has now been retired from source and from the global theorem closure.
+
+The existing wrapper and `OpEnvelope` signatures still expose those fields
+because the dispatch proofs pass them to the current wrapper layer. The
+generated caller-burden ledgers remain the mechanical inventory for the later
+refactor that removes those parameters after generated Aeneas Lean supplies
+proofs inside Lake.
+
+First proof-slice progress: the staged Aeneas harness now checks that
+`extract_lui_from_inst` computes the LUI row-shape constants needed for
+`MainRowProvenance.LuiRowMode`, and main Lake contains
+`MainRowProvenance.luiRowMode_of_extracted_shape`, which states that those
+constants discharge the `OpEnvelope.lui` row-mode field. Main Lake also
+contains `OpEnvelope.luiOfExtractedShape` and
+`OpEnvelope.aeneasBridgeTrust_luiOfExtractedShape`, which construct the LUI
+envelope with the derived row-mode field and prove the LUI branch of this
+bridge predicate. Generated Aeneas Lean remains staged under `build/`, so this
+does not eliminate the remaining caller-burden bridge fields.
+
+Second proof-slice progress: the same row-mode pattern now covers AUIPC. The
+staged Aeneas harness checks the `extract_auipc_from_inst` row-shape constants,
+and main Lake contains `MainRowProvenance.auipcRowMode_of_extracted_shape`,
+`OpEnvelope.auipcOfExtractedShape`, and
+`OpEnvelope.aeneasBridgeTrust_auipcOfExtractedShape`.
+
+Third proof-slice progress: the same row-mode pattern now covers the JAL
+rd-write route. The staged Aeneas harness checks the `extract_jal_from_inst`
+row-shape constants, and main Lake contains
+`MainRowProvenance.jalRowMode_of_extracted_shape`,
+`OpEnvelope.jalOfExtractedShape`, and
+`OpEnvelope.aeneasBridgeTrust_jalOfExtractedShape`.
+
+Fourth proof-slice progress: JALR now has the matching final-row control-pin
+slice. The staged Aeneas harness checks the `extract_jalr_from_inst` external
+`OP_AND` and control-pin constants, and main Lake contains
+`MainRowProvenance.jalrPins_of_extracted_shape`,
+`MainRowProvenance.jalrControl_of_extracted_shape`,
+`OpEnvelope.jalrOfExtractedShape`, and
+`OpEnvelope.aeneasBridgeTrust_jalrOfExtractedShape`.
+
+Fifth proof-slice progress: FENCE now has the matching activation/opcode pin
+slice. The staged Aeneas harness checks the `extract_fence_from_inst` internal
+`OP_FLAG` constants, and main Lake contains
+`MainRowProvenance.fencePins_of_extracted_shape`,
+`OpEnvelope.fenceOfExtractedShape`, and
+`OpEnvelope.aeneasBridgeTrust_fenceOfExtractedShape`.
+
+Sixth proof-slice progress: ADD, ADDI, and ADDW now cover the first Binary
+provider-route pins. The staged Aeneas harness checks that regular ADD and ADDI
+lower to external `OP_ADD` rows and ADDW lowers to an external `OP_ADD_W` row,
+and main Lake contains `MainRowProvenance.addPins_of_extracted_shape`,
+`MainRowProvenance.addwPins_of_extracted_shape`,
+`OpEnvelope.addViaBinaryOfExtractedShape`,
+`OpEnvelope.addiViaBinaryOfExtractedShape`,
+`OpEnvelope.addwOfExtractedShape`, and the matching
+`OpEnvelope.aeneasBridgeTrust_*OfExtractedShape` theorems. The provider-row
+source-lane equalities are still explicit envelope fields.
+
+Seventh proof-slice progress: SUB, SUBW, and ADDIW now cover the remaining
+initial BinaryAdd/BinaryAddW provider-route shape. The staged Aeneas harness
+checks the external `OP_SUB`, `OP_SUB_W`, and `OP_ADD_W` row-shape constants,
+and main Lake contains `MainRowProvenance.subPins_of_extracted_shape`,
+`MainRowProvenance.subwPins_of_extracted_shape`,
+`OpEnvelope.subOfExtractedShape`, `OpEnvelope.subwOfExtractedShape`,
+`OpEnvelope.addiwOfExtractedShape`, and the matching
+`OpEnvelope.aeneasBridgeTrust_*OfExtractedShape` theorems.
+
+Generated-bridge manifest: generated Aeneas Lean remains reproducible build
+output under `build/aeneas-production-extraction`. The maintained trust-gate
+artifact is [`aeneas-generated-bridge-manifest.txt`](aeneas-generated-bridge-manifest.txt),
+checked by `trust/scripts/check-aeneas-generated-bridge-manifest.sh` and by
+`trust/scripts/check-all.sh`. It keeps the generated row-shape predicates and
+Lean examples aligned with the generator template, and checks generated output
+when present, without committing generated Lean.
+
+Remaining path: export provider-row values, selected memory rows, and
+full-ensemble same-message facts into the main proof boundary. Those artifacts
+are needed to remove the remaining caller-burden bridge, row-shape, and
+promise fields from wrapper and `OpEnvelope` boundaries. The `bus_shape`
+category is already zero after the W-shift structural cleanup.
 
 ## Memory State Load Bridge
 
@@ -136,6 +219,17 @@ The generated anti-laundering ledgers are:
 Promise discharge must visibly reduce caller burden, unless a documented
 structural-unpacking exception explains why added structural witnesses collapse
 into shared global-theorem evidence.
+
+Current caller-burden summary:
+
+- Canonical total rows: 1062.
+- Wrapper total rows: 1117.
+- `bridge`: 122 in both ledgers.
+- `row_shape`: 18 canonical, 22 wrapper.
+- `bus_shape`: 0 in both ledgers.
+
+The remaining `bridge` and `row_shape` entries are documented as generated or
+full-ensemble integration boundaries, not as hidden global axioms.
 
 ## Not In This Ledger
 

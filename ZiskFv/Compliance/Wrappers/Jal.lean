@@ -46,7 +46,7 @@ lemma equiv_JAL_x0_no_memory
 
 /-- **Compatibility wrapper for `equiv_JAL`.** Derives `h_circuit` from
     explicit Main-row pins and delegates to canonical `equiv_JAL`. -/
-lemma equiv_JAL
+lemma equiv_JAL_of_main_pins
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
@@ -89,7 +89,7 @@ lemma equiv_JAL
 
 /-- Row-provenance wrapper for the JAL rd-write route. The mode pins come from
     a selected production-extracted row shape. -/
-lemma equiv_JAL_of_row_provenance
+lemma equiv_JAL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
