@@ -1,9 +1,9 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: load/store residual caller-burden audit is complete; moving to
-Binary/BinaryExtension/Arith provider bridge equalities.
+Current focus: Phase 2 caller-burden audit is complete; preparing Phase 3
+generated-proof integration work.
 Blocking: none.
-Next step: inspect provider bridge equality families and record which need
-generated production proofs rather than local refactors.
+Next step: commit the provider-family audit, then decide and implement the
+first generated-proof integration path.
 
 Recent state:
 - Opcode-family slices through MUL and DIV/REM are committed.
@@ -42,6 +42,10 @@ Recent state:
   `StorePromises` already bundle structural bus/state obligations, and the
   full-ensemble Clean witness constructors need generated/full-ensemble facts
   before they can reduce the active `equiv_<OP>` public ledger.
+- Provider-family audit found no honest local reduction: Binary,
+  BinaryExtension, ArithMul, ArithDiv, and Rem bridge equalities are genuine
+  provider-row/Sail-input obligations that need generated/full-ensemble proof
+  integration.
 - W-shift reduction committed as `2aa77fa4 Consolidate W-shift caller burden`.
 - Renamed the active row-provenance LUI/AUIPC/JAL wrappers to `equiv_LUI`,
   `equiv_AUIPC`, and `equiv_JAL`; the older pin-based compatibility wrappers

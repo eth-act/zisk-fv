@@ -422,10 +422,10 @@ Work queue:
 - [x] Audit load/store residual `LoadPromises`/`StorePromises` and
       `LoadCleanWitness` obligations against the Clean Main/Mem bridge
       witnesses already present in `OpEnvelope`.
-- [ ] Audit Binary/BinaryExtension/Arith provider bridge equalities by family
+- [x] Audit Binary/BinaryExtension/Arith provider bridge equalities by family
       and record which require generated production proofs rather than local
       refactors.
-- [ ] For each honest reduction slice, update docs, run build/trust/extraction
+- [x] For each honest reduction slice, update docs, run build/trust/extraction
       checks, and commit.
 
 U/control-flow audit result: `LUI`, `AUIPC`, and `JAL` canonical proofs already
@@ -449,6 +449,20 @@ the public `equiv_<OP>` ledger surface to those constructors would add the
 larger generated/full-ensemble artifact rather than discharge the residual
 promises. No load/store caller-burden reduction is therefore honest until the
 generated/full-ensemble facts are integrated as a maintained proof source.
+
+Provider-family audit result: the remaining `bridge` rows are not accidental
+wrapper clutter. Binary/BinaryAdd/BinaryExtension rows are Sail-input to
+provider-row equalities (`binaryRowA64`, `binaryRowB64`, `rowA64`,
+`rowA32`, `rowShiftAmount`, `rowShiftAmount32`) plus structural
+`RTypePromises`, `ITypePromises`, `ShiftImmPromises`, and
+`ShiftWImmPromises`. ArithMul/ArithDiv/Rem rows are provider-limb operand
+bridges (`h_rs1_value`, `h_rs2_value`) plus division/remainder edge
+preconditions (`h_op2_ne`, `h_no_overflow`, and W-form variants). Existing
+Clean balance modules already derive provider-row `matches_entry` witnesses
+from active Main op-bus interactions, but the operand equalities and arithmetic
+side conditions must come from production row/provider facts and Sail input
+facts. A local signature reshuffle would only hide those obligations, so this
+phase records them as Phase 3 generated-proof integration work.
 
 ## Phase 3: Generated Proof Integration
 
