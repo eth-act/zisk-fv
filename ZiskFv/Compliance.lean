@@ -49,10 +49,13 @@ closures plus the trivial `state_effect_via_channels_eq_bus_effect_2`
 bridge. The V2 trust gate enforces this.
 
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
-defect-aware while `trust/defects.md` contains open claim-weakening defects:
-the `h_known_bugs` binder is orthogonal to the validity witnesses already
-bundled in `OpEnvelope`. Validity says the current modeled constraints hold;
-`h_known_bugs` says this envelope is not inside a ledgered defect region.
+conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
+starts from an already-constructed envelope rather than proving accepted-trace
+completeness. It is also defect-aware while `trust/defects.md` contains open
+claim-weakening defects: the `h_known_bugs` binder is orthogonal to the
+validity witnesses already bundled in `OpEnvelope`. Validity says the current
+modeled constraints hold; `h_known_bugs` says this envelope is not inside a
+ledgered defect region.
 -/
 
 namespace ZiskFv.Compliance
@@ -85,6 +88,7 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
     defect regions recorded by `Defects.NoKnownDefect`. -/
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
+    (_h_burden : env.completenessBurden)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩

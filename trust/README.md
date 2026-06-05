@@ -31,8 +31,8 @@ when they are not trust policy or trust evidence.
 
 | Ledger                            | Count      | File                                                                                         |
 | ---                               | ---:        | ---                                                                                          |
-| Source Lean trust declarations    | 1          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Global compliance theorem closure | 1          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations    | 0          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Global compliance theorem closure | 0          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 | Per-canonical-theorem closures    | 63 entries | [`generated/baseline-equiv-axiom-deps.txt`](generated/baseline-equiv-axiom-deps.txt)         |
 
 ## Generated Files
@@ -59,9 +59,12 @@ completeness declarations in the global soundness closure, canonical active
 dispatch targets, no public-looking `Equivalence.equiv_*` helper theorem
 surfaces, and explicit classification for route-named `OpEnvelope` variants.
 The intended public theorem API is `zisk_riscv_compliant_program_bus` plus the
-63 canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems. Wrapper and
-EquivCore routes are implementation details; the wrapper caller-burden gate
-still tracks wrapper lemma binders as an internal audit surface.
+63 canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems. The public theorem
+is conditional on `OpEnvelope.completenessBurden`, which marks that the
+per-opcode witness envelope is supplied rather than constructed from a full
+accepted trace. Wrapper and EquivCore routes are implementation details; the
+wrapper caller-burden gate still tracks wrapper lemma binders as an internal
+audit surface.
 
 ## PR Policy
 

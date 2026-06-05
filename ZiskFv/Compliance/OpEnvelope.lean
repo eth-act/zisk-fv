@@ -2226,4 +2226,55 @@ inductive OpEnvelope
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536) :
     OpEnvelope state m r_main
 
+/-- Marker for row-local specs carried by `OpEnvelope` constructors. -/
+def OpEnvelope.rowSpecBurden
+    (_env : OpEnvelope state m r_main) : Prop :=
+  True
+
+/-- Marker for provider table specs, provider-row membership, and static
+    lookup evidence carried by `OpEnvelope` constructors. -/
+def OpEnvelope.tableProviderBurden
+    (_env : OpEnvelope state m r_main) : Prop :=
+  True
+
+/-- Marker for memory agreement, byte facts, and Mem/Main memory-bus witness
+    facts carried by load/store `OpEnvelope` constructors. -/
+def OpEnvelope.memoryBurden
+    (_env : OpEnvelope state m r_main) : Prop :=
+  True
+
+/-- Marker for route pins, message equality, row equality, and bus-match facts
+    carried by `OpEnvelope` constructors. -/
+def OpEnvelope.routeBurden
+    (_env : OpEnvelope state m r_main) : Prop :=
+  True
+
+/-- Public marker for the completeness/witness burden hidden inside an
+    `OpEnvelope`.
+
+    The current compliance theorem is not a global accepted-trace
+    completeness theorem: an `OpEnvelope` already carries row specs, table
+    specs, provider-row membership, memory agreement, byte facts, and route
+    pins. Requiring this predicate at the public theorem boundary makes that
+    caller burden explicit without changing the existing wrapper proofs.
+
+    Today the predicate is extractable from the envelope itself; replacing this
+    marker with a nontrivial accepted-trace construction is the next proof
+    strengthening step. -/
+def OpEnvelope.completenessBurden
+    (env : OpEnvelope state m r_main) : Prop :=
+  env.rowSpecBurden
+    ∧ env.tableProviderBurden
+    ∧ env.memoryBurden
+    ∧ env.routeBurden
+
+/-- Existing envelopes satisfy the current burden marker because the
+    proof-bearing witness data is still carried directly by the constructor
+    arguments. This theorem is intentionally the only default discharge for
+    the public theorem's burden premise. -/
+theorem OpEnvelope.completenessBurden_of_env
+    (env : OpEnvelope state m r_main) :
+    env.completenessBurden := by
+  exact ⟨trivial, trivial, trivial, trivial⟩
+
 end ZiskFv.Compliance

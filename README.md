@@ -14,16 +14,18 @@ The current verification claim is:
 ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 ```
 
-That theorem dispatches all 63 covered RV64IM opcode surfaces through
+That theorem is conditional on `OpEnvelope.completenessBurden`: it dispatches
+all 63 covered RV64IM opcode surfaces through
 `ZiskFv/Compliance/Wrappers/<Op>.lean` to the canonical `equiv_<OP>` theorem
-for each instruction. `lake build` typechecking is the formal check.
+for each instruction once the per-arm witness envelope has already been
+constructed. `lake build` typechecking is the formal check.
 
 ## Trust Boundary
 
 All trust-boundary documentation and all machine-checked trust ledgers live in
-[`trust/`](trust/README.md). The current source trust ledger contains 7
+[`trust/`](trust/README.md). The current source trust ledger contains 0
 Lean axiom declarations. The global compliance theorem's transitive project
-axiom closure contains 1 of those declarations, recorded in
+axiom closure contains 0 project axioms, recorded in
 [`trust/generated/baseline-zisk-riscv-compliant.txt`](trust/generated/baseline-zisk-riscv-compliant.txt).
 
 The narrative trust ledger is

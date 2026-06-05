@@ -1,11 +1,11 @@
 # Status
 
-Plan: `docs/ai/plan/PLAN_MEMORY_AXIOM.md`
+Plan: `docs/ai/plan/PLAN_COMPLETENESS_BURDEN.md`
 
 Current focus: implementation, verification, and commit complete.
 
-Blocking: none for axiom removal. Follow-up remains to delete stale `mem_legacy_addr` binders from wrapper/envelope surfaces; active load discharge no longer uses them.
+Blocking: none.
 
-Next step: follow-up cleanup can remove stale `mem_legacy_addr` binders from wrapper/envelope surfaces.
+Next step: optional follow-up can make `OpEnvelope.completenessBurden` nontrivial per constructor or replace `completenessBurden_of_env` with an accepted-trace construction.
 
 Digression: none.
