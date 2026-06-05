@@ -116,7 +116,7 @@ the corresponding checked-in and generated builds have passed.
 | Immediate ALU | ADDI SLLI SLTI SLTIU XORI SRLI SRAI ORI ANDI | done | done | done | done | none |
 | Immediate word ALU | ADDIW SLLIW SRLIW SRAIW | done | done | done | done | none |
 | Branches | BEQ BNE BLT BGE BLTU BGEU | done | done | done | done | none |
-| Loads | LB LBU LH LHU LW LWU LD | pending | pending | pending | pending | none expected |
+| Loads | LB LBU LH LHU LW LWU LD | done | done | done | done | none |
 | Stores | SB SH SW SD | pending | pending | pending | pending | none expected |
 | Upper/jump | LUI AUIPC JAL JALR | pending | pending | pending | pending | none expected |
 | Fence | FENCE | partial | partial | pending | partial | generic FENCE restrictions |
@@ -145,7 +145,7 @@ the corresponding checked-in and generated builds have passed.
   generated coverage, verification, docs, commit.
 - [x] Branches: close whitelist, raw-shape lemma, global theorem shape,
   generated coverage, verification, docs, commit.
-- [ ] Loads: close whitelist, raw-shape lemma, global theorem shape, generated
+- [x] Loads: close whitelist, raw-shape lemma, global theorem shape, generated
   coverage, verification, docs, commit.
 - [ ] Stores: close whitelist, raw-shape lemma, global theorem shape, generated
   coverage, verification, docs, commit.

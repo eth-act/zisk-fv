@@ -185,6 +185,16 @@ def SailBranchInstruction (inst : instruction) : Prop :=
     (Sail.BitVec.extractLsb imm 0 0 == (0#1 : BitVec 1)) = true ∧
     inst = instruction.BTYPE (imm, rs2, rs1, bop.BGEU))
 
+/-- Sail load constructor surface implemented by ZisK RV64IM. -/
+def SailLoadInstruction (inst : instruction) : Prop :=
+  (∃ imm rs1 rd, inst = instruction.LOAD (imm, rs1, rd, false, (1 : Int))) ∨
+  (∃ imm rs1 rd, inst = instruction.LOAD (imm, rs1, rd, false, (2 : Int))) ∨
+  (∃ imm rs1 rd, inst = instruction.LOAD (imm, rs1, rd, false, (4 : Int))) ∨
+  (∃ imm rs1 rd, inst = instruction.LOAD (imm, rs1, rd, false, (8 : Int))) ∨
+  (∃ imm rs1 rd, inst = instruction.LOAD (imm, rs1, rd, true, (1 : Int))) ∨
+  (∃ imm rs1 rd, inst = instruction.LOAD (imm, rs1, rd, true, (2 : Int))) ∨
+  (∃ imm rs1 rd, inst = instruction.LOAD (imm, rs1, rd, true, (4 : Int)))
+
 /-- Compatibility name for the already-closed ADD/SUB pilot surface. -/
 def SailRegisterPilotInstruction (inst : instruction) : Prop :=
   (∃ rs2 rs1 rd, inst = instruction.RTYPE (rs2, rs1, rd, rop.ADD)) ∨
@@ -199,7 +209,8 @@ def SailRv64imInstruction (inst : instruction) : Prop :=
   SailImmediateAluInstruction inst ∨
   SailShiftImmediateInstruction inst ∨
   SailImmediateWordAluInstruction inst ∨
-  SailBranchInstruction inst
+  SailBranchInstruction inst ∨
+  SailLoadInstruction inst
 
 def SailPureRv64imInstruction (inst : instruction) : Prop :=
   SailRegisterAluInstruction inst ∨
@@ -759,6 +770,40 @@ theorem sail_itype_concat_eq_rawIType
         funct3.toNat
         (regidx_to_fin rd).val
         0x13 := by
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_load_concat_eq_rawIType
+    (imm : BitVec 12) (rs1 rd : regidx) (funct3 : BitVec 3) :
+    ((imm ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+        (funct3 ++
+          (LeanRV64D.Functions.encdec_reg_forwards rd ++
+            0b0000011#7)))) : RawInstruction) =
+      Rv64imShapes.rawIType imm.toNat
+        (regidx_to_fin rs1).val
+        funct3.toNat
+        (regidx_to_fin rd).val
+        0x03 := by
+  cases rs1 with | Regidx rs1 =>
+  cases rd with | Regidx rd =>
+  native_decide +revert
+
+theorem sail_load_parts_concat_eq_rawIType
+    (imm : BitVec 12) (rs1 rd : regidx)
+    (is_unsigned : BitVec 1) (width : BitVec 2) :
+    ((imm ++
+      (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+        (is_unsigned ++
+          (width ++
+            (LeanRV64D.Functions.encdec_reg_forwards rd ++
+              0b0000011#7))))) : RawInstruction) =
+      Rv64imShapes.rawIType imm.toNat
+        (regidx_to_fin rs1).val
+        (is_unsigned ++ width).toNat
+        (regidx_to_fin rd).val
+        0x03 := by
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
   native_decide +revert
@@ -2015,6 +2060,153 @@ theorem sail_encode_itype_eq_rawIType
   rw [sail_itype_concat_eq_rawIType imm rs1 rd
     (LeanRV64D.Functions.encdec_iop_forwards op)]
 
+theorem sail_encode_load_eq_rawIType
+    (imm : BitVec 12) (rs1 rd : regidx)
+    (is_unsigned : Bool) (width : Int)
+    (h_valid :
+      LeanRV64D.Functions.valid_load_encdec (Int.toNat width) is_unsigned =
+        true) :
+    LeanRV64D.Functions.encdec_forwards
+        (instruction.LOAD (imm, rs1, rd, is_unsigned, width)) =
+      pure
+        (Rv64imShapes.rawIType imm.toNat
+          (regidx_to_fin rs1).val
+          (LeanRV64D.Functions.bool_bits_forwards is_unsigned ++
+            LeanRV64D.Functions.width_enc_forwards (Int.toNat width)).toNat
+          (regidx_to_fin rd).val
+          0x03) := by
+  rw [LeanRV64D.Functions.encdec_forwards.eq_def]
+  change
+    (if LeanRV64D.Functions.valid_load_encdec (Int.toNat width) is_unsigned = true then
+      (show SailM RawInstruction from
+        pure
+          ((imm ++
+            (LeanRV64D.Functions.encdec_reg_forwards rs1 ++
+              (LeanRV64D.Functions.bool_bits_forwards is_unsigned ++
+                (LeanRV64D.Functions.width_enc_forwards (Int.toNat width) ++
+                  (LeanRV64D.Functions.encdec_reg_forwards rd ++
+                    0b0000011#7))))) : RawInstruction))
+    else do
+      Sail.assert false "Pattern match failure at unknown location"
+      throw Sail.Error.Exit) =
+      pure
+        (Rv64imShapes.rawIType imm.toNat
+          (regidx_to_fin rs1).val
+          (LeanRV64D.Functions.bool_bits_forwards is_unsigned ++
+            LeanRV64D.Functions.width_enc_forwards (Int.toNat width)).toNat
+          (regidx_to_fin rd).val
+          0x03)
+  rw [h_valid]
+  simp only [if_true]
+  rw [sail_load_parts_concat_eq_rawIType imm rs1 rd
+    (LeanRV64D.Functions.bool_bits_forwards is_unsigned)
+    (LeanRV64D.Functions.width_enc_forwards (Int.toNat width))]
+
+theorem sail_encode_lb_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
+    LeanRV64D.Functions.encdec_forwards
+        (instruction.LOAD (imm, rs1, rd, false, (1 : Int))) =
+      pure
+        (Rv64imShapes.rawIType imm.toNat
+          (regidx_to_fin rs1).val
+          0
+          (regidx_to_fin rd).val
+          0x03) := by
+  simpa [
+    LeanRV64D.Functions.bool_bits_forwards,
+    LeanRV64D.Functions.width_enc_forwards
+  ] using sail_encode_load_eq_rawIType imm rs1 rd false (1 : Int)
+    (by native_decide)
+
+theorem sail_encode_lh_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
+    LeanRV64D.Functions.encdec_forwards
+        (instruction.LOAD (imm, rs1, rd, false, (2 : Int))) =
+      pure
+        (Rv64imShapes.rawIType imm.toNat
+          (regidx_to_fin rs1).val
+          1
+          (regidx_to_fin rd).val
+          0x03) := by
+  simpa [
+    LeanRV64D.Functions.bool_bits_forwards,
+    LeanRV64D.Functions.width_enc_forwards
+  ] using sail_encode_load_eq_rawIType imm rs1 rd false (2 : Int)
+    (by native_decide)
+
+theorem sail_encode_lw_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
+    LeanRV64D.Functions.encdec_forwards
+        (instruction.LOAD (imm, rs1, rd, false, (4 : Int))) =
+      pure
+        (Rv64imShapes.rawIType imm.toNat
+          (regidx_to_fin rs1).val
+          2
+          (regidx_to_fin rd).val
+          0x03) := by
+  simpa [
+    LeanRV64D.Functions.bool_bits_forwards,
+    LeanRV64D.Functions.width_enc_forwards
+  ] using sail_encode_load_eq_rawIType imm rs1 rd false (4 : Int)
+    (by native_decide)
+
+theorem sail_encode_ld_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
+    LeanRV64D.Functions.encdec_forwards
+        (instruction.LOAD (imm, rs1, rd, false, (8 : Int))) =
+      pure
+        (Rv64imShapes.rawIType imm.toNat
+          (regidx_to_fin rs1).val
+          3
+          (regidx_to_fin rd).val
+          0x03) := by
+  simpa [
+    LeanRV64D.Functions.bool_bits_forwards,
+    LeanRV64D.Functions.width_enc_forwards
+  ] using sail_encode_load_eq_rawIType imm rs1 rd false (8 : Int)
+    (by native_decide)
+
+theorem sail_encode_lbu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
+    LeanRV64D.Functions.encdec_forwards
+        (instruction.LOAD (imm, rs1, rd, true, (1 : Int))) =
+      pure
+        (Rv64imShapes.rawIType imm.toNat
+          (regidx_to_fin rs1).val
+          4
+          (regidx_to_fin rd).val
+          0x03) := by
+  simpa [
+    LeanRV64D.Functions.bool_bits_forwards,
+    LeanRV64D.Functions.width_enc_forwards
+  ] using sail_encode_load_eq_rawIType imm rs1 rd true (1 : Int)
+    (by native_decide)
+
+theorem sail_encode_lhu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
+    LeanRV64D.Functions.encdec_forwards
+        (instruction.LOAD (imm, rs1, rd, true, (2 : Int))) =
+      pure
+        (Rv64imShapes.rawIType imm.toNat
+          (regidx_to_fin rs1).val
+          5
+          (regidx_to_fin rd).val
+          0x03) := by
+  simpa [
+    LeanRV64D.Functions.bool_bits_forwards,
+    LeanRV64D.Functions.width_enc_forwards
+  ] using sail_encode_load_eq_rawIType imm rs1 rd true (2 : Int)
+    (by native_decide)
+
+theorem sail_encode_lwu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
+    LeanRV64D.Functions.encdec_forwards
+        (instruction.LOAD (imm, rs1, rd, true, (4 : Int))) =
+      pure
+        (Rv64imShapes.rawIType imm.toNat
+          (regidx_to_fin rs1).val
+          6
+          (regidx_to_fin rd).val
+          0x03) := by
+  simpa [
+    LeanRV64D.Functions.bool_bits_forwards,
+    LeanRV64D.Functions.width_enc_forwards
+  ] using sail_encode_load_eq_rawIType imm rs1 rd true (4 : Int)
+    (by native_decide)
+
 theorem sail_encode_slli_eq_rawIType (shamt : BitVec 6) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
         (instruction.SHIFTIOP (shamt, rs1, rd, sop.SLLI)) =
@@ -2414,6 +2606,25 @@ theorem sail_encode_rawIType_contained_in_immediate_alu_shape_in
     simpa using h_encode.symm
   subst raw
   exact ⟨rd, rs1, imm, funct3, opcode, h_rd, h_rs1, h_imm, h_mem, rfl⟩
+
+theorem sail_encode_rawIType_contained_in_load_shape_in
+    {raw : RawInstruction} {inst : instruction} {state : SailState}
+    {imm funct3 rd rs1 : Nat}
+    (h_encode : SailEncodesToIn state inst raw)
+    (h_encode_op :
+      SailEncodesToIn state inst
+        (Rv64imShapes.rawIType imm rs1 funct3 rd 0x03))
+    (h_mem : funct3 ∈ [0, 1, 2, 3, 4, 5, 6])
+    (h_rd : rd ∈ Rv64imShapes.allRvRegs)
+    (h_rs1 : rs1 ∈ Rv64imShapes.allRvRegs)
+    (h_imm : imm < 4096) :
+    Rv64imShapes.LoadRegisterImmediateShape raw := by
+  have h_raw : raw = Rv64imShapes.rawIType imm rs1 funct3 rd 0x03 := by
+    dsimp [SailEncodesToIn, SailReturns] at h_encode h_encode_op
+    rw [h_encode_op] at h_encode
+    simpa using h_encode.symm
+  subst raw
+  exact ⟨rd, rs1, imm, funct3, h_rd, h_rs1, h_imm, h_mem, rfl⟩
 
 theorem sail_encode_shiftI_contained_in_shift_shape_in
     {raw : RawInstruction} {inst : instruction} {state : SailState}
@@ -3133,6 +3344,78 @@ theorem sail_branch_executable_contained_in :
       imm.isLt
       (sail_btype_align_toNat_mod_two imm h_align)
 
+theorem sail_load_executable_contained_in :
+    ∀ state raw inst,
+      SailDecodesToIn state raw inst →
+      SailEncodesToIn state inst raw →
+      SailLoadInstruction inst →
+      Rv64imShapes.LoadRegisterImmediateShape raw := by
+  intro state raw inst _h_decode h_encode h_inst
+  rcases h_inst with
+    ⟨imm, rs1, rd, h_eq⟩ |
+    ⟨imm, rs1, rd, h_eq⟩ |
+    ⟨imm, rs1, rd, h_eq⟩ |
+    ⟨imm, rs1, rd, h_eq⟩ |
+    ⟨imm, rs1, rd, h_eq⟩ |
+    ⟨imm, rs1, rd, h_eq⟩ |
+    ⟨imm, rs1, rd, h_eq⟩
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawIType_contained_in_load_shape_in h_encode
+      (sail_encodes_to_in_of_pure
+        (sail_encode_lb_eq_rawIType imm rs1 rd) state)
+      (by native_decide)
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      imm.isLt
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawIType_contained_in_load_shape_in h_encode
+      (sail_encodes_to_in_of_pure
+        (sail_encode_lh_eq_rawIType imm rs1 rd) state)
+      (by native_decide)
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      imm.isLt
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawIType_contained_in_load_shape_in h_encode
+      (sail_encodes_to_in_of_pure
+        (sail_encode_lw_eq_rawIType imm rs1 rd) state)
+      (by native_decide)
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      imm.isLt
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawIType_contained_in_load_shape_in h_encode
+      (sail_encodes_to_in_of_pure
+        (sail_encode_ld_eq_rawIType imm rs1 rd) state)
+      (by native_decide)
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      imm.isLt
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawIType_contained_in_load_shape_in h_encode
+      (sail_encodes_to_in_of_pure
+        (sail_encode_lbu_eq_rawIType imm rs1 rd) state)
+      (by native_decide)
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      imm.isLt
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawIType_contained_in_load_shape_in h_encode
+      (sail_encodes_to_in_of_pure
+        (sail_encode_lhu_eq_rawIType imm rs1 rd) state)
+      (by native_decide)
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      imm.isLt
+  · rw [h_eq] at h_encode
+    exact sail_encode_rawIType_contained_in_load_shape_in h_encode
+      (sail_encodes_to_in_of_pure
+        (sail_encode_lwu_eq_rawIType imm rs1 rd) state)
+      (by native_decide)
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      imm.isLt
+
 theorem sail_rv64im_executable_contained_in_supported_decode :
     ∀ raw,
       SailRv64imExecutableRaw raw →
@@ -3181,7 +3464,7 @@ theorem sail_rv64im_executable_contained_in_supported_decode_in :
   · exact .inr (.inr (.inl
       (sail_shift_immediate_executable_contained_in
         state raw inst h_decode h_encode h_shift_immediate)))
-  rcases h_tail with h_immediate_word_alu | h_branch
+  rcases h_tail with h_immediate_word_alu | h_tail
   · rcases
       sail_immediate_word_alu_executable_contained_in
         state raw inst h_decode h_encode h_immediate_word_alu with
@@ -3190,8 +3473,13 @@ theorem sail_rv64im_executable_contained_in_supported_decode_in :
         Rv64imShapes.immediate_alu_register_shape_subset_supported_decode
           h_immediate_alu
     · exact .inr (.inr (.inl h_shift))
+  rcases h_tail with h_branch | h_load
   · exact .inr (.inr (.inr (.inr (.inl
       (sail_branch_executable_contained_in
         state raw inst h_decode h_encode h_branch)))))
+  · exact .inr (.inl
+      (Rv64imShapes.load_register_immediate_shape_subset
+        (sail_load_executable_contained_in
+          state raw inst h_decode h_encode h_load)))
 
 end ZiskFv.Completeness.SailDecode

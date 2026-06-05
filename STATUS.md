@@ -1,5 +1,5 @@
 Plan: docs/ai/plan/PLAN_RV64IM_GLOBAL_COMPLETENESS.md
-Focus: Loads slice: add Sail containment for LB/LBU/LH/LHU/LW/LWU/LD.
-Blocking: Nothing currently blocking.
-Next step: Inspect Sail load constructors and existing load/raw I-type shape helpers before adding the Loads whitelist.
-Digression: Branches slice passed Lake build and Aeneas production completeness.
+Focus: Stores slice: start Sail containment for SB/SH/SW/SD.
+Blocking: none.
+Next step: Extend the Sail whitelist and raw-shape lemmas for STORE constructors, then compose store containment into the global shape theorem.
+Digression: Loads slice passed Lake build and Aeneas production completeness.
