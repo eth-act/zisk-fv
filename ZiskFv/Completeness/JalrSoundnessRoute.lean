@@ -20,13 +20,17 @@ abbrev RawInstruction := Rv.RawInstruction
 workspace this is backed by `extract_transpile_rv64im_raw` row checks against
 the JALR soundness-input predicate, not by a hand-picked regression constant. -/
 structure Interface where
-  ziskJalrSoundnessInput : RawInstruction → Prop
+  LoweredRows : Type
+  ziskTranspilesJalr : RawInstruction → LoweredRows → Prop
+  ziskJalrSoundnessInput : LoweredRows → Prop
 
 namespace Interface
 
 abbrev ziskJalrSoundnessRoute
     (iface : Interface) (raw : RawInstruction) : Prop :=
-  iface.ziskJalrSoundnessInput raw
+  ∃ rows,
+    iface.ziskTranspilesJalr raw rows ∧
+    iface.ziskJalrSoundnessInput rows
 
 /-- Sail accepts the raw word as a JALR instruction, with the encode bridge
 making the raw I-type fields available to the checked-in shape theorem. -/
@@ -41,7 +45,7 @@ I-format decode surface. This is a ZisK-side implementation lemma, not the
 source of truth for instruction validity. -/
 def ShapeRouteComplete
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.ziskJalrSoundnessInput raw
+  ∀ raw, shape raw → iface.ziskJalrSoundnessRoute raw
 
 /-- Sail-to-ZisK JALR route completeness before adding the RV64IM state
 assumption. Sail remains the source of valid raw JALR words; the raw I-shape
@@ -49,7 +53,7 @@ formula is derived below only to connect into generated ZisK coverage. -/
 def SailRouteComplete (iface : Interface) : Prop :=
   ∀ state raw,
     SailJalrExecutableIn state raw →
-    iface.ziskJalrSoundnessInput raw
+    iface.ziskJalrSoundnessRoute raw
 
 /-- Sail-to-ZisK JALR route completeness. This is the narrow theorem shape:
 Sail is the source of valid JALR raw words, and ZisK must expose the static row
@@ -58,7 +62,7 @@ def Complete (iface : Interface) : Prop :=
   ∀ state raw,
     Rv64imEnabledSailState state →
     SailJalrExecutableIn state raw →
-    iface.ziskJalrSoundnessInput raw
+    iface.ziskJalrSoundnessRoute raw
 
 /-- The raw I-format JALR shape is recovered from the Sail encode/decode
 relation. This keeps the public route theorem Sail-first while still reusing
