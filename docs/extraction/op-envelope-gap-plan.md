@@ -202,6 +202,23 @@ pipeline.
      `OpEnvelope.subwOfExtractedShape`, and `OpEnvelope.addiwOfExtractedShape`
      plus matching bridge theorems.
 
+   The R-type Binary logic/comparison provider-route shape now covers AND, OR,
+   XOR, SLT, and SLTU:
+
+   - the staged Aeneas harness proves that AND lowers to external `OP_AND`, OR
+     lowers to external `OP_OR`, XOR lowers to external `OP_XOR`, SLT lowers
+     to external `OP_LT`, and SLTU lowers to external `OP_LTU`;
+   - main Lake proves `MainRowProvenance.andPins_of_extracted_shape`,
+     `MainRowProvenance.orPins_of_extracted_shape`,
+     `MainRowProvenance.xorPins_of_extracted_shape`,
+     `MainRowProvenance.ltPins_of_extracted_shape`, and
+     `MainRowProvenance.ltuPins_of_extracted_shape`;
+   - main Lake extends `OpEnvelope.aeneasBridgeTrust` with the corresponding
+     source-lane predicates and exposes `OpEnvelope.andOfExtractedShape`,
+     `OpEnvelope.orOfExtractedShape`, `OpEnvelope.xorOfExtractedShape`,
+     `OpEnvelope.sltOfExtractedShape`, and
+     `OpEnvelope.sltuOfExtractedShape` plus matching bridge theorems.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

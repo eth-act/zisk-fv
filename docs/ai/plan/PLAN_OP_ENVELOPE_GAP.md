@@ -112,6 +112,22 @@ remaining source-lane bridge shapes that match the ADD slice.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: AND/OR/XOR/SLT/SLTU
+
+Continue depth-first through the Binary provider-route group with the R-type
+logic and comparison operations. These share the same external Binary provider
+route as ADD/SUB: Main opcode pins plus provider source-lane equalities.
+
+- [x] Add main-Lake helpers deriving AND, OR, XOR, LT, and LTU `MainRowPins` from extracted-row constants.
+- [x] Extend `aeneasBridgeTrust` and add AND, OR, XOR, SLT, and SLTU `OpEnvelope` constructors/bridge theorems.
+- [x] Add staged Aeneas generated checks for AND, OR, XOR, SLT, and SLTU external provider-route row shapes.
+- [x] Update extraction/trust docs to describe the logic/comparison slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: SUB/SUBW/ADDIW Binary provider-route slice verified; preparing commit.
+Current focus: AND/OR/XOR/SLT/SLTU Binary provider-route slice verified; preparing commit.
 Blocking: none.
-Next step: commit the SUB/SUBW/ADDIW slice if the worktree side effects are clean.
+Next step: commit the AND/OR/XOR/SLT/SLTU slice, then continue with the I-type logic/comparison immediates.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -83,3 +83,12 @@ Notes:
 - `trust/scripts/check-all.sh` passed for the SUB/SUBW/ADDIW slice.
 - `trust/scripts/check-all-semantic.sh` passed for the SUB/SUBW/ADDIW slice.
 - `nix run .#aeneas-production-extract` passed for the SUB/SUBW/ADDIW slice.
+- SUB/SUBW/ADDIW slice committed as `f1b594c6 Add SUB provider-route bridge slice`.
+- Added AND/OR/XOR/SLT/SLTU pin helpers, bridge predicates, constructors,
+  bridge theorems, and staged production row-shape checks.
+- `lake build ZiskFv.Compliance` passed for the AND/OR/XOR/SLT/SLTU slice.
+- `trust/scripts/regenerate.sh` passed for the AND/OR/XOR/SLT/SLTU slice.
+- `trust/scripts/check-all.sh` passed for the AND/OR/XOR/SLT/SLTU slice.
+- `trust/scripts/check-all-semantic.sh` passed for the AND/OR/XOR/SLT/SLTU slice.
+- `nix run .#aeneas-production-extract` passed for the AND/OR/XOR/SLT/SLTU slice.
+- Generated trust diffs are only the expected `aeneas_bridge_trust` line-number shift.

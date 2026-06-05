@@ -80,7 +80,11 @@ def opFlag : Nat := 0
 def opCopyB : Nat := 1
 def opAdd : Nat := 10
 def opSub : Nat := 11
+def opLtu : Nat := 6
+def opLt : Nat := 7
 def opAnd : Nat := 14
+def opOr : Nat := 15
+def opXor : Nat := 16
 def opAddW : Nat := 26
 def opSubW : Nat := 27
 
@@ -307,6 +311,71 @@ theorem subwPins_of_extracted_shape
       simpa [boolF, h_external] using p.is_external_op_eq
     main_op := by
       simpa [natF, ExtractedConst.opSubW, ZiskFv.Trusted.OP_SUB_W, h_op] using p.op_eq }
+
+/-- Build the external `OP_AND` activation/opcode pins from extracted
+row-shape constants. -/
+theorem andPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opAnd)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_AND :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opAnd, ZiskFv.Trusted.OP_AND, h_op] using p.op_eq }
+
+/-- Build the external `OP_OR` activation/opcode pins from extracted
+row-shape constants. -/
+theorem orPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opOr)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_OR :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opOr, ZiskFv.Trusted.OP_OR, h_op] using p.op_eq }
+
+/-- Build the external `OP_XOR` activation/opcode pins from extracted
+row-shape constants. -/
+theorem xorPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opXor)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_XOR :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opXor, ZiskFv.Trusted.OP_XOR, h_op] using p.op_eq }
+
+/-- Build the external `OP_LT` activation/opcode pins from extracted
+row-shape constants. -/
+theorem ltPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opLt)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_LT :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opLt, ZiskFv.Trusted.OP_LT, h_op] using p.op_eq }
+
+/-- Build the external `OP_LTU` activation/opcode pins from extracted
+row-shape constants. -/
+theorem ltuPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opLtu)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_LTU :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opLtu, ZiskFv.Trusted.OP_LTU, h_op] using p.op_eq }
 
 theorem pins
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
