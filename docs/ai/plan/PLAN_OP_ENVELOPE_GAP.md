@@ -160,6 +160,22 @@ the Binary arithmetic/logical operations.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: SLLI/SRLI/SRAI
+
+Continue through BinaryExtension with the 64-bit immediate shift forms. These
+reuse the same Main opcode pins and shift provider component as SLL/SRL/SRA,
+but bridge `ShiftImmPromises` and an immediate shift amount instead of an
+R-type second-register shift amount.
+
+- [ ] Extend `aeneasBridgeTrust` and add SLLI, SRLI, and SRAI `OpEnvelope` constructors/bridge theorems.
+- [ ] Add staged Aeneas generated checks for SLLI, SRLI, and SRAI external shift-provider row shapes.
+- [ ] Update extraction/trust docs to describe the immediate shift slice.
+- [ ] Run `lake build ZiskFv.Compliance`.
+- [ ] Run `trust/scripts/regenerate.sh`.
+- [ ] Run `trust/scripts/check-all.sh`.
+- [ ] Run `trust/scripts/check-all-semantic.sh`.
+- [ ] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

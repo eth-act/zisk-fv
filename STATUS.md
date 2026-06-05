@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: SLL/SRL/SRA BinaryExtension provider-route slice verified; preparing commit.
+Current focus: SLLI/SRLI/SRAI BinaryExtension immediate shift slice.
 Blocking: none.
-Next step: commit the SLL/SRL/SRA slice, then continue with SLLI/SRLI/SRAI.
+Next step: probe production row shapes, add immediate shift bridge constructors/checks, then run full verification.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -114,3 +114,4 @@ Notes:
 - `trust/scripts/check-all-semantic.sh` passed for the SLL/SRL/SRA slice.
 - `nix run .#aeneas-production-extract` passed for the SLL/SRL/SRA slice.
 - Generated trust diffs are only the expected `aeneas_bridge_trust` line-number shift.
+- SLL/SRL/SRA slice committed as `7ac7438a Add R-type shift bridge slice`.
