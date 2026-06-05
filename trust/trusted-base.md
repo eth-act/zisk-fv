@@ -21,16 +21,12 @@ Current generated counts:
 
 | Surface                                                                | Count | Ledger                                                                                       |
 | ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 7     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Source Lean trust declarations                                         | 1     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
 | Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 1     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
-The difference is intentional: some checked-in trust declarations are retained
-for local components or completeness-direction placeholders but are not reached
-by the current global compliance theorem. The semantic trust gate checks the
-global closure against the source ledger modulo
-[`tolerated-completeness-axioms.txt`](tolerated-completeness-axioms.txt),
-which now records documented source axioms that are intentionally absent from
-the global soundness closure.
+The source trust ledger and global theorem closure now match: the only active
+Lean trust declaration is the memory state load bridge reached by the global
+compliance theorem.
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
@@ -40,10 +36,9 @@ Lean axiom ledger:
 
 ## Current Classes
 
-| Class                           | Declarations | In global closure | Removability                                                                                        |
-| ---                             | ---:         | ---:              | ---                                                                                                 |
-| Memory state load bridge        | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
-| Clean completeness placeholders | 6            | 0                 | Completeness-direction placeholders retained for Clean component construction, not soundness.       |
+| Class                    | Declarations | In global closure | Removability                                                                                        |
+| ---                      | ---:         | ---:              | ---                                                                                                 |
+| Memory state load bridge | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
 
 
 ## Retired Row-Shape Bridge
@@ -176,28 +171,16 @@ C disabled in `misa`, and `mseccfg` readability.
 These facts still define the verification target, but they are no longer in
 the trusted axiom ledger.
 
-## Clean Completeness Placeholders
+## Clean Completeness
 
-Declarations live under `ZiskFv/AirsClean/Completeness.lean`.
+The former Clean component completeness placeholders have been retired. The
+old dedicated completeness-axiom module no longer exists, and the six former
+declarations are no longer source-ledger entries.
 
-These are completeness-direction placeholders for clean-table components. They
-assert that a satisfying clean component witness exists for the relevant row
-facts. They do not state per-opcode output equality.
-
-None are currently reached by the global compliance closure. All six are
-source-ledger entries retained for Clean component construction:
-
-```text
-ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness
-ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
-ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness
-ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
-ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
-ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness
-```
-
-Retirement path: prove the corresponding clean component constructibility from
-extracted constraints and witness definitions.
+Clean components still expose `GeneralFormalCircuit.completeness`, but those
+fields are now ordinary Lean proofs conditional on explicit prover-side row
+facts. They do not add trust declarations and they still do not state
+per-opcode output equality.
 
 ## ArithTable And DIV/REM Audit Conclusions
 

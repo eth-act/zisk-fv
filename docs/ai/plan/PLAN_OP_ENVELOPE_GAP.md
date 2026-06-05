@@ -572,7 +572,7 @@ Work queue:
 
 Final verification result: the broad `aeneas_bridge_trust` axiom remains
 retired from the global theorem boundary, the source/global trust ledgers are
-at 7 and 1 entries respectively, `bus_shape` caller burden is zero, and the
+at 1 and 1 entries respectively, `bus_shape` caller burden is zero, and the
 remaining bridge/row-shape/promise obligations are documented as
 generated/full-ensemble integration boundaries.
 
@@ -588,7 +588,7 @@ plan; this cleanup aligns the remaining narrative docs with that state.
       `OpEnvelope.aeneasBridgeTrust` is described as a local audit predicate,
       not a global trust axiom.
 - [x] Confirm the plan has no unchecked slices.
-- [x] Confirm the generated ledgers report 7 source trust declarations, 1
+- [x] Confirm the generated ledgers report 1 source trust declaration, 1
       global closure entry, 63 canonical/wrapper surfaces, 1062 canonical
       caller-burden rows, 1117 wrapper caller-burden rows, and no `bus_shape`
       category.
@@ -598,6 +598,25 @@ plan; this cleanup aligns the remaining narrative docs with that state.
 - [x] Re-run `trust/scripts/check-all-semantic.sh`.
 - [x] Re-run `nix run .#aeneas-production-extract`.
 - [x] Re-run `trust/scripts/check-aeneas-generated-bridge-manifest.sh` after
+      extraction.
+
+## PR Merge-Conflict Resolution
+
+PR #58 conflicted with `origin/main` after main retired the former Clean
+completeness axioms. The merge keeps both reductions: the broad
+`aeneas_bridge_trust` axiom remains retired, and the combined source/global
+trust ledgers are now 1 and 1 entries.
+
+- [x] Merge `origin/main` into `explicit-aeneas-bridge-axioms`.
+- [x] Resolve `trust/README.md` and `trust/allowed-axiom-files.txt` conflicts
+      to the combined one-axiom trust state.
+- [x] Update README/status/trust docs and this plan from 7/1 to 1/1.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+- [x] Run `trust/scripts/check-aeneas-generated-bridge-manifest.sh` after
       extraction.
 
 ## Verification

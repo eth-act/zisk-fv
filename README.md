@@ -21,9 +21,9 @@ for each instruction. `lake build` typechecking is the formal check.
 ## Trust Boundary
 
 All trust-boundary documentation and all machine-checked trust ledgers live in
-[`trust/`](trust/README.md). The current source trust ledger contains 7
-Lean axiom declarations. The global compliance theorem's transitive project
-axiom closure contains 1 of those declarations, recorded in
+[`trust/`](trust/README.md). The current source trust ledger contains 1
+Lean axiom declaration. The global compliance theorem's transitive project
+axiom closure contains that declaration, recorded in
 [`trust/generated/baseline-zisk-riscv-compliant.txt`](trust/generated/baseline-zisk-riscv-compliant.txt).
 
 The narrative trust ledger is

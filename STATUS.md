@@ -1,8 +1,9 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: completion audit cleanup is verified.
+Current focus: PR #58 merge conflicts with `origin/main` are resolved and
+verified.
 Blocking: none.
-Next step: none for this plan; continue only if starting the next
-generated/full-ensemble provider-row export stream.
+Next step: none for this worktree; PR #58 is ready for GitHub checks after the
+merge-resolution commit is pushed.
 
 Recent state:
 - Opcode-family slices through MUL and DIV/REM are committed.
@@ -31,7 +32,7 @@ Recent state:
   `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
   `trust/scripts/check-all-semantic.sh`, and
   `nix run .#aeneas-production-extract`.
-- Final docs record 7 source trust declarations, 1 global-closure project
+- Final docs record 1 source trust declaration, 1 global-closure project
   axiom, zero `bus_shape` caller burden, and remaining bridge/row-shape/promise
   entries as generated/full-ensemble integration boundaries.
 - Final boundary docs committed as `163dfc39`.
@@ -41,3 +42,7 @@ Recent state:
   `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
   `nix run .#aeneas-production-extract`, and the generated-bridge manifest
   gate after extraction.
+- Merged `origin/main` into PR #58, resolving trust-count conflicts after main
+  retired Clean completeness axioms. Final merged trust state is 1 source
+  axiom and 1 global-closure axiom. Verification passed again with the same
+  build, trust, semantic, extraction, and manifest-gate commands.
