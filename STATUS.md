@@ -1,60 +1,27 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: Phase 2 caller-burden audit is complete; preparing Phase 3
-generated-proof integration work.
+Current focus: Phase 3 generated-proof bridge manifest is implemented and
+verified.
 Blocking: none.
-Next step: commit the provider-family audit, then decide and implement the
-first generated-proof integration path.
+Next step: commit the generated-bridge manifest slice, then continue Phase 3
+with provider source-lane export feasibility.
 
 Recent state:
 - Opcode-family slices through MUL and DIV/REM are committed.
-- `OpEnvelope.aeneasBridgeTrust` now has explicit `fence`, `auipc_x0`, and
-  `jal_x0` cases and no wildcard branch.
-- Removed `env.aeneasBridgeTrust` from `OpEnvelope.exec_eq` and deleted the
-  broad `ZiskFv.Compliance.aeneas_bridge_trust` axiom.
-- `lake build ZiskFv.Compliance` passed after the axiom-removal edit.
-- `trust/scripts/regenerate.sh` passed and rewrote the axiom baseline to 7
-  entries.
-- `trust/scripts/check-all.sh` passed with 7 axioms.
-- `trust/scripts/check-all-semantic.sh` passed with the global closure matching
-  the 7-axiom baseline.
-- `nix run .#aeneas-production-extract` passed.
-- Remaining caller-burden ledgers still show bridge=119, row_shape=27/37, and
-  bus_shape=27. The broad trust axiom is gone, but these are still ordinary
-  canonical/wrapper obligations.
-- Plan file is being expanded so `PLAN_OP_ENVELOPE_GAP.md` tracks the full
-  remaining acceptance work, not only the completed opcode-family slices.
-- W-shift (`SLLW`/`SRLW`/`SRAW`) wrapper and canonical signatures now consume
-  the existing `RTypePromises` bundle instead of 15 individual structural
-  state/bus/row-shape binders.
-- Caller-burden diff after W-shift cleanup: total canonical rows 1104 -> 1062,
-  wrapper rows 1165 -> 1123, bus_shape 27 -> 0, canonical row_shape 27 -> 18,
-  wrapper row_shape 37 -> 28, bridge 119 -> 122 because the three W-shift
-  promise bundles are now classified as bridge.
-- `lake build ZiskFv.Compliance.Dispatch.Remaining` passed.
-- `lake build ZiskFv.Compliance` passed.
-- `trust/scripts/regenerate.sh` passed.
-- `trust/scripts/check-all.sh` passed.
-- `trust/scripts/check-all-semantic.sh` passed.
-- `nix run .#aeneas-production-extract` passed.
-- U/control wrapper ledger correction committed as `2c521c67 Correct
-  U-control wrapper ledger surface`.
-- Load/store audit found no honest local reduction: `LoadPromises` and
-  `StorePromises` already bundle structural bus/state obligations, and the
-  full-ensemble Clean witness constructors need generated/full-ensemble facts
-  before they can reduce the active `equiv_<OP>` public ledger.
-- Provider-family audit found no honest local reduction: Binary,
-  BinaryExtension, ArithMul, ArithDiv, and Rem bridge equalities are genuine
-  provider-row/Sail-input obligations that need generated/full-ensemble proof
-  integration.
-- W-shift reduction committed as `2aa77fa4 Consolidate W-shift caller burden`.
-- Renamed the active row-provenance LUI/AUIPC/JAL wrappers to `equiv_LUI`,
-  `equiv_AUIPC`, and `equiv_JAL`; the older pin-based compatibility wrappers
-  are now `_of_main_pins`.
-- Wrapper caller-burden ledger now measures the active row-provenance surface
-  for LUI/AUIPC/JAL. Wrapper total rows dropped 1123 -> 1117 and wrapper
-  row_shape dropped 28 -> 22. Canonical caller-burden stayed unchanged.
-- `lake build ZiskFv.Compliance` passed after the wrapper rename.
-- `trust/scripts/regenerate.sh` passed.
-- `trust/scripts/check-all.sh` passed.
-- `trust/scripts/check-all-semantic.sh` passed.
-- `nix run .#aeneas-production-extract` passed.
+- `OpEnvelope.aeneasBridgeTrust` is exhaustive, and the broad
+  `ZiskFv.Compliance.aeneas_bridge_trust` axiom is retired from the global
+  theorem boundary.
+- W-shift structural cleanup committed as `2aa77fa4`; canonical rows dropped
+  1104 -> 1062, wrapper rows dropped 1165 -> 1123, and `bus_shape` dropped
+  27 -> 0.
+- U/control wrapper ledger correction committed as `2c521c67`; wrapper rows
+  dropped 1123 -> 1117 and wrapper `row_shape` dropped 28 -> 22.
+- Load/store and provider-family audits found no honest local reductions:
+  residual promises/bridges need generated/full-ensemble proof integration.
+- Phase 2 provider-family audit committed as `cebda3cd`.
+- Added `trust/aeneas-generated-bridge-manifest.txt` plus a trust-gate check
+  that keeps generated Aeneas bridge predicates/examples aligned with the
+  generator template and generated output when present.
+- Verification for the manifest slice passed:
+  `lake build ZiskFv.Compliance`, `trust/scripts/regenerate.sh`,
+  `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+  `nix run .#aeneas-production-extract`.

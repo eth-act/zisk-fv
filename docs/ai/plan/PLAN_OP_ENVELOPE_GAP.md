@@ -484,18 +484,46 @@ Acceptance target:
 
 Work queue:
 
-- [ ] Decide the integration path for generated Aeneas Lean: import into main
+- [x] Decide the integration path for generated Aeneas Lean: import into main
       Lake, checked generated module, or a documented verified bridge artifact.
-- [ ] Wire the first production-backed generated fact into main verification for
+- [x] Wire the first production-backed generated fact into main verification for
       one already-covered family, starting with the smallest row-shape case.
-- [ ] Extend the integration pattern across the U/control-flow row-shape facts.
+- [x] Extend the integration pattern across the U/control-flow row-shape facts.
 - [ ] Extend the integration pattern across Binary/BinaryExtension provider
       source-lane facts where the production extraction already computes the
       required row constants.
 - [ ] Extend or explicitly defer memory/load/store generated facts depending on
       available production proof coverage.
-- [ ] Update trust scripts so generated-proof integration regressions are
+- [x] Update trust scripts so generated-proof integration regressions are
       visible in CI-style checks.
+
+Generated-proof integration path: generated Aeneas Lean stays reproducible
+under `build/aeneas-production-extraction` and remains untracked. The
+maintained artifact is `trust/aeneas-generated-bridge-manifest.txt`, checked by
+`trust/scripts/check-aeneas-generated-bridge-manifest.sh` and included in
+`trust/scripts/check-all.sh`. The gate verifies that the generator template
+contains each named bridge predicate and Lean example, and also checks the
+generated `GeneratedChecks.lean` module when it exists. This makes the
+production-backed row-shape bridge facts regression-visible without importing
+the whole generated Aeneas module into main Lake.
+
+First wired fact: LUI row-mode evidence now has an explicit maintained bridge
+chain. The generated harness checks `luiRowModeEvidenceMatches
+(aeneas_extract.extract_lui_from_inst sampleInst) = true`, the manifest keeps
+that check in the trust gate, and main Lake consumes the corresponding
+proof-facing shape via `MainRowProvenance.luiRowMode_of_extracted_shape` and
+`OpEnvelope.luiOfExtractedShape`.
+
+U/control-flow extension: the same maintained generated-bridge manifest covers
+`LUI`, `AUIPC`, `JAL`, `JALR`, and `FENCE`, matching the existing
+`MainRowProvenance` helpers and extracted-shape `OpEnvelope` constructors.
+
+Provider/source-lane deferral: the manifest covers Binary/BinaryExtension/Arith
+row-shape constants that are already produced by extraction, but the residual
+source-lane and arithmetic operand bridges require exported provider-row value
+facts, not only Main row-shape constants. Those remain Phase 3 work until the
+generated artifact carries provider row values or a full-ensemble provider-row
+selection proof into the main boundary.
 
 ## Phase 4: Final Boundary Verification
 
