@@ -419,7 +419,7 @@ Work queue:
 - [x] Audit U/control-flow (`LUI`, `AUIPC`, `JAL`, `JALR`, `FENCE`) residual
       row-shape and promise obligations and separate structural facts from
       semantic promise facts.
-- [ ] Audit load/store residual `LoadPromises`/`StorePromises` and
+- [x] Audit load/store residual `LoadPromises`/`StorePromises` and
       `LoadCleanWitness` obligations against the Clean Main/Mem bridge
       witnesses already present in `OpEnvelope`.
 - [ ] Audit Binary/BinaryExtension/Arith provider bridge equalities by family
@@ -436,6 +436,19 @@ tracked older pin-based compatibility wrappers because those owned the
 `*_of_main_pins`. This is a ledger-surface correction: wrapper row_shape drops
 from 28 to 22, but remaining U/control promise and PC/link bridge obligations
 remain visible and require generated-proof or state/bus integration.
+
+Load/store audit result: the active `equiv_<OP>` load/store wrappers already
+consume shared `BusRows` plus structural `LoadPromises`/`StorePromises` bundles
+and Clean memory witnesses. Those promise bundles still contain real theorem
+inputs: RISC-V platform assumptions, opcode/state assumptions, execution-bus
+length/multiplicity, nextPC alignment, and memory-bus multiplicity/address-space
+facts. The full-ensemble constructors such as
+`*_eq_of_full_ensemble_mem_provider` and `*_eq_of_full_ensemble_main_c` can
+derive selected Clean witness fields from same-message evidence, but switching
+the public `equiv_<OP>` ledger surface to those constructors would add the
+larger generated/full-ensemble artifact rather than discharge the residual
+promises. No load/store caller-burden reduction is therefore honest until the
+generated/full-ensemble facts are integrated as a maintained proof source.
 
 ## Phase 3: Generated Proof Integration
 

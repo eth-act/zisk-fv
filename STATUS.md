@@ -1,10 +1,9 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: U/control-flow wrapper ledger now tracks active row-provenance
-wrappers for LUI/AUIPC/JAL.
+Current focus: load/store residual caller-burden audit is complete; moving to
+Binary/BinaryExtension/Arith provider bridge equalities.
 Blocking: none.
-Next step: commit the U/control wrapper-ledger correction, then audit
-load/store residual `LoadPromises`/`StorePromises` and `LoadCleanWitness`
-obligations.
+Next step: inspect provider bridge equality families and record which need
+generated production proofs rather than local refactors.
 
 Recent state:
 - Opcode-family slices through MUL and DIV/REM are committed.
@@ -37,6 +36,12 @@ Recent state:
 - `trust/scripts/check-all.sh` passed.
 - `trust/scripts/check-all-semantic.sh` passed.
 - `nix run .#aeneas-production-extract` passed.
+- U/control wrapper ledger correction committed as `2c521c67 Correct
+  U-control wrapper ledger surface`.
+- Load/store audit found no honest local reduction: `LoadPromises` and
+  `StorePromises` already bundle structural bus/state obligations, and the
+  full-ensemble Clean witness constructors need generated/full-ensemble facts
+  before they can reduce the active `equiv_<OP>` public ledger.
 - W-shift reduction committed as `2aa77fa4 Consolidate W-shift caller burden`.
 - Renamed the active row-provenance LUI/AUIPC/JAL wrappers to `equiv_LUI`,
   `equiv_AUIPC`, and `equiv_JAL`; the older pin-based compatibility wrappers
