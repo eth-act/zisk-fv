@@ -1,9 +1,10 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: W-shift structural caller-burden reduction is implemented and
-verified.
+Current focus: U/control-flow wrapper ledger now tracks active row-provenance
+wrappers for LUI/AUIPC/JAL.
 Blocking: none.
-Next step: commit the W-shift reduction, then continue Phase 2 with the
-U/control-flow residual row-shape/promise audit.
+Next step: commit the U/control wrapper-ledger correction, then audit
+load/store residual `LoadPromises`/`StorePromises` and `LoadCleanWitness`
+obligations.
 
 Recent state:
 - Opcode-family slices through MUL and DIV/REM are committed.
@@ -32,6 +33,18 @@ Recent state:
   promise bundles are now classified as bridge.
 - `lake build ZiskFv.Compliance.Dispatch.Remaining` passed.
 - `lake build ZiskFv.Compliance` passed.
+- `trust/scripts/regenerate.sh` passed.
+- `trust/scripts/check-all.sh` passed.
+- `trust/scripts/check-all-semantic.sh` passed.
+- `nix run .#aeneas-production-extract` passed.
+- W-shift reduction committed as `2aa77fa4 Consolidate W-shift caller burden`.
+- Renamed the active row-provenance LUI/AUIPC/JAL wrappers to `equiv_LUI`,
+  `equiv_AUIPC`, and `equiv_JAL`; the older pin-based compatibility wrappers
+  are now `_of_main_pins`.
+- Wrapper caller-burden ledger now measures the active row-provenance surface
+  for LUI/AUIPC/JAL. Wrapper total rows dropped 1123 -> 1117 and wrapper
+  row_shape dropped 28 -> 22. Canonical caller-burden stayed unchanged.
+- `lake build ZiskFv.Compliance` passed after the wrapper rename.
 - `trust/scripts/regenerate.sh` passed.
 - `trust/scripts/check-all.sh` passed.
 - `trust/scripts/check-all-semantic.sh` passed.

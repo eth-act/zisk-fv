@@ -102,7 +102,7 @@ theorem equiv_JAL
     change execute_instruction (instruction.JAL (imm, rd)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
     rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-    exact ZiskFv.Compliance.equiv_JAL_of_row_provenance
+    exact ZiskFv.Compliance.equiv_JAL
       state jal_input imm rd misa_val m r_main
       next_pc exec_row e_rd nextPC_val store_pc_mem
       provenance row_mode h_jal_subset h_jmp2 h_pc_bridge

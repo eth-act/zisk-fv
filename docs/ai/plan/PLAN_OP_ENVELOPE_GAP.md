@@ -416,7 +416,7 @@ Work queue:
       existing `RTypePromises` shape where appropriate.
 - [x] Regenerate caller-burden ledgers and compare `bridge`, `row_shape`, and
       `bus_shape` counts before/after the W-shift cleanup.
-- [ ] Audit U/control-flow (`LUI`, `AUIPC`, `JAL`, `JALR`, `FENCE`) residual
+- [x] Audit U/control-flow (`LUI`, `AUIPC`, `JAL`, `JALR`, `FENCE`) residual
       row-shape and promise obligations and separate structural facts from
       semantic promise facts.
 - [ ] Audit load/store residual `LoadPromises`/`StorePromises` and
@@ -427,6 +427,15 @@ Work queue:
       refactors.
 - [ ] For each honest reduction slice, update docs, run build/trust/extraction
       checks, and commit.
+
+U/control-flow audit result: `LUI`, `AUIPC`, and `JAL` canonical proofs already
+used row-provenance wrappers, but the wrapper caller-burden ledger still
+tracked older pin-based compatibility wrappers because those owned the
+`equiv_<OP>` names. The active row-provenance wrappers now own `equiv_LUI`,
+`equiv_AUIPC`, and `equiv_JAL`, while compatibility wrappers are named
+`*_of_main_pins`. This is a ledger-surface correction: wrapper row_shape drops
+from 28 to 22, but remaining U/control promise and PC/link bridge obligations
+remain visible and require generated-proof or state/bus integration.
 
 ## Phase 3: Generated Proof Integration
 

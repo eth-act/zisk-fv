@@ -44,7 +44,7 @@ lemma equiv_AUIPC_x0_no_memory
 /-- **Compatibility wrapper for `equiv_AUIPC`.** Derives `h_circuit` from
     explicit Main-row pins and delegates to canonical
     `equiv_AUIPC`. -/
-lemma equiv_AUIPC
+lemma equiv_AUIPC_of_main_pins
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)
@@ -87,7 +87,7 @@ lemma equiv_AUIPC
 /-- Row-provenance wrapper for `equiv_AUIPC`. The mode pins come from a
     selected production-extracted row shape. The PC/offset dynamic facts are
     supplied explicitly by the caller. -/
-lemma equiv_AUIPC_of_row_provenance
+lemma equiv_AUIPC
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)

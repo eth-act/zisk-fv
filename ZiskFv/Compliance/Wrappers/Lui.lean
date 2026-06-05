@@ -25,8 +25,8 @@ open ZiskFv.Airs.Main
 open ZiskFv.Tactics.UTypeArchetype
 
 
-/-- Compliance wrapper for `equiv_LUI`. -/
-lemma equiv_LUI
+/-- Compatibility wrapper for `equiv_LUI` from explicit Main-row pins. -/
+lemma equiv_LUI_of_main_pins
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
@@ -60,7 +60,7 @@ lemma equiv_LUI
 /-- Row-provenance wrapper for `equiv_LUI`. The mode pins come from a
     selected production-extracted row shape; the dynamic immediate-lane facts
     remain explicit caller obligations. -/
-lemma equiv_LUI_of_row_provenance
+lemma equiv_LUI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)

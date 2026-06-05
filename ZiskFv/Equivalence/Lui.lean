@@ -48,7 +48,7 @@ theorem equiv_LUI
     : execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_LUI_of_row_provenance
+  exact ZiskFv.Compliance.equiv_LUI
     state lui_input imm rd m r_main next_pc exec_row e_rd store_pc_mem
     provenance row_mode h_lui_subset h_imm_lo_nat h_imm_hi_nat promises
 
