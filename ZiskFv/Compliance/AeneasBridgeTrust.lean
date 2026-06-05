@@ -77,6 +77,29 @@ def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
         = ZiskFv.EquivCore.Addw.binaryRowB32
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (providerTable.environment providerRow)) % 2^32
+  | .subw subw_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
+      (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32
+      ∧ (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowB32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32
+  | .addiw addiw_input _ _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ =>
+      (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32
+  | .sub sub_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
+      sub_input.r1_val =
+        ZiskFv.EquivCore.Add.binaryRowA64
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))
+      ∧ sub_input.r2_val =
+        ZiskFv.EquivCore.Add.binaryRowB64
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))
   | _ => True
 
 /-- Construct the LUI envelope while deriving its row-mode field from
@@ -688,6 +711,254 @@ theorem OpEnvelope.aeneasBridgeTrust_addwOfExtractedShape
       h_input_r1_extract h_input_r2_extract h_lane_rd promises).aeneasBridgeTrust := by
   unfold OpEnvelope.addwOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨h_input_r1_extract, h_input_r2_extract⟩
+
+/-- Construct the SUBW Binary-provider envelope while deriving its Main
+activation/opcode pins from production-extracted row-shape equalities. -/
+def OpEnvelope.subwOfExtractedShape
+    (subw_input : PureSpec.SubwInput) (r1 r2 rd : regidx)
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSubW)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
+    (h_input_r2_extract :
+      (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowB32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
+        (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
+    OpEnvelope state m r_main :=
+  OpEnvelope.subw subw_input r1 r2 rd v bus
+    (MainRowProvenance.subwPins_of_extracted_shape provenance h_op h_external)
+    providerTable providerRow h_component h_table_spec h_provider_row
+    h_match_static h_input_r1_extract h_input_r2_extract h_lane_rd promises
+
+/-- The SUBW Binary-provider bridge predicate is derivable for the envelope
+constructed from extracted row-shape pins and provider source-lane facts. -/
+theorem OpEnvelope.aeneasBridgeTrust_subwOfExtractedShape
+    (subw_input : PureSpec.SubwInput) (r1 r2 rd : regidx)
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSubW)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
+    (h_input_r2_extract :
+      (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowB32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
+        (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
+    (OpEnvelope.subwOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      subw_input r1 r2 rd v bus provenance h_op h_external providerTable
+      providerRow h_component h_table_spec h_provider_row h_match_static
+      h_input_r1_extract h_input_r2_extract h_lane_rd promises).aeneasBridgeTrust := by
+  unfold OpEnvelope.subwOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  exact ⟨h_input_r1_extract, h_input_r2_extract⟩
+
+/-- Construct the ADDIW Binary-provider envelope while deriving its Main
+activation/opcode pins from production-extracted row-shape equalities. -/
+def OpEnvelope.addiwOfExtractedShape
+    (addiw_input : PureSpec.AddiwInput) (r1 rd : regidx) (imm : BitVec 12)
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opAddW)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (h_addiw_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+      m r_main addiw_input.imm)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
+        state addiw_input.r1_val addiw_input.imm addiw_input.rd addiw_input.PC
+        (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
+    OpEnvelope state m r_main :=
+  OpEnvelope.addiw addiw_input r1 rd imm v bus
+    (MainRowProvenance.addwPins_of_extracted_shape provenance h_op h_external)
+    h_addiw_subset providerTable providerRow h_component h_table_spec
+    h_provider_row h_match_static h_input_r1_extract h_lane_rd promises
+
+/-- The ADDIW Binary-provider bridge predicate is derivable for the envelope
+constructed from extracted row-shape pins and provider source-lane facts. -/
+theorem OpEnvelope.aeneasBridgeTrust_addiwOfExtractedShape
+    (addiw_input : PureSpec.AddiwInput) (r1 rd : regidx) (imm : BitVec 12)
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opAddW)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (h_addiw_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+      m r_main addiw_input.imm)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_extract :
+      (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+        = ZiskFv.EquivCore.Addw.binaryRowA32
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow)) % 2^32)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
+        state addiw_input.r1_val addiw_input.imm addiw_input.rd addiw_input.PC
+        (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
+    (OpEnvelope.addiwOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      addiw_input r1 rd imm v bus provenance h_op h_external h_addiw_subset
+      providerTable providerRow h_component h_table_spec h_provider_row
+      h_match_static h_input_r1_extract h_lane_rd promises).aeneasBridgeTrust := by
+  unfold OpEnvelope.addiwOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  exact h_input_r1_extract
+
+/-- Construct the SUB Binary-provider envelope while deriving its Main
+activation/opcode pins from production-extracted row-shape equalities. -/
+def OpEnvelope.subOfExtractedShape
+    (sub_input : PureSpec.SubInput) (r1 r2 rd : regidx)
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSub)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : sub_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : sub_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
+        (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
+    OpEnvelope state m r_main :=
+  OpEnvelope.sub sub_input r1 r2 rd v bus
+    (MainRowProvenance.subPins_of_extracted_shape provenance h_op h_external)
+    providerTable providerRow h_component h_table_spec h_provider_row
+    h_match_static h_input_r1_row h_input_r2_row h_lane_rd promises
+
+/-- The SUB Binary-provider bridge predicate is derivable for the envelope
+constructed from extracted row-shape pins and provider source-lane facts. -/
+theorem OpEnvelope.aeneasBridgeTrust_subOfExtractedShape
+    (sub_input : PureSpec.SubInput) (r1 r2 rd : regidx)
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
+    (h_op : provenance.extractedRow.op = ExtractedConst.opSub)
+    (h_external : provenance.extractedRow.isExternalOp = true)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_input_r1_row : sub_input.r1_val =
+      ZiskFv.EquivCore.Add.binaryRowA64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_input_r2_row : sub_input.r2_val =
+      ZiskFv.EquivCore.Add.binaryRowB64
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
+        (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
+    (OpEnvelope.subOfExtractedShape
+      (state := state) (m := m) (r_main := r_main)
+      sub_input r1 r2 rd v bus provenance h_op h_external providerTable
+      providerRow h_component h_table_spec h_provider_row h_match_static
+      h_input_r1_row h_input_r2_row h_lane_rd promises).aeneasBridgeTrust := by
+  unfold OpEnvelope.subOfExtractedShape OpEnvelope.aeneasBridgeTrust
+  exact ⟨h_input_r1_row, h_input_r2_row⟩
 
 /-- **Aeneas row-lowering bridge trust axiom.**
 

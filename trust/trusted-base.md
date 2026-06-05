@@ -134,6 +134,15 @@ and main Lake contains `MainRowProvenance.addPins_of_extracted_shape`,
 `OpEnvelope.aeneasBridgeTrust_*OfExtractedShape` theorems. The provider-row
 source-lane equalities are still explicit envelope fields.
 
+Seventh proof-slice progress: SUB, SUBW, and ADDIW now cover the remaining
+initial BinaryAdd/BinaryAddW provider-route shape. The staged Aeneas harness
+checks the external `OP_SUB`, `OP_SUB_W`, and `OP_ADD_W` row-shape constants,
+and main Lake contains `MainRowProvenance.subPins_of_extracted_shape`,
+`MainRowProvenance.subwPins_of_extracted_shape`,
+`OpEnvelope.subOfExtractedShape`, `OpEnvelope.subwOfExtractedShape`,
+`OpEnvelope.addiwOfExtractedShape`, and the matching
+`OpEnvelope.aeneasBridgeTrust_*OfExtractedShape` theorems.
+
 Retirement path: import the generated Aeneas Lean row-lowering result into the
 main proof, prove the `OpEnvelope.aeneasBridgeTrust` predicate for each
 relevant arm, and replace `aeneas_bridge_trust` with the derived theorem.

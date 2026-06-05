@@ -190,6 +190,18 @@ pipeline.
      equalities and prove the current bridge branches from the existing
      provider-row source-lane equalities.
 
+   The same Binary provider-route shape now covers SUB, SUBW, and ADDIW:
+
+   - the staged Aeneas harness proves that SUB lowers to an external `OP_SUB`
+     row, SUBW lowers to an external `OP_SUB_W` row, and ADDIW lowers to an
+     external `OP_ADD_W` row;
+   - main Lake proves `MainRowProvenance.subPins_of_extracted_shape` and
+     `MainRowProvenance.subwPins_of_extracted_shape`;
+   - main Lake extends `OpEnvelope.aeneasBridgeTrust` with the corresponding
+     source-lane predicates and exposes `OpEnvelope.subOfExtractedShape`,
+     `OpEnvelope.subwOfExtractedShape`, and `OpEnvelope.addiwOfExtractedShape`
+     plus matching bridge theorems.
+
 4. **Prove constructor-specific envelope evidence lemmas.**
 
    For each selected opcode, prove a theorem of the form:

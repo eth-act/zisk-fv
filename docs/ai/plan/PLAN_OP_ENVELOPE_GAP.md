@@ -97,6 +97,21 @@ current `aeneasBridgeTrust` branches from the existing provider-lane fields.
 - [x] Run `trust/scripts/check-all-semantic.sh`.
 - [x] Run `nix run .#aeneas-production-extract`.
 
+## Next Slice: SUB/SUBW/ADDIW
+
+Finish the initial BinaryAdd/BinaryAddW provider-route group by covering the
+remaining source-lane bridge shapes that match the ADD slice.
+
+- [x] Add main-Lake helpers deriving SUB and SUBW `MainRowPins` from extracted-row constants.
+- [x] Extend `aeneasBridgeTrust` and add SUB, SUBW, and ADDIW `OpEnvelope` constructors/bridge theorems.
+- [x] Add staged Aeneas generated checks for SUB, SUBW, and ADDIW external provider-route row shapes.
+- [x] Update extraction/trust docs to describe the SUB/SUBW/ADDIW slice.
+- [x] Run `lake build ZiskFv.Compliance`.
+- [x] Run `trust/scripts/regenerate.sh`.
+- [x] Run `trust/scripts/check-all.sh`.
+- [x] Run `trust/scripts/check-all-semantic.sh`.
+- [x] Run `nix run .#aeneas-production-extract`.
+
 ## Scope
 
 No public theorem signature changes. No wrapper-signature shrinkage. No checked-in generated Aeneas Lean or LLBC. The global theorem is expected to keep depending on `ZiskFv.Compliance.aeneas_bridge_trust` after this slice.

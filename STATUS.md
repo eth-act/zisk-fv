@@ -1,8 +1,7 @@
 Active plan: docs/ai/plan/PLAN_OP_ENVELOPE_GAP.md
-Current focus: initial depth-first OpEnvelope bridge slices are committed.
+Current focus: SUB/SUBW/ADDIW Binary provider-route slice verified; preparing commit.
 Blocking: none.
-Next step: reassess the next opcode-family slice before expanding beyond the
-current `aeneasBridgeTrust` branches.
+Next step: commit the SUB/SUBW/ADDIW slice if the worktree side effects are clean.
 
 Notes:
 - Existing branch already contains the explicit `aeneas_bridge_trust` boundary.
@@ -71,3 +70,16 @@ Notes:
   `b_offset_imm0 = 4096`, so the staged expectation was corrected.
 - `nix run .#aeneas-production-extract` passed for the ADD/ADDI/ADDW slice.
 - ADD/ADDI/ADDW slice committed as `caf568df Add ADD provider-route bridge slice`.
+- Production probes show SUB lowers to external `OP_SUB`, SUBW lowers to
+  external `OP_SUB_W`, and ADDIW lowers to external `OP_ADD_W` with immediate
+  columns `b_use_sp_imm1 = 0`, `b_offset_imm0 = 4096` for the sample row.
+- Added SUB/SUBW pin helpers, extended `aeneasBridgeTrust`, added
+  SUB/SUBW/ADDIW `OpEnvelope.*OfExtractedShape` constructors and bridge
+  theorems, and staged production row-shape checks.
+- First full build caught a skipped `pins` field in the new SUB
+  `aeneasBridgeTrust` pattern; fixed it and reran successfully.
+- `lake build ZiskFv.Compliance` passed for the SUB/SUBW/ADDIW slice.
+- `trust/scripts/regenerate.sh` passed for the SUB/SUBW/ADDIW slice.
+- `trust/scripts/check-all.sh` passed for the SUB/SUBW/ADDIW slice.
+- `trust/scripts/check-all-semantic.sh` passed for the SUB/SUBW/ADDIW slice.
+- `nix run .#aeneas-production-extract` passed for the SUB/SUBW/ADDIW slice.

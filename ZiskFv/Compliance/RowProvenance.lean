@@ -79,8 +79,10 @@ def storeReg : Nat := 3
 def opFlag : Nat := 0
 def opCopyB : Nat := 1
 def opAdd : Nat := 10
+def opSub : Nat := 11
 def opAnd : Nat := 14
 def opAddW : Nat := 26
+def opSubW : Nat := 27
 
 end ExtractedConst
 
@@ -279,6 +281,32 @@ theorem addwPins_of_extracted_shape
       simpa [boolF, h_external] using p.is_external_op_eq
     main_op := by
       simpa [natF, ExtractedConst.opAddW, ZiskFv.Trusted.OP_ADD_W, h_op] using p.op_eq }
+
+/-- Build the external `OP_SUB` activation/opcode pins from extracted
+row-shape constants. -/
+theorem subPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opSub)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_SUB :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opSub, ZiskFv.Trusted.OP_SUB, h_op] using p.op_eq }
+
+/-- Build the external `OP_SUB_W` activation/opcode pins from extracted
+row-shape constants. -/
+theorem subwPins_of_extracted_shape
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main)
+    (h_op : p.extractedRow.op = ExtractedConst.opSubW)
+    (h_external : p.extractedRow.isExternalOp = true) :
+    MainRowPins main r_main 1 ZiskFv.Trusted.OP_SUB_W :=
+  { main_active := by
+      simpa [boolF, h_external] using p.is_external_op_eq
+    main_op := by
+      simpa [natF, ExtractedConst.opSubW, ZiskFv.Trusted.OP_SUB_W, h_op] using p.op_eq }
 
 theorem pins
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
