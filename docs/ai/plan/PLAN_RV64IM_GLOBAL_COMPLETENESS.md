@@ -121,7 +121,7 @@ the corresponding checked-in and generated builds have passed.
 | Branches | BEQ BNE BLT BGE BLTU BGEU | done | done | partial | full decode; edge materialization | full circuit coverage/global composition open |
 | Loads | LB LBU LH LHU LW LWU LD | done | done | partial | full decode; edge materialization | full circuit coverage/global composition open |
 | Stores | SB SH SW SD | done | done | partial | full decode; edge materialization | full circuit coverage/global composition open |
-| Upper/jump | LUI AUIPC JAL JALR | done | done | partial | JALR/LUI/AUIPC full decode; JAL edge-grid only | full JAL immediate coverage open |
+| Upper/jump | LUI AUIPC JAL JALR | done | done | partial | JALR/LUI/AUIPC/JAL full decode | full circuit coverage/global composition open |
 | Fence | FENCE | done | done | done | done | generic FENCE restrictions |
 
 ## Implementation Checklist
@@ -169,7 +169,7 @@ the corresponding checked-in and generated builds have passed.
   `rd`, `rs1`, and 12-bit I-immediate encodings.
 - [x] Upper/jump/LUI-AUIPC: add generated symbolic full decode-acceptance
   proofs over all `rd` and all encoded 20-bit U-immediate bit patterns.
-- [ ] Upper/jump/JAL: add generated full decode-acceptance proof over all
+- [x] Upper/jump/JAL: add generated full decode-acceptance proof over all
   `rd` and all encoded 20-bit J-immediate bit patterns.
 - [x] Fence: close supported-FENCE theorem surface while keeping generic FENCE
   restrictions as explicit known gaps.

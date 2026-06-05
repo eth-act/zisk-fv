@@ -5775,6 +5775,31 @@ def rawUTypeBV (uimm : BitVec 20) (rd : BitVec 5) (opcode : BitVec 7) : Std.U32 
   ⟨(uimm.zeroExtend 32 <<< 12) ||| (rd.zeroExtend 32 <<< 7) |||
     opcode.zeroExtend 32⟩
 
+def rawJTypeBV32 (jimm : BitVec 20) (rd : BitVec 5) : BitVec 32 :=
+  let imm21 : BitVec 21 := jimm.zeroExtend 21 <<< 1
+  (((imm21.extractLsb' 20 1).zeroExtend 32) <<< 31) |||
+    (((imm21.extractLsb' 1 10).zeroExtend 32) <<< 21) |||
+    (((imm21.extractLsb' 11 1).zeroExtend 32) <<< 20) |||
+    (((imm21.extractLsb' 12 8).zeroExtend 32) <<< 12) |||
+    (rd.zeroExtend 32 <<< 7) ||| (0x6f#32)
+
+def rawJTypeBV (jimm : BitVec 20) (rd : BitVec 5) : Std.U32 :=
+  ⟨rawJTypeBV32 jimm rd⟩
+
+def decodedJImm32 (raw : BitVec 32) : BitVec 32 :=
+  let imm20 := (raw &&& 2147483648#32) >>> 31
+  let imm10_1 := (raw &&& 2145386496#32) >>> 21
+  let imm11 := (raw &&& 1048576#32) >>> 20
+  let imm19_12 := (raw &&& 1044480#32) >>> 12
+  (imm20 <<< 20) ||| (imm19_12 <<< 12) ||| (imm11 <<< 11) ||| (imm10_1 <<< 1)
+
+theorem i32_1_nonnegative : (1#i32 : Std.I32).val ≥ 0 := by
+  native_decide
+
+theorem i32_1_lt_u32_numBits :
+    (1#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
+  native_decide
+
 theorem i32_7_nonnegative : (7#i32 : Std.I32).val ≥ 0 := by
   native_decide
 
@@ -5782,11 +5807,39 @@ theorem i32_7_lt_u32_numBits :
     (7#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
   native_decide
 
+theorem i32_11_nonnegative : (11#i32 : Std.I32).val ≥ 0 := by
+  native_decide
+
+theorem i32_11_lt_u32_numBits :
+    (11#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
+  native_decide
+
 theorem i32_12_nonnegative : (12#i32 : Std.I32).val ≥ 0 := by
   native_decide
 
 theorem i32_12_lt_u32_numBits :
     (12#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
+  native_decide
+
+theorem i32_20_nonnegative : (20#i32 : Std.I32).val ≥ 0 := by
+  native_decide
+
+theorem i32_20_lt_u32_numBits :
+    (20#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
+  native_decide
+
+theorem i32_21_nonnegative : (21#i32 : Std.I32).val ≥ 0 := by
+  native_decide
+
+theorem i32_21_lt_u32_numBits :
+    (21#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
+  native_decide
+
+theorem i32_31_nonnegative : (31#i32 : Std.I32).val ≥ 0 := by
+  native_decide
+
+theorem i32_31_lt_u32_numBits :
+    (31#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
   native_decide
 
 lemma rawUTypeBV_opcode_lui (rd : BitVec 5) (uimm : BitVec 20) :
@@ -5801,6 +5854,141 @@ lemma rawUTypeBV_opcode_auipc (rd : BitVec 5) (uimm : BitVec 20) :
   simp [rawUTypeBV]
   bv_decide
 
+lemma rawJTypeBV_opcode_jal (rd : BitVec 5) (jimm : BitVec 20) :
+    rawJTypeBV jimm rd &&& 127#u32 = 111#u32 := by
+  rw [U32.eq_equiv_bv_eq]
+  simp [rawJTypeBV, rawJTypeBV32]
+  bv_decide
+
+lemma decodedJImm32_eq_shift (rd : BitVec 5) (jimm : BitVec 20) :
+    decodedJImm32 (rawJTypeBV32 jimm rd) = jimm.zeroExtend 32 <<< 1 := by
+  unfold decodedJImm32 rawJTypeBV32
+  bv_decide
+
+def decodeJImmResult (raw : Std.U32) : Result Std.U32 := do
+  let i2 ← lift (raw &&& 2147483648#u32)
+  let imm20 ← i2 >>> 31#i32
+  let i3 ← lift (raw &&& 2145386496#u32)
+  let imm10_1 ← i3 >>> 21#i32
+  let i4 ← lift (raw &&& 1048576#u32)
+  let imm11 ← i4 >>> 20#i32
+  let i5 ← lift (raw &&& 1044480#u32)
+  let imm19_12 ← i5 >>> 12#i32
+  let i6 ← imm20 <<< 20#i32
+  let i7 ← imm19_12 <<< 12#i32
+  let i8 ← lift (i6 ||| i7)
+  let i9 ← imm11 <<< 11#i32
+  let i10 ← lift (i8 ||| i9)
+  let i11 ← imm10_1 <<< 1#i32
+  lift (i10 ||| i11)
+
+def decodeJRdResult (raw : Std.U32) : Result Std.U32 := do
+  let i ← lift (raw &&& 3968#u32)
+  i >>> 7#i32
+
+def decodeJSignextResult (raw : Std.U32) : Result Std.I32 := do
+  let i12 ← decodeJImmResult raw
+  aeneas_extract.rv64im_decode.signext i12 21#u32
+
+lemma decodeJImmResult_rawJTypeBV (rd : BitVec 5) (jimm : BitVec 20) :
+    decodeJImmResult (rawJTypeBV jimm rd) =
+      ok (⟨jimm.zeroExtend 32 <<< 1⟩ : Std.U32) := by
+  unfold decodeJImmResult
+  simp only [lift, HShiftRight.hShiftRight, HShiftLeft.hShiftLeft,
+    UScalar.shiftRight_IScalar, UScalar.shiftLeft_IScalar,
+    UScalar.shiftRight, UScalar.shiftLeft,
+    i32_1_nonnegative, i32_1_lt_u32_numBits,
+    i32_11_nonnegative, i32_11_lt_u32_numBits,
+    i32_12_nonnegative, i32_12_lt_u32_numBits,
+    i32_20_nonnegative, i32_20_lt_u32_numBits,
+    i32_21_nonnegative, i32_21_lt_u32_numBits,
+    i32_31_nonnegative, i32_31_lt_u32_numBits,
+    Bind.bind, Std.bind, ↓reduceIte]
+  apply congrArg ok
+  rw [U32.eq_equiv_bv_eq]
+  simp [rawJTypeBV, rawJTypeBV32]
+  bv_decide
+
+lemma decodeJRdResult_rawJTypeBV (rd : BitVec 5) (jimm : BitVec 20) :
+    decodeJRdResult (rawJTypeBV jimm rd) =
+      ok (⟨rd.zeroExtend 32⟩ : Std.U32) := by
+  unfold decodeJRdResult
+  simp only [lift, HShiftRight.hShiftRight, UScalar.shiftRight_IScalar,
+    UScalar.shiftRight, i32_7_nonnegative, i32_7_lt_u32_numBits,
+    Bind.bind, Std.bind, ↓reduceIte]
+  apply congrArg ok
+  rw [U32.eq_equiv_bv_eq]
+  simp [rawJTypeBV, rawJTypeBV32]
+  bv_decide
+
+lemma jimm_shift_lt_2pow21 (jimm : BitVec 20) :
+    (jimm.zeroExtend 32 <<< 1).toNat < 2097152 := by
+  have h : jimm.zeroExtend 32 <<< 1 < 2097152#32 := by bv_decide
+  simpa [BitVec.lt_def] using h
+
+lemma hcast_i32_small_val (x : Std.U32) (h : x.val ≤ IScalar.max .I32) :
+    (UScalar.hcast .I32 x).val = x.val := by
+  have hs := UScalar.hcast_inBounds_spec .I32 x h
+  simpa [lift, WP.spec_ok] using hs
+
+lemma u32_21_sub_1_ok : (21#u32 : Std.U32) - (1#u32 : Std.U32) = ok (20#u32 : Std.U32) := by rfl
+lemma u32_1_shl_20_ok : (1#u32 : Std.U32) <<< (20#u32 : Std.U32) = ok (1048576#u32 : Std.U32) := by rfl
+lemma u32_1_shl_21_ok : (1#u32 : Std.U32) <<< (21#u32 : Std.U32) = ok (2097152#u32 : Std.U32) := by rfl
+
+def signextOk (r : Result Std.I32) : Bool :=
+  match r with | ok _ => true | fail _ => false | div => false
+
+lemma signext_jimm_shift_ok (jimm : BitVec 20) :
+    signextOk (aeneas_extract.rv64im_decode.signext ⟨jimm.zeroExtend 32 <<< 1⟩ 21#u32) = true := by
+  simp only [signextOk, aeneas_extract.rv64im_decode.signext, lift,
+    u32_21_sub_1_ok, u32_1_shl_20_ok, u32_1_shl_21_ok,
+    Bind.bind, Std.bind]
+  by_cases hsign : (1048576#u32 : Std.U32) &&& ⟨jimm.zeroExtend 32 <<< 1⟩ != 0#u32
+  · simp [hsign]
+    have hxmax : (⟨jimm.zeroExtend 32 <<< 1⟩ : Std.U32).val ≤ IScalar.max .I32 := by
+      simp only [UScalar.val, IScalar.max]
+      have hpow : (2 : Int) ^ (IScalarTy.I32.numBits - 1) = 2147483648 := by native_decide
+      rw [hpow]
+      have hlt := jimm_shift_lt_2pow21 jimm
+      omega
+    have hmaxmax : (2097152#u32 : Std.U32).val ≤ IScalar.max .I32 := by native_decide
+    have hxval := hcast_i32_small_val (⟨jimm.zeroExtend 32 <<< 1⟩ : Std.U32) hxmax
+    have hmval := hcast_i32_small_val (2097152#u32 : Std.U32) hmaxmax
+    have hspec :
+        (UScalar.hcast IScalarTy.I32 (⟨BitVec.setWidth 32 jimm <<< 1⟩ : Std.U32) -
+          UScalar.hcast IScalarTy.I32 (2097152#u32 : Std.U32)) ⦃ _ => True ⦄ := by
+      apply WP.spec_mono
+      · apply IScalar.sub_bv_spec
+        · rw [hxval, hmval]
+          simp only [UScalar.val, IScalar.min]
+          have hconst : (2097152#u32 : Std.U32).bv.toNat = 2097152 := by native_decide
+          rw [hconst]
+          have hpow : (2 : Int) ^ (IScalarTy.I32.numBits - 1) = 2147483648 := by native_decide
+          rw [hpow]
+          have hlt := jimm_shift_lt_2pow21 jimm
+          omega
+        · rw [hxval, hmval]
+          simp only [UScalar.val, IScalar.max]
+          have hconst : (2097152#u32 : Std.U32).bv.toNat = 2097152 := by native_decide
+          rw [hconst]
+          have hpow : (2 : Int) ^ (IScalarTy.I32.numBits - 1) = 2147483648 := by native_decide
+          rw [hpow]
+          have hlt := jimm_shift_lt_2pow21 jimm
+          omega
+      · intro _ _
+        trivial
+    cases hsub :
+        (UScalar.hcast IScalarTy.I32 (⟨BitVec.setWidth 32 jimm <<< 1⟩ : Std.U32) -
+          UScalar.hcast IScalarTy.I32 (2097152#u32 : Std.U32)) <;>
+      simp [hsub, WP.spec, WP.theta] at hspec ⊢
+  · simp [hsign]
+
+lemma decodeJSignextResult_rawJTypeBV_ok (rd : BitVec 5) (jimm : BitVec 20) :
+    signextOk (decodeJSignextResult (rawJTypeBV jimm rd)) = true := by
+  unfold decodeJSignextResult
+  rw [decodeJImmResult_rawJTypeBV rd jimm]
+  simpa [Bind.bind, Std.bind] using signext_jimm_shift_ok jimm
+
 lemma decode_32_core_lui (raw : Std.U32) (h : raw &&& 127#u32 = 55#u32) :
     aeneas_extract.rv64im_decode.decode_32_core raw =
       aeneas_extract.rv64im_decode.decode_u raw
@@ -5813,6 +6001,24 @@ lemma decode_32_core_auipc (raw : Std.U32) (h : raw &&& 127#u32 = 23#u32) :
       aeneas_extract.rv64im_decode.decode_u raw
         aeneas_extract.rv64im_decode.RiscvOpcode.Auipc := by
   simp [aeneas_extract.rv64im_decode.decode_32_core, h, lift]
+  rfl
+
+lemma decode_32_core_jal (raw : Std.U32) (h : raw &&& 127#u32 = 111#u32) :
+    aeneas_extract.rv64im_decode.decode_32_core raw =
+      aeneas_extract.rv64im_decode.decode_j raw
+        aeneas_extract.rv64im_decode.RiscvOpcode.Jal := by
+  simp [aeneas_extract.rv64im_decode.decode_32_core, h, lift]
+  rfl
+
+lemma decode_j_eq_helpers
+    (raw : Std.U32) (opcode : aeneas_extract.rv64im_decode.RiscvOpcode) :
+    aeneas_extract.rv64im_decode.decode_j raw opcode = (do
+      let d ←
+        aeneas_extract.rv64im_decode.DecodedRv64im.new opcode
+          aeneas_extract.rv64im_decode.RiscvFormat.J
+      let rd ← decodeJRdResult raw
+      let imm ← decodeJSignextResult raw
+      ok { d with rd := rd, imm := imm }) := by
   rfl
 
 macro "upper_simp" : tactic => `(tactic|
@@ -5843,6 +6049,23 @@ theorem auipc_raw_shape_decode_supported (rd : BitVec 5) (uimm : BitVec 20) :
   simp only [aeneas_extract.extract_decode_rv64im_raw]
   rw [decode_32_core_auipc _ (rawUTypeBV_opcode_auipc rd uimm)]
   upper_simp
+
+theorem jal_raw_shape_decode_supported (rd : BitVec 5) (jimm : BitVec 20) :
+    ZiskDecodeSupportedRaw (rawJTypeBV jimm rd) := by
+  unfold ZiskDecodeSupportedRaw
+  simp only [aeneas_extract.extract_decode_rv64im_raw]
+  rw [decode_32_core_jal _ (rawJTypeBV_opcode_jal rd jimm)]
+  rw [decode_j_eq_helpers]
+  rw [decodeJRdResult_rawJTypeBV rd jimm]
+  have hsign := decodeJSignextResult_rawJTypeBV_ok rd jimm
+  cases hsign_eq : decodeJSignextResult (rawJTypeBV jimm rd) <;>
+    simp [signextOk, hsign_eq] at hsign ⊢
+  simp only [rawDecodeSupported,
+    aeneas_extract.rv64im_decode.DecodedRv64im.new,
+    aeneas_extract.decode_extract_from_decoded,
+    aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im,
+    aeneas_extract.opcode_id, aeneas_extract.format_id,
+    Bind.bind, Std.bind]
 
 end zisk_core_generated_rv_upper_jump_completeness
 EOF
