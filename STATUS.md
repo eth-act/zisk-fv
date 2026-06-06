@@ -2,10 +2,10 @@
 
 Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
 
-Current focus: the public theorem boundary now derives the accepted trace/table object from a full-ensemble Mem-table bridge that carries an accepted trace, a `fullRv64imEnsemble` witness, a concrete Mem table, and table-to-trace embedding.
+Current focus: verified narrowing slice: public compliance now takes selected envelope Mem-row table occurrence and derives selected provider replay-row coverage internally.
 
-Blocking: FullEnsemble/full execution still does not prove the Mem table embedding into chronological accepted rows, concrete selected Mem provider-row coverage, or split-indexed Sail prefix-state equality from accepted execution data.
+Blocking: remaining memory trust gap is still global; accepted full execution data does not yet prove shared Mem trace/table embedding, selected envelope Mem-row table occurrence, or split-indexed prefix-state equality.
 
-Next step: prove the remaining full-ensemble Mem-table bridge fields from accepted full execution data, starting with projected Mem read-replay row embedding into the chronological accepted row trace.
+Next step: commit the verified narrowing slice, then start deriving the full-execution bridge for selected envelope Mem-row occurrence and trace/table embedding.
 
-Digression: none; current work is back on the memory trust gap plan.
+Digression: split theorem blocker is resolved; full verification passed for the narrowing slice.

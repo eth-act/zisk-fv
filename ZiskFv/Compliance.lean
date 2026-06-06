@@ -98,8 +98,8 @@ theorem zisk_riscv_compliant_program_bus
     (h_burden : env.completenessBurden)
     (h_mem_full_trace_table :
       env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
-    (h_mem_provider :
-      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+    (h_mem_envelope_row :
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         h_mem_full_trace_table)
     (h_mem_prefix_state :
       env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
@@ -112,6 +112,11 @@ theorem zisk_riscv_compliant_program_bus
       env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope :=
     env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
       h_mem_full_trace_table
+  let h_mem_provider :
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        h_mem_full_trace_table :=
+    env.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow
+      h_mem_full_trace_table h_mem_envelope_row
   let h_mem_evidence :
       env.AcceptedAirMainMemTraceEvidenceAtEnvelope :=
     env.acceptedAirMainMemTraceEvidenceAtEnvelope_of_traceTableProvider

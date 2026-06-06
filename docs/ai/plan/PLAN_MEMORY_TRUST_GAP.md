@@ -56,6 +56,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Derive selected table projection membership from concrete primary/dual Mem provider-row evidence.
 - [x] Expose accepted trace/table/provider/prefix bridge inputs directly at the public compliance theorem boundary.
 - [x] Derive the public trace/table bridge from a full-ensemble Mem-table bridge object.
+- [x] Narrow selected Mem provider-row coverage to envelope Mem-row table occurrence.
 - [ ] Prove `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -605,3 +606,24 @@ ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed for this slice. The
 remaining open proof is now to derive the shared accepted trace/table
 embedding, concrete provider-row selection, and selected prefix-state equality
 from accepted full execution data.
+
+The current narrowing slice adds
+`FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq`
+and a load-scoped `OpEnvelope.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope`
+predicate, aiming to reduce selected provider-row coverage to the fact that
+the envelope's selected Clean Mem row appears in the FullEnsemble Mem table
+with equal evaluated row input. The adapter theorem
+`selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow`
+is split by load case to avoid monolithic `OpEnvelope` normalization, and the
+public `zisk_riscv_compliant_program_bus` theorem now derives the old provider
+replay-row evidence internally from the narrower predicate. Focused
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance`,
+`lake build ZiskFv.Compliance.OpEnvelope`, and `lake build ZiskFv.Compliance`
+passed. Full `lake build`, trust regeneration, both trust gates, closure print
+with zero project axiom names, targeted retired-memory scans, generated
+zero-entry checks, and `nix run .#test` also passed. After trimming proof-binder
+noise, focused `lake build ZiskFv.Compliance.OpEnvelope` and
+`lake build ZiskFv.Compliance` passed again. The remaining implementation target
+is proving the shared trace/table embedding, selected envelope Mem-row table
+occurrence, and selected prefix-state equality from accepted full execution
+data.
