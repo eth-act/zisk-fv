@@ -3967,17 +3967,6 @@ theorem OpEnvelope.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvel
       ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
         h_mainEval h_providerEval h_msg h_main_b_match
 
-/-- Split-indexed Sail prefix-state equality for the full-ensemble Mem table
-    bridge. -/
-def OpEnvelope.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
-    (env : OpEnvelope state m r_main)
-    (construction :
-      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope) :
-    Prop :=
-  env.SelectedPrefixStateAtTraceTableAtEnvelope
-    (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
-      construction)
-
 /-- Selected raw-row prefix cursor for the accepted trace contained in the
     full-ensemble Mem table bridge.  This is the cursor-shaped state proof
     expected from full-execution replay; unlike the older split-indexed state
@@ -3992,26 +3981,6 @@ def OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
     (env.acceptedTraceOfFullTraceWithMemTable
       (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
         construction))
-
-/-- The accepted full-execution Mem extraction target for one envelope.
-
-    This is the remaining top-level memory trust gap as a theorem-shaped
-    object. For load envelopes it contains the shared accepted AIR/Main/Mem
-    trace tied to a concrete FullEnsemble Mem table, the selected envelope Mem
-    row occurrence in that table, and split-indexed Sail prefix-state equality.
-    Non-load envelopes carry the trivial branches of the component predicates.
-    Future full-execution integration should construct this object from
-    accepted trace data instead of taking its fields as public assumptions. -/
-structure OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope
-    (env : OpEnvelope state m r_main) : Type 2 where
-  fullTraceTable :
-    env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope
-  selectedEnvelopeRow :
-    env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
-      fullTraceTable
-  selectedPrefixState :
-    env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
-      fullTraceTable
 
 /-- Cursor-shaped full-execution Mem extraction target for one envelope.
 
@@ -4153,25 +4122,6 @@ def OpEnvelope.acceptedAirMainMemTraceEvidenceAtEnvelope_of_traceTableProvider
     (env.selectedMemReadReplayRowInTraceTableAtEnvelope_of_providerRow
       traceWithTable h_provider)
     h_state
-
-/-- Lower the full-execution Mem extraction target to the accepted-memory
-    evidence object consumed by the global compliance theorem. -/
-def OpEnvelope.acceptedAirMainMemTraceEvidenceAtEnvelope_of_fullExecutionMemoryExtraction
-    (env : OpEnvelope state m r_main)
-    (extraction :
-      env.AcceptedFullExecutionMemoryExtractionAtEnvelope) :
-    env.AcceptedAirMainMemTraceEvidenceAtEnvelope :=
-  let traceWithTable :
-      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope :=
-    env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
-      extraction.fullTraceTable
-  let provider :
-      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
-        extraction.fullTraceTable :=
-    env.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow
-      extraction.fullTraceTable extraction.selectedEnvelopeRow
-  env.acceptedAirMainMemTraceEvidenceAtEnvelope_of_traceTableProvider
-    traceWithTable provider extraction.selectedPrefixState
 
 /-- Build the selected-prefix cursor from the two explicit selected-row
     obligations at the accepted AIR/Main/Mem boundary: row membership in the

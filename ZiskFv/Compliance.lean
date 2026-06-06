@@ -108,6 +108,34 @@ theorem zisk_riscv_compliant_program_bus
   let h_accepted_mem_trace :
       env.AcceptedAirMainMemFullTraceAtEnvelope :=
     env.acceptedTraceOfFullTraceWithMemTable h_trace_with_table
+  have h_selected_provider :
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        h_mem_extraction.fullTraceTable :=
+    env.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow
+      h_mem_extraction.fullTraceTable h_mem_extraction.selectedEnvelopeRow
+  have h_selected_read_row :
+      env.SelectedMemReadReplayRowInTraceTableAtEnvelope
+        h_trace_with_table :=
+    env.selectedMemReadReplayRowInTraceTableAtEnvelope_of_providerRow
+      h_trace_with_table h_selected_provider
+  have _h_selected_mem_row :
+      env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+        h_accepted_mem_trace :=
+    env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReadReplayRow
+      h_accepted_mem_trace
+      (by
+        cases env <;>
+          simp [OpEnvelope.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope,
+            OpEnvelope.SelectedMemReadReplayRowInTraceTableAtEnvelope,
+            OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope]
+            at h_trace_with_table h_selected_read_row ⊢
+        all_goals
+          exact ⟨h_trace_with_table.table, h_trace_with_table.embedded,
+            by
+              simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+                using h_selected_read_row⟩)
   have h_selected_mem_prefix :
       env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
         h_accepted_mem_trace :=

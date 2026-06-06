@@ -59,11 +59,13 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Narrow selected Mem provider-row coverage to envelope Mem-row table occurrence.
 - [x] Factor the remaining full-execution Mem obligations into `OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope`.
 - [x] Replace the top-level split-indexed memory extraction boundary with cursor-shaped `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope`.
+- [x] Remove the obsolete split-indexed full-execution memory extraction target.
+- [x] Check inside `zisk_riscv_compliant_program_bus` that the selected envelope Mem-row occurrence carried by cursor extraction implies selected accepted-row membership.
 - [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope`, a named full-execution Mem extraction target whose fields carry shared accepted AIR/Main/Mem full-trace data, a `fullRv64imEnsemble` witness, a concrete Mem table in that witness, proof that the table's projected read-replay rows are embedded in the chronological accepted rows, selected envelope Mem-row occurrence in that table, and split-indexed Sail prefix-state equality. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, prefix-indexed read soundness, and initial memory agreement; the lower trace/table object, packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, ordinary selected-row membership, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no theorem that constructs the extraction target from accepted full execution trace data.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope`, a named full-execution Mem extraction target whose fields carry shared accepted AIR/Main/Mem full-trace data, a `fullRv64imEnsemble` witness, a concrete Mem table in that witness, selected envelope Mem-row occurrence in that table, and the selected raw-row prefix cursor. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, prefix-indexed read soundness, and initial memory agreement; the lower trace/table object, packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, ordinary selected-row membership, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no theorem that constructs the extraction target from accepted full execution trace data.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -685,3 +687,16 @@ ZiskFv.Compliance.OpEnvelope` and `lake build ZiskFv.Compliance` passed. The
 remaining proof is now to construct the cursor extraction target from accepted
 full execution trace data: shared trace/table embedding, selected envelope
 Mem-row occurrence, selected prefix cursor coverage, and prefix-read soundness.
+
+The selected-row cleanup slice removes the obsolete split-indexed
+`OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope` and its lowering
+helper. The public theorem now checks that the cursor extraction target's
+selected envelope Mem-row occurrence implies selected accepted-row membership
+via the FullEnsemble table projection and accepted trace/table embedding. The
+selected prefix cursor is still carried separately; tying that cursor and row
+membership together remains part of the unproved cursor-extraction construction
+target. Focused `lake build ZiskFv.Compliance`,
+focused `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
+`trust/scripts/regenerate.sh`, both trust gates, closure print,
+retired-memory scans, generated zero-entry checks, and `nix run .#test`
+passed.
