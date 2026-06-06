@@ -4776,6 +4776,274 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
   selectedEnvelopeRow :
     env.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace fullTrace
 
+/-- Source-shaped per-envelope coverage facts for a shared full-execution
+    memory trace.
+
+    This is the boundary expected from accepted full-execution integration:
+    selected Mem-row occurrence in the witness-selected table, plus the
+    split-indexed Sail prefix-state equality. The selected prefix cursor used
+    by the replay bridge is derived internally from these two facts and the
+    shared mutable-Mem embedding. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) : Type 1 where
+  selectedPrefixState :
+    env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded)
+  selectedEnvelopeRow :
+    env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded)
+
+/-- Build cursor-shaped coverage from source-shaped coverage. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_sourceCoverage
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (sourceCoverage :
+      env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace) :
+    env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace := by
+  cases env
+  case ld ld_input regs mem bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    let env' : OpEnvelope state m r_main :=
+      .ld ld_input regs mem bus pins promises r_mem h_mainEval h_providerEval
+        h_msg h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+        h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+        h_mem_wr
+    let fullTraceTable :=
+      env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded
+    let extraction :=
+      env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+        fullTraceTable sourceCoverage.selectedEnvelopeRow
+        sourceCoverage.selectedPrefixState
+    exact
+      { selectedPrefix := by
+          simpa [env', fullTraceTable,
+            OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+            OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+            OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+            OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+            using extraction.selectedPrefix
+        selectedEnvelopeRow := by
+          simpa [env',
+            OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace,
+            OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+            fullTraceTable]
+            using sourceCoverage.selectedEnvelopeRow }
+  case lbu lbu_input regs mem bus align pins h_width promises r_mem
+      mainRowVar memRowVar mainEnv memEnv mainMult providerMult
+      mainInteraction providerInteraction h_mainEval h_providerEval h_msg
+      h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+      h_mem_wr =>
+    let env' : OpEnvelope state m r_main :=
+      .lbu lbu_input regs mem bus align pins h_width promises r_mem
+        h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+        h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+        h_addr2_idx h_mem_sel h_mem_wr
+    let fullTraceTable :=
+      env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded
+    let extraction :=
+      env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+        fullTraceTable sourceCoverage.selectedEnvelopeRow
+        sourceCoverage.selectedPrefixState
+    exact
+      { selectedPrefix := by
+          simpa [env', fullTraceTable,
+            OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+            OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+            OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+            OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+            using extraction.selectedPrefix
+        selectedEnvelopeRow := by
+          simpa [env',
+            OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace,
+            OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+            fullTraceTable]
+            using sourceCoverage.selectedEnvelopeRow }
+  case lhu lhu_input regs mem bus align pins h_width promises r_mem
+      mainRowVar memRowVar mainEnv memEnv mainMult providerMult
+      mainInteraction providerInteraction h_mainEval h_providerEval h_msg
+      h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+      h_mem_wr =>
+    let env' : OpEnvelope state m r_main :=
+      .lhu lhu_input regs mem bus align pins h_width promises r_mem
+        h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+        h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+        h_addr2_idx h_mem_sel h_mem_wr
+    let fullTraceTable :=
+      env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded
+    let extraction :=
+      env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+        fullTraceTable sourceCoverage.selectedEnvelopeRow
+        sourceCoverage.selectedPrefixState
+    exact
+      { selectedPrefix := by
+          simpa [env', fullTraceTable,
+            OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+            OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+            OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+            OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+            using extraction.selectedPrefix
+        selectedEnvelopeRow := by
+          simpa [env',
+            OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace,
+            OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+            fullTraceTable]
+            using sourceCoverage.selectedEnvelopeRow }
+  case lwu lwu_input regs mem bus align pins h_width promises r_mem
+      mainRowVar memRowVar mainEnv memEnv mainMult providerMult
+      mainInteraction providerInteraction h_mainEval h_providerEval h_msg
+      h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+      h_mem_wr =>
+    let env' : OpEnvelope state m r_main :=
+      .lwu lwu_input regs mem bus align pins h_width promises r_mem
+        h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+        h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+        h_addr2_idx h_mem_sel h_mem_wr
+    let fullTraceTable :=
+      env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded
+    let extraction :=
+      env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+        fullTraceTable sourceCoverage.selectedEnvelopeRow
+        sourceCoverage.selectedPrefixState
+    exact
+      { selectedPrefix := by
+          simpa [env', fullTraceTable,
+            OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+            OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+            OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+            OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+            using extraction.selectedPrefix
+        selectedEnvelopeRow := by
+          simpa [env',
+            OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace,
+            OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+            fullTraceTable]
+            using sourceCoverage.selectedEnvelopeRow }
+  case lb_via_static_match lb_input regs mem v r_binary offset binEnv
+      h_static h_match bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    let env' : OpEnvelope state m r_main :=
+      .lb_via_static_match lb_input regs mem v r_binary offset binEnv
+        h_static h_match bus pins promises r_mem h_mainEval h_providerEval
+        h_msg h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+        h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+        h_mem_wr
+    let fullTraceTable :=
+      env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded
+    let extraction :=
+      env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+        fullTraceTable sourceCoverage.selectedEnvelopeRow
+        sourceCoverage.selectedPrefixState
+    exact
+      { selectedPrefix := by
+          simpa [env', fullTraceTable,
+            OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+            OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+            OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+            OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+            using extraction.selectedPrefix
+        selectedEnvelopeRow := by
+          simpa [env',
+            OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace,
+            OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+            fullTraceTable]
+            using sourceCoverage.selectedEnvelopeRow }
+  case lh_via_static_match lh_input regs mem v r_binary offset binEnv
+      h_static h_match bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    let env' : OpEnvelope state m r_main :=
+      .lh_via_static_match lh_input regs mem v r_binary offset binEnv
+        h_static h_match bus pins promises r_mem h_mainEval h_providerEval
+        h_msg h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+        h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+        h_mem_wr
+    let fullTraceTable :=
+      env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded
+    let extraction :=
+      env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+        fullTraceTable sourceCoverage.selectedEnvelopeRow
+        sourceCoverage.selectedPrefixState
+    exact
+      { selectedPrefix := by
+          simpa [env', fullTraceTable,
+            OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+            OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+            OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+            OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+            using extraction.selectedPrefix
+        selectedEnvelopeRow := by
+          simpa [env',
+            OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace,
+            OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+            fullTraceTable]
+            using sourceCoverage.selectedEnvelopeRow }
+  case lw_via_static_match lw_input regs mem v r_binary offset binEnv
+      h_static h_match bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    let env' : OpEnvelope state m r_main :=
+      .lw_via_static_match lw_input regs mem v r_binary offset binEnv
+        h_static h_match bus pins promises r_mem h_mainEval h_providerEval
+        h_msg h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+        h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+        h_mem_wr
+    let fullTraceTable :=
+      env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded
+    let extraction :=
+      env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+        fullTraceTable sourceCoverage.selectedEnvelopeRow
+        sourceCoverage.selectedPrefixState
+    exact
+      { selectedPrefix := by
+          simpa [env', fullTraceTable,
+            OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+            OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+            OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+            OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+            using extraction.selectedPrefix
+        selectedEnvelopeRow := by
+          simpa [env',
+            OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace,
+            OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+            fullTraceTable]
+            using sourceCoverage.selectedEnvelopeRow }
+  all_goals
+    exact
+      { selectedPrefix := ()
+        selectedEnvelopeRow := trivial }
+
 /-- Load-scoped package containing the shared full-execution memory trace plus
     coverage for one envelope. Non-load envelopes carry no memory data.
 
@@ -4807,6 +5075,58 @@ def OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope
       Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
         env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace
   | _ => ULift.{2, 0} Unit
+
+/-- Load-scoped package containing the shared full-execution memory trace plus
+    source-shaped coverage for one envelope. Non-load envelopes carry no
+    memory data.
+
+    Compared with `AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope`,
+    this exposes the two remaining per-load obligations expected from accepted
+    full execution instead of asking callers for the already-built selected
+    prefix cursor. -/
+def OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace
+  | .lbu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace
+  | .lhu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace
+  | .lwu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace
+  | .lb_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace
+  | .lh_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace
+  | .lw_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace
+  | _ => ULift.{2, 0} Unit
+
+/-- Lower source-shaped full-execution memory evidence to the selected-cursor
+    coverage package consumed by the existing replay bridge. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_source
+    (env : OpEnvelope state m r_main)
+    (source : env.AcceptedFullExecutionMemoryTraceSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨source.1,
+        OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_sourceCoverage
+          _ source.1 source.2⟩
 
 /-- Full-execution memory construction data for one load cursor.
 

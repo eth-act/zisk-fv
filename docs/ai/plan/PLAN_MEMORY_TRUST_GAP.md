@@ -71,11 +71,24 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit split public memory boundary with shared full-execution trace plus per-envelope coverage.
 - [x] Verify and commit inverse packaging from load-scoped construction to shared trace plus coverage.
 - [x] Verify and commit load-scoped public memory trace theorem boundary.
+- [x] Verify and commit source-shaped public memory trace theorem boundary.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
 
 The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope`, a named full-execution Mem extraction target whose fields carry shared accepted AIR/Main/Mem full-trace data, a `fullRv64imEnsemble` witness, a concrete Mem table in that witness, selected envelope Mem-row occurrence in that table, and the selected raw-row prefix cursor. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, prefix-indexed read soundness, and initial memory agreement; the lower trace/table object, packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, ordinary selected-row membership, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no theorem that constructs the extraction target from accepted full execution trace data.
+
+The source-shaped public boundary exposes the next-more-honest memory evidence:
+`OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope` carries the shared
+full-execution Mem trace, selected envelope Mem-row occurrence, and split-indexed
+prefix-state equality, while deriving the selected prefix cursor internally. The
+source coverage is now table-shaped directly, and
+`acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_sourceCoverage` lowers it
+through explicit load-case constructors to avoid generic `OpEnvelope` recursor
+blowups. This slice passed `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, regenerated trust ledgers, both trust
+check scripts, global closure print, targeted retired-memory scans, and
+`nix run .#test`.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
