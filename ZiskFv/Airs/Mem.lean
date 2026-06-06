@@ -425,6 +425,60 @@ theorem segment_last_step_eq_of_next_boundary_segment_every_row
   rw [h_next_boundary] at h_step
   linear_combination h_step
 
+/-- At a non-boundary row, the generated previous-step witness is the
+    previous row's effective step. -/
+theorem previous_step_eq_previous_row_step_of_not_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.previous_step row = previous_row_step v row := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_previous_step,
+      _, _, _, _, _, _, _, _⟩
+  rw [h_not_boundary] at h_previous_step
+  linear_combination h_previous_step
+
+/-- At a segment-boundary row, the generated previous-step witness is the
+    previous segment's carried-out effective step. -/
+theorem previous_step_eq_previous_segment_step_of_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.previous_step row = cols.previous_segment_step := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_previous_step,
+      _, _, _, _, _, _, _, _⟩
+  rw [h_boundary] at h_previous_step
+  linear_combination h_previous_step
+
+/-- On same-address rows, the generated increment equation reduces to the
+    chronological step delta. -/
+theorem delta_step_eq_increment_of_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0) :
+    delta_step v row =
+      v.increment_0 row + 4194304 * v.increment_1 row + 1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_increment,
+      _, _, _, _, _, _, _⟩
+  rw [h_same_addr] at h_increment
+  linear_combination -h_increment
+
+/-- On address-change rows, the generated increment equation reduces to the
+    address delta. -/
+theorem delta_addr_eq_increment_of_addr_change_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1) :
+    delta_addr cols v row =
+      v.increment_0 row + 4194304 * v.increment_1 row + 1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_increment,
+      _, _, _, _, _, _, _⟩
+  rw [h_addr_change] at h_increment
+  linear_combination -h_increment
+
 /-! ## Generated permutation accumulator surface
 
 The extractor emits constraints 24-33 for the `std_sum` / direct-update

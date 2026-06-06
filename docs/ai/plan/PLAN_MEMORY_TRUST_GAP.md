@@ -86,6 +86,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Decompose accepted AIR/Main/Mem coverage into selected prefix plus selected witness Mem-row evidence.
 - [x] Prove non-boundary same-address value carry facts from generated Mem segment constraints.
 - [x] Prove segment-boundary carry-in/carry-out facts from generated Mem segment constraints.
+- [x] Prove previous-step and increment/delta facts from generated Mem segment constraints.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -236,6 +237,17 @@ where `segment_l1 (row + 1) = 1`, the current value chunks, address, and
 effective step are recorded as `segment_last_*`. These are still local
 algebraic consequences; the cross-segment chronological replay proof remains
 open. Focused `lake build ZiskFv.Airs.Mem`, full `lake build`, trust
+regeneration, both trust gates, closure print with no project axiom names,
+targeted retired-memory scan, and `nix run .#test` passed.
+
+The Mem step/delta slice adds generated-order consequences from
+`ZiskFv.Airs.Mem.segment_every_row`: the `previous_step` witness reduces to
+the previous row's effective step at non-boundary rows and to
+`previous_segment_step` at segment boundaries; the generated increment equation
+reduces to `delta_step` for same-address rows and `delta_addr` for address
+changes. These facts are prerequisites for chronological replay, but they do
+not yet prove Nat-level timestamp monotonicity or accepted full-trace
+construction. Focused `lake build ZiskFv.Airs.Mem`, full `lake build`, trust
 regeneration, both trust gates, closure print with no project axiom names,
 targeted retired-memory scan, and `nix run .#test` passed.
 
