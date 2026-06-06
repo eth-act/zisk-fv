@@ -185,6 +185,35 @@ def ReadEventReplayAgreement
   ∧ mem[event.ptr.toNat + 6]? = .some (event.byteAt 6)
   ∧ mem[event.ptr.toNat + 7]? = .some (event.byteAt 7)
 
+/-- Combine Sail/replay state agreement at a cursor with read-row replay
+soundness for the selected event. -/
+theorem memoryTraceAgreement_of_replayAgreement
+    (state : SailState)
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (event : MemEvent)
+    (h_state : ReplayMemoryAgreement state mem)
+    (h_read : ReadEventReplayAgreement mem event) :
+    MemoryTraceAgreement state event := by
+  unfold MemoryTraceAgreement
+  unfold ReadEventReplayAgreement at h_read
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [h_state event.ptr.toNat]
+    exact h_read.1
+  · rw [h_state (event.ptr.toNat + 1)]
+    exact h_read.2.1
+  · rw [h_state (event.ptr.toNat + 2)]
+    exact h_read.2.2.1
+  · rw [h_state (event.ptr.toNat + 3)]
+    exact h_read.2.2.2.1
+  · rw [h_state (event.ptr.toNat + 4)]
+    exact h_read.2.2.2.2.1
+  · rw [h_state (event.ptr.toNat + 5)]
+    exact h_read.2.2.2.2.2.1
+  · rw [h_state (event.ptr.toNat + 6)]
+    exact h_read.2.2.2.2.2.2.1
+  · rw [h_state (event.ptr.toNat + 7)]
+    exact h_read.2.2.2.2.2.2.2
+
 /-- Whole-trace replay soundness. At each event, read rows must emit the
 bytes currently present in the replay memory; store rows update replay memory
 for the remaining suffix. -/

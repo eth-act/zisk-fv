@@ -2805,6 +2805,23 @@ theorem AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.selectedPrefixStateAgre
     ZiskFv.ZiskCircuit.MemTrace.replayAgreement_after_memoryBusRows
       initialState priorRows fullTrace.initialMemory fullTrace.initialAgreement
 
+/-- The global Mem row-trace spec and selected cursor imply the concrete
+    memory byte agreement consumed by local load correctness. -/
+theorem AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.selectedMemoryTraceAgreement
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (construction :
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state entry) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement
+      state (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry entry) :=
+  ZiskFv.ZiskCircuit.MemTrace.memoryTraceAgreement_of_replayAgreement
+    state
+    (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+      construction.fullTrace.initialMemory construction.selected.priorRows)
+    (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry entry)
+    construction.selectedPrefixStateAgreement
+    construction.selectedPrefixReadAgreement
+
 /-- Lower accepted global Mem trace facts to the existing granular replay
     construction object for one selected load cursor. -/
 def acceptedLoadFullMemoryBusRowsTraceConstructionAtCursor_of_globalTrace

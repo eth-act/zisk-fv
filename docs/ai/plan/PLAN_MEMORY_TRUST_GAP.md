@@ -42,6 +42,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Derive selected load cursor read facts from row tags and the global prefix-indexed trace spec.
 - [x] Add raw memory-bus row prefix replay helpers for selected cursor construction.
 - [x] Prove raw-row selected prefix state agreement from initial trace agreement.
+- [x] Derive selected load byte agreement from the global row spec plus selected cursor.
 - [ ] Prove `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
@@ -183,3 +184,18 @@ from the global trace's initial agreement and selected raw-row prefix. Focused
 ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
 compliance closure print with zero project names, targeted retired-memory
 scans, the broad plan scan, and `nix run .#test` passed for this slice.
+The selected-load byte-agreement slice adds
+`ZiskCircuit.MemTrace.memoryTraceAgreement_of_replayAgreement` and
+`AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.selectedMemoryTraceAgreement`,
+so the concrete `MemoryTraceAgreement` consumed by local load correctness is
+now derived directly from the global prefix read fact and selected prefix
+Sail/replay state agreement. Focused `lake build ZiskFv.ZiskCircuit.MemTrace
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust gates, compliance closure print with zero project
+names, retired-memory scans, generated zero-entry count checks, and
+`nix run .#test` passed for this slice. The remaining implementation target
+is not another local load proof; it is extracting or rebinding the skipped
+mixed F/ExtF Mem constraints in `build/extraction/Extraction/Mem.lean` into
+the clean/global trace layer so
+`AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` can be proved from
+accepted AIR/Main/Mem full-trace data.
