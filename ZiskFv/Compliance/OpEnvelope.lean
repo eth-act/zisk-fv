@@ -5347,6 +5347,73 @@ def OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope
         env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace
   | _ => ULift.{2, 0} Unit
 
+/-- Load-scoped shared full-execution memory trace.
+
+    This is the split form of `AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope`:
+    load envelopes carry the shared memory trace object, while non-load
+    envelopes carry no memory trace obligation. -/
+def OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. => AcceptedFullExecutionMemoryTrace m
+  | .lbu .. => AcceptedFullExecutionMemoryTrace m
+  | .lhu .. => AcceptedFullExecutionMemoryTrace m
+  | .lwu .. => AcceptedFullExecutionMemoryTrace m
+  | .lb_via_static_match .. => AcceptedFullExecutionMemoryTrace m
+  | .lh_via_static_match .. => AcceptedFullExecutionMemoryTrace m
+  | .lw_via_static_match .. => AcceptedFullExecutionMemoryTrace m
+  | _ => ULift.{2, 0} Unit
+
+/-- Per-envelope selected-row/prefix coverage indexed by the load-scoped
+    shared trace object. -/
+def OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (fullTraceAtEnvelope :
+      env.AcceptedFullExecutionMemoryTraceAtEnvelope) : Type 1 :=
+  match env with
+  | .ld .. =>
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+        fullTraceAtEnvelope
+  | .lbu .. =>
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+        fullTraceAtEnvelope
+  | .lhu .. =>
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+        fullTraceAtEnvelope
+  | .lwu .. =>
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+        fullTraceAtEnvelope
+  | .lb_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+        fullTraceAtEnvelope
+  | .lh_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+        fullTraceAtEnvelope
+  | .lw_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+        fullTraceAtEnvelope
+  | _ => ULift.{1, 0} Unit
+
+/-- Pack the split load-scoped trace plus selected coverage back into the
+    compatibility package consumed by the existing replay bridge. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_split
+    (env : OpEnvelope state m r_main)
+    (fullTraceAtEnvelope :
+      env.AcceptedFullExecutionMemoryTraceAtEnvelope)
+    (coverage :
+      env.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope
+        fullTraceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope]
+      at fullTraceAtEnvelope coverage ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact ⟨fullTraceAtEnvelope, coverage⟩
+
 /-- Load-scoped package containing the shared full-execution memory trace plus
     source-shaped coverage for one envelope. Non-load envelopes carry no
     memory data.

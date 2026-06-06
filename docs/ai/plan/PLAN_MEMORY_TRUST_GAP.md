@@ -79,6 +79,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add `rows.Nodup` to accepted Mem row-trace construction and derive uniqueness from it.
 - [x] Move the public compliance theorem memory premise to full-execution trace construction.
 - [x] Move the public compliance theorem memory premise to shared full-execution trace plus per-envelope coverage.
+- [x] Split the public compliance theorem memory premise into load-scoped shared trace plus indexed coverage.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -86,11 +87,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 The active load path no longer carries `LoadTraceContext` inside
 `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over
 the selected load event. The public theorem now takes
-`OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope`: load
+`OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope` plus
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope`: load
 envelopes carry a shared accepted full-execution memory trace plus selected
-envelope Mem-row occurrence and selected prefix cursor coverage; non-load
-envelopes carry no memory trace
-data. The split-indexed source predicate, lower trace/table object, packed
+envelope Mem-row occurrence and selected prefix cursor coverage indexed by that
+trace; non-load envelopes carry no memory trace data. The split-indexed source
+predicate, lower trace/table object, packed
 accepted-at-envelope construction, generated Mem burden, packed row
 construction, recursive `MemoryBusRowsReadWriteSound`, projected
 `TraceReplaySound`, ordinary selected-row membership, and selected memory
@@ -968,3 +970,16 @@ Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed;
 full `lake build`, both trust check scripts, global compliance closure print
 with zero project axiom names, targeted retired-memory scan, and
 `nix run .#test` also passed.
+
+The current theorem-surface split exposes the shared trace and selected
+coverage as separate public binders:
+`OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope` and
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope`.
+The compatibility package
+`OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope` is rebuilt
+internally by
+`OpEnvelope.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_split`.
+Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed;
+full `lake build`, trust regeneration, both trust gates, closure print with
+zero project axiom names, targeted retired-memory scan, and `nix run .#test`
+also passed.

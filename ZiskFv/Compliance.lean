@@ -52,13 +52,14 @@ bridge. The V2 trust gate enforces this.
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
 completeness. Load-memory replay evidence is exposed separately through
-`OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope`: load arms
-carry a shared accepted full-execution memory trace plus per-envelope selected
-prefix and selected Mem-row coverage, while non-load arms carry no memory trace
-data. The accepted trace construction includes the duplicate-free memory-row
-invariant used to derive selected occurrence uniqueness internally. The theorem
-derives the load-scoped construction package, generated Mem burden, and replay
-construction internally.
+`OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope` and
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope`: load
+arms carry a shared accepted full-execution memory trace plus per-envelope
+selected prefix and selected Mem-row coverage, while non-load arms carry no
+memory trace data. The accepted trace construction includes the duplicate-free
+memory-row invariant used to derive selected occurrence uniqueness internally.
+The theorem derives the load-scoped construction package, generated Mem burden,
+and replay construction internally.
 It is also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
@@ -98,15 +99,22 @@ theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
     (h_full_memory_trace :
-      env.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope)
+      env.AcceptedFullExecutionMemoryTraceAtEnvelope)
+    (h_full_memory_coverage :
+      env.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope
+        h_full_memory_trace)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
+  let h_mem_trace_with_coverage :
+      env.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope :=
+    env.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_split
+      h_full_memory_trace h_full_memory_coverage
   let h_mem_construction :
       env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope :=
     env.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_traceWithCoverage
-      h_full_memory_trace
+      h_mem_trace_with_coverage
   let h_mem_extraction :
       env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope :=
     env.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstruction
