@@ -2,7 +2,7 @@
 
 Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
 
-Current focus: local dual-row load correctness theorem is verified; preparing the slice commit.
+Current focus: next integration step is deriving the global Mem row trace construction from accepted full-trace data.
 
 Blocking: the current Lean Mem surface exposes only local F-typed row constraints; cross-row continuity, segment carry, and dual-memory emission are now named in `AirsClean.Mem.TraceSpec` but are still deferred and not yet proved from accepted trace constraints.
 
