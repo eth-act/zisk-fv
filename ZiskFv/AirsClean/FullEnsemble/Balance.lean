@@ -1343,6 +1343,15 @@ def memReadReplayRowsOfTable
     (table : Table FGL) : List (Interaction.MemoryBusEntry FGL) :=
   memPrimaryReadReplayRowsOfTable table ++ memDualReadReplayRowsOfTable table
 
+/-- The projected read-replay rows of a concrete Mem table are embedded in
+    the accepted chronological memory-bus row trace. Proving this embedding
+    is the global AIR/Main/Mem integration obligation; selected-row coverage
+    can then be discharged from the table-local projection lemmas below. -/
+def MemReadReplayRowsEmbeddedInTrace
+    (table : Table FGL)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ entry, entry ∈ memReadReplayRowsOfTable table → entry ∈ rows
+
 /-- A concrete Mem table row contributes its primary read projection to the
     table's read-replay row surface. -/
 theorem mem_primary_read_replay_entry_mem_of_table_row
@@ -1420,6 +1429,44 @@ theorem mem_dual_read_replay_entry_mem_of_table_row_match
     simp
   rw [h_eq]
   exact mem_dual_read_replay_entry_mem_of_table_row h_row
+
+/-- A matched primary Mem provider read projection is covered by the accepted
+    chronological row trace once the table's projected replay rows are
+    embedded in that trace. -/
+theorem mem_primary_read_replay_entry_mem_of_embedded_trace_row_match
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {providerRow : Array FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_embedded : MemReadReplayRowsEmbeddedInTrace table rows)
+    (h_row : providerRow ∈ table.table)
+    (h_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (memPrimaryReadReplayEntryOfRow
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))) :
+    entry ∈ rows :=
+  h_embedded entry
+    (mem_primary_read_replay_entry_mem_of_table_row_match h_row h_match)
+
+/-- A matched dual Mem provider read projection is covered by the accepted
+    chronological row trace once the table's projected replay rows are
+    embedded in that trace. -/
+theorem mem_dual_read_replay_entry_mem_of_embedded_trace_row_match
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {providerRow : Array FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_embedded : MemReadReplayRowsEmbeddedInTrace table rows)
+    (h_row : providerRow ∈ table.table)
+    (h_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (memDualReadReplayEntryOfRow
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))) :
+    entry ∈ rows :=
+  h_embedded entry
+    (mem_dual_read_replay_entry_mem_of_table_row_match h_row h_match)
 
 /-! ## Full-ensemble memory-bus row bridges -/
 

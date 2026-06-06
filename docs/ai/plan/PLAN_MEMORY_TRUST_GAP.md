@@ -49,6 +49,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add FullEnsemble selected Mem read-row replay projections.
 - [x] Factor selected-prefix cursor construction into row coverage plus split-indexed state equality.
 - [x] Decompose load-scoped selected-prefix coverage into row membership plus prefix-state equality at the accepted trace boundary.
+- [x] Connect selected Mem provider read projections to accepted chronological row membership through an explicit embedding obligation.
 - [ ] Prove `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -232,6 +233,14 @@ membership and split-indexed prefix-state predicates at the accepted
 AIR/Main/Mem trace boundary, plus an adapter from those two obligations to
 `SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`. Focused `lake build
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust gates, compliance closure print with zero project
+axiom names, targeted retired-memory scans, extractor skip scan, generated
+zero-entry checks, and `nix run .#test` passed for this slice.
+The selected Mem row-embedding slice names
+`FullEnsemble.MemReadReplayRowsEmbeddedInTrace` and proves primary/dual
+selected Mem provider row membership in the accepted chronological row list
+from that embedding plus the existing matched-entry projection lemmas. Focused
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, trust
 regeneration, both trust gates, compliance closure print with zero project
 axiom names, targeted retired-memory scans, extractor skip scan, generated
 zero-entry checks, and `nix run .#test` passed for this slice.
