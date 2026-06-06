@@ -441,3 +441,16 @@ regeneration, both trust gates, compliance closure print, generated zero-entry
 checks, retired-memory scans, and `nix run .#test` passed. The remaining open
 proof is still semantic: derive the generated construction's replay fields and
 the selected prefix cursor from accepted AIR/Main/Mem full-trace data.
+
+The current public-generated-boundary slice changes
+`zisk_riscv_compliant_program_bus` to take
+`env.GeneratedMemFullTraceConstructionAtEnvelope` directly. Load envelopes now
+expose generated Mem full-trace construction plus the selected prefix cursor
+at the theorem boundary; the theorem lowers that burden to the previous packed
+`AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` internally before
+deriving replay facts. Focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance` passed, as did full `lake build`, trust regeneration, both
+trust gates, compliance closure print, generated zero-entry checks,
+retired-memory scans, generated skip scan, and `nix run .#test`. The remaining
+open proof is unchanged: derive the generated construction's replay fields and
+the selected prefix cursor from accepted AIR/Main/Mem full-trace data.

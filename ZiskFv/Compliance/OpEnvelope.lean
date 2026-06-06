@@ -3123,6 +3123,43 @@ def OpEnvelope.SelectedLoadMemoryBusRowsPrefixAtEnvelope
       SelectedLoadMemoryBusRowPrefixCursor state initialState rows bus.e1
   | _ => Unit
 
+/-- Generated Mem full-trace construction plus the selected load prefix
+    cursor for one concrete load row. This is the load-scoped shape expected
+    from accepted AIR/Main/Mem full-trace integration. -/
+structure GeneratedMemFullTraceConstructionWithPrefixAtCursor
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  generatedTrace :
+    ZiskFv.AirsClean.Mem.GeneratedMemFullTraceConstruction
+      initialState rows
+  selectedPrefix :
+    SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry
+
+/-- Public generated Mem full-trace burden, scoped to load envelopes.
+    Non-load envelopes carry `Unit`; load envelopes carry the generated Mem
+    full-trace construction and the selected prefix cursor for the envelope's
+    concrete memory read row. -/
+def OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      GeneratedMemFullTraceConstructionWithPrefixAtCursor state bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      GeneratedMemFullTraceConstructionWithPrefixAtCursor state bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      GeneratedMemFullTraceConstructionWithPrefixAtCursor state bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      GeneratedMemFullTraceConstructionWithPrefixAtCursor state bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      GeneratedMemFullTraceConstructionWithPrefixAtCursor state bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      GeneratedMemFullTraceConstructionWithPrefixAtCursor state bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      GeneratedMemFullTraceConstructionWithPrefixAtCursor state bus.e1
+  | _ => Unit
+
 /-- Construct the public load-scoped memory-row burden from a shared accepted
     Mem row trace plus an envelope-specific prefix cursor. The selected
     row's `as = 2` and `multiplicity = -1` facts are derived from each load
@@ -3219,6 +3256,82 @@ def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_generated
     initialState rows
     generatedTrace.toAcceptedFullMemoryBusRowsTrace
     prefixCursor
+
+/-- Lower the generated Mem full-trace burden to the current packed memory
+    construction burden consumed by replay. -/
+def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_generatedTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (generatedTraceAtEnvelope :
+      env.GeneratedMemFullTraceConstructionAtEnvelope) :
+    env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope]
+      at generatedTraceAtEnvelope ⊢
+  case ld =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lbu =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lhu =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lwu =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lb_via_static_match =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lh_via_static_match =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lw_via_static_match =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  all_goals exact ()
 
 /-- Derive accepted raw-row trace evidence from the granular construction
     burden for this envelope. -/
