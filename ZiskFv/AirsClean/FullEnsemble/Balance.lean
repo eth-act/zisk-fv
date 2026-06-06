@@ -61,6 +61,28 @@ theorem component_mem_fullRv64im_cases
   · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_main)))))))))
   · cases h_empty
 
+/-- Every concrete witness for the full RV64IM ensemble contains a table for
+    the dual-aware mutable Mem component. This is only table selection: it
+    does not assert chronological embedding of that table's projected rows
+    into an accepted memory trace. -/
+theorem exists_mem_table_of_fullRv64im_witness
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
+    ∃ table ∈ witness.allTables,
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus := by
+  have h_component_mem :
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus ∈
+        (fullRv64imEnsemble length program).ensemble.allTables := by
+    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+  have h_in_map :
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus ∈
+        witness.allTables.map (·.component) := by
+    rw [witness.allTables_map_component]
+    exact h_component_mem
+  rcases List.mem_map.mp h_in_map with ⟨table, h_table, h_component⟩
+  exact ⟨table, h_table, h_component⟩
+
 /-- The full ensemble verifier table is the empty verifier component, so it
     cannot contribute operation-bus interactions. -/
 theorem verifierTable_interactionsWith_opBus_nil

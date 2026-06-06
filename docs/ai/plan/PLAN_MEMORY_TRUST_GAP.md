@@ -62,6 +62,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Remove the obsolete split-indexed full-execution memory extraction target.
 - [x] Check inside `zisk_riscv_compliant_program_bus` that the selected envelope Mem-row occurrence carried by cursor extraction implies selected accepted-row membership.
 - [x] Derive cursor extraction from FullEnsemble-aligned Mem-table, selected envelope row, and prefix-state equality facts.
+- [x] Prove that any full RV64IM ensemble witness contains a mutable dual-Mem table and add a constructor that selects it for the Mem trace/table bridge.
 - [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -714,3 +715,19 @@ theorem only needs to supply prefix-state equality for the same FullEnsemble
 Mem-table trace. Focused `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, both trust gates, targeted retired-name
 scans, and `nix run .#test` passed. This slice was committed as `04140c9a`.
+
+The mutable-Mem-table selection slice proves
+`ZiskFv.AirsClean.FullEnsemble.exists_mem_table_of_fullRv64im_witness`: every
+`fullRv64imEnsemble` witness contains a concrete table whose component is
+`Mem.componentWithDualMemBus`. It also adds
+`AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness`, which builds
+the full-ensemble Mem trace/table bridge from a full witness, an accepted
+AIR/Main/Mem trace, and an embedding theorem for the located mutable Mem
+table. This removes manual mutable-Mem table selection from the upstream
+extraction target, but it deliberately does not prove chronological row
+embedding, selected envelope row occurrence, selected prefix cursor coverage,
+or prefix-read soundness. Focused `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance` and `lake build
+ZiskFv.Compliance.OpEnvelope`, full `lake build`, trust regeneration, both
+trust gates, closure print, targeted retired-name scan, and `nix run .#test`
+passed for this slice.

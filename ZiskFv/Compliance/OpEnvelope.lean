@@ -3498,6 +3498,46 @@ structure AcceptedAirMainMemFullTraceWithFullEnsembleMemTable
     ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
       table acceptedTrace.rows
 
+/-- Construct the full-ensemble Mem-table bridge from an actual full RV64IM
+    witness plus an embedding theorem for whichever mutable Mem table occurs
+    in that witness. The table itself is selected by
+    `exists_mem_table_of_fullRv64im_witness`; selected-row occurrence and
+    prefix-state alignment remain separate obligations. -/
+noncomputable def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ∀ table : Air.Flat.Table FGL,
+        table ∈ witness.allTables →
+        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+          ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+            table acceptedTrace.rows) :
+    AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m := by
+  let existsTable :=
+    ZiskFv.AirsClean.FullEnsemble.exists_mem_table_of_fullRv64im_witness
+      witness
+  let table := Classical.choose existsTable
+  have h_table : table ∈ witness.allTables :=
+    (Classical.choose_spec existsTable).1
+  have h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus :=
+    (Classical.choose_spec existsTable).2
+  exact
+    { length := length
+      program := program
+      witness := witness
+      acceptedTrace := acceptedTrace
+      table := table
+      table_mem := h_table
+      table_component := h_component
+      embedded := embedded table h_table h_component }
+
 /-- Forget full-ensemble provenance and keep the trace/table bridge consumed
     by the current replay theorem. -/
 def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.toTraceWithMemTable
