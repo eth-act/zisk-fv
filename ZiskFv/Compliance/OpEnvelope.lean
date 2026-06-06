@@ -3982,6 +3982,19 @@ def OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
       (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
         construction))
 
+/-- Split-indexed Sail prefix-state equality for the accepted trace contained
+    in the FullEnsemble Mem-table bridge.  This is the remaining per-envelope
+    state-cursor fact once selected row membership has been derived from the
+    concrete Mem-table row occurrence. -/
+def OpEnvelope.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope) :
+    Prop :=
+  env.SelectedPrefixStateAtTraceTableAtEnvelope
+    (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      construction)
+
 /-- Cursor-shaped full-execution Mem extraction target for one envelope.
 
     Full execution replay naturally produces a selected raw-row prefix cursor,
@@ -4104,6 +4117,32 @@ def OpEnvelope.acceptedAirMainMemTraceEvidenceAtEnvelope_of_traceTable
         selectedReadRow := trivial
         selectedPrefixState := trivial }
 
+/-- Project selected read-row coverage from a trace/table bridge to the
+    accepted trace carried by that same bridge. -/
+theorem OpEnvelope.selectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_traceTable
+    (env : OpEnvelope state m r_main)
+    (traceWithTable :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope)
+    (h_selected :
+      env.SelectedMemReadReplayRowInTraceTableAtEnvelope traceWithTable) :
+    env.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedTraceOfFullTraceWithMemTable traceWithTable) := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope,
+      OpEnvelope.SelectedMemReadReplayRowInTraceTableAtEnvelope,
+      OpEnvelope.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.acceptedTraceOfFullTraceWithMemTable]
+      at traceWithTable h_selected ⊢
+  all_goals
+    exact
+      ⟨traceWithTable.table, traceWithTable.embedded,
+        by
+          simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+            ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+            ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+            using h_selected⟩
+
 /-- Build the current public accepted-memory evidence object from concrete
     provider-row coverage in the shared FullEnsemble Mem table. This composes
     the table-local primary/dual provider-row adapter with the trace/table
@@ -4163,6 +4202,60 @@ noncomputable def OpEnvelope.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_o
     exact SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
       h_mem h_state
   all_goals exact ()
+
+/-- Build the cursor-shaped extraction target from FullEnsemble-aligned facts:
+    the concrete Mem-table bridge, the selected envelope Mem-row occurrence in
+    that table, and the split-indexed Sail prefix-state equality for the same
+    accepted trace carried by the bridge. Selected row membership is derived
+    internally from the table occurrence and embedding. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+    (env : OpEnvelope state m r_main)
+    (fullTraceTable :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        fullTraceTable)
+    (selectedPrefixState :
+      env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+        fullTraceTable) :
+    env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope := by
+  let traceWithTable :=
+    env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      fullTraceTable
+  let acceptedTrace :=
+    env.acceptedTraceOfFullTraceWithMemTable traceWithTable
+  have selectedProvider :
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        fullTraceTable :=
+    env.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow
+      fullTraceTable selectedEnvelopeRow
+  have selectedReadRow :
+      env.SelectedMemReadReplayRowInTraceTableAtEnvelope traceWithTable :=
+    env.selectedMemReadReplayRowInTraceTableAtEnvelope_of_providerRow
+      traceWithTable selectedProvider
+  have selectedReadRowAtAccepted :
+      env.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace :=
+    env.selectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_traceTable
+      traceWithTable selectedReadRow
+  have selectedPrefixStateAtAccepted :
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace := by
+    change
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedTraceOfFullTraceWithMemTable traceWithTable)
+    exact selectedPrefixState
+  have selectedMembership :
+      env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace :=
+    env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReadReplayRow
+      acceptedTrace selectedReadRowAtAccepted
+  exact
+    { fullTraceTable := fullTraceTable
+      selectedEnvelopeRow := selectedEnvelopeRow
+      selectedPrefix :=
+        env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
+          acceptedTrace selectedMembership selectedPrefixStateAtAccepted }
 
 /-- Combine shared accepted trace data with selected-prefix coverage to
     recover the packed load-scoped construction object used by the existing

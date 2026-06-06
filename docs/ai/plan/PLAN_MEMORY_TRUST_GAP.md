@@ -61,6 +61,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Replace the top-level split-indexed memory extraction boundary with cursor-shaped `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope`.
 - [x] Remove the obsolete split-indexed full-execution memory extraction target.
 - [x] Check inside `zisk_riscv_compliant_program_bus` that the selected envelope Mem-row occurrence carried by cursor extraction implies selected accepted-row membership.
+- [x] Derive cursor extraction from FullEnsemble-aligned Mem-table, selected envelope row, and prefix-state equality facts.
 - [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -700,3 +701,14 @@ focused `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
 `trust/scripts/regenerate.sh`, both trust gates, closure print,
 retired-memory scans, generated zero-entry checks, and `nix run .#test`
 passed.
+
+The FullEnsemble-aligned cursor slice adds
+`OpEnvelope.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope`,
+`OpEnvelope.selectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_traceTable`,
+and
+`OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState`.
+This removes the duplicated accepted-trace package from the next bridge shape:
+selected row membership is now derived internally from the selected envelope
+Mem-row occurrence plus table embedding, while the upstream full-execution
+theorem only needs to supply prefix-state equality for the same FullEnsemble
+Mem-table trace. Focused `lake build ZiskFv.Compliance.OpEnvelope` passed.
