@@ -33,6 +33,17 @@ rm -f \
   "$WORKSPACE/lean-check/RvDecodeIAluOri.lean" \
   "$WORKSPACE/lean-check/RvDecodeIAluAndi.lean" \
   "$WORKSPACE/lean-check/RvDecodeIAlu.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluAdd.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluSub.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluSll.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluSlt.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluSltu.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluXor.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluSrl.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluSra.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluOr.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAluAnd.lean" \
+  "$WORKSPACE/lean-check/RvDecodeRAlu.lean" \
   "$WORKSPACE/lean-check/RvDecodeAddiw.lean" \
   "$WORKSPACE/lean-check/RvDecodeLoadLb.lean" \
   "$WORKSPACE/lean-check/RvDecodeLoadLh.lean" \
@@ -244,6 +255,17 @@ lean_lib RvDecodeIAluXori
 lean_lib RvDecodeIAluOri
 lean_lib RvDecodeIAluAndi
 lean_lib RvDecodeIAlu
+lean_lib RvDecodeRAluAdd
+lean_lib RvDecodeRAluSub
+lean_lib RvDecodeRAluSll
+lean_lib RvDecodeRAluSlt
+lean_lib RvDecodeRAluSltu
+lean_lib RvDecodeRAluXor
+lean_lib RvDecodeRAluSrl
+lean_lib RvDecodeRAluSra
+lean_lib RvDecodeRAluOr
+lean_lib RvDecodeRAluAnd
+lean_lib RvDecodeRAlu
 lean_lib RvDecodeAddiw
 lean_lib RvDecodeLoadLb
 lean_lib RvDecodeLoadLh
@@ -2011,6 +2033,11 @@ def rawIType (imm rs1 funct3 rd opcode : Nat) : Std.U32 :=
     (((imm % 4096) <<< 20) ||| (rs1 <<< 15) |||
       (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
 
+def rawRType (funct7 rs2 rs1 funct3 rd opcode : Nat) : Std.U32 :=
+  rawOfNat32
+    ((funct7 <<< 25) ||| (rs2 <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
+
 def rawSType (imm rs2 rs1 funct3 : Nat) : Std.U32 :=
   let imm12 := imm % 4096
   rawOfNat32
@@ -2429,6 +2456,11 @@ def rawIType (imm rs1 funct3 rd opcode : Nat) : Std.U32 :=
     (((imm % 4096) <<< 20) ||| (rs1 <<< 15) |||
       (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
 
+def rawRType (funct7 rs2 rs1 funct3 rd opcode : Nat) : Std.U32 :=
+  rawOfNat32
+    ((funct7 <<< 25) ||| (rs2 <<< 20) ||| (rs1 <<< 15) |||
+      (funct3 <<< 12) ||| (rd <<< 7) ||| opcode)
+
 def rawSType (imm rs2 rs1 funct3 : Nat) : Std.U32 :=
   let imm12 := imm % 4096
   rawOfNat32
@@ -2696,6 +2728,162 @@ import RvDecodeIAluSltiu
 import RvDecodeIAluXori
 import RvDecodeIAluOri
 import RvDecodeIAluAndi
+import RvDecodeRAluAdd
+import RvDecodeRAluSub
+import RvDecodeRAluSll
+import RvDecodeRAluSlt
+import RvDecodeRAluSltu
+import RvDecodeRAluXor
+import RvDecodeRAluSrl
+import RvDecodeRAluSra
+import RvDecodeRAluOr
+import RvDecodeRAluAnd
+EOF
+
+    write_rv_decode_ralu_module() {
+      local module="$1"
+      local namespace="$2"
+      local decode_theorem_name="$3"
+      local route_theorem_name="$4"
+      local funct7="$5"
+      local funct3="$6"
+      local opcode_id="$7"
+      local zisk_op="$8"
+      local allow_copyb="$9"
+      cat > "$lean_check/$module.lean" <<EOF
+import RvDecodeCommon
+
+open Aeneas Aeneas.Std Result
+open zisk_core
+open zisk_core_generated_rv_decode_common
+
+namespace $namespace
+
+def rAluRawShapesDecodeSupported : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allRvRegs.all fun rs2 =>
+        rawDecodeSupported
+          (aeneas_extract.extract_decode_rv64im_raw
+            (rawRType $funct7 rs2 rs1 $funct3 rd 0x33))
+
+def rowStoresRAluDestination
+    (row : aeneas_extract.ZiskInstExtract) (rd : Nat) : Bool :=
+  if rd == 0 then
+    row.store.val == 0 && row.store_offset.val == 0
+  else
+    row.store.val == 3 && row.store_offset.val == Int.ofNat rd
+
+def rowCarriesReg64OnA
+    (row : aeneas_extract.ZiskInstExtract) (rs : Nat) : Bool :=
+  if rs == 0 then
+    row.a_src.val == 2 &&
+    row.a_use_sp_imm1.val == 0 &&
+    row.a_offset_imm0.val == 0
+  else
+    row.a_src.val == 6 &&
+    row.a_use_sp_imm1.val == 0 &&
+    row.a_offset_imm0.val == rs
+
+def rowCarriesReg64OnB
+    (row : aeneas_extract.ZiskInstExtract) (rs : Nat) : Bool :=
+  if rs == 0 then
+    row.b_src.val == 2 &&
+    row.b_use_sp_imm1.val == 0 &&
+    row.b_offset_imm0.val == 0
+  else
+    row.b_src.val == 6 &&
+    row.b_use_sp_imm1.val == 0 &&
+    row.b_offset_imm0.val == rs
+
+def rowCarriesRAluCopy
+    (row : aeneas_extract.ZiskInstExtract) (rs : Nat) : Bool :=
+  !row.is_external_op &&
+  row.op.val == 1 &&
+  !row.m32 &&
+  row.a_src.val == 2 &&
+  row.a_use_sp_imm1.val == 0 &&
+  row.a_offset_imm0.val == 0 &&
+  rowCarriesReg64OnB row rs
+
+def rowCarriesRAluOp
+    (row : aeneas_extract.ZiskInstExtract)
+    (rs1 rs2 ziskOp : Nat)
+    (allowCopyb : Bool) : Bool :=
+  if allowCopyb && rs1 == 0 then
+    rowCarriesRAluCopy row rs2
+  else if allowCopyb && rs2 == 0 then
+    rowCarriesRAluCopy row rs1
+  else
+    row.is_external_op &&
+    row.op.val == ziskOp &&
+    !row.m32 &&
+    rowCarriesReg64OnA row rs1 &&
+    rowCarriesReg64OnB row rs2
+
+/-- Extracted production-row facts needed to route a lowered register-ALU row
+toward the corresponding soundness interface. ADD and OR include production
+COPYB shortcuts when either input source is x0. -/
+def rawTranspileRAluSoundnessInput
+    (rd rs1 rs2 : Nat)
+    (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
+  match result with
+  | ok summary =>
+      summary.accepted &&
+      summary.decode.supported &&
+      summary.decode.opcode_id.val == $opcode_id &&
+      summary.decode.rd.val == rd &&
+      summary.decode.rs1.val == rs1 &&
+      summary.decode.rs2.val == rs2 &&
+      !summary.row.set_pc &&
+      !summary.row.store_pc &&
+      rowCarriesRAluOp summary.row rs1 rs2 $zisk_op $allow_copyb &&
+      rowStoresRAluDestination summary.row rd
+  | fail _ => false
+  | div => false
+
+def allRAluRawShapesSatisfySoundnessInput : Bool :=
+  allRvRegs.all fun rd =>
+    allRvRegs.all fun rs1 =>
+      allRvRegs.all fun rs2 =>
+        rawTranspileRAluSoundnessInput rd rs1 rs2
+          (aeneas_extract.extract_transpile_rv64im_raw
+            (rawRType $funct7 rs2 rs1 $funct3 rd 0x33))
+
+set_option maxHeartbeats 3000000 in
+theorem $decode_theorem_name :
+    rAluRawShapesDecodeSupported = true := by native_decide
+
+set_option maxHeartbeats 40000000 in
+theorem $route_theorem_name :
+    allRAluRawShapesSatisfySoundnessInput = true := by native_decide
+
+end $namespace
+EOF
+    }
+
+    write_rv_decode_ralu_module RvDecodeRAluAdd zisk_core_generated_rv_decode_ralu_add add_raw_shapes_decode_supported_ok add_raw_shapes_soundness_input_ok 0 0 6 10 true
+    write_rv_decode_ralu_module RvDecodeRAluSub zisk_core_generated_rv_decode_ralu_sub sub_raw_shapes_decode_supported_ok sub_raw_shapes_soundness_input_ok 32 0 7 11 false
+    write_rv_decode_ralu_module RvDecodeRAluSll zisk_core_generated_rv_decode_ralu_sll sll_raw_shapes_decode_supported_ok sll_raw_shapes_soundness_input_ok 0 1 8 33 false
+    write_rv_decode_ralu_module RvDecodeRAluSlt zisk_core_generated_rv_decode_ralu_slt slt_raw_shapes_decode_supported_ok slt_raw_shapes_soundness_input_ok 0 2 9 7 false
+    write_rv_decode_ralu_module RvDecodeRAluSltu zisk_core_generated_rv_decode_ralu_sltu sltu_raw_shapes_decode_supported_ok sltu_raw_shapes_soundness_input_ok 0 3 10 6 false
+    write_rv_decode_ralu_module RvDecodeRAluXor zisk_core_generated_rv_decode_ralu_xor xor_raw_shapes_decode_supported_ok xor_raw_shapes_soundness_input_ok 0 4 11 16 false
+    write_rv_decode_ralu_module RvDecodeRAluSrl zisk_core_generated_rv_decode_ralu_srl srl_raw_shapes_decode_supported_ok srl_raw_shapes_soundness_input_ok 0 5 12 34 false
+    write_rv_decode_ralu_module RvDecodeRAluSra zisk_core_generated_rv_decode_ralu_sra sra_raw_shapes_decode_supported_ok sra_raw_shapes_soundness_input_ok 32 5 13 35 false
+    write_rv_decode_ralu_module RvDecodeRAluOr zisk_core_generated_rv_decode_ralu_or or_raw_shapes_decode_supported_ok or_raw_shapes_soundness_input_ok 0 6 14 15 true
+    write_rv_decode_ralu_module RvDecodeRAluAnd zisk_core_generated_rv_decode_ralu_and and_raw_shapes_decode_supported_ok and_raw_shapes_soundness_input_ok 0 7 15 14 false
+
+    cat > "$lean_check/RvDecodeRAlu.lean" <<'EOF'
+import RvDecodeRAluAdd
+import RvDecodeRAluSub
+import RvDecodeRAluSll
+import RvDecodeRAluSlt
+import RvDecodeRAluSltu
+import RvDecodeRAluXor
+import RvDecodeRAluSrl
+import RvDecodeRAluSra
+import RvDecodeRAluOr
+import RvDecodeRAluAnd
 EOF
 
     cat > "$lean_check/RvDecodeAddiw.lean" <<'EOF'
@@ -2867,6 +3055,16 @@ import RvDecodeIAluSltiu
 import RvDecodeIAluXori
 import RvDecodeIAluOri
 import RvDecodeIAluAndi
+import RvDecodeRAluAdd
+import RvDecodeRAluSub
+import RvDecodeRAluSll
+import RvDecodeRAluSlt
+import RvDecodeRAluSltu
+import RvDecodeRAluXor
+import RvDecodeRAluSrl
+import RvDecodeRAluSra
+import RvDecodeRAluOr
+import RvDecodeRAluAnd
 
 /-!
 Aggregated generated route-completeness surface for row-local soundness input
@@ -2887,7 +3085,17 @@ theorem closed_route_soundness_inputs_ok :
     zisk_core_generated_rv_decode_ialu_sltiu.allIAluRawShapesSatisfySoundnessInput = true ∧
     zisk_core_generated_rv_decode_ialu_xori.allIAluRawShapesSatisfySoundnessInput = true ∧
     zisk_core_generated_rv_decode_ialu_ori.allIAluRawShapesSatisfySoundnessInput = true ∧
-    zisk_core_generated_rv_decode_ialu_andi.allIAluRawShapesSatisfySoundnessInput = true := by
+    zisk_core_generated_rv_decode_ialu_andi.allIAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_add.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_sub.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_sll.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_slt.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_sltu.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_xor.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_srl.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_sra.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_or.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ralu_and.allRAluRawShapesSatisfySoundnessInput = true := by
   exact
     ⟨zisk_core_generated_rv_decode_jalr.allJalrRawShapesSatisfySoundnessInput_ok,
       zisk_core_generated_rv_decode_ialu_addi.addi_raw_shapes_soundness_input_ok,
@@ -2895,7 +3103,17 @@ theorem closed_route_soundness_inputs_ok :
       zisk_core_generated_rv_decode_ialu_sltiu.sltiu_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_ialu_xori.xori_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_ialu_ori.ori_raw_shapes_soundness_input_ok,
-      zisk_core_generated_rv_decode_ialu_andi.andi_raw_shapes_soundness_input_ok⟩
+      zisk_core_generated_rv_decode_ialu_andi.andi_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_add.add_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_sub.sub_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_sll.sll_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_slt.slt_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_sltu.sltu_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_xor.xor_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_srl.srl_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_sra.sra_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_or.or_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ralu_and.and_raw_shapes_soundness_input_ok⟩
 
 end zisk_core_generated_rv_route_soundness
 EOF
