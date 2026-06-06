@@ -3474,6 +3474,41 @@ structure AcceptedAirMainMemFullTraceWithMemTable
     ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
       table acceptedTrace.rows
 
+/-- Accepted AIR/Main/Mem trace data tied to a concrete Mem table in a full
+    RV64IM Clean ensemble witness.
+
+    This is the next upstream shape for full-execution integration. It still
+    records the global embedding obligation explicitly, but the selected table
+    is no longer arbitrary: it is a `Mem.componentWithDualMemBus` table from
+    an actual `fullRv64imEnsemble` witness. -/
+structure AcceptedAirMainMemFullTraceWithFullEnsembleMemTable
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
+  table : Air.Flat.Table FGL
+  table_mem : table ∈ witness.allTables
+  table_component :
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  embedded :
+    ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+      table acceptedTrace.rows
+
+/-- Forget full-ensemble provenance and keep the trace/table bridge consumed
+    by the current replay theorem. -/
+def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.toTraceWithMemTable
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    (construction :
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m) :
+    AcceptedAirMainMemFullTraceWithMemTable m :=
+  { acceptedTrace := construction.acceptedTrace
+    table := construction.table
+    embedded := construction.embedded }
+
 /-- Load-scoped shared accepted trace plus Mem-table embedding. -/
 def OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope
     (env : OpEnvelope state m r_main) : Type 2 :=
@@ -3493,6 +3528,56 @@ def OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope
   | .lw_via_static_match .. =>
       AcceptedAirMainMemFullTraceWithMemTable m
   | _ => ULift.{2, 0} Unit
+
+/-- Load-scoped shared accepted trace plus full-ensemble Mem-table bridge.
+    Non-load envelopes carry `ULift Unit`; load envelopes carry the program
+    trace, full-ensemble witness, concrete Mem table, and embedding needed to
+    build the current trace/table object. -/
+def OpEnvelope.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m
+  | .lbu .. =>
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m
+  | .lhu .. =>
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m
+  | .lwu .. =>
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m
+  | .lb_via_static_match .. =>
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m
+  | .lh_via_static_match .. =>
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m
+  | .lw_via_static_match .. =>
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m
+  | _ => ULift.{2, 0} Unit
+
+/-- Lower the full-ensemble Mem-table bridge to the existing trace/table
+    bridge object at one envelope. -/
+def OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope]
+      at construction ⊢
+  case ld =>
+    exact construction.toTraceWithMemTable
+  case lbu =>
+    exact construction.toTraceWithMemTable
+  case lhu =>
+    exact construction.toTraceWithMemTable
+  case lwu =>
+    exact construction.toTraceWithMemTable
+  case lb_via_static_match =>
+    exact construction.toTraceWithMemTable
+  case lh_via_static_match =>
+    exact construction.toTraceWithMemTable
+  case lw_via_static_match =>
+    exact construction.toTraceWithMemTable
+  all_goals exact ULift.up ()
 
 /-- The accepted trace contained in the shared trace/table bridge object. -/
 def OpEnvelope.acceptedTraceOfFullTraceWithMemTable
@@ -3669,6 +3754,27 @@ def OpEnvelope.SelectedPrefixStateAtTraceTableAtEnvelope
       env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope) : Prop :=
   env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
     (env.acceptedTraceOfFullTraceWithMemTable traceWithTable)
+
+/-- Provider-row coverage for the full-ensemble Mem table bridge. -/
+def OpEnvelope.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope) :
+    Prop :=
+  env.SelectedMemProviderReadReplayRowInTraceTableAtEnvelope
+    (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      construction)
+
+/-- Split-indexed Sail prefix-state equality for the full-ensemble Mem table
+    bridge. -/
+def OpEnvelope.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope) :
+    Prop :=
+  env.SelectedPrefixStateAtTraceTableAtEnvelope
+    (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      construction)
 
 /-- Build the current public accepted-memory evidence object from the next
     upstream full-execution bridge shape: a shared accepted trace, a concrete

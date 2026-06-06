@@ -55,11 +55,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add an accepted trace/table bridge constructor for the current public Mem evidence.
 - [x] Derive selected table projection membership from concrete primary/dual Mem provider-row evidence.
 - [x] Expose accepted trace/table/provider/prefix bridge inputs directly at the public compliance theorem boundary.
+- [x] Derive the public trace/table bridge from a full-ensemble Mem-table bridge object.
 - [ ] Prove `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes the bridge inputs that previously packed `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope`: shared accepted AIR/Main/Mem full-trace data with a concrete FullEnsemble Mem table embedding, concrete selected primary/dual Mem provider-row coverage in that table, and split-indexed Sail prefix-state equality. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, ordinary selected-row membership, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The current slice makes the remaining bridge assumptions visible directly at `zisk_riscv_compliant_program_bus`. The remaining gap after that is still global: there is no theorem that proves this shared accepted Mem trace/table embedding, selected provider-row coverage, and selected prefix-state equality from the full execution trace.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes a full-ensemble Mem-table bridge object that carries shared accepted AIR/Main/Mem full-trace data, a `fullRv64imEnsemble` witness, a concrete Mem table in that witness, and proof that the table's projected read-replay rows are embedded in the chronological accepted rows; it also takes concrete selected primary/dual Mem provider-row coverage in that table and split-indexed Sail prefix-state equality. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the lower trace/table object, packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, ordinary selected-row membership, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The current slice ties the Mem table to a full-ensemble witness at `zisk_riscv_compliant_program_bus`. The remaining gap after that is still global: there is no theorem that proves the table embedding, selected provider-row coverage, and selected prefix-state equality from the full execution trace.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -248,6 +249,14 @@ ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
 regeneration, both trust gates, compliance closure print with zero project
 axiom names, targeted retired-memory scans, extractor skip scan, generated
 zero-entry checks, and `nix run .#test` passed for this slice.
+The full-ensemble Mem-table boundary slice adds
+`AcceptedAirMainMemFullTraceWithFullEnsembleMemTable`, lowers it to the
+previous trace/table bridge, and updates `zisk_riscv_compliant_program_bus` to
+consume that full-ensemble bridge object instead of an arbitrary table bridge.
+Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
+`lake build`, trust regeneration, both trust gates, compliance closure print
+with zero project axiom names, targeted retired-memory scans, extractor skip
+scan, generated zero-entry checks, and `nix run .#test` passed for this slice.
 The selected Mem row-embedding slice names
 `FullEnsemble.MemReadReplayRowsEmbeddedInTrace` and proves primary/dual
 selected Mem provider row membership in the accepted chronological row list
