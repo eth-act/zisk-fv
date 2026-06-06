@@ -377,3 +377,18 @@ Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed,
 as did full `lake build`, trust regeneration, both trust gates, compliance
 closure print with zero project names, retired-memory and removed-boundary
 scans, generated zero-entry count checks, and `nix run .#test`.
+
+The current direct-construction-boundary slice changes
+`zisk_riscv_compliant_program_bus` to take
+`env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` directly. The
+theorem no longer receives a loose pair of
+`AirsClean.Mem.AcceptedFullMemoryBusRowsTrace initialState memoryBusRows` plus
+`env.SelectedLoadMemoryBusRowsPrefixAtEnvelope initialState memoryBusRows`
+arguments only to repack them immediately; callers now see the exact
+load-scoped construction burden consumed by the compliance proof. Focused
+`lake build ZiskFv.Compliance` passed, as did full `lake build`, trust
+regeneration, both trust gates, compliance closure print with zero project
+names, retired-memory scans, generated zero-entry count checks, and
+`nix run .#test`. This is still a boundary-tightening slice, not the final AIR
+proof: the remaining open item is deriving this construction burden from
+accepted AIR/Main/Mem full-trace data.

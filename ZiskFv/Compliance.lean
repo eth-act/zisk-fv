@@ -51,12 +51,12 @@ bridge. The V2 trust gate enforces this.
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
-completeness. Load-memory replay evidence is exposed separately as a shared
-global Mem row trace plus load-scoped selected-prefix cursor evidence. Load
-envelopes carry the cursor selecting their concrete row in the shared
-chronological Mem row list, while read tags are derived from the envelope's
-Main `bMem` match. The theorem derives the packed replay construction
-internally. It is also defect-aware while
+completeness. Load-memory replay evidence is exposed separately through
+`OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`: non-load
+envelopes carry `Unit`, while load envelopes carry the global Mem row trace
+plus the cursor selecting their concrete row in the shared chronological Mem
+row list. The theorem derives the packed replay construction internally. It is
+also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
 `OpEnvelope`. Validity says the current modeled constraints hold;
@@ -94,22 +94,12 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
-    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
-    (memoryBusRows : List (Interaction.MemoryBusEntry FGL))
-    (h_mem_full_trace :
-      ZiskFv.AirsClean.Mem.AcceptedFullMemoryBusRowsTrace
-        initialState memoryBusRows)
-    (h_mem_prefix :
-      env.SelectedLoadMemoryBusRowsPrefixAtEnvelope
-        initialState memoryBusRows)
+    (h_mem_rows_construction :
+      env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
-  have h_mem_rows_construction :
-      env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope :=
-    env.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_globalTraceAndPrefix
-      initialState memoryBusRows h_mem_full_trace h_mem_prefix
   have h_mem_rows_trace : env.AcceptedFullMemoryBusRowsTraceAtEnvelope :=
     env.acceptedFullMemoryBusRowsTraceAtEnvelope_of_construction
       h_mem_rows_construction
