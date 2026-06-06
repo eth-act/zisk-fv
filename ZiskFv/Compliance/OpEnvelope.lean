@@ -2400,6 +2400,36 @@ def OpEnvelope.acceptedFullMemoryTraceBurden
         env.acceptedFullMemoryTraceCovers fullTrace
   | _ => True
 
+/-- Structured full-trace construction target for this envelope.
+
+    This is intentionally a `Type`, not a bare `Prop`: future accepted
+    full-trace construction code should produce a concrete accepted
+    full-memory trace and a selected-load coverage proof at the current
+    envelope cursor. Non-load envelopes carry `Unit`, because no memory replay
+    evidence is needed for them. -/
+def OpEnvelope.AcceptedFullMemoryTraceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld .. | .lbu .. | .lhu .. | .lwu ..
+  | .lb_via_static_match .. | .lh_via_static_match ..
+  | .lw_via_static_match .. =>
+      { fullTrace : AcceptedFullMemoryTrace state //
+        env.acceptedFullMemoryTraceCovers fullTrace }
+  | _ => Unit
+
+/-- Turn the structured full-trace construction target into the public
+    load-scoped memory burden consumed by the compliance theorem. -/
+theorem OpEnvelope.acceptedFullMemoryTraceBurden_of_atEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction : env.AcceptedFullMemoryTraceAtEnvelope) :
+    env.acceptedFullMemoryTraceBurden := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullMemoryTraceAtEnvelope,
+      OpEnvelope.acceptedFullMemoryTraceBurden] at construction ⊢
+  all_goals
+    try exact trivial
+    exact ⟨construction.val, construction.property⟩
+
 /-- Concrete construction payload for the accepted Mem trace used by this
     envelope.
 

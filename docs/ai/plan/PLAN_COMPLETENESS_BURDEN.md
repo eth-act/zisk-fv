@@ -32,10 +32,11 @@ Make the hidden completeness/witness assumptions visible at the public complianc
 - [x] Split public load-memory evidence into `AcceptedProgramMemoryTrace` plus selected-load coverage.
 - [x] Scope public accepted-memory evidence to load envelopes only.
 - [x] Expose accepted full-memory trace burden at the public theorem boundary.
+- [x] Replace the public full-memory trace `Prop` with structured envelope-at-cursor construction data.
 
 ## Current Notes
 
-The global theorem now takes an explicit `OpEnvelope.completenessBurden` premise for row/table/route evidence and a load-scoped `OpEnvelope.acceptedFullMemoryTraceBurden` for load-memory replay. Load arms consume a standalone `LoadMemoryBurden` proposition derived from one accepted Mem trace for the current Sail state plus selected-event membership in that trace; non-load arms discharge the public memory burden as `True`. The new public theorem surface derives the dispatcher-facing `env.memoryBurden`; the earlier `acceptedMemoryTraceBurden` slice passed `lake build`, trust gates, semantic gates, closure print, targeted scans, and `nix run .#test`.
+The global theorem now takes an explicit `OpEnvelope.completenessBurden` premise for row/table/route evidence and a load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` construction for load-memory replay. Load arms consume a standalone `LoadMemoryBurden` proposition derived from one accepted Mem trace for the current Sail state plus selected-event membership in that trace; non-load arms discharge the public memory construction as `Unit`. The new public theorem surface derives the dispatcher-facing `env.memoryBurden`; the earlier `acceptedMemoryTraceBurden` slice passed `lake build`, trust gates, semantic gates, closure print, targeted scans, and `nix run .#test`.
 
 The shared trace-context and `AcceptedMemoryTraceConstruction` slices have
 passed `lake build`, trust regeneration, both trust gate scripts, global
@@ -46,5 +47,6 @@ retired-memory scans; `nix run .#test` also passed. The full-memory-trace
 boundary slice has passed `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, regenerated trust ledgers, both trust check scripts,
 global closure print, targeted retired-memory scans, and `nix run .#test`.
+The structured envelope-at-cursor construction slice passed the same gates.
 
 No current theorem in this branch constructs `OpEnvelope` from accepted full-trace data. Until that global construction exists, `env.completenessBurden` remains a real public hypothesis rather than a discharged completeness theorem.

@@ -20,9 +20,9 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 This theorem is a conditional global compliance theorem over an already
 constructed `OpEnvelope`. Its explicit
 `ZiskFv.Compliance.OpEnvelope.completenessBurden` and
-`ZiskFv.Compliance.OpEnvelope.acceptedFullMemoryTraceBurden` premises mark
+`ZiskFv.Compliance.OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` premises mark
 the current caller-side witness burden: row specs, table/provider evidence,
-route facts, and, for load envelopes only, an accepted full-memory trace
+route facts, and, for load envelopes only, a structured accepted full-memory trace
 plus selected-load coverage are supplied rather than derived by a global
 accepted-trace completeness theorem.
 
@@ -66,9 +66,9 @@ Load correctness now consumes an explicit
 `ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement` premise threaded through
 the load trace context, and `MemModel.lean` only projects the resulting byte
 facts. The global theorem's memory premise is now load-scoped: non-load
-envelopes discharge it as `True`, while load envelopes require a program-level
-accepted Mem trace plus proof that the selected load event for the current
-`OpEnvelope` is covered by that trace.
+envelopes discharge it as `Unit`, while load envelopes require a structured
+accepted full-memory trace plus proof that the selected load event for the
+current `OpEnvelope` is covered by that trace.
 
 ## Platform Profile
 
@@ -100,10 +100,11 @@ the required `OpEnvelope`. The explicit `OpEnvelope.completenessBurden`
 premise is an audit marker for that missing global witness-construction layer;
 there is no default theorem discharging it from an arbitrary envelope. Load
 arms expose their memory burden separately as
-`OpEnvelope.acceptedFullMemoryTraceBurden`: non-load envelopes discharge it
-as `True`; load envelopes require one replay-sound accepted trace for the
-current Sail state plus selected event membership. Those facts remain public
-hypotheses until the accepted full-trace construction is proved.
+`OpEnvelope.AcceptedFullMemoryTraceAtEnvelope`: non-load envelopes discharge it
+as `Unit`; load envelopes require one replay-sound accepted trace for the
+current Sail state plus selected event membership. That structured construction
+remains a public hypothesis until the accepted full-trace construction is
+proved.
 
 ## ArithTable And DIV/REM Audit Conclusions
 
