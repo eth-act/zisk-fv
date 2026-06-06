@@ -2705,6 +2705,36 @@ structure SelectedLoadMemoryBusRowPrefixCursor
       ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
         initialState priorRows
 
+/-- Build a selected raw-row prefix cursor from row coverage plus a proof that
+    any selected split's prefix replays to the current Sail state. This factors
+    selected-prefix construction into the two obligations FullEnsemble/AIR
+    integration can prove independently: the selected row occurs in the
+    accepted chronological row list, and the instruction state is the replayed
+    prefix state for that occurrence. -/
+noncomputable def SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
+    {state initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_mem : entry ∈ rows)
+    (h_state :
+      ∀ priorRows laterRows,
+        rows = priorRows ++ entry :: laterRows →
+          state =
+            ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+              initialState priorRows) :
+    SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry := by
+  let h_exists := List.mem_iff_append.mp h_mem
+  let priorRows := Classical.choose h_exists
+  let laterExists := Classical.choose_spec h_exists
+  let laterRows := Classical.choose laterExists
+  have h_split : rows = priorRows ++ entry :: laterRows :=
+    Classical.choose_spec laterExists
+  exact
+    { priorRows := priorRows
+      laterRows := laterRows
+      trace_split := h_split
+      state_eq := h_state priorRows laterRows h_split }
+
 /-- Turn a prefix cursor plus an envelope-derived Main memory-read match into
     the selected read cursor used by memory replay. -/
 def SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
