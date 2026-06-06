@@ -51,11 +51,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Decompose load-scoped selected-prefix coverage into row membership plus prefix-state equality at the accepted trace boundary.
 - [x] Connect selected Mem provider read projections to accepted chronological row membership through an explicit embedding obligation.
 - [x] Expose selected-row membership and split-indexed prefix-state equality directly in the public compliance theorem signature.
-- [ ] Prove `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope` from the accepted full execution trace.
+- [x] Factor selected-row membership through an explicit FullEnsemble Mem read-replay row embedding obligation.
+- [ ] Prove `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`, both `Unit` for non-load envelopes and, for load envelopes, split into shared accepted AIR/Main/Mem full-trace data plus a selected prefix cursor pinned to the envelope's concrete read row. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The current slice adds a FullEnsemble projection from selected primary/dual Mem provider rows into replayable read `MemoryBusEntry` rows, with membership lemmas for exact selected-entry matches. The remaining gap after that is still global: there is no theorem that proves this shared accepted Mem trace and selected prefix cursor from the full execution trace.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope`, which is trivial for non-load envelopes and, for load envelopes, contains shared accepted AIR/Main/Mem full-trace data, FullEnsemble-shaped selected Mem read-replay row coverage, and split-indexed Sail prefix-state equality. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, ordinary selected-row membership, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The current slice derives ordinary selected-row membership from the FullEnsemble projected-row embedding obligation. The remaining gap after that is still global: there is no theorem that proves this shared accepted Mem trace, selected table projection/embedding, and selected prefix-state equality from the full execution trace.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -545,3 +546,15 @@ ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed, as did full
 generated zero-entry checks, retired-memory scans, extractor skip scan, and
 `nix run .#test`. The remaining open proof is deriving the shared trace object
 and selected-prefix coverage from FullEnsemble/full execution data.
+
+The selected-row evidence factoring slice adds
+`OpEnvelope.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope` and
+`OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope`. The public compliance
+theorem now takes that evidence object and derives ordinary selected-row
+membership from a FullEnsemble Mem read-replay row embedding before building
+the selected prefix cursor. Focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+global compliance closure print, targeted retired-memory scans, extractor skip
+scan, generated zero-entry checks, and `nix run .#test` passed for this slice.
+The remaining open proof is deriving that evidence object from accepted
+FullEnsemble/full execution data.

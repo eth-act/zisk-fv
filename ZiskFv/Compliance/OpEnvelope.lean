@@ -3307,6 +3307,63 @@ def OpEnvelope.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
       bus.e1 ∈ acceptedTrace.rows
   | _ => True
 
+/-- FullEnsemble-shaped selected-row coverage for the accepted chronological
+    Mem trace. For load envelopes, the selected Main memory read must first
+    be a projected read-replay row of some concrete Mem table, and those
+    projected rows must be embedded in the accepted chronological row list.
+
+    This is the visible bridge point for future accepted-execution
+    integration: FullEnsemble/Mem extraction should prove the table-local
+    selected projection and the global embedding, after which ordinary row
+    membership follows below. -/
+def OpEnvelope.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable table
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable table
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable table
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable table
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable table
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable table
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable table
+  | _ => True
+
 /-- Split-indexed Sail state equality for the selected load row. This is the
     second proof obligation needed to construct the selected-prefix cursor:
     whenever the accepted chronological row list is split at the envelope's
@@ -3359,6 +3416,47 @@ def OpEnvelope.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
             ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
               acceptedTrace.initialState priorRows
   | _ => True
+
+/-- The FullEnsemble-shaped selected read-replay coverage implies ordinary
+    selected-row membership in the accepted chronological Mem trace. -/
+theorem OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReadReplayRow
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope)
+    (h_selected :
+      env.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace) :
+    env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+      acceptedTrace := by
+  cases env <;>
+    simp [OpEnvelope.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope]
+      at h_selected ⊢
+  all_goals
+    rcases h_selected with ⟨table, h_embedded, h_row⟩
+    exact h_embedded _
+      (by
+        simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+          ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+          ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+          using h_row)
+
+/-- Accepted AIR/Main/Mem evidence at one envelope, factored at the current
+    full-execution bridge point.
+
+    For non-load envelopes this object is trivial. For load envelopes it
+    carries the shared accepted AIR/Main/Mem trace, a FullEnsemble-shaped
+    selected read-row coverage proof, and the split-indexed Sail prefix-state
+    equality. The ordinary selected-row membership and selected prefix cursor
+    are derived from these fields by the global compliance theorem. -/
+structure OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type where
+  acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope
+  selectedReadRow :
+    env.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+      acceptedTrace
+  selectedPrefixState :
+    env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+      acceptedTrace
 
 /-- Build the selected-prefix cursor from the two explicit selected-row
     obligations at the accepted AIR/Main/Mem boundary: row membership in the
