@@ -113,6 +113,31 @@ lemma mem_load_correct_of_provider_row
   exact ZiskFv.ZiskCircuit.MemTrace.byte_facts_of_event_agreement
     state e h_agree
 
+/-- Dual-provider load correctness for the pinned `dual_mem = 1` Mem row.
+
+The dual Mem emission is always a read at the same byte address and value as
+the primary row, with `timestamp = step_dual` and selector `sel_dual`. Once a
+concrete dual provider row has been matched to the selected memory-bus entry,
+the connection to Sail memory is the same replay-agreement projection used by
+the primary load theorem. -/
+lemma mem_dual_load_correct_of_provider_row
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (h_match : mem_dual_row_byte_addr_matches_entry mem r_mem e)
+    (h_agree :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e)) :
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3)
+    ∧ state.mem[e.ptr.toNat + 4]? = .some (byteAt e 4)
+    ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
+    ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
+    ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7) := by
+  exact ZiskFv.ZiskCircuit.MemTrace.byte_facts_of_event_agreement
+    state e h_agree
+
 /-! ## Convenience: bus_effect-shaped output
 
 `mem_load_correct`'s conclusion is *almost* the precondition shape that
@@ -203,6 +228,7 @@ restrict the 8-byte versions.
 -/
 
 #print axioms mem_load_correct_of_provider_row
+#print axioms mem_dual_load_correct_of_provider_row
 #print axioms mem_load_correct_4byte_of_provider_row
 
 end ZiskFv.ZiskCircuit.MemModel

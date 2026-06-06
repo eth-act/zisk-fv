@@ -45,6 +45,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Derive selected load byte agreement from the global row spec plus selected cursor.
 - [x] Replace anonymous global Mem trace placeholder props with named row-level obligations.
 - [x] Add a dual-aware Clean MemBus emission surface and dual-row adapters.
+- [x] Add local dual-row load correctness from replay agreement.
 - [ ] Prove `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
@@ -225,3 +226,11 @@ rows for future global trace construction. Focused build, full `lake build`,
 trust regeneration, both trust gates, compliance closure print with zero
 project names, generated zero-entry count checks, and targeted retired-memory
 scan passed for this slice; `nix run .#test` also passed.
+The current dual-load theorem slice adds
+`ZiskCircuit.MemModel.mem_dual_load_correct_of_provider_row`, consuming the
+new dual Mem row predicate plus `MemoryTraceAgreement` and projecting the
+same eight byte facts as the primary provider-row theorem. Focused `lake build
+ZiskFv.ZiskCircuit.MemModel ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
+passed, as did full `lake build`, trust regeneration, both trust gates,
+compliance closure print with zero project names, retired-memory scans,
+generated zero-entry count checks, and `nix run .#test`.
