@@ -2664,6 +2664,32 @@ structure SelectedLoadMemoryBusReadRowCursor
       ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusTrace initialState
         (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows priorRows)
 
+/-- Build a selected load row cursor from the ordinary row split, read tags,
+    and Sail cursor equality. Future AIR/Main/Mem integration should prove
+    these tags from the selected Main load row rather than supplying the raw
+    projected-read equality directly. -/
+def SelectedLoadMemoryBusReadRowCursor.of_split_read_tags
+    {state initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
+    (h_split : rows = priorRows ++ entry :: laterRows)
+    (h_as : entry.as = (2 : FGL))
+    (h_mult : entry.multiplicity = (-1 : FGL))
+    (h_state :
+      state =
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusTrace initialState
+          (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows
+            priorRows)) :
+    SelectedLoadMemoryBusReadRowCursor state initialState rows entry :=
+  { priorRows := priorRows
+    laterRows := laterRows
+    trace_split := h_split
+    selected_read :=
+      ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow_read
+        entry h_as h_mult
+    state_eq := h_state }
+
 /-- Accepted chronological raw memory-bus rows plus the selected load row
     cursor for one envelope. The remaining AIR theorem should construct this
     object from full Main/Mem accepted trace data: chronological rows, Mem
@@ -2711,6 +2737,51 @@ structure AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor
     ZiskFv.AirsClean.Mem.AcceptedFullMemoryBusRowsTrace initialState rows
   selected :
     SelectedLoadMemoryBusReadRowCursor state initialState rows entry
+
+/-- Build accepted global Mem row-trace evidence at a selected load cursor from
+    a global trace, row split, read tags, and the Sail cursor equality. -/
+def AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.of_split_read_tags
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (fullTrace :
+      ZiskFv.AirsClean.Mem.AcceptedFullMemoryBusRowsTrace initialState rows)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
+    (h_split : rows = priorRows ++ entry :: laterRows)
+    (h_as : entry.as = (2 : FGL))
+    (h_mult : entry.multiplicity = (-1 : FGL))
+    (h_state :
+      state =
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusTrace initialState
+          (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows
+            priorRows)) :
+    AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state entry :=
+  { initialState := initialState
+    rows := rows
+    fullTrace := fullTrace
+    selected :=
+      SelectedLoadMemoryBusReadRowCursor.of_split_read_tags
+        priorRows laterRows h_split h_as h_mult h_state }
+
+/-- The global prefix-indexed Mem trace spec gives read replay agreement at
+    the selected load row's chronological prefix. -/
+theorem AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.selectedPrefixReadAgreement
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (construction :
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state entry) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+        construction.fullTrace.initialMemory construction.selected.priorRows)
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry entry) := by
+  obtain ⟨h_as, h_mult⟩ :=
+    ZiskFv.ZiskCircuit.MemTrace.read_tags_of_memoryBusTraceEventOfRow_read
+      entry construction.selected.selected_read
+  exact
+    construction.fullTrace.prefixReadSound
+      construction.selected.priorRows entry construction.selected.laterRows
+      construction.selected.trace_split h_as h_mult
 
 /-- Lower accepted global Mem trace facts to the existing granular replay
     construction object for one selected load cursor. -/

@@ -706,6 +706,20 @@ lemma memoryBusTraceEventOfRow_read
       some (MemoryBusTraceEvent.read entry) := by
   simp [memoryBusTraceEventOfRow, h_as, h_mult]
 
+/-- Invert the selected-read projection of a raw memory-bus row. -/
+theorem read_tags_of_memoryBusTraceEventOfRow_read
+    (entry : MemoryBusEntry FGL)
+    (h_read :
+      memoryBusTraceEventOfRow entry =
+        some (MemoryBusTraceEvent.read entry)) :
+    entry.as = (2 : FGL) ∧ entry.multiplicity = (-1 : FGL) := by
+  unfold memoryBusTraceEventOfRow at h_read
+  by_cases h_as : entry.as = (2 : FGL)
+  · by_cases h_mult : entry.multiplicity = (-1 : FGL)
+    · exact ⟨h_as, h_mult⟩
+    · simp [h_as, h_mult] at h_read
+  · simp [h_as] at h_read
+
 @[simp]
 lemma memoryBusTraceEventsOfRows_append
     (xs ys : List (MemoryBusEntry FGL)) :
