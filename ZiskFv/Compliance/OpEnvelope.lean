@@ -3978,6 +3978,21 @@ def OpEnvelope.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
     (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
       construction)
 
+/-- Selected raw-row prefix cursor for the accepted trace contained in the
+    full-ensemble Mem table bridge.  This is the cursor-shaped state proof
+    expected from full-execution replay; unlike the older split-indexed state
+    predicate, it identifies the selected occurrence rather than requiring a
+    state proof for every possible split at an equal row. -/
+def OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope) :
+    Type :=
+  env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+    (env.acceptedTraceOfFullTraceWithMemTable
+      (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+        construction))
+
 /-- The accepted full-execution Mem extraction target for one envelope.
 
     This is the remaining top-level memory trust gap as a theorem-shaped
@@ -3996,6 +4011,25 @@ structure OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope
       fullTraceTable
   selectedPrefixState :
     env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+      fullTraceTable
+
+/-- Cursor-shaped full-execution Mem extraction target for one envelope.
+
+    Full execution replay naturally produces a selected raw-row prefix cursor,
+    not a universal split-indexed equality over every possible split at an
+    equal row. This object is therefore the next upstream theorem target:
+    prove the full trace/table bridge, the selected envelope Mem-row
+    occurrence, and the selected prefix cursor from accepted full execution
+    data, then let the public compliance theorem consume that cursor directly. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 where
+  fullTraceTable :
+    env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope
+  selectedEnvelopeRow :
+    env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+      fullTraceTable
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
       fullTraceTable
 
 /-- Build the current public accepted-memory evidence object from the next

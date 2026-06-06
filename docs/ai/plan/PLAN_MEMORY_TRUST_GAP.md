@@ -58,7 +58,8 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Derive the public trace/table bridge from a full-ensemble Mem-table bridge object.
 - [x] Narrow selected Mem provider-row coverage to envelope Mem-row table occurrence.
 - [x] Factor the remaining full-execution Mem obligations into `OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope`.
-- [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope` from the accepted full execution trace.
+- [x] Replace the top-level split-indexed memory extraction boundary with cursor-shaped `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope`.
+- [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
 
@@ -672,3 +673,15 @@ ZiskFv.Compliance.OpEnvelope` and `lake build ZiskFv.Compliance`, full
 retired-memory scans, generated zero-entry checks, and `nix run .#test`
 passed. The remaining proof is to construct this target from accepted full
 execution trace data.
+
+The cursor-boundary slice adds
+`OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope` and
+`OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope`, then
+changes `zisk_riscv_compliant_program_bus` to consume that cursor-shaped target
+directly. This deliberately avoids lowering a selected cursor to the older
+universal split-indexed prefix-state predicate, because duplicate equal
+memory-bus rows would make that implication too strong. Focused `lake build
+ZiskFv.Compliance.OpEnvelope` and `lake build ZiskFv.Compliance` passed. The
+remaining proof is now to construct the cursor extraction target from accepted
+full execution trace data: shared trace/table embedding, selected envelope
+Mem-row occurrence, selected prefix cursor coverage, and prefix-read soundness.

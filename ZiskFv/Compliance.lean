@@ -52,14 +52,12 @@ bridge. The V2 trust gate enforces this.
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
 completeness. Load-memory replay evidence is exposed separately through
-`OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope`: a named target
-containing a shared accepted AIR/Main/Mem trace tied to a concrete Mem table in
-a `fullRv64imEnsemble` witness, selected envelope Mem-row occurrence in that
-table, and a split-indexed proof that the Sail state is the replayed memory
-state at that row's prefix. The theorem derives the lower trace/table bridge,
-packed accepted load evidence, chronological selected-row membership, the
-selected-prefix cursor, generated Mem burden, and replay construction
-internally. It is also defect-aware while
+`OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope`: a named
+target containing a shared accepted AIR/Main/Mem trace tied to a concrete Mem
+table in a `fullRv64imEnsemble` witness, selected envelope Mem-row occurrence
+in that table, and the selected prefix cursor for the current Sail state. The
+theorem derives the generated Mem burden and replay construction internally.
+It is also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
 `OpEnvelope`. Validity says the current modeled constraints hold;
@@ -98,27 +96,22 @@ theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
     (h_mem_extraction :
-      env.AcceptedFullExecutionMemoryExtractionAtEnvelope)
+      env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
-  let h_mem_evidence :
-      env.AcceptedAirMainMemTraceEvidenceAtEnvelope :=
-    env.acceptedAirMainMemTraceEvidenceAtEnvelope_of_fullExecutionMemoryExtraction
-      h_mem_extraction
-  let h_accepted_mem_trace := h_mem_evidence.acceptedTrace
-  have h_selected_mem_row :
-      env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
-        h_accepted_mem_trace :=
-    env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReadReplayRow
-      h_accepted_mem_trace h_mem_evidence.selectedReadRow
+  let h_trace_with_table :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope :=
+    env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      h_mem_extraction.fullTraceTable
+  let h_accepted_mem_trace :
+      env.AcceptedAirMainMemFullTraceAtEnvelope :=
+    env.acceptedTraceOfFullTraceWithMemTable h_trace_with_table
   have h_selected_mem_prefix :
       env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
         h_accepted_mem_trace :=
-    env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
-      h_accepted_mem_trace h_selected_mem_row
-      h_mem_evidence.selectedPrefixState
+    h_mem_extraction.selectedPrefix
   have h_accepted_mem_trace_at_envelope :
       env.AcceptedAirMainMemFullTraceConstructionAtEnvelope :=
     env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_traceAndPrefix
