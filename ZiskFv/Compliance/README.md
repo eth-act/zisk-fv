@@ -19,10 +19,10 @@ to dispatch each opcode to its `Wrappers/<Op>` wrapper. Its
 `OpEnvelope.completenessBurden` and
 `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` premises make explicit
 that the current theorem starts from supplied witness evidence and, for load
-envelopes only, granular chronological raw memory-bus row construction data
-plus selected read-row cursor data pinned to the envelope's concrete read row
-rather than deriving all of that evidence from an accepted full trace. The
-packed `OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope`, projected
+envelopes only, global Mem row-trace facts plus selected read-row cursor data
+pinned to the envelope's concrete read row rather than deriving all of that
+evidence from an accepted full trace. The lower row construction, packed
+`OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope`, projected
 `OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope`, and projected
 `TraceReplaySound` replay objects are derived internally from row-level
 read/write replay soundness.

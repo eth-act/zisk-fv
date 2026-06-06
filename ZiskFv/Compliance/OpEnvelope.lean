@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Main.OpcodeClassification
+import ZiskFv.AirsClean.Mem.TraceSpec
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
@@ -2694,6 +2695,38 @@ structure AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor
   selected :
     SelectedLoadMemoryBusReadRowCursor state initialState rows entry
 
+/-- Accepted global Mem row-trace facts plus the selected load row cursor.
+
+This is the AIR-shaped predecessor of
+`AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor`: the global Mem
+trace spec names chronological rows, read/write replay soundness, write
+updates, segment carry, and dual-memory emission before lowering to the replay
+construction object used by load proofs. -/
+structure AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  fullTrace :
+    ZiskFv.AirsClean.Mem.AcceptedFullMemoryBusRowsTrace initialState rows
+  selected :
+    SelectedLoadMemoryBusReadRowCursor state initialState rows entry
+
+/-- Lower accepted global Mem trace facts to the existing granular replay
+    construction object for one selected load cursor. -/
+def acceptedLoadFullMemoryBusRowsTraceConstructionAtCursor_of_globalTrace
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL)
+    (construction :
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state entry) :
+    AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state entry :=
+  { initialState := construction.initialState
+    rows := construction.rows
+    rowsConstruction :=
+      ZiskFv.AirsClean.Mem.AcceptedFullMemoryBusRowsTrace.toRowsTraceConstruction
+        construction.fullTrace
+    selected := construction.selected }
+
 /-- Pack granular row-trace construction data into the accepted row trace
     object consumed by the existing memory replay bridge. -/
 def acceptedLoadFullMemoryBusRowsTraceAtCursor_of_construction
@@ -2898,25 +2931,25 @@ def OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope
 
 /-- Public granular raw-row construction burden, scoped to load envelopes.
     This is the visible predecessor of `AcceptedFullMemoryBusRowsTraceAtEnvelope`:
-    load envelopes carry the un-packed row trace construction facts plus the
-    selected read-row cursor. -/
+    load envelopes carry the global Mem row-trace facts plus the selected
+    read-row cursor; the lower replay construction is derived internally. -/
 def OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope
     (env : OpEnvelope state m r_main) : Type :=
   match env with
   | .ld _ _ _ bus _ _ .. =>
-      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state bus.e1
   | .lbu _ _ _ bus _ _ _ _ .. =>
-      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state bus.e1
   | .lhu _ _ _ bus _ _ _ _ .. =>
-      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state bus.e1
   | .lwu _ _ _ bus _ _ _ _ .. =>
-      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state bus.e1
   | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
-      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state bus.e1
   | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
-      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state bus.e1
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
-      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state bus.e1
   | _ => Unit
 
 /-- Derive accepted raw-row trace evidence from the granular construction
@@ -2931,8 +2964,9 @@ def OpEnvelope.acceptedFullMemoryBusRowsTraceAtEnvelope_of_construction
   all_goals
     first
     | exact ()
-    | exact acceptedLoadFullMemoryBusRowsTraceAtCursor_of_construction
-        state _ construction
+    | exact acceptedLoadFullMemoryBusRowsTraceAtCursor_of_construction state _
+        (acceptedLoadFullMemoryBusRowsTraceConstructionAtCursor_of_globalTrace
+          state _ construction)
 
 /-- Derive accepted memory-bus event trace evidence from accepted raw
     memory-bus rows and the selected read-row cursor for this envelope. -/

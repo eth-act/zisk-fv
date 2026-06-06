@@ -37,11 +37,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Replace public `AcceptedFullMemoryBusTraceAtEnvelope` evidence with raw chronological memory-bus row evidence.
 - [x] Replace public packed raw-row trace evidence with granular row-trace construction evidence.
 - [x] Replace direct row-projected `TraceReplaySound` burden with row-level read/write replay soundness.
+- [x] Add a named global Mem row-trace spec and derive the lower row construction from it.
 - [ ] Prove `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages accepted chronological raw memory-bus rows, row-level read/write replay soundness, initial memory agreement, and a selected read-row cursor pinned to the envelope's concrete read row. Those rows are projected internally to chronological memory-bus read/write events by `memoryBusTraceEventsOfRows`, row-level soundness proves the projected `TraceReplaySound`, then the result is packed into `AcceptedMemoryBusRowsTrace`; selected-read replay agreement is proved by induction over the prior-event prefix and combined with cursor agreement derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR/Main/Mem theorem that proves chronological raw memory-bus rows, row-level replay soundness, selected read-row coverage, and the selected Sail state cursor from accepted trace data.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages a global Mem row-trace spec plus a selected read-row cursor pinned to the envelope's concrete read row. The global spec names chronological raw memory-bus rows, row-level read/write replay soundness, initial memory agreement, same-address preservation, write update, segment carry, and dual-event obligations; the lower row construction and projected `TraceReplaySound` are derived internally before packing `AcceptedMemoryBusRowsTrace`. Selected-read replay agreement is proved by induction over the prior-event prefix and combined with cursor agreement derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR/Main/Mem theorem that proves the global Mem row-trace spec, selected read-row coverage, and the selected Sail state cursor from accepted trace data.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -139,6 +140,18 @@ store/order/segment/dual soundness placeholders before packing
 now proves the projected `TraceReplaySound` internally from
 `MemoryBusRowsReadWriteSound`. Focused `lake build
 ZiskFv.ZiskCircuit.MemTrace ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
+passed. Full `lake build`, trust regeneration, both trust gates, global
+closure print with zero project axiom names, targeted retired-memory scans,
+the broad plan scan, and `nix run .#test` also passed for this slice.
+The current global-spec slice adds `ZiskFv.AirsClean.Mem.TraceSpec` with
+`AcceptedFullMemoryBusRowsTrace`, a named full-trace Mem object for
+chronological rows, same-address value preservation, write-update soundness,
+event ordering, segment carry, dual emission, row-level read/write replay
+soundness, and initial memory agreement. `OpEnvelope` load arms now carry this
+global spec plus the selected read-row cursor; the prior granular row
+construction is derived internally by
+`AcceptedFullMemoryBusRowsTrace.toRowsTraceConstruction`. Focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
 passed. Full `lake build`, trust regeneration, both trust gates, global
 closure print with zero project axiom names, targeted retired-memory scans,
 the broad plan scan, and `nix run .#test` also passed for this slice.
