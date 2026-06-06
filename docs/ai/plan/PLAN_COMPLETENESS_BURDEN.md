@@ -30,10 +30,11 @@ Make the hidden completeness/witness assumptions visible at the public complianc
 - [x] Regenerate trust ledgers and run gates for the accepted-memory-trace theorem surface.
 - [x] Commit accepted-memory-trace theorem-surface change.
 - [x] Split public load-memory evidence into `AcceptedProgramMemoryTrace` plus selected-load coverage.
+- [x] Scope public accepted-memory evidence to load envelopes only.
 
 ## Current Notes
 
-The global theorem now takes an explicit `OpEnvelope.completenessBurden` premise for row/table/route evidence and separate `AcceptedProgramMemoryTrace` plus `OpEnvelope.acceptedProgramMemoryTraceCovers` evidence for load-memory replay. Load arms consume a standalone `LoadMemoryBurden` proposition derived from one accepted Mem trace for the current Sail state plus selected-event membership in that trace. The new public theorem surface derives the envelope-local `AcceptedMemoryTraceConstruction`, then the dispatcher-facing `env.memoryBurden`; the earlier `acceptedMemoryTraceBurden` slice passed `lake build`, trust gates, semantic gates, closure print, targeted scans, and `nix run .#test`.
+The global theorem now takes an explicit `OpEnvelope.completenessBurden` premise for row/table/route evidence and a load-scoped `OpEnvelope.acceptedProgramMemoryTraceBurden` for load-memory replay. Load arms consume a standalone `LoadMemoryBurden` proposition derived from one accepted Mem trace for the current Sail state plus selected-event membership in that trace; non-load arms discharge the public memory burden as `True`. The new public theorem surface derives the dispatcher-facing `env.memoryBurden`; the earlier `acceptedMemoryTraceBurden` slice passed `lake build`, trust gates, semantic gates, closure print, targeted scans, and `nix run .#test`.
 
 The shared trace-context and `AcceptedMemoryTraceConstruction` slices have
 passed `lake build`, trust regeneration, both trust gate scripts, global

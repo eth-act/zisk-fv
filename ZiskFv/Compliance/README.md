@@ -16,11 +16,11 @@ The uber theorem `zisk_riscv_compliant_program_bus` lives in
 `ZiskFv/Compliance.lean` (the file at the level above this folder)
 and uses an `OpEnvelope` sum type (63 arms, one per RV64IM opcode)
 to dispatch each opcode to its `Wrappers/<Op>` wrapper. Its
-`OpEnvelope.completenessBurden`, `AcceptedProgramMemoryTrace`, and
-`OpEnvelope.acceptedProgramMemoryTraceCovers` premises make explicit that the
-current theorem starts from supplied witness evidence, an accepted
-program-level Mem trace, and selected-load coverage rather than deriving all
-of that evidence from an accepted full trace.
+`OpEnvelope.completenessBurden` and
+`OpEnvelope.acceptedProgramMemoryTraceBurden` premises make explicit that the
+current theorem starts from supplied witness evidence and, for load envelopes
+only, an accepted program-level Mem trace plus selected-load coverage rather
+than deriving all of that evidence from an accepted full trace.
 
 To audit a single opcode's trust closure, read
 `Compliance/Wrappers/<Op>.lean` together with the canonical

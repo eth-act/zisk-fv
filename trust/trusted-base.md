@@ -20,12 +20,11 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 This theorem is a conditional global compliance theorem over an already
 constructed `OpEnvelope`. Its explicit
 `ZiskFv.Compliance.OpEnvelope.completenessBurden` and
-`ZiskFv.Compliance.AcceptedProgramMemoryTrace` /
-`ZiskFv.Compliance.OpEnvelope.acceptedProgramMemoryTraceCovers` premises mark
+`ZiskFv.Compliance.OpEnvelope.acceptedProgramMemoryTraceBurden` premises mark
 the current caller-side witness burden: row specs, table/provider evidence,
-route facts, an accepted program-level Mem trace, and selected-load coverage
-are supplied rather than derived by a global accepted-trace completeness
-theorem.
+route facts, and, for load envelopes only, an accepted program-level Mem trace
+plus selected-load coverage are supplied rather than derived by a global
+accepted-trace completeness theorem.
 
 Current generated counts:
 
@@ -66,7 +65,8 @@ has been removed.
 Load correctness now consumes an explicit
 `ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement` premise threaded through
 the load trace context, and `MemModel.lean` only projects the resulting byte
-facts. The global theorem's memory premise is now split into a program-level
+facts. The global theorem's memory premise is now load-scoped: non-load
+envelopes discharge it as `True`, while load envelopes require a program-level
 accepted Mem trace plus proof that the selected load event for the current
 `OpEnvelope` is covered by that trace.
 
@@ -100,11 +100,10 @@ the required `OpEnvelope`. The explicit `OpEnvelope.completenessBurden`
 premise is an audit marker for that missing global witness-construction layer;
 there is no default theorem discharging it from an arbitrary envelope. Load
 arms expose their memory burden separately as
-`AcceptedProgramMemoryTrace` plus
-`OpEnvelope.acceptedProgramMemoryTraceCovers`: one replay-sound accepted trace
-for the current Sail state plus selected event membership for load arms. Those
-facts remain public hypotheses until the accepted full-trace construction is
-proved.
+`OpEnvelope.acceptedProgramMemoryTraceBurden`: non-load envelopes discharge it
+as `True`; load envelopes require one replay-sound accepted trace for the
+current Sail state plus selected event membership. Those facts remain public
+hypotheses until the accepted full-trace construction is proved.
 
 ## ArithTable And DIV/REM Audit Conclusions
 

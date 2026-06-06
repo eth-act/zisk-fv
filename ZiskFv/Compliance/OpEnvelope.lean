@@ -2339,6 +2339,21 @@ def OpEnvelope.acceptedProgramMemoryTraceCovers
     (programTrace : AcceptedProgramMemoryTrace state) : Prop :=
   env.selectedLoadEventInTrace programTrace.trace
 
+/-- Public accepted-memory burden, scoped to load envelopes only.
+
+    Non-load opcodes do not need a Mem replay trace. Load opcodes require one
+    accepted program-level Mem trace for the current Sail state plus proof
+    that the selected load event occurs in that trace. -/
+def OpEnvelope.acceptedProgramMemoryTraceBurden
+    (env : OpEnvelope state m r_main) : Prop :=
+  match env with
+  | .ld .. | .lbu .. | .lhu .. | .lwu ..
+  | .lb_via_static_match .. | .lh_via_static_match ..
+  | .lw_via_static_match .. =>
+      ∃ programTrace : AcceptedProgramMemoryTrace state,
+        env.acceptedProgramMemoryTraceCovers programTrace
+  | _ => True
+
 /-- Concrete construction payload for the accepted Mem trace used by this
     envelope.
 
@@ -2373,6 +2388,23 @@ theorem OpEnvelope.acceptedMemoryTraceContext_of_construction
     (construction : env.AcceptedMemoryTraceConstruction) :
     env.acceptedMemoryTraceContext := by
   exact ⟨construction.trace, construction.context, construction.selected⟩
+
+/-- Derive the per-load accepted-memory burden from the load-scoped public
+    program-trace burden. Non-load envelopes discharge immediately. -/
+theorem OpEnvelope.acceptedMemoryTraceBurden_of_programTraceBurden
+    (env : OpEnvelope state m r_main)
+    (h_trace : env.acceptedProgramMemoryTraceBurden) :
+    env.acceptedMemoryTraceBurden := by
+  cases env <;>
+    simp [OpEnvelope.acceptedProgramMemoryTraceBurden,
+      OpEnvelope.acceptedMemoryTraceBurden] at h_trace ⊢
+  all_goals
+    try exact trivial
+    rcases h_trace with ⟨programTrace, h_cover⟩
+    rcases h_cover with ⟨priorEvents, laterEvents, h_split⟩
+    exact ZiskFv.ZiskCircuit.MemTrace.loadMemoryBurden_of_accepted_trace_for_state
+      state _ programTrace.trace programTrace.context
+      priorEvents laterEvents h_split rfl
 
 /-- Derive the per-load accepted-memory burden from the shared accepted trace
     context exposed at the global theorem boundary. -/

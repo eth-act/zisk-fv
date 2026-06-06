@@ -61,10 +61,10 @@ surfaces, and explicit classification for route-named `OpEnvelope` variants.
 The intended public theorem API is `zisk_riscv_compliant_program_bus` plus the
 63 canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems. The public theorem
 is conditional on `OpEnvelope.completenessBurden` and
-`AcceptedProgramMemoryTrace` /
-`OpEnvelope.acceptedProgramMemoryTraceCovers`, which mark that the per-opcode
-witness envelope, program-level Mem trace, and selected-load coverage are
-supplied rather than constructed from a full accepted trace. Wrapper and EquivCore routes are
+`OpEnvelope.acceptedProgramMemoryTraceBurden`, which mark that the per-opcode
+witness envelope and, for load envelopes only, the program-level Mem trace
+plus selected-load coverage are supplied rather than constructed from a full
+accepted trace. Wrapper and EquivCore routes are
 implementation details; the wrapper caller-burden gate still tracks wrapper
 lemma binders as an internal audit surface.
 

@@ -23,11 +23,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Prove each load `OpEnvelope.memoryBurden` from selected-event membership in that accepted trace.
 - [x] Replace the public `acceptedMemoryTraceContext` hypothesis with a proof from the global construction theorem.
 - [x] Replace the public `OpEnvelope.AcceptedMemoryTraceConstruction` premise with a program-level accepted Mem trace plus selected-load coverage.
-- [ ] Prove `AcceptedProgramMemoryTrace` and `OpEnvelope.acceptedProgramMemoryTraceCovers` from accepted full-trace data rather than taking them as caller evidence.
+- [x] Scope the public accepted-memory trace burden to load envelopes only.
+- [ ] Prove load-scoped `AcceptedProgramMemoryTrace` and `OpEnvelope.acceptedProgramMemoryTraceCovers` from accepted full-trace data rather than taking them as caller evidence.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `AcceptedProgramMemoryTrace` for the current Sail state plus `OpEnvelope.acceptedProgramMemoryTraceCovers`, derives `OpEnvelope.AcceptedMemoryTraceConstruction` internally, and then derives `OpEnvelope.acceptedMemoryTraceContext`. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with state-vs-replay cursor agreement. The remaining gap is still global: there is no accepted full-trace theorem that builds the program-level Mem trace and selected-load coverage.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.acceptedProgramMemoryTraceBurden`, which is `True` for non-load envelopes and, for load envelopes, packages `AcceptedProgramMemoryTrace` for the current Sail state plus `OpEnvelope.acceptedProgramMemoryTraceCovers`. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with state-vs-replay cursor agreement. The remaining gap is still global: there is no accepted full-trace theorem that builds the load-scoped program-level Mem trace and selected-load coverage.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
