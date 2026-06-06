@@ -53,6 +53,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose selected-row membership and split-indexed prefix-state equality directly in the public compliance theorem signature.
 - [x] Factor selected-row membership through an explicit FullEnsemble Mem read-replay row embedding obligation.
 - [x] Add an accepted trace/table bridge constructor for the current public Mem evidence.
+- [x] Derive selected table projection membership from concrete primary/dual Mem provider-row evidence.
 - [ ] Prove `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -574,3 +575,16 @@ ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed for this slice. The
 remaining open proof is unchanged but sharper: derive the shared accepted trace
 and table embedding once, and derive selected table projection membership plus
 prefix-state equality for each load cursor from accepted full execution data.
+
+The provider-row projection slice adds
+`OpEnvelope.SelectedMemProviderReadReplayRowInTraceTableAtEnvelope`,
+`OpEnvelope.selectedMemReadReplayRowInTraceTableAtEnvelope_of_providerRow`,
+and
+`OpEnvelope.acceptedAirMainMemTraceEvidenceAtEnvelope_of_traceTableProvider`.
+This derives selected table projection membership from a concrete Mem provider
+row whose primary or dual read projection matches the load row, using the
+existing FullEnsemble table-row projection lemmas. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed for this slice. The
+remaining open proof is now to derive the shared accepted trace/table
+embedding, concrete provider-row selection, and selected prefix-state equality
+from accepted full execution data.
