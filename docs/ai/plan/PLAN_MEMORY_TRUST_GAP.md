@@ -996,3 +996,12 @@ route for callers that already have construction evidence. Focused
 `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`, both trust gates,
 closure print with zero project axiom names, targeted retired-memory scan, and
 `nix run .#test` passed.
+
+Current inspection found no local Lean blocker in the split/projection layer.
+The remaining trust gap is upstream: `AcceptedAirMainMemFullTrace` and
+`AcceptedFullExecutionMemoryTrace` still contain semantic fields that must be
+constructed from accepted full execution, especially `rowsNodup`,
+`chronologicalRows`, `prefixReadSound`, `initialAgreement`, mutable Mem-table
+embedding, selected envelope-row occurrence, and selected prefix cursor
+coverage. These fields are visible rather than hidden, but they are still the
+proof work left to close.
