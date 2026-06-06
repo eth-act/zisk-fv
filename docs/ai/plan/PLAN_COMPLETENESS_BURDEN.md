@@ -21,7 +21,7 @@ Make the hidden completeness/witness assumptions visible at the public complianc
 - [x] Thread load memory burden through clean load wrappers and equivalence theorems.
 - [x] Pass the public compliance burden into load dispatchers.
 - [x] Rebuild and rerun trust checks for the burden-consuming load proofs.
-- [ ] Commit the burden-consuming load proof change.
+- [x] Commit the burden-consuming load proof change.
 
 ## Current Notes
 
