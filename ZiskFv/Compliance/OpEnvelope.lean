@@ -2250,7 +2250,7 @@ def OpEnvelope.memoryBurden
 /-- Accepted Mem-trace evidence for load arms at the `OpEnvelope` boundary.
 
     This is the global-facing memory obligation: for a load envelope it is the
-    replay-sound accepted trace, selected-event split, read tag, and
+    accepted raw-row construction data, selected-event split, read tag, and
     Sail/replay cursor agreement for the selected memory-bus event. Non-load
     arms have no load-memory replay obligation. -/
 def OpEnvelope.acceptedMemoryTraceBurden

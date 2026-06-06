@@ -22,9 +22,10 @@ that the current theorem starts from supplied witness evidence and, for load
 envelopes only, granular chronological raw memory-bus row construction data
 plus selected read-row cursor data pinned to the envelope's concrete read row
 rather than deriving all of that evidence from an accepted full trace. The
-packed `OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope` and projected
-`OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope` replay objects are derived
-internally.
+packed `OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope`, projected
+`OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope`, and projected
+`TraceReplaySound` replay objects are derived internally from row-level
+read/write replay soundness.
 
 To audit a single opcode's trust closure, read
 `Compliance/Wrappers/<Op>.lean` together with the canonical

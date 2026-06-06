@@ -69,7 +69,9 @@ than constructed from a full accepted AIR trace. The intermediate
 `OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope`,
 `OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope`,
 `OpEnvelope.AcceptedMemoryBusExecutionTraceAtEnvelope` and
-`OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` objects are derived internally.
+`OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` objects are derived internally;
+the packed row trace derives projected `TraceReplaySound` from row-level
+read/write replay soundness.
 Wrapper and EquivCore routes are
 implementation details; the wrapper caller-burden gate still tracks wrapper
 lemma binders as an internal audit surface.

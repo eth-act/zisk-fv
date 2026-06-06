@@ -36,11 +36,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Prove load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` from accepted full-trace data rather than taking it as caller evidence.
 - [x] Replace public `AcceptedFullMemoryBusTraceAtEnvelope` evidence with raw chronological memory-bus row evidence.
 - [x] Replace public packed raw-row trace evidence with granular row-trace construction evidence.
+- [x] Replace direct row-projected `TraceReplaySound` burden with row-level read/write replay soundness.
 - [ ] Prove `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages accepted chronological raw memory-bus rows, row-projected `TraceReplaySound`, initial memory agreement, and a selected read-row cursor pinned to the envelope's concrete read row. Those rows are projected internally to chronological memory-bus read/write events by `memoryBusTraceEventsOfRows`, then packed into `AcceptedMemoryBusRowsTrace`; selected-read replay agreement is proved by induction over the prior-event prefix and combined with cursor agreement derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR/Main/Mem theorem that proves chronological raw memory-bus rows, row-projected replay soundness, selected read-row coverage, and the selected Sail state cursor from accepted trace data.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages accepted chronological raw memory-bus rows, row-level read/write replay soundness, initial memory agreement, and a selected read-row cursor pinned to the envelope's concrete read row. Those rows are projected internally to chronological memory-bus read/write events by `memoryBusTraceEventsOfRows`, row-level soundness proves the projected `TraceReplaySound`, then the result is packed into `AcceptedMemoryBusRowsTrace`; selected-read replay agreement is proved by induction over the prior-event prefix and combined with cursor agreement derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR/Main/Mem theorem that proves chronological raw memory-bus rows, row-level replay soundness, selected read-row coverage, and the selected Sail state cursor from accepted trace data.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -132,13 +133,15 @@ Sail state cursor equality.
 The latest construction-boundary slice exposes the replay-soundness burden one
 level earlier: `AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` carries
 `AcceptedMemoryBusRowsTraceConstruction`, whose fields name initial memory,
-initial Sail/replay agreement, row-projected `TraceReplaySound`, and the
+initial Sail/replay agreement, row-level read/write replay soundness, and the
 store/order/segment/dual soundness placeholders before packing
-`AcceptedMemoryBusRowsTrace`. Focused `lake build
+`AcceptedMemoryBusRowsTrace`. `MemTrace.traceReplaySound_of_memoryBusRowsReadWriteSound`
+now proves the projected `TraceReplaySound` internally from
+`MemoryBusRowsReadWriteSound`. Focused `lake build
 ZiskFv.ZiskCircuit.MemTrace ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
 passed. Full `lake build`, trust regeneration, both trust gates, global
 closure print with zero project axiom names, targeted retired-memory scans,
-the broad plan scan, and `nix run .#test` also passed.
+the broad plan scan, and `nix run .#test` also passed for this slice.
 
 The local `rv64im-completeness` branch was checked non-destructively. It adds
 raw-instruction completeness and `OpEnvelope`/Aeneas bridge predicates, but it

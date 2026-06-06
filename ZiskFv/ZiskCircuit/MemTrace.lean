@@ -615,6 +615,39 @@ def memoryBusTraceEventsOfRows
     (rows : List (MemoryBusEntry FGL)) : List MemoryBusTraceEvent :=
   rows.filterMap memoryBusTraceEventOfRow
 
+/-- Replay memory after one raw memory-bus row. Only active memory writes
+    update replay memory; reads, inactive rows, and non-memory rows leave it
+    unchanged. -/
+@[reducible]
+def replayMemoryAfterBusRow
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (row : MemoryBusEntry FGL) :
+    Std.ExtHashMap Nat (BitVec 8) :=
+  if row.as = (2 : FGL) then
+    if row.multiplicity = (1 : FGL) then
+      replayStoreEvent mem (storeEventOfEntry row)
+    else
+      mem
+  else
+    mem
+
+/-- Row-level global replay soundness for chronological raw memory-bus rows.
+
+For every active memory read row, the emitted value must equal the replay
+memory at that row's pointer. Active memory write rows update the replay
+memory in the same eight-byte shape as `bus_effect`; all other rows are
+ignored for memory replay. -/
+def MemoryBusRowsReadWriteSound :
+    Std.ExtHashMap Nat (BitVec 8) →
+      List (MemoryBusEntry FGL) → Prop
+  | _mem, [] => True
+  | mem, row :: rest =>
+      (row.as = (2 : FGL) →
+        row.multiplicity = (-1 : FGL) →
+          ReadEventReplayAgreement mem (eventOfEntry row))
+      ∧ MemoryBusRowsReadWriteSound
+          (replayMemoryAfterBusRow mem row) rest
+
 @[simp]
 lemma memoryBusTraceEventOfRow_read
     (entry : MemoryBusEntry FGL)
@@ -630,6 +663,84 @@ lemma memoryBusTraceEventsOfRows_append
     memoryBusTraceEventsOfRows (xs ++ ys) =
       memoryBusTraceEventsOfRows xs ++ memoryBusTraceEventsOfRows ys := by
   simp [memoryBusTraceEventsOfRows]
+
+/-- Row-level replay soundness implies the event-level `TraceReplaySound`
+    consumed by selected-load proofs. -/
+theorem traceReplaySound_of_memoryBusRowsReadWriteSound
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rows : List (MemoryBusEntry FGL))
+    (h_rows : MemoryBusRowsReadWriteSound initialMemory rows) :
+    TraceReplaySound initialMemory
+      (memoryBusTraceEventsToMemTrace (memoryBusTraceEventsOfRows rows)) := by
+  induction rows generalizing initialMemory with
+  | nil =>
+      simp [memoryBusTraceEventsOfRows, memoryBusTraceEventsToMemTrace,
+        TraceReplaySound]
+  | cons row rest ih =>
+      simp only [MemoryBusRowsReadWriteSound] at h_rows
+      by_cases h_as : row.as = (2 : FGL)
+      · by_cases h_read : row.multiplicity = (-1 : FGL)
+        · have h_event :
+            memoryBusTraceEventOfRow row =
+              some (MemoryBusTraceEvent.read row) := by
+              simp [memoryBusTraceEventOfRow, h_as, h_read]
+          have h_tail :
+              TraceReplaySound initialMemory
+                (memoryBusTraceEventsToMemTrace
+                  (memoryBusTraceEventsOfRows rest)) :=
+            ih initialMemory
+              (by
+                simpa [replayMemoryAfterBusRow, h_as, h_read] using
+                  h_rows.2)
+          simp [memoryBusTraceEventsOfRows, memoryBusTraceEventsToMemTrace,
+            h_event, TraceReplaySound, MemoryBusTraceEvent.toMemEvent,
+            eventOfEntry, h_rows.1 h_as h_read, h_tail]
+        · by_cases h_write : row.multiplicity = (1 : FGL)
+          · have h_event :
+              memoryBusTraceEventOfRow row =
+                some (MemoryBusTraceEvent.write row) := by
+                have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
+                  native_decide
+                simp [memoryBusTraceEventOfRow, h_as, h_write,
+                  h_one_ne_neg_one]
+            have h_rows_tail :
+                MemoryBusRowsReadWriteSound
+                  (replayStoreEvent initialMemory (storeEventOfEntry row))
+                  rest := by
+              simpa [replayMemoryAfterBusRow, h_as, h_write] using
+                h_rows.2
+            have h_tail :=
+              ih (replayStoreEvent initialMemory (storeEventOfEntry row))
+                h_rows_tail
+            simpa [memoryBusTraceEventsOfRows, memoryBusTraceEventsToMemTrace,
+              h_event, TraceReplaySound, MemoryBusTraceEvent.toMemEvent,
+              storeEventOfEntry, replayStoreEvent_storeEventOfEntry] using
+              h_tail
+          · have h_event : memoryBusTraceEventOfRow row = none := by
+              simp [memoryBusTraceEventOfRow, h_as, h_read, h_write]
+            have h_tail :
+                TraceReplaySound initialMemory
+                  (memoryBusTraceEventsToMemTrace
+                    (memoryBusTraceEventsOfRows rest)) :=
+              ih initialMemory
+                (by
+                  simpa [replayMemoryAfterBusRow, h_as, h_write] using
+                    h_rows.2)
+            simpa [memoryBusTraceEventsOfRows, memoryBusTraceEventsToMemTrace,
+              h_event, replayMemoryAfterBusRow, h_as, h_write] using
+              h_tail
+      · have h_event : memoryBusTraceEventOfRow row = none := by
+          simp [memoryBusTraceEventOfRow, h_as]
+        have h_tail :
+            TraceReplaySound initialMemory
+              (memoryBusTraceEventsToMemTrace
+                (memoryBusTraceEventsOfRows rest)) :=
+          ih initialMemory
+            (by
+              simpa [replayMemoryAfterBusRow, h_as] using h_rows.2)
+        simpa [memoryBusTraceEventsOfRows, memoryBusTraceEventsToMemTrace,
+          h_event, replayMemoryAfterBusRow, h_as] using
+          h_tail
 
 /-- Sail state after applying a chronological list of memory-bus events. -/
 @[reducible]
@@ -680,9 +791,7 @@ structure AcceptedMemoryBusRowsTraceConstruction
   eventOrderingSound : Prop
   segmentCarrySound : Prop
   dualEventsSound : Prop
-  traceSound :
-    TraceReplaySound initialMemory
-      (memoryBusTraceEventsToMemTrace (memoryBusTraceEventsOfRows rows))
+  rowsReadWriteSound : MemoryBusRowsReadWriteSound initialMemory rows
   initialAgreement :
     ReplayMemoryAgreement initialState initialMemory
 
@@ -700,7 +809,9 @@ def acceptedMemoryBusRowsTrace_of_construction
         eventOrderingSound := construction.eventOrderingSound
         segmentCarrySound := construction.segmentCarrySound
         dualEventsSound := construction.dualEventsSound
-        traceSound := construction.traceSound }
+        traceSound :=
+          traceReplaySound_of_memoryBusRowsReadWriteSound
+            construction.initialMemory rows construction.rowsReadWriteSound }
     initialAgreement := construction.initialAgreement }
 
 /-- Raw chronological bus rows induce the existing accepted memory-bus event
