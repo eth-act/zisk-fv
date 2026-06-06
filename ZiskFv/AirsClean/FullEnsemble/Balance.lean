@@ -1374,6 +1374,20 @@ def MemReadReplayRowsEmbeddedInTrace
     (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
   ∀ entry, entry ∈ memReadReplayRowsOfTable table → entry ∈ rows
 
+/-- Witness-level embedding obligation for mutable Mem tables. Accepted
+    full-execution integration should prove this from the chronological
+    AIR/Main/Mem trace: every dual-aware mutable Mem table in the full
+    ensemble witness has its projected read-replay rows embedded in the
+    accepted chronological memory row list. -/
+def MutableMemReadReplayRowsEmbeddedInTrace
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+      MemReadReplayRowsEmbeddedInTrace table rows
+
 /-- A concrete Mem table row contributes its primary read projection to the
     table's read-replay row surface. -/
 theorem mem_primary_read_replay_entry_mem_of_table_row

@@ -3513,11 +3513,8 @@ noncomputable def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
           length program).ensemble)
     (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
     (embedded :
-      ∀ table : Air.Flat.Table FGL,
-        table ∈ witness.allTables →
-        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
-          ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
-            table acceptedTrace.rows) :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows) :
     AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m := by
   let existsTable :=
     ZiskFv.AirsClean.FullEnsemble.exists_mem_table_of_fullRv64im_witness
