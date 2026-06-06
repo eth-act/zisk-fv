@@ -27,6 +27,8 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose load-scoped `AcceptedFullMemoryTrace` plus selected-load coverage at the public theorem boundary.
 - [x] Replace the public full-memory trace `Prop` with structured envelope-at-cursor construction data.
 - [x] Narrow `AcceptedFullMemoryTraceAtEnvelope` to accepted trace plus selected split plus cursor agreement.
+- [x] Add generic accepted execution-memory replay steps that prove cursor agreement by prefix induction.
+- [x] Add an `OpEnvelope` constructor from accepted execution-memory trace plus selected cursor data.
 - [ ] Prove load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` from accepted full-trace data rather than taking it as caller evidence.
 
 ## Current Notes
@@ -47,6 +49,13 @@ construction slice has passed `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, regenerated trust ledgers, both trust check scripts,
 global closure print, targeted retired-memory scans, and `nix run .#test`.
 The selected-cursor narrowing slice passed `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, regenerated trust ledgers, both trust check scripts,
+global closure print, targeted retired-memory scans, and `nix run .#test`.
+The execution-replay layer introduces `AcceptedExecutionMemoryTrace`, proves
+prefix cursor agreement from `EventReplayStep`s, and constructs
+`OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` from an accepted execution trace
+plus structured selected cursor data. It has passed `lake build
+ZiskFv.ZiskCircuit.MemTrace` and `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, regenerated trust ledgers, both trust check scripts,
 global closure print, targeted retired-memory scans, and `nix run .#test`.
 

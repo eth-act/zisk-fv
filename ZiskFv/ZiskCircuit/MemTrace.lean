@@ -26,6 +26,9 @@ open Goldilocks
 open Interaction
 open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
+abbrev SailState :=
+  PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+
 /-- Primary or dual Mem operation selected from the Mem trace. -/
 inductive MemLane where
   | primary
@@ -107,9 +110,67 @@ def replayEvents (init : Std.ExtHashMap Nat (BitVec 8)) :
 
 /-- Pointwise agreement between Sail memory and the replay memory at a cursor. -/
 def ReplayMemoryAgreement
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (state : SailState)
     (mem : Std.ExtHashMap Nat (BitVec 8)) : Prop :=
   ∀ addr : Nat, state.mem[addr]? = mem[addr]?
+
+/-- A Sail memory transition that matches one Mem trace event for every
+    replay memory currently agreeing with the pre-state. Loads leave replay
+    memory unchanged; stores update it with `replayStoreEvent`. -/
+def EventReplayStep
+    (before after : SailState) (event : MemEvent) : Prop :=
+  ∀ mem : Std.ExtHashMap Nat (BitVec 8),
+    ReplayMemoryAgreement before mem →
+      ReplayMemoryAgreement after
+        (if event.op = (2 : FGL) then replayStoreEvent mem event else mem)
+
+/-- Per-event replay steps for a prefix, indexed by the already-consumed
+    prefix so callers can provide the Sail state at each execution cursor. -/
+def PrefixReplayStepsFrom
+    (stateAt : List MemEvent → SailState) :
+    List MemEvent → List MemEvent → Prop
+  | _done, [] => True
+  | done, event :: rest =>
+      EventReplayStep (stateAt done) (stateAt (done ++ [event])) event
+      ∧ PrefixReplayStepsFrom stateAt (done ++ [event]) rest
+
+/-- Prefix replay steps restrict to any shorter prefix. -/
+theorem prefixReplayStepsFrom_of_append
+    (stateAt : List MemEvent → SailState)
+    (done pref suffix : List MemEvent)
+    (h_steps : PrefixReplayStepsFrom stateAt done (pref ++ suffix)) :
+    PrefixReplayStepsFrom stateAt done pref := by
+  induction pref generalizing done with
+  | nil =>
+      trivial
+  | cons event rest ih =>
+      simp [PrefixReplayStepsFrom] at h_steps ⊢
+      exact ⟨h_steps.1, ih (done ++ [event]) h_steps.2⟩
+
+/-- Replay agreement after executing a prefix, proved by induction from
+    initial agreement and per-event memory transition steps. -/
+theorem replayAgreement_of_prefixReplayStepsFrom
+    (stateAt : List MemEvent → SailState)
+    (done events : List MemEvent)
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (h_initial : ReplayMemoryAgreement (stateAt done) mem)
+    (h_steps : PrefixReplayStepsFrom stateAt done events) :
+    ReplayMemoryAgreement (stateAt (done ++ events))
+      (replayEvents mem events) := by
+  induction events generalizing done mem with
+  | nil =>
+      simpa [PrefixReplayStepsFrom, replayEvents] using h_initial
+  | cons event rest ih =>
+      simp [PrefixReplayStepsFrom] at h_steps
+      have h_next :
+          ReplayMemoryAgreement (stateAt (done ++ [event]))
+            (if event.op = (2 : FGL) then replayStoreEvent mem event else mem) :=
+        h_steps.1 mem h_initial
+      have h_tail :=
+        ih (done ++ [event])
+          (if event.op = (2 : FGL) then replayStoreEvent mem event else mem)
+          h_next h_steps.2
+      simpa [replayEvents, List.append_assoc] using h_tail
 
 /-- A read event's emitted byte lanes agree with the replay memory at that
 event's byte pointer. -/
@@ -179,7 +240,7 @@ trace for the current Sail state, and states that every selected read cursor
 in that trace agrees with the Sail byte map. Opcode-level load proofs still
 have to prove that their selected memory-bus event occurs in this trace. -/
 structure AcceptedMemTraceForState
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (state : SailState)
     (trace : List MemEvent) : Type where
   accepted : AcceptedMemTrace trace
   readCursorAgreement :
@@ -188,6 +249,32 @@ structure AcceptedMemTraceForState
       event.op = (1 : FGL) →
       ReplayMemoryAgreement state
         (replayEvents accepted.initialMemory priorEvents)
+
+/-- Accepted Mem trace plus a Sail execution-state function whose memory
+    transitions replay the trace. -/
+structure AcceptedExecutionMemoryTrace
+    (stateAt : List MemEvent → SailState)
+    (trace : List MemEvent) : Type where
+  accepted : AcceptedMemTrace trace
+  initialAgreement :
+    ReplayMemoryAgreement (stateAt []) accepted.initialMemory
+  replaySteps : PrefixReplayStepsFrom stateAt [] trace
+
+/-- Cursor agreement for any prefix of an accepted execution memory trace. -/
+theorem replayAgreement_at_prefix_of_execution_trace
+    (stateAt : List MemEvent → SailState)
+    (trace priorEvents laterEvents : List MemEvent)
+    (execTrace : AcceptedExecutionMemoryTrace stateAt trace)
+    (h_split : trace = priorEvents ++ laterEvents) :
+    ReplayMemoryAgreement (stateAt priorEvents)
+      (replayEvents execTrace.accepted.initialMemory priorEvents) := by
+  have h_steps :
+      PrefixReplayStepsFrom stateAt [] priorEvents :=
+    prefixReplayStepsFrom_of_append stateAt [] priorEvents laterEvents
+      (by simpa [h_split] using execTrace.replaySteps)
+  simpa using
+    replayAgreement_of_prefixReplayStepsFrom stateAt [] priorEvents
+      execTrace.accepted.initialMemory execTrace.initialAgreement h_steps
 
 /-- Selected load event plus the accepted trace facts from which its Sail
 memory agreement is derived. -/

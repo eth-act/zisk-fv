@@ -102,9 +102,11 @@ there is no default theorem discharging it from an arbitrary envelope. Load
 arms expose their memory burden separately as
 `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope`: non-load envelopes discharge it
 as `Unit`; load envelopes require one replay-sound accepted trace, selected
-event split, read tag, and Sail/replay cursor agreement. That structured construction
-remains a public hypothesis until the accepted full-trace construction is
-proved.
+event split, read tag, and Sail/replay cursor agreement. The cursor agreement
+can now be constructed from `AcceptedExecutionMemoryTrace`, which proves prefix
+agreement from initial memory agreement and per-event replay steps. The
+remaining global gap is deriving those replay steps and selected cursors from
+accepted AIR trace data.
 
 ## ArithTable And DIV/REM Audit Conclusions
 

@@ -34,6 +34,7 @@ Make the hidden completeness/witness assumptions visible at the public complianc
 - [x] Expose accepted full-memory trace burden at the public theorem boundary.
 - [x] Replace the public full-memory trace `Prop` with structured envelope-at-cursor construction data.
 - [x] Remove stale program-trace wrapper and derive load memory burden directly from selected cursor evidence.
+- [x] Add accepted execution-memory replay data and derive selected cursor evidence from it.
 
 ## Current Notes
 
@@ -53,5 +54,9 @@ The selected-cursor memory construction slice also passed `lake build
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, regenerated trust ledgers,
 both trust check scripts, global closure print, targeted retired-memory scans,
 and `nix run .#test`.
+The accepted execution-memory replay slice has passed `lake build
+ZiskFv.ZiskCircuit.MemTrace` and `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, regenerated trust ledgers, both trust check scripts,
+global closure print, targeted retired-memory scans, and `nix run .#test`.
 
 No current theorem in this branch constructs `OpEnvelope` from accepted full-trace data. Until that global construction exists, `env.completenessBurden` remains a real public hypothesis rather than a discharged completeness theorem.
