@@ -22,13 +22,17 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add a top-level accepted Mem trace object to the global construction layer.
 - [x] Prove each load `OpEnvelope.memoryBurden` from selected-event membership in that accepted trace.
 - [x] Replace the public `acceptedMemoryTraceContext` hypothesis with a proof from the global construction theorem.
-- [ ] Prove `OpEnvelope.AcceptedMemoryTraceConstruction` from accepted full-trace data rather than taking the construction object as caller evidence.
+- [x] Replace the public `OpEnvelope.AcceptedMemoryTraceConstruction` premise with a program-level accepted Mem trace plus selected-load coverage.
+- [ ] Prove `AcceptedProgramMemoryTrace` and `OpEnvelope.acceptedProgramMemoryTraceCovers` from accepted full-trace data rather than taking them as caller evidence.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedMemoryTraceConstruction`, a concrete object containing one accepted Mem trace for the current Sail state plus proof that each load arm's selected `bus.e1` event occurs in that trace, and derives `OpEnvelope.acceptedMemoryTraceContext` internally. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with state-vs-replay cursor agreement. The remaining gap is still global: there is no accepted-trace-to-`OpEnvelope` theorem that can build `AcceptedMemoryTraceConstruction` from full-trace data.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `AcceptedProgramMemoryTrace` for the current Sail state plus `OpEnvelope.acceptedProgramMemoryTraceCovers`, derives `OpEnvelope.AcceptedMemoryTraceConstruction` internally, and then derives `OpEnvelope.acceptedMemoryTraceContext`. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with state-vs-replay cursor agreement. The remaining gap is still global: there is no accepted full-trace theorem that builds the program-level Mem trace and selected-load coverage.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
 trust ledgers, both trust check scripts, the global closure print, targeted
-retired-memory scans, and `nix run .#test`.
+retired-memory scans, and `nix run .#test`. The program-level trace plus
+coverage split has passed `lake build`, regenerated trust ledgers, both trust
+check scripts, the global closure print, and targeted retired-memory scans;
+`nix run .#test` also passed.

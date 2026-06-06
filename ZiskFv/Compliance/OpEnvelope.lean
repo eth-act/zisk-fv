@@ -2317,6 +2317,28 @@ def OpEnvelope.acceptedMemoryTraceContext
   ∃ _ctx : ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace,
     env.selectedLoadEventInTrace trace
 
+/-- Program-level accepted Mem trace for the Sail state at this instruction
+    cursor.
+
+    This object is independent of a particular opcode envelope. It is the
+    global memory trace evidence that future full-trace construction code
+    should build from accepted Mem AIR data, initial memory agreement, and
+    store-event replay. -/
+structure AcceptedProgramMemoryTrace
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
+    Type where
+  trace : List ZiskFv.ZiskCircuit.MemTrace.MemEvent
+  context :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace
+
+/-- The selected load event of this envelope is covered by the program-level
+    accepted Mem trace. Non-load envelopes have no selected load event and
+    therefore discharge this predicate as `True`. -/
+def OpEnvelope.acceptedProgramMemoryTraceCovers
+    (env : OpEnvelope state m r_main)
+    (programTrace : AcceptedProgramMemoryTrace state) : Prop :=
+  env.selectedLoadEventInTrace programTrace.trace
+
 /-- Concrete construction payload for the accepted Mem trace used by this
     envelope.
 
@@ -2330,6 +2352,19 @@ structure OpEnvelope.AcceptedMemoryTraceConstruction
   context :
     ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace
   selected : env.selectedLoadEventInTrace trace
+
+/-- Build the envelope-local accepted-memory construction from one
+    program-level accepted Mem trace plus coverage of this envelope's selected
+    load event. -/
+def OpEnvelope.acceptedMemoryTraceConstructionOfProgramTrace
+    (env : OpEnvelope state m r_main)
+    (programTrace : AcceptedProgramMemoryTrace state)
+    (h_cover : env.acceptedProgramMemoryTraceCovers programTrace) :
+    env.AcceptedMemoryTraceConstruction := by
+  exact
+    { trace := programTrace.trace
+      context := programTrace.context
+      selected := h_cover }
 
 /-- Turn the concrete accepted-memory construction object into the proposition
     consumed by the load-memory projection theorem. -/
