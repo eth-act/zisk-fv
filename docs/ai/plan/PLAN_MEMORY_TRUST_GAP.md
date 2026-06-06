@@ -69,6 +69,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose accepted trace construction plus witness-selected Mem-table obligations at the public theorem boundary.
 - [x] Verify and commit named load-scoped full-execution memory construction package.
 - [x] Verify and commit split public memory boundary with shared full-execution trace plus per-envelope coverage.
+- [x] Verify and commit inverse packaging from load-scoped construction to shared trace plus coverage.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -822,3 +823,15 @@ global compliance closure print, targeted retired-memory scan, and
 `nix run .#test` passed. The remaining open theorem is proving the shared
 trace plus coverage from accepted full execution rather than taking them as
 public inputs.
+
+The current inverse-packaging slice adds
+`OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope` and
+`OpEnvelope.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_traceConstruction`.
+This proves that, on load envelopes, the older load-scoped construction object
+decomposes into the new shared trace plus selected envelope coverage package;
+non-load envelopes remain trivial because they do not contain memory trace
+data. Focused `lake build ZiskFv.Compliance.OpEnvelope`, focused
+`lake build ZiskFv.Compliance`, full `lake build`, both trust check scripts,
+global compliance closure print, targeted retired-memory scan, and
+`nix run .#test` passed. This is a migration helper, not the final upstream
+construction theorem.

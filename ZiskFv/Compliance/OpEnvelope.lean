@@ -4776,6 +4776,38 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
   selectedEnvelopeRow :
     env.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace fullTrace
 
+/-- Load-scoped package containing the shared full-execution memory trace plus
+    coverage for one envelope. Non-load envelopes carry no memory data.
+
+    This is the honest inverse shape of
+    `AcceptedFullExecutionMemoryTraceConstructionAtEnvelope`: the shared trace
+    can only be recovered from a load-scoped construction on load arms. -/
+def OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace
+  | .lbu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace
+  | .lhu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace
+  | .lwu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace
+  | .lb_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace
+  | .lh_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace
+  | .lw_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace
+  | _ => ULift.{2, 0} Unit
+
 /-- Full-execution memory construction data for one load cursor.
 
     This is the theorem-shaped upstream target: accepted full execution should
@@ -4905,6 +4937,37 @@ def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_traceAndPref
         acceptedTrace := acceptedTrace.construction
         selectedPrefix := selectedPrefix }
   all_goals exact ()
+
+/-- Decompose the older load-scoped full-execution construction object into
+    the newer shared trace plus selected envelope coverage package.
+
+    This is a migration helper for upstream callers of the older boundary; it
+    does not manufacture memory evidence for non-load envelopes. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_traceConstruction
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope]
+      at construction ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    refine
+      ⟨{ length := construction.length
+         program := construction.program
+         witness := construction.witness
+         acceptedTrace :=
+           { initialState := construction.construction.initialState
+             rows := construction.construction.rows
+             construction := construction.construction.acceptedTrace }
+         embedded := construction.embedded },
+       ?_⟩
+    exact
+      { selectedPrefix := construction.construction.selectedPrefix
+        selectedEnvelopeRow := construction.selectedEnvelopeRow }
 
 /-- Build the current public load-scoped memory construction object from a
     shared accepted full-execution memory trace plus per-envelope selected
