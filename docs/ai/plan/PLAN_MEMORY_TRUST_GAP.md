@@ -711,4 +711,6 @@ This removes the duplicated accepted-trace package from the next bridge shape:
 selected row membership is now derived internally from the selected envelope
 Mem-row occurrence plus table embedding, while the upstream full-execution
 theorem only needs to supply prefix-state equality for the same FullEnsemble
-Mem-table trace. Focused `lake build ZiskFv.Compliance.OpEnvelope` passed.
+Mem-table trace. Focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, both trust gates, targeted retired-name
+scans, and `nix run .#test` passed. This slice was committed as `04140c9a`.
