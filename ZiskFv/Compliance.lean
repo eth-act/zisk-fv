@@ -52,7 +52,7 @@ bridge. The V2 trust gate enforces this.
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
 completeness. Load-memory replay evidence is exposed separately as a
-load-scoped `OpEnvelope.AcceptedExecutionMemoryTraceAtEnvelope` construction,
+load-scoped `OpEnvelope.AcceptedMemoryBusExecutionTraceAtEnvelope` construction,
 from which the theorem derives the selected replay burden. It is also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
@@ -91,13 +91,14 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
-    (h_mem_trace : env.AcceptedExecutionMemoryTraceAtEnvelope)
+    (h_mem_trace : env.AcceptedMemoryBusExecutionTraceAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
   have h_full_mem_trace : env.AcceptedFullMemoryTraceAtEnvelope :=
-    env.acceptedFullMemoryTraceAtEnvelope_of_executionTraceAtEnvelope h_mem_trace
+    env.acceptedFullMemoryTraceAtEnvelope_of_memoryBusExecutionTraceAtEnvelope
+      h_mem_trace
   have h_memory_burden : env.memoryBurden :=
     env.memoryBurden_of_acceptedFullMemoryTraceAtEnvelope h_full_mem_trace
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
