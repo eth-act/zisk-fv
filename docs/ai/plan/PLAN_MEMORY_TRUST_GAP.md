@@ -48,6 +48,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add local dual-row load correctness from replay agreement.
 - [x] Add FullEnsemble selected Mem read-row replay projections.
 - [x] Factor selected-prefix cursor construction into row coverage plus split-indexed state equality.
+- [x] Decompose load-scoped selected-prefix coverage into row membership plus prefix-state equality at the accepted trace boundary.
 - [ ] Prove `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -226,6 +227,14 @@ while instruction-state alignment remains a separate prefix theorem. Focused
 `lake build`, trust regeneration, both trust gates, compliance closure print
 with zero project axiom names, targeted retired-memory scans, extractor skip
 scan, generated zero-entry checks, and `nix run .#test` passed for this slice.
+The selected-prefix boundary-decomposition slice adds load-scoped row
+membership and split-indexed prefix-state predicates at the accepted
+AIR/Main/Mem trace boundary, plus an adapter from those two obligations to
+`SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust gates, compliance closure print with zero project
+axiom names, targeted retired-memory scans, extractor skip scan, generated
+zero-entry checks, and `nix run .#test` passed for this slice.
 The current extractor slice removes the mixed F/ExtF skip-stub source:
 `tools/pil-extract` now emits constraints that mention challenges or exposed
 values as single-field `[Circuit F F C]` definitions, preserving the PIL fact

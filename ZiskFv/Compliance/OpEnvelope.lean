@@ -3282,6 +3282,125 @@ def OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
         acceptedTrace.initialState acceptedTrace.rows bus.e1
   | _ => Unit
 
+/-- Selected load-row membership in the accepted chronological Mem row list.
+    This is one of the two proof obligations needed to construct
+    `SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`; it should eventually
+    follow from the selected Main/Mem row match plus the embedding of projected
+    Mem replay rows into the accepted chronological trace. -/
+def OpEnvelope.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      bus.e1 ∈ acceptedTrace.rows
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      bus.e1 ∈ acceptedTrace.rows
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      bus.e1 ∈ acceptedTrace.rows
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      bus.e1 ∈ acceptedTrace.rows
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      bus.e1 ∈ acceptedTrace.rows
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      bus.e1 ∈ acceptedTrace.rows
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      bus.e1 ∈ acceptedTrace.rows
+  | _ => True
+
+/-- Split-indexed Sail state equality for the selected load row. This is the
+    second proof obligation needed to construct the selected-prefix cursor:
+    whenever the accepted chronological row list is split at the envelope's
+    concrete load row, the current Sail state is the replayed memory state
+    after that prefix. -/
+def OpEnvelope.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      ∀ priorRows laterRows,
+        acceptedTrace.rows = priorRows ++ bus.e1 :: laterRows →
+          state =
+            ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+              acceptedTrace.initialState priorRows
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      ∀ priorRows laterRows,
+        acceptedTrace.rows = priorRows ++ bus.e1 :: laterRows →
+          state =
+            ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+              acceptedTrace.initialState priorRows
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      ∀ priorRows laterRows,
+        acceptedTrace.rows = priorRows ++ bus.e1 :: laterRows →
+          state =
+            ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+              acceptedTrace.initialState priorRows
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      ∀ priorRows laterRows,
+        acceptedTrace.rows = priorRows ++ bus.e1 :: laterRows →
+          state =
+            ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+              acceptedTrace.initialState priorRows
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∀ priorRows laterRows,
+        acceptedTrace.rows = priorRows ++ bus.e1 :: laterRows →
+          state =
+            ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+              acceptedTrace.initialState priorRows
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∀ priorRows laterRows,
+        acceptedTrace.rows = priorRows ++ bus.e1 :: laterRows →
+          state =
+            ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+              acceptedTrace.initialState priorRows
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∀ priorRows laterRows,
+        acceptedTrace.rows = priorRows ++ bus.e1 :: laterRows →
+          state =
+            ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+              acceptedTrace.initialState priorRows
+  | _ => True
+
+/-- Build the selected-prefix cursor from the two explicit selected-row
+    obligations at the accepted AIR/Main/Mem boundary: row membership in the
+    accepted chronological trace and split-indexed Sail prefix-state equality. -/
+noncomputable def OpEnvelope.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope)
+    (h_mem :
+      env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace)
+    (h_state :
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace) :
+    env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope acceptedTrace := by
+  cases env <;>
+    simp [OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope]
+      at acceptedTrace h_mem h_state ⊢
+  case ld =>
+    exact SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
+      h_mem h_state
+  case lbu =>
+    exact SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
+      h_mem h_state
+  case lhu =>
+    exact SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
+      h_mem h_state
+  case lwu =>
+    exact SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
+      h_mem h_state
+  case lb_via_static_match =>
+    exact SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
+      h_mem h_state
+  case lh_via_static_match =>
+    exact SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
+      h_mem h_state
+  case lw_via_static_match =>
+    exact SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
+      h_mem h_state
+  all_goals exact ()
+
 /-- Combine shared accepted trace data with selected-prefix coverage to
     recover the packed load-scoped construction object used by the existing
     replay bridge. -/
