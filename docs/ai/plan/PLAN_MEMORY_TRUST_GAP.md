@@ -246,3 +246,18 @@ ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed, as did full
 `lake build`, trust regeneration, both trust gates, compliance closure print
 with zero project names, retired-memory scans, generated zero-entry count
 checks, and `nix run .#test`.
+
+The current pure-obligation slice reduces the visible global Mem row-trace
+burden again. `AirsClean.Mem.TraceSpec` now proves raw-row write-update
+soundness directly from `replayMemoryAfterBusRows`, proves event ordering and
+segment-prefix facts from `MemoryBusRowsChronological`, and proves active
+read/write rows project to replay events. Consequently
+`AcceptedFullMemoryBusRowsTrace` no longer asks callers for write-update,
+event-ordering, segment-carry, or dual-event projection evidence; its remaining
+semantic fields are chronological rows, same-address value preservation,
+prefix-indexed read replay soundness, and initial Sail/replay memory agreement.
+Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed, as did full
+`lake build`, trust regeneration, both trust gates, compliance closure print
+with zero project names, retired-memory scans, generated zero-entry count
+checks, and `nix run .#test`.

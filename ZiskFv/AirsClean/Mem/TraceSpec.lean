@@ -65,6 +65,18 @@ def MemoryBusRowsWriteUpdateSound
             (replayMemoryAfterBusRows initialMemory priorRows)
             (storeEventOfEntry row)
 
+/-- The public raw-row replay function updates active memory writes exactly
+    as `storeEventOfEntry` records them. This is definitional for the replay
+    model, so callers of the global Mem trace object should not have to supply
+    it as a separate burden. -/
+theorem memoryBusRowsWriteUpdateSound
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rows : List (Interaction.MemoryBusEntry FGL)) :
+    MemoryBusRowsWriteUpdateSound initialMemory rows := by
+  intro priorRows row _laterRows _h_split h_write
+  obtain ⟨h_as, h_mult⟩ := h_write
+  simp [replayMemoryAfterBusRows, replayMemoryAfterBusRow, h_as, h_mult]
+
 /-- Active same-address rows are timestamp-monotone. This is separated from
     `MemoryBusRowsChronological` because the extracted AIR proof will likely
     discharge it through address/step sortedness constraints. -/
@@ -77,6 +89,21 @@ def MemoryBusRowsEventOrderingSound
           earlier.ptr = later.ptr →
             earlier.timestamp.toNat <= later.timestamp.toNat
 
+/-- Chronological raw rows imply the selected same-address event-ordering
+    consequence. Address equality and active tags are retained in the
+    predicate for future AIR-side extraction, but the public-row statement is
+    just a projection of `Pairwise` chronology. -/
+theorem memoryBusRowsEventOrderingSound_of_chronological
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (h_chronological : MemoryBusRowsChronological rows) :
+    MemoryBusRowsEventOrderingSound rows := by
+  intro priorRows earlier middleRows later laterRows h_split _h_earlier
+    _h_later _h_ptr
+  rw [h_split] at h_chronological
+  rw [MemoryBusRowsChronological] at h_chronological
+  rw [List.pairwise_iff_forall_sublist] at h_chronological
+  exact h_chronological (by simp)
+
 /-- Segment-boundary carry facts for chronological rows. The public row type
     does not expose the Mem segment accumulator columns, so this predicate
     records the row-observable consequence needed by replay: each selected
@@ -88,6 +115,19 @@ def MemoryBusRowsSegmentCarrySound
       priorRows.Pairwise (fun earlier later =>
         earlier.timestamp.toNat <= later.timestamp.toNat)
 
+/-- Every selected prefix of chronological raw rows is chronological. The AIR
+    segment-carry proof still has to justify that the public rows are the
+    accepted chronological rows; once that list is fixed, this prefix property
+    is a standard `Pairwise` projection. -/
+theorem memoryBusRowsSegmentCarrySound_of_chronological
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (h_chronological : MemoryBusRowsChronological rows) :
+    MemoryBusRowsSegmentCarrySound rows := by
+  intro priorRows row laterRows h_split
+  rw [h_split] at h_chronological
+  rw [MemoryBusRowsChronological] at h_chronological
+  exact (List.pairwise_append.1 h_chronological).1
+
 /-- Dual-memory emission coverage at the public row layer: every active memory
     row must project to a replay event. The stronger AIR-side proof should
     additionally show that primary and dual Mem lanes emit the expected rows
@@ -98,6 +138,24 @@ def MemoryBusRowsDualEventsSound
     row ∈ rows →
       (MemoryBusRowIsRead row ∨ MemoryBusRowIsWrite row) →
         ∃ event, memoryBusTraceEventOfRow row = some event
+
+/-- Active read/write memory rows always project to a concrete replay event.
+    The AIR-side dual-emission work still has to expose both primary and dual
+    MemBus rows, but once a row is in the public chronological row list this
+    projection is pure. -/
+theorem memoryBusRowsDualEventsSound
+    (rows : List (Interaction.MemoryBusEntry FGL)) :
+    MemoryBusRowsDualEventsSound rows := by
+  intro row _h_mem h_active
+  rcases h_active with h_read | h_write
+  · obtain ⟨h_as, h_mult⟩ := h_read
+    exact ⟨ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read row,
+      by simp [memoryBusTraceEventOfRow, h_as, h_mult]⟩
+  · obtain ⟨h_as, h_mult⟩ := h_write
+    have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
+      native_decide
+    exact ⟨ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.write row,
+      by simp [memoryBusTraceEventOfRow, h_as, h_mult, h_one_ne_neg_one]⟩
 
 /-- Accepted full Mem trace facts for chronological raw memory-bus rows.
 
@@ -114,10 +172,6 @@ structure AcceptedFullMemoryBusRowsTrace
   chronologicalRows : MemoryBusRowsChronological rows
   sameAddressValuePreservation :
     MemoryBusRowsSameAddressValuePreservation rows
-  writeUpdateSound : MemoryBusRowsWriteUpdateSound initialMemory rows
-  eventOrderingSound : MemoryBusRowsEventOrderingSound rows
-  segmentCarrySound : MemoryBusRowsSegmentCarrySound rows
-  dualEventsSound : MemoryBusRowsDualEventsSound rows
   prefixReadSound : MemoryBusRowsPrefixReadSound initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
 
