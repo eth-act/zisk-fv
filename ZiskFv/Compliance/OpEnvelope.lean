@@ -3160,6 +3160,107 @@ def OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope
       GeneratedMemFullTraceConstructionWithPrefixAtCursor state bus.e1
   | _ => Unit
 
+/-- Accepted AIR/Main/Mem full-trace construction plus the selected load
+    prefix cursor for one concrete load row. This is the remaining global
+    construction target: prove it from the accepted full execution trace, then
+    the generated Mem replay burden follows internally. -/
+structure AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor
+    (main : Valid_Main FGL FGL)
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  acceptedTrace :
+    ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceConstruction
+      main initialState rows
+  selectedPrefix :
+    SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry
+
+/-- Public accepted AIR/Main/Mem full-trace burden, scoped to load envelopes.
+    Non-load envelopes carry `Unit`; load envelopes carry the accepted
+    full-trace construction and the selected prefix cursor for the envelope's
+    concrete memory read row. -/
+def OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor m state bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor m state bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor m state bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor m state bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor m state bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor m state bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor m state bus.e1
+  | _ => Unit
+
+/-- Lower accepted AIR/Main/Mem full-trace data to the generated Mem burden
+    currently consumed by replay. -/
+def OpEnvelope.generatedMemFullTraceConstructionAtEnvelope_of_acceptedAirMainMemTrace
+    (env : OpEnvelope state m r_main)
+    (acceptedTraceAtEnvelope :
+      env.AcceptedAirMainMemFullTraceConstructionAtEnvelope) :
+    env.GeneratedMemFullTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope,
+      OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope]
+      at acceptedTraceAtEnvelope ⊢
+  case ld =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        generatedTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toGeneratedMemFullTraceConstruction
+        selectedPrefix := acceptedTraceAtEnvelope.selectedPrefix }
+  case lbu =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        generatedTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toGeneratedMemFullTraceConstruction
+        selectedPrefix := acceptedTraceAtEnvelope.selectedPrefix }
+  case lhu =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        generatedTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toGeneratedMemFullTraceConstruction
+        selectedPrefix := acceptedTraceAtEnvelope.selectedPrefix }
+  case lwu =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        generatedTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toGeneratedMemFullTraceConstruction
+        selectedPrefix := acceptedTraceAtEnvelope.selectedPrefix }
+  case lb_via_static_match =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        generatedTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toGeneratedMemFullTraceConstruction
+        selectedPrefix := acceptedTraceAtEnvelope.selectedPrefix }
+  case lh_via_static_match =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        generatedTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toGeneratedMemFullTraceConstruction
+        selectedPrefix := acceptedTraceAtEnvelope.selectedPrefix }
+  case lw_via_static_match =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        generatedTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toGeneratedMemFullTraceConstruction
+        selectedPrefix := acceptedTraceAtEnvelope.selectedPrefix }
+  all_goals exact ()
+
 /-- Construct the public load-scoped memory-row burden from a shared accepted
     Mem row trace plus an envelope-specific prefix cursor. The selected
     row's `as = 2` and `multiplicity = -1` facts are derived from each load
@@ -3454,9 +3555,9 @@ def OpEnvelope.routeBurden
     specs, provider-row membership, and route pins. Requiring this predicate at
     the public theorem boundary makes that caller burden explicit without
     changing the existing wrapper proofs. Load-memory replay evidence is
-    exposed separately by `GeneratedMemFullTraceConstructionAtEnvelope`, so
-    the public theorem no longer hides that obligation under this structural
-    completeness marker. -/
+    exposed separately by
+    `AcceptedAirMainMemFullTraceConstructionAtEnvelope`, so the public theorem
+    no longer hides that obligation under this structural completeness marker. -/
 def OpEnvelope.completenessBurden
     (env : OpEnvelope state m r_main) : Prop :=
   env.rowSpecBurden

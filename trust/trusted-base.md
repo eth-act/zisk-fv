@@ -20,9 +20,9 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 This theorem is a conditional global compliance theorem over an already
 constructed `OpEnvelope`. Its explicit
 `ZiskFv.Compliance.OpEnvelope.completenessBurden` and
-`ZiskFv.Compliance.OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope` premises mark
+`ZiskFv.Compliance.OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope` premises mark
 the current caller-side witness burden: row specs, table/provider evidence,
-route facts, and, for load envelopes only, generated Mem full-trace
+route facts, and, for load envelopes only, accepted AIR/Main/Mem full-trace
 construction plus selected prefix cursor data are supplied rather than derived by a global
 accepted-trace completeness theorem.
 
@@ -101,15 +101,17 @@ the required `OpEnvelope`. The explicit `OpEnvelope.completenessBurden`
 premise is an audit marker for that missing global witness-construction layer;
 there is no default theorem discharging it from an arbitrary envelope. Load
 arms expose their memory burden separately as
-`OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope`: non-load envelopes
-discharge it as `Unit`; load envelopes require generated Mem row constraints,
+`OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope`: non-load
+envelopes discharge it as `Unit`; load envelopes require accepted
+AIR/Main/Mem full-trace construction, including generated Mem row constraints,
 chronological raw memory-bus rows, row-level read/write replay soundness,
 initial memory agreement, and a selected raw-row prefix cursor pinned to the
-envelope's concrete read row. The packed row construction, row-trace object,
-projected `TraceReplaySound`, and selected full-memory cursor are derived
-internally by projecting rows to memory-bus events and replaying the prior bus
-events. The remaining global gap is deriving that generated Mem construction
-and selected cursors from accepted AIR trace data.
+envelope's concrete read row. The generated Mem burden, packed row
+construction, row-trace object, projected `TraceReplaySound`, and selected
+full-memory cursor are derived internally by projecting rows to memory-bus
+events and replaying the prior bus events. The remaining global gap is
+deriving that accepted construction and selected cursors from the full
+execution trace.
 
 ## ArithTable And DIV/REM Audit Conclusions
 

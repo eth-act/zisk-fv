@@ -46,11 +46,11 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Replace anonymous global Mem trace placeholder props with named row-level obligations.
 - [x] Add a dual-aware Clean MemBus emission surface and dual-row adapters.
 - [x] Add local dual-row load correctness from replay agreement.
-- [ ] Prove `OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope` from accepted AIR/Main/Mem full-trace data.
+- [ ] Prove `OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages generated Mem full-trace construction plus a selected prefix cursor pinned to the envelope's concrete read row. The generated construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no accepted AIR/Main/Mem theorem that proves the generated Mem construction and selected prefix cursor from accepted trace data.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages accepted AIR/Main/Mem full-trace construction plus a selected prefix cursor pinned to the envelope's concrete read row. The accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no theorem that proves this accepted Mem construction and selected prefix cursor from the full execution trace.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -466,3 +466,17 @@ to introduce an accepted full-trace interface carrying chronological Mem rows,
 prefix read/write replay soundness, initial Sail/replay agreement, and
 selected prefix cursor coverage, then prove those fields from the generated
 Mem constraints and full-trace execution model.
+
+The current accepted-interface slice introduces
+`AirsClean.Mem.AcceptedAirMainMemFullTraceConstruction`, parameterized by the
+concrete `Valid_Main` trace, and
+`OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope`. The public
+compliance theorem now consumes that accepted AIR/Main/Mem full-trace burden
+and derives `GeneratedMemFullTraceConstructionAtEnvelope`, the packed row
+construction, and replay evidence internally. Focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance` passed, as did full `lake build`, trust regeneration, both
+trust gates, compliance closure print, generated zero-entry checks,
+retired-memory scans, extractor skip scan, and `nix run .#test`. The remaining
+open proof is now precisely deriving this accepted interface from the full
+execution trace.

@@ -1,4 +1,5 @@
 import ZiskFv.Airs.Mem
+import ZiskFv.Airs.Main.Main
 import ZiskFv.AirsClean.Mem.Spec
 import ZiskFv.ZiskCircuit.MemTrace
 
@@ -278,5 +279,51 @@ theorem core_every_row_of_generated_full_trace
     ZiskFv.Airs.Mem.core_every_row construction.mem row :=
   ZiskFv.Airs.Mem.core_every_row_of_generated_every_row
     (construction.generatedRows row h_row)
+
+/-! ## Accepted AIR/Main/Mem full-trace construction surface -/
+
+/-- Accepted full-trace construction data for the Main/Mem trace slice.
+
+This is the source-facing interface that must eventually be constructed from
+the accepted full execution trace. It is parameterized by the concrete Main
+AIR trace so the final bridge cannot be stated independently of the program
+trace whose load row is being proved. The fields are still the semantic Mem
+facts needed by replay: generated Mem row constraints, chronological public
+memory-bus rows, read/write replay soundness, and initial Sail/replay memory
+agreement. -/
+structure AcceptedAirMainMemFullTraceConstruction
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (initialState : SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
+  mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL
+  segment : ZiskFv.Airs.Mem.SegmentColumns FGL
+  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
+  rowCount : ℕ
+  generatedRows : GeneratedMemRows mem segment permutation rowCount
+  initialMemory : Std.ExtHashMap Nat (BitVec 8)
+  chronologicalRows : MemoryBusRowsChronological rows
+  rowsReadWriteSound :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound
+      initialMemory rows
+  initialAgreement : ReplayMemoryAgreement initialState initialMemory
+
+/-- Forget the Main-trace provenance marker and produce the generated Mem
+    construction object consumed by the current replay bridge. -/
+def AcceptedAirMainMemFullTraceConstruction.toGeneratedMemFullTraceConstruction
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      AcceptedAirMainMemFullTraceConstruction main initialState rows) :
+    GeneratedMemFullTraceConstruction initialState rows :=
+  { mem := construction.mem
+    segment := construction.segment
+    permutation := construction.permutation
+    rowCount := construction.rowCount
+    generatedRows := construction.generatedRows
+    initialMemory := construction.initialMemory
+    chronologicalRows := construction.chronologicalRows
+    rowsReadWriteSound := construction.rowsReadWriteSound
+    initialAgreement := construction.initialAgreement }
 
 end ZiskFv.AirsClean.Mem
