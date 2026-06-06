@@ -338,3 +338,16 @@ proof and one selected prefix cursor per load envelope. Focused `lake build
 ZiskFv.Compliance` passed, as did full `lake build`, trust regeneration, both
 trust gates, compliance closure print with zero project names, retired-memory
 scans, generated zero-entry count checks, and `nix run .#test`.
+
+The current packed-boundary cleanup removes the obsolete
+`AcceptedFullMemoryBusRowsTraceAndPrefixAtEnvelope`,
+`AcceptedLoadFullMemoryBusRowsGlobalTraceAndPrefixAtCursor`, and
+`acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_traceAndPrefix`
+surface from `OpEnvelope`. The active memory route is now only the split
+interface: a shared global Mem trace plus
+`SelectedLoadMemoryBusRowsPrefixAtEnvelope`, lowered by
+`acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_globalTraceAndPrefix`.
+Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed,
+as did full `lake build`, trust regeneration, both trust gates, compliance
+closure print with zero project names, retired-memory and removed-boundary
+scans, generated zero-entry count checks, and `nix run .#test`.
