@@ -247,6 +247,19 @@ ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed, as did full
 with zero project names, retired-memory scans, generated zero-entry count
 checks, and `nix run .#test`.
 
+The current selected-prefix-constructor slice narrows the load cursor burden.
+`OpEnvelope` now has `SelectedLoadMemoryBusRowPrefixCursor`, which records only
+the selected row split and Sail prefix-state equality. The constructor
+`acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_globalTraceAndPrefix`
+combines that prefix cursor with a shared
+`AirsClean.Mem.AcceptedFullMemoryBusRowsTrace`, deriving the selected row's
+`as = 2` and `multiplicity = -1` facts from each load envelope's existing
+Main-side `bMem` match instead of asking callers for raw read tags. Focused
+`lake build ZiskFv.Compliance.OpEnvelope`, `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+compliance closure print with zero project names, retired-memory scans,
+generated zero-entry count checks, and `nix run .#test` passed.
+
 The current pure-obligation slice reduces the visible global Mem row-trace
 burden again. `AirsClean.Mem.TraceSpec` now proves raw-row write-update
 soundness directly from `replayMemoryAfterBusRows`, proves event ordering and

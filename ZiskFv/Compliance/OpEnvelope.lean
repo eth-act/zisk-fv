@@ -2689,6 +2689,41 @@ def SelectedLoadMemoryBusReadRowCursor.of_split_read_tags
         entry h_as h_mult
     state_eq := h_state }
 
+/-- Selected load cursor in the chronological raw memory-bus row list before
+    proving that the selected row is a memory read. The read tags are already
+    present in load envelopes via their Main-side `bMem` match, so this
+    prefix object is the shape that full-trace integration should supply. -/
+structure SelectedLoadMemoryBusRowPrefixCursor
+    (state initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  priorRows : List (Interaction.MemoryBusEntry FGL)
+  laterRows : List (Interaction.MemoryBusEntry FGL)
+  trace_split : rows = priorRows ++ entry :: laterRows
+  state_eq :
+    state =
+      ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+        initialState priorRows
+
+/-- Turn a prefix cursor plus an envelope-derived Main memory-read match into
+    the selected read cursor used by memory replay. -/
+def SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+    {state initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    {msg : ZiskFv.Channels.MemoryBus.MemBusMessage FGL}
+    (prefixCursor :
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry)
+    (h_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry msg (-1) 2)) :
+    SelectedLoadMemoryBusReadRowCursor state initialState rows entry := by
+  obtain ⟨h_mult, h_as, _h_ptr, _h_v0, _h_v1, _h_ts⟩ := h_match
+  exact
+    SelectedLoadMemoryBusReadRowCursor.of_split_read_tags
+      prefixCursor.priorRows prefixCursor.laterRows
+      prefixCursor.trace_split h_as h_mult prefixCursor.state_eq
+
 /-- Accepted chronological raw memory-bus rows plus the selected load row
     cursor for one envelope. The remaining AIR theorem should construct this
     object from full Main/Mem accepted trace data: chronological rows, Mem
@@ -3061,6 +3096,108 @@ def OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
       AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state bus.e1
   | _ => Unit
+
+/-- Selected load row-prefix cursor burden scoped to load envelopes. This is
+    the part of the memory construction that still needs instruction-cursor
+    integration: identify the envelope's concrete read row in the chronological
+    public Mem row list and prove the Sail state is the replayed prefix state.
+    The read tags themselves are recovered from the load envelope. -/
+def OpEnvelope.SelectedLoadMemoryBusRowsPrefixAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows bus.e1
+  | _ => Unit
+
+/-- Construct the public load-scoped memory-row burden from a shared accepted
+    Mem row trace plus an envelope-specific prefix cursor. The selected
+    row's `as = 2` and `multiplicity = -1` facts are derived from each load
+    arm's existing Main-side memory-read match, so callers no longer need to
+    provide raw read tags in the cursor. -/
+def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_globalTraceAndPrefix
+    (env : OpEnvelope state m r_main)
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (fullTrace :
+      ZiskFv.AirsClean.Mem.AcceptedFullMemoryBusRowsTrace initialState rows)
+    (prefixCursor :
+      env.SelectedLoadMemoryBusRowsPrefixAtEnvelope initialState rows) :
+    env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.SelectedLoadMemoryBusRowsPrefixAtEnvelope,
+      OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope]
+      at prefixCursor ⊢
+  case ld =>
+    exact
+      { initialState := initialState
+        rows := rows
+        fullTrace := fullTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              prefixCursor (by assumption) }
+  case lbu =>
+    exact
+      { initialState := initialState
+        rows := rows
+        fullTrace := fullTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              prefixCursor (by assumption) }
+  case lhu =>
+    exact
+      { initialState := initialState
+        rows := rows
+        fullTrace := fullTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              prefixCursor (by assumption) }
+  case lwu =>
+    exact
+      { initialState := initialState
+        rows := rows
+        fullTrace := fullTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              prefixCursor (by assumption) }
+  case lb_via_static_match =>
+    exact
+      { initialState := initialState
+        rows := rows
+        fullTrace := fullTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              prefixCursor (by assumption) }
+  case lh_via_static_match =>
+    exact
+      { initialState := initialState
+        rows := rows
+        fullTrace := fullTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              prefixCursor (by assumption) }
+  case lw_via_static_match =>
+    exact
+      { initialState := initialState
+        rows := rows
+        fullTrace := fullTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              prefixCursor (by assumption) }
+  all_goals exact ()
 
 /-- Derive accepted raw-row trace evidence from the granular construction
     burden for this envelope. -/
