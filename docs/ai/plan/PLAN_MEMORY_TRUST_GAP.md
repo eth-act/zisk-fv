@@ -36,3 +36,10 @@ retired-memory scans, and `nix run .#test`. The program-level trace plus
 coverage split has passed `lake build`, regenerated trust ledgers, both trust
 check scripts, the global closure print, and targeted retired-memory scans;
 `nix run .#test` also passed.
+
+The local `rv64im-completeness` branch was checked non-destructively. It adds
+raw-instruction completeness and `OpEnvelope`/Aeneas bridge predicates, but it
+does not introduce a Mem replay trace, Sail/replay cursor agreement, or
+selected Mem event coverage theorem. The remaining memory gap therefore cannot
+be closed by simply consuming the PR #60 interface; it needs a new accepted
+Mem full-trace construction layer.
