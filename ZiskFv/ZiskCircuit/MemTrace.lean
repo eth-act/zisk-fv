@@ -70,15 +70,15 @@ def MemoryTraceAgreement
 /-- Apply a store byte to a replay memory. The replay model is deliberately
 byte-addressed, matching Sail's memory map and the PIL memory-bus pointer. -/
 def replayStoreByte
-    (mem : Std.HashMap Nat FGL) (addr : Nat) (byte : FGL) :
-    Std.HashMap Nat FGL :=
+    (mem : Std.ExtHashMap Nat (BitVec 8)) (addr : Nat) (byte : BitVec 8) :
+    Std.ExtHashMap Nat (BitVec 8) :=
   mem.insert addr byte
 
 /-- Replay a store event into a byte-addressed memory map. The Mem AIR emits
 8 lanes; narrow store callers use the event width to select the written
 prefix. -/
-def replayStoreEvent (mem : Std.HashMap Nat FGL) (event : MemEvent) :
-    Std.HashMap Nat FGL :=
+def replayStoreEvent (mem : Std.ExtHashMap Nat (BitVec 8)) (event : MemEvent) :
+    Std.ExtHashMap Nat (BitVec 8) :=
   let mem := if 0 < event.width.toNat then
     replayStoreByte mem event.ptr.toNat (event.byteAt 0) else mem
   let mem := if 1 < event.width.toNat then
@@ -97,27 +97,79 @@ def replayStoreEvent (mem : Std.HashMap Nat FGL) (event : MemEvent) :
     replayStoreByte mem (event.ptr.toNat + 7) (event.byteAt 7) else mem
 
 /-- Replay all store events in order. Loads do not mutate replay memory. -/
-def replayEvents (init : Std.HashMap Nat FGL) : List MemEvent → Std.HashMap Nat FGL
+def replayEvents (init : Std.ExtHashMap Nat (BitVec 8)) :
+    List MemEvent → Std.ExtHashMap Nat (BitVec 8)
   | [] => init
   | event :: rest =>
       let mem :=
         if event.op = (2 : FGL) then replayStoreEvent init event else init
       replayEvents mem rest
 
-/-- Accepted Mem trace facts needed by load soundness. This is the explicit
-nonlocal proof boundary: future Mem AIR work should derive these fields from
-the full accepted trace, rather than supplying per-load byte facts. -/
-structure AcceptedMemTrace
+/-- Pointwise agreement between Sail memory and the replay memory at a cursor. -/
+def ReplayMemoryAgreement
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (mem : Std.ExtHashMap Nat (BitVec 8)) : Prop :=
+  ∀ addr : Nat, state.mem[addr]? = mem[addr]?
+
+/-- A read event's emitted byte lanes agree with the replay memory at that
+event's byte pointer. -/
+def ReadEventReplayAgreement
+    (mem : Std.ExtHashMap Nat (BitVec 8)) (event : MemEvent) : Prop :=
+  mem[event.ptr.toNat]? = .some (event.byteAt 0)
+  ∧ mem[event.ptr.toNat + 1]? = .some (event.byteAt 1)
+  ∧ mem[event.ptr.toNat + 2]? = .some (event.byteAt 2)
+  ∧ mem[event.ptr.toNat + 3]? = .some (event.byteAt 3)
+  ∧ mem[event.ptr.toNat + 4]? = .some (event.byteAt 4)
+  ∧ mem[event.ptr.toNat + 5]? = .some (event.byteAt 5)
+  ∧ mem[event.ptr.toNat + 6]? = .some (event.byteAt 6)
+  ∧ mem[event.ptr.toNat + 7]? = .some (event.byteAt 7)
+
+/-- Whole-trace replay soundness. At each event, read rows must emit the
+bytes currently present in the replay memory; store rows update replay memory
+for the remaining suffix. -/
+def TraceReplaySound
+    (mem : Std.ExtHashMap Nat (BitVec 8)) : List MemEvent → Prop
+  | [] => True
+  | event :: rest =>
+      (event.op = (1 : FGL) → ReadEventReplayAgreement mem event)
+      ∧ TraceReplaySound
+          (if event.op = (2 : FGL) then replayStoreEvent mem event else mem)
+          rest
+
+/-- Project a selected read event's replay agreement out of whole-trace
+soundness at the corresponding prefix cursor. -/
+theorem readEventReplayAgreement_of_trace_sound
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (priorEvents : List MemEvent)
+    (event : MemEvent)
+    (laterEvents : List MemEvent)
+    (h_sound :
+      TraceReplaySound initialMemory (priorEvents ++ event :: laterEvents))
+    (h_read : event.op = (1 : FGL)) :
+    ReadEventReplayAgreement (replayEvents initialMemory priorEvents) event := by
+  induction priorEvents generalizing initialMemory with
+  | nil =>
+      simpa [TraceReplaySound] using h_sound.1 h_read
+  | cons priorEvent priorEvents ih =>
+      simp only [List.cons_append, replayEvents] at h_sound ⊢
+      exact ih
+        (if priorEvent.op = (2 : FGL) then
+          replayStoreEvent initialMemory priorEvent
+        else
+          initialMemory)
+        h_sound.2
+
+/-- Accepted Mem trace facts needed by load soundness. This is the explicit
+nonlocal proof boundary: future Mem AIR work should derive `traceSound`
+from full Mem trace continuity constraints and accepted store replay. -/
+structure AcceptedMemTrace
     (trace : List MemEvent) : Type where
-  initialMemoryAgreement : Prop
+  initialMemory : Std.ExtHashMap Nat (BitVec 8)
   storeReplaySound : Prop
   eventOrderingSound : Prop
   segmentCarrySound : Prop
   dualEventsSound : Prop
-  readAgreement :
-    ∀ event, event ∈ trace → event.op = (1 : FGL) →
-      MemoryTraceAgreement state event
+  traceSound : TraceReplaySound initialMemory trace
 
 /-- Selected load event plus the accepted trace facts from which its Sail
 memory agreement is derived. -/
@@ -125,9 +177,13 @@ structure LoadTraceContext
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (event : MemEvent) : Type where
   trace : List MemEvent
-  accepted : AcceptedMemTrace state trace
-  selected : event ∈ trace
+  accepted : AcceptedMemTrace trace
+  priorEvents : List MemEvent
+  laterEvents : List MemEvent
+  trace_split : trace = priorEvents ++ event :: laterEvents
   read : event.op = (1 : FGL)
+  stateReplayAgreement :
+    ReplayMemoryAgreement state (replayEvents accepted.initialMemory priorEvents)
 
 /-- The local load byte agreement obtained from the accepted Mem trace
 context. -/
@@ -136,7 +192,31 @@ theorem memoryTraceAgreement_of_load_context
     (event : MemEvent)
     (ctx : LoadTraceContext state event) :
     MemoryTraceAgreement state event :=
-  ctx.accepted.readAgreement event ctx.selected ctx.read
+  by
+    have h_read :=
+      readEventReplayAgreement_of_trace_sound
+        ctx.accepted.initialMemory ctx.priorEvents event ctx.laterEvents
+        (by simpa [ctx.trace_split] using ctx.accepted.traceSound)
+        ctx.read
+    unfold MemoryTraceAgreement
+    unfold ReadEventReplayAgreement at h_read
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [ctx.stateReplayAgreement event.ptr.toNat]
+      exact h_read.1
+    · rw [ctx.stateReplayAgreement (event.ptr.toNat + 1)]
+      exact h_read.2.1
+    · rw [ctx.stateReplayAgreement (event.ptr.toNat + 2)]
+      exact h_read.2.2.1
+    · rw [ctx.stateReplayAgreement (event.ptr.toNat + 3)]
+      exact h_read.2.2.2.1
+    · rw [ctx.stateReplayAgreement (event.ptr.toNat + 4)]
+      exact h_read.2.2.2.2.1
+    · rw [ctx.stateReplayAgreement (event.ptr.toNat + 5)]
+      exact h_read.2.2.2.2.2.1
+    · rw [ctx.stateReplayAgreement (event.ptr.toNat + 6)]
+      exact h_read.2.2.2.2.2.2.1
+    · rw [ctx.stateReplayAgreement (event.ptr.toNat + 7)]
+      exact h_read.2.2.2.2.2.2.2
 
 /-- Convert a memory-bus entry into the event shape used by the local load
 theorem. -/

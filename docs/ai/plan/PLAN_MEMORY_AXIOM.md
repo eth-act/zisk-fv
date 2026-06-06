@@ -17,4 +17,4 @@ Remove the source axiom `ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load`
 
 ## Current Notes
 
-The old axiom is retired from the live source and generated trust closure. The replacement makes agreement explicit at the selected load event and active load discharge now uses the byte-address relation `ptr = addr * 8`; stale `mem_legacy_addr` binders remain on some wrapper/envelope surfaces as cleanup, but they are no longer the source of load memory facts.
+The old axiom is retired from the live source and generated trust closure. Active load discharge now uses the byte-address relation `ptr = addr * 8`, and the stale `mem_legacy_addr` binders have been removed from the load wrapper/envelope path. The current replacement derives selected-read agreement from whole-trace replay soundness plus Sail-state cursor agreement.

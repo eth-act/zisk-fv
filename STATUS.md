@@ -2,10 +2,10 @@
 
 Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
 
-Current focus: load memory trace-context refactor complete and committed.
+Current focus: replay-derived selected-read agreement refactor verified.
 
 Blocking: none.
 
-Next step: none for this stream unless the broader post-PR #60 `OpEnvelope` construction is resumed.
+Next step: commit the verified replay-soundness refinement.
 
 Digression: issue #61 scopes the broader post-PR #60 `OpEnvelope` completeness gap.
