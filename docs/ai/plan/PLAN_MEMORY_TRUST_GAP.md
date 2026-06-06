@@ -454,3 +454,15 @@ trust gates, compliance closure print, generated zero-entry checks,
 retired-memory scans, generated skip scan, and `nix run .#test`. The remaining
 open proof is unchanged: derive the generated construction's replay fields and
 the selected prefix cursor from accepted AIR/Main/Mem full-trace data.
+
+The current remaining-target audit checked the in-tree FullEnsemble balance
+surface as the closest accepted AIR/Main/Mem source. That layer can extract
+selected Main memory interactions, balanced provider interactions, and
+selected provider rows, but it does not define a chronological Mem row list or
+connect replay of such a list to the Sail state at an instruction cursor.
+Therefore `OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope` cannot be
+proved from existing accepted data alone; the next real implementation step is
+to introduce an accepted full-trace interface carrying chronological Mem rows,
+prefix read/write replay soundness, initial Sail/replay agreement, and
+selected prefix cursor coverage, then prove those fields from the generated
+Mem constraints and full-trace execution model.
