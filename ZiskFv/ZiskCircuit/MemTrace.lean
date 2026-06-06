@@ -992,6 +992,21 @@ theorem replayAgreement_after_memoryBusTrace
       simpa [stateAfterMemoryBusTrace, memoryBusTraceEventsToMemTrace,
         replayEvents] using h_tail
 
+/-- Replaying a chronological raw memory-bus row prefix preserves Sail/replay
+    memory agreement in the raw-row replay model. -/
+theorem replayAgreement_after_memoryBusRows
+    (initial : SailState)
+    (rows : List (MemoryBusEntry FGL))
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (h_initial : ReplayMemoryAgreement initial mem) :
+    ReplayMemoryAgreement
+      (stateAfterMemoryBusRows initial rows)
+      (replayMemoryAfterBusRows mem rows) := by
+  rw [replayMemoryAfterBusRows_eq_replayEvents]
+  exact
+    replayAgreement_after_memoryBusTrace
+      initial (memoryBusTraceEventsOfRows rows) mem h_initial
+
 /-- Agreement for `eventOfEntry e` is exactly the byte facts expected by
 `bus_effect` load consumers. -/
 lemma byte_facts_of_event_agreement

@@ -41,6 +41,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Replace recursive row-level read/write replay evidence with prefix-indexed row obligations.
 - [x] Derive selected load cursor read facts from row tags and the global prefix-indexed trace spec.
 - [x] Add raw memory-bus row prefix replay helpers for selected cursor construction.
+- [x] Prove raw-row selected prefix state agreement from initial trace agreement.
 - [ ] Prove `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
@@ -170,5 +171,15 @@ The raw-row replay helper slice proves
 `replayMemoryAfterBusRows_eq_replayEvents`, adds `stateAfterMemoryBusRows`,
 and updates selected cursor constructors to use the raw-row state alias.
 Focused build, full `lake build`, trust regeneration, both trust gates,
+compliance closure print with zero project names, targeted retired-memory
+scans, the broad plan scan, and `nix run .#test` passed for this slice.
+
+The selected-prefix helper slice changes `SelectedLoadMemoryBusReadRowCursor`
+to store raw-row state equality directly, proves
+`replayAgreement_after_memoryBusRows`, and proves
+`AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.selectedPrefixStateAgreement`
+from the global trace's initial agreement and selected raw-row prefix. Focused
+`lake build ZiskFv.ZiskCircuit.MemTrace ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
 compliance closure print with zero project names, targeted retired-memory
 scans, the broad plan scan, and `nix run .#test` passed for this slice.

@@ -2661,8 +2661,8 @@ structure SelectedLoadMemoryBusReadRowCursor
       some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry)
   state_eq :
     state =
-      ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusTrace initialState
-        (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows priorRows)
+      ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+        initialState priorRows
 
 /-- Build a selected load row cursor from the ordinary row split, read tags,
     and Sail cursor equality. Future AIR/Main/Mem integration should prove
@@ -2780,6 +2780,30 @@ theorem AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.selectedPrefixReadAgree
     construction.fullTrace.prefixReadSound
       construction.selected.priorRows entry construction.selected.laterRows
       construction.selected.trace_split h_as h_mult
+
+/-- The selected row cursor's Sail state agrees with replaying the raw
+    memory-bus prefix before that row. -/
+theorem AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.selectedPrefixStateAgreement
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (construction :
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state entry) :
+    ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement
+      state
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+        construction.fullTrace.initialMemory construction.selected.priorRows) := by
+  rcases construction with
+    ⟨initialState, rows, fullTrace,
+      ⟨priorRows, laterRows, trace_split, selected_read, state_eq⟩⟩
+  change
+    ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement
+      state
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+        fullTrace.initialMemory priorRows)
+  rw [state_eq]
+  exact
+    ZiskFv.ZiskCircuit.MemTrace.replayAgreement_after_memoryBusRows
+      initialState priorRows fullTrace.initialMemory fullTrace.initialAgreement
 
 /-- Lower accepted global Mem trace facts to the existing granular replay
     construction object for one selected load cursor. -/
