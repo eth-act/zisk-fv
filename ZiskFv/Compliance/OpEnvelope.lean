@@ -3458,6 +3458,209 @@ structure OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope
     env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
       acceptedTrace
 
+/-- Shared accepted AIR/Main/Mem trace data plus the concrete FullEnsemble Mem
+    table whose projected read-replay rows are embedded in that accepted trace.
+
+    This is a program-level bridge shape for load envelopes: full-execution
+    integration should construct it once from the accepted Main/Mem trace, then
+    selected load envelopes only need to prove that their selected row occurs
+    in this table projection and that their Sail state is the replayed prefix
+    state at that row. Non-load envelopes carry `Unit`. -/
+structure AcceptedAirMainMemFullTraceWithMemTable
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) : Type 2 where
+  acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
+  table : Air.Flat.Table FGL
+  embedded :
+    ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+      table acceptedTrace.rows
+
+/-- Load-scoped shared accepted trace plus Mem-table embedding. -/
+def OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      AcceptedAirMainMemFullTraceWithMemTable m
+  | .lbu .. =>
+      AcceptedAirMainMemFullTraceWithMemTable m
+  | .lhu .. =>
+      AcceptedAirMainMemFullTraceWithMemTable m
+  | .lwu .. =>
+      AcceptedAirMainMemFullTraceWithMemTable m
+  | .lb_via_static_match .. =>
+      AcceptedAirMainMemFullTraceWithMemTable m
+  | .lh_via_static_match .. =>
+      AcceptedAirMainMemFullTraceWithMemTable m
+  | .lw_via_static_match .. =>
+      AcceptedAirMainMemFullTraceWithMemTable m
+  | _ => ULift.{2, 0} Unit
+
+/-- The accepted trace contained in the shared trace/table bridge object. -/
+def OpEnvelope.acceptedTraceOfFullTraceWithMemTable
+    (env : OpEnvelope state m r_main)
+    (traceWithTable :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope] at traceWithTable ⊢
+  case ld => exact traceWithTable.acceptedTrace
+  case lbu => exact traceWithTable.acceptedTrace
+  case lhu => exact traceWithTable.acceptedTrace
+  case lwu => exact traceWithTable.acceptedTrace
+  case lb_via_static_match => exact traceWithTable.acceptedTrace
+  case lh_via_static_match => exact traceWithTable.acceptedTrace
+  case lw_via_static_match => exact traceWithTable.acceptedTrace
+  all_goals exact ()
+
+/-- Selected load-row coverage in the concrete FullEnsemble Mem table
+    projection carried by the shared trace/table bridge object. -/
+def OpEnvelope.SelectedMemReadReplayRowInTraceTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (traceWithTable :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable
+          traceWithTable.table
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable
+          traceWithTable.table
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable
+          traceWithTable.table
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable
+          traceWithTable.table
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable
+          traceWithTable.table
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable
+          traceWithTable.table
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable
+          traceWithTable.table
+  | _ => True
+
+/-- Split-indexed Sail prefix-state equality at the accepted trace contained
+    in the shared trace/table bridge object. -/
+def OpEnvelope.SelectedPrefixStateAtTraceTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (traceWithTable :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope) : Prop :=
+  env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+    (env.acceptedTraceOfFullTraceWithMemTable traceWithTable)
+
+/-- Build the current public accepted-memory evidence object from the next
+    upstream full-execution bridge shape: a shared accepted trace, a concrete
+    FullEnsemble Mem-table embedding into that trace, selected row coverage in
+    the table projection, and selected prefix-state equality. -/
+def OpEnvelope.acceptedAirMainMemTraceEvidenceAtEnvelope_of_traceTable
+    (env : OpEnvelope state m r_main)
+    (traceWithTable :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope)
+    (h_selected :
+      env.SelectedMemReadReplayRowInTraceTableAtEnvelope traceWithTable)
+    (h_state :
+      env.SelectedPrefixStateAtTraceTableAtEnvelope traceWithTable) :
+    env.AcceptedAirMainMemTraceEvidenceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope,
+      OpEnvelope.SelectedMemReadReplayRowInTraceTableAtEnvelope,
+      OpEnvelope.SelectedPrefixStateAtTraceTableAtEnvelope,
+      OpEnvelope.acceptedTraceOfFullTraceWithMemTable]
+      at traceWithTable h_selected h_state ⊢
+  case ld =>
+    exact
+      { acceptedTrace := traceWithTable.acceptedTrace
+        selectedReadRow :=
+          ⟨traceWithTable.table, traceWithTable.embedded,
+            by
+              simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+                using h_selected⟩
+        selectedPrefixState := h_state }
+  case lbu =>
+    exact
+      { acceptedTrace := traceWithTable.acceptedTrace
+        selectedReadRow :=
+          ⟨traceWithTable.table, traceWithTable.embedded,
+            by
+              simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+                using h_selected⟩
+        selectedPrefixState := h_state }
+  case lhu =>
+    exact
+      { acceptedTrace := traceWithTable.acceptedTrace
+        selectedReadRow :=
+          ⟨traceWithTable.table, traceWithTable.embedded,
+            by
+              simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+                using h_selected⟩
+        selectedPrefixState := h_state }
+  case lwu =>
+    exact
+      { acceptedTrace := traceWithTable.acceptedTrace
+        selectedReadRow :=
+          ⟨traceWithTable.table, traceWithTable.embedded,
+            by
+              simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+                using h_selected⟩
+        selectedPrefixState := h_state }
+  case lb_via_static_match =>
+    exact
+      { acceptedTrace := traceWithTable.acceptedTrace
+        selectedReadRow :=
+          ⟨traceWithTable.table, traceWithTable.embedded,
+            by
+              simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+                using h_selected⟩
+        selectedPrefixState := h_state }
+  case lh_via_static_match =>
+    exact
+      { acceptedTrace := traceWithTable.acceptedTrace
+        selectedReadRow :=
+          ⟨traceWithTable.table, traceWithTable.embedded,
+            by
+              simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+                using h_selected⟩
+        selectedPrefixState := h_state }
+  case lw_via_static_match =>
+    exact
+      { acceptedTrace := traceWithTable.acceptedTrace
+        selectedReadRow :=
+          ⟨traceWithTable.table, traceWithTable.embedded,
+            by
+              simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+                ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+                using h_selected⟩
+        selectedPrefixState := h_state }
+  all_goals
+    exact
+      { acceptedTrace := ()
+        selectedReadRow := trivial
+        selectedPrefixState := trivial }
+
 /-- Build the selected-prefix cursor from the two explicit selected-row
     obligations at the accepted AIR/Main/Mem boundary: row membership in the
     accepted chronological trace and split-indexed Sail prefix-state equality. -/

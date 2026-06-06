@@ -52,6 +52,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Connect selected Mem provider read projections to accepted chronological row membership through an explicit embedding obligation.
 - [x] Expose selected-row membership and split-indexed prefix-state equality directly in the public compliance theorem signature.
 - [x] Factor selected-row membership through an explicit FullEnsemble Mem read-replay row embedding obligation.
+- [x] Add an accepted trace/table bridge constructor for the current public Mem evidence.
 - [ ] Prove `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -558,3 +559,18 @@ global compliance closure print, targeted retired-memory scans, extractor skip
 scan, generated zero-entry checks, and `nix run .#test` passed for this slice.
 The remaining open proof is deriving that evidence object from accepted
 FullEnsemble/full execution data.
+
+The current trace/table bridge slice adds
+`AcceptedAirMainMemFullTraceWithMemTable`,
+`OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope`,
+`OpEnvelope.SelectedMemReadReplayRowInTraceTableAtEnvelope`, and
+`OpEnvelope.acceptedAirMainMemTraceEvidenceAtEnvelope_of_traceTable`. This is
+the next upstream shape for accepted full execution integration: a shared
+accepted AIR/Main/Mem trace, a concrete FullEnsemble Mem table whose projected
+read-replay rows embed in that trace, selected load membership in that table
+projection, and split-indexed Sail prefix-state equality construct the current
+public `AcceptedAirMainMemTraceEvidenceAtEnvelope`. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed for this slice. The
+remaining open proof is unchanged but sharper: derive the shared accepted trace
+and table embedding once, and derive selected table projection membership plus
+prefix-state equality for each load cursor from accepted full execution data.
