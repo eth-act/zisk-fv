@@ -25,11 +25,11 @@ open ZiskFv.ZiskCircuit.MemTrace
 /-- Accepted full Mem trace facts for chronological raw memory-bus rows.
 
 The rows are already projected to the public memory-bus row type used by the
-load replay layer. `readWriteSound` is the semantic content needed for loads:
-active memory reads emit the replayed value, and active memory writes update
-the replay memory in bus-effect shape. The remaining fields name the global
-AIR obligations that must eventually prove this object from accepted Mem trace
-data rather than from caller evidence. -/
+load replay layer. `prefixReadSound` is the semantic content needed for loads:
+every active memory read row emits the value obtained by replaying the
+chronological prefix before that row. The remaining fields name the global AIR
+obligations that must eventually prove this object from accepted Mem trace data
+rather than from caller evidence. -/
 structure AcceptedFullMemoryBusRowsTrace
     (initialState : SailState)
     (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
@@ -40,7 +40,7 @@ structure AcceptedFullMemoryBusRowsTrace
   eventOrderingSound : Prop
   segmentCarrySound : Prop
   dualEventsSound : Prop
-  readWriteSound : MemoryBusRowsReadWriteSound initialMemory rows
+  prefixReadSound : MemoryBusRowsPrefixReadSound initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
 
 /-- Lower the global Mem trace spec to the replay construction object consumed
@@ -55,7 +55,9 @@ def AcceptedFullMemoryBusRowsTrace.toRowsTraceConstruction
     eventOrderingSound := trace.eventOrderingSound
     segmentCarrySound := trace.segmentCarrySound
     dualEventsSound := trace.dualEventsSound
-    rowsReadWriteSound := trace.readWriteSound
+    rowsReadWriteSound :=
+      memoryBusRowsReadWriteSound_of_prefixReadSound
+        trace.initialMemory rows trace.prefixReadSound
     initialAgreement := trace.initialAgreement }
 
 end ZiskFv.AirsClean.Mem

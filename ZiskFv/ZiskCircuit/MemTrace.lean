@@ -631,6 +631,14 @@ def replayMemoryAfterBusRow
   else
     mem
 
+/-- Replay memory after a chronological prefix of raw memory-bus rows. -/
+@[reducible]
+def replayMemoryAfterBusRows
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (rows : List (MemoryBusEntry FGL)) :
+    Std.ExtHashMap Nat (BitVec 8) :=
+  rows.foldl replayMemoryAfterBusRow mem
+
 /-- Row-level global replay soundness for chronological raw memory-bus rows.
 
 For every active memory read row, the emitted value must equal the replay
@@ -647,6 +655,47 @@ def MemoryBusRowsReadWriteSound :
           ReadEventReplayAgreement mem (eventOfEntry row))
       ∧ MemoryBusRowsReadWriteSound
           (replayMemoryAfterBusRow mem row) rest
+
+/-- Prefix-indexed read soundness for chronological raw memory-bus rows.
+
+This is the shape expected from accepted AIR trace data: for every selected
+read row in the chronological list, the row's emitted value agrees with the
+memory obtained by replaying the preceding rows. -/
+def MemoryBusRowsPrefixReadSound
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rows : List (MemoryBusEntry FGL)) : Prop :=
+  ∀ priorRows row laterRows,
+    rows = priorRows ++ row :: laterRows →
+      row.as = (2 : FGL) →
+        row.multiplicity = (-1 : FGL) →
+          ReadEventReplayAgreement
+            (replayMemoryAfterBusRows initialMemory priorRows)
+            (eventOfEntry row)
+
+/-- Prefix-indexed read soundness implies the recursive row-level replay
+    predicate consumed by the memory-bus trace bridge. -/
+theorem memoryBusRowsReadWriteSound_of_prefixReadSound
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rows : List (MemoryBusEntry FGL))
+    (h_prefix : MemoryBusRowsPrefixReadSound initialMemory rows) :
+    MemoryBusRowsReadWriteSound initialMemory rows := by
+  induction rows generalizing initialMemory with
+  | nil =>
+      simp [MemoryBusRowsReadWriteSound]
+  | cons row rest ih =>
+      simp only [MemoryBusRowsReadWriteSound]
+      constructor
+      · intro h_as h_mult
+        exact h_prefix [] row rest (by simp) h_as h_mult
+      · apply ih
+        intro priorRows selectedRow laterRows h_split h_as h_mult
+        have h_rows_split :
+            row :: rest = (row :: priorRows) ++ selectedRow :: laterRows := by
+          simp [h_split]
+        have h_selected :=
+          h_prefix (row :: priorRows) selectedRow laterRows
+            h_rows_split h_as h_mult
+        simpa [replayMemoryAfterBusRows] using h_selected
 
 @[simp]
 lemma memoryBusTraceEventOfRow_read
