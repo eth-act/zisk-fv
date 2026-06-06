@@ -163,15 +163,14 @@ The rows are already projected to the public memory-bus row type used by the
 load replay layer. `prefixReadSound` is the semantic content needed for loads:
 every active memory read row emits the value obtained by replaying the
 chronological prefix before that row. The remaining fields name the global AIR
-obligations that must eventually prove this object from accepted Mem trace data
-rather than from caller evidence. -/
+obligations that are actually consumed by the replay bridge and must
+eventually be proved from accepted Mem trace data rather than from caller
+evidence. -/
 structure AcceptedFullMemoryBusRowsTrace
     (initialState : SailState)
     (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
   initialMemory : Std.ExtHashMap Nat (BitVec 8)
   chronologicalRows : MemoryBusRowsChronological rows
-  sameAddressValuePreservation :
-    MemoryBusRowsSameAddressValuePreservation rows
   prefixReadSound : MemoryBusRowsPrefixReadSound initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
 

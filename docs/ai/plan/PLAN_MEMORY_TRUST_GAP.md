@@ -266,11 +266,26 @@ soundness directly from `replayMemoryAfterBusRows`, proves event ordering and
 segment-prefix facts from `MemoryBusRowsChronological`, and proves active
 read/write rows project to replay events. Consequently
 `AcceptedFullMemoryBusRowsTrace` no longer asks callers for write-update,
-event-ordering, segment-carry, or dual-event projection evidence; its remaining
-semantic fields are chronological rows, same-address value preservation,
-prefix-indexed read replay soundness, and initial Sail/replay memory agreement.
+event-ordering, segment-carry, dual-event projection, or unused same-address
+value-preservation evidence; its remaining semantic fields are chronological
+rows, prefix-indexed read replay soundness, and initial Sail/replay memory
+agreement.
 Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed, as did full
 `lake build`, trust regeneration, both trust gates, compliance closure print
 with zero project names, retired-memory scans, generated zero-entry count
 checks, and `nix run .#test`.
+
+The current same-address-burden slice removes
+`sameAddressValuePreservation` from
+`AirsClean.Mem.AcceptedFullMemoryBusRowsTrace`. That predicate was not
+consumed by the replay bridge, and deriving the chunk-level
+`value_0/value_1` equality from byte replay soundness alone would require
+additional 32-bit chunk range facts, so keeping it in the active caller burden
+was unnecessary trust surface rather than useful proof input. The remaining
+global trace fields are chronological rows, prefix-indexed read replay
+soundness, and initial Sail/replay memory agreement. Focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+compliance closure print with zero project names, retired-memory scans,
+generated zero-entry count checks, and `nix run .#test` passed.
