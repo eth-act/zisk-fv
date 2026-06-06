@@ -5459,6 +5459,30 @@ def OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope
       env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
   | _ => ULift.{2, 0} Unit
 
+/-- Occurrence uniqueness for the selected prefix carried by the older
+    load-scoped full-execution construction object. Non-load envelopes carry
+    no memory occurrence obligation. -/
+def OpEnvelope.SelectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope) : Prop :=
+  match env with
+  | .ld .. =>
+      construction.construction.selectedPrefix.prefixUnique
+  | .lbu .. =>
+      construction.construction.selectedPrefix.prefixUnique
+  | .lhu .. =>
+      construction.construction.selectedPrefix.prefixUnique
+  | .lwu .. =>
+      construction.construction.selectedPrefix.prefixUnique
+  | .lb_via_static_match .. =>
+      construction.construction.selectedPrefix.prefixUnique
+  | .lh_via_static_match .. =>
+      construction.construction.selectedPrefix.prefixUnique
+  | .lw_via_static_match .. =>
+      construction.construction.selectedPrefix.prefixUnique
+  | _ => True
+
 /-- Lower the load-scoped full-execution memory construction target to the
     cursor-shaped extraction object consumed by the existing replay chain. -/
 noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstruction
@@ -5480,6 +5504,41 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
       OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstructionWitness
         _ construction.program construction.witness construction.construction
         construction.embedded construction.selectedEnvelopeRow
+
+/-- Lower the older full-execution construction object to the current
+    cursor-shaped public source package when selected occurrence uniqueness is
+    available. This isolates the remaining extra fact needed beyond the older
+    construction boundary. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_traceConstructionAndPrefixUnique
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope)
+    (h_unique :
+      env.SelectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope
+        construction) :
+    env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope,
+      OpEnvelope.SelectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope]
+      at construction h_unique ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    refine
+      ⟨{ length := construction.length
+         program := construction.program
+         witness := construction.witness
+         acceptedTrace :=
+           { initialState := construction.construction.initialState
+             rows := construction.construction.rows
+             construction := construction.construction.acceptedTrace }
+         embedded := construction.embedded },
+       ?_⟩
+    exact
+      { selectedEnvelopeRow := construction.selectedEnvelopeRow
+        selectedPrefix := construction.construction.selectedPrefix
+        selectedPrefixUnique := h_unique }
 
 /-- Combine shared accepted trace data with selected-prefix coverage to
     recover the packed load-scoped construction object used by the existing

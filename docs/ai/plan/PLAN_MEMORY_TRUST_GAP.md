@@ -74,6 +74,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit source-shaped public memory trace theorem boundary.
 - [x] Split cursor-to-source promotion through explicit selected-row occurrence uniqueness.
 - [x] Move public memory boundary to cursor-shaped source evidence plus uniqueness.
+- [x] Add construction-plus-uniqueness bridge to the cursor-shaped source boundary.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -142,6 +143,19 @@ for the already-promoted split-indexed source predicate. Focused `lake build
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
 regeneration, both trust gates, closure print with zero project axiom names,
 targeted retired-memory scan, and `nix run .#test` passed for this slice.
+
+The latest construction bridge adds
+`OpEnvelope.SelectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope`
+and
+`OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_traceConstructionAndPrefixUnique`.
+It proves that the older load-scoped full-execution construction object already
+contains the shared trace, selected envelope row, and selected prefix cursor
+needed by the current public memory boundary; the extra fact is exactly
+selected-prefix occurrence uniqueness. Focused `lake build
+ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, full
+`lake build`, trust regeneration, both trust gates, closure print with zero
+project axiom names, targeted retired-memory scan, and `nix run .#test` passed
+for this slice.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
