@@ -17,11 +17,13 @@ The uber theorem `zisk_riscv_compliant_program_bus` lives in
 and uses an `OpEnvelope` sum type (63 arms, one per RV64IM opcode)
 to dispatch each opcode to its `Wrappers/<Op>` wrapper. Its
 `OpEnvelope.completenessBurden` and
-`OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope` premises make explicit
+`OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope` premises make explicit
 that the current theorem starts from supplied witness evidence and, for load
-envelopes only, accepted chronological memory-bus replay evidence plus selected
-cursor data pinned to the envelope's concrete read row rather than deriving all
-of that evidence from an accepted full trace.
+envelopes only, accepted chronological raw memory-bus rows plus selected
+read-row cursor data pinned to the envelope's concrete read row rather than
+deriving all of that evidence from an accepted full trace. The projected
+`OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope` replay object is derived
+internally.
 
 To audit a single opcode's trust closure, read
 `Compliance/Wrappers/<Op>.lean` together with the canonical

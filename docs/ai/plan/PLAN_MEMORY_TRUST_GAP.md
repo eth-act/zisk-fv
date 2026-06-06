@@ -34,11 +34,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose an `OpEnvelope` constructor from accepted memory-bus execution trace data.
 - [x] Replace public accepted execution-memory trace evidence with chronological memory-bus trace evidence.
 - [x] Prove load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` from accepted full-trace data rather than taking it as caller evidence.
-- [ ] Prove `OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope` from accepted AIR/Main/Mem full-trace data.
+- [x] Replace public `AcceptedFullMemoryBusTraceAtEnvelope` evidence with raw chronological memory-bus row evidence.
+- [ ] Prove `OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages accepted chronological memory-bus replay data plus a selected cursor pinned to the envelope's concrete read row. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with the selected cursor agreement derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR-to-bus-event theorem that proves the chronological memory-bus event list and selected cursor from Mem/Main trace data.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages accepted chronological raw memory-bus rows plus a selected read-row cursor pinned to the envelope's concrete read row. Those rows are projected internally to chronological memory-bus read/write events by `memoryBusTraceEventsOfRows`, then `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix and combined with cursor agreement derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR/Main/Mem theorem that proves chronological raw memory-bus rows, row-projected replay soundness, selected read-row coverage, and the selected Sail state cursor from accepted trace data.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -114,6 +115,19 @@ zero project axiom names, retired-memory scans, and `nix run .#test` passed for
 this slice. The remaining open theorem is deriving
 `AcceptedFullMemoryBusTraceAtEnvelope` from accepted AIR/Main/Mem full-trace
 data.
+The latest row-projection slice strengthens the public boundary one more step:
+`AcceptedFullMemoryBusRowsTraceAtEnvelope` carries chronological raw
+memory-bus rows, `AcceptedMemoryBusRowsTrace` accepts the read/write projection
+of those rows, and `acceptedFullMemoryBusTraceAtEnvelope_of_rowsTraceAtEnvelope`
+derives the previous event-list boundary internally. Focused `lake build
+ZiskFv.ZiskCircuit.MemTrace ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
+passed for this slice. Full `lake build`, trust regeneration, both trust gates,
+global closure print with zero project axiom names, targeted retired-memory
+scans, the broad plan scan, and `nix run .#test` also passed. The remaining open theorem is
+deriving `AcceptedFullMemoryBusRowsTraceAtEnvelope` from accepted AIR/Main/Mem
+full-trace data, including row chronology, Mem continuity/read-value
+soundness, initial memory agreement, selected read-row coverage, and selected
+Sail state cursor equality.
 
 The local `rv64im-completeness` branch was checked non-destructively. It adds
 raw-instruction completeness and `OpEnvelope`/Aeneas bridge predicates, but it

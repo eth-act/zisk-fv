@@ -2644,6 +2644,74 @@ structure AcceptedLoadFullMemoryBusTraceAtCursor
   selected :
     SelectedLoadMemoryBusReadCursor state initialState events entry
 
+/-- Selected load cursor in the chronological raw memory-bus row list. This is
+    closer to the full AIR/Main/Mem trace shape than an already-projected event
+    cursor: the split is over the concrete memory-bus rows, and the selected
+    row must project to the envelope's read event. -/
+structure SelectedLoadMemoryBusReadRowCursor
+    (state initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  priorRows : List (Interaction.MemoryBusEntry FGL)
+  laterRows : List (Interaction.MemoryBusEntry FGL)
+  trace_split : rows = priorRows ++ entry :: laterRows
+  selected_read :
+    ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
+      some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry)
+  state_eq :
+    state =
+      ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusTrace initialState
+        (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows priorRows)
+
+/-- Accepted chronological raw memory-bus rows plus the selected load row
+    cursor for one envelope. The remaining AIR theorem should construct this
+    object from full Main/Mem accepted trace data: chronological rows, Mem
+    continuity/read-value soundness, initial memory agreement, and selected
+    envelope row coverage. -/
+structure AcceptedLoadFullMemoryBusRowsTraceAtCursor
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  rowsTrace :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryBusRowsTrace
+      initialState rows
+  selected :
+    SelectedLoadMemoryBusReadRowCursor state initialState rows entry
+
+/-- Project accepted raw memory-bus row evidence to accepted memory-bus event
+    evidence by filtering the chronological rows to memory read/write events. -/
+def acceptedLoadFullMemoryBusTraceAtCursor_of_rowsTrace
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL)
+    (construction :
+      AcceptedLoadFullMemoryBusRowsTraceAtCursor state entry) :
+    AcceptedLoadFullMemoryBusTraceAtCursor state entry := by
+  rcases construction with
+    ⟨initialState, rows, rowsTrace,
+      ⟨priorRows, laterRows, trace_split, selected_read, state_eq⟩⟩
+  refine
+    { initialState := initialState
+      events :=
+        ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows
+          rows
+      busTrace :=
+        ZiskFv.ZiskCircuit.MemTrace.acceptedMemoryBusExecutionTrace_of_rowsTrace
+          initialState rows rowsTrace
+      selected :=
+        { priorEvents :=
+            ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows
+              priorRows
+          laterEvents :=
+            ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows
+              laterRows
+          trace_split := ?_
+          state_eq := state_eq } }
+  rw [trace_split,
+    ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows_append]
+  simp [ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows,
+    selected_read]
+
 /-- Lower replay construction for one selected load cursor. This object is
     derived from `AcceptedLoadFullMemoryBusTraceAtCursor`; it remains separate
     because downstream load-memory agreement already consumes this shape. -/
@@ -2774,6 +2842,44 @@ def OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
       AcceptedLoadFullMemoryBusTraceAtCursor state bus.e1
   | _ => Unit
+
+/-- Public accepted raw memory-bus row trace burden, scoped to load envelopes.
+    This is the AIR-shaped predecessor of `AcceptedFullMemoryBusTraceAtEnvelope`:
+    load envelopes carry chronological raw memory-bus rows plus a selected
+    cursor for the envelope's concrete read row. -/
+def OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceAtCursor state bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceAtCursor state bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceAtCursor state bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceAtCursor state bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceAtCursor state bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceAtCursor state bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceAtCursor state bus.e1
+  | _ => Unit
+
+/-- Derive accepted memory-bus event trace evidence from accepted raw
+    memory-bus rows and the selected read-row cursor for this envelope. -/
+def OpEnvelope.acceptedFullMemoryBusTraceAtEnvelope_of_rowsTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction : env.AcceptedFullMemoryBusRowsTraceAtEnvelope) :
+    env.AcceptedFullMemoryBusTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope,
+      OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope] at construction ⊢
+  all_goals
+    first
+    | exact ()
+    | exact acceptedLoadFullMemoryBusTraceAtCursor_of_rowsTrace
+        state _ construction
 
 /-- Derive lower memory-bus execution replay evidence from accepted full-trace
     data and the selected read cursor for this envelope. -/

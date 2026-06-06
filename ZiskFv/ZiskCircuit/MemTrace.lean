@@ -592,6 +592,45 @@ def memoryBusTraceEventsToMemTrace
     (events : List MemoryBusTraceEvent) : List MemEvent :=
   events.map MemoryBusTraceEvent.toMemEvent
 
+/-- Project a legacy memory-bus row into a chronological memory replay event.
+    Only memory-address-space rows with active read/write multiplicity
+    participate in memory replay; register-space and no-effect rows are
+    ignored. -/
+@[reducible]
+def memoryBusTraceEventOfRow
+    (entry : MemoryBusEntry FGL) : Option MemoryBusTraceEvent :=
+  if entry.as = (2 : FGL) then
+    if entry.multiplicity = (-1 : FGL) then
+      some (MemoryBusTraceEvent.read entry)
+    else if entry.multiplicity = (1 : FGL) then
+      some (MemoryBusTraceEvent.write entry)
+    else
+      none
+  else
+    none
+
+/-- Chronological memory replay events projected from raw memory-bus rows. -/
+@[reducible]
+def memoryBusTraceEventsOfRows
+    (rows : List (MemoryBusEntry FGL)) : List MemoryBusTraceEvent :=
+  rows.filterMap memoryBusTraceEventOfRow
+
+@[simp]
+lemma memoryBusTraceEventOfRow_read
+    (entry : MemoryBusEntry FGL)
+    (h_as : entry.as = (2 : FGL))
+    (h_mult : entry.multiplicity = (-1 : FGL)) :
+    memoryBusTraceEventOfRow entry =
+      some (MemoryBusTraceEvent.read entry) := by
+  simp [memoryBusTraceEventOfRow, h_as, h_mult]
+
+@[simp]
+lemma memoryBusTraceEventsOfRows_append
+    (xs ys : List (MemoryBusEntry FGL)) :
+    memoryBusTraceEventsOfRows (xs ++ ys) =
+      memoryBusTraceEventsOfRows xs ++ memoryBusTraceEventsOfRows ys := by
+  simp [memoryBusTraceEventsOfRows]
+
 /-- Sail state after applying a chronological list of memory-bus events. -/
 @[reducible]
 def stateAfterMemoryBusTrace
@@ -612,6 +651,31 @@ structure AcceptedMemoryBusExecutionTrace
   accepted : AcceptedMemTrace (memoryBusTraceEventsToMemTrace events)
   initialAgreement :
     ReplayMemoryAgreement initialState accepted.initialMemory
+
+/-- Accepted chronological raw memory-bus rows.
+
+This is the first construction layer shaped like the full AIR/Main/Mem trace:
+callers provide the raw memory-bus rows in chronological order, plus the Mem
+continuity/read-value soundness needed for their read/write projection. -/
+structure AcceptedMemoryBusRowsTrace
+    (initialState : SailState)
+    (rows : List (MemoryBusEntry FGL)) : Type where
+  accepted :
+    AcceptedMemTrace
+      (memoryBusTraceEventsToMemTrace (memoryBusTraceEventsOfRows rows))
+  initialAgreement :
+    ReplayMemoryAgreement initialState accepted.initialMemory
+
+/-- Raw chronological bus rows induce the existing accepted memory-bus event
+    trace once their event projection is accepted. -/
+def acceptedMemoryBusExecutionTrace_of_rowsTrace
+    (initialState : SailState)
+    (rows : List (MemoryBusEntry FGL))
+    (rowsTrace : AcceptedMemoryBusRowsTrace initialState rows) :
+    AcceptedMemoryBusExecutionTrace initialState
+      (memoryBusTraceEventsOfRows rows) :=
+  { accepted := rowsTrace.accepted
+    initialAgreement := rowsTrace.initialAgreement }
 
 /-- Replaying a chronological memory-bus prefix preserves Sail/replay memory
 agreement. -/
