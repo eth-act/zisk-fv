@@ -639,6 +639,70 @@ def replayMemoryAfterBusRows
     Std.ExtHashMap Nat (BitVec 8) :=
   rows.foldl replayMemoryAfterBusRow mem
 
+/-- Replaying raw memory-bus rows is the same memory update as replaying their
+    projected read/write event list. This lets AIR-facing proofs reason over
+    raw rows while the existing load bridge continues to consume Mem events. -/
+theorem replayMemoryAfterBusRows_eq_replayEvents
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (rows : List (MemoryBusEntry FGL)) :
+    replayMemoryAfterBusRows mem rows =
+      replayEvents mem
+        (memoryBusTraceEventsToMemTrace (memoryBusTraceEventsOfRows rows)) := by
+  induction rows generalizing mem with
+  | nil =>
+      simp [replayMemoryAfterBusRows, memoryBusTraceEventsOfRows,
+        memoryBusTraceEventsToMemTrace, replayEvents]
+  | cons row rest ih =>
+      by_cases h_as : row.as = (2 : FGL)
+      · by_cases h_read : row.multiplicity = (-1 : FGL)
+        · have h_event :
+            memoryBusTraceEventOfRow row =
+              some (MemoryBusTraceEvent.read row) := by
+              simp [memoryBusTraceEventOfRow, h_as, h_read]
+          have h_row_replay :
+              replayMemoryAfterBusRow mem row = mem := by
+            have h_not_write : ¬row.multiplicity = (1 : FGL) := by
+              intro h_write
+              have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
+                native_decide
+              exact h_one_ne_neg_one (h_write.symm.trans h_read)
+            simp [replayMemoryAfterBusRow, h_as, h_not_write]
+          simpa [replayMemoryAfterBusRows, memoryBusTraceEventsOfRows,
+            memoryBusTraceEventsToMemTrace, replayEvents, h_event,
+            MemoryBusTraceEvent.toMemEvent, h_row_replay] using ih mem
+        · by_cases h_write : row.multiplicity = (1 : FGL)
+          · have h_event :
+              memoryBusTraceEventOfRow row =
+                some (MemoryBusTraceEvent.write row) := by
+              have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
+                native_decide
+              simp [memoryBusTraceEventOfRow, h_as, h_write,
+                h_one_ne_neg_one]
+            have h_row_replay :
+                replayMemoryAfterBusRow mem row =
+                  replayStoreEvent mem (storeEventOfEntry row) := by
+              simp [replayMemoryAfterBusRow, h_as, h_write]
+            simpa [replayMemoryAfterBusRows, memoryBusTraceEventsOfRows,
+              memoryBusTraceEventsToMemTrace, replayEvents, h_event,
+              MemoryBusTraceEvent.toMemEvent, storeEventOfEntry,
+              h_row_replay] using
+              ih (replayStoreEvent mem (storeEventOfEntry row))
+          · have h_event : memoryBusTraceEventOfRow row = none := by
+              simp [memoryBusTraceEventOfRow, h_as, h_read, h_write]
+            have h_row_replay :
+                replayMemoryAfterBusRow mem row = mem := by
+              simp [replayMemoryAfterBusRow, h_as, h_write]
+            simpa [replayMemoryAfterBusRows, memoryBusTraceEventsOfRows,
+              memoryBusTraceEventsToMemTrace, h_event, h_row_replay] using
+              ih mem
+      · have h_event : memoryBusTraceEventOfRow row = none := by
+          simp [memoryBusTraceEventOfRow, h_as]
+        have h_row_replay :
+            replayMemoryAfterBusRow mem row = mem := by
+          simp [replayMemoryAfterBusRow, h_as]
+        simpa [replayMemoryAfterBusRows, memoryBusTraceEventsOfRows,
+          memoryBusTraceEventsToMemTrace, h_event, h_row_replay] using ih mem
+
 /-- Row-level global replay soundness for chronological raw memory-bus rows.
 
 For every active memory read row, the emitted value must equal the replay
@@ -812,6 +876,13 @@ def stateAfterMemoryBusTrace
   events.foldl
     (fun state event => MemoryBusTraceEvent.applyState state event)
     initial
+
+/-- Sail state after applying the read/write projection of chronological raw
+    memory-bus rows. -/
+@[reducible]
+def stateAfterMemoryBusRows
+    (initial : SailState) (rows : List (MemoryBusEntry FGL)) : SailState :=
+  stateAfterMemoryBusTrace initial (memoryBusTraceEventsOfRows rows)
 
 /-- Accepted chronological memory-bus execution trace.
 

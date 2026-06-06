@@ -40,11 +40,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add a named global Mem row-trace spec and derive the lower row construction from it.
 - [x] Replace recursive row-level read/write replay evidence with prefix-indexed row obligations.
 - [x] Derive selected load cursor read facts from row tags and the global prefix-indexed trace spec.
+- [x] Add raw memory-bus row prefix replay helpers for selected cursor construction.
 - [ ] Prove `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages a global Mem row-trace spec plus a selected read-row cursor pinned to the envelope's concrete read row. The global spec names chronological raw memory-bus rows, prefix-indexed read replay soundness, initial memory agreement, same-address preservation, write update, segment carry, and dual-event obligations; the recursive `MemoryBusRowsReadWriteSound` consumed by lower replay code is derived internally from the prefix-indexed row obligation. Selected row cursors can now be built from row splits plus ordinary memory-read tags, and the selected prefix read agreement is projected from the global trace spec. Selected Sail cursor agreement is still derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR/Main/Mem theorem that proves the global Mem row-trace spec, selected read-row coverage, and the selected Sail state cursor from accepted trace data.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages a global Mem row-trace spec plus a selected read-row cursor pinned to the envelope's concrete read row. The global spec names chronological raw memory-bus rows, prefix-indexed read replay soundness, initial memory agreement, same-address preservation, write update, segment carry, and dual-event obligations; the recursive `MemoryBusRowsReadWriteSound` consumed by lower replay code is derived internally from the prefix-indexed row obligation. Raw row replay now has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The selected prefix read agreement is projected from the global trace spec, while selected Sail cursor agreement is still derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR/Main/Mem theorem that proves the global Mem row-trace spec, selected read-row coverage, and the selected Sail state cursor from accepted trace data.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -164,3 +165,10 @@ does not introduce a Mem replay trace, Sail/replay cursor agreement, or
 selected Mem event coverage theorem. The remaining memory gap therefore cannot
 be closed by simply consuming the PR #60 interface; it needs a new accepted
 Mem full-trace construction layer.
+
+The raw-row replay helper slice proves
+`replayMemoryAfterBusRows_eq_replayEvents`, adds `stateAfterMemoryBusRows`,
+and updates selected cursor constructors to use the raw-row state alias.
+Focused build, full `lake build`, trust regeneration, both trust gates,
+compliance closure print with zero project names, targeted retired-memory
+scans, the broad plan scan, and `nix run .#test` passed for this slice.

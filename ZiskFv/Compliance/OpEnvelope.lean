@@ -2678,9 +2678,8 @@ def SelectedLoadMemoryBusReadRowCursor.of_split_read_tags
     (h_mult : entry.multiplicity = (-1 : FGL))
     (h_state :
       state =
-        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusTrace initialState
-          (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows
-            priorRows)) :
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+          initialState priorRows) :
     SelectedLoadMemoryBusReadRowCursor state initialState rows entry :=
   { priorRows := priorRows
     laterRows := laterRows
@@ -2753,9 +2752,8 @@ def AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.of_split_read_tags
     (h_mult : entry.multiplicity = (-1 : FGL))
     (h_state :
       state =
-        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusTrace initialState
-          (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsOfRows
-            priorRows)) :
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+          initialState priorRows) :
     AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state entry :=
   { initialState := initialState
     rows := rows
