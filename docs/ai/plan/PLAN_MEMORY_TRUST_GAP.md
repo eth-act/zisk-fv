@@ -835,3 +835,11 @@ data. Focused `lake build ZiskFv.Compliance.OpEnvelope`, focused
 global compliance closure print, targeted retired-memory scan, and
 `nix run .#test` passed. This is a migration helper, not the final upstream
 construction theorem.
+
+Post-commit source inspection did not find a broader accepted full-execution
+witness object that already proves the memory trace. `FullEnsemble` exposes
+the RV64IM ensemble, table selection, and balanced-channel projections, while
+`Main` exposes row-local/ROM/memory-bus Clean component surfaces. The missing
+source theorem still has to connect those accepted witness tables to
+chronological memory rows, prefix replay/state coverage, and selected envelope
+row occurrence; it is not currently available as a global execution object.
