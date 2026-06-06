@@ -81,6 +81,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Move the public compliance theorem memory premise to shared full-execution trace plus per-envelope coverage.
 - [x] Split the public compliance theorem memory premise into load-scoped shared trace plus indexed coverage.
 - [x] Add direct projections from full-execution memory construction to the split public trace and coverage binders.
+- [x] Add a shared-trace theorem wrapper for the split public compliance theorem.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1005,3 +1006,15 @@ constructed from accepted full execution, especially `rowsNodup`,
 embedding, selected envelope-row occurrence, and selected prefix cursor
 coverage. These fields are visible rather than hidden, but they are still the
 proof work left to close.
+
+The shared-trace wrapper slice adds
+`OpEnvelope.acceptedFullExecutionMemoryTraceAtEnvelope_of_fullTrace`,
+`OpEnvelope.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_fullTraceCoverage`,
+and
+`zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace`. This variant
+consumes one shared `AcceptedFullExecutionMemoryTrace` plus ordinary
+per-envelope coverage, then lowers to the current split public theorem
+internally. Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
+passed; full `lake build`, trust regeneration, both trust gates, closure print
+with zero project axiom names, targeted retired-memory scan, and
+`nix run .#test` also passed.

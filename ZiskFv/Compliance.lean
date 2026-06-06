@@ -196,4 +196,25 @@ theorem zisk_riscv_compliant_program_bus
   · exact zisk_riscv_compliant_program_bus_misc env h_memory_burden
   · exact zisk_riscv_compliant_program_bus_remaining env h_memory_burden h_known_bugs
 
+/-- Variant of the global theorem whose memory input is the shared
+    full-execution trace object plus ordinary per-envelope coverage.
+
+    This is the source-shaped target for future accepted-full-execution
+    integration: construct one `AcceptedFullExecutionMemoryTrace`, prove the
+    selected load coverage for the current envelope, then lower to the current
+    split public theorem boundary internally. -/
+theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (coverage :
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus env h_burden
+    (env.acceptedFullExecutionMemoryTraceAtEnvelope_of_fullTrace fullTrace)
+    (env.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_fullTraceCoverage
+      fullTrace coverage)
+    h_known_bugs
+
 end ZiskFv.Compliance

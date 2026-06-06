@@ -5394,6 +5394,39 @@ def OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope
         fullTraceAtEnvelope
   | _ => ULift.{1, 0} Unit
 
+/-- Project a shared full-execution memory trace into the load-scoped split
+    public boundary. Non-load envelopes carry no memory trace data. -/
+def OpEnvelope.acceptedFullExecutionMemoryTraceAtEnvelope_of_fullTrace
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) :
+    env.AcceptedFullExecutionMemoryTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope]
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact fullTrace
+
+/-- Project ordinary coverage for a shared full-execution memory trace into
+    the indexed split public boundary. -/
+def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_fullTraceCoverage
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (coverage :
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace) :
+    env.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope
+      (env.acceptedFullExecutionMemoryTraceAtEnvelope_of_fullTrace
+        fullTrace) := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope,
+      OpEnvelope.acceptedFullExecutionMemoryTraceAtEnvelope_of_fullTrace]
+      at coverage ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact coverage
+
 /-- Pack the split load-scoped trace plus selected coverage back into the
     compatibility package consumed by the existing replay bridge. -/
 noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_split
