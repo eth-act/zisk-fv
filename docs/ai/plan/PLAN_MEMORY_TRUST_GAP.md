@@ -83,6 +83,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add direct projections from full-execution memory construction to the split public trace and coverage binders.
 - [x] Add a shared-trace theorem wrapper for the split public compliance theorem.
 - [x] Add an accepted AIR/Main/Mem trace wrapper for the shared-trace theorem.
+- [x] Decompose accepted AIR/Main/Mem coverage into selected prefix plus selected witness Mem-row evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -201,6 +202,18 @@ the full RV64IM witness, mutable-Mem embedding, and selected per-envelope
 coverage; it does not prove the remaining semantic Mem fields. Focused
 `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 trust regeneration, both trust gates, closure print with no project axiom names,
+targeted retired-memory scan, and `nix run .#test` passed.
+
+The selected-coverage slice adds
+`OpEnvelope.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope`,
+`acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection`, and
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSelection`. It unpacks
+the per-envelope memory coverage obligation into the selected chronological
+prefix and selected witness Mem-row occurrence that accepted full execution
+must actually produce. This still does not prove the semantic
+`AcceptedAirMainMemFullTrace` fields. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust gates, closure print with no project axiom names,
 targeted retired-memory scan, and `nix run .#test` passed.
 
 The public theorem-surface, shared trace-context, and

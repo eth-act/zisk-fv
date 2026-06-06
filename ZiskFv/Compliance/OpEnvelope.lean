@@ -4998,6 +4998,64 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
   selectedEnvelopeRow :
     env.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace fullTrace
 
+/-- Unpacked per-envelope selection facts for accepted AIR/Main/Mem trace data.
+
+    This is the shape accepted full-execution integration is expected to
+    produce for each load envelope once the shared trace and witness-level
+    Mem-table embedding are known: the selected prefix cursor in the accepted
+    chronological Mem trace, plus the selected envelope Mem-row occurrence in
+    the witness-selected mutable Mem table. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows) : Type 1 where
+  selectedPrefix :
+    env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace
+        (AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
+          program witness acceptedTrace embedded))
+  selectedEnvelopeRow :
+    env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        program witness acceptedTrace embedded)
+
+/-- Repack unpacked selected-prefix/selected-row evidence into the shared
+    full-execution coverage object consumed by the current compliance proof. -/
+def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
+        program witness acceptedTrace embedded) :
+    env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+      (AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
+        program witness acceptedTrace embedded) :=
+  { selectedPrefix := selection.selectedPrefix
+    selectedEnvelopeRow := by
+      cases env <;>
+        simp [OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace,
+          OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness]
+          at selection ⊢
+      all_goals
+        exact selection.selectedEnvelopeRow }
+
 /-- Source-shaped per-envelope coverage facts for a shared full-execution
     memory trace.
 

@@ -248,4 +248,35 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTrace
       program witness acceptedTrace embedded)
     coverage h_known_bugs
 
+/-- Variant of the global theorem whose per-envelope memory input is the
+    unpacked selected-prefix and selected witness Mem-row evidence.
+
+    This is the next accepted-execution integration shape after constructing
+    the shared accepted AIR/Main/Mem trace and mutable-Mem embedding. It still
+    leaves the semantic Mem trace construction itself explicit in
+    `acceptedTrace`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
+        program witness acceptedTrace embedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTrace
+    env h_burden program witness acceptedTrace embedded
+    (env.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
+      program witness acceptedTrace embedded selection)
+    h_known_bugs
+
 end ZiskFv.Compliance
