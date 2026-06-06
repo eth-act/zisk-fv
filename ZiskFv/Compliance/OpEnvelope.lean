@@ -2233,8 +2233,19 @@ def OpEnvelope.tableProviderBurden
 /-- Marker for memory agreement, byte facts, and Mem/Main memory-bus witness
     facts carried by load/store `OpEnvelope` constructors. -/
 def OpEnvelope.memoryBurden
-    (_env : OpEnvelope state m r_main) : Prop :=
-  True
+    (env : OpEnvelope state m r_main) : Prop :=
+  match env with
+  | .ld _ _ _ _ _ promises .. => promises.memoryBurden
+  | .lbu _ _ _ _ _ _ _ promises .. => promises.memoryBurden
+  | .lhu _ _ _ _ _ _ _ promises .. => promises.memoryBurden
+  | .lwu _ _ _ _ _ _ _ promises .. => promises.memoryBurden
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ _ _ promises .. =>
+      promises.memoryBurden
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ _ _ promises .. =>
+      promises.memoryBurden
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ _ _ promises .. =>
+      promises.memoryBurden
+  | _ => True
 
 /-- Marker for route pins, message equality, row equality, and bus-match facts
     carried by `OpEnvelope` constructors. -/
@@ -2251,23 +2262,16 @@ def OpEnvelope.routeBurden
     pins. Requiring this predicate at the public theorem boundary makes that
     caller burden explicit without changing the existing wrapper proofs.
 
-    Today the predicate is extractable from the envelope itself; replacing this
-    marker with a nontrivial accepted-trace construction is the next proof
-    strengthening step. -/
+    For load arms, `memoryBurden` unfolds to the replay-sound accepted trace,
+    selected-event split, read tag, and Sail/replay cursor agreement carried by
+    `LoadPromises`. Replacing the remaining constructor-carried evidence with
+    a top-level accepted-trace construction is the next proof strengthening
+    step. -/
 def OpEnvelope.completenessBurden
     (env : OpEnvelope state m r_main) : Prop :=
   env.rowSpecBurden
     ∧ env.tableProviderBurden
     ∧ env.memoryBurden
     ∧ env.routeBurden
-
-/-- Existing envelopes satisfy the current burden marker because the
-    proof-bearing witness data is still carried directly by the constructor
-    arguments. This theorem is intentionally the only default discharge for
-    the public theorem's burden premise. -/
-theorem OpEnvelope.completenessBurden_of_env
-    (env : OpEnvelope state m r_main) :
-    env.completenessBurden := by
-  exact ⟨trivial, trivial, trivial, trivial⟩
 
 end ZiskFv.Compliance

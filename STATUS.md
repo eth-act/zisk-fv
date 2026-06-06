@@ -1,11 +1,11 @@
 # Status
 
-Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
+Plan: `docs/ai/plan/PLAN_COMPLETENESS_BURDEN.md`
 
-Current focus: replay-derived selected-read agreement refactor complete and committed.
+Current focus: strengthened burden surface verified and committed.
 
 Blocking: none.
 
-Next step: resume the broader post-PR #60 accepted-trace-to-`OpEnvelope` construction if this stream continues.
+Next step: resume the accepted-trace-to-`OpEnvelope` construction when this stream continues.
 
-Digression: issue #61 scopes the broader post-PR #60 `OpEnvelope` completeness gap.
+Digression: issue #61 scopes the broader post-PR #60 `OpEnvelope` completeness gap; this change makes the load-memory portion visible at the public theorem boundary but does not prove it from top-level trace data.

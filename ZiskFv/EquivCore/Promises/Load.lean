@@ -51,6 +51,34 @@ structure LoadPromises
   m2_mult : e2.multiplicity = 1
   m2_as : e2.as.val = 1
 
+/-- Public memory burden carried by a load promise.
+
+This is the theorem-shaped form of the replay obligation hidden inside the
+load promise: the selected event must sit in an accepted trace, that accepted
+trace must be replay-sound, the selected event must be a read, and the Sail
+state must agree with replay memory at the selected cursor. -/
+def LoadPromises.memoryBurden
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {mstatus : RegisterType Register.mstatus}
+    {pmaRegion : PMA_Region}
+    {misa : RegisterType Register.misa}
+    {mseccfg : RegisterType Register.mseccfg}
+    {opcode_assumptions : Prop}
+    {pure_nextPC : BitVec 64}
+    {exec_row : List (Interaction.ExecutionBusEntry FGL)}
+    {e0 e1 e2 : Interaction.MemoryBusEntry FGL}
+    (promises : LoadPromises state mstatus pmaRegion misa mseccfg
+      opcode_assumptions pure_nextPC exec_row e0 e1 e2) : Prop :=
+  let ctx := promises.mem_trace_context
+  (ZiskFv.ZiskCircuit.MemTrace.TraceReplaySound
+      ctx.accepted.initialMemory ctx.trace
+    ∧ ctx.trace =
+        ctx.priorEvents ++ ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1 :: ctx.laterEvents
+    ∧ (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1).op = (1 : FGL)
+    ∧ ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement state
+        (ZiskFv.ZiskCircuit.MemTrace.replayEvents
+          ctx.accepted.initialMemory ctx.priorEvents))
+
 /-- Derived load memory agreement. This intentionally has the former field
 name so existing load consumers use dot notation while the proof now comes
 from accepted trace context. -/

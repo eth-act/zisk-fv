@@ -93,8 +93,11 @@ per-opcode output equality.
 The public theorem does not yet prove that an accepted full trace constructs
 the required `OpEnvelope`. The explicit `OpEnvelope.completenessBurden`
 premise is an audit marker for that missing global witness-construction layer;
-today it is discharged by `OpEnvelope.completenessBurden_of_env` because the
-envelope constructors still carry the proof-bearing facts directly.
+there is no default theorem discharging it from an arbitrary envelope. Load
+arms expose their memory burden as replay-sound accepted-trace data, selected
+event membership, read tagging, and Sail/replay cursor agreement, but those
+facts are still carried by constructor witnesses until the accepted-trace-to-
+`OpEnvelope` construction is proved.
 
 ## ArithTable And DIV/REM Audit Conclusions
 
