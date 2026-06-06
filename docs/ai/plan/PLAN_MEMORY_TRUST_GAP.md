@@ -392,3 +392,19 @@ names, retired-memory scans, generated zero-entry count checks, and
 `nix run .#test`. This is still a boundary-tightening slice, not the final AIR
 proof: the remaining open item is deriving this construction burden from
 accepted AIR/Main/Mem full-trace data.
+
+The current Mem-source-rebinding slice adds source-level names for generated
+Mem constraints 0-23. `Airs.Mem.SegmentColumns` records the exposed and
+preprocessed segment columns, `Airs.Mem.segment_every_row` mirrors the
+generated segment/continuity constraints, and
+`Airs.Mem.core_every_row_of_segment_every_row` proves the existing 9-local
+Mem bridge surface is a projection of those generated facts.
+`AirsClean.Mem.Bridge.constraints_at_of_segment_every_row` connects that
+projection to the Clean bridge. Focused `lake build ZiskFv.Airs.Mem
+ZiskFv.AirsClean.Mem.Bridge ZiskFv.AirsClean.Mem.TraceSpec`, full
+`lake build`, trust regeneration, both trust gates, compliance closure print,
+generated zero-entry checks, retired-memory scans, and `nix run .#test`
+passed. This still leaves generated permutation constraints 24-33 and the
+chronological replay proof to bind before
+`AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` can be derived from
+accepted AIR/Main/Mem full-trace data.

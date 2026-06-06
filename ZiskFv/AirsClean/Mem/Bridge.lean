@@ -182,6 +182,18 @@ def constraints_at (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : Prop :=
   ∧ (v.addr_changes r * (1 - v.wr r)) * v.value_0 r = 0
   ∧ (v.addr_changes r * (1 - v.wr r)) * v.value_1 r = 0
 
+/-- The generated segment/continuity Mem surface contains the current local
+    Clean bridge constraints as a projection. -/
+theorem constraints_at_of_segment_every_row
+    (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (cols : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (r : ℕ)
+    (h_segment : ZiskFv.Airs.Mem.segment_every_row cols v r) :
+    constraints_at v r := by
+  simpa [constraints_at, ZiskFv.Airs.Mem.core_every_row] using
+    ZiskFv.Airs.Mem.core_every_row_of_segment_every_row
+      (cols := cols) (v := v) (row := r) h_segment
+
 /-- **Bridge theorem.** Given a row of a `Valid_Mem` satisfying the
     9 Clean Component constraints and the boolean range assumptions,
     the Mem per-row Spec holds. -/
