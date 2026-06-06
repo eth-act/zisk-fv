@@ -91,6 +91,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add Nat interpretations and no-wrap bounds for Mem increment and distance chunks.
 - [x] Verify and commit no-wrap field/Nat bridges for packed Mem increment and distance expressions.
 - [x] Verify and commit Nat-facing generated delta consequences for Mem step/address increments.
+- [x] Verify and commit dual-step range/no-wrap facts for Mem chronology.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -246,6 +247,20 @@ ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance` also passes. Full `lake build`, trust regeneration, both
 trust gates, closure print with zero project axiom names, targeted retired-memory
 scan, and `nix run .#test` passed for this slice.
+
+The dual-step chronology slice adds range/no-wrap facts:
+`step_columns_in_range`, `dual_step_delta_in_range`,
+`step_dual_ge_step_add_wr_of_dual_step_delta_range`,
+`dual_step_delta_val_eq_nat_sub_of_range`,
+`step_le_step_dual_of_dual_step_delta_range`, and
+`step_lt_step_dual_of_wr_one_dual_step_delta_range`. These model the PIL
+`range_check(step_dual - step - wr, 0, 2^24 - 1, sel_dual)` no-wrap consequence
+needed to order primary and dual Mem events inside one row. Focused `lake build
+ZiskFv.Airs.Mem`, dependent focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+closure print with zero project axiom names, targeted retired-memory scan, and
+`nix run .#test` passed for this slice.
 
 The Mem segment-continuity slice adds named consequences of
 `ZiskFv.Airs.Mem.segment_every_row`: at non-boundary rows

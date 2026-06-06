@@ -603,6 +603,131 @@ theorem delta_addr_val_pos_of_addr_change_segment_every_row
     (cols := cols) (v := v) (row := row) h h_addr_change h_range]
   exact incrementNat_pos v row
 
+/-- PIL bit-range facts for the mutable-Mem step columns. In `mem.pil`,
+    `step`, `step_dual`, and `previous_step` are `bits(MEM_STEP_BITS)`, and
+    the pinned RV64IM configuration has `MEM_STEP_BITS = 40`. -/
+def step_columns_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
+  (v.step row).val < 2 ^ 40
+    ∧ (v.step_dual row).val < 2 ^ 40
+    ∧ (v.previous_step row).val < 2 ^ 40
+
+/-- PIL range-check fact for the dual mutable-Mem step delta:
+    `range_check(step_dual - step - wr, 0, 2^24 - 1, sel_dual)`. -/
+def dual_step_delta_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
+  (v.step_dual row - v.step row - v.wr row : FGL).val < 2 ^ 24
+
+/-- A small Goldilocks no-wrap fact for the dual-step range check. If
+    `step_dual - step - wr` has a small representative while the step columns
+    are 40-bit and `wr` is one bit, then the field subtraction did not wrap. -/
+theorem step_dual_ge_step_add_wr_of_dual_step_delta_range
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_delta : dual_step_delta_in_range v row) :
+    (v.step row).val + (v.wr row).val ≤ (v.step_dual row).val := by
+  rcases h_steps with ⟨h_step, h_step_dual, _h_previous_step⟩
+  have hmod :
+      (v.step_dual row - v.step row - v.wr row : FGL).val =
+        (18446744069414584321 - (v.wr row).val
+          + (18446744069414584321 - (v.step row).val
+            + (v.step_dual row).val)) % 18446744069414584321 := by
+    simp [Fin.val_sub]
+  by_contra hle
+  have hlt : (v.step_dual row).val < (v.step row).val + (v.wr row).val := by
+    omega
+  have hcalc :
+      (18446744069414584321 - (v.wr row).val
+          + (18446744069414584321 - (v.step row).val
+            + (v.step_dual row).val)) % 18446744069414584321 =
+        18446744069414584321 -
+          ((v.step row).val + (v.wr row).val - (v.step_dual row).val) := by
+    have hsmall :
+        (v.step row).val + (v.wr row).val - (v.step_dual row).val <
+          18446744069414584321 := by
+      omega
+    have hsum :
+        18446744069414584321 - (v.wr row).val
+            + (18446744069414584321 - (v.step row).val
+              + (v.step_dual row).val) =
+          2 * 18446744069414584321 -
+            ((v.step row).val + (v.wr row).val - (v.step_dual row).val) := by
+      omega
+    rw [hsum]
+    have hsplit :
+        2 * 18446744069414584321 -
+            ((v.step row).val + (v.wr row).val - (v.step_dual row).val) =
+          18446744069414584321 +
+            (18446744069414584321 -
+              ((v.step row).val + (v.wr row).val - (v.step_dual row).val)) := by
+      omega
+    rw [hsplit]
+    rw [Nat.add_mod_left]
+    exact Nat.mod_eq_of_lt (by omega)
+  rw [dual_step_delta_in_range, hmod, hcalc] at h_delta
+  omega
+
+/-- Under the dual-step range check, the field expression's representative is
+    the ordinary Nat subtraction `step_dual - step - wr`. -/
+theorem dual_step_delta_val_eq_nat_sub_of_range
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_delta : dual_step_delta_in_range v row) :
+    (v.step_dual row - v.step row - v.wr row : FGL).val =
+      (v.step_dual row).val - (v.step row).val - (v.wr row).val := by
+  have h_ge :=
+    step_dual_ge_step_add_wr_of_dual_step_delta_range
+      (v := v) (row := row) h_steps h_wr h_delta
+  have hmod :
+      (v.step_dual row - v.step row - v.wr row : FGL).val =
+        (18446744069414584321 - (v.wr row).val
+          + (18446744069414584321 - (v.step row).val
+            + (v.step_dual row).val)) % 18446744069414584321 := by
+    simp [Fin.val_sub]
+  rw [hmod]
+  have hsum :
+      18446744069414584321 - (v.wr row).val
+          + (18446744069414584321 - (v.step row).val
+            + (v.step_dual row).val) =
+        2 * 18446744069414584321 +
+          ((v.step_dual row).val - (v.step row).val - (v.wr row).val) := by
+    omega
+  rw [hsum]
+  rw [Nat.add_comm]
+  rw [Nat.add_mul_mod_self_right]
+  exact Nat.mod_eq_of_lt (by
+    rcases h_steps with ⟨h_step, h_step_dual, _h_previous_step⟩
+    omega)
+
+/-- The dual-step range check gives timestamp monotonicity inside a dual Mem
+    row. -/
+theorem step_le_step_dual_of_dual_step_delta_range
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_delta : dual_step_delta_in_range v row) :
+    (v.step row).val ≤ (v.step_dual row).val := by
+  have h_ge :=
+    step_dual_ge_step_add_wr_of_dual_step_delta_range
+      (v := v) (row := row) h_steps h_wr h_delta
+  omega
+
+/-- If the primary operation is a write (`wr = 1`), the dual Mem timestamp is
+    strictly later than the primary timestamp. -/
+theorem step_lt_step_dual_of_wr_one_dual_step_delta_range
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_steps : step_columns_in_range v row)
+    (h_delta : dual_step_delta_in_range v row)
+    (h_wr_one : v.wr row = 1) :
+    (v.step row).val < (v.step_dual row).val := by
+  have h_wr_val : (v.wr row).val = 1 := by
+    rw [h_wr_one]
+    rfl
+  have h_ge :=
+    step_dual_ge_step_add_wr_of_dual_step_delta_range
+      (v := v) (row := row) h_steps (by omega) h_delta
+  omega
+
 /-- Nat interpretation of the two 16-bit distance chunks used for large Mem
     segment-boundary checks. -/
 @[simp]
