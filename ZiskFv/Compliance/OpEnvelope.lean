@@ -2331,6 +2331,28 @@ structure AcceptedProgramMemoryTrace
   context :
     ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace
 
+/-- Accepted full-memory-trace evidence for the Sail state at this
+    instruction cursor.
+
+    This is the global object the future accepted full-trace construction
+    theorem should produce. It is intentionally independent of one envelope;
+    load envelopes separately prove that their selected memory event occurs in
+    this trace. -/
+structure AcceptedFullMemoryTrace
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
+    Type where
+  trace : List ZiskFv.ZiskCircuit.MemTrace.MemEvent
+  context :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace
+
+/-- View a full-memory trace as the narrower program-level trace object used
+    by the load replay bridge. -/
+def AcceptedFullMemoryTrace.toProgramTrace
+    (fullTrace : AcceptedFullMemoryTrace state) :
+    AcceptedProgramMemoryTrace state :=
+  { trace := fullTrace.trace
+    context := fullTrace.context }
+
 /-- The selected load event of this envelope is covered by the program-level
     accepted Mem trace. Non-load envelopes have no selected load event and
     therefore discharge this predicate as `True`. -/
@@ -2338,6 +2360,14 @@ def OpEnvelope.acceptedProgramMemoryTraceCovers
     (env : OpEnvelope state m r_main)
     (programTrace : AcceptedProgramMemoryTrace state) : Prop :=
   env.selectedLoadEventInTrace programTrace.trace
+
+/-- The selected load event of this envelope is covered by the accepted
+    full-memory trace. Non-load envelopes discharge this predicate as
+    `True`. -/
+def OpEnvelope.acceptedFullMemoryTraceCovers
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullMemoryTrace state) : Prop :=
+  env.selectedLoadEventInTrace fullTrace.trace
 
 /-- Public accepted-memory burden, scoped to load envelopes only.
 
@@ -2352,6 +2382,22 @@ def OpEnvelope.acceptedProgramMemoryTraceBurden
   | .lw_via_static_match .. =>
       ∃ programTrace : AcceptedProgramMemoryTrace state,
         env.acceptedProgramMemoryTraceCovers programTrace
+  | _ => True
+
+/-- Public accepted full-memory-trace burden, scoped to load envelopes only.
+
+    This is the global construction hook for Mem replay: non-load opcodes do
+    not need memory replay evidence, while load opcodes require one accepted
+    full-memory trace for the current Sail state plus selected-event coverage
+    in that trace. -/
+def OpEnvelope.acceptedFullMemoryTraceBurden
+    (env : OpEnvelope state m r_main) : Prop :=
+  match env with
+  | .ld .. | .lbu .. | .lhu .. | .lwu ..
+  | .lb_via_static_match .. | .lh_via_static_match ..
+  | .lw_via_static_match .. =>
+      ∃ fullTrace : AcceptedFullMemoryTrace state,
+        env.acceptedFullMemoryTraceCovers fullTrace
   | _ => True
 
 /-- Concrete construction payload for the accepted Mem trace used by this
@@ -2380,6 +2426,22 @@ def OpEnvelope.acceptedMemoryTraceConstructionOfProgramTrace
     { trace := programTrace.trace
       context := programTrace.context
       selected := h_cover }
+
+/-- Build the load-scoped program-trace burden from the accepted full-memory
+    trace burden. Non-load envelopes discharge immediately. -/
+theorem OpEnvelope.acceptedProgramMemoryTraceBurden_of_fullMemoryTraceBurden
+    (env : OpEnvelope state m r_main)
+    (h_trace : env.acceptedFullMemoryTraceBurden) :
+    env.acceptedProgramMemoryTraceBurden := by
+  cases env <;>
+    simp [OpEnvelope.acceptedFullMemoryTraceBurden,
+      OpEnvelope.acceptedFullMemoryTraceCovers,
+      OpEnvelope.acceptedProgramMemoryTraceBurden,
+      OpEnvelope.acceptedProgramMemoryTraceCovers] at h_trace ⊢
+  all_goals
+    try exact trivial
+    rcases h_trace with ⟨fullTrace, h_cover⟩
+    exact ⟨fullTrace.toProgramTrace, h_cover⟩
 
 /-- Turn the concrete accepted-memory construction object into the proposition
     consumed by the load-memory projection theorem. -/

@@ -15,7 +15,7 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 ```
 
 That theorem is conditional on `OpEnvelope.completenessBurden` and the
-load-scoped `OpEnvelope.acceptedProgramMemoryTraceBurden`: it dispatches all
+load-scoped `OpEnvelope.acceptedFullMemoryTraceBurden`: it dispatches all
 63 covered RV64IM
 opcode surfaces through
 `ZiskFv/Compliance/Wrappers/<Op>.lean` to the canonical `equiv_<OP>` theorem
