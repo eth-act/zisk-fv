@@ -44,6 +44,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Prove raw-row selected prefix state agreement from initial trace agreement.
 - [x] Derive selected load byte agreement from the global row spec plus selected cursor.
 - [x] Replace anonymous global Mem trace placeholder props with named row-level obligations.
+- [x] Add a dual-aware Clean MemBus emission surface and dual-row adapters.
 - [ ] Prove `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
@@ -215,3 +216,12 @@ ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
 compliance closure print with zero project names, retired-memory scans,
 generated zero-entry count checks, and `nix run .#test` passed for this slice.
+The current dual-emission slice adds `memWithDualMemBusElaborated`,
+`circuitWithDualMemBus`, `componentWithDualMemBus`, and a concrete dual-row
+payload adapter for the pinned `dual_mem = 1` PIL emission. The existing
+primary-only `componentWithMemBus` remains unchanged for current FullEnsemble
+compatibility, while the new surface exposes both primary and dual provider
+rows for future global trace construction. Focused build, full `lake build`,
+trust regeneration, both trust gates, compliance closure print with zero
+project names, generated zero-entry count checks, and targeted retired-memory
+scan passed for this slice; `nix run .#test` also passed.

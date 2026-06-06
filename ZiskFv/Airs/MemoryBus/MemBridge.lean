@@ -88,6 +88,20 @@ def mem_row_byte_addr_matches_entry
   ∧ e.as = 2
   ∧ entry_packs_mem_row_value mem r_mem e
 
+/-- Byte-addressed dual Mem row matches a bus entry.  In the pinned
+`dual_mem = 1` PIL instance, the second Mem emission is always a read at the
+same byte address and value as the primary row, selected by `sel_dual` and
+timestamped by `step_dual`. -/
+@[simp]
+def mem_dual_row_byte_addr_matches_entry
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
+  mem.sel_dual r_mem = 1
+  ∧ e.ptr = mem.addr r_mem * 8
+  ∧ mem.step_dual r_mem = e.timestamp
+  ∧ e.as = 2
+  ∧ e.multiplicity = -1
+  ∧ entry_packs_mem_row_value mem r_mem e
+
 /-! ## Trusted-surface: memory-bus permutation soundness
 
 Mirrors `OperationBus.matches_entry` (operation-bus `bus_id = 5000`)
