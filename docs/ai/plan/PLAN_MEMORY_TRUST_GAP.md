@@ -76,7 +76,24 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope`, a named full-execution Mem extraction target whose fields carry shared accepted AIR/Main/Mem full-trace data, a `fullRv64imEnsemble` witness, a concrete Mem table in that witness, selected envelope Mem-row occurrence in that table, and the selected raw-row prefix cursor. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, prefix-indexed read soundness, and initial memory agreement; the lower trace/table object, packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, ordinary selected-row membership, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no theorem that constructs the extraction target from accepted full execution trace data.
+The active load path no longer carries `LoadTraceContext` inside
+`LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over
+the selected load event. The public theorem now takes
+`OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope`: load envelopes
+carry shared accepted AIR/Main/Mem full-trace data, a `fullRv64imEnsemble`
+witness, a concrete Mem table in that witness, selected envelope Mem-row
+occurrence in that table, and split-indexed prefix-state equality; non-load
+envelopes carry no memory trace data. The shared accepted construction names
+generated Mem row constraints, chronological raw memory-bus rows,
+prefix-indexed read soundness, and initial memory agreement; the lower
+trace/table object, packed accepted-at-envelope construction, generated Mem
+burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`,
+projected `TraceReplaySound`, ordinary selected-row membership, and selected
+memory cursor are derived internally. Raw row replay has an explicit equivalence
+to projected Mem-event replay, and selected row cursors can be built from row
+splits plus ordinary memory-read tags. The remaining gap is still global: there
+is no theorem that constructs the source-shaped load evidence from accepted full
+execution trace data.
 
 The source-shaped public boundary exposes the next-more-honest memory evidence:
 `OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope` carries the shared
