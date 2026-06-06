@@ -88,6 +88,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Prove segment-boundary carry-in/carry-out facts from generated Mem segment constraints.
 - [x] Prove previous-step and increment/delta facts from generated Mem segment constraints.
 - [x] Split generated/accepted Mem trace construction into row-order and replay-agreement obligations.
+- [x] Add Nat interpretations and no-wrap bounds for Mem increment and distance chunks.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -243,6 +244,18 @@ passed, as did focused `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
 closure print with no project axiom names, the retired-memory declaration scan,
 and `nix run .#test`.
+
+The increment/distance arithmetic slice adds `incrementNat`,
+`increment_chunks_in_range`, `distanceChunksNat`, and
+`distance_chunks_in_range` in `ZiskFv.Airs.Mem`, plus positivity and
+Goldilocks-modulus no-wrap bounds for those Nat interpretations. These facts
+mirror the PIL `bits(22)`, `bits(16)`, and two-`bits(16)` range checks and are
+intended as the arithmetic input for the next chronology proof; they do not yet
+prove chronological row ordering. Focused `lake build ZiskFv.Airs.Mem`,
+focused `lake build ZiskFv.AirsClean.Mem.TraceSpec
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust gates, closure print with no project axiom names, the
+retired-memory declaration scan, and `nix run .#test` passed.
 
 The Mem segment-boundary slice adds the complementary boundary facts from
 `ZiskFv.Airs.Mem.segment_every_row`: at rows with `segment_l1 row = 1`,

@@ -479,6 +479,75 @@ theorem delta_addr_eq_increment_of_addr_change_segment_every_row
   rw [h_addr_change] at h_increment
   linear_combination -h_increment
 
+/-- Nat interpretation of the PIL `l_increment`/`h_increment` pair.
+    In `mem.pil`, `l_increment` is `bits(22)` and `h_increment` is
+    `bits(16)`, and the field expression is
+    `l_increment + 2^22 * h_increment + 1`. -/
+@[simp]
+def incrementNat (v : Valid_Mem FGL FGL) (row : ℕ) : ℕ :=
+  (v.increment_0 row).val + 4194304 * (v.increment_1 row).val + 1
+
+/-- PIL range facts for the mutable-Mem increment chunks. These are the
+    `range_check` obligations at `mem.pil:384-385`. -/
+def increment_chunks_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
+  (v.increment_0 row).val < 2 ^ 22 ∧ (v.increment_1 row).val < 2 ^ 16
+
+/-- The increment expression is strictly positive as a Nat. -/
+theorem incrementNat_pos (v : Valid_Mem FGL FGL) (row : ℕ) :
+    0 < incrementNat v row := by
+  simp [incrementNat]
+
+/-- The range-checked increment expression is at most `2^38`. The upper
+    bound can be attained because the PIL expression adds one after packing
+    the two chunks. -/
+theorem incrementNat_le_two_pow_38
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_range : increment_chunks_in_range v row) :
+    incrementNat v row ≤ 2 ^ 38 := by
+  rcases h_range with ⟨h_lo, h_hi⟩
+  simp [incrementNat] at *
+  omega
+
+/-- The range-checked increment expression is far below the Goldilocks
+    modulus, so later field/Nat bridges can use it as a no-wrap witness. -/
+theorem incrementNat_lt_goldilocks_modulus
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_range : increment_chunks_in_range v row) :
+    incrementNat v row < 18446744069414584321 := by
+  have h_le := incrementNat_le_two_pow_38 (v := v) (row := row) h_range
+  norm_num at h_le ⊢
+  omega
+
+/-- Nat interpretation of the two 16-bit distance chunks used for large Mem
+    segment-boundary checks. -/
+@[simp]
+def distanceChunksNat (lo hi : FGL) : ℕ :=
+  lo.val + 65536 * hi.val
+
+/-- PIL range facts for a two-chunk large-memory segment distance. -/
+def distance_chunks_in_range (lo hi : FGL) : Prop :=
+  lo.val < 2 ^ 16 ∧ hi.val < 2 ^ 16
+
+/-- Two 16-bit distance chunks pack to at most `2^32 - 1`. -/
+theorem distanceChunksNat_le_two_pow_32_sub_one
+    {lo hi : FGL}
+    (h_range : distance_chunks_in_range lo hi) :
+    distanceChunksNat lo hi ≤ 2 ^ 32 - 1 := by
+  rcases h_range with ⟨h_lo, h_hi⟩
+  simp [distanceChunksNat] at *
+  omega
+
+/-- Packed two-chunk large-memory segment distances are below the Goldilocks
+    modulus. -/
+theorem distanceChunksNat_lt_goldilocks_modulus
+    {lo hi : FGL}
+    (h_range : distance_chunks_in_range lo hi) :
+    distanceChunksNat lo hi < 18446744069414584321 := by
+  have h_le :=
+    distanceChunksNat_le_two_pow_32_sub_one (lo := lo) (hi := hi) h_range
+  norm_num at h_le ⊢
+  omega
+
 /-! ## Generated permutation accumulator surface
 
 The extractor emits constraints 24-33 for the `std_sum` / direct-update
