@@ -119,7 +119,7 @@ lemma equiv_LBU_of_discharged
   obtain ⟨mab, marb, ma, mab_core, marb_core, mab_lookup, marb_lookup, h_provider⟩ := align
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_mem_trace_agreement, h_m2_mult, h_m2_as⟩ := promises
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
   rw [equiv_LBU_sail state lbu_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm

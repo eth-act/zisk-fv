@@ -61,7 +61,7 @@ lemma equiv_LBU
     -- Activation + opcode pins (Compliance ROM handshake).
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (1 : FGL))
-    -- Structural promise bundle (12 fields, see Promises/Load.lean).
+    -- Structural promise bundle (11 fields, see Promises/Load.lean).
     (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)

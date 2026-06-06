@@ -15,7 +15,9 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Build and fix Lean fallout.
 - [x] Regenerate trust ledgers.
 - [x] Run trust checks and final suite.
+- [x] Decouple `LoadPromises.memoryBurden` from hidden constructor-carried trace context.
+- [x] Verify and commit standalone load memory burden surface.
 
 ## Current Notes
 
-The active load path now carries `LoadTraceContext` through `LoadPromises`, and the stale `mem_legacy_addr` pins have been removed from load wrappers, witnesses, dispatchers, and `OpEnvelope`. `AcceptedMemTrace` now carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with state-vs-replay cursor agreement. `lake build`, trust gates, the explicit global closure print, and `nix run .#test` pass. The broader accepted-trace-to-`OpEnvelope` theorem remains the post-PR #60 composition target tracked by issue #61.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event, suitable for proof from top-level accepted trace data. The stale `mem_legacy_addr` pins have been removed from load wrappers, witnesses, dispatchers, and `OpEnvelope`. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with state-vs-replay cursor agreement. The broader accepted-trace-to-`OpEnvelope` theorem remains the post-PR #60 composition target tracked by issue #61.

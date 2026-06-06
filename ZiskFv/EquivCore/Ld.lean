@@ -148,7 +148,7 @@ lemma equiv_LD_of_discharged
   obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_mem_trace_agreement, h_m2_mult, h_m2_as⟩ := promises
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
   -- Step 1. Reduce LHS via Sail-level equivalence.
   rw [equiv_LD_sail state ld_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]

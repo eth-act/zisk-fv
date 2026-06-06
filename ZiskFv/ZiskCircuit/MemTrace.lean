@@ -185,6 +185,21 @@ structure LoadTraceContext
   stateReplayAgreement :
     ReplayMemoryAgreement state (replayEvents accepted.initialMemory priorEvents)
 
+/-- Public load-memory burden for a selected event. Unlike
+`LoadTraceContext`, this is a proposition that callers can prove from a
+top-level accepted Mem trace without first packing the evidence into a load
+promise constructor. -/
+def LoadMemoryBurden
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (event : MemEvent) : Prop :=
+  ∃ trace : List MemEvent,
+  ∃ accepted : AcceptedMemTrace trace,
+  ∃ priorEvents : List MemEvent,
+  ∃ laterEvents : List MemEvent,
+    trace = priorEvents ++ event :: laterEvents
+    ∧ event.op = (1 : FGL)
+    ∧ ReplayMemoryAgreement state (replayEvents accepted.initialMemory priorEvents)
+
 /-- The local load byte agreement obtained from the accepted Mem trace
 context. -/
 theorem memoryTraceAgreement_of_load_context
@@ -216,6 +231,42 @@ theorem memoryTraceAgreement_of_load_context
     · rw [ctx.stateReplayAgreement (event.ptr.toNat + 6)]
       exact h_read.2.2.2.2.2.2.1
     · rw [ctx.stateReplayAgreement (event.ptr.toNat + 7)]
+      exact h_read.2.2.2.2.2.2.2
+
+/-- The selected load byte agreement obtained from the public load-memory
+burden. -/
+theorem memoryTraceAgreement_of_load_memory_burden
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (event : MemEvent)
+    (h_burden : LoadMemoryBurden state event) :
+    MemoryTraceAgreement state event :=
+  by
+    rcases h_burden with
+      ⟨trace, accepted, priorEvents, laterEvents,
+        h_trace_split, h_read_event, h_state_replay⟩
+    have h_read :=
+      readEventReplayAgreement_of_trace_sound
+        accepted.initialMemory priorEvents event laterEvents
+        (by simpa [h_trace_split] using accepted.traceSound)
+        h_read_event
+    unfold MemoryTraceAgreement
+    unfold ReadEventReplayAgreement at h_read
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [h_state_replay event.ptr.toNat]
+      exact h_read.1
+    · rw [h_state_replay (event.ptr.toNat + 1)]
+      exact h_read.2.1
+    · rw [h_state_replay (event.ptr.toNat + 2)]
+      exact h_read.2.2.1
+    · rw [h_state_replay (event.ptr.toNat + 3)]
+      exact h_read.2.2.2.1
+    · rw [h_state_replay (event.ptr.toNat + 4)]
+      exact h_read.2.2.2.2.1
+    · rw [h_state_replay (event.ptr.toNat + 5)]
+      exact h_read.2.2.2.2.2.1
+    · rw [h_state_replay (event.ptr.toNat + 6)]
+      exact h_read.2.2.2.2.2.2.1
+    · rw [h_state_replay (event.ptr.toNat + 7)]
       exact h_read.2.2.2.2.2.2.2
 
 /-- Convert a memory-bus entry into the event shape used by the local load

@@ -166,7 +166,7 @@ lemma equiv_LH_clean_provider_of_wf
       promises h_memory_burden
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_mem_trace_context, h_m2_mult, h_m2_as⟩ := promises
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
   obtain ⟨h_bundle, h_mem8⟩ :=
     ZiskFv.EquivCore.Bridge.MemClean.ld_discharge_full_clean_provider
       main mem r_main r_mem mainRow memRow e1 e2 state
