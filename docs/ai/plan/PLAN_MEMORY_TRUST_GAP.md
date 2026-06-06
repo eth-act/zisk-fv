@@ -301,3 +301,15 @@ memory-read match. Focused `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance` passed, as did full `lake build`, trust regeneration, both
 trust gates, compliance closure print with zero project names,
 retired-memory scans, generated zero-entry count checks, and `nix run .#test`.
+
+The current local-Mem projection slice adds named consequences of
+`AirsClean.Mem.Spec`: selector/write boolean projections, `sel_dual => sel`,
+`wr => sel`, the `read_same_addr` identity, and the two zero-value facts for
+read rows at an address change. These facts are direct projections of the
+existing nine local F-typed constraints and are intended as reusable leaves for
+the eventual cross-row/global trace construction. Focused `lake build
+ZiskFv.AirsClean.Mem.Spec ZiskFv.AirsClean.Mem.Bridge
+ZiskFv.AirsClean.Mem.TraceSpec` passed, as did full `lake build`, trust
+regeneration, both trust gates, compliance closure print with zero project
+names, retired-memory scans, generated zero-entry count checks, and
+`nix run .#test`.

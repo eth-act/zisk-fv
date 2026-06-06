@@ -64,4 +64,78 @@ def Spec (row : MemRow FGL) : Prop :=
   ∧ (row.addr_changes * (1 - row.wr)) * row.value_0 = 0
   ∧ (row.addr_changes * (1 - row.wr)) * row.value_1 = 0
 
+theorem sel_dual_boolean_of_spec
+    (row : MemRow FGL) (h_spec : Spec row) :
+    row.sel_dual = 0 ∨ row.sel_dual = 1 := by
+  have h := h_spec.1
+  rcases mul_eq_zero.mp h with h_zero | h_one_sub
+  · exact Or.inl h_zero
+  · exact Or.inr (sub_eq_zero.mp h_one_sub).symm
+
+theorem sel_boolean_of_spec
+    (row : MemRow FGL) (h_spec : Spec row) :
+    row.sel = 0 ∨ row.sel = 1 := by
+  have h := h_spec.2.2.1
+  rcases mul_eq_zero.mp h with h_zero | h_one_sub
+  · exact Or.inl h_zero
+  · exact Or.inr (sub_eq_zero.mp h_one_sub).symm
+
+theorem addr_changes_boolean_of_spec
+    (row : MemRow FGL) (h_spec : Spec row) :
+    row.addr_changes = 0 ∨ row.addr_changes = 1 := by
+  have h := h_spec.2.2.2.1
+  rcases mul_eq_zero.mp h with h_zero | h_one_sub
+  · exact Or.inl h_zero
+  · exact Or.inr (sub_eq_zero.mp h_one_sub).symm
+
+theorem wr_boolean_of_spec
+    (row : MemRow FGL) (h_spec : Spec row) :
+    row.wr = 0 ∨ row.wr = 1 := by
+  have h := h_spec.2.2.2.2.1
+  rcases mul_eq_zero.mp h with h_zero | h_one_sub
+  · exact Or.inl h_zero
+  · exact Or.inr (sub_eq_zero.mp h_one_sub).symm
+
+theorem sel_of_sel_dual_one_of_spec
+    (row : MemRow FGL) (h_spec : Spec row)
+    (h_sel_dual : row.sel_dual = 1) :
+    row.sel = 1 := by
+  have h := h_spec.2.1
+  rw [h_sel_dual] at h
+  have h_one_sub : 1 - row.sel = 0 := by simpa using h
+  exact (sub_eq_zero.mp h_one_sub).symm
+
+theorem sel_of_wr_one_of_spec
+    (row : MemRow FGL) (h_spec : Spec row)
+    (h_wr : row.wr = 1) :
+    row.sel = 1 := by
+  have h := h_spec.2.2.2.2.2.1
+  rw [h_wr] at h
+  have h_one_sub : 1 - row.sel = 0 := by simpa using h
+  exact (sub_eq_zero.mp h_one_sub).symm
+
+theorem read_same_addr_eq_of_spec
+    (row : MemRow FGL) (h_spec : Spec row) :
+    row.read_same_addr = (1 - row.addr_changes) * (1 - row.wr) := by
+  have h := h_spec.2.2.2.2.2.2.1
+  linear_combination h
+
+theorem read_addr_change_value_0_zero_of_spec
+    (row : MemRow FGL) (h_spec : Spec row)
+    (h_addr_changes : row.addr_changes = 1)
+    (h_wr : row.wr = 0) :
+    row.value_0 = 0 := by
+  have h := h_spec.2.2.2.2.2.2.2.1
+  rw [h_addr_changes, h_wr] at h
+  linear_combination h
+
+theorem read_addr_change_value_1_zero_of_spec
+    (row : MemRow FGL) (h_spec : Spec row)
+    (h_addr_changes : row.addr_changes = 1)
+    (h_wr : row.wr = 0) :
+    row.value_1 = 0 := by
+  have h := h_spec.2.2.2.2.2.2.2.2
+  rw [h_addr_changes, h_wr] at h
+  linear_combination h
+
 end ZiskFv.AirsClean.Mem
