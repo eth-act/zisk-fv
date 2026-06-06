@@ -57,11 +57,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose accepted trace/table/provider/prefix bridge inputs directly at the public compliance theorem boundary.
 - [x] Derive the public trace/table bridge from a full-ensemble Mem-table bridge object.
 - [x] Narrow selected Mem provider-row coverage to envelope Mem-row table occurrence.
-- [ ] Prove `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope` from the accepted full execution trace.
+- [x] Factor the remaining full-execution Mem obligations into `OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope`.
+- [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes a full-ensemble Mem-table bridge object that carries shared accepted AIR/Main/Mem full-trace data, a `fullRv64imEnsemble` witness, a concrete Mem table in that witness, and proof that the table's projected read-replay rows are embedded in the chronological accepted rows; it also takes concrete selected primary/dual Mem provider-row coverage in that table and split-indexed Sail prefix-state equality. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the lower trace/table object, packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, ordinary selected-row membership, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The current slice ties the Mem table to a full-ensemble witness at `zisk_riscv_compliant_program_bus`. The remaining gap after that is still global: there is no theorem that proves the table embedding, selected provider-row coverage, and selected prefix-state equality from the full execution trace.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope`, a named full-execution Mem extraction target whose fields carry shared accepted AIR/Main/Mem full-trace data, a `fullRv64imEnsemble` witness, a concrete Mem table in that witness, proof that the table's projected read-replay rows are embedded in the chronological accepted rows, selected envelope Mem-row occurrence in that table, and split-indexed Sail prefix-state equality. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, prefix-indexed read soundness, and initial memory agreement; the lower trace/table object, packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, ordinary selected-row membership, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no theorem that constructs the extraction target from accepted full execution trace data.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -659,3 +660,15 @@ generated zero-entry baseline checks, and `nix run .#test` also passed. The
 remaining implementation target is still the accepted AIR/full-execution
 extraction theorem that proves the new prefix-read field and selected cursor
 facts from trace data, rather than taking them as top-level trust.
+
+The extraction-target boundary slice adds
+`OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope`, containing the
+full-ensemble Mem trace/table object, selected envelope Mem-row table
+occurrence, and split-indexed prefix-state equality, and refactors
+`zisk_riscv_compliant_program_bus` to consume that named target before deriving
+the existing accepted-memory evidence internally. Focused `lake build
+ZiskFv.Compliance.OpEnvelope` and `lake build ZiskFv.Compliance`, full
+`lake build`, `trust/scripts/regenerate.sh`, both trust gates, closure print,
+retired-memory scans, generated zero-entry checks, and `nix run .#test`
+passed. The remaining proof is to construct this target from accepted full
+execution trace data.

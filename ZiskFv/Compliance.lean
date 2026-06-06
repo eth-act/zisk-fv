@@ -51,13 +51,14 @@ bridge. The V2 trust gate enforces this.
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
-completeness. Load-memory replay evidence is exposed separately through a
-shared accepted AIR/Main/Mem trace tied to a concrete Mem table in a
-`fullRv64imEnsemble` witness, selected primary/dual provider-row coverage in
-that table, and a split-indexed proof that the Sail state is the replayed
-memory state at that row's prefix. The theorem derives the lower trace/table
-bridge, packed accepted load evidence, chronological selected-row membership,
-the selected-prefix cursor, generated Mem burden, and replay construction
+completeness. Load-memory replay evidence is exposed separately through
+`OpEnvelope.AcceptedFullExecutionMemoryExtractionAtEnvelope`: a named target
+containing a shared accepted AIR/Main/Mem trace tied to a concrete Mem table in
+a `fullRv64imEnsemble` witness, selected envelope Mem-row occurrence in that
+table, and a split-indexed proof that the Sail state is the replayed memory
+state at that row's prefix. The theorem derives the lower trace/table bridge,
+packed accepted load evidence, chronological selected-row membership, the
+selected-prefix cursor, generated Mem burden, and replay construction
 internally. It is also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
@@ -96,31 +97,16 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
-    (h_mem_full_trace_table :
-      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
-    (h_mem_envelope_row :
-      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
-        h_mem_full_trace_table)
-    (h_mem_prefix_state :
-      env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
-        h_mem_full_trace_table)
+    (h_mem_extraction :
+      env.AcceptedFullExecutionMemoryExtractionAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
-  let h_mem_trace_table :
-      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope :=
-    env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
-      h_mem_full_trace_table
-  let h_mem_provider :
-      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
-        h_mem_full_trace_table :=
-    env.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow
-      h_mem_full_trace_table h_mem_envelope_row
   let h_mem_evidence :
       env.AcceptedAirMainMemTraceEvidenceAtEnvelope :=
-    env.acceptedAirMainMemTraceEvidenceAtEnvelope_of_traceTableProvider
-      h_mem_trace_table h_mem_provider h_mem_prefix_state
+    env.acceptedAirMainMemTraceEvidenceAtEnvelope_of_fullExecutionMemoryExtraction
+      h_mem_extraction
   let h_accepted_mem_trace := h_mem_evidence.acceptedTrace
   have h_selected_mem_row :
       env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
