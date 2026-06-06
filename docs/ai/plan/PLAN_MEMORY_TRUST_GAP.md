@@ -46,11 +46,11 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Replace anonymous global Mem trace placeholder props with named row-level obligations.
 - [x] Add a dual-aware Clean MemBus emission surface and dual-row adapters.
 - [x] Add local dual-row load correctness from replay agreement.
-- [ ] Prove `OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope` from the accepted full execution trace.
+- [ ] Prove `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages accepted AIR/Main/Mem full-trace construction plus a selected prefix cursor pinned to the envelope's concrete read row. The accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no theorem that proves this accepted Mem construction and selected prefix cursor from the full execution trace.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`, both `Unit` for non-load envelopes and, for load envelopes, split into shared accepted AIR/Main/Mem full-trace data plus a selected prefix cursor pinned to the envelope's concrete read row. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no theorem that proves this shared accepted Mem trace and selected prefix cursor from the full execution trace.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -480,3 +480,17 @@ trust gates, compliance closure print, generated zero-entry checks,
 retired-memory scans, extractor skip scan, and `nix run .#test`. The remaining
 open proof is now precisely deriving this accepted interface from the full
 execution trace.
+
+The current split-boundary slice introduces
+`AirsClean.Mem.AcceptedAirMainMemFullTrace` as the shared program-level trace
+object and separates selected load cursor coverage into
+`OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`. The public
+compliance theorem consumes those two pieces and derives the previous packed
+`OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope`,
+`GeneratedMemFullTraceConstructionAtEnvelope`, and replay evidence internally.
+Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed, as did full
+`lake build`, trust regeneration, both trust gates, compliance closure print,
+generated zero-entry checks, retired-memory scans, extractor skip scan, and
+`nix run .#test`. The remaining open proof is deriving the shared trace object
+and selected-prefix coverage from FullEnsemble/full execution data.

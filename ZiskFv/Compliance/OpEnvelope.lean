@@ -3199,6 +3199,117 @@ def OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope
       AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor m state bus.e1
   | _ => Unit
 
+/-- Shared accepted AIR/Main/Mem trace data scoped to load envelopes.
+    Non-load envelopes carry `Unit`; load envelopes carry the shared
+    program-level trace object, without the selected cursor. -/
+def OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
+  | .lbu .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
+  | .lhu .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
+  | .lwu .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
+  | .lb_via_static_match .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
+  | .lh_via_static_match .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
+  | .lw_via_static_match .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
+  | _ => Unit
+
+/-- Selected-prefix coverage for the accepted AIR/Main/Mem trace at one
+    envelope. This is separated from the shared trace object so the future
+    full-execution theorem has two explicit jobs: construct the chronological
+    Mem trace, and locate each load row's cursor in it. -/
+def OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        acceptedTrace.initialState acceptedTrace.rows bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        acceptedTrace.initialState acceptedTrace.rows bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        acceptedTrace.initialState acceptedTrace.rows bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        acceptedTrace.initialState acceptedTrace.rows bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        acceptedTrace.initialState acceptedTrace.rows bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        acceptedTrace.initialState acceptedTrace.rows bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        acceptedTrace.initialState acceptedTrace.rows bus.e1
+  | _ => Unit
+
+/-- Combine shared accepted trace data with selected-prefix coverage to
+    recover the packed load-scoped construction object used by the existing
+    replay bridge. -/
+def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_traceAndPrefix
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope acceptedTrace) :
+    env.AcceptedAirMainMemFullTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope,
+      OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope]
+      at acceptedTrace selectedPrefix ⊢
+  case ld =>
+    exact
+      { initialState := acceptedTrace.initialState
+        rows := acceptedTrace.rows
+        acceptedTrace := acceptedTrace.construction
+        selectedPrefix := selectedPrefix }
+  case lbu =>
+    exact
+      { initialState := acceptedTrace.initialState
+        rows := acceptedTrace.rows
+        acceptedTrace := acceptedTrace.construction
+        selectedPrefix := selectedPrefix }
+  case lhu =>
+    exact
+      { initialState := acceptedTrace.initialState
+        rows := acceptedTrace.rows
+        acceptedTrace := acceptedTrace.construction
+        selectedPrefix := selectedPrefix }
+  case lwu =>
+    exact
+      { initialState := acceptedTrace.initialState
+        rows := acceptedTrace.rows
+        acceptedTrace := acceptedTrace.construction
+        selectedPrefix := selectedPrefix }
+  case lb_via_static_match =>
+    exact
+      { initialState := acceptedTrace.initialState
+        rows := acceptedTrace.rows
+        acceptedTrace := acceptedTrace.construction
+        selectedPrefix := selectedPrefix }
+  case lh_via_static_match =>
+    exact
+      { initialState := acceptedTrace.initialState
+        rows := acceptedTrace.rows
+        acceptedTrace := acceptedTrace.construction
+        selectedPrefix := selectedPrefix }
+  case lw_via_static_match =>
+    exact
+      { initialState := acceptedTrace.initialState
+        rows := acceptedTrace.rows
+        acceptedTrace := acceptedTrace.construction
+        selectedPrefix := selectedPrefix }
+  all_goals exact ()
+
 /-- Lower accepted AIR/Main/Mem full-trace data to the generated Mem burden
     currently consumed by replay. -/
 def OpEnvelope.generatedMemFullTraceConstructionAtEnvelope_of_acceptedAirMainMemTrace

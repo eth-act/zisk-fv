@@ -17,12 +17,14 @@ The uber theorem `zisk_riscv_compliant_program_bus` lives in
 and uses an `OpEnvelope` sum type (63 arms, one per RV64IM opcode)
 to dispatch each opcode to its `Wrappers/<Op>` wrapper. Its
 `OpEnvelope.completenessBurden` and
-`OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope` premises make
+`OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` plus
+`OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope` premises make
 explicit that the current theorem starts from supplied witness evidence and,
-for load envelopes only, accepted AIR/Main/Mem full-trace construction data
-plus selected prefix cursor data pinned to the envelope's concrete read row
-rather than deriving all of that evidence from a full execution trace. The
-generated Mem burden, packed
+for load envelopes only, shared accepted AIR/Main/Mem full-trace data plus
+selected prefix cursor data pinned to the envelope's concrete read row rather
+than deriving all of that evidence from a full execution trace. The packed
+`OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope`, generated Mem
+burden, packed
 `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, lower
 `OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope`, projected
 `OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope`, and projected

@@ -52,11 +52,12 @@ bridge. The V2 trust gate enforces this.
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
 completeness. Load-memory replay evidence is exposed separately through
-`OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope`: non-load
+`OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` plus
+`OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`: non-load
 envelopes carry `Unit`, while load envelopes carry accepted AIR/Main/Mem
-full-trace construction data plus the prefix cursor selecting their concrete
-row in the shared chronological Mem row list. The theorem derives the
-generated Mem burden and packed replay construction internally. It is also
+full-trace data plus a separate prefix cursor selecting their concrete row in
+the shared chronological Mem row list. The theorem derives the packed accepted
+load construction, generated Mem burden, and replay construction internally. It is also
 defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
@@ -96,15 +97,22 @@ theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
     (h_accepted_mem_trace :
-      env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
+      env.AcceptedAirMainMemFullTraceAtEnvelope)
+    (h_selected_mem_prefix :
+      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+        h_accepted_mem_trace)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
+  have h_accepted_mem_trace_at_envelope :
+      env.AcceptedAirMainMemFullTraceConstructionAtEnvelope :=
+    env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_traceAndPrefix
+      h_accepted_mem_trace h_selected_mem_prefix
   have h_generated_mem_trace :
       env.GeneratedMemFullTraceConstructionAtEnvelope :=
     env.generatedMemFullTraceConstructionAtEnvelope_of_acceptedAirMainMemTrace
-      h_accepted_mem_trace
+      h_accepted_mem_trace_at_envelope
   have h_mem_rows_construction :
       env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope :=
     env.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_generatedTraceAtEnvelope

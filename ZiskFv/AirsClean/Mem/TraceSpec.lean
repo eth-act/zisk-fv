@@ -326,4 +326,18 @@ def AcceptedAirMainMemFullTraceConstruction.toGeneratedMemFullTraceConstruction
     rowsReadWriteSound := construction.rowsReadWriteSound
     initialAgreement := construction.initialAgreement }
 
+/-- Program-level accepted AIR/Main/Mem trace data, before selecting the load
+    row relevant to one `OpEnvelope`.
+
+This separates the shared trace construction from the per-envelope cursor:
+future full-execution integration should construct this object once for the
+accepted program trace, then prove selected-prefix coverage for each load
+envelope. -/
+structure AcceptedAirMainMemFullTrace
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) : Type where
+  initialState : SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  construction :
+    AcceptedAirMainMemFullTraceConstruction main initialState rows
+
 end ZiskFv.AirsClean.Mem
