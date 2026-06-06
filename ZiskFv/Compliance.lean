@@ -53,7 +53,7 @@ conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
 completeness. Load-memory replay evidence is exposed separately as a
 load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` construction, from
-which the theorem derives the selected program-trace replay burden. It is also defect-aware while
+which the theorem derives the selected replay burden. It is also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
 `OpEnvelope`. Validity says the current modeled constraints hold;
@@ -96,15 +96,8 @@ theorem zisk_riscv_compliant_program_bus
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
-  have h_full_mem_trace : env.acceptedFullMemoryTraceBurden :=
-    env.acceptedFullMemoryTraceBurden_of_atEnvelope h_mem_trace
-  have h_program_mem_trace : env.acceptedProgramMemoryTraceBurden :=
-    env.acceptedProgramMemoryTraceBurden_of_fullMemoryTraceBurden
-      h_full_mem_trace
-  have h_accepted_memory_burden : env.acceptedMemoryTraceBurden :=
-    env.acceptedMemoryTraceBurden_of_programTraceBurden h_program_mem_trace
   have h_memory_burden : env.memoryBurden :=
-    env.memoryBurden_of_acceptedMemoryTraceBurden h_accepted_memory_burden
+    env.memoryBurden_of_acceptedFullMemoryTraceAtEnvelope h_mem_trace
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact zisk_riscv_compliant_program_bus_branch env
   · exact zisk_riscv_compliant_program_bus_nomem env

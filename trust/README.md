@@ -63,7 +63,7 @@ The intended public theorem API is `zisk_riscv_compliant_program_bus` plus the
 is conditional on `OpEnvelope.completenessBurden` and
 `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope`, which mark that the per-opcode
 witness envelope and, for load envelopes only, the structured accepted
-full-memory trace plus selected-load coverage are supplied rather than
+full-memory trace plus selected split and cursor agreement are supplied rather than
 constructed from a full
 accepted trace. Wrapper and EquivCore routes are
 implementation details; the wrapper caller-burden gate still tracks wrapper

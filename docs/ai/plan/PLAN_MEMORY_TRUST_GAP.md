@@ -26,11 +26,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Scope the public accepted-memory trace burden to load envelopes only.
 - [x] Expose load-scoped `AcceptedFullMemoryTrace` plus selected-load coverage at the public theorem boundary.
 - [x] Replace the public full-memory trace `Prop` with structured envelope-at-cursor construction data.
+- [x] Narrow `AcceptedFullMemoryTraceAtEnvelope` to accepted trace plus selected split plus cursor agreement.
 - [ ] Prove load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` from accepted full-trace data rather than taking it as caller evidence.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages `AcceptedFullMemoryTrace` for the current Sail state plus selected-load coverage. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with state-vs-replay cursor agreement. The remaining gap is still global: there is no accepted full-trace theorem that builds the load-scoped full-memory trace construction.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages an accepted replay trace, selected event split, read tag, and Sail/replay cursor agreement. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with the selected cursor agreement. The remaining gap is still global: there is no accepted full execution-trace theorem that proves the selected cursor agreement from AIR trace data.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -43,6 +44,9 @@ check scripts, the global closure print, and targeted retired-memory scans;
 ledgers, both trust check scripts, global closure print, targeted
 retired-memory scans, and `nix run .#test`. The structured envelope-at-cursor
 construction slice has passed `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, regenerated trust ledgers, both trust check scripts,
+global closure print, targeted retired-memory scans, and `nix run .#test`.
+The selected-cursor narrowing slice passed `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, regenerated trust ledgers, both trust check scripts,
 global closure print, targeted retired-memory scans, and `nix run .#test`.
 

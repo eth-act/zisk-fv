@@ -19,7 +19,7 @@ to dispatch each opcode to its `Wrappers/<Op>` wrapper. Its
 `OpEnvelope.completenessBurden` and
 `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` premises make explicit that the
 current theorem starts from supplied witness evidence and, for load envelopes
-only, a structured accepted full-memory trace plus selected-load coverage rather
+only, a structured accepted full-memory trace plus selected split and cursor agreement rather
 than deriving all of that evidence from an accepted full trace.
 
 To audit a single opcode's trust closure, read

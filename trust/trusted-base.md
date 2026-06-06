@@ -23,7 +23,7 @@ constructed `OpEnvelope`. Its explicit
 `ZiskFv.Compliance.OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` premises mark
 the current caller-side witness burden: row specs, table/provider evidence,
 route facts, and, for load envelopes only, a structured accepted full-memory trace
-plus selected-load coverage are supplied rather than derived by a global
+plus selected-load split and cursor agreement are supplied rather than derived by a global
 accepted-trace completeness theorem.
 
 Current generated counts:
@@ -67,8 +67,8 @@ Load correctness now consumes an explicit
 the load trace context, and `MemModel.lean` only projects the resulting byte
 facts. The global theorem's memory premise is now load-scoped: non-load
 envelopes discharge it as `Unit`, while load envelopes require a structured
-accepted full-memory trace plus proof that the selected load event for the
-current `OpEnvelope` is covered by that trace.
+accepted full-memory trace, a split selecting the load event in that trace,
+and Sail/replay agreement at that cursor.
 
 ## Platform Profile
 
@@ -101,8 +101,8 @@ premise is an audit marker for that missing global witness-construction layer;
 there is no default theorem discharging it from an arbitrary envelope. Load
 arms expose their memory burden separately as
 `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope`: non-load envelopes discharge it
-as `Unit`; load envelopes require one replay-sound accepted trace for the
-current Sail state plus selected event membership. That structured construction
+as `Unit`; load envelopes require one replay-sound accepted trace, selected
+event split, read tag, and Sail/replay cursor agreement. That structured construction
 remains a public hypothesis until the accepted full-trace construction is
 proved.
 

@@ -2317,49 +2317,19 @@ def OpEnvelope.acceptedMemoryTraceContext
   ∃ _ctx : ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace,
     env.selectedLoadEventInTrace trace
 
-/-- Program-level accepted Mem trace for the Sail state at this instruction
+/-- Accepted full-memory-trace evidence for the Sail state at an instruction
     cursor.
 
-    This object is independent of a particular opcode envelope. It is the
-    global memory trace evidence that future full-trace construction code
-    should build from accepted Mem AIR data, initial memory agreement, and
-    store-event replay. -/
-structure AcceptedProgramMemoryTrace
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
-    Type where
-  trace : List ZiskFv.ZiskCircuit.MemTrace.MemEvent
-  context :
-    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace
-
-/-- Accepted full-memory-trace evidence for the Sail state at this
-    instruction cursor.
-
-    This is the global object the future accepted full-trace construction
-    theorem should produce. It is intentionally independent of one envelope;
-    load envelopes separately prove that their selected memory event occurs in
-    this trace. -/
+    This object contains only the replay-sound Mem trace. The separate
+    envelope-at-cursor object below supplies the selected load split and the
+    Sail/replay memory agreement at that cursor, which is the exact invariant
+    future full-trace construction code must derive from execution-state
+    replay. -/
 structure AcceptedFullMemoryTrace
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
     Type where
   trace : List ZiskFv.ZiskCircuit.MemTrace.MemEvent
-  context :
-    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace
-
-/-- View a full-memory trace as the narrower program-level trace object used
-    by the load replay bridge. -/
-def AcceptedFullMemoryTrace.toProgramTrace
-    (fullTrace : AcceptedFullMemoryTrace state) :
-    AcceptedProgramMemoryTrace state :=
-  { trace := fullTrace.trace
-    context := fullTrace.context }
-
-/-- The selected load event of this envelope is covered by the program-level
-    accepted Mem trace. Non-load envelopes have no selected load event and
-    therefore discharge this predicate as `True`. -/
-def OpEnvelope.acceptedProgramMemoryTraceCovers
-    (env : OpEnvelope state m r_main)
-    (programTrace : AcceptedProgramMemoryTrace state) : Prop :=
-  env.selectedLoadEventInTrace programTrace.trace
+  accepted : ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTrace trace
 
 /-- The selected load event of this envelope is covered by the accepted
     full-memory trace. Non-load envelopes discharge this predicate as
@@ -2369,52 +2339,90 @@ def OpEnvelope.acceptedFullMemoryTraceCovers
     (fullTrace : AcceptedFullMemoryTrace state) : Prop :=
   env.selectedLoadEventInTrace fullTrace.trace
 
-/-- Public accepted-memory burden, scoped to load envelopes only.
-
-    Non-load opcodes do not need a Mem replay trace. Load opcodes require one
-    accepted program-level Mem trace for the current Sail state plus proof
-    that the selected load event occurs in that trace. -/
-def OpEnvelope.acceptedProgramMemoryTraceBurden
-    (env : OpEnvelope state m r_main) : Prop :=
-  match env with
-  | .ld .. | .lbu .. | .lhu .. | .lwu ..
-  | .lb_via_static_match .. | .lh_via_static_match ..
-  | .lw_via_static_match .. =>
-      ∃ programTrace : AcceptedProgramMemoryTrace state,
-        env.acceptedProgramMemoryTraceCovers programTrace
-  | _ => True
+/-- Accepted full-memory-trace evidence at one selected load cursor. -/
+structure AcceptedLoadMemoryTraceAtCursor
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (event : ZiskFv.ZiskCircuit.MemTrace.MemEvent) : Type where
+  fullTrace : AcceptedFullMemoryTrace state
+  priorEvents : List ZiskFv.ZiskCircuit.MemTrace.MemEvent
+  laterEvents : List ZiskFv.ZiskCircuit.MemTrace.MemEvent
+  trace_split : fullTrace.trace = priorEvents ++ event :: laterEvents
+  read : event.op = (1 : FGL)
+  stateReplayAgreement :
+    ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement state
+      (ZiskFv.ZiskCircuit.MemTrace.replayEvents
+        fullTrace.accepted.initialMemory priorEvents)
 
 /-- Public accepted full-memory-trace burden, scoped to load envelopes only.
 
     This is the global construction hook for Mem replay: non-load opcodes do
     not need memory replay evidence, while load opcodes require one accepted
-    full-memory trace for the current Sail state plus selected-event coverage
-    in that trace. -/
+    full-memory trace, the selected-event split inside that trace, and
+    Sail/replay agreement at the selected cursor. -/
 def OpEnvelope.acceptedFullMemoryTraceBurden
     (env : OpEnvelope state m r_main) : Prop :=
   match env with
-  | .ld .. | .lbu .. | .lhu .. | .lwu ..
-  | .lb_via_static_match .. | .lh_via_static_match ..
-  | .lw_via_static_match .. =>
-      ∃ fullTrace : AcceptedFullMemoryTrace state,
-        env.acceptedFullMemoryTraceCovers fullTrace
+  | .ld _ _ _ bus _ _ .. =>
+      Nonempty
+        (AcceptedLoadMemoryTraceAtCursor state
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1))
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      Nonempty
+        (AcceptedLoadMemoryTraceAtCursor state
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1))
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      Nonempty
+        (AcceptedLoadMemoryTraceAtCursor state
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1))
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      Nonempty
+        (AcceptedLoadMemoryTraceAtCursor state
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1))
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      Nonempty
+        (AcceptedLoadMemoryTraceAtCursor state
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1))
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      Nonempty
+        (AcceptedLoadMemoryTraceAtCursor state
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1))
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      Nonempty
+        (AcceptedLoadMemoryTraceAtCursor state
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1))
   | _ => True
 
 /-- Structured full-trace construction target for this envelope.
 
     This is intentionally a `Type`, not a bare `Prop`: future accepted
     full-trace construction code should produce a concrete accepted
-    full-memory trace and a selected-load coverage proof at the current
-    envelope cursor. Non-load envelopes carry `Unit`, because no memory replay
+    full-memory trace, the selected-load split, and the Sail/replay cursor
+    agreement. Non-load envelopes carry `Unit`, because no memory replay
     evidence is needed for them. -/
 def OpEnvelope.AcceptedFullMemoryTraceAtEnvelope
     (env : OpEnvelope state m r_main) : Type :=
   match env with
-  | .ld .. | .lbu .. | .lhu .. | .lwu ..
-  | .lb_via_static_match .. | .lh_via_static_match ..
-  | .lw_via_static_match .. =>
-      { fullTrace : AcceptedFullMemoryTrace state //
-        env.acceptedFullMemoryTraceCovers fullTrace }
+  | .ld _ _ _ bus _ _ .. =>
+      AcceptedLoadMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
   | _ => Unit
 
 /-- Turn the structured full-trace construction target into the public
@@ -2428,7 +2436,25 @@ theorem OpEnvelope.acceptedFullMemoryTraceBurden_of_atEnvelope
       OpEnvelope.acceptedFullMemoryTraceBurden] at construction ⊢
   all_goals
     try exact trivial
-    exact ⟨construction.val, construction.property⟩
+    exact ⟨construction⟩
+
+/-- Derive the dispatcher-facing load-memory burden from accepted full-trace
+    evidence at the selected envelope cursor. -/
+theorem OpEnvelope.memoryBurden_of_acceptedFullMemoryTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction : env.AcceptedFullMemoryTraceAtEnvelope) :
+    env.memoryBurden := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullMemoryTraceAtEnvelope,
+      OpEnvelope.memoryBurden,
+      ZiskFv.EquivCore.Promises.LoadPromises.memoryBurden] at construction ⊢
+  all_goals
+    try exact trivial
+    exact
+      ⟨construction.fullTrace.trace, construction.fullTrace.accepted,
+        construction.priorEvents, construction.laterEvents,
+        construction.trace_split, construction.read,
+        construction.stateReplayAgreement⟩
 
 /-- Concrete construction payload for the accepted Mem trace used by this
     envelope.
@@ -2444,35 +2470,6 @@ structure OpEnvelope.AcceptedMemoryTraceConstruction
     ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace
   selected : env.selectedLoadEventInTrace trace
 
-/-- Build the envelope-local accepted-memory construction from one
-    program-level accepted Mem trace plus coverage of this envelope's selected
-    load event. -/
-def OpEnvelope.acceptedMemoryTraceConstructionOfProgramTrace
-    (env : OpEnvelope state m r_main)
-    (programTrace : AcceptedProgramMemoryTrace state)
-    (h_cover : env.acceptedProgramMemoryTraceCovers programTrace) :
-    env.AcceptedMemoryTraceConstruction := by
-  exact
-    { trace := programTrace.trace
-      context := programTrace.context
-      selected := h_cover }
-
-/-- Build the load-scoped program-trace burden from the accepted full-memory
-    trace burden. Non-load envelopes discharge immediately. -/
-theorem OpEnvelope.acceptedProgramMemoryTraceBurden_of_fullMemoryTraceBurden
-    (env : OpEnvelope state m r_main)
-    (h_trace : env.acceptedFullMemoryTraceBurden) :
-    env.acceptedProgramMemoryTraceBurden := by
-  cases env <;>
-    simp [OpEnvelope.acceptedFullMemoryTraceBurden,
-      OpEnvelope.acceptedFullMemoryTraceCovers,
-      OpEnvelope.acceptedProgramMemoryTraceBurden,
-      OpEnvelope.acceptedProgramMemoryTraceCovers] at h_trace ⊢
-  all_goals
-    try exact trivial
-    rcases h_trace with ⟨fullTrace, h_cover⟩
-    exact ⟨fullTrace.toProgramTrace, h_cover⟩
-
 /-- Turn the concrete accepted-memory construction object into the proposition
     consumed by the load-memory projection theorem. -/
 theorem OpEnvelope.acceptedMemoryTraceContext_of_construction
@@ -2480,23 +2477,6 @@ theorem OpEnvelope.acceptedMemoryTraceContext_of_construction
     (construction : env.AcceptedMemoryTraceConstruction) :
     env.acceptedMemoryTraceContext := by
   exact ⟨construction.trace, construction.context, construction.selected⟩
-
-/-- Derive the per-load accepted-memory burden from the load-scoped public
-    program-trace burden. Non-load envelopes discharge immediately. -/
-theorem OpEnvelope.acceptedMemoryTraceBurden_of_programTraceBurden
-    (env : OpEnvelope state m r_main)
-    (h_trace : env.acceptedProgramMemoryTraceBurden) :
-    env.acceptedMemoryTraceBurden := by
-  cases env <;>
-    simp [OpEnvelope.acceptedProgramMemoryTraceBurden,
-      OpEnvelope.acceptedMemoryTraceBurden] at h_trace ⊢
-  all_goals
-    try exact trivial
-    rcases h_trace with ⟨programTrace, h_cover⟩
-    rcases h_cover with ⟨priorEvents, laterEvents, h_split⟩
-    exact ZiskFv.ZiskCircuit.MemTrace.loadMemoryBurden_of_accepted_trace_for_state
-      state _ programTrace.trace programTrace.context
-      priorEvents laterEvents h_split rfl
 
 /-- Derive the per-load accepted-memory burden from the shared accepted trace
     context exposed at the global theorem boundary. -/
