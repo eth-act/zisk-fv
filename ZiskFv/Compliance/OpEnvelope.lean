@@ -2247,6 +2247,35 @@ def OpEnvelope.memoryBurden
       promises.memoryBurden
   | _ => True
 
+/-- Accepted Mem-trace evidence for load arms at the `OpEnvelope` boundary.
+
+    This is the global-facing memory obligation: for a load envelope it is the
+    replay-sound accepted trace, selected-event split, read tag, and
+    Sail/replay cursor agreement for the selected memory-bus event. Non-load
+    arms have no load-memory replay obligation. -/
+def OpEnvelope.acceptedMemoryTraceBurden
+    (env : OpEnvelope state m r_main) : Prop :=
+  match env with
+  | .ld _ _ _ _ _ promises .. => promises.memoryBurden
+  | .lbu _ _ _ _ _ _ _ promises .. => promises.memoryBurden
+  | .lhu _ _ _ _ _ _ _ promises .. => promises.memoryBurden
+  | .lwu _ _ _ _ _ _ _ promises .. => promises.memoryBurden
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ _ _ promises .. =>
+      promises.memoryBurden
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ _ _ promises .. =>
+      promises.memoryBurden
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ _ _ promises .. =>
+      promises.memoryBurden
+  | _ => True
+
+/-- Project the dispatcher-facing memory burden from the accepted Mem-trace
+    obligation exposed at the global theorem boundary. -/
+theorem OpEnvelope.memoryBurden_of_acceptedMemoryTraceBurden
+    (env : OpEnvelope state m r_main)
+    (h_trace : env.acceptedMemoryTraceBurden) :
+    env.memoryBurden := by
+  cases env <;> exact h_trace
+
 /-- Marker for route pins, message equality, row equality, and bus-match facts
     carried by `OpEnvelope` constructors. -/
 def OpEnvelope.routeBurden
@@ -2258,20 +2287,15 @@ def OpEnvelope.routeBurden
 
     The current compliance theorem is not a global accepted-trace
     completeness theorem: an `OpEnvelope` already carries row specs, table
-    specs, provider-row membership, memory agreement, byte facts, and route
-    pins. Requiring this predicate at the public theorem boundary makes that
-    caller burden explicit without changing the existing wrapper proofs.
-
-    For load arms, `memoryBurden` unfolds to the replay-sound accepted trace,
-    selected-event split, read tag, and Sail/replay cursor agreement carried by
-    `LoadPromises`. Replacing the remaining constructor-carried evidence with
-    a top-level accepted-trace construction is the next proof strengthening
-    step. -/
+    specs, provider-row membership, and route pins. Requiring this predicate at
+    the public theorem boundary makes that caller burden explicit without
+    changing the existing wrapper proofs. Load-memory replay evidence is
+    exposed separately by `acceptedMemoryTraceBurden`, so the public theorem no
+    longer hides that obligation under this structural completeness marker. -/
 def OpEnvelope.completenessBurden
     (env : OpEnvelope state m r_main) : Prop :=
   env.rowSpecBurden
     ∧ env.tableProviderBurden
-    ∧ env.memoryBurden
     ∧ env.routeBurden
 
 end ZiskFv.Compliance

@@ -51,11 +51,12 @@ bridge. The V2 trust gate enforces this.
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
-completeness. It is also defect-aware while `trust/defects.md` contains open
-claim-weakening defects: the `h_known_bugs` binder is orthogonal to the
-validity witnesses already bundled in `OpEnvelope`. Validity says the current
-modeled constraints hold; `h_known_bugs` says this envelope is not inside a
-ledgered defect region.
+completeness. Load-memory replay evidence is exposed separately as
+`OpEnvelope.acceptedMemoryTraceBurden`. It is also defect-aware while
+`trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
+binder is orthogonal to the validity witnesses already bundled in
+`OpEnvelope`. Validity says the current modeled constraints hold;
+`h_known_bugs` says this envelope is not inside a ledgered defect region.
 -/
 
 namespace ZiskFv.Compliance
@@ -89,10 +90,13 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
+    (h_mem_trace : env.acceptedMemoryTraceBurden)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
-  obtain ⟨_h_row_burden, _h_table_provider_burden, h_memory_burden, _h_route_burden⟩ :=
+  obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
+  have h_memory_burden : env.memoryBurden :=
+    env.memoryBurden_of_acceptedMemoryTraceBurden h_mem_trace
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact zisk_riscv_compliant_program_bus_branch env
   · exact zisk_riscv_compliant_program_bus_nomem env

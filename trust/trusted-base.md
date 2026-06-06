@@ -19,10 +19,11 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 
 This theorem is a conditional global compliance theorem over an already
 constructed `OpEnvelope`. Its explicit
-`ZiskFv.Compliance.OpEnvelope.completenessBurden` premise marks the current
-caller-side witness burden: row specs, table/provider evidence, memory
-agreement, and route facts are supplied by the envelope rather than derived by
-a global accepted-trace completeness theorem.
+`ZiskFv.Compliance.OpEnvelope.completenessBurden` and
+`ZiskFv.Compliance.OpEnvelope.acceptedMemoryTraceBurden` premises mark the
+current caller-side witness burden: row specs, table/provider evidence, route
+facts, and load-memory accepted-trace evidence are supplied rather than
+derived by a global accepted-trace completeness theorem.
 
 Current generated counts:
 
@@ -58,8 +59,8 @@ route obligations.
 
 ## Retired Memory State Load Bridge
 
-The former source axiom
-`ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load` has been removed.
+The former source axiom tying arbitrary Sail load state directly to a Mem row
+has been removed.
 Load correctness now consumes an explicit
 `ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement` premise threaded through
 the load trace context, and `MemModel.lean` only projects the resulting byte
@@ -94,10 +95,11 @@ The public theorem does not yet prove that an accepted full trace constructs
 the required `OpEnvelope`. The explicit `OpEnvelope.completenessBurden`
 premise is an audit marker for that missing global witness-construction layer;
 there is no default theorem discharging it from an arbitrary envelope. Load
-arms expose their memory burden as replay-sound accepted-trace data, selected
-event membership, read tagging, and Sail/replay cursor agreement, but those
-facts are still carried by constructor witnesses until the accepted-trace-to-
-`OpEnvelope` construction is proved.
+arms expose their memory burden separately as
+`OpEnvelope.acceptedMemoryTraceBurden`: replay-sound accepted-trace data,
+selected event membership, read tagging, and Sail/replay cursor agreement.
+Those facts remain a public hypothesis until the accepted-trace-to-`OpEnvelope`
+construction is proved.
 
 ## ArithTable And DIV/REM Audit Conclusions
 

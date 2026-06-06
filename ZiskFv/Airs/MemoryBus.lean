@@ -77,7 +77,7 @@ def matches_memory_entry (a b : MemoryBusEntry FGL) : Prop :=
 
 This is the right shape for relating a Main-side Clean pull to a provider
 push: their PIL message payloads agree, but legacy multiplicity polarity is
-opposite. Provider-row facts such as `mem_row_matches_entry` consume these
+opposite. Provider-row facts such as `mem_row_byte_addr_matches_entry` consume these
 payload fields and keep selector/polarity obligations separately. -/
 def matches_memory_payload (a b : MemoryBusEntry FGL) : Prop :=
   a.as = b.as

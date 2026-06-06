@@ -76,28 +76,6 @@ def entry_packs_mem_row_value
   mem.value_0 r_mem = memory_entry_lo e
   ∧ mem.value_1 r_mem = memory_entry_hi e
 
-/-- **Mem row matches a bus entry.** A bus entry `e` corresponds to Mem
-    AIR row `r_mem` of `mem` when:
-
-    * `mem.sel r_mem = 1` (the row is live, emitted to the bus);
-    * `mem.addr r_mem = e.ptr` (memory address agrees);
-    * `mem.step r_mem = e.timestamp` (mem-step / timestamp agrees);
-    * `e.as = 2` (memory-side address space; `as = 1` is the register
-      side);
-    * `entry_packs_mem_row_value` (byte decomposition of value chunks).
-
-    The `wr` bit is *not* part of this predicate — it is parameterized
-    by the load / store discharge lemmas below (load: `wr = 0`;
-    store: `wr = 1`). -/
-@[simp]
-def mem_row_matches_entry
-    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
-  mem.sel r_mem = 1
-  ∧ mem.addr r_mem = e.ptr
-  ∧ mem.step r_mem = e.timestamp
-  ∧ e.as = 2
-  ∧ entry_packs_mem_row_value mem r_mem e
-
 /-- Byte-addressed Mem row matches a bus entry.  This is the PIL-shaped
 provider relation: Mem's raw `addr` column is word-addressed and the memory
 bus carries the byte pointer `addr * 8`. -/
@@ -105,7 +83,7 @@ bus carries the byte pointer `addr * 8`. -/
 def mem_row_byte_addr_matches_entry
     (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
   mem.sel r_mem = 1
-  ∧ mem.addr r_mem * 8 = e.ptr
+  ∧ e.ptr = mem.addr r_mem * 8
   ∧ mem.step r_mem = e.timestamp
   ∧ e.as = 2
   ∧ entry_packs_mem_row_value mem r_mem e
