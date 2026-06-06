@@ -543,6 +543,66 @@ theorem field_increment_val_eq_incrementNat
     _ = incrementNat v row := by
       exact Nat.mod_eq_of_lt h_lt
 
+/-- Same-address generated segment constraints give the exact Nat
+    representative of the chronological step delta. -/
+theorem delta_step_val_eq_incrementNat_of_same_addr_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_range : increment_chunks_in_range v row) :
+    (delta_step v row).val = incrementNat v row := by
+  have h_delta :=
+    delta_step_eq_increment_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_same_addr
+  calc
+    (delta_step v row).val =
+        (v.increment_0 row + 4194304 * v.increment_1 row + 1 : FGL).val := by
+      rw [h_delta]
+    _ = incrementNat v row :=
+      field_increment_val_eq_incrementNat (v := v) (row := row) h_range
+
+/-- Same-address generated segment constraints make the chronological step
+    delta strictly positive at the Nat-representative level. -/
+theorem delta_step_val_pos_of_same_addr_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_range : increment_chunks_in_range v row) :
+    0 < (delta_step v row).val := by
+  rw [delta_step_val_eq_incrementNat_of_same_addr_segment_every_row
+    (cols := cols) (v := v) (row := row) h h_same_addr h_range]
+  exact incrementNat_pos v row
+
+/-- Address-change generated segment constraints give the exact Nat
+    representative of the chronological address delta. -/
+theorem delta_addr_val_eq_incrementNat_of_addr_change_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1)
+    (h_range : increment_chunks_in_range v row) :
+    (delta_addr cols v row).val = incrementNat v row := by
+  have h_delta :=
+    delta_addr_eq_increment_of_addr_change_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_addr_change
+  calc
+    (delta_addr cols v row).val =
+        (v.increment_0 row + 4194304 * v.increment_1 row + 1 : FGL).val := by
+      rw [h_delta]
+    _ = incrementNat v row :=
+      field_increment_val_eq_incrementNat (v := v) (row := row) h_range
+
+/-- Address-change generated segment constraints make the chronological address
+    delta strictly positive at the Nat-representative level. -/
+theorem delta_addr_val_pos_of_addr_change_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1)
+    (h_range : increment_chunks_in_range v row) :
+    0 < (delta_addr cols v row).val := by
+  rw [delta_addr_val_eq_incrementNat_of_addr_change_segment_every_row
+    (cols := cols) (v := v) (row := row) h h_addr_change h_range]
+  exact incrementNat_pos v row
+
 /-- Nat interpretation of the two 16-bit distance chunks used for large Mem
     segment-boundary checks. -/
 @[simp]

@@ -90,6 +90,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split generated/accepted Mem trace construction into row-order and replay-agreement obligations.
 - [x] Add Nat interpretations and no-wrap bounds for Mem increment and distance chunks.
 - [x] Verify and commit no-wrap field/Nat bridges for packed Mem increment and distance expressions.
+- [x] Verify and commit Nat-facing generated delta consequences for Mem step/address increments.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -232,6 +233,19 @@ ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
 closure print with zero project axiom names, targeted retired-memory scan, and
 `nix run .#test` passed for this slice.
+
+The next working edit adds generated-delta consequences:
+`delta_step_val_eq_incrementNat_of_same_addr_segment_every_row`,
+`delta_step_val_pos_of_same_addr_segment_every_row`,
+`delta_addr_val_eq_incrementNat_of_addr_change_segment_every_row`, and
+`delta_addr_val_pos_of_addr_change_segment_every_row`. These combine the
+generated Mem segment equations with the no-wrap increment bridge so chronology
+proofs can use positive Nat representatives instead of raw field equalities.
+Focused `lake build ZiskFv.Airs.Mem` passes. The dependent focused build `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance` also passes. Full `lake build`, trust regeneration, both
+trust gates, closure print with zero project axiom names, targeted retired-memory
+scan, and `nix run .#test` passed for this slice.
 
 The Mem segment-continuity slice adds named consequences of
 `ZiskFv.Airs.Mem.segment_every_row`: at non-boundary rows
