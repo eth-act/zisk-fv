@@ -666,6 +666,43 @@ structure AcceptedMemoryBusRowsTrace
   initialAgreement :
     ReplayMemoryAgreement initialState accepted.initialMemory
 
+/-- Granular construction data for accepted chronological raw memory-bus rows.
+
+This is the public-facing shape of the remaining Mem continuity burden: the
+whole-trace replay theorem is still supplied, but it is no longer hidden inside
+an already-packed `AcceptedMemoryBusRowsTrace`. Future AIR work should replace
+these fields with proofs from Mem/Main trace constraints. -/
+structure AcceptedMemoryBusRowsTraceConstruction
+    (initialState : SailState)
+    (rows : List (MemoryBusEntry FGL)) : Type where
+  initialMemory : Std.ExtHashMap Nat (BitVec 8)
+  storeReplaySound : Prop
+  eventOrderingSound : Prop
+  segmentCarrySound : Prop
+  dualEventsSound : Prop
+  traceSound :
+    TraceReplaySound initialMemory
+      (memoryBusTraceEventsToMemTrace (memoryBusTraceEventsOfRows rows))
+  initialAgreement :
+    ReplayMemoryAgreement initialState initialMemory
+
+/-- Pack granular raw-row trace construction data into the accepted row trace
+    object consumed by existing replay bridges. -/
+def acceptedMemoryBusRowsTrace_of_construction
+    (initialState : SailState)
+    (rows : List (MemoryBusEntry FGL))
+    (construction :
+      AcceptedMemoryBusRowsTraceConstruction initialState rows) :
+    AcceptedMemoryBusRowsTrace initialState rows :=
+  { accepted :=
+      { initialMemory := construction.initialMemory
+        storeReplaySound := construction.storeReplaySound
+        eventOrderingSound := construction.eventOrderingSound
+        segmentCarrySound := construction.segmentCarrySound
+        dualEventsSound := construction.dualEventsSound
+        traceSound := construction.traceSound }
+    initialAgreement := construction.initialAgreement }
+
 /-- Raw chronological bus rows induce the existing accepted memory-bus event
     trace once their event projection is accepted. -/
 def acceptedMemoryBusExecutionTrace_of_rowsTrace

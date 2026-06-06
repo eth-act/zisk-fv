@@ -61,11 +61,12 @@ surfaces, and explicit classification for route-named `OpEnvelope` variants.
 The intended public theorem API is `zisk_riscv_compliant_program_bus` plus the
 63 canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems. The public theorem
 is conditional on `OpEnvelope.completenessBurden` and
-`OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope`, which mark that the
+`OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, which mark that the
 per-opcode witness envelope and, for load envelopes only, accepted
-chronological raw memory-bus rows plus selected read-row cursor data pinned to
-the envelope's concrete read row are supplied rather than constructed from a
-full accepted AIR trace. The intermediate
+chronological raw memory-bus row construction facts plus selected read-row
+cursor data pinned to the envelope's concrete read row are supplied rather
+than constructed from a full accepted AIR trace. The intermediate
+`OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope`,
 `OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope`,
 `OpEnvelope.AcceptedMemoryBusExecutionTraceAtEnvelope` and
 `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` objects are derived internally.

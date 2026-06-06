@@ -2679,6 +2679,36 @@ structure AcceptedLoadFullMemoryBusRowsTraceAtCursor
   selected :
     SelectedLoadMemoryBusReadRowCursor state initialState rows entry
 
+/-- Granular construction data for accepted raw memory-bus rows plus the
+    selected load row cursor. This exposes the remaining Mem continuity and
+    selected-cursor obligations before they are packed into
+    `AcceptedLoadFullMemoryBusRowsTraceAtCursor`. -/
+structure AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  rowsConstruction :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryBusRowsTraceConstruction
+      initialState rows
+  selected :
+    SelectedLoadMemoryBusReadRowCursor state initialState rows entry
+
+/-- Pack granular row-trace construction data into the accepted row trace
+    object consumed by the existing memory replay bridge. -/
+def acceptedLoadFullMemoryBusRowsTraceAtCursor_of_construction
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL)
+    (construction :
+      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state entry) :
+    AcceptedLoadFullMemoryBusRowsTraceAtCursor state entry :=
+  { initialState := construction.initialState
+    rows := construction.rows
+    rowsTrace :=
+      ZiskFv.ZiskCircuit.MemTrace.acceptedMemoryBusRowsTrace_of_construction
+        construction.initialState construction.rows construction.rowsConstruction
+    selected := construction.selected }
+
 /-- Project accepted raw memory-bus row evidence to accepted memory-bus event
     evidence by filtering the chronological rows to memory read/write events. -/
 def acceptedLoadFullMemoryBusTraceAtCursor_of_rowsTrace
@@ -2865,6 +2895,44 @@ def OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
       AcceptedLoadFullMemoryBusRowsTraceAtCursor state bus.e1
   | _ => Unit
+
+/-- Public granular raw-row construction burden, scoped to load envelopes.
+    This is the visible predecessor of `AcceptedFullMemoryBusRowsTraceAtEnvelope`:
+    load envelopes carry the un-packed row trace construction facts plus the
+    selected read-row cursor. -/
+def OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsTraceConstructionAtCursor state bus.e1
+  | _ => Unit
+
+/-- Derive accepted raw-row trace evidence from the granular construction
+    burden for this envelope. -/
+def OpEnvelope.acceptedFullMemoryBusRowsTraceAtEnvelope_of_construction
+    (env : OpEnvelope state m r_main)
+    (construction : env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope) :
+    env.AcceptedFullMemoryBusRowsTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope] at construction ⊢
+  all_goals
+    first
+    | exact ()
+    | exact acceptedLoadFullMemoryBusRowsTraceAtCursor_of_construction
+        state _ construction
 
 /-- Derive accepted memory-bus event trace evidence from accepted raw
     memory-bus rows and the selected read-row cursor for this envelope. -/
