@@ -4685,6 +4685,97 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
         selectedEnvelopeRow := trivial
         selectedPrefix := () }
 
+/-- Shared full-execution memory trace construction for one Main trace.
+
+    This is the program-level memory object expected from accepted full
+    execution: a full RV64IM witness, the accepted AIR/Main/Mem memory trace,
+    and the proof that the witness-selected mutable Mem table embeds its
+    projected read-replay rows in that chronological trace. It deliberately
+    does not select a particular load envelope row. -/
+structure AcceptedFullExecutionMemoryTrace
+    (main : Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace main
+  embedded :
+    ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+      witness acceptedTrace.rows
+
+/-- Load-scoped view of the shared full-execution memory trace. -/
+def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) :
+    env.AcceptedAirMainMemFullTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope]
+  all_goals
+    try exact ()
+  all_goals
+    exact fullTrace.acceptedTrace
+
+/-- Selected envelope row occurrence for the witness-selected Mem table in a
+    shared full-execution memory trace. Non-load envelopes carry no row
+    obligation. -/
+def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) : Prop :=
+  match env with
+  | .ld .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+  | .lbu .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+  | .lhu .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+  | .lwu .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+  | .lb_via_static_match .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+  | .lh_via_static_match .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+  | .lw_via_static_match .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+  | _ => True
+
+/-- Per-envelope coverage facts for a shared full-execution memory trace.
+
+    The selected prefix identifies the concrete chronological read occurrence
+    for this envelope. The selected row occurrence ties the envelope's Clean
+    Mem provider row to the witness-selected mutable Mem table. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) : Type 1 where
+  selectedPrefix :
+    env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace
+        fullTrace)
+  selectedEnvelopeRow :
+    env.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace fullTrace
+
 /-- Full-execution memory construction data for one load cursor.
 
     This is the theorem-shaped upstream target: accepted full execution should
@@ -4814,6 +4905,33 @@ def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_traceAndPref
         acceptedTrace := acceptedTrace.construction
         selectedPrefix := selectedPrefix }
   all_goals exact ()
+
+/-- Build the current public load-scoped memory construction object from a
+    shared accepted full-execution memory trace plus per-envelope selected
+    coverage. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_fullExecutionMemoryTrace
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (coverage :
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace) :
+    env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope]
+      at ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := fullTrace.length
+        program := fullTrace.program
+        witness := fullTrace.witness
+        construction :=
+          { initialState := fullTrace.acceptedTrace.initialState
+            rows := fullTrace.acceptedTrace.rows
+            acceptedTrace := fullTrace.acceptedTrace.construction
+            selectedPrefix := coverage.selectedPrefix }
+        embedded := fullTrace.embedded
+        selectedEnvelopeRow := coverage.selectedEnvelopeRow }
 
 /-- Lower accepted AIR/Main/Mem full-trace data to the generated Mem burden
     currently consumed by replay. -/

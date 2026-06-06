@@ -68,7 +68,8 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Derive cursor extraction from accepted trace construction plus witness-selected Mem-table obligations.
 - [x] Expose accepted trace construction plus witness-selected Mem-table obligations at the public theorem boundary.
 - [x] Verify and commit named load-scoped full-execution memory construction package.
-- [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope` from the accepted full execution trace.
+- [x] Verify and commit split public memory boundary with shared full-execution trace plus per-envelope coverage.
+- [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
 
@@ -808,3 +809,16 @@ witness-selected table; non-load envelopes remain `ULift Unit`. Focused
 `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed for this
 slice. Full `lake build`, both trust gates, closure print with zero project
 axiom names, targeted retired-memory scan, and `nix run .#test` also passed.
+
+The split-boundary slice adds shared
+`AcceptedFullExecutionMemoryTrace`, per-envelope
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope`, and
+`OpEnvelope.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_fullExecutionMemoryTrace`.
+The public compliance theorem now consumes the shared trace and selected
+coverage separately, then derives the older load-scoped construction object
+internally. Focused `lake build ZiskFv.Compliance.OpEnvelope`, focused
+`lake build ZiskFv.Compliance`, full `lake build`, both trust check scripts,
+global compliance closure print, targeted retired-memory scan, and
+`nix run .#test` passed. The remaining open theorem is proving the shared
+trace plus coverage from accepted full execution rather than taking them as
+public inputs.
