@@ -5803,6 +5803,52 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceWithCoverageAtEnvel
       { selectedPrefix := construction.construction.selectedPrefix
         selectedEnvelopeRow := construction.selectedEnvelopeRow }
 
+/-- Project the shared full-execution memory trace from the older
+    construction object into the split public boundary shape. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceAtEnvelope_of_traceConstruction
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope]
+      at construction ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := construction.length
+        program := construction.program
+        witness := construction.witness
+        acceptedTrace :=
+          { initialState := construction.construction.initialState
+            rows := construction.construction.rows
+            construction := construction.construction.acceptedTrace }
+        embedded := construction.embedded }
+
+/-- Project selected coverage from the older construction object into the
+    split public boundary shape, indexed by the projected shared trace above. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_traceConstruction
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope
+      (env.acceptedFullExecutionMemoryTraceAtEnvelope_of_traceConstruction
+        construction) := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope,
+      OpEnvelope.acceptedFullExecutionMemoryTraceAtEnvelope_of_traceConstruction]
+      at construction ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { selectedPrefix := construction.construction.selectedPrefix
+        selectedEnvelopeRow := construction.selectedEnvelopeRow }
+
 /-- Build the current public load-scoped memory construction object from a
     shared accepted full-execution memory trace plus per-envelope selected
     coverage. -/
