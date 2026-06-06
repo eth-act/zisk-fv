@@ -1,8 +1,8 @@
-import ZiskFv.Completeness.Rv64imShapes
+import ZiskFv.Completeness.Rv64im.Shapes
 import ZiskFv.SailSpec.Auxiliaries
 
 /-!
-# Sail-derived RV decode domain
+# Sail-derived RV64IM decode domain
 
 This module is the checked-in Sail-domain bridge for RV completeness.  It names
 the Sail raw-decode domain from the generated Sail decoder and proves the first

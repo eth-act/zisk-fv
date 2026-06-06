@@ -10,8 +10,9 @@ Project goal:
 > extraction are trusted, prove soundness: every state transition accepted by
 > the modeled ZisK RV64IM circuits is a valid RISC-V state transition.
 
-Completeness is a planned future upgrade. Known bugs must explicitly weaken
-the theorem statement until fixed. Other assumptions must be classified as
+RV64IM completeness is tracked separately from the soundness theorem through
+`ZiskFv.Completeness.Rv64im.rv64im_completeness`. Known bugs must explicitly
+weaken theorem statements until fixed. Other assumptions must be classified as
 removable, fundamental-to-scope, or completeness-only.
 
 ## Reading Path
@@ -110,7 +111,8 @@ interface:
 `ZiskRowMaterializedRaw`, `KnownZiskDecodeGapRaw`,
 `KnownZiskRowMaterializationGapRaw`, `KnownZiskGapRaw`,
 `ZiskCircuitCoveredRaw`, `RvAvoidKnownBugsFor`, and
-`RvCompletenessAvoidingKnownBugsFor`.
+`RvCompletenessAvoidingKnownBugsFor`, which feed the checked-in
+`ZiskFv.Completeness.Rv64im.rv64im_completeness` interface.
 `check-all-semantic.sh` runs the olean-consuming semantic gate after a build.
 `regenerate.sh` refreshes every generated ledger after an intentional
 trust-boundary change.

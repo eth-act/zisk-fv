@@ -38,7 +38,6 @@ import ZiskFv.Equivalence.Sd
 import ZiskFv.Equivalence.Sw
 import ZiskFv.Equivalence.Auipc
 import ZiskFv.Equivalence.Fence
-import ZiskFv.Completeness.JalrSoundnessRoute
 import ZiskFv.Equivalence.Divuw
 import ZiskFv.Equivalence.Remuw
 import ZiskFv.Equivalence.Divw
@@ -131,7 +130,5 @@ import ZiskFv.AirsClean.FullEnsemble.Balance
 import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance
 import ZiskFv.Completeness.Rv
-import ZiskFv.Completeness.Rv64imShapes
 import ZiskFv.Completeness.Rv64im
-import ZiskFv.Completeness.Fence
-import ZiskFv.Completeness.SailDecode
+import ZiskFv.Completeness.Rv64im.SailDecode

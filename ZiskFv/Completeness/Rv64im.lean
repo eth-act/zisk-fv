@@ -1,17 +1,15 @@
-import ZiskFv.Completeness.Rv64imShapes
+import ZiskFv.Completeness.Rv64im.Shapes
 
 /-!
-# RV64IM shape-family completeness
+# RV64IM completeness
 
-This module states the checked-in theorem surface for the RV64IM raw-shape
-families exercised by the generated Aeneas production-transpiler harness.
+This module states the checked-in RV64IM completeness theorem surface.
 
 The concrete generated predicates live outside the repository in the
-reproducible extraction workspace. Here we keep the shape-family closure
-statements in the normal Lean build. The main RV target is the
-`SupportedDecodeShape`: every Sail-executable instruction in that decoded
-RV64IM surface should be circuit-covered, except for explicitly recorded ZisK
-gaps.
+reproducible extraction workspace. Here we keep the uniform theorem in the
+normal Lean build: every Sail-executable RV64IM raw instruction is covered by
+the production ZisK decode/lower/materialize/soundness-input surface, except
+for explicitly recorded ZisK decode gaps.
 -/
 
 namespace ZiskFv.Completeness.Rv64im
@@ -5912,12 +5910,35 @@ theorem rv64im_global_completeness_with_soundness_input_avoiding_known_decode_bu
     h_opcode
     h_soundness
 
+/-- Public RV64IM completeness theorem.
+
+Sail is the source of valid raw instructions.  For every Sail-executable
+RV64IM raw word, outside explicitly known ZisK decode gaps, the production
+ZisK decode/lower/materialize path covers the instruction and provides the
+row-local soundness input expected by the opcode soundness theorems. -/
+theorem rv64im_completeness
+    (iface : Rv.Interface)
+    (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
+    (h_supported : SupportedDecodeAvoidKnownDecodeBugs iface)
+    (h_lower : Rv.Interface.LoweringComplete iface)
+    (h_rows : Rv.Interface.RowMaterializationComplete iface)
+    (h_opcode : Rv.Interface.OpcodeCoverageComplete iface)
+    (h_soundness : SupportedDecodeSoundnessInputComplete iface) :
+    Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
+  rv64im_global_completeness_with_soundness_input_avoiding_known_decode_bugs
+    iface
+    h_sail_subset
+    h_supported
+    h_lower
+    h_rows
+    h_opcode
+    h_soundness
+
 /-- Family-instantiated global route-completeness theorem.
 
-This is the checked-in bridge expected by the generated route aggregation: each
-family proves its own production-row soundness-input contract, and this theorem
-assembles those contracts into the global Sail-first RV64IM completeness
-surface. -/
+This is only a helper for the generated route aggregation: each family proves
+its own production-row soundness-input contract, and this theorem assembles
+those contracts into the uniform `rv64im_completeness` endpoint. -/
 theorem rv64im_global_completeness_with_family_soundness_inputs_avoiding_known_decode_bugs
     (iface : Rv.Interface)
     (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
@@ -5935,7 +5956,7 @@ theorem rv64im_global_completeness_with_family_soundness_inputs_avoiding_known_d
     (h_jump_soundness : JumpRegisterImmediateSoundnessInputComplete iface)
     (h_fence_soundness : SupportedFencePredSuccSoundnessInputComplete iface) :
     Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
-  rv64im_global_completeness_with_soundness_input_avoiding_known_decode_bugs
+  rv64im_completeness
     iface
     h_sail_subset
     h_supported
