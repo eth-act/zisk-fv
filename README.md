@@ -91,7 +91,10 @@ interface:
 `ZiskRowMaterializedRaw`, `KnownZiskDecodeGapRaw`,
 `KnownZiskRowMaterializationGapRaw`, `KnownZiskGapRaw`,
 `ZiskCircuitCoveredRaw`, `RvAvoidKnownBugsFor`, and
-`RvCompletenessAvoidingKnownBugsFor`.
+`RvCompletenessAvoidingKnownBugsFor`. The checked-in completeness modules use
+the same abstract interface to state the Sail-domain containment, supported
+RV64IM coverage, and route soundness-input theorem surfaces while keeping the
+generated Aeneas workspace separate from the main Lean build.
 For extraction-only timing or debugging, run
 `AENEAS_CHECK_LEAN=0 nix run .#aeneas-production-extract`.
 

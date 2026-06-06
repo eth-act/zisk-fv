@@ -103,10 +103,9 @@ the same mnemonic to the same helper variant. The same gate covers the raw
 RV64IM extraction wrappers used by the completeness pipeline: raw decoding must
 use the shared production decoder core, raw lowering must route through
 `lower_rv64im_single_row_input`, and raw materialization must report the row
-inserted by that production path. This records the extraction step as closed;
-Sail-domain containment and universal row-totality are separate proof
-obligations. The optional RV completeness harness also emits the concrete
-generated predicate set used by those later obligations:
+inserted by that production path. The optional RV completeness harness also
+emits the concrete generated predicate set used by the checked-in completeness
+interface:
 `ZiskDecodeSupportedRaw`, `ZiskTranspileAcceptedRaw`, `ZiskLowerableRaw`,
 `ZiskRowMaterializedRaw`, `KnownZiskDecodeGapRaw`,
 `KnownZiskRowMaterializationGapRaw`, `KnownZiskGapRaw`,
