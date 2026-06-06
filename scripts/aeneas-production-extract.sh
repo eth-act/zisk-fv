@@ -3557,6 +3557,7 @@ import RvDecodeBranchBgeu
 EOF
 
     cat > "$lean_check/RvRouteSoundness.lean" <<'EOF'
+import RvUpperJumpCompleteness
 import RvDecodeJalr
 import RvDecodeIAluAddi
 import RvDecodeIAluSlti
@@ -3688,7 +3689,10 @@ theorem closed_route_soundness_inputs_ok :
     zisk_core_generated_rv_decode_store_sb.allStoreRawShapesSatisfySoundnessInput 0 = true ∧
     zisk_core_generated_rv_decode_store_sh.allStoreRawShapesSatisfySoundnessInput 1 = true ∧
     zisk_core_generated_rv_decode_store_sw.allStoreRawShapesSatisfySoundnessInput 2 = true ∧
-    zisk_core_generated_rv_decode_store_sd.allStoreRawShapesSatisfySoundnessInput 3 = true := by
+    zisk_core_generated_rv_decode_store_sd.allStoreRawShapesSatisfySoundnessInput 3 = true ∧
+    zisk_core_generated_rv_upper_jump_completeness.allLuiLoweringRegsRouteOk ∧
+    zisk_core_generated_rv_upper_jump_completeness.allAuipcLoweringRegsRouteOk ∧
+    zisk_core_generated_rv_upper_jump_completeness.allJalLoweringRegsRouteOk := by
   exact
     ⟨zisk_core_generated_rv_decode_jalr.allJalrRawShapesSatisfySoundnessInput_ok,
       zisk_core_generated_rv_decode_ialu_addi.addi_raw_shapes_soundness_input_ok,
@@ -3748,7 +3752,10 @@ theorem closed_route_soundness_inputs_ok :
       zisk_core_generated_rv_decode_store_sb.sb_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_store_sh.sh_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_store_sw.sw_raw_shapes_soundness_input_ok,
-      zisk_core_generated_rv_decode_store_sd.sd_raw_shapes_soundness_input_ok⟩
+      zisk_core_generated_rv_decode_store_sd.sd_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_upper_jump_completeness.all_lui_lowering_regs_route_ok,
+      zisk_core_generated_rv_upper_jump_completeness.all_auipc_lowering_regs_route_ok,
+      zisk_core_generated_rv_upper_jump_completeness.all_jal_lowering_regs_route_ok⟩
 
 end zisk_core_generated_rv_route_soundness
 EOF
@@ -8115,6 +8122,136 @@ def rawDecodeSupported (result : Result aeneas_extract.Rv64imDecodeExtract) : Bo
 def ZiskDecodeSupportedRaw (raw : Std.U32) : Prop :=
   rawDecodeSupported (aeneas_extract.extract_decode_rv64im_raw raw) = true
 
+def rowStoresRegDestination
+    (row : aeneas_extract.ZiskInstExtract) (rd : Nat) : Bool :=
+  if rd == 0 then
+    row.store.val == 0 && row.store_offset.val == 0
+  else
+    row.store.val == 3 && row.store_offset.val == Int.ofNat rd
+
+def rowStoresPcRegDestination
+    (row : aeneas_extract.ZiskInstExtract) (rd : Nat) : Bool :=
+  if rd == 0 then
+    !row.store_pc && row.store.val == 0 && row.store_offset.val == 0
+  else
+    row.store_pc && row.store.val == 3 && row.store_offset.val == Int.ofNat rd
+
+def rowHasZeroImmediateSources
+    (row : aeneas_extract.ZiskInstExtract) : Bool :=
+  row.a_src.val == 2 &&
+  row.a_use_sp_imm1.val == 0 &&
+  row.a_offset_imm0.val == 0 &&
+  row.b_src.val == 2 &&
+  row.b_use_sp_imm1.val == 0 &&
+  row.b_offset_imm0.val == 0
+
+def rowCarriesImm64OnB
+    (row : aeneas_extract.ZiskInstExtract) (imm : Std.I32) : Bool :=
+  match do
+    let imm64 ← lift (IScalar.hcast UScalarTy.U64 imm)
+    let hi ← imm64 >>> 32#i32
+    let lo ← lift (imm64 &&& 4294967295#u64)
+    ok (row.b_src.val == 2 &&
+      row.b_use_sp_imm1.val == hi.val &&
+      row.b_offset_imm0.val == lo.val)
+  with
+  | ok b => b
+  | fail _ => false
+  | div => false
+
+def lowerLuiRouteOk
+    (rd : Nat) (imm : Std.I32)
+    (result : Result aeneas_extract.ZiskInstExtract) : Bool :=
+  match result with
+  | ok row =>
+      !row.is_external_op &&
+      row.op.val == 1 &&
+      !row.m32 &&
+      !row.set_pc &&
+      !row.store_pc &&
+      row.a_src.val == 2 &&
+      row.a_use_sp_imm1.val == 0 &&
+      row.a_offset_imm0.val == 0 &&
+      rowCarriesImm64OnB row imm &&
+      rowStoresRegDestination row rd &&
+      row.jmp_offset1.val == 4 &&
+      row.jmp_offset2.val == 4
+  | fail _ => false
+  | div => false
+
+def lowerLuiRouteForReg (rd : Std.U32) (imm : Std.I32) : Bool :=
+  lowerLuiRouteOk rd.val imm
+      (do
+        let ctx ←
+          riscv2zisk_context.Riscv2ZiskContext.lui
+            { extract_inst := none, extract_marker := (),
+              input_precompile := none, output_precompile := none,
+              input_precompile_reg := none, output_precompile_reg := none }
+            { rom_address := 0#u64, rd := rd, rs1 := 0#u32,
+              rs2 := 0#u32, imm := imm }
+            4#u64
+        let zib ← core.option.Option.unwrap ctx.extract_inst
+        aeneas_extract.ZiskInstExtract.from_inst zib.i)
+
+def lowerAuipcRouteOk
+    (rd : Nat) (imm : Std.I32)
+    (result : Result aeneas_extract.ZiskInstExtract) : Bool :=
+  match result with
+  | ok row =>
+      !row.is_external_op &&
+      row.op.val == 0 &&
+      !row.m32 &&
+      !row.set_pc &&
+      rowHasZeroImmediateSources row &&
+      rowStoresPcRegDestination row rd &&
+      row.jmp_offset1.val == 4 &&
+      row.jmp_offset2.val == (IScalar.cast .I64 imm).val
+  | fail _ => false
+  | div => false
+
+def lowerAuipcRouteForReg (rd : Std.U32) (imm : Std.I32) : Bool :=
+  lowerAuipcRouteOk rd.val imm
+      (do
+        let ctx ←
+          riscv2zisk_context.Riscv2ZiskContext.auipc
+            { extract_inst := none, extract_marker := (),
+              input_precompile := none, output_precompile := none,
+              input_precompile_reg := none, output_precompile_reg := none }
+            { rom_address := 0#u64, rd := rd, rs1 := 0#u32,
+              rs2 := 0#u32, imm := imm }
+        let zib ← core.option.Option.unwrap ctx.extract_inst
+        aeneas_extract.ZiskInstExtract.from_inst zib.i)
+
+def lowerJalRouteOk
+    (rd : Nat) (imm : Std.I32)
+    (result : Result aeneas_extract.ZiskInstExtract) : Bool :=
+  match result with
+  | ok row =>
+      !row.is_external_op &&
+      row.op.val == 0 &&
+      !row.m32 &&
+      !row.set_pc &&
+      rowHasZeroImmediateSources row &&
+      rowStoresPcRegDestination row rd &&
+      row.jmp_offset1.val == (IScalar.cast .I64 imm).val &&
+      row.jmp_offset2.val == 4
+  | fail _ => false
+  | div => false
+
+def lowerJalRouteForReg (rd : Std.U32) (imm : Std.I32) : Bool :=
+  lowerJalRouteOk rd.val imm
+      (do
+        let ctx ←
+          riscv2zisk_context.Riscv2ZiskContext.jal
+            { extract_inst := none, extract_marker := (),
+              input_precompile := none, output_precompile := none,
+              input_precompile_reg := none, output_precompile_reg := none }
+            { rom_address := 0#u64, rd := rd, rs1 := 0#u32,
+              rs2 := 0#u32, imm := imm }
+            4#u64
+        let zib ← core.option.Option.unwrap ctx.extract_inst
+        aeneas_extract.ZiskInstExtract.from_inst zib.i)
+
 def rawUTypeBV (uimm : BitVec 20) (rd : BitVec 5) (opcode : BitVec 7) : Std.U32 :=
   ⟨(uimm.zeroExtend 32 <<< 12) ||| (rd.zeroExtend 32 <<< 7) |||
     opcode.zeroExtend 32⟩
@@ -8184,6 +8321,43 @@ theorem i32_31_nonnegative : (31#i32 : Std.I32).val ≥ 0 := by
 
 theorem i32_31_lt_u32_numBits :
     (31#i32 : Std.I32).toNat < UScalarTy.U32.numBits := by
+  native_decide
+
+theorem i32_32_nonnegative : (32#i32 : Std.I32).val ≥ 0 := by
+  native_decide
+
+theorem i32_32_lt_u64_numBits :
+    (32#i32 : Std.I32).toNat < UScalarTy.U64.numBits := by
+  native_decide
+
+theorem uscalar64_shift_right_i32_32_ok_true (x : Std.U64) :
+    (do
+      let _ ← x >>> 32#i32
+      ok true) = ok true := by
+  simp only [HShiftRight.hShiftRight,
+    UScalar.shiftRight_IScalar,
+    UScalar.shiftRight,
+    i32_32_nonnegative,
+    i32_32_lt_u64_numBits,
+    Bind.bind,
+    Std.bind,
+    ↓reduceIte]
+
+theorem zero_u64_shift_right_i32_32 :
+    ((0#u64 : Std.U64) >>> 32#i32) = ok (0#u64 : Std.U64) := by
+  simp only [HShiftRight.hShiftRight,
+    UScalar.shiftRight_IScalar,
+    UScalar.shiftRight,
+    i32_32_nonnegative,
+    i32_32_lt_u64_numBits,
+    ↓reduceIte]
+  apply congrArg ok
+  rw [U64.eq_equiv_bv_eq]
+  have h32 : (32#i32 : Std.I32).toNat = 32 := by native_decide
+  simp
+
+theorem four_i64_scalar_val_eq :
+    (↑(4#64#iscalar : Std.I64) : Int) = 4 := by
   native_decide
 
 lemma rawUTypeBV_opcode_lui (rd : BitVec 5) (uimm : BitVec 20) :
@@ -8411,8 +8585,303 @@ theorem jal_raw_shape_decode_supported (rd : BitVec 5) (jimm : BitVec 20) :
     aeneas_extract.opcode_id, aeneas_extract.format_id,
     Bind.bind, Std.bind]
 
-end zisk_core_generated_rv_upper_jump_completeness
 EOF
+    cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<'EOF'
+
+theorem lui_set_width_one_val_eq :
+    (↑(BitVec.setWidth 64 1#System.Platform.numBits#iscalar : Std.I64) : Int) = 1 := by
+  native_decide
+
+theorem lui_set_width_thirtyone_val_eq :
+    (↑(BitVec.setWidth 64 31#System.Platform.numBits#iscalar : Std.I64) : Int) = 31 := by
+  native_decide
+
+EOF
+    for rd in $(seq 0 31); do
+      cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<EOF
+
+theorem lui_reg${rd}_i64_val_eq :
+    (↑(${rd}#64#iscalar : Std.I64) : Int) = ${rd} := by
+  native_decide
+
+EOF
+      if [[ "$rd" == 0 ]]; then
+        cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<EOF
+theorem lui_reg0_i64_eq_zero :
+    (0#64#iscalar : Std.I64) = 0#i64 := by
+  native_decide
+
+theorem lower_lui_reg0_route_ok (imm : Std.I32) :
+    lowerLuiRouteForReg 0#u32 imm = true := by
+  have himm :=
+    uscalar64_shift_right_i32_32_ok_true
+      ((BitVec.signExtend 64 imm.bv#uscalar) : Std.U64)
+  cases himm_shift :
+      (((BitVec.signExtend 64 imm.bv#uscalar) : Std.U64) >>> 32#i32) <;>
+    simp [himm_shift, Bind.bind, Std.bind] at himm
+  simp [lowerLuiRouteForReg,
+    lowerLuiRouteOk, rowCarriesImm64OnB, rowStoresRegDestination,
+    riscv2zisk_context.Riscv2ZiskContext.lui,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    core.option.Option.unwrap,
+    aeneas_extract.ZiskInstExtract.from_inst,
+    zisk_inst.SRC_IMM,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    Bind.bind,
+    Std.bind,
+    zero_u64_shift_right_i32_32,
+    himm_shift,
+    UScalar.hcast,
+    IScalar.hcast,
+    lift,
+    lui_reg0_i64_eq_zero,
+    four_i64_scalar_val_eq]
+
+EOF
+      else
+        cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<EOF
+theorem lui_reg${rd}_i64_ne_zero :
+    ¬ ((${rd}#64#iscalar : Std.I64) = 0#i64) := by
+  native_decide
+
+theorem lui_reg${rd}_i64_val_not_lt_regs_from_set_width :
+    ¬ ((↑(${rd}#64#iscalar : Std.I64) : Int) <
+      (↑(BitVec.setWidth 64 1#System.Platform.numBits#iscalar : Std.I64) : Int)) := by
+  native_decide
+
+theorem regs_to_set_width_val_not_lt_lui_reg${rd}_i64 :
+    ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#iscalar : Std.I64) : Int) <
+      (↑(${rd}#64#iscalar : Std.I64) : Int)) := by
+  native_decide
+
+theorem lower_lui_reg${rd}_route_ok (imm : Std.I32) :
+    lowerLuiRouteForReg ${rd}#u32 imm = true := by
+  have himm :=
+    uscalar64_shift_right_i32_32_ok_true
+      ((BitVec.signExtend 64 imm.bv#uscalar) : Std.U64)
+  cases himm_shift :
+      (((BitVec.signExtend 64 imm.bv#uscalar) : Std.U64) >>> 32#i32) <;>
+    simp [himm_shift, Bind.bind, Std.bind] at himm
+  simp [lowerLuiRouteForReg,
+    lowerLuiRouteOk, rowCarriesImm64OnB, rowStoresRegDestination,
+    riscv2zisk_context.Riscv2ZiskContext.lui,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    core.option.Option.unwrap,
+    aeneas_extract.ZiskInstExtract.from_inst,
+    zisk_inst.SRC_IMM,
+    zisk_inst.STORE_REG,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    Bind.bind,
+    Std.bind,
+    zero_u64_shift_right_i32_32,
+    himm_shift,
+    UScalar.hcast,
+    IScalar.hcast,
+    lift,
+    lui_reg${rd}_i64_ne_zero,
+    lui_reg${rd}_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_lui_reg${rd}_i64,
+    lui_reg${rd}_i64_val_eq,
+    four_i64_scalar_val_eq,
+    lui_set_width_one_val_eq,
+    lui_set_width_thirtyone_val_eq]
+
+EOF
+      fi
+    done
+    for rd in $(seq 0 31); do
+      if [[ "$rd" == 0 ]]; then
+        rd_facts="lui_reg0_i64_eq_zero"
+      else
+        rd_facts="lui_reg${rd}_i64_ne_zero,
+    lui_reg${rd}_i64_val_not_lt_regs_from_set_width,
+    regs_to_set_width_val_not_lt_lui_reg${rd}_i64,
+    lui_reg${rd}_i64_val_eq,
+    lui_set_width_one_val_eq,
+    lui_set_width_thirtyone_val_eq"
+      fi
+      cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<EOF
+
+theorem lower_auipc_reg${rd}_route_ok (imm : Std.I32) :
+    lowerAuipcRouteForReg ${rd}#u32 imm = true := by
+  simp [lowerAuipcRouteForReg,
+    lowerAuipcRouteOk, rowHasZeroImmediateSources, rowStoresPcRegDestination,
+    riscv2zisk_context.Riscv2ZiskContext.auipc,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_pc_reg,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    core.option.Option.unwrap,
+    aeneas_extract.ZiskInstExtract.from_inst,
+    zisk_inst.SRC_IMM,
+    zisk_inst.STORE_REG,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    Bind.bind,
+    Std.bind,
+    zero_u64_shift_right_i32_32,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    four_i64_scalar_val_eq,
+    ${rd_facts}]
+
+theorem lower_jal_reg${rd}_route_ok (imm : Std.I32) :
+    lowerJalRouteForReg ${rd}#u32 imm = true := by
+  simp [lowerJalRouteForReg,
+    lowerJalRouteOk, rowHasZeroImmediateSources, rowStoresPcRegDestination,
+    riscv2zisk_context.Riscv2ZiskContext.jal,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type,
+    zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size,
+    zisk_ops.ZiskOp.is_m32,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_pc_reg,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    core.option.Option.unwrap,
+    aeneas_extract.ZiskInstExtract.from_inst,
+    zisk_inst.SRC_IMM,
+    zisk_inst.STORE_REG,
+    zisk_registers.REGS_IN_MAIN_FROM,
+    zisk_registers.REGS_IN_MAIN_TO,
+    Bind.bind,
+    Std.bind,
+    zero_u64_shift_right_i32_32,
+    UScalar.hcast,
+    IScalar.cast,
+    IScalar.hcast,
+    lift,
+    four_i64_scalar_val_eq,
+    ${rd_facts}]
+
+EOF
+    done
+    cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<'EOF'
+def allLuiLoweringRegsRouteOk : Prop :=
+  ∀ imm : Std.I32,
+EOF
+    for rd in $(seq 0 31); do
+      if [[ "$rd" == 31 ]]; then
+        echo "    lowerLuiRouteForReg ${rd}#u32 imm = true" >> "$lean_check/RvUpperJumpCompleteness.lean"
+      else
+        echo "    lowerLuiRouteForReg ${rd}#u32 imm = true ∧" >> "$lean_check/RvUpperJumpCompleteness.lean"
+      fi
+    done
+    cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<'EOF'
+
+theorem all_lui_lowering_regs_route_ok :
+    allLuiLoweringRegsRouteOk := by
+  intro imm
+  repeat' constructor
+EOF
+    for rd in $(seq 0 31); do
+      echo "  · exact lower_lui_reg${rd}_route_ok imm" >> "$lean_check/RvUpperJumpCompleteness.lean"
+    done
+    cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<'EOF'
+
+def allAuipcLoweringRegsRouteOk : Prop :=
+  ∀ imm : Std.I32,
+EOF
+    for rd in $(seq 0 31); do
+      if [[ "$rd" == 31 ]]; then
+        echo "    lowerAuipcRouteForReg ${rd}#u32 imm = true" >> "$lean_check/RvUpperJumpCompleteness.lean"
+      else
+        echo "    lowerAuipcRouteForReg ${rd}#u32 imm = true ∧" >> "$lean_check/RvUpperJumpCompleteness.lean"
+      fi
+    done
+    cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<'EOF'
+
+theorem all_auipc_lowering_regs_route_ok :
+    allAuipcLoweringRegsRouteOk := by
+  intro imm
+  repeat' constructor
+EOF
+    for rd in $(seq 0 31); do
+      echo "  · exact lower_auipc_reg${rd}_route_ok imm" >> "$lean_check/RvUpperJumpCompleteness.lean"
+    done
+    cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<'EOF'
+
+def allJalLoweringRegsRouteOk : Prop :=
+  ∀ imm : Std.I32,
+EOF
+    for rd in $(seq 0 31); do
+      if [[ "$rd" == 31 ]]; then
+        echo "    lowerJalRouteForReg ${rd}#u32 imm = true" >> "$lean_check/RvUpperJumpCompleteness.lean"
+      else
+        echo "    lowerJalRouteForReg ${rd}#u32 imm = true ∧" >> "$lean_check/RvUpperJumpCompleteness.lean"
+      fi
+    done
+    cat >> "$lean_check/RvUpperJumpCompleteness.lean" <<'EOF'
+
+theorem all_jal_lowering_regs_route_ok :
+    allJalLoweringRegsRouteOk := by
+  intro imm
+  repeat' constructor
+EOF
+    for rd in $(seq 0 31); do
+      echo "  · exact lower_jal_reg${rd}_route_ok imm" >> "$lean_check/RvUpperJumpCompleteness.lean"
+    done
+    printf '\n\nend zisk_core_generated_rv_upper_jump_completeness\n' >> "$lean_check/RvUpperJumpCompleteness.lean"
     nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks RvRouteSoundness RvDecodeCompleteness RvCompleteness RvUpperJumpCompleteness' bash "$lean_check"
   elif [[ "$AENEAS_CHECK_RV64IM_COMPLETENESS" != 0 ]]; then
     cat > "$lean_check/Rv64imCompleteness.lean" <<'EOF'
