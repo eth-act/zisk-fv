@@ -89,6 +89,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Prove previous-step and increment/delta facts from generated Mem segment constraints.
 - [x] Split generated/accepted Mem trace construction into row-order and replay-agreement obligations.
 - [x] Add Nat interpretations and no-wrap bounds for Mem increment and distance chunks.
+- [x] Verify and commit no-wrap field/Nat bridges for packed Mem increment and distance expressions.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -220,6 +221,17 @@ must actually produce. This still does not prove the semantic
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
 regeneration, both trust gates, closure print with no project axiom names,
 targeted retired-memory scan, and `nix run .#test` passed.
+
+The current working edit adds no-wrap bridge lemmas for the packed Mem
+increment and segment-distance expressions:
+`field_increment_val_eq_incrementNat` and
+`field_distance_val_eq_distanceChunksNat`. These are local arithmetic bridges
+needed by chronology proofs that move from generated field equalities to Nat
+order facts. Focused `lake build ZiskFv.Airs.Mem`, dependent focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+closure print with zero project axiom names, targeted retired-memory scan, and
+`nix run .#test` passed for this slice.
 
 The Mem segment-continuity slice adds named consequences of
 `ZiskFv.Airs.Mem.segment_every_row`: at non-boundary rows

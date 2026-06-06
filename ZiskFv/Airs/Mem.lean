@@ -518,6 +518,31 @@ theorem incrementNat_lt_goldilocks_modulus
   norm_num at h_le ⊢
   omega
 
+/-- The field expression in the generated increment constraint is the field
+    cast of the Nat interpretation. -/
+theorem incrementNat_cast_eq_field_increment
+    (v : Valid_Mem FGL FGL) (row : ℕ) :
+    ((incrementNat v row : ℕ) : FGL) =
+      v.increment_0 row + 4194304 * v.increment_1 row + 1 := by
+  simp [incrementNat]
+
+/-- Under the PIL chunk range checks, the field increment expression has the
+    Nat representative `incrementNat`. This is the no-wrap bridge needed by
+    chronology proofs that move from generated field equalities to Nat order. -/
+theorem field_increment_val_eq_incrementNat
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_range : increment_chunks_in_range v row) :
+    (v.increment_0 row + 4194304 * v.increment_1 row + 1 : FGL).val =
+      incrementNat v row := by
+  have h_cast := incrementNat_cast_eq_field_increment v row
+  have h_lt := incrementNat_lt_goldilocks_modulus (v := v) (row := row) h_range
+  calc
+    (v.increment_0 row + 4194304 * v.increment_1 row + 1 : FGL).val =
+        (((incrementNat v row : ℕ) : FGL)).val := by
+      rw [h_cast.symm]
+    _ = incrementNat v row := by
+      exact Nat.mod_eq_of_lt h_lt
+
 /-- Nat interpretation of the two 16-bit distance chunks used for large Mem
     segment-boundary checks. -/
 @[simp]
@@ -547,6 +572,28 @@ theorem distanceChunksNat_lt_goldilocks_modulus
     distanceChunksNat_le_two_pow_32_sub_one (lo := lo) (hi := hi) h_range
   norm_num at h_le ⊢
   omega
+
+/-- The field expression used for large-memory distance chunks is the field
+    cast of the Nat interpretation. -/
+theorem distanceChunksNat_cast_eq_field_distance (lo hi : FGL) :
+    ((distanceChunksNat lo hi : ℕ) : FGL) = lo + 65536 * hi := by
+  simp [distanceChunksNat]
+
+/-- Under the PIL chunk range checks, the packed distance field expression
+    has the Nat representative `distanceChunksNat`. -/
+theorem field_distance_val_eq_distanceChunksNat
+    {lo hi : FGL}
+    (h_range : distance_chunks_in_range lo hi) :
+    (lo + 65536 * hi : FGL).val = distanceChunksNat lo hi := by
+  have h_cast := distanceChunksNat_cast_eq_field_distance lo hi
+  have h_lt :=
+    distanceChunksNat_lt_goldilocks_modulus (lo := lo) (hi := hi) h_range
+  calc
+    (lo + 65536 * hi : FGL).val =
+        (((distanceChunksNat lo hi : ℕ) : FGL)).val := by
+      rw [h_cast.symm]
+    _ = distanceChunksNat lo hi := by
+      exact Nat.mod_eq_of_lt h_lt
 
 /-! ## Generated permutation accumulator surface
 
