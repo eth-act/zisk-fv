@@ -87,6 +87,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Prove non-boundary same-address value carry facts from generated Mem segment constraints.
 - [x] Prove segment-boundary carry-in/carry-out facts from generated Mem segment constraints.
 - [x] Prove previous-step and increment/delta facts from generated Mem segment constraints.
+- [x] Split generated/accepted Mem trace construction into row-order and replay-agreement obligations.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -229,6 +230,19 @@ chronological replay remain separate obligations. Focused `lake build
 ZiskFv.Airs.Mem`, full `lake build`, trust regeneration, both trust gates,
 closure print with no project axiom names, targeted retired-memory scan, and
 `nix run .#test` passed.
+
+The split-construction slice adds `GeneratedMemRowOrderFacts`,
+`GeneratedMemReplayFacts`,
+`GeneratedMemFullTraceSplitConstruction`, and
+`AcceptedAirMainMemFullTraceSplitConstruction`. These do not discharge the
+remaining semantic Mem obligations; they split the upstream theorem target so
+generated row constraints, chronological uniqueness/order, and Sail/replay
+agreement can be proved independently and then repacked into the existing
+construction object. Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec`
+passed, as did focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+closure print with no project axiom names, the retired-memory declaration scan,
+and `nix run .#test`.
 
 The Mem segment-boundary slice adds the complementary boundary facts from
 `ZiskFv.Airs.Mem.segment_every_row`: at rows with `segment_l1 row = 1`,

@@ -235,6 +235,41 @@ def GeneratedMemRows
   ∀ row, row < rowCount →
     ZiskFv.Airs.Mem.generated_every_row segment permutation mem row
 
+/-- Row-order facts that must be extracted from accepted Mem sorting,
+    segment-boundary, and multiplicity constraints before replay soundness can
+    be constructed. Keeping these facts separate prevents the AIR bridge from
+    hiding chronological uniqueness inside a packed replay object. -/
+structure GeneratedMemRowOrderFacts
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop where
+  rowsNodup : rows.Nodup
+  chronologicalRows : MemoryBusRowsChronological rows
+
+/-- Replay facts that connect the accepted chronological Mem rows to Sail
+    memory. These are the semantic facts load soundness consumes after the row
+    order and selected-row coverage have fixed the relevant prefix. -/
+structure GeneratedMemReplayFacts
+    (initialState : SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
+  initialMemory : Std.ExtHashMap Nat (BitVec 8)
+  prefixReadSound :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
+      initialMemory rows
+  initialAgreement : ReplayMemoryAgreement initialState initialMemory
+
+/-- Split target for the upstream AIR/Main/Mem bridge: generated Mem row
+    constraints, public chronological row order, and replay agreement are
+    independent proof obligations. -/
+structure GeneratedMemFullTraceSplitConstruction
+    (initialState : SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
+  mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL
+  segment : ZiskFv.Airs.Mem.SegmentColumns FGL
+  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
+  rowCount : ℕ
+  generatedRows : GeneratedMemRows mem segment permutation rowCount
+  orderFacts : GeneratedMemRowOrderFacts rows
+  replayFacts : GeneratedMemReplayFacts initialState rows
+
 /-- Accepted full Mem trace construction data rooted at the generated Mem
     constraint surface.
 
@@ -259,6 +294,45 @@ structure GeneratedMemFullTraceConstruction
     ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
       initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
+
+/-- Repack the split generated-trace target into the legacy full construction
+    object currently consumed by the compliance bridge. -/
+def GeneratedMemFullTraceConstruction.ofSplit
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (split : GeneratedMemFullTraceSplitConstruction initialState rows) :
+    GeneratedMemFullTraceConstruction initialState rows :=
+  { mem := split.mem
+    segment := split.segment
+    permutation := split.permutation
+    rowCount := split.rowCount
+    generatedRows := split.generatedRows
+    initialMemory := split.replayFacts.initialMemory
+    rowsNodup := split.orderFacts.rowsNodup
+    chronologicalRows := split.orderFacts.chronologicalRows
+    prefixReadSound := split.replayFacts.prefixReadSound
+    initialAgreement := split.replayFacts.initialAgreement }
+
+/-- Decompose the existing generated full-trace construction into the split
+    target. This is useful while callers migrate from packed construction
+    evidence to separately proved order and replay obligations. -/
+def GeneratedMemFullTraceConstruction.toSplit
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction : GeneratedMemFullTraceConstruction initialState rows) :
+    GeneratedMemFullTraceSplitConstruction initialState rows :=
+  { mem := construction.mem
+    segment := construction.segment
+    permutation := construction.permutation
+    rowCount := construction.rowCount
+    generatedRows := construction.generatedRows
+    orderFacts :=
+      { rowsNodup := construction.rowsNodup
+        chronologicalRows := construction.chronologicalRows }
+    replayFacts :=
+      { initialMemory := construction.initialMemory
+        prefixReadSound := construction.prefixReadSound
+        initialAgreement := construction.initialAgreement } }
 
 /-- Generated full-trace construction data lowers to the global Mem row-trace
     object consumed by load replay. -/
@@ -312,6 +386,64 @@ structure AcceptedAirMainMemFullTraceConstruction
     ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
       initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
+
+/-- Split accepted AIR/Main/Mem construction target. The `main` parameter
+    marks provenance from the accepted program trace, while the proof fields
+    mirror the generated split target: local generated constraints, public row
+    order, and Sail/replay memory agreement. -/
+structure AcceptedAirMainMemFullTraceSplitConstruction
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (initialState : SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
+  mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL
+  segment : ZiskFv.Airs.Mem.SegmentColumns FGL
+  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
+  rowCount : ℕ
+  generatedRows : GeneratedMemRows mem segment permutation rowCount
+  orderFacts : GeneratedMemRowOrderFacts rows
+  replayFacts : GeneratedMemReplayFacts initialState rows
+
+/-- Repack split accepted AIR/Main/Mem evidence into the current construction
+    object consumed by downstream compliance wrappers. -/
+def AcceptedAirMainMemFullTraceConstruction.ofSplit
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (split :
+      AcceptedAirMainMemFullTraceSplitConstruction main initialState rows) :
+    AcceptedAirMainMemFullTraceConstruction main initialState rows :=
+  { mem := split.mem
+    segment := split.segment
+    permutation := split.permutation
+    rowCount := split.rowCount
+    generatedRows := split.generatedRows
+    initialMemory := split.replayFacts.initialMemory
+    rowsNodup := split.orderFacts.rowsNodup
+    chronologicalRows := split.orderFacts.chronologicalRows
+    prefixReadSound := split.replayFacts.prefixReadSound
+    initialAgreement := split.replayFacts.initialAgreement }
+
+/-- Decompose packed accepted AIR/Main/Mem construction evidence into the
+    split target. -/
+def AcceptedAirMainMemFullTraceConstruction.toSplit
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      AcceptedAirMainMemFullTraceConstruction main initialState rows) :
+    AcceptedAirMainMemFullTraceSplitConstruction main initialState rows :=
+  { mem := construction.mem
+    segment := construction.segment
+    permutation := construction.permutation
+    rowCount := construction.rowCount
+    generatedRows := construction.generatedRows
+    orderFacts :=
+      { rowsNodup := construction.rowsNodup
+        chronologicalRows := construction.chronologicalRows }
+    replayFacts :=
+      { initialMemory := construction.initialMemory
+        prefixReadSound := construction.prefixReadSound
+        initialAgreement := construction.initialAgreement } }
 
 /-- Forget the Main-trace provenance marker and produce the generated Mem
     construction object consumed by the current replay bridge. -/
