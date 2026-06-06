@@ -3616,6 +3616,56 @@ def OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
     exact construction.toTraceWithMemTable
   all_goals exact ULift.up ()
 
+/-- Envelope-scoped constructor for the full-ensemble Mem-table bridge.
+
+    Load envelopes receive the witness-selected mutable dual-Mem table; non-load
+    envelopes carry `ULift Unit`. This is the first full-execution extraction
+    step that no longer asks callers to choose a concrete Mem table. -/
+noncomputable def OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows) :
+    env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope]
+  case ld =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+        program witness acceptedTrace embedded
+  case lbu =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+        program witness acceptedTrace embedded
+  case lhu =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+        program witness acceptedTrace embedded
+  case lwu =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+        program witness acceptedTrace embedded
+  case lb_via_static_match =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+        program witness acceptedTrace embedded
+  case lh_via_static_match =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+        program witness acceptedTrace embedded
+  case lw_via_static_match =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+        program witness acceptedTrace embedded
+  all_goals exact ULift.up ()
+
 /-- The accepted trace contained in the shared trace/table bridge object. -/
 def OpEnvelope.acceptedTraceOfFullTraceWithMemTable
     (env : OpEnvelope state m r_main)
@@ -4293,6 +4343,41 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
       selectedPrefix :=
         env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
           acceptedTrace selectedMembership selectedPrefixStateAtAccepted }
+
+/-- Construct the cursor-shaped full-execution memory extraction target from
+    witness-selected full-ensemble Mem data.
+
+    This composes the witness-selected mutable Mem table constructor with the
+    table-local selected-row and prefix-state bridge. The remaining upstream
+    obligations are therefore exactly the named mutable-Mem embedding, the
+    selected envelope Mem-row occurrence in the selected table, and the
+    selected prefix-state equality. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_witnessPrefixState
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness acceptedTrace embedded))
+    (selectedPrefixState :
+      env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness acceptedTrace embedded)) :
+    env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope :=
+  env.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+    (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+      program witness acceptedTrace embedded)
+    selectedEnvelopeRow
+    selectedPrefixState
 
 /-- Combine shared accepted trace data with selected-prefix coverage to
     recover the packed load-scoped construction object used by the existing

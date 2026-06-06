@@ -64,6 +64,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Derive cursor extraction from FullEnsemble-aligned Mem-table, selected envelope row, and prefix-state equality facts.
 - [x] Prove that any full RV64IM ensemble witness contains a mutable dual-Mem table and add a constructor that selects it for the Mem trace/table bridge.
 - [x] Name the witness-level mutable-Mem read-row embedding obligation consumed by the Mem trace/table bridge.
+- [x] Add envelope-level constructors that use the witness-selected Mem table to build the cursor-extraction target.
 - [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -744,3 +745,16 @@ trace. Focused `lake build ZiskFv.AirsClean.FullEnsemble.Balance` and
 `lake build ZiskFv.Compliance.OpEnvelope` passed. Full `lake build`, both
 trust gates, closure print with zero project axiom names, targeted retired-name
 scan, and `nix run .#test` also passed.
+
+The witness-selected cursor-constructor slice adds
+`OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness`
+and
+`OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_witnessPrefixState`.
+The future accepted full-execution extraction theorem no longer needs to pass
+an arbitrary Mem table bridge: it can call these constructors from an accepted
+trace, full-ensemble witness, `MutableMemReadReplayRowsEmbeddedInTrace`, the
+selected envelope row occurrence in the witness-selected table, and selected
+prefix-state equality. Focused `lake build ZiskFv.Compliance.OpEnvelope`
+passed for this slice. Full `lake build`, both trust gates, closure print with
+zero project axiom names, targeted retired-name scan, and `nix run .#test`
+also passed.
