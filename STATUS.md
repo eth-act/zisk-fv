@@ -6,6 +6,6 @@ Current focus: the remaining global derivation target: prove `OpEnvelope.Accepte
 
 Blocking: FullEnsemble still does not provide chronological Mem rows, row-level read/write replay soundness, initial Sail/replay agreement, or selected load prefix cursor coverage from accepted execution data.
 
-Next step: commit the verified row-embedding slice, then start connecting accepted full execution data to the named chronological Mem trace object.
+Next step: start connecting accepted full execution data to the named chronological Mem trace object.
 
 Digression: none; current work is back on the memory trust gap plan.

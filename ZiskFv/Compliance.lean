@@ -52,13 +52,13 @@ bridge. The V2 trust gate enforces this.
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
 completeness. Load-memory replay evidence is exposed separately through
-`OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` plus
-`OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`: non-load
-envelopes carry `Unit`, while load envelopes carry accepted AIR/Main/Mem
-full-trace data plus a separate prefix cursor selecting their concrete row in
-the shared chronological Mem row list. The theorem derives the packed accepted
-load construction, generated Mem burden, and replay construction internally. It is also
-defect-aware while
+`OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` plus decomposed
+selected-row obligations: non-load envelopes carry trivial obligations, while
+load envelopes carry accepted AIR/Main/Mem full-trace data, selected-row
+membership in the shared chronological Mem row list, and split-indexed proof
+that the Sail state is the replayed memory state at that row's prefix. The
+theorem derives the selected-prefix cursor, packed accepted load construction,
+generated Mem burden, and replay construction internally. It is also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
 `OpEnvelope`. Validity says the current modeled constraints hold;
@@ -98,13 +98,21 @@ theorem zisk_riscv_compliant_program_bus
     (h_burden : env.completenessBurden)
     (h_accepted_mem_trace :
       env.AcceptedAirMainMemFullTraceAtEnvelope)
-    (h_selected_mem_prefix :
-      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+    (h_selected_mem_row :
+      env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+        h_accepted_mem_trace)
+    (h_selected_mem_state :
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
         h_accepted_mem_trace)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
+  have h_selected_mem_prefix :
+      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+        h_accepted_mem_trace :=
+    env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
+      h_accepted_mem_trace h_selected_mem_row h_selected_mem_state
   have h_accepted_mem_trace_at_envelope :
       env.AcceptedAirMainMemFullTraceConstructionAtEnvelope :=
     env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_traceAndPrefix

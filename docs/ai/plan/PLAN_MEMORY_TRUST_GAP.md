@@ -50,6 +50,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Factor selected-prefix cursor construction into row coverage plus split-indexed state equality.
 - [x] Decompose load-scoped selected-prefix coverage into row membership plus prefix-state equality at the accepted trace boundary.
 - [x] Connect selected Mem provider read projections to accepted chronological row membership through an explicit embedding obligation.
+- [x] Expose selected-row membership and split-indexed prefix-state equality directly in the public compliance theorem signature.
 - [ ] Prove `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -244,6 +245,14 @@ from that embedding plus the existing matched-entry projection lemmas. Focused
 regeneration, both trust gates, compliance closure print with zero project
 axiom names, targeted retired-memory scans, extractor skip scan, generated
 zero-entry checks, and `nix run .#test` passed for this slice.
+The public compliance theorem-boundary slice changes
+`zisk_riscv_compliant_program_bus` to consume selected-row membership and
+split-indexed prefix-state equality directly, then derives
+`SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope` internally. Focused
+`lake build ZiskFv.Compliance`, full `lake build`, trust regeneration, both
+trust gates, compliance closure print with zero project axiom names, targeted
+retired-memory scans, extractor skip scan, generated zero-entry checks, and
+`nix run .#test` passed for this slice.
 The current extractor slice removes the mixed F/ExtF skip-stub source:
 `tools/pil-extract` now emits constraints that mention challenges or exposed
 values as single-field `[Circuit F F C]` definitions, preserving the PIL fact
