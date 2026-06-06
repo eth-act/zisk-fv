@@ -550,6 +550,102 @@ theorem eventReplayStep_store_entry_write_state
   simpa [EventReplayStep, storeEventOfEntry] using
     replayMemoryAgreement_write_entry before mem e h_agree
 
+/-- Chronological memory-bus events used by the execution replay bridge.
+Reads are selected load events; writes are the eight-lane memory-bus writes
+that `bus_effect` applies to Sail memory. -/
+inductive MemoryBusTraceEvent where
+  | read (entry : MemoryBusEntry FGL)
+  | write (entry : MemoryBusEntry FGL)
+
+namespace MemoryBusTraceEvent
+
+/-- Convert a chronological memory-bus event to the Mem replay event. -/
+@[reducible]
+def toMemEvent : MemoryBusTraceEvent → MemEvent
+  | .read entry => eventOfEntry entry
+  | .write entry => storeEventOfEntry entry
+
+/-- Apply one chronological memory-bus event to Sail state memory. -/
+@[reducible]
+def applyState (state : SailState) : MemoryBusTraceEvent → SailState
+  | .read _entry => state
+  | .write entry => { state with mem := writeMemoryOfEntry state.mem entry }
+
+/-- Every concrete memory-bus event is a valid replay step for the state
+transition produced by `applyState`. -/
+theorem eventReplayStep
+    (state : SailState) (event : MemoryBusTraceEvent) :
+    EventReplayStep state (event.applyState state) event.toMemEvent := by
+  cases event with
+  | read entry =>
+      simpa [toMemEvent, applyState] using
+        eventReplayStep_read_entry_same_state state entry
+  | write entry =>
+      simpa [toMemEvent, applyState] using
+        eventReplayStep_store_entry_write_state state entry
+
+end MemoryBusTraceEvent
+
+/-- The Mem trace obtained from a chronological memory-bus event list. -/
+@[reducible]
+def memoryBusTraceEventsToMemTrace
+    (events : List MemoryBusTraceEvent) : List MemEvent :=
+  events.map MemoryBusTraceEvent.toMemEvent
+
+/-- Sail state after applying a chronological list of memory-bus events. -/
+@[reducible]
+def stateAfterMemoryBusTrace
+    (initial : SailState) (events : List MemoryBusTraceEvent) : SailState :=
+  events.foldl
+    (fun state event => MemoryBusTraceEvent.applyState state event)
+    initial
+
+/-- Accepted chronological memory-bus execution trace.
+
+This is a bus-level construction layer: accepted AIR trace construction still
+has to produce the chronological event list and its whole-trace replay
+soundness, but this object no longer asks callers for selected cursor memory
+agreement directly. -/
+structure AcceptedMemoryBusExecutionTrace
+    (initialState : SailState) (events : List MemoryBusTraceEvent) :
+    Type where
+  accepted : AcceptedMemTrace (memoryBusTraceEventsToMemTrace events)
+  initialAgreement :
+    ReplayMemoryAgreement initialState accepted.initialMemory
+
+/-- Replaying a chronological memory-bus prefix preserves Sail/replay memory
+agreement. -/
+theorem replayAgreement_after_memoryBusTrace
+    (initial : SailState)
+    (events : List MemoryBusTraceEvent)
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (h_initial : ReplayMemoryAgreement initial mem) :
+    ReplayMemoryAgreement
+      (stateAfterMemoryBusTrace initial events)
+      (replayEvents mem (memoryBusTraceEventsToMemTrace events)) := by
+  induction events generalizing initial mem with
+  | nil =>
+      simpa [stateAfterMemoryBusTrace, memoryBusTraceEventsToMemTrace,
+        replayEvents] using h_initial
+  | cons event rest ih =>
+      have h_step :
+          ReplayMemoryAgreement
+            (MemoryBusTraceEvent.applyState initial event)
+            (if event.toMemEvent.op = (2 : FGL) then
+              replayStoreEvent mem event.toMemEvent
+            else
+              mem) :=
+        MemoryBusTraceEvent.eventReplayStep initial event mem h_initial
+      have h_tail :=
+        ih (MemoryBusTraceEvent.applyState initial event)
+          (if event.toMemEvent.op = (2 : FGL) then
+            replayStoreEvent mem event.toMemEvent
+          else
+            mem)
+          h_step
+      simpa [stateAfterMemoryBusTrace, memoryBusTraceEventsToMemTrace,
+        replayEvents] using h_tail
+
 /-- Agreement for `eventOfEntry e` is exactly the byte facts expected by
 `bus_effect` load consumers. -/
 lemma byte_facts_of_event_agreement

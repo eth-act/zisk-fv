@@ -100,13 +100,14 @@ the required `OpEnvelope`. The explicit `OpEnvelope.completenessBurden`
 premise is an audit marker for that missing global witness-construction layer;
 there is no default theorem discharging it from an arbitrary envelope. Load
 arms expose their memory burden separately as
-`OpEnvelope.AcceptedFullMemoryTraceAtEnvelope`: non-load envelopes discharge it
-as `Unit`; load envelopes require one replay-sound accepted trace, selected
-event split, read tag, and Sail/replay cursor agreement. The cursor agreement
-can now be constructed from `AcceptedExecutionMemoryTrace`, which proves prefix
-agreement from initial memory agreement and per-event replay steps. The
-remaining global gap is deriving those replay steps and selected cursors from
-accepted AIR trace data.
+`OpEnvelope.AcceptedExecutionMemoryTraceAtEnvelope`: non-load envelopes
+discharge it as `Unit`; load envelopes require one replay-sound accepted trace,
+per-event replay steps, selected event split, read tag, and Sail
+state-at-cursor equality. The selected full-memory cursor can also be
+constructed from `OpEnvelope.AcceptedMemoryBusExecutionTraceAtEnvelope`, which
+replays concrete chronological memory-bus read/write events from initial memory
+agreement. The remaining global gap is deriving those chronological events and
+selected cursors from accepted AIR trace data.
 
 ## ArithTable And DIV/REM Audit Conclusions
 
