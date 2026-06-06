@@ -202,6 +202,19 @@ mixed F/ExtF Mem constraints in `build/extraction/Extraction/Mem.lean` into
 the clean/global trace layer so
 `AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` can be proved from
 accepted AIR/Main/Mem full-trace data.
+The current extractor slice removes the mixed F/ExtF skip-stub source:
+`tools/pil-extract` now emits constraints that mention challenges or exposed
+values as single-field `[Circuit F F C]` definitions, preserving the PIL fact
+for the active ZisK validator shape without requiring a generic `F -> ExtF`
+coercion. After `nix run .#populate`,
+`build/extraction/Extraction/Mem.lean` contains definitions for the former
+mixed witness/challenge Mem constraints; the remaining skipped Mem constraints
+are the distinct positive-row-offset cases. `cargo test --manifest-path
+tools/pil-extract/Cargo.toml`, full `lake build`, trust regeneration, both
+trust gates, compliance closure print, generated zero-entry checks, and
+`nix run .#test` passed for this slice.
+The open work is now rebinding these generated single-field constraints, plus
+the remaining row-offset facts, into the Clean/global trace construction.
 The current row-obligation naming slice replaces the anonymous
 `chronologicalRows`, same-address preservation, write-update, event-ordering,
 segment-carry, and dual-emission `Prop` fields in

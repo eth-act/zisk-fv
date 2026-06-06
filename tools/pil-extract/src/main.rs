@@ -491,26 +491,27 @@ fn render_constraint(
         .ok_or_else(|| anyhow!("constraint #{} has no expression_idx", idx))?
         .idx as usize;
 
-    // Permutation/lookup constraints mix `F`-typed witness cells with
-    // `ExtF`-typed challenges and exposed values. Lean cannot synthesize
-    // `HMul F ExtF _` without a coercion (and openvm-fv's extractor leaves
-    // these as comments rather than emitting an ill-typed `def`). We do the
-    // same: detect `Challenge`/`AirValue`/`AirGroupValue` references and
-    // skip-stub the constraint. The named-constraint layer (Airs/) provides
-    // a hand-written replacement using `OperationBusEntry`.
-    if expr_uses_extf(pilout, air, expr_idx)? {
-        bail!(
-            "constraint mixes F (witness cells) with ExtF (challenges/exposed values); cannot typecheck without coercion. The named-constraint layer should rebind it via OperationBusEntry"
-        );
-    }
-
+    // Permutation/lookup constraints mix witness cells with challenges and
+    // exposed values. The general `Circuit F ExtF C` form cannot typecheck
+    // those expressions without a coercion from `F` into `ExtF`, but the active
+    // ZisK validators are single-field (`F = ExtF`). Emit these constraints in
+    // that specialized form so the generated layer still records the PIL fact.
+    let uses_extf = expr_uses_extf(pilout, air, expr_idx)?;
     let rendered = render_expr_by_idx(pilout, air, expr_idx)?;
     let suffix = constraint_kind_suffix(kind);
     out.push_str("  @[simp]\n");
-    out.push_str(&format!(
-        "  def constraint_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
-        idx, suffix
-    ));
+    if uses_extf {
+        out.push_str("  -- Mixed witness/challenge constraint emitted for single-field circuits.\n");
+        out.push_str(&format!(
+            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F : Type}} [Field F] [Circuit F F C] (c : C F F) (row: ℕ) :=\n",
+            idx, suffix
+        ));
+    } else {
+        out.push_str(&format!(
+            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
+            idx, suffix
+        ));
+    }
     if let Some(line) = debug_line.as_deref().filter(|s| !s.is_empty()) {
         out.push_str(&format!("    -- {}\n", line));
     }
@@ -2053,11 +2054,11 @@ mod tests {
     }
 
     #[test]
-    fn render_air_skip_unsupported_emits_stub_for_extf_constraint() {
-        // A constraint mixing a witness cell with a Challenge is ExtF-
-        // typed; without --skip-unsupported the renderer aborts. With it,
-        // a comment stub replaces the def — the named-constraint layer
-        // takes over for these.
+    fn render_air_emits_single_field_def_for_extf_constraint() {
+        // A constraint mixing a witness cell with a Challenge is only
+        // well-typed in Lean when the circuit uses one field for witness cells,
+        // challenges, and exposed values. The renderer should keep the PIL
+        // constraint as a single-field definition instead of skip-stubbing it.
         let pilout = PilOut {
             num_challenges: vec![1],
             air_groups: vec![pilout::AirGroup {
@@ -2076,31 +2077,30 @@ mod tests {
             ..Default::default()
         };
 
-        // First confirm the strict path aborts:
-        {
-            let hit = find_air(&pilout, "Demo").unwrap();
-            let strict = RenderOpts {
-                skip_unsupported: false,
-                only: None,
-            };
-            assert!(render_air(&pilout, hit, &strict).is_err());
-        }
-
-        // Then confirm the lenient path emits a stub instead:
         let hit = find_air(&pilout, "Demo").unwrap();
-        let lenient = RenderOpts {
-            skip_unsupported: true,
+        let opts = RenderOpts {
+            skip_unsupported: false,
             only: None,
         };
-        let out = render_air(&pilout, hit, &lenient).expect("should not abort under skip");
+        let out = render_air(&pilout, hit, &opts).expect("render single-field mixed constraint");
         assert!(
-            out.contains("constraint_0_every_row skipped:"),
-            "expected skip stub for ExtF constraint, got:\n{}",
+            out.contains("Mixed witness/challenge constraint emitted for single-field circuits."),
+            "expected single-field explanatory comment, got:\n{}",
             out
         );
         assert!(
-            !out.contains("def constraint_0_every_row"),
-            "skipped constraint should not emit a def"
+            out.contains("def constraint_0_every_row {C : Type → Type → Type} {F : Type} [Field F] [Circuit F F C] (c : C F F) (row: ℕ) :="),
+            "expected a single-field constraint def, got:\n{}",
+            out
+        );
+        assert!(
+            out.contains("(Circuit.challenge c (index := 0))"),
+            "expected challenge operand to remain in the emitted constraint, got:\n{}",
+            out
+        );
+        assert!(
+            !out.contains("skipped:"),
+            "mixed F/ExtF constraint should not be skip-stubbed"
         );
     }
 
