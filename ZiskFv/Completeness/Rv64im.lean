@@ -44,9 +44,19 @@ def Rv64imCompletenessAvoidingKnownDecodeBugs
     (iface : Rv.Interface) : Prop :=
   Rv.Interface.CompletenessAvoidingKnownDecodeBugs iface
 
+def Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.CompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface
+
 def SupportedDecodeAvoidKnownDecodeBugs
     (iface : Rv.Interface) : Prop :=
   Rv.Interface.ShapeAvoidKnownDecodeBugs
+    iface
+    Rv64imShapes.SupportedDecodeShape
+
+def SupportedDecodeSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
     iface
     Rv64imShapes.SupportedDecodeShape
 
@@ -5791,6 +5801,32 @@ theorem rv64im_global_completeness_avoiding_known_decode_bugs
     h_lower
     h_rows
     h_opcode
+
+/-- Stable global route-completeness theorem.
+
+This strengthens `rv64im_global_completeness_avoiding_known_decode_bugs` with
+the static row contract needed by the opcode soundness interfaces.  Sail is
+still the public source of valid raw words: `h_sail_subset` is the checked-in
+Sail-to-shape bridge, while `h_soundness` is the generated production-ZisK
+obligation over that full shape. -/
+theorem rv64im_global_completeness_with_soundness_input_avoiding_known_decode_bugs
+    (iface : Rv.Interface)
+    (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
+    (h_supported : SupportedDecodeAvoidKnownDecodeBugs iface)
+    (h_lower : Rv.Interface.LoweringComplete iface)
+    (h_rows : Rv.Interface.RowMaterializationComplete iface)
+    (h_opcode : Rv.Interface.OpcodeCoverageComplete iface)
+    (h_soundness : SupportedDecodeSoundnessInputComplete iface) :
+    Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
+  Rv.Interface.completeness_with_soundness_input_avoiding_known_decode_bugs
+    iface
+    Rv64imShapes.SupportedDecodeShape
+    h_sail_subset
+    h_supported
+    h_lower
+    h_rows
+    h_opcode
+    h_soundness
 
 theorem rv64im_completeness_of_memory_refined_family_avoid_no_gap_sail_and_rows
     (iface : Rv.Interface)

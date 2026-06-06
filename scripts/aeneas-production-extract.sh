@@ -54,6 +54,7 @@ rm -f \
   "$WORKSPACE/lean-check/RvDecodeBranchBltu.lean" \
   "$WORKSPACE/lean-check/RvDecodeBranchBgeu.lean" \
   "$WORKSPACE/lean-check/RvDecodeBranch.lean" \
+  "$WORKSPACE/lean-check/RvRouteSoundness.lean" \
   "$WORKSPACE/lean-check/RvDecodeCompleteness.lean" \
   "$WORKSPACE/lean-check/RvCompleteness.lean" \
   "$WORKSPACE/lean-check/RvUpperJumpCompleteness.lean"
@@ -264,6 +265,7 @@ lean_lib RvDecodeBranchBge
 lean_lib RvDecodeBranchBltu
 lean_lib RvDecodeBranchBgeu
 lean_lib RvDecodeBranch
+lean_lib RvRouteSoundness
 lean_lib RvDecodeCompleteness
 lean_lib RvCompleteness
 lean_lib RvUpperJumpCompleteness
@@ -2834,6 +2836,32 @@ import RvDecodeBranchBltu
 import RvDecodeBranchBgeu
 EOF
 
+    cat > "$lean_check/RvRouteSoundness.lean" <<'EOF'
+import RvDecodeJalr
+import RvDecodeIAluAndi
+
+/-!
+Aggregated generated route-completeness surface for row-local soundness input
+checks.  These theorems are production-ZisK obligations over Sail-derived raw
+shape bridges; Sail validity remains stated in the checked-in RV64IM theorem.
+
+This module currently records the closed route classes.  Future route families
+should be added here only after their positive generated theorem passes on
+correct ZisK and a representative negative probe has been shown to fail.
+-/
+
+namespace zisk_core_generated_rv_route_soundness
+
+theorem closed_route_soundness_inputs_ok :
+    zisk_core_generated_rv_decode_jalr.allJalrRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ialu_andi.allAndiRawShapesSatisfySoundnessInput = true := by
+  exact
+    ⟨zisk_core_generated_rv_decode_jalr.allJalrRawShapesSatisfySoundnessInput_ok,
+      zisk_core_generated_rv_decode_ialu_andi.allAndiRawShapesSatisfySoundnessInput_ok⟩
+
+end zisk_core_generated_rv_route_soundness
+EOF
+
     cat > "$lean_check/RvDecodeCompleteness.lean" <<'EOF'
 import RvDecodeJalr
 import RvDecodeIAlu
@@ -2841,10 +2869,12 @@ import RvDecodeAddiw
 import RvDecodeLoad
 import RvDecodeStore
 import RvDecodeBranch
+import RvRouteSoundness
 
 /-!
 This wrapper keeps one public generated target for exhaustive RV decode
-coverage while the expensive finite checks live in smaller Lake modules.
+coverage and closed route-soundness checks while the expensive finite checks
+live in smaller Lake modules.
 -/
 EOF
 
@@ -7491,7 +7521,7 @@ theorem jal_raw_shape_decode_supported (rd : BitVec 5) (jimm : BitVec 20) :
 
 end zisk_core_generated_rv_upper_jump_completeness
 EOF
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks RvDecodeCompleteness RvCompleteness RvUpperJumpCompleteness' bash "$lean_check"
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks RvRouteSoundness RvDecodeCompleteness RvCompleteness RvUpperJumpCompleteness' bash "$lean_check"
   elif [[ "$AENEAS_CHECK_RV64IM_COMPLETENESS" != 0 ]]; then
     cat > "$lean_check/Rv64imCompleteness.lean" <<'EOF'
 import ProductionM2

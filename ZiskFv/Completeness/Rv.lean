@@ -26,6 +26,7 @@ structure Interface where
   ziskLowerable : RawInstruction → Prop
   ziskRowMaterialized : RawInstruction → Prop
   ziskOpcodeCovered : RawInstruction → Prop
+  ziskSoundnessInput : RawInstruction → Prop
   knownDecodeGap : RawInstruction → Prop
   knownRowMaterializationGap : RawInstruction → Prop
 
@@ -39,6 +40,10 @@ def ziskCircuitCovered (iface : Interface) (raw : RawInstruction) : Prop :=
   iface.ziskLowerable raw ∧
   iface.ziskRowMaterialized raw ∧
   iface.ziskOpcodeCovered raw
+
+def ziskCircuitCoveredWithSoundnessInput
+    (iface : Interface) (raw : RawInstruction) : Prop :=
+  iface.ziskCircuitCovered raw ∧ iface.ziskSoundnessInput raw
 
 /-- ZisK-internal stage proved in the generated Aeneas harness:
 decoder-supported raw words have a lowering opcode. -/
@@ -135,6 +140,23 @@ def ShapeRowMaterializationComplete
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
   ∀ raw, shape raw → iface.ziskLowerable raw → iface.ziskRowMaterialized raw
 
+def SoundnessInputComplete (iface : Interface) : Prop :=
+  ∀ raw, iface.ziskLowerable raw → iface.ziskSoundnessInput raw
+
+def ShapeSoundnessInputComplete
+    (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
+  ∀ raw, shape raw → iface.ziskLowerable raw → iface.ziskSoundnessInput raw
+
+def CompletenessWithSoundnessInputAvoidingKnownDecodeBugs
+    (iface : Interface) : Prop :=
+  ∀ raw, iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
+    iface.ziskCircuitCoveredWithSoundnessInput raw
+
+def ShapeCompletenessWithSoundnessInputAvoidingKnownDecodeBugs
+    (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
+  ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
+    iface.ziskCircuitCoveredWithSoundnessInput raw
+
 /-- Main abstract composition theorem for the current plan.
 
 The non-abstract generated Aeneas counterpart is
@@ -171,6 +193,31 @@ theorem completeness_avoiding_known_decode_bugs
   have h_lowerable := h_lower raw h_supported
   exact ⟨h_supported, h_lowerable, h_rows raw h_lowerable,
     h_opcode raw h_supported⟩
+
+/-- Acceptance-focused completeness plus the static row contract expected by
+the opcode soundness interface.  The Sail predicate remains the public raw-word
+domain; the shape is only the bridge used to discharge generated ZisK-side
+obligations. -/
+theorem completeness_with_soundness_input_avoiding_known_decode_bugs
+    (iface : Interface)
+    (shape : RawInstruction → Prop)
+    (h_sail_subset : SailExecutableContainedIn iface shape)
+    (h_avoid : ShapeAvoidKnownDecodeBugs iface shape)
+    (h_lower : LoweringComplete iface)
+    (h_rows : RowMaterializationComplete iface)
+    (h_opcode : OpcodeCoverageComplete iface)
+    (h_soundness : ShapeSoundnessInputComplete iface shape) :
+    CompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface := by
+  intro raw h_sail h_not_decode_gap
+  have h_shape := h_sail_subset raw h_sail
+  have h_supported := h_avoid raw h_shape h_sail h_not_decode_gap
+  have h_lowerable := h_lower raw h_supported
+  exact
+    ⟨⟨h_supported,
+        h_lowerable,
+        h_rows raw h_lowerable,
+        h_opcode raw h_supported⟩,
+      h_soundness raw h_shape h_lowerable⟩
 
 /-- Main abstract composition theorem for the generated Aeneas proof shape:
 known decode gaps are excluded before decode support, and known row gaps are
@@ -341,6 +388,15 @@ theorem shape_row_materialization_mono
   intro raw h_shape h_lowerable
   exact h_rows raw (h_subset raw h_shape) h_lowerable
 
+theorem shape_soundness_input_mono
+    (iface : Interface)
+    {shape_small shape_big : RawInstruction → Prop}
+    (h_subset : ∀ raw, shape_small raw → shape_big raw)
+    (h_soundness : ShapeSoundnessInputComplete iface shape_big) :
+    ShapeSoundnessInputComplete iface shape_small := by
+  intro raw h_shape h_lowerable
+  exact h_soundness raw (h_subset raw h_shape) h_lowerable
+
 theorem shape_completeness_or
     (iface : Interface)
     {shape_left shape_right : RawInstruction → Prop}
@@ -432,6 +488,19 @@ theorem shape_row_materialization_or
     (h_left : ShapeRowMaterializationComplete iface shape_left)
     (h_right : ShapeRowMaterializationComplete iface shape_right) :
     ShapeRowMaterializationComplete
+      iface
+      (fun raw => shape_left raw ∨ shape_right raw) := by
+  intro raw h_shape h_lowerable
+  rcases h_shape with h_left_shape | h_right_shape
+  · exact h_left raw h_left_shape h_lowerable
+  · exact h_right raw h_right_shape h_lowerable
+
+theorem shape_soundness_input_or
+    (iface : Interface)
+    {shape_left shape_right : RawInstruction → Prop}
+    (h_left : ShapeSoundnessInputComplete iface shape_left)
+    (h_right : ShapeSoundnessInputComplete iface shape_right) :
+    ShapeSoundnessInputComplete
       iface
       (fun raw => shape_left raw ∨ shape_right raw) := by
   intro raw h_shape h_lowerable

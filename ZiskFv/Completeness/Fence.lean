@@ -79,6 +79,7 @@ def fenceInterface : Rv.Interface where
   ziskLowerable := ZiskFenceSupportedRaw
   ziskRowMaterialized := ZiskFenceSupportedRaw
   ziskOpcodeCovered := ZiskFenceSupportedRaw
+  ziskSoundnessInput := ZiskFenceSupportedRaw
   knownDecodeGap := KnownFenceDecodeGapRaw
   knownRowMaterializationGap := fun _ => False
 
