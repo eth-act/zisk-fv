@@ -67,6 +67,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add envelope-level constructors that use the witness-selected Mem table to build the cursor-extraction target.
 - [x] Derive cursor extraction from accepted trace construction plus witness-selected Mem-table obligations.
 - [x] Expose accepted trace construction plus witness-selected Mem-table obligations at the public theorem boundary.
+- [x] Verify and commit named load-scoped full-execution memory construction package.
 - [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -231,6 +232,16 @@ mixed F/ExtF Mem constraints in `build/extraction/Extraction/Mem.lean` into
 the clean/global trace layer so
 `AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` can be proved from
 accepted AIR/Main/Mem full-trace data.
+
+The current uncommitted cleanup replaces the anonymous nested Sigma/PLift
+public memory-construction payload with
+`OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionWithWitness`. This does
+not close the memory trust gap; it makes the remaining full-execution load
+obligation readable and theorem-shaped. The first focused build failed on a
+universe mismatch after the structure introduction; the boundary was raised to
+`Type 2`. Focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, both trust gates, and `nix run .#test`
+passed.
 The FullEnsemble selected Mem replay projection slice adds
 `memPrimaryReadReplayEntryOfRow`, `memDualReadReplayEntryOfRow`,
 `memReadReplayRowsOfTable`, and table-row/matched-entry membership lemmas in

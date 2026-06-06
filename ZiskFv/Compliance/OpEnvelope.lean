@@ -4685,6 +4685,29 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
         selectedEnvelopeRow := trivial
         selectedPrefix := () }
 
+/-- Full-execution memory construction data for one load cursor.
+
+    This is the theorem-shaped upstream target: accepted full execution should
+    provide the accepted AIR/Main/Mem trace construction, the full RV64IM
+    witness, the mutable-Mem read-row embedding for that witness, and selected
+    envelope Mem-row occurrence in the witness-selected table. The selected
+    prefix cursor is already part of `construction`. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionWithWitness
+    (env : OpEnvelope state m r_main) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope
+  embedded :
+    env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+      program witness construction
+  selectedEnvelopeRow :
+    env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
+      program witness construction embedded
+
 /-- Load-scoped full-execution memory construction target.
 
     This is the public boundary shape one step above
@@ -4694,107 +4717,23 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
     envelope Mem-row occurrence in the witness-selected table. Non-load
     envelopes carry no memory obligation. -/
 def OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope
-    (env : OpEnvelope state m r_main) : Type 1 :=
+    (env : OpEnvelope state m r_main) : Type 2 :=
   match env with
   | .ld .. =>
-      Sigma fun length : ℕ =>
-      Sigma fun program : ZiskFv.AirsClean.ZiskInstructionRom.Program length =>
-      Sigma fun witness :
-        Air.Flat.EnsembleWitness
-          (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-            length program).ensemble =>
-      Sigma fun construction :
-        env.AcceptedAirMainMemFullTraceConstructionAtEnvelope =>
-      Sigma fun embedded :
-        PLift (env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
-          program witness construction) =>
-        PLift (env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
-          program witness construction embedded.down)
+      env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
   | .lbu .. =>
-      Sigma fun length : ℕ =>
-      Sigma fun program : ZiskFv.AirsClean.ZiskInstructionRom.Program length =>
-      Sigma fun witness :
-        Air.Flat.EnsembleWitness
-          (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-            length program).ensemble =>
-      Sigma fun construction :
-        env.AcceptedAirMainMemFullTraceConstructionAtEnvelope =>
-      Sigma fun embedded :
-        PLift (env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
-          program witness construction) =>
-        PLift (env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
-          program witness construction embedded.down)
+      env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
   | .lhu .. =>
-      Sigma fun length : ℕ =>
-      Sigma fun program : ZiskFv.AirsClean.ZiskInstructionRom.Program length =>
-      Sigma fun witness :
-        Air.Flat.EnsembleWitness
-          (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-            length program).ensemble =>
-      Sigma fun construction :
-        env.AcceptedAirMainMemFullTraceConstructionAtEnvelope =>
-      Sigma fun embedded :
-        PLift (env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
-          program witness construction) =>
-        PLift (env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
-          program witness construction embedded.down)
+      env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
   | .lwu .. =>
-      Sigma fun length : ℕ =>
-      Sigma fun program : ZiskFv.AirsClean.ZiskInstructionRom.Program length =>
-      Sigma fun witness :
-        Air.Flat.EnsembleWitness
-          (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-            length program).ensemble =>
-      Sigma fun construction :
-        env.AcceptedAirMainMemFullTraceConstructionAtEnvelope =>
-      Sigma fun embedded :
-        PLift (env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
-          program witness construction) =>
-        PLift (env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
-          program witness construction embedded.down)
+      env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
   | .lb_via_static_match .. =>
-      Sigma fun length : ℕ =>
-      Sigma fun program : ZiskFv.AirsClean.ZiskInstructionRom.Program length =>
-      Sigma fun witness :
-        Air.Flat.EnsembleWitness
-          (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-            length program).ensemble =>
-      Sigma fun construction :
-        env.AcceptedAirMainMemFullTraceConstructionAtEnvelope =>
-      Sigma fun embedded :
-        PLift (env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
-          program witness construction) =>
-        PLift (env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
-          program witness construction embedded.down)
+      env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
   | .lh_via_static_match .. =>
-      Sigma fun length : ℕ =>
-      Sigma fun program : ZiskFv.AirsClean.ZiskInstructionRom.Program length =>
-      Sigma fun witness :
-        Air.Flat.EnsembleWitness
-          (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-            length program).ensemble =>
-      Sigma fun construction :
-        env.AcceptedAirMainMemFullTraceConstructionAtEnvelope =>
-      Sigma fun embedded :
-        PLift (env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
-          program witness construction) =>
-        PLift (env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
-          program witness construction embedded.down)
+      env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
   | .lw_via_static_match .. =>
-      Sigma fun length : ℕ =>
-      Sigma fun program : ZiskFv.AirsClean.ZiskInstructionRom.Program length =>
-      Sigma fun witness :
-        Air.Flat.EnsembleWitness
-          (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-            length program).ensemble =>
-      Sigma fun construction :
-        env.AcceptedAirMainMemFullTraceConstructionAtEnvelope =>
-      Sigma fun embedded :
-        PLift (env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
-          program witness construction) =>
-        PLift (env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
-          program witness construction embedded.down)
-  | _ => ULift.{1, 0} Unit
+      env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
+  | _ => ULift.{2, 0} Unit
 
 /-- Lower the load-scoped full-execution memory construction target to the
     cursor-shaped extraction object consumed by the existing replay chain. -/
@@ -4813,12 +4752,10 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
           selectedEnvelopeRow := trivial
           selectedPrefix := () }
   all_goals
-    rcases construction with
-      ⟨length, program, witness, traceConstruction, embedded,
-        selectedEnvelopeRow⟩
     exact
       OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstructionWitness
-        _ program witness traceConstruction embedded.down selectedEnvelopeRow.down
+        _ construction.program construction.witness construction.construction
+        construction.embedded construction.selectedEnvelopeRow
 
 /-- Combine shared accepted trace data with selected-prefix coverage to
     recover the packed load-scoped construction object used by the existing
