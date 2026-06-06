@@ -3454,8 +3454,9 @@ def OpEnvelope.routeBurden
     specs, provider-row membership, and route pins. Requiring this predicate at
     the public theorem boundary makes that caller burden explicit without
     changing the existing wrapper proofs. Load-memory replay evidence is
-    exposed separately by `acceptedMemoryTraceContext`, so the public theorem no
-    longer hides that obligation under this structural completeness marker. -/
+    exposed separately by `GeneratedMemFullTraceConstructionAtEnvelope`, so
+    the public theorem no longer hides that obligation under this structural
+    completeness marker. -/
 def OpEnvelope.completenessBurden
     (env : OpEnvelope state m r_main) : Prop :=
   env.rowSpecBurden

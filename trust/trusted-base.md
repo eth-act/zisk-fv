@@ -20,10 +20,10 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 This theorem is a conditional global compliance theorem over an already
 constructed `OpEnvelope`. Its explicit
 `ZiskFv.Compliance.OpEnvelope.completenessBurden` and
-`ZiskFv.Compliance.OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` premises mark
+`ZiskFv.Compliance.OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope` premises mark
 the current caller-side witness burden: row specs, table/provider evidence,
-route facts, and, for load envelopes only, global Mem row-trace facts plus
-selected read-row cursor data are supplied rather than derived by a global
+route facts, and, for load envelopes only, generated Mem full-trace
+construction plus selected prefix cursor data are supplied rather than derived by a global
 accepted-trace completeness theorem.
 
 Current generated counts:
@@ -66,12 +66,10 @@ Load correctness now consumes an explicit
 `ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement` premise threaded through
 the load trace context, and `MemModel.lean` only projects the resulting byte
 facts. The global theorem's memory premise is now load-scoped: non-load
-envelopes discharge it as `Unit`, while load envelopes require global Mem
-row-trace facts, a split selecting the concrete read row in those rows, and
-Sail/replay agreement at that cursor derived internally from the projected
-bus-event replay object. The lower row construction and projected
-`TraceReplaySound` fact are also derived internally from row-level read/write
-replay soundness over the raw rows.
+envelopes discharge it as `Unit`, while load envelopes require generated Mem
+full-trace construction, a split selecting the concrete read row in the raw
+memory-bus rows, and Sail/replay agreement at that cursor. The packed row
+construction and projected `TraceReplaySound` fact are derived internally.
 
 ## Platform Profile
 
@@ -103,17 +101,15 @@ the required `OpEnvelope`. The explicit `OpEnvelope.completenessBurden`
 premise is an audit marker for that missing global witness-construction layer;
 there is no default theorem discharging it from an arbitrary envelope. Load
 arms expose their memory burden separately as
-`OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`: non-load
-envelopes discharge it as `Unit`; load envelopes require a global Mem
-row-trace spec naming chronological raw memory-bus rows, row-level read/write
-replay soundness, same-address preservation, write-update soundness, segment
-carry, dual-event soundness, initial memory agreement, and a selected raw-row
-cursor pinned to the envelope's concrete read row. The lower row construction,
-packed row-trace object, projected `TraceReplaySound`, and selected
-full-memory cursor are derived internally by projecting rows to memory-bus
-events and replaying the prior bus events. The remaining global gap is
-deriving that global Mem trace spec and selected cursors from accepted AIR
-trace data.
+`OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope`: non-load envelopes
+discharge it as `Unit`; load envelopes require generated Mem row constraints,
+chronological raw memory-bus rows, row-level read/write replay soundness,
+initial memory agreement, and a selected raw-row prefix cursor pinned to the
+envelope's concrete read row. The packed row construction, row-trace object,
+projected `TraceReplaySound`, and selected full-memory cursor are derived
+internally by projecting rows to memory-bus events and replaying the prior bus
+events. The remaining global gap is deriving that generated Mem construction
+and selected cursors from accepted AIR trace data.
 
 ## ArithTable And DIV/REM Audit Conclusions
 
