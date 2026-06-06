@@ -17,18 +17,15 @@ The uber theorem `zisk_riscv_compliant_program_bus` lives in
 and uses an `OpEnvelope` sum type (63 arms, one per RV64IM opcode)
 to dispatch each opcode to its `Wrappers/<Op>` wrapper. Its
 `OpEnvelope.completenessBurden` and
-load-scoped full-ensemble Mem trace/table/provider/prefix premises make explicit
-that the current theorem starts from supplied witness evidence and, for load
-envelopes only, shared accepted AIR/Main/Mem full-trace data, a concrete Mem
-table in a `fullRv64imEnsemble` witness, embedding of that table's projected
-read-replay rows into the accepted chronological row trace, selected
-primary/dual provider-row coverage in that table, and split-indexed
-prefix-state equality rather than deriving all of that evidence from a full
-execution trace. The lower trace/table bridge, packed
+`OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope` make
+explicit that the current theorem starts from supplied witness evidence and,
+for load envelopes only, accepted AIR/Main/Mem full-trace construction data, a
+full RV64IM witness, embedding of that witness's mutable Mem read-replay rows
+into the accepted chronological row trace, and selected envelope Mem-row
+occurrence in the witness-selected table rather than deriving all of that
+evidence from a full execution trace. The lower trace/table bridge, packed
 `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope`, ordinary selected-row
-membership, selected prefix cursor, packed
-`OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope`, generated Mem
-burden, packed
+membership, selected prefix cursor, generated Mem burden, packed
 `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, lower
 `OpEnvelope.AcceptedFullMemoryBusRowsTraceAtEnvelope`, projected
 `OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope`, and projected

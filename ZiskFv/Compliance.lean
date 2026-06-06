@@ -52,11 +52,12 @@ bridge. The V2 trust gate enforces this.
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
 completeness. Load-memory replay evidence is exposed separately through
-`OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope`: a named
-target containing a shared accepted AIR/Main/Mem trace tied to a concrete Mem
-table in a `fullRv64imEnsemble` witness, selected envelope Mem-row occurrence
-in that table, and the selected prefix cursor for the current Sail state. The
-theorem derives the generated Mem burden and replay construction internally.
+`OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope`: load arms
+carry accepted AIR/Main/Mem trace construction data, a full RV64IM witness,
+the mutable-Mem read-row embedding for that witness, and selected envelope
+Mem-row occurrence in the witness-selected table. The theorem derives the
+selected prefix cursor, generated Mem burden, and replay construction
+internally.
 It is also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
@@ -95,12 +96,16 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
-    (h_mem_extraction :
-      env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope)
+    (h_mem_construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
+  let h_mem_extraction :
+      env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope :=
+    env.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstruction
+      h_mem_construction
   let h_trace_with_table :
       env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope :=
     env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble

@@ -66,7 +66,8 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Name the witness-level mutable-Mem read-row embedding obligation consumed by the Mem trace/table bridge.
 - [x] Add envelope-level constructors that use the witness-selected Mem table to build the cursor-extraction target.
 - [x] Derive cursor extraction from accepted trace construction plus witness-selected Mem-table obligations.
-- [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope` from the accepted full execution trace.
+- [x] Expose accepted trace construction plus witness-selected Mem-table obligations at the public theorem boundary.
+- [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
 
@@ -784,3 +785,15 @@ witness-selected table. Focused `lake build ZiskFv.Compliance.OpEnvelope`
 passed for this slice. Full `lake build`, both trust gates, closure print with
 zero project axiom names, targeted retired-memory scan, and `nix run .#test`
 also passed.
+
+The public-boundary construction slice adds
+`OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope` and
+`OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstruction`.
+`zisk_riscv_compliant_program_bus` now consumes this load-scoped construction
+object instead of the post-built cursor extraction object. Load envelopes expose
+the accepted AIR/Main/Mem trace construction, full RV64IM witness,
+mutable-Mem read-row embedding, and selected envelope Mem-row occurrence in the
+witness-selected table; non-load envelopes remain `ULift Unit`. Focused
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed for this
+slice. Full `lake build`, both trust gates, closure print with zero project
+axiom names, targeted retired-memory scan, and `nix run .#test` also passed.
