@@ -1,11 +1,11 @@
 # Status
 
-Plan: `docs/ai/plan/PLAN_COMPLETENESS_BURDEN.md`
+Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
 
-Current focus: implementation, verification, and commit complete.
+Current focus: implementation and verification complete for the load memory trace-context refactor.
 
 Blocking: none.
 
-Next step: optional follow-up can make `OpEnvelope.completenessBurden` nontrivial per constructor or replace `completenessBurden_of_env` with an accepted-trace construction.
+Next step: commit the verified chunk.
 
-Digression: none.
+Digression: issue #61 scopes the broader post-PR #60 `OpEnvelope` completeness gap.

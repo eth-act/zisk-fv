@@ -145,7 +145,6 @@ lemma equiv_LH_clean_provider_of_wf
     (h_addr2_idx :
       lh_input.rd.toNat = (Transpiler.wrap_to_regidx mainRow.rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     (do
       Sail.writeReg Register.nextPC
@@ -161,7 +160,12 @@ lemma equiv_LH_clean_provider_of_wf
   obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_mem_trace_agreement, h_m2_mult, h_m2_as⟩ := promises
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_mem_trace_context, h_m2_mult, h_m2_as⟩ := promises
+  have h_mem_trace_agreement :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1) :=
+    ZiskFv.ZiskCircuit.MemTrace.memoryTraceAgreement_of_load_context
+      state (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1) h_mem_trace_context
   obtain ⟨h_bundle, h_mem8⟩ :=
     ZiskFv.EquivCore.Bridge.MemClean.ld_discharge_full_clean_provider
       main mem r_main r_mem mainRow memRow e1 e2 state
@@ -169,7 +173,7 @@ lemma equiv_LH_clean_provider_of_wf
       h_main_row h_mem_row h_main_spec h_store_pc
       h_main_b_match h_main_c_match h_mem_match
       h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_legacy_addr h_mem_wr h_mem_trace_agreement
+      h_mem_sel h_mem_wr h_mem_trace_agreement
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match,
           h_rd_zero_iff, h_rd_idx, _h_copy0, _h_copy1⟩ := h_bundle
   rw [equiv_LH_sail state lh_input mstatus pmaRegion misa mseccfg

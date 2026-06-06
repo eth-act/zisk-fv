@@ -206,7 +206,6 @@ structure LdCleanWitness
   addr2_idx :
     ld_input.rd.toNat = (Transpiler.wrap_to_regidx mainRow.rom.addr2).val
   mem_sel : mem.sel r_mem = 1
-  mem_legacy_addr : mem.addr r_mem = bus.e1.ptr
   mem_wr : mem.wr r_mem = 0
 
 /-- Generic structural Clean witness for load-shaped Main consumer + Mem
@@ -249,7 +248,6 @@ structure LoadCleanWitness
   addr2_idx :
     rd.toNat = (Transpiler.wrap_to_regidx mainRow.rom.addr2).val
   mem_sel : mem.sel r_mem = 1
-  mem_legacy_addr : mem.addr r_mem = bus.e1.ptr
   mem_wr : mem.wr r_mem = 0
 
 /-- Clean-backed LD-shaped discharge.
@@ -300,7 +298,6 @@ theorem ld_discharge_full_clean_provider
     (h_addr2_idx :
       rd.toNat = (Transpiler.wrap_to_regidx mainRow.rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0)
     (h_mem_trace_agreement :
       ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
@@ -396,7 +393,7 @@ theorem ld_discharge_full_clean_provider_of_witness
     w.main_row w.mem_row w.main_spec w.store_pc
     w.main_b_match w.main_c_match w.mem_match
     w.addr1 w.addr2_zero_iff w.addr2_idx
-    w.mem_sel w.mem_legacy_addr w.mem_wr h_mem_trace_agreement
+    w.mem_sel w.mem_wr h_mem_trace_agreement
 
 /-! ## Store-side Clean adapters -/
 

@@ -1458,7 +1458,6 @@ inductive OpEnvelope
       ld_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LBU =====================================
   | lbu
@@ -1516,7 +1515,6 @@ inductive OpEnvelope
       lbu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LHU =====================================
   | lhu
@@ -1574,7 +1572,6 @@ inductive OpEnvelope
       lhu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LWU =====================================
   | lwu
@@ -1632,7 +1629,6 @@ inductive OpEnvelope
       lwu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LB via static BinaryExtension lookup ====
   -- T4 alternate provider arm: takes the BinaryExtension row witness
@@ -1698,7 +1694,6 @@ inductive OpEnvelope
       lb_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LH via static BinaryExtension lookup ====
   | lh_via_static_match
@@ -1761,7 +1756,6 @@ inductive OpEnvelope
       lh_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LW via static BinaryExtension lookup ====
   | lw_via_static_match
@@ -1824,7 +1818,6 @@ inductive OpEnvelope
       lw_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ MUL =====================================
   | mul

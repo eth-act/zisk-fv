@@ -45,10 +45,31 @@ structure LoadPromises
   m0_as : e0.as.val = 1
   m1_mult : e1.multiplicity = -1
   m1_as : e1.as.val = 2
-  mem_trace_agreement :
-    ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
+  mem_trace_context :
+    ZiskFv.ZiskCircuit.MemTrace.LoadTraceContext state
       (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1)
   m2_mult : e2.multiplicity = 1
   m2_as : e2.as.val = 1
+
+/-- Derived load memory agreement. This intentionally has the former field
+name so existing load consumers use dot notation while the proof now comes
+from accepted trace context. -/
+def LoadPromises.mem_trace_agreement
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {mstatus : RegisterType Register.mstatus}
+    {pmaRegion : PMA_Region}
+    {misa : RegisterType Register.misa}
+    {mseccfg : RegisterType Register.mseccfg}
+    {opcode_assumptions : Prop}
+    {pure_nextPC : BitVec 64}
+    {exec_row : List (Interaction.ExecutionBusEntry FGL)}
+    {e0 e1 e2 : Interaction.MemoryBusEntry FGL}
+    (promises : LoadPromises state mstatus pmaRegion misa mseccfg
+      opcode_assumptions pure_nextPC exec_row e0 e1 e2) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1) :=
+  ZiskFv.ZiskCircuit.MemTrace.memoryTraceAgreement_of_load_context
+    state (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1)
+    promises.mem_trace_context
 
 end ZiskFv.EquivCore.Promises

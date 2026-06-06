@@ -280,7 +280,6 @@ lemma equiv_LD_clean_provider
     (h_addr2_idx :
       ld_input.rd.toNat = (Transpiler.wrap_to_regidx mainRow.rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     execute_instruction (instruction.LOAD (
       ld_input.imm,
@@ -296,7 +295,7 @@ lemma equiv_LD_clean_provider
       h_main_row h_mem_row h_main_spec h_store_pc
       h_main_b_match h_main_c_match h_mem_match
       h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_legacy_addr h_mem_wr promises.mem_trace_agreement
+      h_mem_sel h_mem_wr promises.mem_trace_agreement
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
           h_rd_idx, h_copy0, h_copy1⟩ := h_bundle
   exact equiv_LD_of_discharged state ld_input regs bus promises main r_main pins

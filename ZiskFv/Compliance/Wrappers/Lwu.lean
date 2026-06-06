@@ -114,7 +114,6 @@ theorem lwu_eq_of_full_ensemble_mem_provider
       lwu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     execute_instruction (instruction.LOAD (
       lwu_input.imm,
@@ -128,7 +127,7 @@ theorem lwu_eq_of_full_ensemble_mem_provider
       main mem r_main r_mem bus lwu_input.r1_val lwu_input.imm lwu_input.rd
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
-      h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+      h_addr2_idx h_mem_sel h_mem_wr
   exact equiv_LWU state lwu_input regs main mem r_main bus align pins h_width promises w
 
 end ZiskFv.Compliance
