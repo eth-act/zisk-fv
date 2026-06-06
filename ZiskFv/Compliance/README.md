@@ -16,14 +16,14 @@ The uber theorem `zisk_riscv_compliant_program_bus` lives in
 `ZiskFv/Compliance.lean` (the file at the level above this folder)
 and uses an `OpEnvelope` sum type (63 arms, one per RV64IM opcode)
 to dispatch each opcode to its `Wrappers/<Op>` wrapper. Its
-`OpEnvelope.completenessBurden`, shared
-`AcceptedFullExecutionMemoryTrace`, and per-envelope
-`OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope` make explicit
-that the current theorem starts from supplied witness evidence and, for load
-envelopes only, selected prefix coverage and selected envelope Mem-row
-occurrence in the witness-selected table rather than deriving all of that
-evidence from a full execution trace. The load-scoped memory construction
-object, lower trace/table bridge, packed
+`OpEnvelope.completenessBurden` and
+`OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope` make
+explicit that the current theorem starts from supplied witness evidence and,
+for load envelopes only, a shared accepted memory trace plus selected prefix
+coverage and selected envelope Mem-row occurrence in the witness-selected
+table rather than deriving all of that evidence from a full execution trace.
+Non-load envelopes carry no memory trace data. The load-scoped memory
+construction object, lower trace/table bridge, packed
 `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope`, ordinary selected-row
 membership, selected prefix cursor, generated Mem burden, packed
 `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`, lower

@@ -4996,6 +4996,35 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceConstructionAtEnvel
         embedded := fullTrace.embedded
         selectedEnvelopeRow := coverage.selectedEnvelopeRow }
 
+/-- Lower the load-scoped shared-trace-plus-coverage package to the older
+    load-scoped construction object consumed by the replay bridge.
+
+    This is the public theorem boundary shape: non-load envelopes carry no
+    memory trace data, while load envelopes carry the shared accepted trace and
+    selected coverage needed to build the construction internally. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_traceWithCoverage
+    (env : OpEnvelope state m r_main)
+    (traceWithCoverage :
+      env.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope]
+      at traceWithCoverage ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := traceWithCoverage.1.length
+        program := traceWithCoverage.1.program
+        witness := traceWithCoverage.1.witness
+        construction :=
+          { initialState := traceWithCoverage.1.acceptedTrace.initialState
+            rows := traceWithCoverage.1.acceptedTrace.rows
+            acceptedTrace := traceWithCoverage.1.acceptedTrace.construction
+            selectedPrefix := traceWithCoverage.2.selectedPrefix }
+        embedded := traceWithCoverage.1.embedded
+        selectedEnvelopeRow := traceWithCoverage.2.selectedEnvelopeRow }
+
 /-- Lower accepted AIR/Main/Mem full-trace data to the generated Mem burden
     currently consumed by replay. -/
 def OpEnvelope.generatedMemFullTraceConstructionAtEnvelope_of_acceptedAirMainMemTrace

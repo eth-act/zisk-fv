@@ -70,6 +70,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit named load-scoped full-execution memory construction package.
 - [x] Verify and commit split public memory boundary with shared full-execution trace plus per-envelope coverage.
 - [x] Verify and commit inverse packaging from load-scoped construction to shared trace plus coverage.
+- [x] Verify and commit load-scoped public memory trace theorem boundary.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -843,3 +844,16 @@ the RV64IM ensemble, table selection, and balanced-channel projections, while
 source theorem still has to connect those accepted witness tables to
 chronological memory rows, prefix replay/state coverage, and selected envelope
 row occurrence; it is not currently available as a global execution object.
+
+The active load-scoped public-boundary slice changes
+`zisk_riscv_compliant_program_bus` to consume
+`OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope` rather than
+a shared trace plus a separate per-envelope coverage argument. Load envelopes
+still expose the accepted full-execution memory trace and selected coverage,
+while non-load envelopes carry only `ULift Unit`; the older construction object
+is derived internally by
+`OpEnvelope.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_traceWithCoverage`.
+Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed;
+full `lake build`, both trust check scripts, global compliance closure print
+with zero project axiom names, targeted retired-memory scan, and
+`nix run .#test` also passed.
