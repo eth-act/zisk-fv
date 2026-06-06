@@ -408,3 +408,17 @@ passed. This still leaves generated permutation constraints 24-33 and the
 chronological replay proof to bind before
 `AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` can be derived from
 accepted AIR/Main/Mem full-trace data.
+
+The current permutation-rebinding slice adds source-level names for generated
+Mem constraints 24-33. `Airs.Mem.PermutationColumns` records the `std_sum`
+challenges, `__L1__`, and six exposed direct accumulator values,
+`Airs.Mem.permutation_every_row` mirrors the generated accumulator formulas,
+and `Airs.Mem.generated_every_row` bundles the segment and permutation
+surfaces. `Airs.Mem.core_every_row_of_generated_every_row` and
+`AirsClean.Mem.Bridge.constraints_at_of_generated_every_row` prove the current
+local Mem bridge remains a projection of the complete generated row surface.
+Focused/full builds, trust regeneration, both trust gates, compliance closure
+print, generated zero-entry checks, retired-memory scans, and `nix run .#test`
+passed. The remaining open proof is semantic: derive chronological rows,
+replay soundness, selected read-row coverage, and selected Sail cursor
+agreement from accepted AIR/Main/Mem full-trace data.
