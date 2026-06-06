@@ -422,3 +422,22 @@ print, generated zero-entry checks, retired-memory scans, and `nix run .#test`
 passed. The remaining open proof is semantic: derive chronological rows,
 replay soundness, selected read-row coverage, and selected Sail cursor
 agreement from accepted AIR/Main/Mem full-trace data.
+
+The current generated-construction-target slice adds
+`AirsClean.Mem.GeneratedMemFullTraceConstruction`, rooted in
+`GeneratedMemRows`, so the future accepted AIR/Main/Mem bridge has a concrete
+target containing the generated Mem row constraints, chronological raw rows,
+sequential read/write replay soundness, and initial Sail/replay agreement.
+`GeneratedMemFullTraceConstruction.toAcceptedFullMemoryBusRowsTrace` lowers
+that object to the existing global replay trace, and
+`core_every_row_of_generated_full_trace` projects the local Mem bridge facts
+from the generated row surface. `OpEnvelope` now has
+`acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_generatedTraceAndPrefix`,
+which combines this generated trace object with the selected load prefix cursor
+to supply the current compliance theorem's memory construction burden.
+Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust gates, compliance closure print, generated zero-entry
+checks, retired-memory scans, and `nix run .#test` passed. The remaining open
+proof is still semantic: derive the generated construction's replay fields and
+the selected prefix cursor from accepted AIR/Main/Mem full-trace data.

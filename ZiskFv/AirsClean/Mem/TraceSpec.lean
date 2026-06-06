@@ -1,3 +1,4 @@
+import ZiskFv.Airs.Mem
 import ZiskFv.AirsClean.Mem.Spec
 import ZiskFv.ZiskCircuit.MemTrace
 
@@ -208,5 +209,74 @@ def AcceptedFullMemoryBusRowsTrace.toRowsTraceConstruction
       memoryBusRowsReadWriteSound_of_prefixReadSound
         trace.initialMemory rows trace.prefixReadSound
     initialAgreement := trace.initialAgreement }
+
+/-! ## Generated Mem full-trace construction surface
+
+The source `Airs.Mem.generated_every_row` predicate names every generated
+Mem row constraint. The semantic replay object above intentionally does not
+pretend those algebraic row facts alone prove chronological memory replay:
+the accepted full-trace bridge still has to extract row chronology, selected
+public rows, prefix read soundness, and initial Sail/replay agreement from the
+accepted AIR/Main/Mem trace. `GeneratedMemFullTraceConstruction` is the
+non-hidden target for that bridge.
+-/
+
+/-- All generated Mem constraints hold for the active row range represented
+    by `rowCount`. -/
+def GeneratedMemRows
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (rowCount : ℕ) : Prop :=
+  ∀ row, row < rowCount →
+    ZiskFv.Airs.Mem.generated_every_row segment permutation mem row
+
+/-- Accepted full Mem trace construction data rooted at the generated Mem
+    constraint surface.
+
+The first fields are the actual generated AIR row facts. The remaining fields
+are the semantic consequences still needed by load replay. Keeping them in the
+same object makes the remaining bridge theorem precise: it must fill these
+semantic fields from accepted AIR/Main/Mem full-trace data, not from a load
+wrapper or arbitrary Sail memory bytes. -/
+structure GeneratedMemFullTraceConstruction
+    (initialState : SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
+  mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL
+  segment : ZiskFv.Airs.Mem.SegmentColumns FGL
+  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
+  rowCount : ℕ
+  generatedRows : GeneratedMemRows mem segment permutation rowCount
+  initialMemory : Std.ExtHashMap Nat (BitVec 8)
+  chronologicalRows : MemoryBusRowsChronological rows
+  rowsReadWriteSound :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound
+      initialMemory rows
+  initialAgreement : ReplayMemoryAgreement initialState initialMemory
+
+/-- Generated full-trace construction data lowers to the global Mem row-trace
+    object consumed by load replay. -/
+def GeneratedMemFullTraceConstruction.toAcceptedFullMemoryBusRowsTrace
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction : GeneratedMemFullTraceConstruction initialState rows) :
+    AcceptedFullMemoryBusRowsTrace initialState rows :=
+  AcceptedFullMemoryBusRowsTrace.ofReadWriteSound
+    construction.initialMemory
+    construction.chronologicalRows
+    construction.rowsReadWriteSound
+    construction.initialAgreement
+
+/-- Projection of the local Mem bridge obligations from generated full-trace
+    construction data. -/
+theorem core_every_row_of_generated_full_trace
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction : GeneratedMemFullTraceConstruction initialState rows)
+    {row : ℕ}
+    (h_row : row < construction.rowCount) :
+    ZiskFv.Airs.Mem.core_every_row construction.mem row :=
+  ZiskFv.Airs.Mem.core_every_row_of_generated_every_row
+    (construction.generatedRows row h_row)
 
 end ZiskFv.AirsClean.Mem

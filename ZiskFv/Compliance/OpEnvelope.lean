@@ -3199,6 +3199,27 @@ def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_globalTra
               prefixCursor (by assumption) }
   all_goals exact ()
 
+/-- Construct the public load-scoped memory-row burden from generated Mem
+    full-trace construction data plus an envelope-specific selected prefix
+    cursor. This is the next AIR bridge target: prove the generated
+    construction and selected cursor from accepted AIR/Main/Mem full-trace
+    data, then this adapter supplies the current compliance theorem's memory
+    premise. -/
+def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_generatedTraceAndPrefix
+    (env : OpEnvelope state m r_main)
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (generatedTrace :
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceConstruction
+        initialState rows)
+    (prefixCursor :
+      env.SelectedLoadMemoryBusRowsPrefixAtEnvelope initialState rows) :
+    env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope :=
+  env.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_globalTraceAndPrefix
+    initialState rows
+    generatedTrace.toAcceptedFullMemoryBusRowsTrace
+    prefixCursor
+
 /-- Derive accepted raw-row trace evidence from the granular construction
     burden for this envelope. -/
 def OpEnvelope.acceptedFullMemoryBusRowsTraceAtEnvelope_of_construction
