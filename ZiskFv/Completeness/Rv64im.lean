@@ -60,6 +60,60 @@ def SupportedDecodeSoundnessInputComplete
     iface
     Rv64imShapes.SupportedDecodeShape
 
+def RTypeRegisterSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
+    iface
+    Rv64imShapes.RTypeRegisterShape
+
+def JalrRegisterImmediateSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
+    iface
+    Rv64imShapes.JalrRegisterImmediateShape
+
+def ImmediateAluRegisterSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
+    iface
+    Rv64imShapes.ImmediateAluRegisterShape
+
+def MemoryRegisterImmediateSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
+    iface
+    Rv64imShapes.MemoryRegisterImmediateShape
+
+def ShiftRegisterSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
+    iface
+    Rv64imShapes.ShiftRegisterShape
+
+def BranchRegisterImmediateSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
+    iface
+    Rv64imShapes.BranchRegisterImmediateShape
+
+def UpperRegisterImmediateSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
+    iface
+    Rv64imShapes.UpperRegisterImmediateShape
+
+def JumpRegisterImmediateSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
+    iface
+    Rv64imShapes.JumpRegisterImmediateShape
+
+def SupportedFencePredSuccSoundnessInputComplete
+    (iface : Rv.Interface) : Prop :=
+  Rv.Interface.ShapeSoundnessInputComplete
+    iface
+    Rv64imShapes.SupportedFencePredSuccShape
+
 def MemoryRefinedSupportedDecodeCompletenessAvoidingKnownBugs
     (iface : Rv.Interface) : Prop :=
   Rv.Interface.ShapeCompletenessAvoidingKnownBugs
@@ -5401,6 +5455,36 @@ theorem supported_decode_shape_rows_of_memory_refined_families
     · exact h_jump raw h_jump_shape h_lowerable
   · exact h_fence raw h_fence_shape h_lowerable
 
+theorem supported_decode_shape_soundness_input_of_memory_refined_families
+    (iface : Rv.Interface)
+    (h_r : RTypeRegisterSoundnessInputComplete iface)
+    (h_jalr : JalrRegisterImmediateSoundnessInputComplete iface)
+    (h_alu : ImmediateAluRegisterSoundnessInputComplete iface)
+    (h_memory : MemoryRegisterImmediateSoundnessInputComplete iface)
+    (h_shift : ShiftRegisterSoundnessInputComplete iface)
+    (h_branch : BranchRegisterImmediateSoundnessInputComplete iface)
+    (h_upper : UpperRegisterImmediateSoundnessInputComplete iface)
+    (h_jump : JumpRegisterImmediateSoundnessInputComplete iface)
+    (h_fence : SupportedFencePredSuccSoundnessInputComplete iface) :
+    SupportedDecodeSoundnessInputComplete iface := by
+  intro raw h_shape h_lowerable
+  rcases h_shape with
+    h_r_shape | h_i_shape | h_shift_shape | h_store_shape |
+    h_branch_shape | h_upper_jump_shape | h_fence_shape
+  · exact h_r raw h_r_shape h_lowerable
+  · rcases Rv64imShapes.i_type_register_immediate_shape_cases h_i_shape with
+      h_jalr_shape | h_alu_shape | h_load_shape
+    · exact h_jalr raw h_jalr_shape h_lowerable
+    · exact h_alu raw h_alu_shape h_lowerable
+    · exact h_memory raw (.inl h_load_shape) h_lowerable
+  · exact h_shift raw h_shift_shape h_lowerable
+  · exact h_memory raw (.inr h_store_shape) h_lowerable
+  · exact h_branch raw h_branch_shape h_lowerable
+  · rcases h_upper_jump_shape with h_upper_shape | h_jump_shape
+    · exact h_upper raw h_upper_shape h_lowerable
+    · exact h_jump raw h_jump_shape h_lowerable
+  · exact h_fence raw h_fence_shape h_lowerable
+
 theorem supported_decode_shape_completeness_of_memory_refined_families
     (iface : Rv.Interface)
     (h_r :
@@ -5827,6 +5911,48 @@ theorem rv64im_global_completeness_with_soundness_input_avoiding_known_decode_bu
     h_rows
     h_opcode
     h_soundness
+
+/-- Family-instantiated global route-completeness theorem.
+
+This is the checked-in bridge expected by the generated route aggregation: each
+family proves its own production-row soundness-input contract, and this theorem
+assembles those contracts into the global Sail-first RV64IM completeness
+surface. -/
+theorem rv64im_global_completeness_with_family_soundness_inputs_avoiding_known_decode_bugs
+    (iface : Rv.Interface)
+    (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
+    (h_supported : SupportedDecodeAvoidKnownDecodeBugs iface)
+    (h_lower : Rv.Interface.LoweringComplete iface)
+    (h_rows : Rv.Interface.RowMaterializationComplete iface)
+    (h_opcode : Rv.Interface.OpcodeCoverageComplete iface)
+    (h_r_soundness : RTypeRegisterSoundnessInputComplete iface)
+    (h_jalr_soundness : JalrRegisterImmediateSoundnessInputComplete iface)
+    (h_alu_soundness : ImmediateAluRegisterSoundnessInputComplete iface)
+    (h_memory_soundness : MemoryRegisterImmediateSoundnessInputComplete iface)
+    (h_shift_soundness : ShiftRegisterSoundnessInputComplete iface)
+    (h_branch_soundness : BranchRegisterImmediateSoundnessInputComplete iface)
+    (h_upper_soundness : UpperRegisterImmediateSoundnessInputComplete iface)
+    (h_jump_soundness : JumpRegisterImmediateSoundnessInputComplete iface)
+    (h_fence_soundness : SupportedFencePredSuccSoundnessInputComplete iface) :
+    Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
+  rv64im_global_completeness_with_soundness_input_avoiding_known_decode_bugs
+    iface
+    h_sail_subset
+    h_supported
+    h_lower
+    h_rows
+    h_opcode
+    (supported_decode_shape_soundness_input_of_memory_refined_families
+      iface
+      h_r_soundness
+      h_jalr_soundness
+      h_alu_soundness
+      h_memory_soundness
+      h_shift_soundness
+      h_branch_soundness
+      h_upper_soundness
+      h_jump_soundness
+      h_fence_soundness)
 
 theorem rv64im_completeness_of_memory_refined_family_avoid_no_gap_sail_and_rows
     (iface : Rv.Interface)
