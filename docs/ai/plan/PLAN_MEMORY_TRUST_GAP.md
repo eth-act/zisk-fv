@@ -72,6 +72,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit inverse packaging from load-scoped construction to shared trace plus coverage.
 - [x] Verify and commit load-scoped public memory trace theorem boundary.
 - [x] Verify and commit source-shaped public memory trace theorem boundary.
+- [x] Split cursor-to-source promotion through explicit selected-row occurrence uniqueness.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -106,6 +107,28 @@ blowups. This slice passed `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, regenerated trust ledgers, both trust
 check scripts, global closure print, targeted retired-memory scans, and
 `nix run .#test`.
+
+Status checkpoint: this is not currently blocked on a local Lean syntax or build
+failure. The remaining risk is the final global proof obligation: accepted full
+execution still has to produce one shared `AcceptedFullExecutionMemoryTrace` plus
+per-load selected table-row occurrence, selected prefix cursor, and selected-row
+occurrence uniqueness.
+No ZisK semantic bug has been identified so far; the issue is whether the
+accepted-execution surface already exposes enough coverage/state facts to prove
+that theorem, or whether the global construction layer must be strengthened.
+
+The latest theorem split records the exact promotion needed when full execution
+naturally produces a selected prefix cursor rather than the stronger
+split-indexed state predicate. `SelectedLoadMemoryBusRowPrefixCursor.prefixUnique`
+and `state_eq_of_prefixUnique` prove that cursor state equality plus selected
+occurrence uniqueness implies all-splits prefix-state equality; the envelope
+constructors `selectedPrefixStateAtFullEnsembleMemTableAtEnvelope_of_prefixUnique`
+and `acceptedFullExecutionMemoryTraceSourceAtEnvelope_of_prefixUnique` package
+that bridge for the public source boundary. This avoids pretending cursor data
+alone proves source coverage. Focused `lake build ZiskFv.Compliance.OpEnvelope`
+passed for this split; `lake build ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust gates, closure print with zero project axiom names,
+targeted retired-memory scan, and `nix run .#test` also passed.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated

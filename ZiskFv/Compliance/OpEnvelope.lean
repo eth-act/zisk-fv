@@ -2705,6 +2705,41 @@ structure SelectedLoadMemoryBusRowPrefixCursor
       ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
         initialState priorRows
 
+/-- The selected cursor identifies the only chronological occurrence of the
+    selected row. This is the extra fact needed to promote a cursor-shaped
+    state proof to the split-indexed state predicate used at the public source
+    boundary. -/
+def SelectedLoadMemoryBusRowPrefixCursor.prefixUnique
+    {state initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (cursor :
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry) :
+    Prop :=
+  ∀ priorRows laterRows,
+    rows = priorRows ++ entry :: laterRows →
+      priorRows = cursor.priorRows
+
+/-- A selected cursor plus occurrence uniqueness gives the stronger
+    split-indexed prefix-state equality. -/
+theorem SelectedLoadMemoryBusRowPrefixCursor.state_eq_of_prefixUnique
+    {state initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (cursor :
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry)
+    (h_unique : cursor.prefixUnique) :
+    ∀ priorRows laterRows,
+      rows = priorRows ++ entry :: laterRows →
+        state =
+          ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows
+            initialState priorRows := by
+  intro priorRows laterRows h_split
+  have h_prior : priorRows = cursor.priorRows :=
+    h_unique priorRows laterRows h_split
+  rw [h_prior]
+  exact cursor.state_eq
+
 /-- Build a selected raw-row prefix cursor from row coverage plus a proof that
     any selected split's prefix replays to the current Sail state. This factors
     selected-prefix construction into the two obligations FullEnsemble/AIR
@@ -3463,6 +3498,56 @@ def OpEnvelope.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
               acceptedTrace.initialState priorRows
   | _ => True
 
+/-- Occurrence uniqueness for the selected prefix cursor in the accepted
+    chronological Mem trace. For load envelopes, every split of the accepted
+    rows at the selected load row has the same prefix as the selected cursor;
+    non-load envelopes carry no memory occurrence. -/
+def OpEnvelope.SelectedPrefixUniqueAtAcceptedAirMainMemTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace) : Prop :=
+  match env with
+  | .ld .. =>
+      selectedPrefix.prefixUnique
+  | .lbu .. =>
+      selectedPrefix.prefixUnique
+  | .lhu .. =>
+      selectedPrefix.prefixUnique
+  | .lwu .. =>
+      selectedPrefix.prefixUnique
+  | .lb_via_static_match .. =>
+      selectedPrefix.prefixUnique
+  | .lh_via_static_match .. =>
+      selectedPrefix.prefixUnique
+  | .lw_via_static_match .. =>
+      selectedPrefix.prefixUnique
+  | _ => True
+
+/-- Promote cursor-shaped selected-prefix evidence to the split-indexed
+    prefix-state predicate when the selected row occurrence is unique. -/
+theorem OpEnvelope.selectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope_of_prefixUnique
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace)
+    (h_unique :
+      env.SelectedPrefixUniqueAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace selectedPrefix) :
+    env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+      acceptedTrace := by
+  cases env <;>
+    simp [OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.SelectedPrefixUniqueAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope]
+      at acceptedTrace selectedPrefix h_unique ⊢
+  all_goals
+    exact
+      SelectedLoadMemoryBusRowPrefixCursor.state_eq_of_prefixUnique
+        selectedPrefix h_unique
+
 /-- The FullEnsemble-shaped selected read-replay coverage implies ordinary
     selected-row membership in the accepted chronological Mem trace. -/
 theorem OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReadReplayRow
@@ -4127,6 +4212,44 @@ def OpEnvelope.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
   env.SelectedPrefixStateAtTraceTableAtEnvelope
     (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
       construction)
+
+/-- Occurrence uniqueness for the selected prefix cursor in the accepted
+    trace contained in the FullEnsemble Mem-table bridge. -/
+def OpEnvelope.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+        construction) : Prop :=
+  env.SelectedPrefixUniqueAtAcceptedAirMainMemTraceAtEnvelope
+    (env.acceptedTraceOfFullTraceWithMemTable
+      (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+        construction))
+    selectedPrefix
+
+/-- Promote a FullEnsemble-table selected prefix cursor to the source-shaped
+    split-indexed prefix-state predicate, provided the selected occurrence is
+    unique in the accepted chronological row list. -/
+theorem OpEnvelope.selectedPrefixStateAtFullEnsembleMemTableAtEnvelope_of_prefixUnique
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+        construction)
+    (h_unique :
+      env.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope
+        construction selectedPrefix) :
+    env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+      construction := by
+  exact
+    env.selectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope_of_prefixUnique
+      (env.acceptedTraceOfFullTraceWithMemTable
+        (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+          construction))
+      selectedPrefix
+      h_unique
 
 /-- Cursor-shaped full-execution Mem extraction target for one envelope.
 
@@ -4798,6 +4921,39 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
         fullTrace.embedded)
 
+/-- Build source-shaped coverage from cursor-shaped selected-prefix evidence
+    plus a proof that the selected row occurrence is unique in the accepted
+    chronological trace. This is the honest bridge from the cursor shape
+    naturally produced by execution replay to the split-indexed source shape
+    currently consumed by the public compliance theorem. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope_of_prefixUnique
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded))
+    (selectedPrefix :
+      env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded))
+    (h_unique :
+      env.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+        selectedPrefix) :
+    env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace :=
+  { selectedPrefixState :=
+      env.selectedPrefixStateAtFullEnsembleMemTableAtEnvelope_of_prefixUnique
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+        selectedPrefix h_unique
+    selectedEnvelopeRow := selectedEnvelopeRow }
+
 /-- Build cursor-shaped coverage from source-shaped coverage. -/
 noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_sourceCoverage
     (env : OpEnvelope state m r_main)
@@ -5109,6 +5265,40 @@ def OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope
       Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
         env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace
   | _ => ULift.{2, 0} Unit
+
+/-- Load-scoped source evidence from a shared full-execution trace, selected
+    table-row occurrence, cursor-shaped selected-prefix evidence, and selected
+    occurrence uniqueness. Non-load envelopes carry no memory data. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceAtEnvelope_of_prefixUnique
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded))
+    (selectedPrefix :
+      env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded))
+    (h_unique :
+      env.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded)
+        selectedPrefix) :
+    env.AcceptedFullExecutionMemoryTraceSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope]
+      at selectedEnvelopeRow selectedPrefix h_unique ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨fullTrace,
+        OpEnvelope.acceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope_of_prefixUnique
+          _ fullTrace selectedEnvelopeRow selectedPrefix h_unique⟩
 
 /-- Lower source-shaped full-execution memory evidence to the selected-cursor
     coverage package consumed by the existing replay bridge. -/
