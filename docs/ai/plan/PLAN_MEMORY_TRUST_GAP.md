@@ -137,6 +137,7 @@ zero project axiom names, retired-memory scans, and `nix run .#test` passed for
 this slice. The remaining open theorem is deriving
 `AcceptedFullMemoryBusTraceAtEnvelope` from accepted AIR/Main/Mem full-trace
 data.
+
 The latest row-projection slice strengthens the public boundary one more step:
 `AcceptedFullMemoryBusRowsTraceAtEnvelope` carries chronological raw
 memory-bus rows, `AcceptedMemoryBusRowsTrace` accepts the read/write projection
@@ -627,3 +628,17 @@ noise, focused `lake build ZiskFv.Compliance.OpEnvelope` and
 is proving the shared trace/table embedding, selected envelope Mem-row table
 occurrence, and selected prefix-state equality from accepted full execution
 data.
+
+Post-commit audit of the next bridge checked the in-tree FullEnsemble balance
+surface and the Clean `Air.Flat` table/witness definitions. A direct table
+uniqueness route would require proving duplicate-free component positions for
+the concrete full ensemble, including many component disequalities; even if
+proved, that only identifies the Mem table and does not derive chronological
+trace embedding or Sail/replay prefix-state equality. `Mem.TraceSpec` already
+separates pure replay consequences from the semantic obligations:
+`GeneratedMemFullTraceConstruction` and
+`AcceptedAirMainMemFullTraceConstruction` still require chronological public
+rows, row-level read/write replay soundness, and initial Sail/replay memory
+agreement as fields. The next aligned implementation target is therefore an
+AIR/full-execution extraction theorem for those fields plus selected prefix
+cursor coverage, not another local load projection theorem.

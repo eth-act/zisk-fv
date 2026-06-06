@@ -2,10 +2,10 @@
 
 Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
 
-Current focus: verified narrowing slice: public compliance now takes selected envelope Mem-row table occurrence and derives selected provider replay-row coverage internally.
+Current focus: audited the next full-execution bridge after commit `acb3da7a`; the remaining missing theorem is an AIR/full-ensemble extraction theorem, not another local load proof.
 
-Blocking: remaining memory trust gap is still global; accepted full execution data does not yet prove shared Mem trace/table embedding, selected envelope Mem-row table occurrence, or split-indexed prefix-state equality.
+Blocking: accepted full execution data still does not prove shared Mem trace/table embedding, selected envelope Mem-row occurrence, or split-indexed prefix-state equality. A table-uniqueness route needs brittle component disequalities and still would not prove chronological replay or Sail prefix equality.
 
-Next step: commit the verified narrowing slice, then start deriving the full-execution bridge for selected envelope Mem-row occurrence and trace/table embedding.
+Next step: build the AIR extraction surface for accepted Mem rows: chronological public rows, prefix read/write replay soundness, initial Sail/replay agreement, and selected prefix cursor coverage from the full execution trace.
 
-Digression: split theorem blocker is resolved; full verification passed for the narrowing slice.
+Digression: split theorem blocker is resolved; the latest audit found no ZisK bug, only missing formal bridge facts.
