@@ -85,6 +85,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add an accepted AIR/Main/Mem trace wrapper for the shared-trace theorem.
 - [x] Decompose accepted AIR/Main/Mem coverage into selected prefix plus selected witness Mem-row evidence.
 - [x] Prove non-boundary same-address value carry facts from generated Mem segment constraints.
+- [x] Prove segment-boundary carry-in/carry-out facts from generated Mem segment constraints.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -227,6 +228,16 @@ chronological replay remain separate obligations. Focused `lake build
 ZiskFv.Airs.Mem`, full `lake build`, trust regeneration, both trust gates,
 closure print with no project axiom names, targeted retired-memory scan, and
 `nix run .#test` passed.
+
+The Mem segment-boundary slice adds the complementary boundary facts from
+`ZiskFv.Airs.Mem.segment_every_row`: at rows with `segment_l1 row = 1`,
+the previous-address/value expressions reduce to `previous_segment_*`; at rows
+where `segment_l1 (row + 1) = 1`, the current value chunks, address, and
+effective step are recorded as `segment_last_*`. These are still local
+algebraic consequences; the cross-segment chronological replay proof remains
+open. Focused `lake build ZiskFv.Airs.Mem`, full `lake build`, trust
+regeneration, both trust gates, closure print with no project axiom names,
+targeted retired-memory scan, and `nix run .#test` passed.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated

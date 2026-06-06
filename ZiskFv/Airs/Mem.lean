@@ -348,6 +348,83 @@ theorem value_1_eq_previous_of_read_same_addr_segment_every_row
   rw [h_prev] at h_value_1
   linear_combination h_value_1
 
+/-- At a segment-boundary row, the segment previous-address expression is the
+    previous segment's carried-out address. -/
+theorem segment_previous_addr_eq_previous_segment_of_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_boundary : cols.segment_l1 row = 1) :
+    segment_previous_addr cols v row = cols.previous_segment_addr := by
+  simp [segment_previous_addr, h_boundary]
+
+/-- At a segment-boundary row, the segment previous-value expression for the
+    low chunk is the previous segment's carried-out low value chunk. -/
+theorem segment_previous_value_0_eq_previous_segment_of_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_boundary : cols.segment_l1 row = 1) :
+    segment_previous_value_0 cols v row = cols.previous_segment_value_0 := by
+  simp [segment_previous_value_0, h_boundary]
+
+/-- At a segment-boundary row, the segment previous-value expression for the
+    high chunk is the previous segment's carried-out high value chunk. -/
+theorem segment_previous_value_1_eq_previous_segment_of_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_boundary : cols.segment_l1 row = 1) :
+    segment_previous_value_1 cols v row = cols.previous_segment_value_1 := by
+  simp [segment_previous_value_1, h_boundary]
+
+/-- The generated segment constraints record the current low value chunk as
+    the segment's carried-out low value when the next row starts a segment. -/
+theorem segment_last_value_0_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.value_0 row = cols.segment_last_value_0 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, h_value_0, _, _, _, _, _, _, _, _, _,
+      _, _, _, _, _⟩
+  rw [h_next_boundary] at h_value_0
+  linear_combination h_value_0
+
+/-- The generated segment constraints record the current high value chunk as
+    the segment's carried-out high value when the next row starts a segment. -/
+theorem segment_last_value_1_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.value_1 row = cols.segment_last_value_1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, h_value_1, _, _, _, _, _, _, _, _,
+      _, _, _, _, _⟩
+  rw [h_next_boundary] at h_value_1
+  linear_combination h_value_1
+
+/-- The generated segment constraints record the current address as the
+    segment's carried-out address when the next row starts a segment. -/
+theorem segment_last_addr_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.addr row = cols.segment_last_addr := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, h_addr, _, _, _, _, _, _, _,
+      _, _, _, _, _⟩
+  rw [h_next_boundary] at h_addr
+  linear_combination h_addr
+
+/-- The generated segment constraints record the current effective step as the
+    segment's carried-out step when the next row starts a segment. -/
+theorem segment_last_step_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.sel_dual row * (v.step_dual row - v.step row) + v.step row =
+      cols.segment_last_step := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, h_step, _, _, _, _, _, _,
+      _, _, _, _, _⟩
+  rw [h_next_boundary] at h_step
+  linear_combination h_step
+
 /-! ## Generated permutation accumulator surface
 
 The extractor emits constraints 24-33 for the `std_sum` / direct-update
