@@ -2268,6 +2268,71 @@ def OpEnvelope.acceptedMemoryTraceBurden
       promises.memoryBurden
   | _ => True
 
+/-- The selected load event from an `OpEnvelope` occurs in a shared accepted
+    Mem trace. Non-load arms do not select a Mem read event. -/
+def OpEnvelope.selectedLoadEventInTrace
+    (env : OpEnvelope state m r_main)
+    (trace : List ZiskFv.ZiskCircuit.MemTrace.MemEvent) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      ∃ priorEvents laterEvents,
+        trace = priorEvents ++
+          ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1 :: laterEvents
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      ∃ priorEvents laterEvents,
+        trace = priorEvents ++
+          ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1 :: laterEvents
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      ∃ priorEvents laterEvents,
+        trace = priorEvents ++
+          ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1 :: laterEvents
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      ∃ priorEvents laterEvents,
+        trace = priorEvents ++
+          ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1 :: laterEvents
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ priorEvents laterEvents,
+        trace = priorEvents ++
+          ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1 :: laterEvents
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ priorEvents laterEvents,
+        trace = priorEvents ++
+          ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1 :: laterEvents
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ priorEvents laterEvents,
+        trace = priorEvents ++
+          ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1 :: laterEvents
+  | _ => True
+
+/-- Global-facing accepted Mem trace context for an `OpEnvelope`.
+
+    This is stronger than passing the per-load `LoadMemoryBurden` directly:
+    one accepted trace for the current Sail state is supplied, and each load
+    arm must identify its selected `bus.e1` event inside that trace. The
+    remaining future step is proving this context from the full accepted AIR
+    trace construction rather than taking it as a public premise. -/
+def OpEnvelope.acceptedMemoryTraceContext
+    (env : OpEnvelope state m r_main) : Prop :=
+  ∃ trace : List ZiskFv.ZiskCircuit.MemTrace.MemEvent,
+  ∃ _ctx : ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace,
+    env.selectedLoadEventInTrace trace
+
+/-- Derive the per-load accepted-memory burden from the shared accepted trace
+    context exposed at the global theorem boundary. -/
+theorem OpEnvelope.acceptedMemoryTraceBurden_of_context
+    (env : OpEnvelope state m r_main)
+    (h_context : env.acceptedMemoryTraceContext) :
+    env.acceptedMemoryTraceBurden := by
+  cases env <;>
+    simp [OpEnvelope.acceptedMemoryTraceContext,
+      OpEnvelope.selectedLoadEventInTrace,
+      OpEnvelope.acceptedMemoryTraceBurden,
+      ZiskFv.EquivCore.Promises.LoadPromises.memoryBurden] at h_context ⊢
+  all_goals
+    try exact trivial
+    exact ZiskFv.ZiskCircuit.MemTrace.loadMemoryBurden_of_accepted_trace_split_nonempty
+      state _ h_context rfl
+
 /-- Project the dispatcher-facing memory burden from the accepted Mem-trace
     obligation exposed at the global theorem boundary. -/
 theorem OpEnvelope.memoryBurden_of_acceptedMemoryTraceBurden
@@ -2290,7 +2355,7 @@ def OpEnvelope.routeBurden
     specs, provider-row membership, and route pins. Requiring this predicate at
     the public theorem boundary makes that caller burden explicit without
     changing the existing wrapper proofs. Load-memory replay evidence is
-    exposed separately by `acceptedMemoryTraceBurden`, so the public theorem no
+    exposed separately by `acceptedMemoryTraceContext`, so the public theorem no
     longer hides that obligation under this structural completeness marker. -/
 def OpEnvelope.completenessBurden
     (env : OpEnvelope state m r_main) : Prop :=

@@ -16,7 +16,7 @@ The uber theorem `zisk_riscv_compliant_program_bus` lives in
 `ZiskFv/Compliance.lean` (the file at the level above this folder)
 and uses an `OpEnvelope` sum type (63 arms, one per RV64IM opcode)
 to dispatch each opcode to its `Wrappers/<Op>` wrapper. Its
-`OpEnvelope.completenessBurden` and `OpEnvelope.acceptedMemoryTraceBurden`
+`OpEnvelope.completenessBurden` and `OpEnvelope.acceptedMemoryTraceContext`
 premises make explicit that the current theorem starts from supplied witness
 and load-memory trace evidence rather than deriving that evidence from an
 accepted full trace.

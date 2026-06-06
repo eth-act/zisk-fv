@@ -171,6 +171,24 @@ structure AcceptedMemTrace
   dualEventsSound : Prop
   traceSound : TraceReplaySound initialMemory trace
 
+/-- Accepted Mem trace plus Sail/replay cursor agreement for read events in
+that trace.
+
+This is the reusable global memory object: it carries one accepted replay
+trace for the current Sail state, and states that every selected read cursor
+in that trace agrees with the Sail byte map. Opcode-level load proofs still
+have to prove that their selected memory-bus event occurs in this trace. -/
+structure AcceptedMemTraceForState
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (trace : List MemEvent) : Type where
+  accepted : AcceptedMemTrace trace
+  readCursorAgreement :
+    ∀ (event : MemEvent) (priorEvents laterEvents : List MemEvent),
+      trace = priorEvents ++ event :: laterEvents →
+      event.op = (1 : FGL) →
+      ReplayMemoryAgreement state
+        (replayEvents accepted.initialMemory priorEvents)
+
 /-- Selected load event plus the accepted trace facts from which its Sail
 memory agreement is derived. -/
 structure LoadTraceContext
@@ -199,6 +217,56 @@ def LoadMemoryBurden
     trace = priorEvents ++ event :: laterEvents
     ∧ event.op = (1 : FGL)
     ∧ ReplayMemoryAgreement state (replayEvents accepted.initialMemory priorEvents)
+
+/-- Derive a selected load burden from the shared accepted trace object and
+membership of the selected event in that trace. -/
+theorem loadMemoryBurden_of_accepted_trace_for_state
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (event : MemEvent)
+    (trace : List MemEvent)
+    (ctx : AcceptedMemTraceForState state trace)
+    (priorEvents laterEvents : List MemEvent)
+    (h_split : trace = priorEvents ++ event :: laterEvents)
+    (h_read : event.op = (1 : FGL)) :
+    LoadMemoryBurden state event := by
+  exact ⟨trace, ctx.accepted, priorEvents, laterEvents, h_split, h_read,
+    ctx.readCursorAgreement event priorEvents laterEvents h_split h_read⟩
+
+/-- Existential membership-shaped version used by `OpEnvelope` load arms. -/
+theorem loadMemoryBurden_of_accepted_trace_membership
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (event : MemEvent)
+    (h_membership :
+      ∃ trace : List MemEvent,
+      ∃ _ctx : AcceptedMemTraceForState state trace,
+      ∃ priorEvents : List MemEvent,
+      ∃ laterEvents : List MemEvent,
+        trace = priorEvents ++ event :: laterEvents)
+    (h_read : event.op = (1 : FGL)) :
+    LoadMemoryBurden state event := by
+  rcases h_membership with
+    ⟨trace, ctx, priorEvents, laterEvents, h_split⟩
+  exact loadMemoryBurden_of_accepted_trace_for_state
+    state event trace ctx priorEvents laterEvents h_split h_read
+
+/-- Simplified membership shape produced when the shared accepted-trace
+context is normalized around a selected load event. -/
+theorem loadMemoryBurden_of_accepted_trace_split_nonempty
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (event : MemEvent)
+    (h_membership :
+      ∃ priorEvents : List MemEvent,
+      ∃ laterEvents : List MemEvent,
+        Nonempty
+          (AcceptedMemTraceForState state
+            (priorEvents ++ event :: laterEvents)))
+    (h_read : event.op = (1 : FGL)) :
+    LoadMemoryBurden state event := by
+  rcases h_membership with
+    ⟨priorEvents, laterEvents, ⟨ctx⟩⟩
+  exact loadMemoryBurden_of_accepted_trace_for_state
+    state event (priorEvents ++ event :: laterEvents) ctx
+    priorEvents laterEvents rfl h_read
 
 /-- The local load byte agreement obtained from the accepted Mem trace
 context. -/
