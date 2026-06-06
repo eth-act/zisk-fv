@@ -22,6 +22,83 @@ namespace ZiskFv.AirsClean.Mem
 open Goldilocks
 open ZiskFv.ZiskCircuit.MemTrace
 
+/-- Active memory read row in the public memory-bus row projection. -/
+def MemoryBusRowIsRead (row : Interaction.MemoryBusEntry FGL) : Prop :=
+  row.as = (2 : FGL) ∧ row.multiplicity = (-1 : FGL)
+
+/-- Active memory write row in the public memory-bus row projection. -/
+def MemoryBusRowIsWrite (row : Interaction.MemoryBusEntry FGL) : Prop :=
+  row.as = (2 : FGL) ∧ row.multiplicity = (1 : FGL)
+
+/-- Rows are already ordered as the chronological Mem trace consumed by
+    replay. This is the public-row version of the Mem sorted-address/step
+    obligation; the eventual AIR bridge should derive it from the Mem
+    permutation and segment-order constraints. -/
+def MemoryBusRowsChronological
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  rows.Pairwise (fun earlier later =>
+    earlier.timestamp.toNat <= later.timestamp.toNat)
+
+/-- Adjacent same-address reads preserve the emitted value. This names the
+    row-local value carry fact that must be supplied by Mem continuity for
+    sorted rows. -/
+def MemoryBusRowsSameAddressValuePreservation
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ priorRows previous row laterRows,
+    rows = priorRows ++ previous :: row :: laterRows →
+      MemoryBusRowIsRead previous →
+        MemoryBusRowIsRead row →
+          previous.ptr = row.ptr →
+            previous.value_0 = row.value_0 ∧ previous.value_1 = row.value_1
+
+/-- Writes update the replay memory in the same public-row shape consumed by
+    the load bridge. The proof is expected to come from accepted Mem write
+    rows and their memory-bus emission. -/
+def MemoryBusRowsWriteUpdateSound
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ priorRows row laterRows,
+    rows = priorRows ++ row :: laterRows →
+      MemoryBusRowIsWrite row →
+        replayMemoryAfterBusRows initialMemory (priorRows ++ [row]) =
+          replayStoreEvent
+            (replayMemoryAfterBusRows initialMemory priorRows)
+            (storeEventOfEntry row)
+
+/-- Active same-address rows are timestamp-monotone. This is separated from
+    `MemoryBusRowsChronological` because the extracted AIR proof will likely
+    discharge it through address/step sortedness constraints. -/
+def MemoryBusRowsEventOrderingSound
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ priorRows earlier middleRows later laterRows,
+    rows = priorRows ++ earlier :: middleRows ++ later :: laterRows →
+      (MemoryBusRowIsRead earlier ∨ MemoryBusRowIsWrite earlier) →
+        (MemoryBusRowIsRead later ∨ MemoryBusRowIsWrite later) →
+          earlier.ptr = later.ptr →
+            earlier.timestamp.toNat <= later.timestamp.toNat
+
+/-- Segment-boundary carry facts for chronological rows. The public row type
+    does not expose the Mem segment accumulator columns, so this predicate
+    records the row-observable consequence needed by replay: each selected
+    prefix remains a chronological prefix of the full row list. -/
+def MemoryBusRowsSegmentCarrySound
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ priorRows row laterRows,
+    rows = priorRows ++ row :: laterRows →
+      priorRows.Pairwise (fun earlier later =>
+        earlier.timestamp.toNat <= later.timestamp.toNat)
+
+/-- Dual-memory emission coverage at the public row layer: every active memory
+    row must project to a replay event. The stronger AIR-side proof should
+    additionally show that primary and dual Mem lanes emit the expected rows
+    before this predicate is constructed. -/
+def MemoryBusRowsDualEventsSound
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ row,
+    row ∈ rows →
+      (MemoryBusRowIsRead row ∨ MemoryBusRowIsWrite row) →
+        ∃ event, memoryBusTraceEventOfRow row = some event
+
 /-- Accepted full Mem trace facts for chronological raw memory-bus rows.
 
 The rows are already projected to the public memory-bus row type used by the
@@ -34,12 +111,13 @@ structure AcceptedFullMemoryBusRowsTrace
     (initialState : SailState)
     (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
   initialMemory : Std.ExtHashMap Nat (BitVec 8)
-  chronologicalRows : Prop
-  sameAddressValuePreservation : Prop
-  writeUpdateSound : Prop
-  eventOrderingSound : Prop
-  segmentCarrySound : Prop
-  dualEventsSound : Prop
+  chronologicalRows : MemoryBusRowsChronological rows
+  sameAddressValuePreservation :
+    MemoryBusRowsSameAddressValuePreservation rows
+  writeUpdateSound : MemoryBusRowsWriteUpdateSound initialMemory rows
+  eventOrderingSound : MemoryBusRowsEventOrderingSound rows
+  segmentCarrySound : MemoryBusRowsSegmentCarrySound rows
+  dualEventsSound : MemoryBusRowsDualEventsSound rows
   prefixReadSound : MemoryBusRowsPrefixReadSound initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
 
@@ -51,10 +129,10 @@ def AcceptedFullMemoryBusRowsTrace.toRowsTraceConstruction
     (trace : AcceptedFullMemoryBusRowsTrace initialState rows) :
     AcceptedMemoryBusRowsTraceConstruction initialState rows :=
   { initialMemory := trace.initialMemory
-    storeReplaySound := trace.writeUpdateSound
-    eventOrderingSound := trace.eventOrderingSound
-    segmentCarrySound := trace.segmentCarrySound
-    dualEventsSound := trace.dualEventsSound
+    storeReplaySound := MemoryBusRowsWriteUpdateSound trace.initialMemory rows
+    eventOrderingSound := MemoryBusRowsEventOrderingSound rows
+    segmentCarrySound := MemoryBusRowsSegmentCarrySound rows
+    dualEventsSound := MemoryBusRowsDualEventsSound rows
     rowsReadWriteSound :=
       memoryBusRowsReadWriteSound_of_prefixReadSound
         trace.initialMemory rows trace.prefixReadSound

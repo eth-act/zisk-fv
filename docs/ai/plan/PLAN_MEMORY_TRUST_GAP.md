@@ -43,6 +43,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add raw memory-bus row prefix replay helpers for selected cursor construction.
 - [x] Prove raw-row selected prefix state agreement from initial trace agreement.
 - [x] Derive selected load byte agreement from the global row spec plus selected cursor.
+- [x] Replace anonymous global Mem trace placeholder props with named row-level obligations.
 - [ ] Prove `OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
@@ -199,3 +200,18 @@ mixed F/ExtF Mem constraints in `build/extraction/Extraction/Mem.lean` into
 the clean/global trace layer so
 `AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` can be proved from
 accepted AIR/Main/Mem full-trace data.
+The current row-obligation naming slice replaces the anonymous
+`chronologicalRows`, same-address preservation, write-update, event-ordering,
+segment-carry, and dual-emission `Prop` fields in
+`AirsClean.Mem.TraceSpec.AcceptedFullMemoryBusRowsTrace` with named predicates
+over public chronological `MemoryBusEntry` rows:
+`MemoryBusRowsChronological`,
+`MemoryBusRowsSameAddressValuePreservation`,
+`MemoryBusRowsWriteUpdateSound`, `MemoryBusRowsEventOrderingSound`,
+`MemoryBusRowsSegmentCarrySound`, and `MemoryBusRowsDualEventsSound`.
+The lower `AcceptedMemoryBusRowsTraceConstruction` adapter still exposes the
+named propositions at the older construction layer. Focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+compliance closure print with zero project names, retired-memory scans,
+generated zero-entry count checks, and `nix run .#test` passed for this slice.
