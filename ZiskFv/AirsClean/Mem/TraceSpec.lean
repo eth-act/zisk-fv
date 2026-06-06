@@ -172,6 +172,7 @@ structure AcceptedFullMemoryBusRowsTrace
     (initialState : SailState)
     (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
   initialMemory : Std.ExtHashMap Nat (BitVec 8)
+  rowsNodup : rows.Nodup
   chronologicalRows : MemoryBusRowsChronological rows
   prefixReadSound : MemoryBusRowsPrefixReadSound initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
@@ -184,10 +185,12 @@ def AcceptedFullMemoryBusRowsTrace.ofReadWriteSound
     {rows : List (Interaction.MemoryBusEntry FGL)}
     (initialMemory : Std.ExtHashMap Nat (BitVec 8))
     (h_chronological : MemoryBusRowsChronological rows)
+    (h_nodup : rows.Nodup)
     (h_rows : MemoryBusRowsReadWriteSound initialMemory rows)
     (h_initial : ReplayMemoryAgreement initialState initialMemory) :
     AcceptedFullMemoryBusRowsTrace initialState rows :=
   { initialMemory := initialMemory
+    rowsNodup := h_nodup
     chronologicalRows := h_chronological
     prefixReadSound :=
       memoryBusRowsPrefixReadSound_of_readWriteSound
@@ -250,6 +253,7 @@ structure GeneratedMemFullTraceConstruction
   rowCount : ℕ
   generatedRows : GeneratedMemRows mem segment permutation rowCount
   initialMemory : Std.ExtHashMap Nat (BitVec 8)
+  rowsNodup : rows.Nodup
   chronologicalRows : MemoryBusRowsChronological rows
   prefixReadSound :
     ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
@@ -264,6 +268,7 @@ def GeneratedMemFullTraceConstruction.toAcceptedFullMemoryBusRowsTrace
     (construction : GeneratedMemFullTraceConstruction initialState rows) :
     AcceptedFullMemoryBusRowsTrace initialState rows :=
   { initialMemory := construction.initialMemory
+    rowsNodup := construction.rowsNodup
     chronologicalRows := construction.chronologicalRows
     prefixReadSound := construction.prefixReadSound
     initialAgreement := construction.initialAgreement }
@@ -301,6 +306,7 @@ structure AcceptedAirMainMemFullTraceConstruction
   rowCount : ℕ
   generatedRows : GeneratedMemRows mem segment permutation rowCount
   initialMemory : Std.ExtHashMap Nat (BitVec 8)
+  rowsNodup : rows.Nodup
   chronologicalRows : MemoryBusRowsChronological rows
   prefixReadSound :
     ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
@@ -322,6 +328,7 @@ def AcceptedAirMainMemFullTraceConstruction.toGeneratedMemFullTraceConstruction
     rowCount := construction.rowCount
     generatedRows := construction.generatedRows
     initialMemory := construction.initialMemory
+    rowsNodup := construction.rowsNodup
     chronologicalRows := construction.chronologicalRows
     prefixReadSound := construction.prefixReadSound
     initialAgreement := construction.initialAgreement }

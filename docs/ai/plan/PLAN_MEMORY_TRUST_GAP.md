@@ -75,6 +75,9 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split cursor-to-source promotion through explicit selected-row occurrence uniqueness.
 - [x] Move public memory boundary to cursor-shaped source evidence plus uniqueness.
 - [x] Add construction-plus-uniqueness bridge to the cursor-shaped source boundary.
+- [x] Add a `rows.Nodup` helper that proves selected-prefix occurrence uniqueness.
+- [x] Add `rows.Nodup` to accepted Mem row-trace construction and derive uniqueness from it.
+- [x] Move the public compliance theorem memory premise to full-execution trace construction.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -156,6 +159,34 @@ ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, full
 `lake build`, trust regeneration, both trust gates, closure print with zero
 project axiom names, targeted retired-memory scan, and `nix run .#test` passed
 for this slice.
+
+The helper slice adds
+`List.prefix_eq_of_nodup_splits` and
+`SelectedLoadMemoryBusRowPrefixCursor.prefixUnique_of_nodup`, proving that a
+duplicate-free accepted row list is enough to discharge the selected-prefix
+uniqueness side condition. This passed focused `lake build
+ZiskFv.Compliance.OpEnvelope`. It does not by itself close the gap: accepted
+full execution still has to provide `rows.Nodup` or another real uniqueness
+invariant, plus the shared trace/coverage/cursor evidence.
+
+The construction-boundary slice makes that uniqueness invariant part
+of the accepted Mem trace object: `AcceptedFullMemoryBusRowsTrace`,
+`GeneratedMemFullTraceConstruction`, and
+`AcceptedAirMainMemFullTraceConstruction` now carry `rowsNodup`. The envelope
+bridge
+`selectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_nodup`
+derives selected occurrence uniqueness from that field, and
+`acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_traceConstruction`
+uses it to lower the construction package to the current cursor-source package.
+`zisk_riscv_compliant_program_bus` now consumes
+`OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope` and derives
+cursor-source evidence internally. Focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec`, focused `lake build
+ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, and full
+`lake build` passed for this slice. `trust/scripts/regenerate.sh`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, closure
+print with zero project axiom names, targeted retired-memory scan, and
+`nix run .#test` also passed.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated

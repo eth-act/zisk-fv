@@ -2720,6 +2720,82 @@ def SelectedLoadMemoryBusRowPrefixCursor.prefixUnique
     rows = priorRows ++ entry :: laterRows →
       priorRows = cursor.priorRows
 
+/-- In a duplicate-free list, a split at a selected element has a unique
+    prefix. -/
+theorem List.prefix_eq_of_nodup_splits
+    {α : Type} [DecidableEq α]
+    {rows priorRows laterRows cursorPriorRows cursorLaterRows : List α}
+    {entry : α}
+    (h_nodup : rows.Nodup)
+    (h_cursor :
+      rows = cursorPriorRows ++ entry :: cursorLaterRows)
+    (h_split :
+      rows = priorRows ++ entry :: laterRows) :
+    priorRows = cursorPriorRows := by
+  subst rows
+  induction cursorPriorRows generalizing priorRows with
+  | nil =>
+      cases priorRows with
+      | nil =>
+          rfl
+      | cons head tail =>
+          simp only [List.nil_append, List.cons_append, List.cons.injEq]
+            at h_split
+          obtain ⟨h_head, h_tail⟩ := h_split
+          subst head
+          have h_nodup_cons : (entry :: cursorLaterRows).Nodup := by
+            simpa using h_nodup
+          have h_not_mem : entry ∉ cursorLaterRows := by
+            exact (List.nodup_cons.mp h_nodup_cons).1
+          have h_mem : entry ∈ cursorLaterRows := by
+            rw [h_tail]
+            simp
+          exact False.elim (h_not_mem h_mem)
+  | cons head cursorTail ih =>
+      cases priorRows with
+      | nil =>
+          simp only [List.cons_append, List.nil_append, List.cons.injEq]
+            at h_split
+          obtain ⟨h_head, h_tail⟩ := h_split
+          subst head
+          have h_nodup_cons :
+              (entry :: (cursorTail ++ entry :: cursorLaterRows)).Nodup := by
+            exact h_nodup
+          have h_not_mem :
+              entry ∉ (cursorTail ++ entry :: cursorLaterRows) := by
+            exact (List.nodup_cons.mp h_nodup_cons).1
+          have h_mem :
+              entry ∈ (cursorTail ++ entry :: cursorLaterRows) := by
+            simp
+          exact False.elim (h_not_mem h_mem)
+      | cons priorHead priorTail =>
+          simp only [List.cons_append, List.cons.injEq] at h_split
+          obtain ⟨h_head, h_tail⟩ := h_split
+          subst priorHead
+          have h_tail_nodup :
+              (cursorTail ++ entry :: cursorLaterRows).Nodup := by
+            have h_cons :
+                (head :: (cursorTail ++ entry :: cursorLaterRows)).Nodup := by
+              simpa using h_nodup
+            exact (List.nodup_cons.mp h_cons).2
+          have h_prior_tail : priorTail = cursorTail :=
+            ih h_tail_nodup h_tail
+          rw [h_prior_tail]
+
+/-- A duplicate-free accepted row list discharges selected-prefix occurrence
+    uniqueness for a cursor. -/
+theorem SelectedLoadMemoryBusRowPrefixCursor.prefixUnique_of_nodup
+    {state initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (cursor :
+      SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry)
+    (h_nodup : rows.Nodup) :
+    cursor.prefixUnique := by
+  intro priorRows laterRows h_split
+  exact
+    List.prefix_eq_of_nodup_splits h_nodup cursor.trace_split h_split
+
 /-- A selected cursor plus occurrence uniqueness gives the stronger
     split-indexed prefix-state equality. -/
 theorem SelectedLoadMemoryBusRowPrefixCursor.state_eq_of_prefixUnique
@@ -5483,6 +5559,24 @@ def OpEnvelope.SelectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructio
       construction.construction.selectedPrefix.prefixUnique
   | _ => True
 
+/-- The duplicate-free row invariant in the accepted Mem trace discharges
+    selected-prefix occurrence uniqueness for the selected load cursor carried
+    by the full-execution construction object. -/
+theorem OpEnvelope.selectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_nodup
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope) :
+    env.SelectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope
+      construction := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope,
+      OpEnvelope.SelectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope]
+      at construction ⊢
+  all_goals
+    exact
+      construction.construction.selectedPrefix.prefixUnique_of_nodup
+        construction.construction.acceptedTrace.rowsNodup
+
 /-- Lower the load-scoped full-execution memory construction target to the
     cursor-shaped extraction object consumed by the existing replay chain. -/
 noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstruction
@@ -5539,6 +5633,19 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvel
       { selectedEnvelopeRow := construction.selectedEnvelopeRow
         selectedPrefix := construction.construction.selectedPrefix
         selectedPrefixUnique := h_unique }
+
+/-- Lower the older full-execution construction object to the current
+    cursor-shaped public source package using the accepted trace's
+    duplicate-free row invariant to prove selected occurrence uniqueness. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_traceConstruction
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope :=
+  env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_traceConstructionAndPrefixUnique
+    construction
+    (env.selectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_nodup
+      construction)
 
 /-- Combine shared accepted trace data with selected-prefix coverage to
     recover the packed load-scoped construction object used by the existing
