@@ -2,11 +2,11 @@
 
 Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
 
-Current focus: upstream accepted full-execution memory construction. The effective previous-row chronology helper slice is verified and ready to commit.
+Current focus: upstream accepted full-execution memory construction. The next target is reducing row-order/replay obligations using the generated Mem chronology helpers now in place.
 
 Blocking: accepted full execution data still does not construct the accepted Mem row trace or selected load coverage, including duplicate-free chronological rows, prefix read soundness, initial agreement, witness Mem-table embedding, selected row occurrence, and selected cursor construction.
 
-Next step: commit the verified effective previous-row chronology helper slice, then continue toward row-order/replay construction.
+Next step: inspect the row-order/replay construction surface and add the next bridge from generated Mem rows toward `AcceptedAirMainMemFullTraceConstruction`.
 
 Verification: focused `lake build ZiskFv.Airs.Mem`, dependent focused `lake build ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust regeneration, `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, closure print with zero project axiom names, retired-memory declaration scan, and `nix run .#test` passed for the current effective previous-row chronology helper edit.
 
