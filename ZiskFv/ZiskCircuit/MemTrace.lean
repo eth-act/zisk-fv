@@ -790,6 +790,36 @@ theorem memoryBusRowsReadWriteSound_of_prefixReadSound
             h_rows_split h_as h_mult
         simpa [replayMemoryAfterBusRows] using h_selected
 
+/-- Recursive row-level replay soundness implies the prefix-indexed read
+    form. This lets accepted Mem trace construction discharge read soundness
+    either by a direct prefix theorem or by a sequential replay proof over the
+    chronological rows. -/
+theorem memoryBusRowsPrefixReadSound_of_readWriteSound
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rows : List (MemoryBusEntry FGL))
+    (h_rows : MemoryBusRowsReadWriteSound initialMemory rows) :
+    MemoryBusRowsPrefixReadSound initialMemory rows := by
+  intro priorRows selectedRow laterRows h_split h_as h_mult
+  induction priorRows generalizing initialMemory rows with
+  | nil =>
+      subst rows
+      simpa [MemoryBusRowsReadWriteSound] using h_rows.1 h_as h_mult
+  | cons row priorRows ih =>
+      cases rows with
+      | nil =>
+          simp at h_split
+      | cons head rest =>
+          simp only [List.cons_append, List.cons.injEq] at h_split
+          obtain ⟨h_head, h_rest⟩ := h_split
+          subst head
+          have h_tail : MemoryBusRowsReadWriteSound
+              (replayMemoryAfterBusRow initialMemory row) rest := by
+            simpa [MemoryBusRowsReadWriteSound] using h_rows.2
+          have h_selected :=
+            ih (replayMemoryAfterBusRow initialMemory row) rest
+              h_tail h_rest
+          simpa [replayMemoryAfterBusRows] using h_selected
+
 @[simp]
 lemma memoryBusTraceEventOfRow_read
     (entry : MemoryBusEntry FGL)

@@ -313,3 +313,15 @@ ZiskFv.AirsClean.Mem.TraceSpec` passed, as did full `lake build`, trust
 regeneration, both trust gates, compliance closure print with zero project
 names, retired-memory scans, generated zero-entry count checks, and
 `nix run .#test`.
+
+The current replay-soundness bridge slice proves
+`ZiskCircuit.MemTrace.memoryBusRowsPrefixReadSound_of_readWriteSound`, the
+converse direction from recursive raw-row replay soundness to prefix-indexed
+read soundness. `AirsClean.Mem.AcceptedFullMemoryBusRowsTrace.ofReadWriteSound`
+uses that theorem so the final AIR bridge can construct the global Mem trace
+from chronological rows, a sequential row replay proof, and initial
+Sail/replay memory agreement. Focused `lake build ZiskFv.ZiskCircuit.MemTrace
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance` passed, as did full `lake build`, trust regeneration, both
+trust gates, compliance closure print with zero project names, retired-memory
+scans, generated zero-entry count checks, and `nix run .#test`.

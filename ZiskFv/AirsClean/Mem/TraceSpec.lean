@@ -174,6 +174,24 @@ structure AcceptedFullMemoryBusRowsTrace
   prefixReadSound : MemoryBusRowsPrefixReadSound initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
 
+/-- Build the accepted global Mem row trace from a sequential row replay
+    proof. This is useful for the eventual AIR bridge, where Mem continuity is
+    naturally proved by walking the chronological row list. -/
+def AcceptedFullMemoryBusRowsTrace.ofReadWriteSound
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (h_chronological : MemoryBusRowsChronological rows)
+    (h_rows : MemoryBusRowsReadWriteSound initialMemory rows)
+    (h_initial : ReplayMemoryAgreement initialState initialMemory) :
+    AcceptedFullMemoryBusRowsTrace initialState rows :=
+  { initialMemory := initialMemory
+    chronologicalRows := h_chronological
+    prefixReadSound :=
+      memoryBusRowsPrefixReadSound_of_readWriteSound
+        initialMemory rows h_rows
+    initialAgreement := h_initial }
+
 /-- Lower the global Mem trace spec to the replay construction object consumed
     by the existing memory-load bridge. -/
 def AcceptedFullMemoryBusRowsTrace.toRowsTraceConstruction
