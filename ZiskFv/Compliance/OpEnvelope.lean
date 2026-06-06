@@ -2547,6 +2547,66 @@ def OpEnvelope.acceptedFullMemoryTraceAtEnvelope_of_executionTrace
         stateAt trace h_selected.priorEvents h_selected.laterEvents _
         execTrace h_selected.trace_split h_selected.state_eq rfl
 
+/-- Accepted execution-memory trace data for one selected load cursor. -/
+structure AcceptedLoadExecutionMemoryTraceAtCursor
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (event : ZiskFv.ZiskCircuit.MemTrace.MemEvent) : Type where
+  stateAt : List ZiskFv.ZiskCircuit.MemTrace.MemEvent →
+    ZiskFv.ZiskCircuit.MemTrace.SailState
+  trace : List ZiskFv.ZiskCircuit.MemTrace.MemEvent
+  execTrace :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedExecutionMemoryTrace stateAt trace
+  selected : SelectedLoadExecutionCursor state stateAt trace event
+
+/-- Public accepted execution-memory trace burden, scoped to load envelopes
+only. Non-load envelopes carry `Unit`; load envelopes carry an accepted Mem
+trace, replay steps over a Sail state-at-cursor function, and the selected
+load cursor in that execution trace. -/
+def OpEnvelope.AcceptedExecutionMemoryTraceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      AcceptedLoadExecutionMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadExecutionMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadExecutionMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadExecutionMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadExecutionMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadExecutionMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadExecutionMemoryTraceAtCursor state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+  | _ => Unit
+
+/-- Derive the existing selected full-memory trace construction from the
+stronger accepted execution-memory trace evidence exposed at the public
+compliance theorem boundary. -/
+def OpEnvelope.acceptedFullMemoryTraceAtEnvelope_of_executionTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction : env.AcceptedExecutionMemoryTraceAtEnvelope) :
+    env.AcceptedFullMemoryTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedExecutionMemoryTraceAtEnvelope,
+      OpEnvelope.AcceptedFullMemoryTraceAtEnvelope] at construction ⊢
+  all_goals
+    first
+    | exact ()
+    | exact acceptedLoadMemoryTraceAtCursor_of_executionTrace
+        construction.stateAt construction.trace
+        construction.selected.priorEvents construction.selected.laterEvents _
+        construction.execTrace construction.selected.trace_split
+        construction.selected.state_eq rfl
+
 /-- Concrete construction payload for the accepted Mem trace used by this
     envelope.
 

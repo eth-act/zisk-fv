@@ -29,6 +29,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Narrow `AcceptedFullMemoryTraceAtEnvelope` to accepted trace plus selected split plus cursor agreement.
 - [x] Add generic accepted execution-memory replay steps that prove cursor agreement by prefix induction.
 - [x] Add an `OpEnvelope` constructor from accepted execution-memory trace plus selected cursor data.
+- [x] Replace public `AcceptedFullMemoryTraceAtEnvelope` with accepted execution-memory trace evidence.
 - [ ] Prove load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` from accepted full-trace data rather than taking it as caller evidence.
 
 ## Current Notes
@@ -73,6 +74,13 @@ ZiskFv.ZiskCircuit.MemTrace`, `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
 global closure print, retired-memory scans, and `nix run .#test`. Regeneration
 left the project axiom baseline and global compliance closure at zero entries.
+The public compliance theorem now consumes load-scoped
+`OpEnvelope.AcceptedExecutionMemoryTraceAtEnvelope` evidence instead of a
+pre-collapsed `AcceptedFullMemoryTraceAtEnvelope`; the theorem derives the old
+selected full-memory trace cursor internally. This exposes the actual execution
+replay data needed at the theorem boundary while preserving `Unit` for non-load
+envelopes. Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
+passed for this slice.
 
 The local `rv64im-completeness` branch was checked non-destructively. It adds
 raw-instruction completeness and `OpEnvelope`/Aeneas bridge predicates, but it
