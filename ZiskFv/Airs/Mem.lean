@@ -269,6 +269,85 @@ theorem core_every_row_of_segment_every_row
       h18, _, _, h21, _, h23⟩
   exact ⟨h3, h4, h5, h6, h7, h8, h18, h21, h23⟩
 
+/-- At a non-boundary row, the segment previous-address expression is the
+    previous row's address. Segment-boundary carry-in is handled separately by
+    the global Mem trace construction. -/
+theorem segment_previous_addr_eq_previous_of_not_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    segment_previous_addr cols v row = v.addr (row - 1) := by
+  simp [segment_previous_addr, h_not_boundary]
+
+/-- At a non-boundary row, the segment previous-value expression for the low
+    chunk is the previous row's low value chunk. -/
+theorem segment_previous_value_0_eq_previous_of_not_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    segment_previous_value_0 cols v row = v.value_0 (row - 1) := by
+  simp [segment_previous_value_0, h_not_boundary]
+
+/-- At a non-boundary row, the segment previous-value expression for the high
+    chunk is the previous row's high value chunk. -/
+theorem segment_previous_value_1_eq_previous_of_not_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    segment_previous_value_1 cols v row = v.value_1 (row - 1) := by
+  simp [segment_previous_value_1, h_not_boundary]
+
+/-- The generated segment constraints imply same-address rows carry the
+    previous address at non-boundary positions. -/
+theorem addr_eq_previous_of_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.addr row = v.addr (row - 1) := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_addr, _, _, _, _⟩
+  rw [h_same_addr] at h_addr
+  have h_prev :=
+    segment_previous_addr_eq_previous_of_not_boundary
+      (cols := cols) (v := v) (row := row) h_not_boundary
+  rw [h_prev] at h_addr
+  linear_combination h_addr
+
+/-- The generated segment constraints imply same-address reads carry the
+    previous low value chunk at non-boundary positions. -/
+theorem value_0_eq_previous_of_read_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.value_0 row = v.value_0 (row - 1) := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_value_0, _, _, _⟩
+  rw [h_read_same_addr] at h_value_0
+  have h_prev :=
+    segment_previous_value_0_eq_previous_of_not_boundary
+      (cols := cols) (v := v) (row := row) h_not_boundary
+  rw [h_prev] at h_value_0
+  linear_combination h_value_0
+
+/-- The generated segment constraints imply same-address reads carry the
+    previous high value chunk at non-boundary positions. -/
+theorem value_1_eq_previous_of_read_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.value_1 row = v.value_1 (row - 1) := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_value_1, _⟩
+  rw [h_read_same_addr] at h_value_1
+  have h_prev :=
+    segment_previous_value_1_eq_previous_of_not_boundary
+      (cols := cols) (v := v) (row := row) h_not_boundary
+  rw [h_prev] at h_value_1
+  linear_combination h_value_1
+
 /-! ## Generated permutation accumulator surface
 
 The extractor emits constraints 24-33 for the `std_sum` / direct-update

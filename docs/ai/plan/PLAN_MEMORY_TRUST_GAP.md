@@ -84,6 +84,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add a shared-trace theorem wrapper for the split public compliance theorem.
 - [x] Add an accepted AIR/Main/Mem trace wrapper for the shared-trace theorem.
 - [x] Decompose accepted AIR/Main/Mem coverage into selected prefix plus selected witness Mem-row evidence.
+- [x] Prove non-boundary same-address value carry facts from generated Mem segment constraints.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -215,6 +216,17 @@ must actually produce. This still does not prove the semantic
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
 regeneration, both trust gates, closure print with no project axiom names,
 targeted retired-memory scan, and `nix run .#test` passed.
+
+The Mem segment-continuity slice adds named consequences of
+`ZiskFv.Airs.Mem.segment_every_row`: at non-boundary rows
+(`segment_l1 row = 0`), the previous-address/value expressions reduce to the
+previous row, same-address rows carry the previous address, and same-address
+reads carry the previous `value_0`/`value_1` chunks. These lemmas are a real
+piece of the future `prefixReadSound` proof; segment-boundary carry-in and
+chronological replay remain separate obligations. Focused `lake build
+ZiskFv.Airs.Mem`, full `lake build`, trust regeneration, both trust gates,
+closure print with no project axiom names, targeted retired-memory scan, and
+`nix run .#test` passed.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
