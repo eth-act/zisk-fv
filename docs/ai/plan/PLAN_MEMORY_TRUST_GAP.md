@@ -33,11 +33,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add chronological memory-bus replay construction for read/write bus events.
 - [x] Expose an `OpEnvelope` constructor from accepted memory-bus execution trace data.
 - [x] Replace public accepted execution-memory trace evidence with chronological memory-bus trace evidence.
-- [ ] Prove load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` from accepted full-trace data rather than taking it as caller evidence.
+- [x] Prove load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope` from accepted full-trace data rather than taking it as caller evidence.
+- [ ] Prove `OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope` from accepted AIR/Main/Mem full-trace data.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedMemoryBusExecutionTraceAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages accepted chronological memory-bus replay data, selected event split, and Sail state-at-cursor equality. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with the selected cursor agreement derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR-to-bus-event theorem that proves the chronological memory-bus event list and selected cursor from Mem/Main trace data.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope`, which is `Unit` for non-load envelopes and, for load envelopes, packages accepted chronological memory-bus replay data plus a selected cursor pinned to the envelope's concrete read row. `AcceptedMemTrace` carries whole-trace `TraceReplaySound`; selected-read replay agreement is proved by induction over the prior-event prefix, then combined with the selected cursor agreement derived by replaying prior bus events. The remaining gap is still global: there is no accepted AIR-to-bus-event theorem that proves the chronological memory-bus event list and selected cursor from Mem/Main trace data.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -101,6 +102,18 @@ selected full-memory cursor internally via the bus replay bridge. Focused
 `lake build`, trust regeneration, both trust gates, global closure print with
 zero project axiom names, retired-memory scans, and `nix run .#test` passed for
 this public-boundary slice.
+The current public boundary slice strengthens that evidence again:
+`AcceptedFullMemoryBusTraceAtEnvelope` carries the accepted chronological
+memory-bus trace and a selected cursor whose split contains the envelope's
+concrete `MemoryBusTraceEvent.read bus.e1`; the lower
+`AcceptedMemoryBusExecutionTraceAtEnvelope` and then
+`AcceptedFullMemoryTraceAtEnvelope` are derived internally. Focused
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
+`lake build`, trust regeneration, both trust gates, global closure print with
+zero project axiom names, retired-memory scans, and `nix run .#test` passed for
+this slice. The remaining open theorem is deriving
+`AcceptedFullMemoryBusTraceAtEnvelope` from accepted AIR/Main/Mem full-trace
+data.
 
 The local `rv64im-completeness` branch was checked non-destructively. It adds
 raw-instruction completeness and `OpEnvelope`/Aeneas bridge predicates, but it

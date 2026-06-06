@@ -2614,51 +2614,101 @@ def OpEnvelope.acceptedFullMemoryTraceAtEnvelope_of_executionTraceAtEnvelope
     events and the selected load cursor. The selected Sail/replay cursor
     agreement is derived by replaying the prior bus events from initial memory
     agreement. -/
+structure SelectedLoadMemoryBusReadCursor
+    (state initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (events : List ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  priorEvents : List ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent
+  laterEvents : List ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent
+  trace_split :
+    events =
+      priorEvents ++
+        ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry ::
+          laterEvents
+  state_eq :
+    state =
+      ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusTrace
+        initialState priorEvents
+
+/-- Accepted chronological memory-bus trace plus the selected load cursor for
+    one envelope. The selected event is the concrete bus read row emitted by
+    the envelope, not an arbitrary Mem event supplied by the caller. -/
+structure AcceptedLoadFullMemoryBusTraceAtCursor
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  events : List ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent
+  busTrace :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryBusExecutionTrace
+      initialState events
+  selected :
+    SelectedLoadMemoryBusReadCursor state initialState events entry
+
+/-- Lower replay construction for one selected load cursor. This object is
+    derived from `AcceptedLoadFullMemoryBusTraceAtCursor`; it remains separate
+    because downstream load-memory agreement already consumes this shape. -/
 structure AcceptedLoadMemoryBusExecutionTraceAtCursor
     (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
-    (event : ZiskFv.ZiskCircuit.MemTrace.MemEvent) : Type where
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
   initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
   events : List ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent
   busTrace :
     ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryBusExecutionTrace
       initialState events
   priorEvents : List ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent
-  selectedEvent : ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent
   laterEvents : List ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent
-  trace_split : events = priorEvents ++ selectedEvent :: laterEvents
-  selected_event :
-    selectedEvent.toMemEvent = event
+  trace_split :
+    events =
+      priorEvents ++
+        ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry ::
+          laterEvents
   state_eq :
     state =
       ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusTrace
         initialState priorEvents
-  read : event.op = (1 : FGL)
+
+/-- Collapse full memory-bus trace data and its selected read cursor into the
+    lower replay construction consumed by load-memory agreement. -/
+def acceptedLoadMemoryBusExecutionTraceAtCursor_of_fullTrace
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL)
+    (construction :
+      AcceptedLoadFullMemoryBusTraceAtCursor state entry) :
+    AcceptedLoadMemoryBusExecutionTraceAtCursor state entry :=
+  { initialState := construction.initialState
+    events := construction.events
+    busTrace := construction.busTrace
+    priorEvents := construction.selected.priorEvents
+    laterEvents := construction.selected.laterEvents
+    trace_split := construction.selected.trace_split
+    state_eq := construction.selected.state_eq }
 
 /-- Build the existing selected full-memory cursor from chronological
     memory-bus execution trace data. -/
 def acceptedLoadMemoryTraceAtCursor_of_memoryBusExecutionTrace
     (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
-    (event : ZiskFv.ZiskCircuit.MemTrace.MemEvent)
+    (entry : Interaction.MemoryBusEntry FGL)
     (construction :
-      AcceptedLoadMemoryBusExecutionTraceAtCursor state event) :
-    AcceptedLoadMemoryTraceAtCursor state event := by
+      AcceptedLoadMemoryBusExecutionTraceAtCursor state entry) :
+    AcceptedLoadMemoryTraceAtCursor state
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry entry) := by
   rcases construction with
-    ⟨initialState, events, busTrace, priorEvents, selectedEvent, laterEvents,
-      trace_split, selected_event, state_eq, read⟩
+    ⟨initialState, events, busTrace, priorEvents, laterEvents,
+      trace_split, state_eq⟩
   subst state
   have h_mem_split :
       ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsToMemTrace
         events =
         ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsToMemTrace
           priorEvents
-        ++ event ::
+        ++ ZiskFv.ZiskCircuit.MemTrace.eventOfEntry entry ::
           ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsToMemTrace
             laterEvents := by
     rw [trace_split,
       ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsToMemTrace,
       List.map_append]
     simp [ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsToMemTrace,
-      selected_event]
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.toMemEvent]
   exact
     { fullTrace :=
         { trace :=
@@ -2670,9 +2720,9 @@ def acceptedLoadMemoryTraceAtCursor_of_memoryBusExecutionTrace
           priorEvents
       laterEvents :=
         ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsToMemTrace
-          laterEvents
+            laterEvents
       trace_split := h_mem_split
-      read := read
+      read := rfl
       stateReplayAgreement := by
         simpa [ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventsToMemTrace] using
           ZiskFv.ZiskCircuit.MemTrace.replayAgreement_after_memoryBusTrace
@@ -2687,27 +2737,58 @@ def OpEnvelope.AcceptedMemoryBusExecutionTraceAtEnvelope
     (env : OpEnvelope state m r_main) : Type :=
   match env with
   | .ld _ _ _ bus _ _ .. =>
-      AcceptedLoadMemoryBusExecutionTraceAtCursor state
-        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+      AcceptedLoadMemoryBusExecutionTraceAtCursor state bus.e1
   | .lbu _ _ _ bus _ _ _ _ .. =>
-      AcceptedLoadMemoryBusExecutionTraceAtCursor state
-        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+      AcceptedLoadMemoryBusExecutionTraceAtCursor state bus.e1
   | .lhu _ _ _ bus _ _ _ _ .. =>
-      AcceptedLoadMemoryBusExecutionTraceAtCursor state
-        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+      AcceptedLoadMemoryBusExecutionTraceAtCursor state bus.e1
   | .lwu _ _ _ bus _ _ _ _ .. =>
-      AcceptedLoadMemoryBusExecutionTraceAtCursor state
-        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+      AcceptedLoadMemoryBusExecutionTraceAtCursor state bus.e1
   | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
-      AcceptedLoadMemoryBusExecutionTraceAtCursor state
-        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+      AcceptedLoadMemoryBusExecutionTraceAtCursor state bus.e1
   | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
-      AcceptedLoadMemoryBusExecutionTraceAtCursor state
-        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+      AcceptedLoadMemoryBusExecutionTraceAtCursor state bus.e1
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
-      AcceptedLoadMemoryBusExecutionTraceAtCursor state
-        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry bus.e1)
+      AcceptedLoadMemoryBusExecutionTraceAtCursor state bus.e1
   | _ => Unit
+
+/-- Public accepted full memory-bus trace burden, scoped to load envelopes.
+    Non-load envelopes carry `Unit`; load envelopes carry a chronological
+    accepted memory-bus trace plus a cursor selecting the envelope's concrete
+    read row in that trace. -/
+def OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusTraceAtCursor state bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusTraceAtCursor state bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusTraceAtCursor state bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusTraceAtCursor state bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusTraceAtCursor state bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusTraceAtCursor state bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusTraceAtCursor state bus.e1
+  | _ => Unit
+
+/-- Derive lower memory-bus execution replay evidence from accepted full-trace
+    data and the selected read cursor for this envelope. -/
+def OpEnvelope.acceptedMemoryBusExecutionTraceAtEnvelope_of_fullTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction : env.AcceptedFullMemoryBusTraceAtEnvelope) :
+    env.AcceptedMemoryBusExecutionTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullMemoryBusTraceAtEnvelope,
+      OpEnvelope.AcceptedMemoryBusExecutionTraceAtEnvelope] at construction ⊢
+  all_goals
+    first
+    | exact ()
+    | exact acceptedLoadMemoryBusExecutionTraceAtCursor_of_fullTrace
+        state _ construction
 
 /-- Derive selected full-memory trace evidence from chronological memory-bus
     execution trace evidence. -/
