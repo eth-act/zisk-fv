@@ -20,14 +20,13 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 This theorem is a conditional global compliance theorem over an already
 constructed `OpEnvelope`. Its explicit
 `ZiskFv.Compliance.OpEnvelope.completenessBurden` and
-`ZiskFv.Compliance.OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope` premises mark
+`ZiskFv.Compliance.OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope` premises mark
 the current caller-side witness burden: row specs, table/provider evidence,
-route facts, and, for load envelopes only, accepted AIR/Main/Mem trace
-construction, full RV64IM witness data, mutable-Mem trace embedding, selected
-row occurrence, and selected prefix cursor are supplied rather than derived by
-a global accepted-trace completeness theorem. The accepted trace construction
-includes the duplicate-free memory-row invariant used to derive selected
-occurrence uniqueness internally.
+route facts, and, for load envelopes only, a shared accepted full-execution
+memory trace plus selected row occurrence and selected prefix cursor coverage
+are supplied rather than derived by a global accepted-trace completeness
+theorem. The accepted trace construction includes the duplicate-free memory-row
+invariant used to derive selected occurrence uniqueness internally.
 
 Current generated counts:
 
@@ -104,15 +103,15 @@ the required `OpEnvelope`. The explicit `OpEnvelope.completenessBurden`
 premise is an audit marker for that missing global witness-construction layer;
 there is no default theorem discharging it from an arbitrary envelope. Load
 arms expose their memory burden separately as
-`OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope`: non-load
-envelopes discharge it as `ULift Unit`; load envelopes require accepted
-AIR/Main/Mem trace construction data, including generated Mem row constraints,
+`OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope`: non-load
+envelopes discharge it as `ULift Unit`; load envelopes require a shared
+accepted full-execution memory trace, including generated Mem row constraints,
 duplicate-free chronological raw memory-bus rows, row-level read/write replay
-soundness, and initial memory agreement, plus a full RV64IM witness,
-mutable-Mem trace embedding, selected envelope Mem-row occurrence, and a
-selected raw-row prefix cursor pinned to the envelope's concrete read row. The
-cursor-source package, selected occurrence uniqueness, split-indexed source
-predicate, packed accepted-at-envelope object, generated Mem burden, packed row construction,
+soundness, initial memory agreement, a full RV64IM witness, and mutable-Mem
+trace embedding, plus selected envelope Mem-row occurrence and a selected
+raw-row prefix cursor pinned to the envelope's concrete read row. The
+load-scoped construction package, selected occurrence uniqueness, packed
+accepted-at-envelope object, generated Mem burden, packed row construction,
 row-trace object, projected `TraceReplaySound`, and selected full-memory cursor
 are derived internally by projecting rows to memory-bus events and replaying
 the prior bus events. The remaining global gap is deriving that shared trace

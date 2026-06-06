@@ -78,6 +78,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add a `rows.Nodup` helper that proves selected-prefix occurrence uniqueness.
 - [x] Add `rows.Nodup` to accepted Mem row-trace construction and derive uniqueness from it.
 - [x] Move the public compliance theorem memory premise to full-execution trace construction.
+- [x] Move the public compliance theorem memory premise to shared full-execution trace plus per-envelope coverage.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -85,11 +86,10 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 The active load path no longer carries `LoadTraceContext` inside
 `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over
 the selected load event. The public theorem now takes
-`OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope`: load
-envelopes carry shared accepted AIR/Main/Mem full-trace data, a
-`fullRv64imEnsemble` witness, a concrete Mem table in that witness, selected
-envelope Mem-row occurrence in that table, the selected prefix cursor, and
-selected-row occurrence uniqueness; non-load envelopes carry no memory trace
+`OpEnvelope.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope`: load
+envelopes carry a shared accepted full-execution memory trace plus selected
+envelope Mem-row occurrence and selected prefix cursor coverage; non-load
+envelopes carry no memory trace
 data. The split-indexed source predicate, lower trace/table object, packed
 accepted-at-envelope construction, generated Mem burden, packed row
 construction, recursive `MemoryBusRowsReadWriteSound`, projected
