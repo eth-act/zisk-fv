@@ -29,3 +29,5 @@ Make the hidden completeness/witness assumptions visible at the public complianc
 ## Current Notes
 
 The global theorem now takes an explicit `OpEnvelope.completenessBurden` premise. Load arms consume a standalone `LoadMemoryBurden` proposition: an accepted Mem trace, selected-event split, read tag, and Sail/replay cursor agreement for the selected event. The standalone burden chunk removed the hidden `mem_trace_context` field from `LoadPromises` and passed `lake build`, trust regeneration, both trust gates, explicit global closure print, and `nix run .#test`. The remaining proof-strengthening pass is still the accepted-trace-to-envelope construction that proves these obligations from top-level trace data.
+
+No current theorem in this branch constructs `OpEnvelope` from accepted full-trace data. Until that global construction exists, `env.completenessBurden` remains a real public hypothesis rather than a discharged completeness theorem.
