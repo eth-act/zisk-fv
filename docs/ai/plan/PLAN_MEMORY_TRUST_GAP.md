@@ -93,6 +93,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit Nat-facing generated delta consequences for Mem step/address increments.
 - [x] Verify and commit dual-step range/no-wrap facts for Mem chronology.
 - [x] Verify and commit previous-step same-address chronology facts for Mem replay.
+- [x] Verify and commit effective previous-row primary/dual chronology facts.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -270,6 +271,17 @@ row's carried `previous_step` and current `step`. This is the row-to-row
 chronology counterpart to the dual-step in-row ordering fact. Focused
 `lake build ZiskFv.Airs.Mem` and dependent focused `lake build
 ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+closure print with zero project axiom names, targeted retired-memory scan, and
+`nix run .#test` passed for this slice.
+
+The current working edit adds direct projections for `previous_row_step`: when
+the previous row has no dual event it is the previous primary `step`, and when
+`sel_dual = 1` it is `step_dual`. It also combines those projections with the
+same-address previous-step chronology theorem to prove non-boundary chronology
+from the previous primary or dual emitted timestamp into the current row's
+primary timestamp. Focused `lake build ZiskFv.Airs.Mem` and dependent focused
+`lake build ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
 closure print with zero project axiom names, targeted retired-memory scan, and
 `nix run .#test` passed for this slice.

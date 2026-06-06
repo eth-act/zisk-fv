@@ -184,6 +184,38 @@ def previous_row_step (v : Valid_Mem F F) (row : ℕ) : F :=
   v.sel_dual (row - 1) * (v.step_dual (row - 1) - v.step (row - 1))
     + v.step (row - 1)
 
+/-- If the previous Mem row has no dual event, its effective carried step is
+    its primary step. -/
+theorem previous_row_step_eq_step_of_no_dual
+    {v : Valid_Mem F F} {row : ℕ}
+    (h_no_dual : v.sel_dual (row - 1) = 0) :
+    previous_row_step v row = v.step (row - 1) := by
+  simp [previous_row_step, h_no_dual]
+
+/-- If the previous Mem row has a dual event, its effective carried step is
+    its dual step. -/
+theorem previous_row_step_eq_step_dual_of_dual
+    {v : Valid_Mem F F} {row : ℕ}
+    (h_dual : v.sel_dual (row - 1) = 1) :
+    previous_row_step v row = v.step_dual (row - 1) := by
+  simp [previous_row_step, h_dual]
+
+/-- Nat-valued projection of `previous_row_step_eq_step_of_no_dual`. -/
+theorem previous_row_step_val_eq_step_val_of_no_dual
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_no_dual : v.sel_dual (row - 1) = 0) :
+    (previous_row_step v row).val = (v.step (row - 1)).val := by
+  rw [previous_row_step_eq_step_of_no_dual
+    (v := v) (row := row) h_no_dual]
+
+/-- Nat-valued projection of `previous_row_step_eq_step_dual_of_dual`. -/
+theorem previous_row_step_val_eq_step_dual_val_of_dual
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_dual : v.sel_dual (row - 1) = 1) :
+    (previous_row_step v row).val = (v.step_dual (row - 1)).val := by
+  rw [previous_row_step_eq_step_dual_of_dual
+    (v := v) (row := row) h_dual]
+
 @[simp]
 def segment_previous_addr
     (cols : SegmentColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
@@ -674,6 +706,58 @@ theorem previous_step_le_step_of_same_addr_segment_every_row
               ((v.step row).val + (1 - (v.wr row).val))) := by
       omega
     omega
+
+/-- At a non-boundary same-address row, if the previous row has no dual
+    event, the previous row's primary timestamp is no later than the current
+    row's primary timestamp. -/
+theorem previous_primary_step_le_step_of_same_addr_not_boundary_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_not_boundary : cols.segment_l1 row = 0)
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_range : increment_chunks_in_range v row)
+    (h_no_dual : v.sel_dual (row - 1) = 0) :
+    (v.step (row - 1)).val ≤ (v.step row).val := by
+  have h_prev :=
+    previous_step_eq_previous_row_step_of_not_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_not_boundary
+  have h_eff :=
+    previous_row_step_eq_step_of_no_dual
+      (v := v) (row := row) h_no_dual
+  have h_le :=
+    previous_step_le_step_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row)
+      h h_same_addr h_steps h_wr h_range
+  rw [h_prev, h_eff] at h_le
+  exact h_le
+
+/-- At a non-boundary same-address row, if the previous row has a dual event,
+    the previous row's dual timestamp is no later than the current row's
+    primary timestamp. -/
+theorem previous_dual_step_le_step_of_same_addr_not_boundary_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_not_boundary : cols.segment_l1 row = 0)
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_range : increment_chunks_in_range v row)
+    (h_dual : v.sel_dual (row - 1) = 1) :
+    (v.step_dual (row - 1)).val ≤ (v.step row).val := by
+  have h_prev :=
+    previous_step_eq_previous_row_step_of_not_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_not_boundary
+  have h_eff :=
+    previous_row_step_eq_step_dual_of_dual
+      (v := v) (row := row) h_dual
+  have h_le :=
+    previous_step_le_step_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row)
+      h h_same_addr h_steps h_wr h_range
+  rw [h_prev, h_eff] at h_le
+  exact h_le
 
 /-- Address-change generated segment constraints give the exact Nat
     representative of the chronological address delta. -/
