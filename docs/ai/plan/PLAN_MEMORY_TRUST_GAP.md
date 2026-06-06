@@ -325,3 +325,16 @@ ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance` passed, as did full `lake build`, trust regeneration, both
 trust gates, compliance closure print with zero project names, retired-memory
 scans, generated zero-entry count checks, and `nix run .#test`.
+
+The current compliance-boundary split changes
+`zisk_riscv_compliant_program_bus` to take the shared
+`AirsClean.Mem.AcceptedFullMemoryBusRowsTrace initialState memoryBusRows` and
+the load-scoped `env.SelectedLoadMemoryBusRowsPrefixAtEnvelope initialState
+memoryBusRows` separately. The theorem derives
+`AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` internally with
+`acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_globalTraceAndPrefix`,
+so the remaining AIR theorem has two precise targets: one global Mem row-trace
+proof and one selected prefix cursor per load envelope. Focused `lake build
+ZiskFv.Compliance` passed, as did full `lake build`, trust regeneration, both
+trust gates, compliance closure print with zero project names, retired-memory
+scans, generated zero-entry count checks, and `nix run .#test`.
