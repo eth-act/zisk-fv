@@ -436,11 +436,119 @@ def eventOfEntry (e : MemoryBusEntry FGL) : MemEvent where
   value_0 := e.value_0
   value_1 := e.value_1
 
+/-- Convert a memory-bus store entry into the event shape used by replay.
+ZisK's memory bus carries eight byte lanes for memory writes. Narrow stores
+preserve the untouched lanes in the emitted entry, so the bus-effect memory
+update and the replay update are both eight-byte writes at this layer. -/
+@[reducible]
+def storeEventOfEntry (e : MemoryBusEntry FGL) : MemEvent where
+  lane := .primary
+  op := 2
+  ptr := e.ptr
+  timestamp := e.timestamp
+  width := 8
+  value_0 := e.value_0
+  value_1 := e.value_1
+
+/-- The Sail/bus-effect memory update for an eight-lane memory write entry. -/
+@[reducible]
+def writeMemoryOfEntry
+    (mem : Std.ExtHashMap Nat (BitVec 8)) (e : MemoryBusEntry FGL) :
+    Std.ExtHashMap Nat (BitVec 8) :=
+  (((((((mem.insert e.ptr.toNat (byteAt e 0)
+    ).insert (e.ptr.toNat + 1) (byteAt e 1)
+    ).insert (e.ptr.toNat + 2) (byteAt e 2)
+    ).insert (e.ptr.toNat + 3) (byteAt e 3)
+    ).insert (e.ptr.toNat + 4) (byteAt e 4)
+    ).insert (e.ptr.toNat + 5) (byteAt e 5)
+    ).insert (e.ptr.toNat + 6) (byteAt e 6)
+    ).insert (e.ptr.toNat + 7) (byteAt e 7)
+
 @[simp]
 lemma eventOfEntry_byteAt (e : MemoryBusEntry FGL) (i : ℕ) :
     (eventOfEntry e).byteAt i = byteAt e i := by
   unfold eventOfEntry MemEvent.byteAt byteAt
   simp
+
+@[simp]
+lemma storeEventOfEntry_byteAt (e : MemoryBusEntry FGL) (i : ℕ) :
+    (storeEventOfEntry e).byteAt i = byteAt e i := by
+  unfold storeEventOfEntry MemEvent.byteAt byteAt
+  simp
+
+@[simp]
+lemma replayStoreEvent_storeEventOfEntry
+    (mem : Std.ExtHashMap Nat (BitVec 8)) (e : MemoryBusEntry FGL) :
+    replayStoreEvent mem (storeEventOfEntry e) = writeMemoryOfEntry mem e := by
+  simp [replayStoreEvent, replayStoreByte, storeEventOfEntry, writeMemoryOfEntry]
+
+/-- A memory read event leaves Sail/replay memory agreement unchanged. -/
+theorem eventReplayStep_read_entry_same_state
+    (state : SailState) (e : MemoryBusEntry FGL) :
+    EventReplayStep state state (eventOfEntry e) := by
+  intro mem h_agree
+  simpa [EventReplayStep, eventOfEntry] using h_agree
+
+/-- An eight-lane memory write entry updates Sail memory and replay memory in
+the same byte-addressed shape. -/
+theorem replayMemoryAgreement_write_entry
+    (before : SailState)
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (e : MemoryBusEntry FGL)
+    (h_agree : ReplayMemoryAgreement before mem) :
+    ReplayMemoryAgreement
+      { before with mem := writeMemoryOfEntry before.mem e }
+      (replayStoreEvent mem (storeEventOfEntry e)) := by
+  intro addr
+  simp only [ReplayMemoryAgreement] at h_agree
+  simp only [replayStoreEvent_storeEventOfEntry, writeMemoryOfEntry,
+    Std.ExtHashMap.getElem?_insert, beq_iff_eq]
+  grind [h_agree addr]
+
+/-- Updating Sail memory with `replayStoreEvent` preserves pointwise agreement
+with a replay memory updated by the same event. This is the width-parametric
+store transition used by accepted Mem trace replay. -/
+theorem replayMemoryAgreement_replayStoreEvent
+    (before : SailState)
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (event : MemEvent)
+    (h_agree : ReplayMemoryAgreement before mem) :
+    ReplayMemoryAgreement
+      { before with mem := replayStoreEvent before.mem event }
+      (replayStoreEvent mem event) := by
+  have h_mem_eq : before.mem = mem := by
+    apply Std.ExtHashMap.ext_getElem?
+    intro addr
+    exact h_agree addr
+  subst mem
+  intro addr
+  rfl
+
+/-- Any Mem store event is an `EventReplayStep` when the post-state memory is
+the width-parametric replay update of the pre-state memory. -/
+theorem eventReplayStep_store_event_replay_state
+    (before : SailState)
+    (event : MemEvent)
+    (h_store : event.op = (2 : FGL)) :
+    EventReplayStep
+      before
+      { before with mem := replayStoreEvent before.mem event }
+      event := by
+  intro mem h_agree
+  simp [h_store]
+  exact replayMemoryAgreement_replayStoreEvent before mem event h_agree
+
+/-- A memory-bus store entry is an `EventReplayStep` when the post-state is
+the corresponding eight-lane Sail memory update. -/
+theorem eventReplayStep_store_entry_write_state
+    (before : SailState) (e : MemoryBusEntry FGL) :
+    EventReplayStep
+      before
+      { before with mem := writeMemoryOfEntry before.mem e }
+      (storeEventOfEntry e) := by
+  intro mem h_agree
+  simpa [EventReplayStep, storeEventOfEntry] using
+    replayMemoryAgreement_write_entry before mem e h_agree
 
 /-- Agreement for `eventOfEntry e` is exactly the byte facts expected by
 `bus_effect` load consumers. -/

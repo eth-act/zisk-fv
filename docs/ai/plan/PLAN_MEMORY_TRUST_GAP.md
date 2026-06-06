@@ -58,6 +58,21 @@ plus structured selected cursor data. It has passed `lake build
 ZiskFv.ZiskCircuit.MemTrace` and `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, regenerated trust ledgers, both trust check scripts,
 global closure print, targeted retired-memory scans, and `nix run .#test`.
+The current implementation slice is proving reusable per-event replay facts for
+memory-bus entries: memory reads preserve Sail/replay agreement, and memory
+writes update Sail memory in the same eight-byte shape as `replayStoreEvent`.
+These facts are intended to instantiate the existing `EventReplayStep` layer
+once accepted Mem/Main trace data identifies the selected chronological event.
+The slice now also includes a width-parametric store replay theorem:
+`eventReplayStep_store_event_replay_state` proves any store `MemEvent` is an
+`EventReplayStep` when the Sail post-state uses `replayStoreEvent` on the
+pre-state memory, avoiding an eight-byte-only interpretation for actual Mem
+AIR store rows.
+This per-event replay lemma slice passed `lake build
+ZiskFv.ZiskCircuit.MemTrace`, `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+global closure print, retired-memory scans, and `nix run .#test`. Regeneration
+left the project axiom baseline and global compliance closure at zero entries.
 
 The local `rv64im-completeness` branch was checked non-destructively. It adds
 raw-instruction completeness and `OpEnvelope`/Aeneas bridge predicates, but it
