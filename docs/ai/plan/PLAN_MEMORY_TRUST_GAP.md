@@ -65,6 +65,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Prove that any full RV64IM ensemble witness contains a mutable dual-Mem table and add a constructor that selects it for the Mem trace/table bridge.
 - [x] Name the witness-level mutable-Mem read-row embedding obligation consumed by the Mem trace/table bridge.
 - [x] Add envelope-level constructors that use the witness-selected Mem table to build the cursor-extraction target.
+- [x] Derive cursor extraction from accepted trace construction plus witness-selected Mem-table obligations.
 - [ ] Prove `OpEnvelope.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
@@ -178,6 +179,13 @@ event ordering, segment carry, dual emission, row-level read/write replay
 soundness, and initial memory agreement. `OpEnvelope` load arms now carry this
 global spec plus the selected read-row cursor; the prior granular row
 construction is derived internally by
+The latest uncommitted cursor-construction slice adds
+`OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_construction`, recovering
+the shared accepted AIR/Main/Mem trace object from the load-scoped accepted
+trace construction. Focused `lake build ZiskFv.Compliance.OpEnvelope` passed.
+This is a small verified reduction: it removes one separately supplied selected
+prefix cursor from the planned next constructor, but it does not yet prove the
+remaining full-execution embedding or selected Mem-row occurrence obligations.
 `AcceptedFullMemoryBusRowsTrace.toRowsTraceConstruction`. Focused `lake build
 ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
 passed. Full `lake build`, trust regeneration, both trust gates, global
@@ -761,3 +769,18 @@ selected prefix cursor directly or selected prefix-state equality. Focused
 `lake build`, both trust gates, closure print with zero project axiom names,
 targeted retired-name scan, and `nix run .#test` also passed for the final
 slice.
+
+The accepted-trace-construction cursor slice adds
+`OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_construction`,
+`OpEnvelope.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction`,
+`OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness`, and
+`OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstructionWitness`.
+The selected prefix cursor is now recovered from
+`AcceptedAirMainMemFullTraceConstructionAtEnvelope` instead of being supplied
+separately to the witness bridge. The remaining full-execution obligations are
+therefore the accepted trace construction itself, witness-level mutable-Mem
+read-row embedding, and selected envelope Mem-row occurrence in the
+witness-selected table. Focused `lake build ZiskFv.Compliance.OpEnvelope`
+passed for this slice. Full `lake build`, both trust gates, closure print with
+zero project axiom names, targeted retired-memory scan, and `nix run .#test`
+also passed.

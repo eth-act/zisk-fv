@@ -3251,6 +3251,52 @@ def OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope
       ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
   | _ => Unit
 
+/-- Recover the shared accepted AIR/Main/Mem trace object from the
+    load-scoped accepted trace construction plus selected prefix cursor. -/
+def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_construction
+    (env : OpEnvelope state m r_main)
+    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope] at construction ⊢
+  case ld =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        construction := construction.acceptedTrace }
+  case lbu =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        construction := construction.acceptedTrace }
+  case lhu =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        construction := construction.acceptedTrace }
+  case lwu =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        construction := construction.acceptedTrace }
+  case lb_via_static_match =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        construction := construction.acceptedTrace }
+  case lh_via_static_match =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        construction := construction.acceptedTrace }
+  case lw_via_static_match =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        construction := construction.acceptedTrace }
+  all_goals exact ()
+
 /-- Selected-prefix coverage for the accepted AIR/Main/Mem trace at one
     envelope. This is separated from the shared trace object so the future
     full-execution theorem has two explicit jobs: construct the chronological
@@ -4411,6 +4457,233 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
       program witness acceptedTrace embedded)
     selectedEnvelopeRow
     selectedPrefixState
+
+/-- Load-scoped mutable-Mem embedding obligation at the accepted trace
+    construction boundary. Non-load envelopes carry `True`; load envelopes
+    require the witness-selected mutable Mem table's read-replay rows to embed
+    in the chronological rows from the accepted construction. -/
+def OpEnvelope.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (_program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length _program).ensemble)
+    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope) :
+    Prop :=
+  match env with
+  | .ld .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness construction.rows
+  | .lbu .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness construction.rows
+  | .lhu .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness construction.rows
+  | .lwu .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness construction.rows
+  | .lb_via_static_match .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness construction.rows
+  | .lh_via_static_match .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness construction.rows
+  | .lw_via_static_match .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness construction.rows
+  | _ => True
+
+/-- Load-scoped selected envelope Mem-row occurrence at the accepted trace
+    construction boundary. The concrete Mem table is selected from the
+    full-ensemble witness, and the shared accepted trace is recovered from the
+    construction. -/
+def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction) :
+    Prop :=
+  match env with
+  | .ld .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded)
+  | .lbu .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded)
+  | .lhu .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded)
+  | .lwu .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded)
+  | .lb_via_static_match .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded)
+  | .lh_via_static_match .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded)
+  | .lw_via_static_match .. =>
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded)
+  | _ => True
+
+/-- Construct cursor-shaped memory extraction from the accepted trace
+    construction plus witness-selected Mem table obligations.
+
+    Compared with `..._of_witnessCursor`, the selected prefix cursor is no
+    longer a separate input: it comes from
+    `AcceptedAirMainMemFullTraceConstructionAtEnvelope`. The remaining
+    upstream obligations are the mutable-Mem embedding and selected envelope
+    Mem-row occurrence in the witness-selected table. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstructionWitness
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
+        program witness construction embedded) :
+    env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope,
+      OpEnvelope.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction,
+      OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness,
+      OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness]
+      at construction embedded selectedEnvelopeRow ⊢
+  case ld =>
+    exact
+      { fullTraceTable :=
+          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+            program witness
+            { initialState := construction.initialState
+              rows := construction.rows
+              construction := construction.acceptedTrace }
+            embedded
+        selectedEnvelopeRow := selectedEnvelopeRow
+        selectedPrefix := construction.selectedPrefix }
+  case lbu =>
+    exact
+      { fullTraceTable :=
+          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+            program witness
+            { initialState := construction.initialState
+              rows := construction.rows
+              construction := construction.acceptedTrace }
+            embedded
+        selectedEnvelopeRow := selectedEnvelopeRow
+        selectedPrefix := construction.selectedPrefix }
+  case lhu =>
+    exact
+      { fullTraceTable :=
+          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+            program witness
+            { initialState := construction.initialState
+              rows := construction.rows
+              construction := construction.acceptedTrace }
+            embedded
+        selectedEnvelopeRow := selectedEnvelopeRow
+        selectedPrefix := construction.selectedPrefix }
+  case lwu =>
+    exact
+      { fullTraceTable :=
+          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+            program witness
+            { initialState := construction.initialState
+              rows := construction.rows
+              construction := construction.acceptedTrace }
+            embedded
+        selectedEnvelopeRow := selectedEnvelopeRow
+        selectedPrefix := construction.selectedPrefix }
+  case lb_via_static_match =>
+    exact
+      { fullTraceTable :=
+          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+            program witness
+            { initialState := construction.initialState
+              rows := construction.rows
+              construction := construction.acceptedTrace }
+            embedded
+        selectedEnvelopeRow := selectedEnvelopeRow
+        selectedPrefix := construction.selectedPrefix }
+  case lh_via_static_match =>
+    exact
+      { fullTraceTable :=
+          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+            program witness
+            { initialState := construction.initialState
+              rows := construction.rows
+              construction := construction.acceptedTrace }
+            embedded
+        selectedEnvelopeRow := selectedEnvelopeRow
+        selectedPrefix := construction.selectedPrefix }
+  case lw_via_static_match =>
+    exact
+      { fullTraceTable :=
+          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+            program witness
+            { initialState := construction.initialState
+              rows := construction.rows
+              construction := construction.acceptedTrace }
+            embedded
+        selectedEnvelopeRow := selectedEnvelopeRow
+        selectedPrefix := construction.selectedPrefix }
+  all_goals
+    exact
+      { fullTraceTable := ULift.up ()
+        selectedEnvelopeRow := trivial
+        selectedPrefix := () }
 
 /-- Combine shared accepted trace data with selected-prefix coverage to
     recover the packed load-scoped construction object used by the existing
