@@ -82,6 +82,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split the public compliance theorem memory premise into load-scoped shared trace plus indexed coverage.
 - [x] Add direct projections from full-execution memory construction to the split public trace and coverage binders.
 - [x] Add a shared-trace theorem wrapper for the split public compliance theorem.
+- [x] Add an accepted AIR/Main/Mem trace wrapper for the shared-trace theorem.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -191,6 +192,16 @@ ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, and full
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, closure
 print with zero project axiom names, targeted retired-memory scan, and
 `nix run .#test` also passed.
+
+The accepted-trace packaging slice adds
+`AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace` and
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTrace`. This exposes
+the next upstream integration target as accepted AIR/Main/Mem trace data plus
+the full RV64IM witness, mutable-Mem embedding, and selected per-envelope
+coverage; it does not prove the remaining semantic Mem fields. Focused
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
+trust regeneration, both trust gates, closure print with no project axiom names,
+targeted retired-memory scan, and `nix run .#test` passed.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated

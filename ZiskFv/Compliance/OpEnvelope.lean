@@ -4904,6 +4904,29 @@ structure AcceptedFullExecutionMemoryTrace
     ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
       witness acceptedTrace.rows
 
+/-- Package accepted AIR/Main/Mem trace data, a full RV64IM witness, and the
+    witness-level mutable-Mem embedding into the shared full-execution memory
+    trace object. This is only record packaging; the semantic fields of
+    `acceptedTrace` and the embedding proof remain explicit inputs. -/
+def AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
+    {main : Valid_Main FGL FGL}
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace main)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows) :
+    AcceptedFullExecutionMemoryTrace main :=
+  { length := length
+    program := program
+    witness := witness
+    acceptedTrace := acceptedTrace
+    embedded := embedded }
+
 /-- Load-scoped view of the shared full-execution memory trace. -/
 def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace
     (env : OpEnvelope state m r_main)
