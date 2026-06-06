@@ -236,10 +236,11 @@ def GeneratedMemRows
     constraint surface.
 
 The first fields are the actual generated AIR row facts. The remaining fields
-are the semantic consequences still needed by load replay. Keeping them in the
-same object makes the remaining bridge theorem precise: it must fill these
-semantic fields from accepted AIR/Main/Mem full-trace data, not from a load
-wrapper or arbitrary Sail memory bytes. -/
+are the semantic consequences still needed by load replay. `prefixReadSound`
+is deliberately prefix-indexed: this is the shape expected from a Mem
+continuity proof over accepted chronological rows, while the recursive
+`MemoryBusRowsReadWriteSound` object is derived when lowering to the replay
+bridge. -/
 structure GeneratedMemFullTraceConstruction
     (initialState : SailState)
     (rows : List (Interaction.MemoryBusEntry FGL)) : Type where
@@ -250,8 +251,8 @@ structure GeneratedMemFullTraceConstruction
   generatedRows : GeneratedMemRows mem segment permutation rowCount
   initialMemory : Std.ExtHashMap Nat (BitVec 8)
   chronologicalRows : MemoryBusRowsChronological rows
-  rowsReadWriteSound :
-    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound
+  prefixReadSound :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
       initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
 
@@ -262,11 +263,10 @@ def GeneratedMemFullTraceConstruction.toAcceptedFullMemoryBusRowsTrace
     {rows : List (Interaction.MemoryBusEntry FGL)}
     (construction : GeneratedMemFullTraceConstruction initialState rows) :
     AcceptedFullMemoryBusRowsTrace initialState rows :=
-  AcceptedFullMemoryBusRowsTrace.ofReadWriteSound
-    construction.initialMemory
-    construction.chronologicalRows
-    construction.rowsReadWriteSound
-    construction.initialAgreement
+  { initialMemory := construction.initialMemory
+    chronologicalRows := construction.chronologicalRows
+    prefixReadSound := construction.prefixReadSound
+    initialAgreement := construction.initialAgreement }
 
 /-- Projection of the local Mem bridge obligations from generated full-trace
     construction data. -/
@@ -289,8 +289,8 @@ the accepted full execution trace. It is parameterized by the concrete Main
 AIR trace so the final bridge cannot be stated independently of the program
 trace whose load row is being proved. The fields are still the semantic Mem
 facts needed by replay: generated Mem row constraints, chronological public
-memory-bus rows, read/write replay soundness, and initial Sail/replay memory
-agreement. -/
+memory-bus rows, prefix-indexed read soundness, and initial Sail/replay
+memory agreement. -/
 structure AcceptedAirMainMemFullTraceConstruction
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (initialState : SailState)
@@ -302,8 +302,8 @@ structure AcceptedAirMainMemFullTraceConstruction
   generatedRows : GeneratedMemRows mem segment permutation rowCount
   initialMemory : Std.ExtHashMap Nat (BitVec 8)
   chronologicalRows : MemoryBusRowsChronological rows
-  rowsReadWriteSound :
-    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound
+  prefixReadSound :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
       initialMemory rows
   initialAgreement : ReplayMemoryAgreement initialState initialMemory
 
@@ -323,7 +323,7 @@ def AcceptedAirMainMemFullTraceConstruction.toGeneratedMemFullTraceConstruction
     generatedRows := construction.generatedRows
     initialMemory := construction.initialMemory
     chronologicalRows := construction.chronologicalRows
-    rowsReadWriteSound := construction.rowsReadWriteSound
+    prefixReadSound := construction.prefixReadSound
     initialAgreement := construction.initialAgreement }
 
 /-- Program-level accepted AIR/Main/Mem trace data, before selecting the load

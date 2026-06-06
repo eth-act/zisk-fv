@@ -642,3 +642,20 @@ rows, row-level read/write replay soundness, and initial Sail/replay memory
 agreement as fields. The next aligned implementation target is therefore an
 AIR/full-execution extraction theorem for those fields plus selected prefix
 cursor coverage, not another local load projection theorem.
+
+The prefix-read surface slice changes `GeneratedMemFullTraceConstruction` and
+`AcceptedAirMainMemFullTraceConstruction` to carry
+`MemoryBusRowsPrefixReadSound` instead of recursive
+`MemoryBusRowsReadWriteSound`; the recursive replay object is now derived
+internally when lowering through `AcceptedFullMemoryBusRowsTrace`. This moves
+the remaining semantic obligation into the prefix-indexed form expected from
+chronological accepted Mem rows. Focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec`, `lake build ZiskFv.Compliance.OpEnvelope`,
+and `lake build ZiskFv.Compliance` passed. Full `lake build`,
+`trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, closure print for
+`ZiskFv.Compliance.zisk_riscv_compliant_program_bus`, retired-memory scans,
+generated zero-entry baseline checks, and `nix run .#test` also passed. The
+remaining implementation target is still the accepted AIR/full-execution
+extraction theorem that proves the new prefix-read field and selected cursor
+facts from trace data, rather than taking them as top-level trust.
