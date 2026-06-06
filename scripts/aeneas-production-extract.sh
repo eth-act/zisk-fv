@@ -3300,8 +3300,12 @@ EOF
     write_rv_decode_branch_module() {
       local module="$1"
       local namespace="$2"
-      local theorem_name="$3"
-      local funct3="$4"
+      local decode_theorem_name="$3"
+      local route_theorem_name="$4"
+      local funct3="$5"
+      local opcode_id="$6"
+      local zisk_op="$7"
+      local negated="$8"
       cat > "$lean_check/$module.lean" <<EOF
 import RvDecodeCommon
 
@@ -3319,20 +3323,92 @@ def branchFunct3RawShapesDecodeSupported (funct3 : Nat) : Bool :=
           (aeneas_extract.extract_decode_rv64im_raw
             (rawBType (bimm <<< 1) rs2 rs1 funct3))
 
+def signExtend13ToInt (imm : Nat) : Int :=
+  if imm < 4096 then Int.ofNat imm else Int.ofNat imm - 8192
+
+def branchImmediate (bimm : Nat) : Int :=
+  signExtend13ToInt (bimm <<< 1)
+
+def rowCarriesReg64OnA
+    (row : aeneas_extract.ZiskInstExtract) (rs1 : Nat) : Bool :=
+  if rs1 == 0 then
+    row.a_src.val == 2 &&
+    row.a_use_sp_imm1.val == 0 &&
+    row.a_offset_imm0.val == 0
+  else
+    row.a_src.val == 6 &&
+    row.a_use_sp_imm1.val == 0 &&
+    row.a_offset_imm0.val == rs1
+
+def rowCarriesReg64OnB
+    (row : aeneas_extract.ZiskInstExtract) (rs2 : Nat) : Bool :=
+  if rs2 == 0 then
+    row.b_src.val == 2 &&
+    row.b_use_sp_imm1.val == 0 &&
+    row.b_offset_imm0.val == 0
+  else
+    row.b_src.val == 6 &&
+    row.b_use_sp_imm1.val == 0 &&
+    row.b_offset_imm0.val == rs2
+
+def rowCarriesBranchOffsets
+    (row : aeneas_extract.ZiskInstExtract) (bimm : Nat) : Bool :=
+  if $negated then
+    row.jmp_offset1.val == 4 &&
+    row.jmp_offset2.val == branchImmediate bimm
+  else
+    row.jmp_offset1.val == branchImmediate bimm &&
+    row.jmp_offset2.val == 4
+
+def rawTranspileBranchSoundnessInput
+    (rs1 rs2 bimm : Nat)
+    (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
+  match result with
+  | ok summary =>
+      summary.accepted &&
+      summary.decode.supported &&
+      summary.decode.opcode_id.val == $opcode_id &&
+      summary.decode.rs1.val == rs1 &&
+      summary.decode.rs2.val == rs2 &&
+      !summary.row.set_pc &&
+      !summary.row.store_pc &&
+      summary.row.store.val == 0 &&
+      summary.row.store_offset.val == 0 &&
+      summary.row.is_external_op &&
+      summary.row.op.val == $zisk_op &&
+      !summary.row.m32 &&
+      rowCarriesReg64OnA summary.row rs1 &&
+      rowCarriesReg64OnB summary.row rs2 &&
+      rowCarriesBranchOffsets summary.row bimm
+  | fail _ => false
+  | div => false
+
+def allBranchRawShapesSatisfySoundnessInput (funct3 : Nat) : Bool :=
+  allRvRegs.all fun rs1 =>
+    allRvRegs.all fun rs2 =>
+      allBEncodedImmediates.all fun bimm =>
+        rawTranspileBranchSoundnessInput rs1 rs2 bimm
+          (aeneas_extract.extract_transpile_rv64im_raw
+            (rawBType (bimm <<< 1) rs2 rs1 funct3))
+
 set_option maxHeartbeats 3000000 in
-theorem $theorem_name :
+theorem $decode_theorem_name :
     branchFunct3RawShapesDecodeSupported $funct3 = true := by native_decide
+
+set_option maxHeartbeats 40000000 in
+theorem $route_theorem_name :
+    allBranchRawShapesSatisfySoundnessInput $funct3 = true := by native_decide
 
 end $namespace
 EOF
     }
 
-    write_rv_decode_branch_module RvDecodeBranchBeq zisk_core_generated_rv_decode_branch_beq beq_raw_shapes_decode_supported_ok 0
-    write_rv_decode_branch_module RvDecodeBranchBne zisk_core_generated_rv_decode_branch_bne bne_raw_shapes_decode_supported_ok 1
-    write_rv_decode_branch_module RvDecodeBranchBlt zisk_core_generated_rv_decode_branch_blt blt_raw_shapes_decode_supported_ok 4
-    write_rv_decode_branch_module RvDecodeBranchBge zisk_core_generated_rv_decode_branch_bge bge_raw_shapes_decode_supported_ok 5
-    write_rv_decode_branch_module RvDecodeBranchBltu zisk_core_generated_rv_decode_branch_bltu bltu_raw_shapes_decode_supported_ok 6
-    write_rv_decode_branch_module RvDecodeBranchBgeu zisk_core_generated_rv_decode_branch_bgeu bgeu_raw_shapes_decode_supported_ok 7
+    write_rv_decode_branch_module RvDecodeBranchBeq zisk_core_generated_rv_decode_branch_beq beq_raw_shapes_decode_supported_ok beq_raw_shapes_soundness_input_ok 0 47 9 false
+    write_rv_decode_branch_module RvDecodeBranchBne zisk_core_generated_rv_decode_branch_bne bne_raw_shapes_decode_supported_ok bne_raw_shapes_soundness_input_ok 1 48 9 true
+    write_rv_decode_branch_module RvDecodeBranchBlt zisk_core_generated_rv_decode_branch_blt blt_raw_shapes_decode_supported_ok blt_raw_shapes_soundness_input_ok 4 49 7 false
+    write_rv_decode_branch_module RvDecodeBranchBge zisk_core_generated_rv_decode_branch_bge bge_raw_shapes_decode_supported_ok bge_raw_shapes_soundness_input_ok 5 50 7 true
+    write_rv_decode_branch_module RvDecodeBranchBltu zisk_core_generated_rv_decode_branch_bltu bltu_raw_shapes_decode_supported_ok bltu_raw_shapes_soundness_input_ok 6 51 6 false
+    write_rv_decode_branch_module RvDecodeBranchBgeu zisk_core_generated_rv_decode_branch_bgeu bgeu_raw_shapes_decode_supported_ok bgeu_raw_shapes_soundness_input_ok 7 52 6 true
 
     cat > "$lean_check/RvDecodeBranch.lean" <<'EOF'
 import RvDecodeBranchBeq
@@ -3386,6 +3462,12 @@ import RvDecodeMExtRem
 import RvDecodeMExtRemu
 import RvDecodeMExtRemw
 import RvDecodeMExtRemuw
+import RvDecodeBranchBeq
+import RvDecodeBranchBne
+import RvDecodeBranchBlt
+import RvDecodeBranchBge
+import RvDecodeBranchBltu
+import RvDecodeBranchBgeu
 
 /-!
 Aggregated generated route-completeness surface for row-local soundness input
@@ -3441,7 +3523,13 @@ theorem closed_route_soundness_inputs_ok :
     zisk_core_generated_rv_decode_mext_rem.allRAluRawShapesSatisfySoundnessInput = true ∧
     zisk_core_generated_rv_decode_mext_remu.allRAluRawShapesSatisfySoundnessInput = true ∧
     zisk_core_generated_rv_decode_mext_remw.allRAluRawShapesSatisfySoundnessInput = true ∧
-    zisk_core_generated_rv_decode_mext_remuw.allRAluRawShapesSatisfySoundnessInput = true := by
+    zisk_core_generated_rv_decode_mext_remuw.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_branch_beq.allBranchRawShapesSatisfySoundnessInput 0 = true ∧
+    zisk_core_generated_rv_decode_branch_bne.allBranchRawShapesSatisfySoundnessInput 1 = true ∧
+    zisk_core_generated_rv_decode_branch_blt.allBranchRawShapesSatisfySoundnessInput 4 = true ∧
+    zisk_core_generated_rv_decode_branch_bge.allBranchRawShapesSatisfySoundnessInput 5 = true ∧
+    zisk_core_generated_rv_decode_branch_bltu.allBranchRawShapesSatisfySoundnessInput 6 = true ∧
+    zisk_core_generated_rv_decode_branch_bgeu.allBranchRawShapesSatisfySoundnessInput 7 = true := by
   exact
     ⟨zisk_core_generated_rv_decode_jalr.allJalrRawShapesSatisfySoundnessInput_ok,
       zisk_core_generated_rv_decode_ialu_addi.addi_raw_shapes_soundness_input_ok,
@@ -3484,7 +3572,13 @@ theorem closed_route_soundness_inputs_ok :
       zisk_core_generated_rv_decode_mext_rem.rem_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_mext_remu.remu_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_mext_remw.remw_raw_shapes_soundness_input_ok,
-      zisk_core_generated_rv_decode_mext_remuw.remuw_raw_shapes_soundness_input_ok⟩
+      zisk_core_generated_rv_decode_mext_remuw.remuw_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_branch_beq.beq_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_branch_bne.bne_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_branch_blt.blt_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_branch_bge.bge_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_branch_bltu.bltu_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_branch_bgeu.bgeu_raw_shapes_soundness_input_ok⟩
 
 end zisk_core_generated_rv_route_soundness
 EOF
