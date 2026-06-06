@@ -26,16 +26,16 @@ Make the hidden completeness/witness assumptions visible at the public complianc
 - [x] Rebuild and rerun trust checks for standalone load memory burden.
 - [x] Commit standalone load memory burden change.
 - [x] Split load-memory replay evidence out of `OpEnvelope.completenessBurden`.
-- [x] Add `OpEnvelope.acceptedMemoryTraceContext` and derive `env.memoryBurden` from it.
+- [x] Add `OpEnvelope.AcceptedMemoryTraceConstruction` and derive `env.memoryBurden` from it.
 - [x] Regenerate trust ledgers and run gates for the accepted-memory-trace theorem surface.
 - [x] Commit accepted-memory-trace theorem-surface change.
 
 ## Current Notes
 
-The global theorem now takes an explicit `OpEnvelope.completenessBurden` premise for row/table/route evidence and a separate `OpEnvelope.acceptedMemoryTraceContext` premise for load-memory replay evidence. Load arms consume a standalone `LoadMemoryBurden` proposition derived from one accepted Mem trace for the current Sail state plus selected-event membership in that trace. The new public theorem surface derives the dispatcher-facing `env.memoryBurden` from that context; the earlier `acceptedMemoryTraceBurden` slice passed `lake build`, trust gates, semantic gates, closure print, targeted scans, and `nix run .#test`.
+The global theorem now takes an explicit `OpEnvelope.completenessBurden` premise for row/table/route evidence and a separate `OpEnvelope.AcceptedMemoryTraceConstruction` object for load-memory replay evidence. Load arms consume a standalone `LoadMemoryBurden` proposition derived from one accepted Mem trace for the current Sail state plus selected-event membership in that trace. The new public theorem surface derives the dispatcher-facing `env.memoryBurden` from that construction; the earlier `acceptedMemoryTraceBurden` slice passed `lake build`, trust gates, semantic gates, closure print, targeted scans, and `nix run .#test`.
 
-The shared trace-context slice has passed `lake build`, trust regeneration,
-both trust gate scripts, global closure print, targeted retired-memory scans,
-and `nix run .#test`.
+The shared trace-context and `AcceptedMemoryTraceConstruction` slices have
+passed `lake build`, trust regeneration, both trust gate scripts, global
+closure print, targeted retired-memory scans, and `nix run .#test`.
 
 No current theorem in this branch constructs `OpEnvelope` from accepted full-trace data. Until that global construction exists, `env.completenessBurden` remains a real public hypothesis rather than a discharged completeness theorem.

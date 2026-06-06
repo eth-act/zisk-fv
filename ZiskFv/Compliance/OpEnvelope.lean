@@ -2317,6 +2317,28 @@ def OpEnvelope.acceptedMemoryTraceContext
   ∃ _ctx : ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace,
     env.selectedLoadEventInTrace trace
 
+/-- Concrete construction payload for the accepted Mem trace used by this
+    envelope.
+
+    This is the theorem hook for the missing accepted-trace-to-`OpEnvelope`
+    layer: global construction code should build this object from accepted
+    full-trace data. The compliance theorem consumes this structured evidence
+    and derives the final `acceptedMemoryTraceContext` proposition internally. -/
+structure OpEnvelope.AcceptedMemoryTraceConstruction
+    (env : OpEnvelope state m r_main) : Type where
+  trace : List ZiskFv.ZiskCircuit.MemTrace.MemEvent
+  context :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemTraceForState state trace
+  selected : env.selectedLoadEventInTrace trace
+
+/-- Turn the concrete accepted-memory construction object into the proposition
+    consumed by the load-memory projection theorem. -/
+theorem OpEnvelope.acceptedMemoryTraceContext_of_construction
+    (env : OpEnvelope state m r_main)
+    (construction : env.AcceptedMemoryTraceConstruction) :
+    env.acceptedMemoryTraceContext := by
+  exact ⟨construction.trace, construction.context, construction.selected⟩
+
 /-- Derive the per-load accepted-memory burden from the shared accepted trace
     context exposed at the global theorem boundary. -/
 theorem OpEnvelope.acceptedMemoryTraceBurden_of_context
