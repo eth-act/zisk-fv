@@ -234,3 +234,15 @@ ZiskFv.ZiskCircuit.MemModel ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
 passed, as did full `lake build`, trust regeneration, both trust gates,
 compliance closure print with zero project names, retired-memory scans,
 generated zero-entry count checks, and `nix run .#test`.
+
+The current active-ensemble slice switches `fullRv64imEnsemble` from the
+primary-only Mem provider table to `AirsClean.Mem.componentWithDualMemBus`.
+`FullEnsemble.Balance` now extracts Mem provider rows as either primary or
+dual MemBus emissions and threads that branch through the spec- and
+entry-match-carrying bridge lemmas. Focused `lake build
+ZiskFv.AirsClean.FullEnsemble ZiskFv.AirsClean.FullEnsemble.Balance` and
+`lake build ZiskFv.EquivCore.Bridge.MemCleanFullEnsemble
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` passed, as did full
+`lake build`, trust regeneration, both trust gates, compliance closure print
+with zero project names, retired-memory scans, generated zero-entry count
+checks, and `nix run .#test`.

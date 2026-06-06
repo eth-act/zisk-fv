@@ -34,7 +34,7 @@ theorem component_mem_fullRv64im_cases
       ∨ component = ZiskFv.AirsClean.MemAlignReadByte.component
       ∨ component = ZiskFv.AirsClean.MemAlignByte.component
       ∨ component = ZiskFv.AirsClean.MemAlign.component
-      ∨ component = ZiskFv.AirsClean.Mem.componentWithMemBus
+      ∨ component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
       ∨ component = ZiskFv.AirsClean.ArithDiv.component
       ∨ component = ZiskFv.AirsClean.ArithMul.component
       ∨ component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
@@ -162,14 +162,14 @@ theorem memAlign_table_interactionsWith_opBus_nil
 /-- A table whose component is Mem has no operation-bus interactions. -/
 theorem mem_table_interactionsWith_opBus_nil
     {table : Table FGL}
-    (h_component : table.component = ZiskFv.AirsClean.Mem.componentWithMemBus) :
+    (h_component : table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
     table.interactionsWith OpBusChannel.toRaw = [] := by
   have h_not :
       OpBusChannel.toRaw ∉
-        ZiskFv.AirsClean.Mem.componentWithMemBus.circuit.channels := by
-    simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithMemBus,
-      ZiskFv.AirsClean.Mem.circuitWithMemBus,
-      ZiskFv.AirsClean.Mem.memWithMemBusElaborated,
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+      ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
+      ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated,
       OpBusChannel, MemBusChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
@@ -537,7 +537,7 @@ theorem exists_matching_mem_component_of_active_main_interaction
             ∧ (table.component = ZiskFv.AirsClean.MemAlignReadByte.component
               ∨ table.component = ZiskFv.AirsClean.MemAlignByte.component
               ∨ table.component = ZiskFv.AirsClean.MemAlign.component
-              ∨ table.component = ZiskFv.AirsClean.Mem.componentWithMemBus
+              ∨ table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
               ∨ table.component =
                   ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program) := by
   obtain ⟨providerInteraction, h_mem_provider, h_msg, h_nonpull, h_nonzero⟩ :=
@@ -631,6 +631,27 @@ theorem exists_memBus_row_eval_of_singleton_interactionsWith
   simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
     h_singleton] at h_mem
   exact h_mem
+
+/-- If a table's memory-bus abstract interactions are exactly two entries,
+    any concrete table-level interaction on that channel is one of those two
+    entries evaluated at some row. -/
+theorem exists_memBus_row_eval_of_pair_interactionsWith
+    {table : Table FGL} {left right : AbstractInteraction FGL}
+    (h_pair :
+      table.component.operations.interactionsWith MemBusChannel.toRaw =
+        [left, right])
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    (∃ row ∈ table.table,
+      interaction = left.eval (table.environment row))
+    ∨ (∃ row ∈ table.table,
+      interaction = right.eval (table.environment row)) := by
+  simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_pair] at h_mem
+  obtain ⟨row, h_row, h_eval⟩ := h_mem
+  rcases h_eval with h_left | h_right
+  · exact Or.inl ⟨row, h_row, h_left⟩
+  · exact Or.inr ⟨row, h_row, h_right⟩
 
 /-- Row extraction for the unified Main operation-bus interaction in the full
     ensemble. The extracted row is a `MainRowWithRom`; its `.core` is the same
@@ -1192,6 +1213,33 @@ theorem exists_mem_row_eval_of_interaction_mem
       ZiskFv.AirsClean.Mem.componentWithMemBus_interactionsWith_memBus
   · exact h_mem
 
+/-- Row extraction for a dual-aware Mem memory-bus provider interaction in
+    the full ensemble. The selected interaction is either the primary Mem
+    provider emission or the pinned `dual_mem = 1` read emission. -/
+theorem exists_mem_dual_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    (∃ row ∈ table.table,
+      interaction =
+        ((MemBusChannel.emitted
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+          (table.environment row))
+    ∨ (∃ row ∈ table.table,
+      interaction =
+        ((MemBusChannel.emitted
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel_dual
+          (ZiskFv.AirsClean.Mem.memBusDualMessageExpr
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+          (table.environment row)) := by
+  apply exists_memBus_row_eval_of_pair_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus
+  · exact h_mem
+
 /-- Row extraction for a MemAlign memory-bus interaction in the full ensemble. -/
 theorem exists_memAlign_row_eval_of_interaction_mem
     {table : Table FGL}
@@ -1402,13 +1450,20 @@ theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
                           ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
                         (providerTable.environment providerRow))
                 ∨ (∃ providerRow ∈ providerTable.table,
-                  providerTable.component = ZiskFv.AirsClean.Mem.componentWithMemBus
-                    ∧ providerInteraction =
-                      ((MemBusChannel.emitted
-                        ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar.sel
-                        (ZiskFv.AirsClean.Mem.memBusMessageExpr
-                          ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar)).toRaw).eval
-                        (providerTable.environment providerRow))
+                  providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+                    ∧
+                      (providerInteraction =
+                          ((MemBusChannel.emitted
+                            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel
+                            (ZiskFv.AirsClean.Mem.memBusMessageExpr
+                              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+                            (providerTable.environment providerRow)
+                        ∨ providerInteraction =
+                          ((MemBusChannel.emitted
+                            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel_dual
+                            (ZiskFv.AirsClean.Mem.memBusDualMessageExpr
+                              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+                            (providerTable.environment providerRow)))
                 ∨ (∃ providerRow ∈ providerTable.table,
                   providerTable.component =
                     ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
@@ -1477,13 +1532,20 @@ theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
     right
     left
     exact ⟨providerRow, h_providerRow, h_memAlign, h_providerEval⟩
-  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
-      exists_mem_row_eval_of_interaction_mem h_mem h_providerInteraction
-    right
-    right
-    right
-    left
-    exact ⟨providerRow, h_providerRow, h_mem, h_providerEval⟩
+  · rcases exists_mem_dual_row_eval_of_interaction_mem
+        h_mem h_providerInteraction with h_primary | h_dual
+    · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ := h_primary
+      right
+      right
+      right
+      left
+      exact ⟨providerRow, h_providerRow, h_mem, Or.inl h_providerEval⟩
+    · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ := h_dual
+      right
+      right
+      right
+      left
+      exact ⟨providerRow, h_providerRow, h_mem, Or.inr h_providerEval⟩
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
       exists_main_mem_row_eval_of_interaction_mem h_main h_providerInteraction
     right
@@ -1586,13 +1648,20 @@ theorem exists_mem_provider_row_msg_eq_spec_of_active_main_table_interaction
                           (providerTable.environment providerRow))
                   ∨ (∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
-                      ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithMemBus
-                      ∧ providerInteraction =
-                        ((MemBusChannel.emitted
-                          ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar.sel
-                          (ZiskFv.AirsClean.Mem.memBusMessageExpr
-                            ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar)).toRaw).eval
-                          (providerTable.environment providerRow))
+                      ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+                      ∧
+                        (providerInteraction =
+                            ((MemBusChannel.emitted
+                              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel
+                              (ZiskFv.AirsClean.Mem.memBusMessageExpr
+                                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+                              (providerTable.environment providerRow)
+                          ∨ providerInteraction =
+                            ((MemBusChannel.emitted
+                              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel_dual
+                              (ZiskFv.AirsClean.Mem.memBusDualMessageExpr
+                                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+                              (providerTable.environment providerRow)))
                   ∨ (∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
                       ∧ providerTable.component =
@@ -1769,22 +1838,38 @@ theorem exists_mem_provider_row_matches_entry_spec_of_active_main_eval
                         multiplicity as))
                 ∨ (∃ providerRow ∈ providerTable.table,
                   providerTable.component.Spec (providerTable.environment providerRow)
-                    ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithMemBus
-                    ∧ providerInteraction =
-                      ((MemBusChannel.emitted
-                        ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar.sel
-                        (ZiskFv.AirsClean.Mem.memBusMessageExpr
-                          ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar)).toRaw).eval
-                        (providerTable.environment providerRow)
-                    ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry
-                      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-                        (eval (mainTable.environment mainRow) mainMsg)
-                        multiplicity as)
-                      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-                        (eval (providerTable.environment providerRow)
-                          (ZiskFv.AirsClean.Mem.memBusMessageExpr
-                            ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar))
-                        multiplicity as))
+                    ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+                    ∧
+                      ((providerInteraction =
+                          ((MemBusChannel.emitted
+                            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel
+                            (ZiskFv.AirsClean.Mem.memBusMessageExpr
+                              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+                            (providerTable.environment providerRow)
+                        ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry
+                          (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                            (eval (mainTable.environment mainRow) mainMsg)
+                            multiplicity as)
+                          (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                            (eval (providerTable.environment providerRow)
+                              (ZiskFv.AirsClean.Mem.memBusMessageExpr
+                                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+                            multiplicity as))
+                      ∨ (providerInteraction =
+                          ((MemBusChannel.emitted
+                            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel_dual
+                            (ZiskFv.AirsClean.Mem.memBusDualMessageExpr
+                              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+                            (providerTable.environment providerRow)
+                        ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry
+                          (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                            (eval (mainTable.environment mainRow) mainMsg)
+                            multiplicity as)
+                          (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                            (eval (providerTable.environment providerRow)
+                              (ZiskFv.AirsClean.Mem.memBusDualMessageExpr
+                                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+                            multiplicity as))))
                 ∨ (∃ providerRow ∈ providerTable.table,
                   providerTable.component.Spec (providerTable.environment providerRow)
                     ∧ providerTable.component =
@@ -1899,17 +1984,32 @@ theorem exists_mem_provider_row_matches_entry_spec_of_active_main_eval
     apply ZiskFv.Airs.MemoryBus.matches_memory_entry_of_eval_emitted_provider_msg_eq
     rw [← h_providerEval, ← h_mainEval]
     exact h_msg
-  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
-      exists_mem_row_eval_of_interaction_mem h_mem h_providerInteraction
-    right
-    right
-    right
-    left
-    refine ⟨providerRow, h_providerRow,
-      h_providerSpecs providerRow h_providerRow, h_mem, h_providerEval, ?_⟩
-    apply ZiskFv.Airs.MemoryBus.matches_memory_entry_of_eval_emitted_provider_msg_eq
-    rw [← h_providerEval, ← h_mainEval]
-    exact h_msg
+  · rcases exists_mem_dual_row_eval_of_interaction_mem
+        h_mem h_providerInteraction with h_primary | h_dual
+    · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ := h_primary
+      right
+      right
+      right
+      left
+      refine ⟨providerRow, h_providerRow,
+        h_providerSpecs providerRow h_providerRow, h_mem, ?_⟩
+      left
+      refine ⟨h_providerEval, ?_⟩
+      apply ZiskFv.Airs.MemoryBus.matches_memory_entry_of_eval_emitted_provider_msg_eq
+      rw [← h_providerEval, ← h_mainEval]
+      exact h_msg
+    · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ := h_dual
+      right
+      right
+      right
+      left
+      refine ⟨providerRow, h_providerRow,
+        h_providerSpecs providerRow h_providerRow, h_mem, ?_⟩
+      right
+      refine ⟨h_providerEval, ?_⟩
+      apply ZiskFv.Airs.MemoryBus.matches_memory_entry_of_eval_emitted_provider_msg_eq
+      rw [← h_providerEval, ← h_mainEval]
+      exact h_msg
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
       exists_main_mem_row_eval_of_interaction_mem h_main h_providerInteraction
     right
