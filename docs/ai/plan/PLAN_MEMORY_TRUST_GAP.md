@@ -215,6 +215,19 @@ trust gates, compliance closure print, generated zero-entry checks, and
 `nix run .#test` passed for this slice.
 The open work is now rebinding these generated single-field constraints, plus
 the remaining row-offset facts, into the Clean/global trace construction.
+The current row-offset extractor slice removes the remaining generated
+constraint holes: signed witness/fixed row offsets now render as `row + k` or
+`row - k` with rotation 0. After `nix run .#populate`,
+`build/extraction/Extraction/Mem.lean` contains definitions for all
+constraints 0-33, including former positive-row-offset constraints 9-12 and
+33, and `rg "skipped:|not yet supported" build/extraction/Extraction` returns
+no matches. `cargo test --manifest-path tools/pil-extract/Cargo.toml`, full
+`lake build`, trust regeneration, both trust gates, compliance closure print,
+generated zero-entry checks, and `nix run .#test` passed for this slice. The
+open work is now entirely in the main Lean rebinding layer:
+mirror the complete generated Mem constraint surface as named Clean/global
+facts and use those facts to construct the accepted chronological Mem row
+trace plus selected prefix cursors.
 The current row-obligation naming slice replaces the anonymous
 `chronologicalRows`, same-address preservation, write-update, event-ordering,
 segment-carry, and dual-emission `Prop` fields in
