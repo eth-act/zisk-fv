@@ -66,7 +66,8 @@ def OpEnvelope.exec_eq_misc
 
 set_option maxHeartbeats 800000
 theorem zisk_riscv_compliant_program_bus_misc
-    (env : OpEnvelope state m r_main) :
+    (env : OpEnvelope state m r_main)
+    (h_memory_burden : env.memoryBurden) :
     env.exec_eq_misc := by
   cases env with
   | lb_via_static_match lb_input regs mem v r_binary offset env h_static h_match
@@ -88,7 +89,7 @@ theorem zisk_riscv_compliant_program_bus_misc
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lb.equiv_LB
       state lb_input regs m mem r_main v r_binary offset env h_static
-      h_match bus pins promises w
+      h_match bus pins promises h_memory_burden w
   | lh_via_static_match lh_input regs mem v r_binary offset env h_static h_match
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
@@ -108,7 +109,7 @@ theorem zisk_riscv_compliant_program_bus_misc
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lh.equiv_LH
       state lh_input regs m mem r_main v r_binary offset env h_static
-      h_match bus pins promises w
+      h_match bus pins promises h_memory_burden w
   | lw_via_static_match lw_input regs mem v r_binary offset env h_static h_match
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
@@ -128,7 +129,7 @@ theorem zisk_riscv_compliant_program_bus_misc
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lw.equiv_LW
       state lw_input regs m mem r_main v r_binary offset env h_static
-      h_match bus pins promises w
+      h_match bus pins promises h_memory_burden w
   | addi_via_binary addi_input r1 rd imm bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_static h_addi_subset
       h_input_r1_row h_input_imm_row h_lane_rd promises =>

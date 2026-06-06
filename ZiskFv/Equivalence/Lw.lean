@@ -35,6 +35,7 @@ theorem equiv_LW
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_memory_burden : promises.memoryBurden)
     (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
         main mem r_main bus lw_input.r1_val lw_input.imm lw_input.rd)
     : (do
@@ -45,6 +46,6 @@ theorem equiv_LW
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_LW
     state lw_input regs main mem r_main v r_binary offset env h_static h_match
-    bus pins promises w
+    bus pins promises h_memory_burden w
 
 end ZiskFv.Equivalence.Lw

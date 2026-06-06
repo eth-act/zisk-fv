@@ -43,6 +43,7 @@ lemma equiv_LWU
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_memory_burden : promises.memoryBurden)
     (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
         main mem r_main bus lwu_input.r1_val lwu_input.imm lwu_input.rd) :
     execute_instruction (instruction.LOAD (
@@ -55,7 +56,7 @@ lemma equiv_LWU
   exact ZiskFv.EquivCore.Lwu.equiv_LWU_clean_provider_witness
     state lwu_input regs bus
     promises
-    main mem r_main align pins h_width w
+    main mem h_memory_burden r_main align pins h_width w
 
 /-- LWU wrapper rooted at selected full-ensemble Main/Mem memory rows. -/
 theorem lwu_eq_of_full_ensemble_mem_provider
@@ -73,6 +74,7 @@ theorem lwu_eq_of_full_ensemble_mem_provider
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_memory_burden : promises.memoryBurden)
     {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
     {memRowVar : Var ZiskFv.AirsClean.Mem.MemRow FGL}
     {mainEnv memEnv : Environment FGL}
@@ -128,6 +130,6 @@ theorem lwu_eq_of_full_ensemble_mem_provider
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
-  exact equiv_LWU state lwu_input regs main mem r_main bus align pins h_width promises w
+  exact equiv_LWU state lwu_input regs main mem r_main bus align pins h_width promises h_memory_burden w
 
 end ZiskFv.Compliance

@@ -204,6 +204,7 @@ lemma equiv_LWU_clean_provider
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
+    (h_memory_burden : promises.memoryBurden)
     (r_main r_mem : ℕ)
     (align : ZiskFv.Compliance.MemAlignWitness main r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
@@ -251,7 +252,7 @@ lemma equiv_LWU_clean_provider
       h_main_row h_mem_row h_main_spec h_store_pc
       h_main_b_match h_main_c_match h_mem_match
       h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_wr promises.mem_trace_agreement
+      h_mem_sel h_mem_wr (promises.mem_trace_agreement h_memory_burden)
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
           h_rd_idx, h_copy0, h_copy1⟩ := h_bundle
   have h_mem :
@@ -276,6 +277,7 @@ lemma equiv_LWU_clean_provider_witness
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
+    (h_memory_burden : promises.memoryBurden)
     (r_main : ℕ)
     (align : ZiskFv.Compliance.MemAlignWitness main r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
@@ -290,7 +292,7 @@ lemma equiv_LWU_clean_provider_witness
       4
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_LWU_clean_provider
-    state lwu_input regs bus promises main mem r_main w.r_mem align pins h_width
+    state lwu_input regs bus promises main mem h_memory_burden r_main w.r_mem align pins h_width
     w.mainRow w.memRow w.main_row w.mem_row w.main_spec w.store_pc
     w.main_b_match w.main_c_match w.mem_match
     w.addr1 w.addr2_zero_iff w.addr2_idx

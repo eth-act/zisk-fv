@@ -49,6 +49,7 @@ lemma equiv_LH
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_memory_burden : promises.memoryBurden)
     (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
         main mem r_main bus lh_input.r1_val lh_input.imm lh_input.rd) :
     (do
@@ -66,7 +67,7 @@ lemma equiv_LH
       w.main_row w.mem_row w.main_spec w.store_pc
       w.main_b_match w.main_c_match w.mem_match
       w.addr1 w.addr2_zero_iff w.addr2_idx
-      w.mem_sel w.mem_wr promises.mem_trace_agreement
+      w.mem_sel w.mem_wr (promises.mem_trace_agreement h_memory_burden)
   have lfd :=
     ZiskFv.EquivCore.Promises.load_full_discharge_LH_of_match_clean
       main v r_main r_binary offset env e1 h_static h_match h_main_op
@@ -81,7 +82,7 @@ lemma equiv_LH
     state lh_input regs
     ⟨exec_row, e0, e1, e2⟩
     promises
-    main mem r_main w.r_mem
+    h_memory_burden main mem r_main w.r_mem
     v r_binary lfd.h_op_binary h_bytes h_wfs
     lfd.hc_lo_sum_lt lfd.hc_hi_sum_lt
     lfd.h_match_clo lfd.h_match_chi
@@ -110,6 +111,7 @@ theorem lh_eq_of_full_ensemble_mem_provider
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_memory_burden : promises.memoryBurden)
     {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
     {memRowVar : Var ZiskFv.AirsClean.Mem.MemRow FGL}
     {mainEnv memEnv : Environment FGL}
@@ -166,6 +168,6 @@ theorem lh_eq_of_full_ensemble_mem_provider
       h_addr2_idx h_mem_sel h_mem_wr
   exact equiv_LH
     state lh_input regs main mem r_main v r_binary offset env h_static h_match
-    bus pins promises w
+    bus pins promises h_memory_burden w
 
 end ZiskFv.Compliance

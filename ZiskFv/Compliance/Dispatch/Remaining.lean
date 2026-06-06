@@ -183,6 +183,7 @@ def OpEnvelope.exec_eq_remaining
 
 theorem zisk_riscv_compliant_program_bus_remaining
     (env : OpEnvelope state m r_main)
+    (h_memory_burden : env.memoryBurden)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_remaining := by
   cases env with
@@ -200,7 +201,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lbu.equiv_LBU
-      state lbu_input regs m mem r_main bus align pins h_width promises w
+      state lbu_input regs m mem r_main bus align pins h_width promises h_memory_burden w
   | lhu lhu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
@@ -215,7 +216,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lhu.equiv_LHU
-      state lhu_input regs m mem r_main bus align pins h_width promises w
+      state lhu_input regs m mem r_main bus align pins h_width promises h_memory_burden w
   | lwu lwu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
@@ -230,7 +231,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lwu.equiv_LWU
-      state lwu_input regs m mem r_main bus align pins h_width promises w
+      state lwu_input regs m mem r_main bus align pins h_width promises h_memory_burden w
   | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
       h_b0_value h_b1_value h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7 =>
@@ -532,6 +533,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
     closures. -/
 theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     (env : OpEnvelope state m r_main)
+    (h_memory_burden : env.memoryBurden)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_remaining := by
   cases env with
@@ -544,6 +546,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Compliance.lbu_eq_of_full_ensemble_mem_provider
       state lbu_input regs m mem r_main r_mem bus align pins h_width promises
+      h_memory_burden
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
@@ -556,6 +559,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Compliance.lhu_eq_of_full_ensemble_mem_provider
       state lhu_input regs m mem r_main r_mem bus align pins h_width promises
+      h_memory_burden
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
@@ -568,6 +572,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Compliance.lwu_eq_of_full_ensemble_mem_provider
       state lwu_input regs m mem r_main r_mem bus align pins h_width promises
+      h_memory_burden
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr

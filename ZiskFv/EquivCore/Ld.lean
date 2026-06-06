@@ -250,6 +250,7 @@ lemma equiv_LD_clean_provider
         (PureSpec.execute_LOADD_pure ld_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
+    (h_memory_burden : promises.memoryBurden)
     (r_main r_mem : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (mainRow : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
@@ -295,7 +296,7 @@ lemma equiv_LD_clean_provider
       h_main_row h_mem_row h_main_spec h_store_pc
       h_main_b_match h_main_c_match h_mem_match
       h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_wr promises.mem_trace_agreement
+      h_mem_sel h_mem_wr (promises.mem_trace_agreement h_memory_burden)
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
           h_rd_idx, h_copy0, h_copy1⟩ := h_bundle
   exact equiv_LD_of_discharged state ld_input regs bus promises main r_main pins
@@ -318,6 +319,7 @@ lemma equiv_LD_clean_provider_witness
         (PureSpec.execute_LOADD_pure ld_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
+    (h_memory_burden : promises.memoryBurden)
     (r_main : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (w : ZiskFv.EquivCore.Bridge.MemClean.LdCleanWitness
@@ -331,7 +333,7 @@ lemma equiv_LD_clean_provider_witness
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨h_bundle, h_mem⟩ :=
     ZiskFv.EquivCore.Bridge.MemClean.ld_discharge_full_clean_provider_of_witness
-      main mem r_main bus state ld_input w promises.mem_trace_agreement
+      main mem r_main bus state ld_input w (promises.mem_trace_agreement h_memory_burden)
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
           h_rd_idx, h_copy0, h_copy1⟩ := h_bundle
   exact equiv_LD_of_discharged state ld_input regs bus promises main r_main pins

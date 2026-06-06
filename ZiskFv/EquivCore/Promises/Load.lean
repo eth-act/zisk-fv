@@ -79,9 +79,11 @@ def LoadPromises.memoryBurden
         (ZiskFv.ZiskCircuit.MemTrace.replayEvents
           ctx.accepted.initialMemory ctx.priorEvents))
 
-/-- Derived load memory agreement. This intentionally has the former field
-name so existing load consumers use dot notation while the proof now comes
-from accepted trace context. -/
+/-- Derived load memory agreement, consuming the public memory burden.
+
+Keeping this as the only active projection prevents load proofs from silently
+using constructor-carried trace evidence without the top-level burden premise
+that exposes that evidence. -/
 def LoadPromises.mem_trace_agreement
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     {mstatus : RegisterType Register.mstatus}
@@ -94,10 +96,38 @@ def LoadPromises.mem_trace_agreement
     {e0 e1 e2 : Interaction.MemoryBusEntry FGL}
     (promises : LoadPromises state mstatus pmaRegion misa mseccfg
       opcode_assumptions pure_nextPC exec_row e0 e1 e2) :
+    promises.memoryBurden →
     ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
-      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1) :=
-  ZiskFv.ZiskCircuit.MemTrace.memoryTraceAgreement_of_load_context
-    state (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1)
-    promises.mem_trace_context
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1) := by
+  intro h_burden
+  let ctx := promises.mem_trace_context
+  dsimp [LoadPromises.memoryBurden] at h_burden
+  rcases h_burden with
+    ⟨h_trace_sound, h_trace_split, h_read, h_state_replay⟩
+  have h_read_replay :=
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_trace_sound
+      ctx.accepted.initialMemory ctx.priorEvents
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1) ctx.laterEvents
+      (by simpa [h_trace_split] using h_trace_sound)
+      h_read
+  unfold ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement
+  unfold ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement at h_read_replay
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [h_state_replay (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1).ptr.toNat]
+    exact h_read_replay.1
+  · rw [h_state_replay ((ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1).ptr.toNat + 1)]
+    exact h_read_replay.2.1
+  · rw [h_state_replay ((ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1).ptr.toNat + 2)]
+    exact h_read_replay.2.2.1
+  · rw [h_state_replay ((ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1).ptr.toNat + 3)]
+    exact h_read_replay.2.2.2.1
+  · rw [h_state_replay ((ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1).ptr.toNat + 4)]
+    exact h_read_replay.2.2.2.2.1
+  · rw [h_state_replay ((ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1).ptr.toNat + 5)]
+    exact h_read_replay.2.2.2.2.2.1
+  · rw [h_state_replay ((ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1).ptr.toNat + 6)]
+    exact h_read_replay.2.2.2.2.2.2.1
+  · rw [h_state_replay ((ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1).ptr.toNat + 7)]
+    exact h_read_replay.2.2.2.2.2.2.2
 
 end ZiskFv.EquivCore.Promises

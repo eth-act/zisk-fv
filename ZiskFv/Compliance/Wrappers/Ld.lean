@@ -182,6 +182,7 @@ lemma equiv_LD
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_memory_burden : promises.memoryBurden)
     (w : ZiskFv.EquivCore.Bridge.MemClean.LdCleanWitness
         main mem r_main bus ld_input) :
     execute_instruction (instruction.LOAD (
@@ -194,7 +195,7 @@ lemma equiv_LD
   exact ZiskFv.EquivCore.Ld.equiv_LD_clean_provider_witness
     state ld_input regs bus
     promises
-    main mem r_main pins w
+    main mem h_memory_burden r_main pins w
 
 /-- LD wrapper rooted at selected full-ensemble Main/Mem memory rows.
 
@@ -216,6 +217,7 @@ theorem ld_eq_of_full_ensemble_mem_provider
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_memory_burden : promises.memoryBurden)
     {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
     {memRowVar : Var ZiskFv.AirsClean.Mem.MemRow FGL}
     {mainEnv memEnv : Environment FGL}
@@ -271,6 +273,6 @@ theorem ld_eq_of_full_ensemble_mem_provider
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
-  exact equiv_LD state ld_input regs main mem r_main bus pins promises w
+  exact equiv_LD state ld_input regs main mem r_main bus pins promises h_memory_burden w
 
 end ZiskFv.Compliance

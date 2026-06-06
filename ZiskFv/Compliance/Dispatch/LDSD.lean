@@ -46,7 +46,8 @@ def OpEnvelope.exec_eq_ldsd
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_ldsd
-    (env : OpEnvelope state m r_main) :
+    (env : OpEnvelope state m r_main)
+    (h_memory_burden : env.memoryBurden) :
     env.exec_eq_ldsd := by
   cases env with
   | ld ld_input regs mem bus pins promises r_mem h_mainEval h_providerEval
@@ -61,7 +62,7 @@ theorem zisk_riscv_compliant_program_bus_ldsd
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Ld.equiv_LD
-      state ld_input regs m mem r_main bus pins promises w
+      state ld_input regs m mem r_main bus pins promises h_memory_burden w
   | sd sd_input regs bus pins h_opcode_assumptions promises h_main_row
       h_main_spec h_store_pc h_main_c_match h_addr2 h_b0_value h_b1_value =>
     simp only [OpEnvelope.exec_eq_ldsd]

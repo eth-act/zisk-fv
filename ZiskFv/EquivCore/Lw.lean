@@ -98,6 +98,7 @@ lemma equiv_LW_clean_provider_of_wf
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_memory_burden : promises.memoryBurden)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main r_mem : ℕ)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
@@ -171,14 +172,14 @@ lemma equiv_LW_clean_provider_of_wf
       ))) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
-  obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
-          h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_mem_trace_context, h_m2_mult, h_m2_as⟩ := promises
   have h_mem_trace_agreement :
       ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
         (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1) :=
-    ZiskFv.ZiskCircuit.MemTrace.memoryTraceAgreement_of_load_context
-      state (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e1) h_mem_trace_context
+    ZiskFv.EquivCore.Promises.LoadPromises.mem_trace_agreement
+      promises h_memory_burden
+  obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
+          h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_mem_trace_context, h_m2_mult, h_m2_as⟩ := promises
   obtain ⟨h_bundle, h_mem8⟩ :=
     ZiskFv.EquivCore.Bridge.MemClean.ld_discharge_full_clean_provider
       main mem r_main r_mem mainRow memRow e1 e2 state

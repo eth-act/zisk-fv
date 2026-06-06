@@ -39,6 +39,7 @@ theorem equiv_LBU
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_memory_burden : promises.memoryBurden)
     (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
         main mem r_main bus lbu_input.r1_val lbu_input.imm lbu_input.rd)
     : execute_instruction (instruction.LOAD (
@@ -46,6 +47,6 @@ theorem equiv_LBU
     )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_LBU
-    state lbu_input regs main mem r_main bus align pins h_width promises w
+    state lbu_input regs main mem r_main bus align pins h_width promises h_memory_burden w
 
 end ZiskFv.Equivalence.Lbu
