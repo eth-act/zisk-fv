@@ -50,6 +50,20 @@ rm -f \
   "$WORKSPACE/lean-check/RvDecodeRAluSrlw.lean" \
   "$WORKSPACE/lean-check/RvDecodeRAluSraw.lean" \
   "$WORKSPACE/lean-check/RvDecodeRAluW.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtMul.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtMulh.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtMulhsu.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtMulhu.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtMulw.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtDiv.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtDivu.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtDivw.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtDivuw.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtRem.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtRemu.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtRemw.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExtRemuw.lean" \
+  "$WORKSPACE/lean-check/RvDecodeMExt.lean" \
   "$WORKSPACE/lean-check/RvDecodeAddiw.lean" \
   "$WORKSPACE/lean-check/RvDecodeLoadLb.lean" \
   "$WORKSPACE/lean-check/RvDecodeLoadLh.lean" \
@@ -278,6 +292,20 @@ lean_lib RvDecodeRAluSllw
 lean_lib RvDecodeRAluSrlw
 lean_lib RvDecodeRAluSraw
 lean_lib RvDecodeRAluW
+lean_lib RvDecodeMExtMul
+lean_lib RvDecodeMExtMulh
+lean_lib RvDecodeMExtMulhsu
+lean_lib RvDecodeMExtMulhu
+lean_lib RvDecodeMExtMulw
+lean_lib RvDecodeMExtDiv
+lean_lib RvDecodeMExtDivu
+lean_lib RvDecodeMExtDivw
+lean_lib RvDecodeMExtDivuw
+lean_lib RvDecodeMExtRem
+lean_lib RvDecodeMExtRemu
+lean_lib RvDecodeMExtRemw
+lean_lib RvDecodeMExtRemuw
+lean_lib RvDecodeMExt
 lean_lib RvDecodeAddiw
 lean_lib RvDecodeLoadLb
 lean_lib RvDecodeLoadLh
@@ -2891,6 +2919,19 @@ EOF
     write_rv_decode_ralu_module RvDecodeRAluSllw zisk_core_generated_rv_decode_ralu_sllw sllw_raw_shapes_decode_supported_ok sllw_raw_shapes_soundness_input_ok 0x3b 0 1 18 36 true false
     write_rv_decode_ralu_module RvDecodeRAluSrlw zisk_core_generated_rv_decode_ralu_srlw srlw_raw_shapes_decode_supported_ok srlw_raw_shapes_soundness_input_ok 0x3b 0 5 19 37 true false
     write_rv_decode_ralu_module RvDecodeRAluSraw zisk_core_generated_rv_decode_ralu_sraw sraw_raw_shapes_decode_supported_ok sraw_raw_shapes_soundness_input_ok 0x3b 32 5 20 38 true false
+    write_rv_decode_ralu_module RvDecodeMExtMul zisk_core_generated_rv_decode_mext_mul mul_raw_shapes_decode_supported_ok mul_raw_shapes_soundness_input_ok 0x33 1 0 21 180 false false
+    write_rv_decode_ralu_module RvDecodeMExtMulh zisk_core_generated_rv_decode_mext_mulh mulh_raw_shapes_decode_supported_ok mulh_raw_shapes_soundness_input_ok 0x33 1 1 22 181 false false
+    write_rv_decode_ralu_module RvDecodeMExtMulhsu zisk_core_generated_rv_decode_mext_mulhsu mulhsu_raw_shapes_decode_supported_ok mulhsu_raw_shapes_soundness_input_ok 0x33 1 2 23 179 false false
+    write_rv_decode_ralu_module RvDecodeMExtMulhu zisk_core_generated_rv_decode_mext_mulhu mulhu_raw_shapes_decode_supported_ok mulhu_raw_shapes_soundness_input_ok 0x33 1 3 24 177 false false
+    write_rv_decode_ralu_module RvDecodeMExtMulw zisk_core_generated_rv_decode_mext_mulw mulw_raw_shapes_decode_supported_ok mulw_raw_shapes_soundness_input_ok 0x3b 1 0 25 182 true false
+    write_rv_decode_ralu_module RvDecodeMExtDiv zisk_core_generated_rv_decode_mext_div div_raw_shapes_decode_supported_ok div_raw_shapes_soundness_input_ok 0x33 1 4 26 186 false false
+    write_rv_decode_ralu_module RvDecodeMExtDivu zisk_core_generated_rv_decode_mext_divu divu_raw_shapes_decode_supported_ok divu_raw_shapes_soundness_input_ok 0x33 1 5 27 184 false false
+    write_rv_decode_ralu_module RvDecodeMExtDivw zisk_core_generated_rv_decode_mext_divw divw_raw_shapes_decode_supported_ok divw_raw_shapes_soundness_input_ok 0x3b 1 4 28 190 true false
+    write_rv_decode_ralu_module RvDecodeMExtDivuw zisk_core_generated_rv_decode_mext_divuw divuw_raw_shapes_decode_supported_ok divuw_raw_shapes_soundness_input_ok 0x3b 1 5 29 188 true false
+    write_rv_decode_ralu_module RvDecodeMExtRem zisk_core_generated_rv_decode_mext_rem rem_raw_shapes_decode_supported_ok rem_raw_shapes_soundness_input_ok 0x33 1 6 30 187 false false
+    write_rv_decode_ralu_module RvDecodeMExtRemu zisk_core_generated_rv_decode_mext_remu remu_raw_shapes_decode_supported_ok remu_raw_shapes_soundness_input_ok 0x33 1 7 31 185 false false
+    write_rv_decode_ralu_module RvDecodeMExtRemw zisk_core_generated_rv_decode_mext_remw remw_raw_shapes_decode_supported_ok remw_raw_shapes_soundness_input_ok 0x3b 1 6 32 191 true false
+    write_rv_decode_ralu_module RvDecodeMExtRemuw zisk_core_generated_rv_decode_mext_remuw remuw_raw_shapes_decode_supported_ok remuw_raw_shapes_soundness_input_ok 0x3b 1 7 33 189 true false
 
     cat > "$lean_check/RvDecodeRAlu.lean" <<'EOF'
 import RvDecodeRAluAdd
@@ -2911,6 +2952,22 @@ import RvDecodeRAluSubw
 import RvDecodeRAluSllw
 import RvDecodeRAluSrlw
 import RvDecodeRAluSraw
+EOF
+
+    cat > "$lean_check/RvDecodeMExt.lean" <<'EOF'
+import RvDecodeMExtMul
+import RvDecodeMExtMulh
+import RvDecodeMExtMulhsu
+import RvDecodeMExtMulhu
+import RvDecodeMExtMulw
+import RvDecodeMExtDiv
+import RvDecodeMExtDivu
+import RvDecodeMExtDivw
+import RvDecodeMExtDivuw
+import RvDecodeMExtRem
+import RvDecodeMExtRemu
+import RvDecodeMExtRemw
+import RvDecodeMExtRemuw
 EOF
 
     cat > "$lean_check/RvDecodeAddiw.lean" <<'EOF'
@@ -3097,6 +3154,19 @@ import RvDecodeRAluSubw
 import RvDecodeRAluSllw
 import RvDecodeRAluSrlw
 import RvDecodeRAluSraw
+import RvDecodeMExtMul
+import RvDecodeMExtMulh
+import RvDecodeMExtMulhsu
+import RvDecodeMExtMulhu
+import RvDecodeMExtMulw
+import RvDecodeMExtDiv
+import RvDecodeMExtDivu
+import RvDecodeMExtDivw
+import RvDecodeMExtDivuw
+import RvDecodeMExtRem
+import RvDecodeMExtRemu
+import RvDecodeMExtRemw
+import RvDecodeMExtRemuw
 
 /-!
 Aggregated generated route-completeness surface for row-local soundness input
@@ -3132,7 +3202,20 @@ theorem closed_route_soundness_inputs_ok :
     zisk_core_generated_rv_decode_ralu_subw.allRAluRawShapesSatisfySoundnessInput = true ∧
     zisk_core_generated_rv_decode_ralu_sllw.allRAluRawShapesSatisfySoundnessInput = true ∧
     zisk_core_generated_rv_decode_ralu_srlw.allRAluRawShapesSatisfySoundnessInput = true ∧
-    zisk_core_generated_rv_decode_ralu_sraw.allRAluRawShapesSatisfySoundnessInput = true := by
+    zisk_core_generated_rv_decode_ralu_sraw.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_mul.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_mulh.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_mulhsu.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_mulhu.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_mulw.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_div.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_divu.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_divw.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_divuw.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_rem.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_remu.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_remw.allRAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_mext_remuw.allRAluRawShapesSatisfySoundnessInput = true := by
   exact
     ⟨zisk_core_generated_rv_decode_jalr.allJalrRawShapesSatisfySoundnessInput_ok,
       zisk_core_generated_rv_decode_ialu_addi.addi_raw_shapes_soundness_input_ok,
@@ -3155,7 +3238,20 @@ theorem closed_route_soundness_inputs_ok :
       zisk_core_generated_rv_decode_ralu_subw.subw_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_ralu_sllw.sllw_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_ralu_srlw.srlw_raw_shapes_soundness_input_ok,
-      zisk_core_generated_rv_decode_ralu_sraw.sraw_raw_shapes_soundness_input_ok⟩
+      zisk_core_generated_rv_decode_ralu_sraw.sraw_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_mul.mul_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_mulh.mulh_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_mulhsu.mulhsu_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_mulhu.mulhu_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_mulw.mulw_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_div.div_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_divu.divu_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_divw.divw_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_divuw.divuw_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_rem.rem_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_remu.remu_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_remw.remw_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_mext_remuw.remuw_raw_shapes_soundness_input_ok⟩
 
 end zisk_core_generated_rv_route_soundness
 EOF
