@@ -2772,6 +2772,20 @@ structure AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor
   selected :
     SelectedLoadMemoryBusReadRowCursor state initialState rows entry
 
+/-- Accepted global Mem row-trace facts plus the selected load row-prefix
+    cursor before proving the selected row is a read. This is the shape the
+    full AIR/Main/Mem integration should construct: the envelope's Main-side
+    memory match supplies read tags separately. -/
+structure AcceptedLoadFullMemoryBusRowsGlobalTraceAndPrefixAtCursor
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  fullTrace :
+    ZiskFv.AirsClean.Mem.AcceptedFullMemoryBusRowsTrace initialState rows
+  selectedPrefix :
+    SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry
+
 /-- Build accepted global Mem row-trace evidence at a selected load cursor from
     a global trace, row split, read tags, and the Sail cursor equality. -/
 def AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor.of_split_read_tags
@@ -3097,6 +3111,29 @@ def OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope
       AcceptedLoadFullMemoryBusRowsGlobalTraceAtCursor state bus.e1
   | _ => Unit
 
+/-- Public predecessor of the full memory-row construction burden. Load
+    envelopes carry the shared global Mem row trace plus only a selected
+    prefix cursor; the selected row's read tags are derived from the envelope's
+    Main-side `bMem` match. Non-load envelopes carry `Unit`. -/
+def OpEnvelope.AcceptedFullMemoryBusRowsTraceAndPrefixAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAndPrefixAtCursor state bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAndPrefixAtCursor state bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAndPrefixAtCursor state bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAndPrefixAtCursor state bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAndPrefixAtCursor state bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAndPrefixAtCursor state bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedLoadFullMemoryBusRowsGlobalTraceAndPrefixAtCursor state bus.e1
+  | _ => Unit
+
 /-- Selected load row-prefix cursor burden scoped to load envelopes. This is
     the part of the memory construction that still needs instruction-cursor
     integration: identify the envelope's concrete read row in the chronological
@@ -3197,6 +3234,77 @@ def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_globalTra
         selected :=
             SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
               prefixCursor (by assumption) }
+  all_goals exact ()
+
+/-- Construct the full memory-row burden from its public predecessor. This is
+    a wrapper around
+    `acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_globalTraceAndPrefix`
+    that keeps the top-level theorem boundary load-scoped. -/
+def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_traceAndPrefix
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullMemoryBusRowsTraceAndPrefixAtEnvelope) :
+    env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullMemoryBusRowsTraceAndPrefixAtEnvelope,
+      OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope]
+      at construction ⊢
+  case ld =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        fullTrace := construction.fullTrace
+        selected :=
+          SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+            construction.selectedPrefix (by assumption) }
+  case lbu =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        fullTrace := construction.fullTrace
+        selected :=
+          SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+            construction.selectedPrefix (by assumption) }
+  case lhu =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        fullTrace := construction.fullTrace
+        selected :=
+          SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+            construction.selectedPrefix (by assumption) }
+  case lwu =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        fullTrace := construction.fullTrace
+        selected :=
+          SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+            construction.selectedPrefix (by assumption) }
+  case lb_via_static_match =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        fullTrace := construction.fullTrace
+        selected :=
+          SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+            construction.selectedPrefix (by assumption) }
+  case lh_via_static_match =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        fullTrace := construction.fullTrace
+        selected :=
+          SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+            construction.selectedPrefix (by assumption) }
+  case lw_via_static_match =>
+    exact
+      { initialState := construction.initialState
+        rows := construction.rows
+        fullTrace := construction.fullTrace
+        selected :=
+          SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+            construction.selectedPrefix (by assumption) }
   all_goals exact ()
 
 /-- Derive accepted raw-row trace evidence from the granular construction

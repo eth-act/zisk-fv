@@ -289,3 +289,15 @@ ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
 compliance closure print with zero project names, retired-memory scans,
 generated zero-entry count checks, and `nix run .#test` passed.
+
+The current compliance-boundary refinement adds
+`OpEnvelope.AcceptedFullMemoryBusRowsTraceAndPrefixAtEnvelope`: load envelopes
+carry the shared `AirsClean.Mem.AcceptedFullMemoryBusRowsTrace` plus a selected
+row-prefix cursor, and non-load envelopes carry `Unit`. The top-level
+`zisk_riscv_compliant_program_bus` theorem now consumes this predecessor
+burden and derives `AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope`
+internally by combining the prefix cursor with the envelope's Main-side
+memory-read match. Focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance` passed, as did full `lake build`, trust regeneration, both
+trust gates, compliance closure print with zero project names,
+retired-memory scans, generated zero-entry count checks, and `nix run .#test`.
