@@ -573,6 +573,108 @@ theorem delta_step_val_pos_of_same_addr_segment_every_row
     (cols := cols) (v := v) (row := row) h h_same_addr h_range]
   exact incrementNat_pos v row
 
+/-- PIL bit-range facts for the mutable-Mem step columns. In `mem.pil`,
+    `step`, `step_dual`, and `previous_step` are `bits(MEM_STEP_BITS)`, and
+    the pinned RV64IM configuration has `MEM_STEP_BITS = 40`. -/
+def step_columns_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
+  (v.step row).val < 2 ^ 40
+    ∧ (v.step_dual row).val < 2 ^ 40
+    ∧ (v.previous_step row).val < 2 ^ 40
+
+/-- A small no-wrap fact for the same-address step delta. The generated
+    increment equation gives a small positive representative for
+    `step - previous_step + (1 - wr)`; since `step` and `previous_step` are
+    40-bit and `wr` is a bit, that representative cannot be a wrapped
+    subtraction. -/
+theorem previous_step_le_step_of_same_addr_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_range : increment_chunks_in_range v row) :
+    (v.previous_step row).val ≤ (v.step row).val := by
+  have h_delta_eq :=
+    delta_step_val_eq_incrementNat_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_same_addr h_range
+  have h_delta_pos :=
+    delta_step_val_pos_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_same_addr h_range
+  have h_delta_bound := incrementNat_le_two_pow_38 (v := v) (row := row) h_range
+  have hmod :
+      (delta_step v row).val =
+        (18446744069414584321 - (v.previous_step row).val
+          + (v.step row).val
+          + (18446744069414584321 - (v.wr row).val + 1)) %
+          18446744069414584321 := by
+    simp [delta_step, Fin.val_sub, Fin.val_add]
+  by_contra hle
+  have hlt : (v.step row).val < (v.previous_step row).val := by
+    omega
+  by_cases h_prev_succ :
+      (v.previous_step row).val = (v.step row).val + (1 - (v.wr row).val)
+  · have hcalc :
+        (18446744069414584321 - (v.previous_step row).val
+          + (v.step row).val
+          + (18446744069414584321 - (v.wr row).val + 1)) %
+          18446744069414584321 = 0 := by
+      have hsum :
+          18446744069414584321 - (v.previous_step row).val
+            + (v.step row).val
+            + (18446744069414584321 - (v.wr row).val + 1) =
+            2 * 18446744069414584321 := by
+        omega
+      rw [hsum]
+    rw [hmod, hcalc] at h_delta_pos
+    omega
+  · have hdiff_pos_outer :
+        0 < (v.previous_step row).val -
+          ((v.step row).val + (1 - (v.wr row).val)) := by
+      omega
+    have hdiff_small_outer :
+        (v.previous_step row).val -
+            ((v.step row).val + (1 - (v.wr row).val)) <
+          2 ^ 40 := by
+      rcases h_steps with ⟨h_step, _h_step_dual, h_previous_step⟩
+      omega
+    have hcalc :
+        (18446744069414584321 - (v.previous_step row).val
+          + (v.step row).val
+          + (18446744069414584321 - (v.wr row).val + 1)) %
+          18446744069414584321 =
+          18446744069414584321 -
+            ((v.previous_step row).val -
+              ((v.step row).val + (1 - (v.wr row).val))) := by
+      have hsum :
+          18446744069414584321 - (v.previous_step row).val
+            + (v.step row).val
+            + (18446744069414584321 - (v.wr row).val + 1) =
+            2 * 18446744069414584321 -
+              ((v.previous_step row).val -
+                ((v.step row).val + (1 - (v.wr row).val))) := by
+        omega
+      rw [hsum]
+      have hsplit :
+          2 * 18446744069414584321 -
+              ((v.previous_step row).val -
+                ((v.step row).val + (1 - (v.wr row).val))) =
+            18446744069414584321 +
+              (18446744069414584321 -
+                ((v.previous_step row).val -
+                  ((v.step row).val + (1 - (v.wr row).val)))) := by
+        omega
+      rw [hsplit]
+      rw [Nat.add_mod_left]
+      exact Nat.mod_eq_of_lt (by omega)
+    rw [hmod, hcalc] at h_delta_eq
+    have h_large :
+        2 ^ 38 <
+          18446744069414584321 -
+            ((v.previous_step row).val -
+              ((v.step row).val + (1 - (v.wr row).val))) := by
+      omega
+    omega
+
 /-- Address-change generated segment constraints give the exact Nat
     representative of the chronological address delta. -/
 theorem delta_addr_val_eq_incrementNat_of_addr_change_segment_every_row
@@ -602,14 +704,6 @@ theorem delta_addr_val_pos_of_addr_change_segment_every_row
   rw [delta_addr_val_eq_incrementNat_of_addr_change_segment_every_row
     (cols := cols) (v := v) (row := row) h h_addr_change h_range]
   exact incrementNat_pos v row
-
-/-- PIL bit-range facts for the mutable-Mem step columns. In `mem.pil`,
-    `step`, `step_dual`, and `previous_step` are `bits(MEM_STEP_BITS)`, and
-    the pinned RV64IM configuration has `MEM_STEP_BITS = 40`. -/
-def step_columns_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
-  (v.step row).val < 2 ^ 40
-    ∧ (v.step_dual row).val < 2 ^ 40
-    ∧ (v.previous_step row).val < 2 ^ 40
 
 /-- PIL range-check fact for the dual mutable-Mem step delta:
     `range_check(step_dual - step - wr, 0, 2^24 - 1, sel_dual)`. -/

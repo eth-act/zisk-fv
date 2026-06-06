@@ -92,6 +92,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit no-wrap field/Nat bridges for packed Mem increment and distance expressions.
 - [x] Verify and commit Nat-facing generated delta consequences for Mem step/address increments.
 - [x] Verify and commit dual-step range/no-wrap facts for Mem chronology.
+- [x] Verify and commit previous-step same-address chronology facts for Mem replay.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -257,6 +258,17 @@ The dual-step chronology slice adds range/no-wrap facts:
 `range_check(step_dual - step - wr, 0, 2^24 - 1, sel_dual)` no-wrap consequence
 needed to order primary and dual Mem events inside one row. Focused `lake build
 ZiskFv.Airs.Mem`, dependent focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
+closure print with zero project axiom names, targeted retired-memory scan, and
+`nix run .#test` passed for this slice.
+
+The current working edit adds
+`previous_step_le_step_of_same_addr_segment_every_row`, a no-wrap bridge from
+the generated same-address increment equation to Nat chronology between the
+row's carried `previous_step` and current `step`. This is the row-to-row
+chronology counterpart to the dual-step in-row ordering fact. Focused
+`lake build ZiskFv.Airs.Mem` and dependent focused `lake build
 ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates,
 closure print with zero project axiom names, targeted retired-memory scan, and
