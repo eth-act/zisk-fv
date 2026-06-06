@@ -749,12 +749,15 @@ scan, and `nix run .#test` also passed.
 The witness-selected cursor-constructor slice adds
 `OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness`
 and
+`OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_witnessCursor`
+and
 `OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_witnessPrefixState`.
 The future accepted full-execution extraction theorem no longer needs to pass
 an arbitrary Mem table bridge: it can call these constructors from an accepted
 trace, full-ensemble witness, `MutableMemReadReplayRowsEmbeddedInTrace`, the
-selected envelope row occurrence in the witness-selected table, and selected
-prefix-state equality. Focused `lake build ZiskFv.Compliance.OpEnvelope`
-passed for this slice. Full `lake build`, both trust gates, closure print with
-zero project axiom names, targeted retired-name scan, and `nix run .#test`
-also passed.
+selected envelope row occurrence in the witness-selected table, and either the
+selected prefix cursor directly or selected prefix-state equality. Focused
+`lake build ZiskFv.Compliance.OpEnvelope` passed for this slice. Full
+`lake build`, both trust gates, closure print with zero project axiom names,
+targeted retired-name scan, and `nix run .#test` also passed for the final
+slice.

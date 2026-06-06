@@ -4345,6 +4345,39 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
           acceptedTrace selectedMembership selectedPrefixStateAtAccepted }
 
 /-- Construct the cursor-shaped full-execution memory extraction target from
+    witness-selected full-ensemble Mem data and a selected prefix cursor.
+
+    This is the direct shape expected from accepted full-execution replay: a
+    witness-selected Mem table bridge, selected row occurrence in that table,
+    and a cursor identifying the selected chronological prefix. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_witnessCursor
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness acceptedTrace embedded))
+    (selectedPrefix :
+      env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness acceptedTrace embedded)) :
+    env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope :=
+  { fullTraceTable :=
+      env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        program witness acceptedTrace embedded
+    selectedEnvelopeRow := selectedEnvelopeRow
+    selectedPrefix := selectedPrefix }
+
+/-- Construct the cursor-shaped full-execution memory extraction target from
     witness-selected full-ensemble Mem data.
 
     This composes the witness-selected mutable Mem table constructor with the
