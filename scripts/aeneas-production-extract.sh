@@ -341,6 +341,7 @@ lean_lib RvDecodeBranchBge
 lean_lib RvDecodeBranchBltu
 lean_lib RvDecodeBranchBgeu
 lean_lib RvDecodeBranch
+lean_lib RvDecodeFence
 lean_lib RvRouteSoundness
 lean_lib RvDecodeCompleteness
 lean_lib RvCompleteness
@@ -3547,6 +3548,73 @@ EOF
     write_rv_decode_branch_module RvDecodeBranchBltu zisk_core_generated_rv_decode_branch_bltu bltu_raw_shapes_decode_supported_ok bltu_raw_shapes_soundness_input_ok 6 51 6 false
     write_rv_decode_branch_module RvDecodeBranchBgeu zisk_core_generated_rv_decode_branch_bgeu bgeu_raw_shapes_decode_supported_ok bgeu_raw_shapes_soundness_input_ok 7 52 6 true
 
+    cat > "$lean_check/RvDecodeFence.lean" <<'EOF'
+import RvDecodeCommon
+
+open Aeneas Aeneas.Std Result
+open zisk_core
+open zisk_core_generated_rv_decode_common
+
+namespace zisk_core_generated_rv_decode_fence
+
+def fencePredSuccRawShapesDecodeSupported : Bool :=
+  (List.range 16).all fun pred =>
+    (List.range 16).all fun succ =>
+      rawDecodeSupported
+        (aeneas_extract.extract_decode_rv64im_raw
+          (rawOfNat32 ((pred <<< 24) ||| (succ <<< 20) ||| 0x0f)))
+
+def rowHasZeroImmediateSources
+    (row : aeneas_extract.ZiskInstExtract) : Bool :=
+  row.a_src.val == 2 &&
+  row.a_use_sp_imm1.val == 0 &&
+  row.a_offset_imm0.val == 0 &&
+  row.b_src.val == 2 &&
+  row.b_use_sp_imm1.val == 0 &&
+  row.b_offset_imm0.val == 0
+
+/-- Extracted production-row facts needed to route a supported FENCE row
+toward the soundness interface. Supported FENCE lowers through production
+`nop`, so the expected row is a flag/no-op row with no stores and normal
+fall-through offsets. -/
+def rawTranspileFenceSoundnessInput
+    (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
+  match result with
+  | ok summary =>
+      summary.accepted &&
+      summary.decode.supported &&
+      summary.decode.opcode_id.val == 5 &&
+      !summary.row.is_external_op &&
+      summary.row.op.val == 0 &&
+      !summary.row.m32 &&
+      !summary.row.set_pc &&
+      !summary.row.store_pc &&
+      summary.row.store.val == 0 &&
+      summary.row.store_offset.val == 0 &&
+      rowHasZeroImmediateSources summary.row &&
+      summary.row.jmp_offset1.val == 4 &&
+      summary.row.jmp_offset2.val == 4
+  | fail _ => false
+  | div => false
+
+def allFencePredSuccShapesSatisfySoundnessInput : Bool :=
+  (List.range 16).all fun pred =>
+    (List.range 16).all fun succ =>
+      rawTranspileFenceSoundnessInput
+        (aeneas_extract.extract_transpile_rv64im_raw
+          (rawOfNat32 ((pred <<< 24) ||| (succ <<< 20) ||| 0x0f)))
+
+set_option maxHeartbeats 3000000 in
+theorem fence_pred_succ_raw_shapes_decode_supported_ok :
+    fencePredSuccRawShapesDecodeSupported = true := by native_decide
+
+set_option maxHeartbeats 3000000 in
+theorem fence_pred_succ_raw_shapes_soundness_input_ok :
+    allFencePredSuccShapesSatisfySoundnessInput = true := by native_decide
+
+end zisk_core_generated_rv_decode_fence
+EOF
+
     cat > "$lean_check/RvDecodeBranch.lean" <<'EOF'
 import RvDecodeBranchBeq
 import RvDecodeBranchBne
@@ -3617,6 +3685,7 @@ import RvDecodeStoreSb
 import RvDecodeStoreSh
 import RvDecodeStoreSw
 import RvDecodeStoreSd
+import RvDecodeFence
 
 /-!
 Aggregated generated route-completeness surface for row-local soundness input
@@ -3690,6 +3759,7 @@ theorem closed_route_soundness_inputs_ok :
     zisk_core_generated_rv_decode_store_sh.allStoreRawShapesSatisfySoundnessInput 1 = true ∧
     zisk_core_generated_rv_decode_store_sw.allStoreRawShapesSatisfySoundnessInput 2 = true ∧
     zisk_core_generated_rv_decode_store_sd.allStoreRawShapesSatisfySoundnessInput 3 = true ∧
+    zisk_core_generated_rv_decode_fence.allFencePredSuccShapesSatisfySoundnessInput = true ∧
     zisk_core_generated_rv_upper_jump_completeness.allLuiLoweringRegsRouteOk ∧
     zisk_core_generated_rv_upper_jump_completeness.allAuipcLoweringRegsRouteOk ∧
     zisk_core_generated_rv_upper_jump_completeness.allJalLoweringRegsRouteOk := by
@@ -3753,6 +3823,7 @@ theorem closed_route_soundness_inputs_ok :
       zisk_core_generated_rv_decode_store_sh.sh_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_store_sw.sw_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_decode_store_sd.sd_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_fence.fence_pred_succ_raw_shapes_soundness_input_ok,
       zisk_core_generated_rv_upper_jump_completeness.all_lui_lowering_regs_route_ok,
       zisk_core_generated_rv_upper_jump_completeness.all_auipc_lowering_regs_route_ok,
       zisk_core_generated_rv_upper_jump_completeness.all_jal_lowering_regs_route_ok⟩
@@ -3768,6 +3839,7 @@ import RvDecodeIShift
 import RvDecodeLoad
 import RvDecodeStore
 import RvDecodeBranch
+import RvDecodeFence
 import RvRouteSoundness
 
 /-!
