@@ -2543,8 +2543,12 @@ EOF
     write_rv_decode_ialu_module() {
       local module="$1"
       local namespace="$2"
-      local theorem_name="$3"
-      local funct3="$4"
+      local decode_theorem_name="$3"
+      local route_theorem_name="$4"
+      local funct3="$5"
+      local opcode_id="$6"
+      local zisk_op="$7"
+      local allow_copyb="$8"
       cat > "$lean_check/$module.lean" <<EOF
 import RvDecodeCommon
 
@@ -2553,38 +2557,6 @@ open zisk_core
 open zisk_core_generated_rv_decode_common
 
 namespace $namespace
-
-def nonShiftIAluFunct3RawShapesDecodeSupported (funct3 : Nat) : Bool :=
-  allRvRegs.all fun rd =>
-    allRvRegs.all fun rs1 =>
-      allIImmediates.all fun imm =>
-        rawDecodeSupported
-          (aeneas_extract.extract_decode_rv64im_raw
-            (rawIType imm rs1 funct3 rd 0x13))
-
-set_option maxHeartbeats 3000000 in
-theorem $theorem_name :
-    nonShiftIAluFunct3RawShapesDecodeSupported $funct3 = true := by native_decide
-
-end $namespace
-EOF
-    }
-
-    write_rv_decode_ialu_module RvDecodeIAluAddi zisk_core_generated_rv_decode_ialu_addi addi_raw_shapes_decode_supported_ok 0
-    write_rv_decode_ialu_module RvDecodeIAluSlti zisk_core_generated_rv_decode_ialu_slti slti_raw_shapes_decode_supported_ok 2
-    write_rv_decode_ialu_module RvDecodeIAluSltiu zisk_core_generated_rv_decode_ialu_sltiu sltiu_raw_shapes_decode_supported_ok 3
-    write_rv_decode_ialu_module RvDecodeIAluXori zisk_core_generated_rv_decode_ialu_xori xori_raw_shapes_decode_supported_ok 4
-    write_rv_decode_ialu_module RvDecodeIAluOri zisk_core_generated_rv_decode_ialu_ori ori_raw_shapes_decode_supported_ok 6
-    write_rv_decode_ialu_module RvDecodeIAluAndi zisk_core_generated_rv_decode_ialu_andi andi_raw_shapes_decode_supported_ok 7
-
-    cat > "$lean_check/RvDecodeIAluAndi.lean" <<'EOF'
-import RvDecodeCommon
-
-open Aeneas Aeneas.Std Result
-open zisk_core
-open zisk_core_generated_rv_decode_common
-
-namespace zisk_core_generated_rv_decode_ialu_andi
 
 def nonShiftIAluFunct3RawShapesDecodeSupported (funct3 : Nat) : Bool :=
   allRvRegs.all fun rd =>
@@ -2620,51 +2592,102 @@ def rowCarriesAndiSourceA
     row.a_use_sp_imm1.val == 0 &&
     row.a_offset_imm0.val == rs1
 
-/-- Extracted production-row facts needed to route a lowered ANDI row toward
-the checked-in ANDI soundness interface. This is a class-level analogue of the
-JALR route check: the expected opcode/source/store pins come from the existing
-ANDI soundness theorem surface, while the raw instruction set is generated from
-the full Sail I-format shape. -/
-def rawTranspileAndiSoundnessInput
+def rowCarriesIAluOp
+    (row : aeneas_extract.ZiskInstExtract)
+    (rs1 ziskOp : Nat)
+    (allowCopyb : Bool) : Bool :=
+  if allowCopyb && rs1 == 0 then
+    !row.is_external_op &&
+    row.op.val == 1 &&
+    !row.m32 &&
+    row.a_src.val == 2 &&
+    row.a_use_sp_imm1.val == 0 &&
+    row.a_offset_imm0.val == 0
+  else
+    row.is_external_op &&
+    row.op.val == ziskOp &&
+    !row.m32 &&
+    rowCarriesAndiSourceA row rs1
+
+def rowCarriesReg64OnB
+    (row : aeneas_extract.ZiskInstExtract) (rs : Nat) : Bool :=
+  row.b_src.val == 6 &&
+  row.b_use_sp_imm1.val == 0 &&
+  row.b_offset_imm0.val == rs
+
+def rowCarriesAddiRegisterCopy
+    (row : aeneas_extract.ZiskInstExtract) (rs1 : Nat) : Bool :=
+  !row.is_external_op &&
+  row.op.val == 1 &&
+  !row.m32 &&
+  row.a_src.val == 2 &&
+  row.a_use_sp_imm1.val == 0 &&
+  row.a_offset_imm0.val == 0 &&
+  rowCarriesReg64OnB row rs1
+
+def rowCarriesAddiNoWrite
+    (row : aeneas_extract.ZiskInstExtract) : Bool :=
+  !row.is_external_op &&
+  row.op.val == 0 &&
+  !row.m32 &&
+  row.store.val == 0 &&
+  row.store_offset.val == 0
+
+/-- Extracted production-row facts needed to route a lowered non-shift
+I-ALU row toward the corresponding soundness interface.  The row contract is
+parameterized by the Sail/ZisK opcode pair and by the production COPYB fast
+path used for ADDI/XORI/ORI when rs1 is x0. -/
+def rawTranspileIAluSoundnessInput
     (rd rs1 imm : Nat)
     (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
   match result with
   | ok summary =>
       summary.accepted &&
       summary.decode.supported &&
-      summary.decode.opcode_id.val == 42 &&
+      summary.decode.opcode_id.val == $opcode_id &&
       summary.decode.rd.val == rd &&
       summary.decode.rs1.val == rs1 &&
-      summary.row.is_external_op &&
-      summary.row.op.val == 14 &&
-      !summary.row.m32 &&
       !summary.row.set_pc &&
       !summary.row.store_pc &&
-      rowCarriesAndiSourceA summary.row rs1 &&
-      summary.row.b_src.val == 2 &&
-      rowCarriesImm64OnB summary.row imm &&
-      rowStoresAndiDestination summary.row rd
+      (if $opcode_id == 34 && rd == 0 then
+        rowCarriesAddiNoWrite summary.row
+      else if $opcode_id == 34 && imm == 0 && rs1 != 0 then
+        rowCarriesAddiRegisterCopy summary.row rs1 &&
+        rowStoresAndiDestination summary.row rd
+      else
+        rowCarriesIAluOp summary.row rs1 $zisk_op $allow_copyb &&
+        summary.row.b_src.val == 2 &&
+        rowCarriesImm64OnB summary.row imm &&
+        rowStoresAndiDestination summary.row rd)
   | fail _ => false
   | div => false
 
-def allAndiRawShapesSatisfySoundnessInput : Bool :=
+def allIAluRawShapesSatisfySoundnessInput : Bool :=
   allRvRegs.all fun rd =>
     allRvRegs.all fun rs1 =>
       allIImmediates.all fun imm =>
-        rawTranspileAndiSoundnessInput rd rs1 imm
+        rawTranspileIAluSoundnessInput rd rs1 imm
           (aeneas_extract.extract_transpile_rv64im_raw
-            (rawIType imm rs1 7 rd 0x13))
+            (rawIType imm rs1 $funct3 rd 0x13))
 
 set_option maxHeartbeats 3000000 in
-theorem andi_raw_shapes_decode_supported_ok :
-    nonShiftIAluFunct3RawShapesDecodeSupported 7 = true := by native_decide
+theorem $decode_theorem_name :
+    nonShiftIAluFunct3RawShapesDecodeSupported $funct3 = true := by native_decide
 
 set_option maxHeartbeats 40000000 in
-theorem allAndiRawShapesSatisfySoundnessInput_ok :
-    allAndiRawShapesSatisfySoundnessInput = true := by native_decide
+theorem $route_theorem_name :
+    allIAluRawShapesSatisfySoundnessInput = true := by native_decide
 
-end zisk_core_generated_rv_decode_ialu_andi
+end $namespace
 EOF
+    }
+
+    write_rv_decode_ialu_module RvDecodeIAluAddi zisk_core_generated_rv_decode_ialu_addi addi_raw_shapes_decode_supported_ok addi_raw_shapes_soundness_input_ok 0 34 10 true
+    write_rv_decode_ialu_module RvDecodeIAluSlti zisk_core_generated_rv_decode_ialu_slti slti_raw_shapes_decode_supported_ok slti_raw_shapes_soundness_input_ok 2 36 7 false
+    write_rv_decode_ialu_module RvDecodeIAluSltiu zisk_core_generated_rv_decode_ialu_sltiu sltiu_raw_shapes_decode_supported_ok sltiu_raw_shapes_soundness_input_ok 3 37 6 false
+    write_rv_decode_ialu_module RvDecodeIAluXori zisk_core_generated_rv_decode_ialu_xori xori_raw_shapes_decode_supported_ok xori_raw_shapes_soundness_input_ok 4 38 16 true
+    write_rv_decode_ialu_module RvDecodeIAluOri zisk_core_generated_rv_decode_ialu_ori ori_raw_shapes_decode_supported_ok ori_raw_shapes_soundness_input_ok 6 41 15 true
+    write_rv_decode_ialu_module RvDecodeIAluAndi zisk_core_generated_rv_decode_ialu_andi andi_raw_shapes_decode_supported_ok andi_raw_shapes_soundness_input_ok 7 42 14 false
 
     cat > "$lean_check/RvDecodeIAlu.lean" <<'EOF'
 import RvDecodeIAluAddi
@@ -2838,6 +2861,11 @@ EOF
 
     cat > "$lean_check/RvRouteSoundness.lean" <<'EOF'
 import RvDecodeJalr
+import RvDecodeIAluAddi
+import RvDecodeIAluSlti
+import RvDecodeIAluSltiu
+import RvDecodeIAluXori
+import RvDecodeIAluOri
 import RvDecodeIAluAndi
 
 /-!
@@ -2854,10 +2882,20 @@ namespace zisk_core_generated_rv_route_soundness
 
 theorem closed_route_soundness_inputs_ok :
     zisk_core_generated_rv_decode_jalr.allJalrRawShapesSatisfySoundnessInput = true ∧
-    zisk_core_generated_rv_decode_ialu_andi.allAndiRawShapesSatisfySoundnessInput = true := by
+    zisk_core_generated_rv_decode_ialu_addi.allIAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ialu_slti.allIAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ialu_sltiu.allIAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ialu_xori.allIAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ialu_ori.allIAluRawShapesSatisfySoundnessInput = true ∧
+    zisk_core_generated_rv_decode_ialu_andi.allIAluRawShapesSatisfySoundnessInput = true := by
   exact
     ⟨zisk_core_generated_rv_decode_jalr.allJalrRawShapesSatisfySoundnessInput_ok,
-      zisk_core_generated_rv_decode_ialu_andi.allAndiRawShapesSatisfySoundnessInput_ok⟩
+      zisk_core_generated_rv_decode_ialu_addi.addi_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ialu_slti.slti_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ialu_sltiu.sltiu_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ialu_xori.xori_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ialu_ori.ori_raw_shapes_soundness_input_ok,
+      zisk_core_generated_rv_decode_ialu_andi.andi_raw_shapes_soundness_input_ok⟩
 
 end zisk_core_generated_rv_route_soundness
 EOF
