@@ -20,12 +20,12 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 This theorem is a conditional global compliance theorem over an already
 constructed `OpEnvelope`. Its explicit
 `ZiskFv.Compliance.OpEnvelope.completenessBurden` and
-`ZiskFv.Compliance.OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` plus
-`ZiskFv.Compliance.OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope` premises mark
+`ZiskFv.Compliance.OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope` premises mark
 the current caller-side witness burden: row specs, table/provider evidence,
 route facts, and, for load envelopes only, shared accepted AIR/Main/Mem
-full-trace data plus selected prefix cursor data are supplied rather than
-derived by a global accepted-trace completeness theorem.
+full-trace data plus selected row occurrence, selected prefix cursor, and
+selected occurrence uniqueness are supplied rather than derived by a global
+accepted-trace completeness theorem.
 
 Current generated counts:
 
@@ -102,18 +102,19 @@ the required `OpEnvelope`. The explicit `OpEnvelope.completenessBurden`
 premise is an audit marker for that missing global witness-construction layer;
 there is no default theorem discharging it from an arbitrary envelope. Load
 arms expose their memory burden separately as
-`OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and
-`OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`: non-load
-envelopes discharge both as `Unit`; load envelopes require shared accepted
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope`: non-load
+envelopes discharge it as `ULift Unit`; load envelopes require shared accepted
 AIR/Main/Mem full-trace data, including generated Mem row constraints,
 chronological raw memory-bus rows, row-level read/write replay soundness, and
-initial memory agreement, plus a selected raw-row prefix cursor pinned to the
-envelope's concrete read row. The packed accepted-at-envelope object,
-generated Mem burden, packed row construction, row-trace object, projected
-`TraceReplaySound`, and selected full-memory cursor are derived internally by
-projecting rows to memory-bus events and replaying the prior bus events. The
-remaining global gap is deriving that shared trace data and selected cursors
-from the full execution trace.
+initial memory agreement, plus selected envelope Mem-row occurrence, a selected
+raw-row prefix cursor pinned to the envelope's concrete read row, and
+selected-row occurrence uniqueness. The split-indexed source predicate, packed
+accepted-at-envelope object, generated Mem burden, packed row construction,
+row-trace object, projected `TraceReplaySound`, and selected full-memory cursor
+are derived internally by projecting rows to memory-bus events and replaying
+the prior bus events. The remaining global gap is deriving that shared trace
+data, selected rows, selected cursors, and selected-row uniqueness from the
+full execution trace.
 
 ## ArithTable And DIV/REM Audit Conclusions
 

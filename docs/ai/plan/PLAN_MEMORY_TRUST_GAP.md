@@ -73,6 +73,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit load-scoped public memory trace theorem boundary.
 - [x] Verify and commit source-shaped public memory trace theorem boundary.
 - [x] Split cursor-to-source promotion through explicit selected-row occurrence uniqueness.
+- [x] Move public memory boundary to cursor-shaped source evidence plus uniqueness.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -80,21 +81,20 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 The active load path no longer carries `LoadTraceContext` inside
 `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over
 the selected load event. The public theorem now takes
-`OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope`: load envelopes
-carry shared accepted AIR/Main/Mem full-trace data, a `fullRv64imEnsemble`
-witness, a concrete Mem table in that witness, selected envelope Mem-row
-occurrence in that table, and split-indexed prefix-state equality; non-load
-envelopes carry no memory trace data. The shared accepted construction names
-generated Mem row constraints, chronological raw memory-bus rows,
-prefix-indexed read soundness, and initial memory agreement; the lower
-trace/table object, packed accepted-at-envelope construction, generated Mem
-burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`,
-projected `TraceReplaySound`, ordinary selected-row membership, and selected
-memory cursor are derived internally. Raw row replay has an explicit equivalence
-to projected Mem-event replay, and selected row cursors can be built from row
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope`: load
+envelopes carry shared accepted AIR/Main/Mem full-trace data, a
+`fullRv64imEnsemble` witness, a concrete Mem table in that witness, selected
+envelope Mem-row occurrence in that table, the selected prefix cursor, and
+selected-row occurrence uniqueness; non-load envelopes carry no memory trace
+data. The split-indexed source predicate, lower trace/table object, packed
+accepted-at-envelope construction, generated Mem burden, packed row
+construction, recursive `MemoryBusRowsReadWriteSound`, projected
+`TraceReplaySound`, ordinary selected-row membership, and selected memory
+cursor are derived internally. Raw row replay has an explicit equivalence to
+projected Mem-event replay, and selected row cursors can be built from row
 splits plus ordinary memory-read tags. The remaining gap is still global: there
-is no theorem that constructs the source-shaped load evidence from accepted full
-execution trace data.
+is no theorem that constructs the cursor-shaped load evidence from accepted
+full execution trace data.
 
 The source-shaped public boundary exposes the next-more-honest memory evidence:
 `OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope` carries the shared
@@ -129,6 +129,19 @@ alone proves source coverage. Focused `lake build ZiskFv.Compliance.OpEnvelope`
 passed for this split; `lake build ZiskFv.Compliance`, full `lake build`, trust
 regeneration, both trust gates, closure print with zero project axiom names,
 targeted retired-memory scan, and `nix run .#test` also passed.
+
+The current public-boundary slice adds
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope` and
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope`, then changes
+`zisk_riscv_compliant_program_bus` to consume that cursor-shaped package. The
+theorem derives `AcceptedFullExecutionMemoryTraceSourceAtEnvelope` internally
+with `acceptedFullExecutionMemoryTraceSourceAtEnvelope_of_cursorSource`. This
+makes the accepted-execution obligation visible as shared trace + selected row
++ selected cursor + selected occurrence uniqueness, instead of asking callers
+for the already-promoted split-indexed source predicate. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust gates, closure print with zero project axiom names,
+targeted retired-memory scan, and `nix run .#test` passed for this slice.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated

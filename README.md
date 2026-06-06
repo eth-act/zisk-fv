@@ -15,8 +15,8 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 ```
 
 That theorem is conditional on `OpEnvelope.completenessBurden` and the
-load-scoped `OpEnvelope.AcceptedFullMemoryTraceAtEnvelope`: it dispatches all
-63 covered RV64IM
+load-scoped `OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope`:
+it dispatches all 63 covered RV64IM
 opcode surfaces through
 `ZiskFv/Compliance/Wrappers/<Op>.lean` to the canonical `equiv_<OP>` theorem
 for each instruction once the per-arm witness envelope has already been

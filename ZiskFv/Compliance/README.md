@@ -17,13 +17,13 @@ The uber theorem `zisk_riscv_compliant_program_bus` lives in
 and uses an `OpEnvelope` sum type (63 arms, one per RV64IM opcode)
 to dispatch each opcode to its `Wrappers/<Op>` wrapper. Its
 `OpEnvelope.completenessBurden` and
-`OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope` make
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope` make
 explicit that the current theorem starts from supplied witness evidence and,
 for load envelopes only, a shared accepted memory trace plus selected envelope
-Mem-row occurrence and split-indexed prefix-state equality in the
-witness-selected table rather than deriving all of that evidence from a full
-execution trace. Cursor-shaped replay evidence can be promoted to that source
-shape only with an explicit selected-occurrence uniqueness proof.
+Mem-row occurrence, selected prefix cursor, and selected-occurrence uniqueness
+in the witness-selected table rather than deriving all of that evidence from a
+full execution trace. The split-indexed source predicate is derived internally
+from that cursor-shaped evidence.
 Non-load envelopes carry no memory trace data. The load-scoped memory
 construction object, lower trace/table bridge, packed
 `OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope`, ordinary selected-row

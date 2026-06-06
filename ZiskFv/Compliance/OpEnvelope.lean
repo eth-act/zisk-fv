@@ -4921,6 +4921,33 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
         fullTrace.embedded)
 
+/-- Cursor-shaped source coverage for a shared full-execution memory trace.
+
+    This is one step closer to accepted full-execution replay than
+    `AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope`: it carries the
+    selected prefix cursor that replay naturally constructs, plus the explicit
+    occurrence-uniqueness proof needed to promote that cursor to the
+    split-indexed source predicate. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) : Type 1 where
+  selectedEnvelopeRow :
+    env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded)
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded)
+  selectedPrefixUnique :
+    env.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded)
+      selectedPrefix
+
 /-- Build source-shaped coverage from cursor-shaped selected-prefix evidence
     plus a proof that the selected row occurrence is unique in the accepted
     chronological trace. This is the honest bridge from the cursor shape
@@ -4953,6 +4980,18 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceCoverageAtEnv
           fullTrace.embedded)
         selectedPrefix h_unique
     selectedEnvelopeRow := selectedEnvelopeRow }
+
+/-- Lower cursor-shaped full-execution coverage to source-shaped coverage. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope_of_cursorCoverage
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (cursorCoverage :
+      env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope
+        fullTrace) :
+    env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace :=
+  env.acceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope_of_prefixUnique
+    fullTrace cursorCoverage.selectedEnvelopeRow
+    cursorCoverage.selectedPrefix cursorCoverage.selectedPrefixUnique
 
 /-- Build cursor-shaped coverage from source-shaped coverage. -/
 noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_sourceCoverage
@@ -5266,6 +5305,39 @@ def OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope
         env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace
   | _ => ULift.{2, 0} Unit
 
+/-- Load-scoped package containing the shared full-execution memory trace plus
+    cursor-shaped source coverage. Non-load envelopes carry no memory data.
+
+    This is the current upstream theorem target: accepted full execution should
+    construct the shared trace, locate the selected Mem row, construct the
+    selected chronological prefix cursor, and prove that selected occurrence is
+    unique. The split-indexed source predicate is derived below. -/
+def OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope fullTrace
+  | .lbu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope fullTrace
+  | .lhu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope fullTrace
+  | .lwu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope fullTrace
+  | .lb_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope fullTrace
+  | .lh_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope fullTrace
+  | .lw_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope fullTrace
+  | _ => ULift.{2, 0} Unit
+
 /-- Load-scoped source evidence from a shared full-execution trace, selected
     table-row occurrence, cursor-shaped selected-prefix evidence, and selected
     occurrence uniqueness. Non-load envelopes carry no memory data. -/
@@ -5299,6 +5371,25 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceAtEnvelope_of
       ⟨fullTrace,
         OpEnvelope.acceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope_of_prefixUnique
           _ fullTrace selectedEnvelopeRow selectedPrefix h_unique⟩
+
+/-- Lower the cursor-shaped public memory evidence to the source-shaped
+    package consumed by the existing replay bridge. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceAtEnvelope_of_cursorSource
+    (env : OpEnvelope state m r_main)
+    (cursorSource :
+      env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceSourceAtEnvelope]
+      at cursorSource ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨cursorSource.1,
+        OpEnvelope.acceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope_of_cursorCoverage
+          _ cursorSource.1 cursorSource.2⟩
 
 /-- Lower source-shaped full-execution memory evidence to the selected-cursor
     coverage package consumed by the existing replay bridge. -/
