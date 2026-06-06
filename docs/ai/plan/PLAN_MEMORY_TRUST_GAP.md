@@ -46,11 +46,12 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Replace anonymous global Mem trace placeholder props with named row-level obligations.
 - [x] Add a dual-aware Clean MemBus emission surface and dual-row adapters.
 - [x] Add local dual-row load correctness from replay agreement.
+- [x] Add FullEnsemble selected Mem read-row replay projections.
 - [ ] Prove `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope` from the accepted full execution trace.
 
 ## Current Notes
 
-The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`, both `Unit` for non-load envelopes and, for load envelopes, split into shared accepted AIR/Main/Mem full-trace data plus a selected prefix cursor pinned to the envelope's concrete read row. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The remaining gap is still global: there is no theorem that proves this shared accepted Mem trace and selected prefix cursor from the full execution trace.
+The active load path no longer carries `LoadTraceContext` inside `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over the selected load event. The public theorem now takes `OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope` and `OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope`, both `Unit` for non-load envelopes and, for load envelopes, split into shared accepted AIR/Main/Mem full-trace data plus a selected prefix cursor pinned to the envelope's concrete read row. The shared accepted construction names generated Mem row constraints, chronological raw memory-bus rows, row-level read/write replay soundness, and initial memory agreement; the packed accepted-at-envelope construction, generated Mem burden, packed row construction, recursive `MemoryBusRowsReadWriteSound`, projected `TraceReplaySound`, and selected memory cursor are derived internally. Raw row replay has an explicit equivalence to projected Mem-event replay, and selected row cursors can be built from row splits plus ordinary memory-read tags. The current slice adds a FullEnsemble projection from selected primary/dual Mem provider rows into replayable read `MemoryBusEntry` rows, with membership lemmas for exact selected-entry matches. The remaining gap after that is still global: there is no theorem that proves this shared accepted Mem trace and selected prefix cursor from the full execution trace.
 
 The public theorem-surface, shared trace-context, and
 `AcceptedMemoryTraceConstruction` slices have passed `lake build`, regenerated
@@ -202,6 +203,17 @@ mixed F/ExtF Mem constraints in `build/extraction/Extraction/Mem.lean` into
 the clean/global trace layer so
 `AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` can be proved from
 accepted AIR/Main/Mem full-trace data.
+The FullEnsemble selected Mem replay projection slice adds
+`memPrimaryReadReplayEntryOfRow`, `memDualReadReplayEntryOfRow`,
+`memReadReplayRowsOfTable`, and table-row/matched-entry membership lemmas in
+`ZiskFv.AirsClean.FullEnsemble.Balance`. This exposes selected primary and
+dual Mem provider rows as replayable read `MemoryBusEntry` rows without
+claiming chronological ordering, row-level read/write soundness, or Sail/replay
+state agreement. Focused `lake build ZiskFv.AirsClean.FullEnsemble.Balance`,
+full `lake build`, trust regeneration, both trust gates, compliance closure
+print with zero project axiom names, targeted retired-memory scans, extractor
+skip scan, generated zero-entry checks, and `nix run .#test` passed for this
+slice.
 The current extractor slice removes the mixed F/ExtF skip-stub source:
 `tools/pil-extract` now emits constraints that mention challenges or exposed
 values as single-field `[Circuit F F C]` definitions, preserving the PIL fact

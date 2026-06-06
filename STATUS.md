@@ -6,6 +6,6 @@ Current focus: the remaining global derivation target: prove `OpEnvelope.Accepte
 
 Blocking: FullEnsemble still does not provide chronological Mem rows, row-level read/write replay soundness, initial Sail/replay agreement, or selected load prefix cursor coverage from accepted execution data.
 
-Next step: derive those shared trace and selected-prefix fields from FullEnsemble/full execution data. The split-boundary slice passed focused build, full `lake build`, trust regeneration, both trust gates, compliance closure print, retired-memory scans, extractor skip scan, generated zero-entry checks, and `nix run .#test`.
+Next step: use the new FullEnsemble Mem read-replay row projection to connect selected Mem provider row matches to the selected-prefix cursor construction.
 
 Digression: none; current work is back on the memory trust gap plan.
