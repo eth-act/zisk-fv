@@ -163,6 +163,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add replay-only provider plus prefix-state boundary that derives selected prefix cursor.
 - [x] Add replay-only cursor-to-state adapter using accepted trace `rowsNodup`.
 - [x] Add accepted-split replay-only extraction and compliance boundary.
+- [x] Add direct split generated/accepted Mem construction replay projections.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -274,6 +275,22 @@ selected prefix cursor from actual trace data. Focused
 `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 slice.
+
+Current split replay-projection checkpoint:
+`GeneratedMemFullTraceSplitConstruction.toAcceptedFullMemoryBusRowsTrace` and
+`AcceptedAirMainMemFullTraceSplitConstruction.toAcceptedFullMemoryBusRowsTrace`
+now lower split order/replay facts directly to the global raw-row replay trace.
+`OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_generatedSplitTraceAtEnvelope`
+and
+`OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_acceptedAirMainMemSplitTraceAtEnvelope`
+consume those split traces directly for load-scoped replay construction,
+without first repacking through the older packed generated construction shape.
+This is a real projection from existing split evidence, not final closure:
+accepted full execution still has to produce the split trace and selected
+prefix/provider facts. Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this slice.
 
 Current replay-only prefix-state checkpoint:
 `selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_replayRowSplitExtractionProvider`

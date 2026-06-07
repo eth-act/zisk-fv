@@ -270,6 +270,19 @@ structure GeneratedMemFullTraceSplitConstruction
   orderFacts : GeneratedMemRowOrderFacts rows
   replayFacts : GeneratedMemReplayFacts initialState rows
 
+/-- Split generated full-trace construction data lowers directly to the
+    accepted global Mem row-trace object consumed by replay. -/
+def GeneratedMemFullTraceSplitConstruction.toAcceptedFullMemoryBusRowsTrace
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction : GeneratedMemFullTraceSplitConstruction initialState rows) :
+    AcceptedFullMemoryBusRowsTrace initialState rows :=
+  { initialMemory := construction.replayFacts.initialMemory
+    rowsNodup := construction.orderFacts.rowsNodup
+    chronologicalRows := construction.orderFacts.chronologicalRows
+    prefixReadSound := construction.replayFacts.prefixReadSound
+    initialAgreement := construction.replayFacts.initialAgreement }
+
 /-- Accepted full Mem trace construction data rooted at the generated Mem
     constraint surface.
 
@@ -341,11 +354,7 @@ def GeneratedMemFullTraceConstruction.toAcceptedFullMemoryBusRowsTrace
     {rows : List (Interaction.MemoryBusEntry FGL)}
     (construction : GeneratedMemFullTraceConstruction initialState rows) :
     AcceptedFullMemoryBusRowsTrace initialState rows :=
-  { initialMemory := construction.initialMemory
-    rowsNodup := construction.rowsNodup
-    chronologicalRows := construction.chronologicalRows
-    prefixReadSound := construction.prefixReadSound
-    initialAgreement := construction.initialAgreement }
+  construction.toSplit.toAcceptedFullMemoryBusRowsTrace
 
 /-- Projection of the local Mem bridge obligations from generated full-trace
     construction data. -/
@@ -402,6 +411,21 @@ structure AcceptedAirMainMemFullTraceSplitConstruction
   generatedRows : GeneratedMemRows mem segment permutation rowCount
   orderFacts : GeneratedMemRowOrderFacts rows
   replayFacts : GeneratedMemReplayFacts initialState rows
+
+/-- Split accepted AIR/Main/Mem construction data lowers directly to the
+    accepted global Mem row-trace object consumed by replay. -/
+def AcceptedAirMainMemFullTraceSplitConstruction.toAcceptedFullMemoryBusRowsTrace
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      AcceptedAirMainMemFullTraceSplitConstruction main initialState rows) :
+    AcceptedFullMemoryBusRowsTrace initialState rows :=
+  { initialMemory := construction.replayFacts.initialMemory
+    rowsNodup := construction.orderFacts.rowsNodup
+    chronologicalRows := construction.orderFacts.chronologicalRows
+    prefixReadSound := construction.replayFacts.prefixReadSound
+    initialAgreement := construction.replayFacts.initialAgreement }
 
 /-- Repack split accepted AIR/Main/Mem evidence into the current construction
     object consumed by downstream compliance wrappers. -/

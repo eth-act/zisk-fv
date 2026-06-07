@@ -10945,6 +10945,161 @@ def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_generated
               generatedTraceAtEnvelope.selectedPrefix (by assumption) }
   all_goals exact ()
 
+/-- Lower split generated Mem full-trace data directly to the current packed
+    memory construction burden consumed by replay, without first repacking the
+    split generated construction. -/
+def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_generatedSplitTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (generatedTraceAtEnvelope :
+      env.GeneratedMemFullTraceSplitConstructionAtEnvelope) :
+    env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.GeneratedMemFullTraceSplitConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope]
+      at generatedTraceAtEnvelope ⊢
+  case ld =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lbu =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lhu =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lwu =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lb_via_static_match =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lh_via_static_match =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lw_via_static_match =>
+    exact
+      { initialState := generatedTraceAtEnvelope.initialState
+        rows := generatedTraceAtEnvelope.rows
+        fullTrace :=
+          generatedTraceAtEnvelope.generatedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              generatedTraceAtEnvelope.selectedPrefix (by assumption) }
+  all_goals exact ()
+
+/-- Lower split accepted AIR/Main/Mem full-trace data directly to the current
+    packed memory construction burden consumed by replay. This consumes the
+    accepted split construction's order and replay facts directly, without
+    forgetting through generated construction first. -/
+def OpEnvelope.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_acceptedAirMainMemSplitTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (acceptedTraceAtEnvelope :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope) :
+    env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope]
+      at acceptedTraceAtEnvelope ⊢
+  case ld =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        fullTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              acceptedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lbu =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        fullTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              acceptedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lhu =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        fullTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              acceptedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lwu =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        fullTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              acceptedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lb_via_static_match =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        fullTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              acceptedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lh_via_static_match =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        fullTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              acceptedTraceAtEnvelope.selectedPrefix (by assumption) }
+  case lw_via_static_match =>
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        fullTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toAcceptedFullMemoryBusRowsTrace
+        selected :=
+            SelectedLoadMemoryBusReadRowCursor.of_prefix_main_read_match
+              acceptedTraceAtEnvelope.selectedPrefix (by assumption) }
+  all_goals exact ()
+
 /-- Derive accepted raw-row trace evidence from the granular construction
     burden for this envelope. -/
 def OpEnvelope.acceptedFullMemoryBusRowsTraceAtEnvelope_of_construction
