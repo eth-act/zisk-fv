@@ -154,6 +154,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose generated split Mem construction at the top-level compliance theorem boundary.
 - [x] Expose generated Mem construction as the direct sufficient top-level replay boundary.
 - [x] Add selected replay-row coverage target to avoid relying on all-row read embedding for primary writes.
+- [x] Add provider-row replay coverage with primary read evidence.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -256,6 +257,17 @@ the existing replay-row embedding. Focused
 `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for committed slice `e0fe4794`.
+
+Current provider replay-row checkpoint:
+`OpEnvelope.SelectedMemReplayRowInTraceTableAtEnvelope`,
+`OpEnvelope.SelectedMemProviderReplayRowInTraceTableAtEnvelope`, and
+`selectedMemReplayRowInTraceTableAtEnvelope_of_providerReplayRow` add the
+table-local selected replay-row path. The primary branch carries the concrete
+Mem row `wr = 0` proof needed to use the actual read/write replay embedding;
+dual rows remain read events by construction. Focused
+`lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this uncommitted slice.
 
 Current checkpoint after committed slice `f256fd0d`: the ROM/source-legality
 split is verified and committed, and the next row-indexed source-legality bridge

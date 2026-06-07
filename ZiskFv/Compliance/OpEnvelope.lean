@@ -4283,6 +4283,45 @@ def OpEnvelope.SelectedMemReadReplayRowInTraceTableAtEnvelope
           traceWithTable.table
   | _ => True
 
+/-- Selected row membership in the concrete Mem table's actual read/write
+    replay projection. For primary Mem rows this preserves write polarity; load
+    coverage must therefore prove the selected provider row is a read before
+    using this target. -/
+def OpEnvelope.SelectedMemReplayRowInTraceTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (traceWithTable :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable
+          traceWithTable.table
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable
+          traceWithTable.table
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable
+          traceWithTable.table
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable
+          traceWithTable.table
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable
+          traceWithTable.table
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable
+          traceWithTable.table
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      bus.e1 ∈
+        ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable
+          traceWithTable.table
+  | _ => True
+
 /-- Provider-row selected coverage in the concrete FullEnsemble Mem table.
     This is the table-local predecessor of
     `SelectedMemReadReplayRowInTraceTableAtEnvelope`: the selected load row is
@@ -4365,6 +4404,103 @@ def OpEnvelope.SelectedMemProviderReadReplayRowInTraceTableAtEnvelope
               ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
   | _ => True
 
+/-- Provider-row selected coverage through the concrete Mem table's actual
+    replay projection.
+
+    Primary rows are accepted only when the selected provider row is a read, so
+    the read projection coincides with the polarity-preserving replay row.
+    Dual rows remain read events by construction. -/
+def OpEnvelope.SelectedMemProviderReplayRowInTraceTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (traceWithTable :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ traceWithTable.table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (traceWithTable.table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      ∃ providerRow ∈ traceWithTable.table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (traceWithTable.table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      ∃ providerRow ∈ traceWithTable.table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (traceWithTable.table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      ∃ providerRow ∈ traceWithTable.table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (traceWithTable.table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ traceWithTable.table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (traceWithTable.table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ traceWithTable.table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (traceWithTable.table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ traceWithTable.table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (traceWithTable.table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (traceWithTable.table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | _ => True
+
 /-- A matched concrete primary/dual Mem provider row implies selected
     membership in the table's read-replay projection. -/
 theorem OpEnvelope.selectedMemReadReplayRowInTraceTableAtEnvelope_of_providerRow
@@ -4394,6 +4530,39 @@ theorem OpEnvelope.selectedMemReadReplayRowInTraceTableAtEnvelope_of_providerRow
         using
           ZiskFv.AirsClean.FullEnsemble.mem_dual_read_replay_entry_mem_of_table_row_match
             h_providerRow h_dual
+
+/-- A matched concrete primary/dual Mem provider row with read evidence in
+    the primary branch implies selected membership in the table's actual
+    read/write replay projection. -/
+theorem OpEnvelope.selectedMemReplayRowInTraceTableAtEnvelope_of_providerReplayRow
+    (env : OpEnvelope state m r_main)
+    (traceWithTable :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope)
+    (h_provider :
+      env.SelectedMemProviderReplayRowInTraceTableAtEnvelope
+        traceWithTable) :
+    env.SelectedMemReplayRowInTraceTableAtEnvelope traceWithTable := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope,
+      OpEnvelope.SelectedMemProviderReplayRowInTraceTableAtEnvelope,
+      OpEnvelope.SelectedMemReplayRowInTraceTableAtEnvelope]
+      at traceWithTable h_provider ⊢
+  all_goals
+    rcases h_provider with ⟨providerRow, h_providerRow,
+      ⟨h_primary, h_wr⟩ | h_dual⟩
+    · simpa [ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable,
+        ZiskFv.AirsClean.FullEnsemble.memPrimaryReplayRowsOfTable,
+        ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+        using
+          ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_mem_of_replay_embedded_trace_row_match
+            (fun entry h_entry => h_entry) h_providerRow h_wr
+            h_primary
+    · simpa [ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable,
+        ZiskFv.AirsClean.FullEnsemble.memPrimaryReplayRowsOfTable,
+        ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+        using
+          ZiskFv.AirsClean.FullEnsemble.mem_dual_read_replay_entry_mem_of_replay_embedded_trace_row_match
+            (fun entry h_entry => h_entry) h_providerRow h_dual
 
 /-- Split-indexed Sail prefix-state equality at the accepted trace contained
     in the shared trace/table bridge object. -/
