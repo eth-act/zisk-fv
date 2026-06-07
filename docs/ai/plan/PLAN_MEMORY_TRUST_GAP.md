@@ -111,6 +111,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add table-parametric FullEnsemble Mem-table construction and provider-row cursor extraction path.
 - [x] Move the primary compliance theorem boundary to provider-row cursor-source evidence.
 - [x] Add direct-`LD` mutable-provider route bridge to table-parametric provider replay coverage.
+- [x] Split direct-`LD` active-Main provider routing into named mutable promotion and four visible non-mutable branch-exclusion obligations.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1418,3 +1419,20 @@ ZiskFv.Compliance`, full `lake build`, `trust/scripts/regenerate.sh`,
 `nix run .#test` pass for this slice. The next route obligations are proving
 direct `LD` excludes the non-mutable branch family, and following legitimate
 subword MemAlign branches to mutable Mem.
+
+The current branch-exclusion split adds named FullEnsemble branch predicates
+for MemAlignReadByte, MemAlignByte, MemAlign, and Main self-provider cases
+inside `ActiveMainNonMutableMemProviderRowMatchSpec`, plus a proof that ruling
+out all four rules out the aggregate non-mutable family. At the envelope level,
+`OpEnvelope.DirectLoadActiveMainMemProviderRouteAtEnvelope` exposes balanced
+active-Main provider coverage before branch selection, and
+`OpEnvelope.DirectLoadNoNonMutableMemProviderRouteAtEnvelope` exposes the four
+direct-`LD` exclusions needed by
+`directLoadMutableMemProviderRouteAtEnvelope_of_active_route`. This slice is
+honest about the remaining gap: it does not prove those exclusions; it gives
+the Main/ROM provenance integration a precise target. Focused
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance`, focused `lake build
+ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, full
+`lake build`, `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice.

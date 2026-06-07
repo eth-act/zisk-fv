@@ -4939,6 +4939,100 @@ def OpEnvelope.DirectLoadMutableMemProviderRouteAtEnvelope
         ∧ mainTable.environment mainRow = mainEnv
   | _ => True
 
+/-- Active-Main memory-provider coverage for a direct `LD` envelope before
+    choosing the mutable-Mem branch.
+
+    This is the balanced-channel coverage surface exposed by FullEnsemble.
+    Direct `LD` route closure still has to rule out the named non-mutable
+    provider branches before it can select a concrete mutable Mem row. -/
+def OpEnvelope.DirectLoadActiveMainMemProviderRouteAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL) : Prop :=
+  match env with
+  | .ld (mainRowVar := mainRowVar) (mainEnv := mainEnv)
+      (mainInteraction := mainInteraction) .. =>
+      ZiskFv.AirsClean.FullEnsemble.ActiveMainMemProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2
+        ∧ mainTable.environment mainRow = mainEnv
+  | _ => True
+
+/-- Branch-by-branch exclusion target for direct `LD` non-mutable provider
+    routes.
+
+    This predicate intentionally names the unresolved route facts instead of
+    hiding them inside the mutable provider replay bridge.  Later integration
+    should prove these four exclusions from Main/ROM provenance and raw
+    memory-channel selector facts. -/
+def OpEnvelope.DirectLoadNoNonMutableMemProviderRouteAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL) : Prop :=
+  match env with
+  | .ld (mainRowVar := mainRowVar)
+      (mainInteraction := mainInteraction) .. =>
+      (¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainMemAlignReadByteProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
+      ∧ (¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainMemAlignByteProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
+      ∧ (¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainMemAlignProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
+      ∧ (¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainSelfMemProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
+  | _ => True
+
+/-- Promote balanced active-Main coverage to the mutable-Mem route once the
+    named non-mutable branches have been ruled out. -/
+def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_active :
+      env.DirectLoadActiveMainMemProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_no_nonmutable :
+      env.DirectLoadNoNonMutableMemProviderRouteAtEnvelope
+        program witness mainTable mainRow) :
+    env.DirectLoadMutableMemProviderRouteAtEnvelope
+      program witness mainTable mainRow := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadActiveMainMemProviderRouteAtEnvelope,
+      OpEnvelope.DirectLoadNoNonMutableMemProviderRouteAtEnvelope,
+      OpEnvelope.DirectLoadMutableMemProviderRouteAtEnvelope] at h_active h_no_nonmutable ⊢
+  case ld =>
+    rcases h_active with ⟨h_match, h_mainEnv⟩
+    rcases h_no_nonmutable with
+      ⟨h_no_marb, h_no_mab, h_no_memAlign, h_no_main⟩
+    exact
+      ⟨ZiskFv.AirsClean.FullEnsemble.activeMainMutableMemProviderRowMatchSpec_of_no_nonmutable
+        h_match
+        (ZiskFv.AirsClean.FullEnsemble.activeMainNonMutableMemProviderRowMatchSpec_of_no_branch
+          h_no_marb h_no_mab h_no_memAlign h_no_main),
+        h_mainEnv⟩
+
 /-- Direct mutable-route selected provider coverage.
 
     This is Prop-valued because balanced channel coverage is also Prop-valued:
