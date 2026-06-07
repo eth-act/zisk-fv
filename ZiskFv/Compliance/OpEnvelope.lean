@@ -8051,6 +8051,77 @@ structure OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEn
       (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
         extraction)
 
+/-- Replay-only provider-row coverage projects to accepted chronological-row
+    coverage for the accepted trace carried by the replay-only extraction. -/
+theorem OpEnvelope.selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_replayRowSplitExtractionProvider
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m)
+    (h_provider :
+      env.SelectedMemProviderReplayRowInMemTableAtEnvelope extraction.table) :
+    env.SelectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
+        extraction) := by
+  cases env <;>
+    simp [OpEnvelope.SelectedMemProviderReplayRowInMemTableAtEnvelope,
+      OpEnvelope.SelectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope]
+      at h_provider ⊢
+  all_goals
+    rcases h_provider with ⟨providerRow, h_providerRow,
+      ⟨h_primary, h_wr⟩ | h_dual⟩
+    · refine ⟨extraction.table, extraction.replayEmbedded, ?_⟩
+      simpa [ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable,
+        ZiskFv.AirsClean.FullEnsemble.memPrimaryReplayRowsOfTable,
+        ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+        using
+          ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_mem_of_replay_embedded_trace_row_match
+            (fun entry h_entry => h_entry) h_providerRow h_wr h_primary
+    · refine ⟨extraction.table, extraction.replayEmbedded, ?_⟩
+      simpa [ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable,
+        ZiskFv.AirsClean.FullEnsemble.memPrimaryReplayRowsOfTable,
+        ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+        using
+          ZiskFv.AirsClean.FullEnsemble.mem_dual_read_replay_entry_mem_of_replay_embedded_trace_row_match
+            (fun entry h_entry => h_entry) h_providerRow h_dual
+
+/-- Replay-only selected-load evidence with prefix-state equality instead of
+    an already assembled selected-prefix cursor. This is closer to the final
+    accepted-execution proof shape: selected provider coverage gives row
+    membership, and replay prefix-state equality gives the Sail state link. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m) :
+    Type 1 where
+  selectedProviderRow :
+    env.SelectedMemProviderReplayRowInMemTableAtEnvelope extraction.table
+  selectedPrefixState :
+    env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
+        extraction)
+
+/-- Build replay-only selected-prefix evidence from provider-row coverage and
+    prefix-state equality. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope_of_stateSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+      extraction :=
+  { selectedProviderRow := selection.selectedProviderRow
+    selectedPrefix :=
+      env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
+        (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
+          extraction)
+        (env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReplayRow
+          (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
+            extraction)
+          (env.selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_replayRowSplitExtractionProvider
+            extraction selection.selectedProviderRow))
+        selection.selectedPrefixState }
+
 /-- Per-envelope selected-load extraction indexed by the named shared row
     extraction package.
 

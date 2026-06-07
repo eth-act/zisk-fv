@@ -968,6 +968,45 @@ theorem zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructi
       program witness construction replayEmbedded)
     selection h_known_bugs
 
+/-- Replay-only generated split Mem construction variant whose per-load input
+    is provider-row coverage plus prefix-state equality.
+
+    This is closer to the accepted full-execution integration target than
+    `zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayRowSelection`:
+    callers identify the selected provider replay row and prove Sail/replay
+    prefix-state agreement, while the selected prefix cursor is constructed
+    internally. -/
+theorem zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayRowStateSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    {initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplitConstruction
+        initialState rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofGeneratedMemTrace
+          program witness construction replayEmbedded))
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayRowSelection
+    env h_burden program witness construction replayEmbedded
+    (env.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope_of_stateSelection
+      (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofGeneratedMemTrace
+        program witness construction replayEmbedded)
+      selection)
+    h_known_bugs
+
 /-- Variant of the global theorem whose memory input is the load-scoped
     row-extraction/cursor-selection source package.
 

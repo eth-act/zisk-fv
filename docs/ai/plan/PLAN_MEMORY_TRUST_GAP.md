@@ -160,6 +160,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add replay-provider split-trace source boundary and compliance wrapper.
 - [x] Add generated split Mem replay-provider selection boundary.
 - [x] Add replay-only split Mem replay-provider boundary without read-only embedding.
+- [x] Add replay-only provider plus prefix-state boundary that derives selected prefix cursor.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -267,6 +268,23 @@ top-level replay-provider boundary. This reduces a stale obligation but is
 still conditional: accepted full execution must still prove generated split
 construction, all-event replay embedding, selected provider-row coverage, and
 selected prefix cursor from actual trace data. Focused
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
+`lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice.
+
+Current replay-only prefix-state checkpoint:
+`selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_replayRowSplitExtractionProvider`
+derives accepted chronological-row coverage from replay-only provider-row
+coverage and the concrete table's all-event replay embedding.
+`AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope` then
+uses that row membership plus selected prefix-state equality to construct the
+selected prefix cursor internally, and
+`zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayRowStateSelection`
+exposes this closer-to-accepted-execution boundary at the compliance theorem
+level. This still leaves generated split construction, all-event replay
+embedding, provider-row coverage, and prefix-state equality as upstream
+obligations. Focused
 `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
 `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
