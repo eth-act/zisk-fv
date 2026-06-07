@@ -3278,6 +3278,20 @@ structure GeneratedMemFullTraceConstructionWithPrefixAtCursor
   selectedPrefix :
     SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry
 
+/-- Split generated Mem full-trace construction plus the selected load prefix
+    cursor for one concrete load row. The generated row constraints, public
+    row-order facts, and replay facts remain separate. -/
+structure GeneratedMemFullTraceSplitConstructionWithPrefixAtCursor
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  generatedTrace :
+    ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplitConstruction
+      initialState rows
+  selectedPrefix :
+    SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry
+
 /-- Public generated Mem full-trace burden, scoped to load envelopes.
     Non-load envelopes carry `Unit`; load envelopes carry the generated Mem
     full-trace construction and the selected prefix cursor for the envelope's
@@ -3300,6 +3314,48 @@ def OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
       GeneratedMemFullTraceConstructionWithPrefixAtCursor state bus.e1
   | _ => Unit
+
+/-- Public split generated Mem full-trace burden, scoped to load envelopes.
+    Non-load envelopes carry `Unit`; load envelopes keep generated row facts,
+    row-order facts, and replay facts separated. -/
+def OpEnvelope.GeneratedMemFullTraceSplitConstructionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      GeneratedMemFullTraceSplitConstructionWithPrefixAtCursor state bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      GeneratedMemFullTraceSplitConstructionWithPrefixAtCursor state bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      GeneratedMemFullTraceSplitConstructionWithPrefixAtCursor state bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      GeneratedMemFullTraceSplitConstructionWithPrefixAtCursor state bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      GeneratedMemFullTraceSplitConstructionWithPrefixAtCursor state bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      GeneratedMemFullTraceSplitConstructionWithPrefixAtCursor state bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      GeneratedMemFullTraceSplitConstructionWithPrefixAtCursor state bus.e1
+  | _ => Unit
+
+/-- Repack split generated Mem construction evidence into the packed
+    generated construction consumed by the current replay bridge. -/
+def OpEnvelope.generatedMemFullTraceConstructionAtEnvelope_of_split
+    (env : OpEnvelope state m r_main)
+    (split : env.GeneratedMemFullTraceSplitConstructionAtEnvelope) :
+    env.GeneratedMemFullTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.GeneratedMemFullTraceSplitConstructionAtEnvelope,
+      OpEnvelope.GeneratedMemFullTraceConstructionAtEnvelope] at split ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := split.initialState
+        rows := split.rows
+        generatedTrace :=
+          ZiskFv.AirsClean.Mem.GeneratedMemFullTraceConstruction.ofSplit
+            split.generatedTrace
+        selectedPrefix := split.selectedPrefix }
 
 /-- Accepted AIR/Main/Mem full-trace construction plus the selected load
     prefix cursor for one concrete load row. This is the remaining global
@@ -9018,6 +9074,28 @@ def OpEnvelope.generatedMemFullTraceConstructionAtEnvelope_of_acceptedAirMainMem
           acceptedTraceAtEnvelope.acceptedTrace.toGeneratedMemFullTraceConstruction
         selectedPrefix := acceptedTraceAtEnvelope.selectedPrefix }
   all_goals exact ()
+
+/-- Lower split accepted AIR/Main/Mem full-trace data to the split generated
+    Mem burden, preserving the separated generated-row, row-order, and replay
+    obligations. -/
+def OpEnvelope.generatedMemFullTraceSplitConstructionAtEnvelope_of_acceptedAirMainMemTraceSplit
+    (env : OpEnvelope state m r_main)
+    (acceptedTraceAtEnvelope :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope) :
+    env.GeneratedMemFullTraceSplitConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope,
+      OpEnvelope.GeneratedMemFullTraceSplitConstructionAtEnvelope]
+      at acceptedTraceAtEnvelope ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := acceptedTraceAtEnvelope.initialState
+        rows := acceptedTraceAtEnvelope.rows
+        generatedTrace :=
+          acceptedTraceAtEnvelope.acceptedTrace.toGeneratedMemFullTraceSplitConstruction
+        selectedPrefix := acceptedTraceAtEnvelope.selectedPrefix }
 
 /-- Construct the public load-scoped memory-row burden from a shared accepted
     Mem row trace plus an envelope-specific prefix cursor. The selected

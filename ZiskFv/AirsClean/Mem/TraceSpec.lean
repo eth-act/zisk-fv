@@ -465,6 +465,23 @@ def AcceptedAirMainMemFullTraceConstruction.toGeneratedMemFullTraceConstruction
     prefixReadSound := construction.prefixReadSound
     initialAgreement := construction.initialAgreement }
 
+/-- Forget the Main-trace provenance marker while preserving the split
+    generated Mem obligations. -/
+def AcceptedAirMainMemFullTraceSplitConstruction.toGeneratedMemFullTraceSplitConstruction
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      AcceptedAirMainMemFullTraceSplitConstruction main initialState rows) :
+    GeneratedMemFullTraceSplitConstruction initialState rows :=
+  { mem := construction.mem
+    segment := construction.segment
+    permutation := construction.permutation
+    rowCount := construction.rowCount
+    generatedRows := construction.generatedRows
+    orderFacts := construction.orderFacts
+    replayFacts := construction.replayFacts }
+
 /-- Program-level accepted AIR/Main/Mem trace data, before selecting the load
     row relevant to one `OpEnvelope`.
 

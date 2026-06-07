@@ -136,6 +136,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add provider-shaped accepted trace construction boundary.
 - [x] Expose split accepted AIR/Main/Mem construction at the provider compliance boundary.
 - [x] Add direct-`LD` split-construction route bridge for positive aligned mutable-Mem coverage.
+- [x] Add split generated-Mem envelope lowering from split accepted AIR/Main/Mem construction.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
