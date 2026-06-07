@@ -255,7 +255,7 @@ selected loads should instead prove their provider row is a read, then use
 the existing replay-row embedding. Focused
 `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
-`nix run .#test` pass for this uncommitted slice.
+`nix run .#test` pass for committed slice `e0fe4794`.
 
 Current checkpoint after committed slice `f256fd0d`: the ROM/source-legality
 split is verified and committed, and the next row-indexed source-legality bridge
