@@ -6502,6 +6502,89 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
           embedded replayEmbedded)
   | _ => True
 
+/-- Provider-row selected coverage at the accepted trace construction
+    boundary.
+
+    This is the provider-shaped counterpart to
+    `SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness`: accepted
+    execution supplies a concrete primary/dual Mem replay row in the
+    witness-selected mutable Mem table, rather than proving equality with the
+    envelope-carried Clean Mem row. -/
+def OpEnvelope.SelectedMemProviderRowAtAcceptedTraceConstructionWithWitness
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction) :
+    Prop :=
+  match env with
+  | .ld .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded replayEmbedded)
+  | .lbu .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded replayEmbedded)
+  | .lhu .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded replayEmbedded)
+  | .lwu .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded replayEmbedded)
+  | .lb_via_static_match .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded replayEmbedded)
+  | .lh_via_static_match .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded replayEmbedded)
+  | .lw_via_static_match .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          program witness
+          { initialState := construction.initialState
+            rows := construction.rows
+            construction := construction.acceptedTrace }
+          embedded replayEmbedded)
+  | _ => True
+
 /-- Shared full-execution memory trace construction for one Main trace.
 
     This is the program-level memory object expected from accepted full
@@ -8190,6 +8273,30 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionWithWitness
     env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
       program witness construction embedded replayEmbedded
 
+/-- Provider-shaped load-scoped full-execution memory construction package.
+
+    This is the accepted-execution target after replacing the older
+    envelope-row equality obligation with concrete primary/dual provider-row
+    replay coverage in the witness-selected mutable Mem table. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
+    (env : OpEnvelope state m r_main) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope
+  embedded :
+    env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+      program witness construction
+  replayEmbedded :
+    env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
+      program witness construction
+  selectedProviderRow :
+    env.SelectedMemProviderRowAtAcceptedTraceConstructionWithWitness
+      program witness construction embedded replayEmbedded
+
 /-- Load-scoped full-execution memory construction target.
 
     This is the public boundary shape one step above
@@ -8215,6 +8322,26 @@ def OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope
       env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
   | .lw_via_static_match .. =>
       env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
+  | _ => ULift.{2, 0} Unit
+
+/-- Provider-shaped load-scoped full-execution memory construction target. -/
+def OpEnvelope.AcceptedFullExecutionMemoryProviderTraceConstructionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      env.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
+  | .lbu .. =>
+      env.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
+  | .lhu .. =>
+      env.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
+  | .lwu .. =>
+      env.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
+  | .lb_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
+  | .lh_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
+  | .lw_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
   | _ => ULift.{2, 0} Unit
 
 /-- Package the unpacked accepted AIR/Main/Mem construction fields into the
@@ -8256,6 +8383,76 @@ def OpEnvelope.acceptedFullExecutionMemoryTraceConstructionWithWitness_of_fields
         embedded := embedded
         replayEmbedded := replayEmbedded
         selectedEnvelopeRow := selectedEnvelopeRow }
+
+/-- Package unpacked accepted AIR/Main/Mem construction fields into the
+    provider-shaped load-scoped full-execution memory construction object. -/
+def OpEnvelope.acceptedFullExecutionMemoryProviderTraceConstructionWithWitness_of_fields
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (selectedProviderRow :
+      env.SelectedMemProviderRowAtAcceptedTraceConstructionWithWitness
+        program witness construction embedded replayEmbedded) :
+    env.AcceptedFullExecutionMemoryProviderTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderTraceConstructionAtEnvelope]
+      at construction embedded replayEmbedded selectedProviderRow ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := length
+        program := program
+        witness := witness
+        construction := construction
+        embedded := embedded
+        replayEmbedded := replayEmbedded
+        selectedProviderRow := selectedProviderRow }
+
+/-- Lower provider-shaped accepted trace construction evidence to the primary
+    provider-prefix source boundary.
+
+    The selected prefix cursor is carried by the accepted AIR/Main/Mem
+    construction; the selected row is already provider-shaped, so no
+    envelope-row equality is needed. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope_of_providerTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryProviderTraceConstructionAtEnvelope) :
+    env.AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope]
+      at construction ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      OpEnvelope.acceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope_of_providerSelection
+        env0
+        construction.program
+        construction.witness
+        { initialState := construction.construction.initialState
+          rows := construction.construction.rows
+          construction := construction.construction.acceptedTrace }
+        construction.embedded
+        construction.replayEmbedded
+        { selectedProviderRow := by
+            exact construction.selectedProviderRow
+          selectedPrefix := by
+            exact construction.construction.selectedPrefix }
 
 /-- Occurrence uniqueness for the selected prefix carried by the older
     load-scoped full-execution construction object. Non-load envelopes carry

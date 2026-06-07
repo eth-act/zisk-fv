@@ -133,6 +133,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Move the primary compliance theorem to the provider-prefix source boundary.
 - [x] Add unpacked accepted AIR/Main/Mem provider-selection boundary.
 - [x] Add direct global theorem for shared row extraction plus provider-row cursor selection.
+- [x] Add provider-shaped accepted trace construction boundary.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -218,6 +219,19 @@ selected provider-row replay coverage in the witness-selected Mem table, and
 the selected chronological prefix cursor. The selected occurrence uniqueness
 field is derived internally from `fullTrace.acceptedTrace.construction.rowsNodup`.
 Focused `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
+both trust scripts, and `nix run .#test` passed for the committed provider-prefix
+source slices.
+
+Current checkpoint after provider-trace-construction wrapper: the wrapper slice adds a provider-shaped accepted
+trace construction package that replaces the older selected envelope-row
+equality obligation with concrete primary/dual provider-row replay coverage in
+the witness-selected mutable Mem table. The lowering now reuses the existing
+provider-selection constructor instead of normalizing provider-row coverage
+directly, and focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass. The larger
+remaining gap is still the global accepted-execution theorem that constructs the
+shared Mem trace and per-envelope selected provider-row/prefix coverage.
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this slice.
 

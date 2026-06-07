@@ -362,6 +362,40 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemTraceConstruction
         selectedEnvelopeRow))
     h_known_bugs
 
+/-- Provider-shaped variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemTraceConstruction`.
+
+    This is the construction-level accepted-execution target after replacing
+    selected envelope-row equality with concrete primary/dual provider-row
+    replay coverage in the witness-selected mutable Mem table. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (selectedProviderRow :
+      env.SelectedMemProviderRowAtAcceptedTraceConstructionWithWitness
+        program witness construction embedded replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus env h_burden
+    (env.acceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope_of_providerTraceConstruction
+      (env.acceptedFullExecutionMemoryProviderTraceConstructionWithWitness_of_fields
+        program witness construction embedded replayEmbedded
+        selectedProviderRow))
+    h_known_bugs
+
 /-- Variant of the global theorem whose memory input is accepted AIR/Main/Mem
     trace data plus the full RV64IM witness and mutable-Mem embeddings.
 
