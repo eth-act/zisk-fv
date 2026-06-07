@@ -9093,6 +9093,42 @@ def OpEnvelope.acceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitn
         replayEmbedded := replayEmbedded
         selectedProviderRow := selectedProviderRow }
 
+/-- Build split provider-shaped load-scoped construction evidence from the
+    named shared split row extraction plus extraction-indexed provider
+    selection.
+
+    This is the bridge from the current shared accepted-execution target
+    (`AcceptedFullExecutionMemoryRowSplitExtraction` plus per-load selection)
+    to the construction-shaped theorem boundary. It repacks the shared split
+    trace with the selected prefix carried by `selection`; it does not
+    manufacture any trace, embedding, or selected-row facts. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope_of_rowSplitExtractionSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope]
+      at selection ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := extraction.length
+        program := extraction.program
+        witness := extraction.witness
+        splitConstruction :=
+          { initialState := extraction.acceptedTrace.initialState
+            rows := extraction.acceptedTrace.rows
+            acceptedTrace := extraction.acceptedTrace.construction
+            selectedPrefix := selection.selectedPrefix }
+        embedded := extraction.embedded
+        replayEmbedded := extraction.replayEmbedded
+        selectedProviderRow := selection.selectedProviderRow }
+
 /-- Lower provider-shaped accepted trace construction evidence to the primary
     provider-prefix source boundary.
 
