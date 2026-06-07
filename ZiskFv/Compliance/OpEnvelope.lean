@@ -5359,6 +5359,79 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace
           fullTrace.embedded fullTrace.replayEmbedded)
   | _ => True
 
+/-- Selected provider-row replay coverage for the witness-selected Mem table
+    in a shared full-execution memory trace. Non-load envelopes carry no row
+    obligation.
+
+    This is the provider-shaped version of
+    `SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace`: it asks for the
+    concrete primary/dual Mem replay match directly, instead of first
+    identifying the provider row with the envelope-carried Clean Mem row. -/
+def OpEnvelope.SelectedMemProviderRowAtAcceptedFullExecutionMemoryTrace
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) : Prop :=
+  match env with
+  | .ld .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)
+  | .lbu .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)
+  | .lhu .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)
+  | .lwu .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)
+  | .lb_via_static_match .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)
+  | .lh_via_static_match .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)
+  | .lw_via_static_match .. =>
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)
+  | _ => True
+
+/-- The older envelope-row occurrence shape implies provider-row replay
+    coverage for the same witness-selected Mem table. -/
+theorem OpEnvelope.selectedMemProviderRowAtAcceptedFullExecutionMemoryTrace_of_envelopeRow
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (h_row :
+      env.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace
+        fullTrace) :
+    env.SelectedMemProviderRowAtAcceptedFullExecutionMemoryTrace
+      fullTrace := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace,
+      OpEnvelope.SelectedMemProviderRowAtAcceptedFullExecutionMemoryTrace]
+      at h_row ⊢
+  all_goals
+    exact
+      OpEnvelope.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow
+        env0
+        (env0.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)
+        h_row
+
 /-- Per-envelope coverage facts for a shared full-execution memory trace.
 
     The selected prefix identifies the concrete chronological read occurrence
@@ -5444,6 +5517,27 @@ structure OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
         extraction.program extraction.witness extraction.acceptedTrace
         extraction.embedded extraction.replayEmbedded)
 
+/-- Provider-row version of extraction-indexed cursor evidence.
+
+    This is the upstream-facing row-selection shape expected from balanced
+    full-execution replay: the selected load bus entry is matched by a
+    concrete primary/dual replay projection from the witness-selected Mem
+    table. The older envelope-row equality package lowers to this shape through
+    `selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow`. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m) : Type 1 where
+  selectedProviderRow :
+    env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        extraction.program extraction.witness extraction.acceptedTrace
+        extraction.embedded extraction.replayEmbedded)
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        extraction.program extraction.witness extraction.acceptedTrace
+        extraction.embedded extraction.replayEmbedded)
+
 /-- Load-scoped accepted full-execution row extraction plus cursor-shaped
     selected-load evidence.
 
@@ -5475,6 +5569,39 @@ def OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope
   | .lw_via_static_match .. =>
       Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
         env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction
+  | _ => ULift.{2, 0} Unit
+
+/-- Load-scoped accepted full-execution row extraction plus provider-row
+    cursor evidence. Non-load envelopes carry no memory data.
+
+    This is the provider-shaped successor to
+    `AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope`: selected
+    row coverage is the concrete primary/dual Mem replay match, not equality to
+    the envelope-carried Clean Mem row. -/
+def OpEnvelope.AcceptedFullExecutionMemoryProviderRowCursorSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope extraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope extraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope extraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope extraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope extraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope extraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope extraction
   | _ => ULift.{2, 0} Unit
 
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
@@ -5588,6 +5715,34 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
         fullTrace.embedded fullTrace.replayEmbedded)
       selectedPrefix
+
+/-- Provider-row cursor-shaped source coverage for a shared full-execution
+    memory trace.
+
+    This is the provider-shaped version of
+    `AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope`: the selected
+    row fact is a concrete primary/dual provider replay match in the
+    witness-selected Mem table. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) : Type 1 where
+  selectedProviderRow :
+    env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded fullTrace.replayEmbedded)
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded fullTrace.replayEmbedded)
+  selectedPrefixUnique :
+    env.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+        fullTrace.embedded fullTrace.replayEmbedded)
+      selectedPrefix
+
 
 /-- Build source-shaped coverage from cursor-shaped selected-prefix evidence
     plus a proof that the selected row occurrence is unique in the accepted
@@ -6128,6 +6283,48 @@ def OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope
         env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope fullTrace
   | _ => ULift.{2, 0} Unit
 
+/-- Load-scoped package containing the shared full-execution memory trace plus
+    provider-row cursor-shaped coverage. Non-load envelopes carry no memory
+    data.
+
+    This is the provider-row version of
+    `AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope`: accepted full
+    execution supplies the shared accepted Mem trace, a primary/dual provider
+    replay match in the concrete Mem table, the selected chronological prefix
+    cursor, and occurrence uniqueness. -/
+def OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
+          fullTrace
+  | .lbu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
+          fullTrace
+  | .lhu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
+          fullTrace
+  | .lwu .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
+          fullTrace
+  | .lb_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
+          fullTrace
+  | .lh_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
+          fullTrace
+  | .lw_via_static_match .. =>
+      Σ fullTrace : AcceptedFullExecutionMemoryTrace m,
+        env.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
+          fullTrace
+  | _ => ULift.{2, 0} Unit
+
 /-- Load-scoped source evidence from a shared full-execution trace, selected
     table-row occurrence, cursor-shaped selected-prefix evidence, and selected
     occurrence uniqueness. Non-load envelopes carry no memory data. -/
@@ -6260,6 +6457,167 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvel
       OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelection
         _
         source.1 source.2
+
+/-- Build provider-row cursor selection from the older envelope-row cursor
+    selection. This is a compatibility adapter: envelope-row occurrence is
+    lowered to provider replay coverage, while the upstream-facing provider
+    shape remains the stronger theorem target. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope_of_rowCursorSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+      extraction :=
+  { selectedProviderRow :=
+      OpEnvelope.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow
+        env
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          extraction.program extraction.witness extraction.acceptedTrace
+          extraction.embedded extraction.replayEmbedded)
+        selection.selectedEnvelopeRow
+    selectedPrefix := selection.selectedPrefix }
+
+/-- Lower load-scoped older row-cursor source evidence to the provider-row
+    source shape. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderRowCursorSelectionSourceAtEnvelope_of_rowCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryProviderRowCursorSelectionSourceAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryProviderRowCursorSelectionSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨source.1,
+        OpEnvelope.acceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope_of_rowCursorSelection
+          env0
+          source.1 source.2⟩
+
+/-- Build provider-shaped public memory evidence from the named shared row
+    extraction plus provider-row cursor evidence. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope]
+      at selection ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨extraction.toFullTrace,
+        { selectedProviderRow := by
+            simpa [AcceptedFullExecutionMemoryRowExtraction.toFullTrace,
+              OpEnvelope.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope,
+              OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness]
+              using selection.selectedProviderRow
+          selectedPrefix := by
+            simpa [AcceptedFullExecutionMemoryRowExtraction.toFullTrace,
+              OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+              OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+              OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+              OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+              OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+              using selection.selectedPrefix
+          selectedPrefixUnique := by
+            exact
+              selection.selectedPrefix.prefixUnique_of_nodup
+                extraction.acceptedTrace.construction.rowsNodup }⟩
+
+/-- Lower load-scoped provider-row extraction/cursor-selection source evidence
+    to provider-shaped public memory evidence. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryProviderRowCursorSelectionSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderRowCursorSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelection
+        env0
+        source.1 source.2
+
+/-- Compatibility lowering from the older envelope-row public source package
+    to provider-shaped public memory evidence. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope :=
+  env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelectionSource
+    (env.acceptedFullExecutionMemoryProviderRowCursorSelectionSourceAtEnvelope_of_rowCursorSelectionSource
+      source)
+
+/-- Compatibility lowering from the older shared cursor-source package to the
+    provider-shaped shared cursor-source package. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_cursorSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨source.1,
+        { selectedProviderRow := by
+            exact
+              OpEnvelope.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow
+                env0
+                (env0.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+                  source.1.program source.1.witness source.1.acceptedTrace
+                  source.1.embedded source.1.replayEmbedded)
+                source.2.selectedEnvelopeRow
+          selectedPrefix := source.2.selectedPrefix
+          selectedPrefixUnique := source.2.selectedPrefixUnique }⟩
+
+/-- Lower provider-shaped cursor source evidence to the accepted AIR/Main/Mem
+    trace construction consumed by replay.
+
+    The selected prefix cursor already contains the chronological selected-row
+    membership and prefix-state agreement needed by the lower replay bridge.
+    Provider-row coverage remains visible at the public boundary and is used to
+    construct that cursor upstream. -/
+noncomputable def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_providerTraceCursorSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := source.1.acceptedTrace.initialState
+        rows := source.1.acceptedTrace.rows
+        acceptedTrace := source.1.acceptedTrace.construction
+        selectedPrefix := source.2.selectedPrefix }
 
 /-- Lower source-shaped full-execution memory evidence to the selected-cursor
     coverage package consumed by the existing replay bridge. -/

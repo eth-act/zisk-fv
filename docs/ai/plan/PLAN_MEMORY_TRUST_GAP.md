@@ -109,6 +109,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Name balanced active-Main memory provider row coverage from FullEnsemble.
 - [x] Split balanced provider coverage into mutable-Mem and non-mutable route branches.
 - [x] Add table-parametric FullEnsemble Mem-table construction and provider-row cursor extraction path.
+- [x] Move the primary compliance theorem boundary to provider-row cursor-source evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1385,3 +1386,18 @@ cursor evidence; non-load envelopes carry no memory data. Focused `lake build
 ZiskFv.Compliance`, full `lake build`, `trust/scripts/regenerate.sh`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this slice.
+
+The provider-boundary slice adds provider-row versions of the shared trace
+cursor coverage, trace cursor source, extraction-indexed cursor selection, and
+load-scoped row-cursor source package. `zisk_riscv_compliant_program_bus` now
+consumes
+`OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope`
+directly, and the replay chain lowers from the selected prefix cursor without
+reconstructing the older envelope-row extraction object. Older envelope-row
+theorem variants remain as compatibility wrappers via
+`selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow`.
+Focused `lake build ZiskFv.Compliance.OpEnvelope`, focused `lake build
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates, and
+`nix run .#test` pass for this slice. The remaining global target is still to
+derive the shared accepted Mem row extraction plus per-load provider replay
+coverage and selected prefix cursor from balanced accepted full execution.

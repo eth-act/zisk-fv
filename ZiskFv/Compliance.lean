@@ -99,52 +99,15 @@ theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
     (h_full_memory_source :
-      env.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope)
+      env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
-  let h_full_memory_cursor_source :
-      env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope :=
-    env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
-      h_full_memory_source
-  let h_full_memory_trace_source :
-      env.AcceptedFullExecutionMemoryTraceSourceAtEnvelope :=
-    env.acceptedFullExecutionMemoryTraceSourceAtEnvelope_of_cursorSource
-      h_full_memory_cursor_source
-  let h_mem_trace_with_coverage :
-      env.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope :=
-    env.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_source
-      h_full_memory_trace_source
-  let h_mem_construction :
-      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope :=
-    env.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_traceWithCoverage
-      h_mem_trace_with_coverage
-  let h_mem_extraction :
-      env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope :=
-    env.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstruction
-      h_mem_construction
-  let h_trace_with_table :
-      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope :=
-    env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
-      h_mem_extraction.fullTraceTable
-  let h_accepted_mem_trace :
-      env.AcceptedAirMainMemFullTraceAtEnvelope :=
-    env.acceptedTraceOfFullTraceWithMemTable h_trace_with_table
-  have _h_selected_mem_row :
-      env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
-        h_accepted_mem_trace :=
-    env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_envelopeMemRowReplay
-      h_mem_extraction.fullTraceTable
-      h_mem_extraction.selectedEnvelopeRow
-  have h_selected_mem_prefix :
-      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
-        h_accepted_mem_trace :=
-    h_mem_extraction.selectedPrefix
   have h_accepted_mem_trace_at_envelope :
       env.AcceptedAirMainMemFullTraceConstructionAtEnvelope :=
-    env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_traceAndPrefix
-      h_accepted_mem_trace h_selected_mem_prefix
+    env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_providerTraceCursorSource
+      h_full_memory_source
   have h_generated_mem_trace :
       env.GeneratedMemFullTraceConstructionAtEnvelope :=
     env.generatedMemFullTraceConstructionAtEnvelope_of_acceptedAirMainMemTrace
@@ -195,13 +158,15 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
   zisk_riscv_compliant_program_bus env h_burden
-    (env.acceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope_of_traceConstruction
-      (env.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_traceWithCoverage
-        (env.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_split
-          (env.acceptedFullExecutionMemoryTraceAtEnvelope_of_fullTrace
-            fullTrace)
-          (env.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_fullTraceCoverage
-            fullTrace coverage))))
+    (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_cursorSource
+      (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
+        (env.acceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope_of_traceConstruction
+          (env.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_traceWithCoverage
+            (env.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_split
+              (env.acceptedFullExecutionMemoryTraceAtEnvelope_of_fullTrace
+                fullTrace)
+              (env.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_fullTraceCoverage
+                fullTrace coverage))))))
     h_known_bugs
 
 /-- Variant of the global theorem whose memory input is the packed
@@ -220,8 +185,9 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
   zisk_riscv_compliant_program_bus env h_burden
-    (env.acceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope_of_traceConstruction
-      construction)
+    (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
+      (env.acceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope_of_traceConstruction
+        construction))
     h_known_bugs
 
 /-- Variant of the global theorem whose memory input is source-shaped
@@ -262,6 +228,19 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
     env h_burden
     (env.acceptedFullExecutionMemoryTraceSourceAtEnvelope_of_cursorSource
       cursorSource)
+    h_known_bugs
+
+/-- Variant of the global theorem whose memory input is provider-row
+    cursor-shaped full-execution source evidence. This is the primary theorem's
+    memory boundary exposed under a descriptive wrapper name. -/
+theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTraceCursorSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (providerCursorSource :
+      env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus env h_burden providerCursorSource
     h_known_bugs
 
 /-- Variant of the global theorem whose memory input is the unpacked accepted
@@ -413,6 +392,21 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursor
   zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
     env h_burden
     (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
+      source)
+    h_known_bugs
+
+/-- Variant of the global theorem whose memory input is load-scoped
+    provider-row extraction/cursor-selection evidence. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryProviderRowCursorSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelectionSource
       source)
     h_known_bugs
 
