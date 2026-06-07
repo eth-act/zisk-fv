@@ -179,16 +179,22 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 
 ## Current Notes
 
-In-flight checkpoint: `ZiskFv/Compliance/OpEnvelope.lean` has an uncommitted
-adapter slice that projects `AcceptedFullExecutionMemoryTrace` plus
+Worktree checkpoint: this stream now lives at
+`/home/cody/zisk-fv/.worktrees/memory-trust-gap` on branch `memory-trust-gap`.
+Merge commit `a058ff0b` incorporates `origin/main` and includes the adapter
+slice in `ZiskFv/Compliance/OpEnvelope.lean` that projects
+`AcceptedFullExecutionMemoryTrace` plus
 `AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope` into the newer
 accepted split replay-envelope prefix-state boundary. This lowers an older
 accepted-execution-shaped memory package into the current theorem shape, but it
 does not yet prove that raw accepted full-execution data constructs the shared
 split trace, all-event replay embedding, selected envelope-row occurrence, or
-prefix-state equality. Next verification target is a focused
-`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, followed by adding
-the public wrapper if the adapter remains clean.
+prefix-state equality. A focused
+`lake build ZiskFv.Compliance.RowProvenance ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance` was attempted after the merge but stopped while rebuilding
+dependency cache before reaching project modules; the next verification target
+is to rerun focused build from the merged worktree, followed by adding the
+public wrapper if the adapter remains clean.
 
 Latest checkpoint: `OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace`
 and `OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness` expose
