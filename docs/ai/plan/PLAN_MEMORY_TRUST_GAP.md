@@ -1279,3 +1279,16 @@ through the cursor-source theorem. Focused
 `lake build ZiskFv.Compliance` pass. This is still a boundary-sharpening step:
 it does not prove the accepted Mem trace construction, embeddings, selected row
 occurrence, or selected cursor from full execution.
+
+Post-commit inspection of `ZiskFv.AirsClean.FullEnsemble.Balance` confirms the
+next missing object is not another table-selection projection. The existing
+`exists_mem_table_of_fullRv64im_witness` theorem explicitly selects the
+dual-aware mutable Mem table but does not assert chronological embedding of
+that table's projected rows into an accepted memory trace. The balance module
+has selected-provider and message-match lemmas from `witness.BalancedChannels`
+and `witness.Spec`, but no theorem that constructs the accepted chronological
+row list, `rowsNodup`, chronological order, prefix read soundness, initial
+agreement, or mutable-Mem replay embeddings from those channel facts. The next
+real proof target must therefore introduce/prove the accepted memory-bus row
+extraction from balanced full-execution interactions before the current
+cursor-source obligations can be discharged globally.
