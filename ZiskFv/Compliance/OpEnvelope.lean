@@ -4998,6 +4998,29 @@ def OpEnvelope.DirectLoadNoNonMutableMemProviderRouteAtEnvelope
         (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
   | _ => True
 
+/-- The byte-width MemAlign provider branches that direct `LD` can rule out
+    from its Main `b` memory-message width alone. -/
+def OpEnvelope.DirectLoadNoByteMemAlignProviderRouteAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL) : Prop :=
+  match env with
+  | .ld (mainRowVar := mainRowVar)
+      (mainInteraction := mainInteraction) .. =>
+      (¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainMemAlignReadByteProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
+      ∧ (¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainMemAlignByteProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
+  | _ => True
+
 /-- Direct `LD` row-shape provenance for the evaluated Clean Main row carried
     by an envelope.
 
@@ -5059,6 +5082,268 @@ def OpEnvelope.directLoadMainBSourceFactsAtEnvelope_of_rowProvenance
         using provenance.store_reg_eq
     exact ⟨h_b_src_mem, h_b_src_ind, h_b_src_reg, h_ind_width,
       h_store_reg⟩
+
+/-- Direct `LD` Main `b` memory message has byte width 8. -/
+def OpEnvelope.directLoadMainBMessageWidthAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope) :
+    match env with
+    | .ld (mainRowVar := mainRowVar) (mainEnv := mainEnv) .. =>
+        (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRowVar)).width = 8
+    | _ => True := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadMainBSourceFactsAtEnvelope] at h_source ⊢
+  case ld =>
+    rcases h_source with
+      ⟨_h_b_src_mem, h_b_src_ind, _h_b_src_reg, h_ind_width,
+        _h_store_reg⟩
+    simp [h_b_src_ind, h_ind_width]
+
+/-- Direct `LD` cannot be provided by MemAlignReadByte, whose raw memory-bus
+    message has width 1. -/
+def OpEnvelope.directLoadNoMemAlignReadByteProviderRouteAtEnvelope_of_sourceFacts
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope) :
+    match env with
+    | .ld (mainRowVar := mainRowVar)
+        (mainInteraction := mainInteraction) .. =>
+        ¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainMemAlignReadByteProviderRowMatchSpec
+          program witness mainTable mainRow mainInteraction
+          (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2
+    | _ => True := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadMainBSourceFactsAtEnvelope] at h_source ⊢
+  case ld ld_input regs mem bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction providerInteraction
+      h_mainEval h_providerEval_ld h_msg_ld h_main_row h_mem_row h_main_spec
+      h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+      h_addr2_idx h_mem_sel h_mem_wr =>
+    intro h_branch
+    rcases h_branch with
+      ⟨providerInteraction, _h_provider_witness, h_msg, _h_nonpull,
+        _h_nonzero, providerTable, _h_providerTable, _h_providerInteraction,
+        providerRow, _h_providerRow, _h_providerSpec, _h_component,
+        h_providerEval, _h_entry⟩
+    rcases h_source with
+      ⟨_h_b_src_mem, h_b_src_ind, _h_b_src_reg, h_ind_width,
+        _h_store_reg⟩
+    have h_width_main :
+        (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRowVar)).width = 8 := by
+      simp [h_b_src_ind, h_ind_width]
+    have h_raw_msg :
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.pushed
+          (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).toRaw).eval
+            (providerTable.environment providerRow)).msg =
+          (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult
+            (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).toRaw).eval
+              mainEnv).msg := by
+      calc
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.pushed
+          (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).toRaw).eval
+            (providerTable.environment providerRow)).msg
+            = providerInteraction.msg := by rw [h_providerEval]
+        _ = mainInteraction.msg := h_msg
+        _ = (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult
+            (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).toRaw).eval
+              mainEnv).msg := by rw [h_mainEval]
+    have h_vec :
+        Vector.map (Expression.eval (providerTable.environment providerRow))
+            (toElements
+              (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+                ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)) =
+          Vector.map (Expression.eval mainEnv)
+            (toElements (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)) := by
+      apply Vector.toArray_injective
+      simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_raw_msg
+    have h_eval :
+        eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+              ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar) =
+          eval mainEnv (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) := by
+      have h_from := congrArg
+        (fun xs => (fromElements xs :
+          ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+      simpa [ProvableType.fromElements_eval_toElements] using h_from
+    have h_width_provider :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+              ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).width = 1 := by
+      rw [ZiskFv.AirsClean.MemAlignReadByte.eval_memBusMessageExpr]
+    have h_width_eq :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+              ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).width =
+          (eval mainEnv (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).width := by
+      exact congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.width h_eval
+    have h_main_eval :
+        (eval mainEnv (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).width =
+          (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRowVar)).width := by
+      rw [ZiskFv.AirsClean.Main.eval_bMemMessageExpr]
+    have h_bad : (1 : FGL) = 8 := by
+      calc
+        (1 : FGL) =
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+                ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).width :=
+              h_width_provider.symm
+        _ = (eval mainEnv
+              (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).width :=
+              h_width_eq
+        _ = (ZiskFv.AirsClean.Main.bMemMessage
+              (eval mainEnv mainRowVar)).width := h_main_eval
+        _ = 8 := h_width_main
+    exact (by native_decide : (1 : FGL) ≠ 8) h_bad
+
+/-- Direct `LD` cannot be provided by MemAlignByte, whose raw memory-bus
+    message has width 1. -/
+def OpEnvelope.directLoadNoMemAlignByteProviderRouteAtEnvelope_of_sourceFacts
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope) :
+    match env with
+    | .ld (mainRowVar := mainRowVar)
+        (mainInteraction := mainInteraction) .. =>
+        ¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainMemAlignByteProviderRowMatchSpec
+          program witness mainTable mainRow mainInteraction
+          (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2
+    | _ => True := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadMainBSourceFactsAtEnvelope] at h_source ⊢
+  case ld ld_input regs mem bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction providerInteraction
+      h_mainEval h_providerEval_ld h_msg_ld h_main_row h_mem_row h_main_spec
+      h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+      h_addr2_idx h_mem_sel h_mem_wr =>
+    intro h_branch
+    rcases h_branch with
+      ⟨providerInteraction, _h_provider_witness, h_msg, _h_nonpull,
+        _h_nonzero, providerTable, _h_providerTable, _h_providerInteraction,
+        providerRow, _h_providerRow, _h_providerSpec, _h_component,
+        h_providerEval, _h_entry⟩
+    rcases h_source with
+      ⟨_h_b_src_mem, h_b_src_ind, _h_b_src_reg, h_ind_width,
+        _h_store_reg⟩
+    have h_width_main :
+        (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRowVar)).width = 8 := by
+      simp [h_b_src_ind, h_ind_width]
+    have h_raw_msg :
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.pushed
+          (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw).eval
+            (providerTable.environment providerRow)).msg =
+          (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult
+            (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).toRaw).eval
+              mainEnv).msg := by
+      calc
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.pushed
+          (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw).eval
+            (providerTable.environment providerRow)).msg
+            = providerInteraction.msg := by rw [h_providerEval]
+        _ = mainInteraction.msg := h_msg
+        _ = (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult
+            (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).toRaw).eval
+              mainEnv).msg := by rw [h_mainEval]
+    have h_vec :
+        Vector.map (Expression.eval (providerTable.environment providerRow))
+            (toElements
+              (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+                ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)) =
+          Vector.map (Expression.eval mainEnv)
+            (toElements (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)) := by
+      apply Vector.toArray_injective
+      simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_raw_msg
+    have h_eval :
+        eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+              ZiskFv.AirsClean.MemAlignByte.component.rowInputVar) =
+          eval mainEnv (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) := by
+      have h_from := congrArg
+        (fun xs => (fromElements xs :
+          ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+      simpa [ProvableType.fromElements_eval_toElements] using h_from
+    have h_width_provider :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+              ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).width = 1 := by
+      rw [ZiskFv.AirsClean.MemAlignByte.eval_memBusMessageExpr]
+    have h_width_eq :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+              ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).width =
+          (eval mainEnv (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).width := by
+      exact congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.width h_eval
+    have h_main_eval :
+        (eval mainEnv (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).width =
+          (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRowVar)).width := by
+      rw [ZiskFv.AirsClean.Main.eval_bMemMessageExpr]
+    have h_bad : (1 : FGL) = 8 := by
+      calc
+        (1 : FGL) =
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+                ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).width :=
+              h_width_provider.symm
+        _ = (eval mainEnv
+              (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).width :=
+              h_width_eq
+        _ = (ZiskFv.AirsClean.Main.bMemMessage
+              (eval mainEnv mainRowVar)).width := h_main_eval
+        _ = 8 := h_width_main
+    exact (by native_decide : (1 : FGL) ≠ 8) h_bad
+
+/-- Package the two byte-width direct-`LD` provider exclusions.  The generic
+    MemAlign and Main self-provider branches remain separate obligations. -/
+def OpEnvelope.directLoadNoByteMemAlignProviderRouteAtEnvelope_of_sourceFacts
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope) :
+    env.DirectLoadNoByteMemAlignProviderRouteAtEnvelope
+      program witness mainTable mainRow := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadNoByteMemAlignProviderRouteAtEnvelope] at h_source ⊢
+  case ld ld_input regs mem bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction providerInteraction
+      h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+      h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+      h_addr2_idx h_mem_sel h_mem_wr =>
+    exact
+      ⟨OpEnvelope.directLoadNoMemAlignReadByteProviderRouteAtEnvelope_of_sourceFacts
+          (OpEnvelope.ld ld_input regs mem bus pins promises r_mem
+            h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+            h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+            h_addr2_idx h_mem_sel h_mem_wr)
+          program witness mainTable mainRow h_source,
+        OpEnvelope.directLoadNoMemAlignByteProviderRouteAtEnvelope_of_sourceFacts
+          (OpEnvelope.ld ld_input regs mem bus pins promises r_mem
+            h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+            h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+            h_addr2_idx h_mem_sel h_mem_wr)
+          program witness mainTable mainRow h_source⟩
 
 /-- Promote balanced active-Main coverage to the mutable-Mem route once the
     named non-mutable branches have been ruled out. -/

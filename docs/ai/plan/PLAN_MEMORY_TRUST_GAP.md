@@ -113,6 +113,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add direct-`LD` mutable-provider route bridge to table-parametric provider replay coverage.
 - [x] Split direct-`LD` active-Main provider routing into named mutable promotion and four visible non-mutable branch-exclusion obligations.
 - [x] Add direct-`LD` row provenance and Main `b` source-fact bridge for branch exclusions.
+- [x] Prove direct-`LD` MemAlignReadByte and MemAlignByte branch exclusions from raw width equality.
 - [ ] Prove direct-`LD` non-mutable branch exclusions from source facts plus raw channel route facts.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -1454,3 +1455,17 @@ ZiskFv.Compliance`, full `lake build`, `trust/scripts/regenerate.sh`,
 `nix run .#test` pass for this slice. The immediate remaining local route work
 is to combine these source facts with raw memory-channel provider-route facts
 to prove the four direct-`LD` non-mutable exclusions.
+
+The byte-width exclusion slice proves the first two direct-`LD` non-mutable
+provider exclusions. `OpEnvelope.directLoadMainBMessageWidthAtEnvelope` derives
+that direct `LD` Main `bMem` has raw memory-bus width 8, while
+`directLoadNoMemAlignReadByteProviderRouteAtEnvelope_of_sourceFacts` and
+`directLoadNoMemAlignByteProviderRouteAtEnvelope_of_sourceFacts` rule out the
+MemAlignReadByte and MemAlignByte provider branches because their raw pushed
+messages have width 1 and balance equates the full raw message. The package
+predicate `DirectLoadNoByteMemAlignProviderRouteAtEnvelope` deliberately covers
+only those two branches; generic MemAlign and Main self-provider remain visible
+open obligations. Focused `lake build ZiskFv.Compliance.OpEnvelope` passes for
+this slice, as do focused `lake build ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
