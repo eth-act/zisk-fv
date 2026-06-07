@@ -148,6 +148,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add split provider construction package and lower it to split-trace source evidence.
 - [x] Expose unpacked split-indexed provider construction theorem.
 - [x] Bridge shared row extraction plus provider selection into split provider construction.
+- [x] Add constructor for shared row-split extraction from split trace plus embeddings.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -1758,3 +1759,14 @@ ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, full
 `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 bridge.
+
+Current uncommitted constructor checkpoint:
+`AcceptedFullExecutionMemoryRowSplitExtraction.ofAcceptedAirMainMemTrace`
+packages a split accepted AIR/Main/Mem trace plus the mutable-Mem read/replay
+embedding predicates into the named shared row-split extraction target. This
+does not discharge the global obligations; it isolates the next proof target
+into three ingredients accepted full execution must provide. Focused `lake
+build ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`,
+full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+constructor.

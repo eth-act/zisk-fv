@@ -6991,6 +6991,35 @@ def AcceptedFullExecutionMemoryRowSplitExtraction.toRowExtraction
     embedded := extraction.embedded
     replayEmbedded := extraction.replayEmbedded }
 
+/-- Package split accepted AIR/Main/Mem trace data plus mutable-Mem replay
+    embeddings into the named shared full-execution row extraction target.
+
+    This constructor is record packaging only. It keeps the remaining global
+    obligations separated: accepted full execution must still build the split
+    trace and prove both mutable-Mem embedding predicates. -/
+def AcceptedFullExecutionMemoryRowSplitExtraction.ofAcceptedAirMainMemTrace
+    {main : Valid_Main FGL FGL}
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit main)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows) :
+    AcceptedFullExecutionMemoryRowSplitExtraction main :=
+  { length := length
+    program := program
+    witness := witness
+    acceptedTrace := acceptedTrace
+    embedded := embedded
+    replayEmbedded := replayEmbedded }
+
 /-- Load-scoped view of the shared full-execution memory trace. -/
 def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace
     (env : OpEnvelope state m r_main)
