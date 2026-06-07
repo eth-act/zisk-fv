@@ -98,6 +98,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Thread all-event replay embedding through the selected FullEnsemble Mem-table bridge.
 - [x] Add selected accepted-row membership from all-event replay embedding.
 - [x] Add a global wrapper that consumes packed full-execution memory construction.
+- [x] Add direct accepted AIR/Main/Mem selection to packed memory construction bridge.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1218,3 +1219,22 @@ store/update replay construction. Focused
 `lake build`, trust regeneration, both trust gates, closure print with zero
 project axiom names, targeted retired-memory scan, and `nix run .#test` passed
 for this slice.
+
+Status checkpoint: this is not a current local Lean proof loop. The last two
+slices were verified and committed. The remaining work is the upstream global
+construction theorem: deriving the accepted Mem trace, replay agreement, and
+selected load coverage from accepted full-execution data instead of taking those
+semantic fields as top-level evidence. No ZisK semantic bug has been identified
+so far; the issue is still a proof-surface/trust-boundary gap.
+
+The accepted-selection bridge slice adds
+`OpEnvelope.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_acceptedAirMainMemSelection`
+and routes
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSelection` through
+`zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction`.
+This aligns the source-shaped accepted AIR/Main/Mem selection boundary with the
+packed construction theorem used by replay, without claiming the upstream
+accepted-execution construction has been proved. Focused
+`lake build ZiskFv.Compliance.OpEnvelope` and
+`lake build ZiskFv.Compliance` passed. Full `lake build`, trust regeneration,
+both trust gates, and `nix run .#test` also passed.

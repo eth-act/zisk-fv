@@ -6159,6 +6159,36 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceConstructionAtEnvel
         replayEmbedded := fullTrace.replayEmbedded
         selectedEnvelopeRow := coverage.selectedEnvelopeRow }
 
+/-- Build the current public load-scoped memory construction object from the
+    explicit accepted AIR/Main/Mem trace, witness embeddings, and unpacked
+    per-envelope selection evidence. This keeps the accepted-execution
+    integration boundary source-shaped while still routing through the packed
+    construction object consumed by replay. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_acceptedAirMainMemSelection
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
+        program witness acceptedTrace embedded replayEmbedded) :
+    env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope :=
+  env.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_fullExecutionMemoryTrace
+    (AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
+      program witness acceptedTrace embedded replayEmbedded)
+    (env.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
+      program witness acceptedTrace embedded replayEmbedded selection)
+
 /-- Lower the load-scoped shared-trace-plus-coverage package to the older
     load-scoped construction object consumed by the replay bridge.
 
