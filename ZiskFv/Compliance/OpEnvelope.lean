@@ -7387,6 +7387,32 @@ structure AcceptedFullExecutionMemoryRowSplitExtraction
     ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
       witness acceptedTrace.rows
 
+/-- Replay-only split shared accepted-execution Mem row extraction target.
+
+    This is the replay-provider successor of
+    `AcceptedFullExecutionMemoryRowSplitExtraction`: selected-load coverage
+    uses the concrete Mem table's read/write replay projection, so this shared
+    extraction carries only the all-event replay embedding for the selected
+    mutable Mem table. It deliberately does not require the older read-only
+    mutable-Mem embedding, whose primary projection is not valid for write
+    rows. -/
+structure AcceptedFullExecutionMemoryReplayRowSplitExtraction
+    (main : Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit main
+  table : Air.Flat.Table FGL
+  table_mem : table ∈ witness.allTables
+  table_component :
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  replayEmbedded :
+    ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+      table acceptedTrace.rows
+
 /-- Lower the named row-extraction target to the shared full-execution memory
     trace package already consumed by the load replay bridge. -/
 def AcceptedFullExecutionMemoryRowExtraction.toFullTrace
@@ -7475,6 +7501,99 @@ def AcceptedFullExecutionMemoryRowSplitExtraction.ofGeneratedMemTrace
         construction
     embedded := embedded
     replayEmbedded := replayEmbedded }
+
+/-- Package split accepted AIR/Main/Mem trace data plus a concrete
+    mutable-Mem replay embedding into the replay-only extraction target. -/
+def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTraceTable
+    {main : Valid_Main FGL FGL}
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit main)
+    (table : Air.Flat.Table FGL)
+    (table_mem : table ∈ witness.allTables)
+    (table_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+        table acceptedTrace.rows) :
+    AcceptedFullExecutionMemoryReplayRowSplitExtraction main :=
+  { length := length
+    program := program
+    witness := witness
+    acceptedTrace := acceptedTrace
+    table := table
+    table_mem := table_mem
+    table_component := table_component
+    replayEmbedded := replayEmbedded }
+
+/-- Package generated split Mem construction plus a concrete mutable-Mem
+    replay embedding into the replay-only extraction target. -/
+def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofGeneratedMemTraceTable
+    {main : Valid_Main FGL FGL}
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    {initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplitConstruction
+        initialState rows)
+    (table : Air.Flat.Table FGL)
+    (table_mem : table ∈ witness.allTables)
+    (table_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+        table rows) :
+    AcceptedFullExecutionMemoryReplayRowSplitExtraction main :=
+  AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTraceTable
+    program witness
+    (ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit.ofGenerated
+      construction)
+    table table_mem table_component replayEmbedded
+
+/-- Package generated split Mem construction plus the witness-level all-event
+    mutable-Mem replay embedding into the replay-only extraction target.
+
+    The mutable Mem table is selected from the full RV64IM witness exactly as
+    in the older full-ensemble bridge, but no read-only embedding is required. -/
+noncomputable def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofGeneratedMemTrace
+    {main : Valid_Main FGL FGL}
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    {initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplitConstruction
+        initialState rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness rows) :
+    AcceptedFullExecutionMemoryReplayRowSplitExtraction main := by
+  let existsTable :=
+    ZiskFv.AirsClean.FullEnsemble.exists_mem_table_of_fullRv64im_witness
+      witness
+  let table := Classical.choose existsTable
+  have h_table : table ∈ witness.allTables :=
+    (Classical.choose_spec existsTable).1
+  have h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus :=
+    (Classical.choose_spec existsTable).2
+  exact
+    AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofGeneratedMemTraceTable
+      program witness construction table h_table h_component
+      (replayEmbedded table h_table h_component)
 
 /-- Load-scoped view of the shared full-execution memory trace. -/
 def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace
@@ -7579,6 +7698,115 @@ def OpEnvelope.SelectedMemProviderRowAtAcceptedFullExecutionMemoryTrace
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
           fullTrace.embedded fullTrace.replayEmbedded)
+  | _ => True
+
+/-- Load-scoped accepted trace carried by a replay-only split extraction. -/
+def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m) :
+    env.AcceptedAirMainMemFullTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope]
+  all_goals
+    try exact ()
+  all_goals
+    exact extraction.acceptedTrace.toAcceptedAirMainMemFullTrace
+
+/-- Provider-row selected coverage through a concrete Mem table's actual
+    read/write replay projection.
+
+    This is the table-only replay-provider predicate used by replay-only
+    extraction. It does not require a read-only table embedding; selected
+    primary rows carry `wr = 0`, and dual rows are read replay events by
+    construction. -/
+def OpEnvelope.SelectedMemProviderReplayRowInMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (table : Air.Flat.Table FGL) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+            (eval (table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
   | _ => True
 
 /-- The older envelope-row occurrence shape implies provider-row replay
@@ -7802,6 +8030,26 @@ def OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAt
   env.AcceptedFullExecutionMemoryReplayProviderSplitTraceSelectionAtEnvelope
     extraction.program extraction.witness extraction.acceptedTrace
     extraction.embedded extraction.replayEmbedded
+
+/-- Replay-only extraction-indexed selected-load evidence.
+
+    This is the narrower successor to
+    `AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope`
+    for replay-provider integrations: selected provider-row coverage is stated
+    against the concrete mutable Mem table carried by the replay-only
+    extraction, and the selected prefix cursor is stated directly over the
+    accepted chronological trace. No read-only mutable-Mem embedding is
+    required. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m) :
+    Type 1 where
+  selectedProviderRow :
+    env.SelectedMemProviderReplayRowInMemTableAtEnvelope extraction.table
+  selectedPrefix :
+    env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
+        extraction)
 
 /-- Per-envelope selected-load extraction indexed by the named shared row
     extraction package.
@@ -8081,6 +8329,45 @@ def OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSo
           extraction
   | _ => ULift.{2, 0} Unit
 
+/-- Replay-only split-trace version of the load-scoped row-extraction source.
+
+    This source is strictly narrower than
+    `AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope`:
+    load envelopes carry a replay-only shared extraction plus selected
+    provider-row/prefix evidence; non-load envelopes carry no memory data. -/
+def OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+          extraction
+  | _ => ULift.{2, 0} Unit
+
 /-- Package extraction-indexed replay-provider split selection as the
     load-scoped source object. -/
 def OpEnvelope.acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope_of_selection
@@ -8092,6 +8379,23 @@ def OpEnvelope.acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSo
     env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope := by
   cases env <;>
     simp [OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope]
+      at selection ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact ⟨extraction, selection⟩
+
+/-- Package replay-only extraction-indexed selection as the load-scoped source
+    object. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope_of_selection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope]
       at selection ⊢
   all_goals
     try exact ULift.up ()
@@ -9418,6 +9722,33 @@ noncomputable def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_o
   cases env <;>
     simp [OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope,
       OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := source.1.acceptedTrace.initialState
+        rows := source.1.acceptedTrace.rows
+        acceptedTrace :=
+          ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceConstruction.ofSplit
+            source.1.acceptedTrace.construction
+        selectedPrefix := source.2.selectedPrefix }
+
+/-- Lower replay-only split source evidence to the accepted AIR/Main/Mem
+    construction consumed by the replay proof.
+
+    The selected provider row and all-event replay embedding remain visible in
+    the source object. This lowering only repacks the split accepted trace and
+    selected prefix cursor; unlike the older replay-provider source, it does
+    not require a read-only mutable-Mem embedding. -/
+noncomputable def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayRowSplitTraceSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope,
       OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope]
       at source ⊢
   all_goals

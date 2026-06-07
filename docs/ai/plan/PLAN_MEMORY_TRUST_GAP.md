@@ -159,6 +159,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add replay-provider cursor extraction target.
 - [x] Add replay-provider split-trace source boundary and compliance wrapper.
 - [x] Add generated split Mem replay-provider selection boundary.
+- [x] Add replay-only split Mem replay-provider boundary without read-only embedding.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -251,6 +252,23 @@ coverage directly in the compliance theorem family. This is still conditional:
 the generated split construction, mutable-Mem embeddings, selected prefix, and
 selected replay-provider row remain caller obligations. Focused
 `lake build ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice.
+
+Current replay-only boundary checkpoint:
+`AcceptedFullExecutionMemoryReplayRowSplitExtraction` carries split accepted
+AIR/Main/Mem trace data, one concrete mutable Mem table, and the all-event
+`MemReplayRowsEmbeddedInTrace` proof for that table, without requiring the
+older read-only mutable-Mem embedding. The new
+`zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayRowSelection`
+wrapper exposes generated split Mem construction plus witness-level all-event
+replay embedding and selected provider/prefix coverage as the sufficient
+top-level replay-provider boundary. This reduces a stale obligation but is
+still conditional: accepted full execution must still prove generated split
+construction, all-event replay embedding, selected provider-row coverage, and
+selected prefix cursor from actual trace data. Focused
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
+`lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 slice.
 
