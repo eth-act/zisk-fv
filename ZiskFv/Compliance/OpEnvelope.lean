@@ -3682,6 +3682,61 @@ def OpEnvelope.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope
             ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable table
   | _ => True
 
+/-- FullEnsemble-shaped selected-row coverage through the actual read/write
+    Mem replay surface.
+
+    This is the semantically correct global embedding target for accepted Mem
+    traces: primary writes stay writes in `memReplayRowsOfTable`, while
+    selected load coverage can still use this predicate once the concrete
+    provider row is known to be a read. -/
+def OpEnvelope.SelectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ table : Air.Flat.Table FGL,
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows
+          ∧ bus.e1 ∈
+            ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
+  | _ => True
+
 /-- Split-indexed Sail state equality for the selected load row. This is the
     second proof obligation needed to construct the selected-prefix cursor:
     whenever the accepted chronological row list is split at the envelope's
@@ -3805,6 +3860,29 @@ theorem OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_m
       (by
         simpa [ZiskFv.AirsClean.FullEnsemble.memReadReplayRowsOfTable,
           ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayRowsOfTable,
+          ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+          using h_row)
+
+/-- The FullEnsemble-shaped selected replay-row coverage implies ordinary
+    selected-row membership in the accepted chronological Mem trace. -/
+theorem OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReplayRow
+    (env : OpEnvelope state m r_main)
+    (acceptedTrace : env.AcceptedAirMainMemFullTraceAtEnvelope)
+    (h_selected :
+      env.SelectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace) :
+    env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+      acceptedTrace := by
+  cases env <;>
+    simp [OpEnvelope.SelectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope]
+      at h_selected ⊢
+  all_goals
+    rcases h_selected with ⟨table, h_embedded, h_row⟩
+    exact h_embedded _
+      (by
+        simpa [ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable,
+          ZiskFv.AirsClean.FullEnsemble.memPrimaryReplayRowsOfTable,
           ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
           using h_row)
 
