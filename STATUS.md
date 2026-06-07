@@ -2,11 +2,11 @@
 
 Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
 
-Current focus: shared accepted split trace plus envelope-row prefix-state replay wrapper is implemented and broad-gate verified. Next work is deriving the visible trace/replay/row/state obligations from accepted full-execution data.
+Current focus: shared accepted split trace plus envelope-row prefix-state replay wrapper `0521712c` is committed. Next work is deriving the visible trace/replay/row/state obligations from accepted full-execution data.
 
 Blocking: no local blocker. The larger global blocker remains: accepted full execution data still does not construct the generated split Mem construction, mutable-Mem all-event replay embedding, selected load provider-row coverage, or selected prefix-state equality from actual accepted trace data.
 
-Next step: commit the accepted-split prefix-state wrapper slice, then continue toward deriving those visible obligations from accepted full execution.
+Next step: continue toward accepted full execution constructing the shared split trace, all-event replay embedding, selected envelope-row/provider coverage, and prefix-state equality from actual accepted trace data.
 
 Verification: accepted-split prefix-state wrapper passed focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and `nix run .#test`. Accepted-split replay-envelope wrapper passed the same broad gates. Shared-generated wrapper passed focused `lake build ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and `nix run .#test`. Generated-split replay-envelope wrapper passed focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and `nix run .#test`. Construction-level envelope-row bridge `0f87cb04` passed the same broad gates. Committed accepted/generated split wrapper slice `acb92c4d` and replay-only envelope-row state-selection boundary `4d1ca15a` passed the same broad gates.
 
