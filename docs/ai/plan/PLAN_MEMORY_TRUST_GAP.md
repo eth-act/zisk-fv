@@ -119,6 +119,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add table-parametric provider cursor source evidence for the concrete Mem table found by route balance.
 - [x] Split direct-`LD` table-parametric provider cursor construction into same-table provider-row replay plus prefix-state replay.
 - [x] Compose direct-`LD` active route coverage, replay embeddings, and table-indexed prefix replay into direct source evidence.
+- [x] Reduce direct-`LD` same-table prefix-state replay to selected prefix cursor replay plus accepted-row uniqueness.
 - [ ] Replace the over-broad direct-`LD` generic MemAlign exclusion target with aligned direct-Mem selected-provider coverage or provider uniqueness.
 - [ ] Construct table-parametric provider cursor source for direct `LD` from aligned route coverage plus selected prefix replay.
 - [ ] Discharge `MainMemBusMultiplicitySound` from ROM/source legality for unified Main memory interactions.
@@ -172,11 +173,13 @@ and `state_eq_of_prefixUnique` prove that cursor state equality plus selected
 occurrence uniqueness implies all-splits prefix-state equality; the envelope
 constructors `selectedPrefixStateAtFullEnsembleMemTableAtEnvelope_of_prefixUnique`
 and `acceptedFullExecutionMemoryTraceSourceAtEnvelope_of_prefixUnique` package
-that bridge for the public source boundary. This avoids pretending cursor data
-alone proves source coverage. Focused `lake build ZiskFv.Compliance.OpEnvelope`
-passed for this split; `lake build ZiskFv.Compliance`, full `lake build`, trust
-regeneration, both trust gates, closure print with zero project axiom names,
-targeted retired-memory scan, and `nix run .#test` also passed.
+that bridge for the public source boundary. The direct-`LD` variant
+`directLoadMutableMemProviderPrefixStateAtEnvelope_of_prefixCursor` now consumes
+same-table selected prefix cursors, derives occurrence uniqueness from
+`fullTraceTable.acceptedTrace.construction.rowsNodup`, and feeds the
+route-plus-prefix source composition through a replay-shaped prefix-cursor
+wrapper. Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
+passes for this slice; full gates are pending before commit.
 
 The current public-boundary slice adds
 `OpEnvelope.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope` and
