@@ -155,6 +155,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose generated Mem construction as the direct sufficient top-level replay boundary.
 - [x] Add selected replay-row coverage target to avoid relying on all-row read embedding for primary writes.
 - [x] Add provider-row replay coverage with primary read evidence.
+- [x] Add full-ensemble replay-provider bridge to selected-row membership.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -265,6 +266,19 @@ Current provider replay-row checkpoint:
 table-local selected replay-row path. The primary branch carries the concrete
 Mem row `wr = 0` proof needed to use the actual read/write replay embedding;
 dual rows remain read events by construction. Focused
+`lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for committed slice `006f6179`.
+
+Current replay-provider bridge checkpoint:
+`OpEnvelope.SelectedMemReplayRowInFullEnsembleMemTableAtEnvelope`,
+`OpEnvelope.SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope`,
+`selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_traceTable`, and
+`selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_providerReplayRows`
+connect the replay-provider row target to accepted selected-row membership via
+the actual `replayEmbedded` path. This gives accepted full-execution integration
+a semantically correct bridge for selected loads without requiring primary
+writes to appear in the read-only replay projection. Focused
 `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this uncommitted slice.

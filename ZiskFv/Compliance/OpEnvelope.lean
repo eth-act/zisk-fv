@@ -4583,6 +4583,44 @@ def OpEnvelope.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
     (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
       construction)
 
+/-- Selected replay-row coverage for the full-ensemble Mem table bridge. -/
+def OpEnvelope.SelectedMemReplayRowInFullEnsembleMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope) :
+    Prop :=
+  env.SelectedMemReplayRowInTraceTableAtEnvelope
+    (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      construction)
+
+/-- Provider-row selected coverage through the concrete FullEnsemble Mem
+    table's actual read/write replay projection. -/
+def OpEnvelope.SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope) :
+    Prop :=
+  env.SelectedMemProviderReplayRowInTraceTableAtEnvelope
+    (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      construction)
+
+/-- Provider-row replay coverage in the concrete FullEnsemble Mem table
+    implies selected membership in the table's actual read/write replay
+    projection. -/
+theorem OpEnvelope.selectedMemReplayRowInFullEnsembleMemTableAtEnvelope_of_providerReplayRow
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
+    (h_provider :
+      env.SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope
+        construction) :
+    env.SelectedMemReplayRowInFullEnsembleMemTableAtEnvelope
+      construction :=
+  env.selectedMemReplayRowInTraceTableAtEnvelope_of_providerReplayRow
+    (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      construction)
+    h_provider
+
 /-- Concrete selected Mem provider-row occurrence in the FullEnsemble Mem
     table, expressed in the smaller shape available from load envelope arms.
 
@@ -5205,6 +5243,32 @@ theorem OpEnvelope.selectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope_o
             ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
             using h_selected⟩
 
+/-- Project selected replay-row coverage from a trace/table bridge to the
+    accepted trace carried by that same bridge. -/
+theorem OpEnvelope.selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_traceTable
+    (env : OpEnvelope state m r_main)
+    (traceWithTable :
+      env.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope)
+    (h_selected :
+      env.SelectedMemReplayRowInTraceTableAtEnvelope traceWithTable) :
+    env.SelectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedTraceOfFullTraceWithMemTable traceWithTable) := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope,
+      OpEnvelope.SelectedMemReplayRowInTraceTableAtEnvelope,
+      OpEnvelope.SelectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.acceptedTraceOfFullTraceWithMemTable]
+      at traceWithTable h_selected ⊢
+  all_goals
+    exact
+      ⟨traceWithTable.table, traceWithTable.replayEmbedded,
+        by
+          simpa [ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable,
+            ZiskFv.AirsClean.FullEnsemble.memPrimaryReplayRowsOfTable,
+            ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
+            using h_selected⟩
+
 /-- Concrete provider-row coverage in the FullEnsemble Mem table gives
     ordinary selected-row membership in the accepted chronological trace.
 
@@ -5237,6 +5301,42 @@ theorem OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_p
       traceWithTable h_selected
   exact
     env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReadReplayRow
+      (env.acceptedTraceOfFullTraceWithMemTable traceWithTable)
+      h_at_trace
+
+/-- Concrete provider-row replay coverage in the FullEnsemble Mem table gives
+    ordinary selected-row membership in the accepted chronological trace
+    through the actual read/write replay embedding.
+
+    Primary rows must carry `wr = 0` in the provider coverage; dual replay rows
+    remain reads by construction. This is the preferred selected-load route for
+    accepted full-execution integration, because it does not require primary
+    writes to appear in the read-only replay projection. -/
+theorem OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_providerReplayRows
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
+    (h_provider :
+      env.SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope
+        construction) :
+    env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedTraceOfFullTraceWithMemTable
+        (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+          construction)) := by
+  let traceWithTable :=
+    env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      construction
+  have h_selected :
+      env.SelectedMemReplayRowInTraceTableAtEnvelope traceWithTable :=
+    env.selectedMemReplayRowInTraceTableAtEnvelope_of_providerReplayRow
+      traceWithTable h_provider
+  have h_at_trace :
+      env.SelectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedTraceOfFullTraceWithMemTable traceWithTable) :=
+    env.selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_traceTable
+      traceWithTable h_selected
+  exact
+    env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReplayRow
       (env.acceptedTraceOfFullTraceWithMemTable traceWithTable)
       h_at_trace
 
