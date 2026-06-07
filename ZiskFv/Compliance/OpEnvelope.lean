@@ -3665,8 +3665,8 @@ structure OpEnvelope.AcceptedAirMainMemTraceEvidenceAtEnvelope
     env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
       acceptedTrace
 
-/-- Shared accepted AIR/Main/Mem trace data plus the concrete FullEnsemble Mem
-    table whose projected read-replay rows are embedded in that accepted trace.
+/-- Shared accepted AIR/Main/Mem trace data plus the concrete Mem table whose
+    projected replay rows are embedded in that accepted trace.
 
     This is a program-level bridge shape for load envelopes: full-execution
     integration should construct it once from the accepted Main/Mem trace, then
@@ -3679,6 +3679,9 @@ structure AcceptedAirMainMemFullTraceWithMemTable
   table : Air.Flat.Table FGL
   embedded :
     ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+      table acceptedTrace.rows
+  replayEmbedded :
+    ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
       table acceptedTrace.rows
 
 /-- Accepted AIR/Main/Mem trace data tied to a concrete Mem table in a full
@@ -3704,10 +3707,13 @@ structure AcceptedAirMainMemFullTraceWithFullEnsembleMemTable
   embedded :
     ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
       table acceptedTrace.rows
+  replayEmbedded :
+    ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+      table acceptedTrace.rows
 
 /-- Construct the full-ensemble Mem-table bridge from an actual full RV64IM
-    witness plus an embedding theorem for whichever mutable Mem table occurs
-    in that witness. The table itself is selected by
+    witness plus embedding theorems for whichever mutable Mem table occurs in
+    that witness. The table itself is selected by
     `exists_mem_table_of_fullRv64im_witness`; selected-row occurrence and
     prefix-state alignment remain separate obligations. -/
 noncomputable def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
@@ -3721,6 +3727,9 @@ noncomputable def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
     (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
     (embedded :
       ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
         witness acceptedTrace.rows) :
     AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m := by
   let existsTable :=
@@ -3740,7 +3749,8 @@ noncomputable def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
       table := table
       table_mem := h_table
       table_component := h_component
-      embedded := embedded table h_table h_component }
+      embedded := embedded table h_table h_component
+      replayEmbedded := replayEmbedded table h_table h_component }
 
 /-- Forget full-ensemble provenance and keep the trace/table bridge consumed
     by the current replay theorem. -/
@@ -3751,7 +3761,8 @@ def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.toTraceWithMemTable
     AcceptedAirMainMemFullTraceWithMemTable m :=
   { acceptedTrace := construction.acceptedTrace
     table := construction.table
-    embedded := construction.embedded }
+    embedded := construction.embedded
+    replayEmbedded := construction.replayEmbedded }
 
 /-- Load-scoped shared accepted trace plus Mem-table embedding. -/
 def OpEnvelope.AcceptedAirMainMemFullTraceWithMemTableAtEnvelope
@@ -3839,6 +3850,9 @@ noncomputable def OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTable
     (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
     (embedded :
       ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
         witness acceptedTrace.rows) :
     env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope := by
   cases env <;>
@@ -3846,31 +3860,31 @@ noncomputable def OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTable
   case ld =>
     exact
       AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-        program witness acceptedTrace embedded
+        program witness acceptedTrace embedded replayEmbedded
   case lbu =>
     exact
       AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-        program witness acceptedTrace embedded
+        program witness acceptedTrace embedded replayEmbedded
   case lhu =>
     exact
       AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-        program witness acceptedTrace embedded
+        program witness acceptedTrace embedded replayEmbedded
   case lwu =>
     exact
       AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-        program witness acceptedTrace embedded
+        program witness acceptedTrace embedded replayEmbedded
   case lb_via_static_match =>
     exact
       AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-        program witness acceptedTrace embedded
+        program witness acceptedTrace embedded replayEmbedded
   case lh_via_static_match =>
     exact
       AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-        program witness acceptedTrace embedded
+        program witness acceptedTrace embedded replayEmbedded
   case lw_via_static_match =>
     exact
       AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-        program witness acceptedTrace embedded
+        program witness acceptedTrace embedded replayEmbedded
   all_goals exact ULift.up ()
 
 /-- The accepted trace contained in the shared trace/table bridge object. -/
@@ -4607,18 +4621,21 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
     (embedded :
       ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
         witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
     (selectedEnvelopeRow :
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
-          program witness acceptedTrace embedded))
+          program witness acceptedTrace embedded replayEmbedded))
     (selectedPrefix :
       env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
-          program witness acceptedTrace embedded)) :
+          program witness acceptedTrace embedded replayEmbedded)) :
     env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope :=
   { fullTraceTable :=
       env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
-        program witness acceptedTrace embedded
+        program witness acceptedTrace embedded replayEmbedded
     selectedEnvelopeRow := selectedEnvelopeRow
     selectedPrefix := selectedPrefix }
 
@@ -4642,18 +4659,21 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
     (embedded :
       ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
         witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
     (selectedEnvelopeRow :
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
-          program witness acceptedTrace embedded))
+          program witness acceptedTrace embedded replayEmbedded))
     (selectedPrefixState :
       env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
-          program witness acceptedTrace embedded)) :
+          program witness acceptedTrace embedded replayEmbedded)) :
     env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope :=
   env.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
     (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
-      program witness acceptedTrace embedded)
+      program witness acceptedTrace embedded replayEmbedded)
     selectedEnvelopeRow
     selectedPrefixState
 
@@ -4749,6 +4769,9 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
     (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
     (embedded :
       env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
         program witness construction) :
     Prop :=
   match env with
@@ -4759,7 +4782,7 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
           { initialState := construction.initialState
             rows := construction.rows
             construction := construction.acceptedTrace }
-          embedded)
+          embedded replayEmbedded)
   | .lbu .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
@@ -4767,7 +4790,7 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
           { initialState := construction.initialState
             rows := construction.rows
             construction := construction.acceptedTrace }
-          embedded)
+          embedded replayEmbedded)
   | .lhu .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
@@ -4775,7 +4798,7 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
           { initialState := construction.initialState
             rows := construction.rows
             construction := construction.acceptedTrace }
-          embedded)
+          embedded replayEmbedded)
   | .lwu .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
@@ -4783,7 +4806,7 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
           { initialState := construction.initialState
             rows := construction.rows
             construction := construction.acceptedTrace }
-          embedded)
+          embedded replayEmbedded)
   | .lb_via_static_match .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
@@ -4791,7 +4814,7 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
           { initialState := construction.initialState
             rows := construction.rows
             construction := construction.acceptedTrace }
-          embedded)
+          embedded replayEmbedded)
   | .lh_via_static_match .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
@@ -4799,7 +4822,7 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
           { initialState := construction.initialState
             rows := construction.rows
             construction := construction.acceptedTrace }
-          embedded)
+          embedded replayEmbedded)
   | .lw_via_static_match .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
@@ -4807,121 +4830,8 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
           { initialState := construction.initialState
             rows := construction.rows
             construction := construction.acceptedTrace }
-          embedded)
+          embedded replayEmbedded)
   | _ => True
-
-/-- Construct cursor-shaped memory extraction from the accepted trace
-    construction plus witness-selected Mem table obligations.
-
-    Compared with `..._of_witnessCursor`, the selected prefix cursor is no
-    longer a separate input: it comes from
-    `AcceptedAirMainMemFullTraceConstructionAtEnvelope`. The remaining
-    upstream obligations are the mutable-Mem embedding and selected envelope
-    Mem-row occurrence in the witness-selected table. -/
-noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstructionWitness
-    (env : OpEnvelope state m r_main)
-    {length : ℕ}
-    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
-    (witness :
-      Air.Flat.EnsembleWitness
-        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-          length program).ensemble)
-    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
-    (embedded :
-      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
-        program witness construction)
-    (selectedEnvelopeRow :
-      env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
-        program witness construction embedded) :
-    env.AcceptedFullExecutionMemoryCursorExtractionAtEnvelope := by
-  cases env <;>
-    simp [OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope,
-      OpEnvelope.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction,
-      OpEnvelope.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness,
-      OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness]
-      at construction embedded selectedEnvelopeRow ⊢
-  case ld =>
-    exact
-      { fullTraceTable :=
-          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-            program witness
-            { initialState := construction.initialState
-              rows := construction.rows
-              construction := construction.acceptedTrace }
-            embedded
-        selectedEnvelopeRow := selectedEnvelopeRow
-        selectedPrefix := construction.selectedPrefix }
-  case lbu =>
-    exact
-      { fullTraceTable :=
-          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-            program witness
-            { initialState := construction.initialState
-              rows := construction.rows
-              construction := construction.acceptedTrace }
-            embedded
-        selectedEnvelopeRow := selectedEnvelopeRow
-        selectedPrefix := construction.selectedPrefix }
-  case lhu =>
-    exact
-      { fullTraceTable :=
-          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-            program witness
-            { initialState := construction.initialState
-              rows := construction.rows
-              construction := construction.acceptedTrace }
-            embedded
-        selectedEnvelopeRow := selectedEnvelopeRow
-        selectedPrefix := construction.selectedPrefix }
-  case lwu =>
-    exact
-      { fullTraceTable :=
-          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-            program witness
-            { initialState := construction.initialState
-              rows := construction.rows
-              construction := construction.acceptedTrace }
-            embedded
-        selectedEnvelopeRow := selectedEnvelopeRow
-        selectedPrefix := construction.selectedPrefix }
-  case lb_via_static_match =>
-    exact
-      { fullTraceTable :=
-          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-            program witness
-            { initialState := construction.initialState
-              rows := construction.rows
-              construction := construction.acceptedTrace }
-            embedded
-        selectedEnvelopeRow := selectedEnvelopeRow
-        selectedPrefix := construction.selectedPrefix }
-  case lh_via_static_match =>
-    exact
-      { fullTraceTable :=
-          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-            program witness
-            { initialState := construction.initialState
-              rows := construction.rows
-              construction := construction.acceptedTrace }
-            embedded
-        selectedEnvelopeRow := selectedEnvelopeRow
-        selectedPrefix := construction.selectedPrefix }
-  case lw_via_static_match =>
-    exact
-      { fullTraceTable :=
-          AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
-            program witness
-            { initialState := construction.initialState
-              rows := construction.rows
-              construction := construction.acceptedTrace }
-            embedded
-        selectedEnvelopeRow := selectedEnvelopeRow
-        selectedPrefix := construction.selectedPrefix }
-  all_goals
-    exact
-      { fullTraceTable := ULift.up ()
-        selectedEnvelopeRow := trivial
-        selectedPrefix := () }
 
 /-- Shared full-execution memory trace construction for one Main trace.
 
@@ -4997,37 +4907,37 @@ def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedFullExecutionMemoryTrace
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
   | .lbu .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
   | .lhu .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
   | .lwu .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
   | .lb_via_static_match .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
   | .lh_via_static_match .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
   | .lw_via_static_match .. =>
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
   | _ => True
 
 /-- Per-envelope coverage facts for a shared full-execution memory trace.
@@ -5075,7 +4985,7 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
   selectedEnvelopeRow :
     env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
       (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
-        program witness acceptedTrace embedded)
+        program witness acceptedTrace embedded replayEmbedded)
 
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
     full-execution coverage object consumed by the current compliance proof. -/
@@ -5124,12 +5034,12 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope
     env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
       (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded)
+        fullTrace.embedded fullTrace.replayEmbedded)
   selectedEnvelopeRow :
     env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
       (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded)
+        fullTrace.embedded fullTrace.replayEmbedded)
 
 /-- Cursor-shaped source coverage for a shared full-execution memory trace.
 
@@ -5145,17 +5055,17 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope
     env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
       (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded)
+        fullTrace.embedded fullTrace.replayEmbedded)
   selectedPrefix :
     env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
       (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded)
+        fullTrace.embedded fullTrace.replayEmbedded)
   selectedPrefixUnique :
     env.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope
       (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded)
+        fullTrace.embedded fullTrace.replayEmbedded)
       selectedPrefix
 
 /-- Build source-shaped coverage from cursor-shaped selected-prefix evidence
@@ -5170,24 +5080,24 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceCoverageAtEnv
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded))
+          fullTrace.embedded fullTrace.replayEmbedded))
     (selectedPrefix :
       env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded))
+          fullTrace.embedded fullTrace.replayEmbedded))
     (h_unique :
       env.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
         selectedPrefix) :
     env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace :=
   { selectedPrefixState :=
       env.selectedPrefixStateAtFullEnsembleMemTableAtEnvelope_of_prefixUnique
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
         selectedPrefix h_unique
     selectedEnvelopeRow := selectedEnvelopeRow }
 
@@ -5224,7 +5134,7 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_
     let fullTraceTable :=
       env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded
+        fullTrace.embedded fullTrace.replayEmbedded
     let extraction :=
       env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
         fullTraceTable sourceCoverage.selectedEnvelopeRow
@@ -5257,7 +5167,7 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_
     let fullTraceTable :=
       env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded
+        fullTrace.embedded fullTrace.replayEmbedded
     let extraction :=
       env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
         fullTraceTable sourceCoverage.selectedEnvelopeRow
@@ -5290,7 +5200,7 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_
     let fullTraceTable :=
       env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded
+        fullTrace.embedded fullTrace.replayEmbedded
     let extraction :=
       env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
         fullTraceTable sourceCoverage.selectedEnvelopeRow
@@ -5323,7 +5233,7 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_
     let fullTraceTable :=
       env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded
+        fullTrace.embedded fullTrace.replayEmbedded
     let extraction :=
       env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
         fullTraceTable sourceCoverage.selectedEnvelopeRow
@@ -5357,7 +5267,7 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_
     let fullTraceTable :=
       env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded
+        fullTrace.embedded fullTrace.replayEmbedded
     let extraction :=
       env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
         fullTraceTable sourceCoverage.selectedEnvelopeRow
@@ -5391,7 +5301,7 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_
     let fullTraceTable :=
       env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded
+        fullTrace.embedded fullTrace.replayEmbedded
     let extraction :=
       env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
         fullTraceTable sourceCoverage.selectedEnvelopeRow
@@ -5425,7 +5335,7 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_
     let fullTraceTable :=
       env'.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-        fullTrace.embedded
+        fullTrace.embedded fullTrace.replayEmbedded
     let extraction :=
       env'.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
         fullTraceTable sourceCoverage.selectedEnvelopeRow
@@ -5658,17 +5568,17 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceAtEnvelope_of
       env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded))
+          fullTrace.embedded fullTrace.replayEmbedded))
     (selectedPrefix :
       env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded))
+          fullTrace.embedded fullTrace.replayEmbedded))
     (h_unique :
       env.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope
         (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
           fullTrace.program fullTrace.witness fullTrace.acceptedTrace
-          fullTrace.embedded)
+          fullTrace.embedded fullTrace.replayEmbedded)
         selectedPrefix) :
     env.AcceptedFullExecutionMemoryTraceSourceAtEnvelope := by
   cases env <;>
@@ -5744,7 +5654,7 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionWithWitness
       program witness construction
   selectedEnvelopeRow :
     env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
-      program witness construction embedded
+      program witness construction embedded replayEmbedded
 
 /-- Load-scoped full-execution memory construction target.
 
@@ -5831,11 +5741,17 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelo
         { fullTraceTable := ULift.up ()
           selectedEnvelopeRow := trivial
           selectedPrefix := () }
-  all_goals
-    exact
-      OpEnvelope.acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstructionWitness
-        _ construction.program construction.witness construction.construction
-        construction.embedded construction.selectedEnvelopeRow
+    all_goals
+      exact
+        { fullTraceTable :=
+            AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
+              construction.program construction.witness
+              { initialState := construction.construction.initialState
+                rows := construction.construction.rows
+                construction := construction.construction.acceptedTrace }
+              construction.embedded construction.replayEmbedded
+          selectedEnvelopeRow := construction.selectedEnvelopeRow
+          selectedPrefix := construction.construction.selectedPrefix }
 
 /-- Lower the older full-execution construction object to the current
     cursor-shaped public source package when selected occurrence uniqueness is

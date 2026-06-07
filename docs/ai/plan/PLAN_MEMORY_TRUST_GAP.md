@@ -95,6 +95,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit previous-step same-address chronology facts for Mem replay.
 - [x] Verify and commit effective previous-row primary/dual chronology facts.
 - [x] Expose all-event mutable-Mem replay embedding alongside selected-read embedding.
+- [x] Thread all-event replay embedding through the selected FullEnsemble Mem-table bridge.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -214,6 +215,18 @@ coverage; it does not prove the remaining semantic Mem fields. Focused
 `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 trust regeneration, both trust gates, closure print with no project axiom names,
 targeted retired-memory scan, and `nix run .#test` passed.
+
+Current checkpoint: the replay-embedding slice is verified and committed. The
+current uncommitted patch extends the selected FullEnsemble Mem-table bridge so
+it carries both selected-read embedding and all-event read/write replay
+embedding. It threads `replayEmbedded` through the witness-selected table
+constructors, selected-row predicates, cursor extraction, source/coverage
+constructors, and accepted-trace construction bridge. The timeout-prone
+construction-witness helper was removed and the construction was inlined in
+`acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstruction`.
+Focused `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`, trust
+regeneration, both trust gates, closure print with zero project axiom names,
+narrow retired-memory scan, and `nix run .#test` pass for this slice.
 
 The selected-coverage slice adds
 `OpEnvelope.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope`,
