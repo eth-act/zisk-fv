@@ -105,6 +105,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Index selected-load extraction evidence by the named shared Mem row extraction package.
 - [x] Split selected-load extraction evidence into cursor-shaped row selection.
 - [x] Package row extraction plus cursor selection as a load-scoped source target.
+- [x] Move the primary compliance theorem boundary to the row-cursor source target.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -564,6 +565,7 @@ full `lake build`, trust regeneration, both trust gates, compliance closure
 print with zero project axiom names, targeted retired-memory scans, extractor
 skip scan, generated zero-entry checks, and `nix run .#test` passed for this
 slice.
+
 The selected-prefix factoring slice adds
 `SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split`, which builds
 the cursor from membership in the accepted chronological row list plus a
@@ -1348,3 +1350,17 @@ ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 slice.
+
+The current primary-boundary slice changes
+`zisk_riscv_compliant_program_bus` itself to consume
+`OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope`.
+The older split full-trace, packed construction, source-shaped, cursor-source,
+row-extraction, and accepted AIR/Main/Mem theorem variants remain as wrappers
+that lower into this sharper public theorem boundary. This makes the
+top-level compliant theorem expose the real remaining accepted-execution
+memory obligation directly: for load envelopes, accepted full execution must
+produce shared row extraction plus selected mutable-Mem row and selected prefix
+cursor evidence; non-load envelopes carry no memory data. Focused `lake build
+ZiskFv.Compliance`, full `lake build`, `trust/scripts/regenerate.sh`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this slice.

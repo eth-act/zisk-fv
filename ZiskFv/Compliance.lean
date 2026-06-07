@@ -98,19 +98,24 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
-    (h_full_memory_trace :
-      env.AcceptedFullExecutionMemoryTraceAtEnvelope)
-    (h_full_memory_coverage :
-      env.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope
-        h_full_memory_trace)
+    (h_full_memory_source :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
     h_burden
+  let h_full_memory_cursor_source :
+      env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope :=
+    env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
+      h_full_memory_source
+  let h_full_memory_trace_source :
+      env.AcceptedFullExecutionMemoryTraceSourceAtEnvelope :=
+    env.acceptedFullExecutionMemoryTraceSourceAtEnvelope_of_cursorSource
+      h_full_memory_cursor_source
   let h_mem_trace_with_coverage :
       env.AcceptedFullExecutionMemoryTraceWithCoverageAtEnvelope :=
-    env.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_split
-      h_full_memory_trace h_full_memory_coverage
+    env.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_source
+      h_full_memory_trace_source
   let h_mem_construction :
       env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope :=
     env.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_traceWithCoverage
@@ -190,9 +195,13 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
   zisk_riscv_compliant_program_bus env h_burden
-    (env.acceptedFullExecutionMemoryTraceAtEnvelope_of_fullTrace fullTrace)
-    (env.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_fullTraceCoverage
-      fullTrace coverage)
+    (env.acceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope_of_traceConstruction
+      (env.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_traceWithCoverage
+        (env.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_split
+          (env.acceptedFullExecutionMemoryTraceAtEnvelope_of_fullTrace
+            fullTrace)
+          (env.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_fullTraceCoverage
+            fullTrace coverage))))
     h_known_bugs
 
 /-- Variant of the global theorem whose memory input is the packed
@@ -211,9 +220,7 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
   zisk_riscv_compliant_program_bus env h_burden
-    (env.acceptedFullExecutionMemoryTraceAtEnvelope_of_traceConstruction
-      construction)
-    (env.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_traceConstruction
+    (env.acceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope_of_traceConstruction
       construction)
     h_known_bugs
 
