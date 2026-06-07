@@ -5212,6 +5212,20 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
       (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         program witness acceptedTrace embedded replayEmbedded)
 
+/-- Per-envelope selected-load extraction indexed by the named shared row
+    extraction package.
+
+    This is just the extraction-shaped view of
+    `AcceptedFullExecutionMemoryTraceSelectionAtEnvelope`: accepted full
+    execution should construct the shared row extraction once, then prove this
+    selected-prefix/selected-row package for each load envelope. -/
+def OpEnvelope.AcceptedFullExecutionMemoryRowSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m) : Type 1 :=
+  env.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
+    extraction.program extraction.witness extraction.acceptedTrace
+    extraction.embedded extraction.replayEmbedded
+
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
     full-execution coverage object consumed by the current compliance proof. -/
 def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
@@ -5243,6 +5257,19 @@ def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
           at selection ⊢
       all_goals
         exact selection.selectedEnvelopeRow }
+
+/-- Repack extraction-indexed selected-load evidence into the ordinary
+    per-envelope coverage object for `extraction.toFullTrace`. -/
+def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_rowSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryRowSelectionAtEnvelope extraction) :
+    env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+      extraction.toFullTrace :=
+  env.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
+    extraction.program extraction.witness extraction.acceptedTrace
+    extraction.embedded extraction.replayEmbedded selection
 
 /-- Source-shaped per-envelope coverage facts for a shared full-execution
     memory trace.
@@ -5920,6 +5947,18 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvel
           program witness acceptedTrace embedded replayEmbedded,
         OpEnvelope.acceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope_of_selection
           env0 program witness acceptedTrace embedded replayEmbedded selection⟩
+
+/-- Build cursor-shaped public memory evidence from the named shared row
+    extraction package plus extraction-indexed selected-load evidence. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryRowSelectionAtEnvelope extraction) :
+    env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope :=
+  env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_selection
+    extraction.program extraction.witness extraction.acceptedTrace
+    extraction.embedded extraction.replayEmbedded selection
 
 /-- Lower source-shaped full-execution memory evidence to the selected-cursor
     coverage package consumed by the existing replay bridge. -/

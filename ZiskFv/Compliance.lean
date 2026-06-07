@@ -358,16 +358,13 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtrac
     (h_burden : env.completenessBurden)
     (extraction : AcceptedFullExecutionMemoryRowExtraction m)
     (selection :
-      env.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
-        extraction.program extraction.witness extraction.acceptedTrace
-        extraction.embedded extraction.replayEmbedded)
+      env.AcceptedFullExecutionMemoryRowSelectionAtEnvelope extraction)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
   zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
     env h_burden
-    (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_selection
-      extraction.program extraction.witness extraction.acceptedTrace
-      extraction.embedded extraction.replayEmbedded selection)
+    (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowSelection
+      extraction selection)
     h_known_bugs
 
 /-- Variant of the global theorem whose per-envelope memory input is the

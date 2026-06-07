@@ -102,6 +102,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose top-level compliance wrappers for source and cursor-source memory evidence.
 - [x] Expose a top-level wrapper for unpacked accepted AIR/Main/Mem trace construction plus witness facts.
 - [x] Name the shared accepted full-execution Mem row extraction target and add compliance wrappers for it.
+- [x] Index selected-load extraction evidence by the named shared Mem row extraction package.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1302,5 +1303,15 @@ consume this shared package with either ordinary per-envelope coverage or the
 unpacked selected-prefix/selected-row evidence. This is not the missing global
 row-extraction proof; it gives that proof a named result shape. Focused
 `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
+`lake build`, trust regeneration, both trust gates, and `nix run .#test` pass
+for this slice.
+
+The current selected-load boundary slice adds
+`OpEnvelope.AcceptedFullExecutionMemoryRowSelectionAtEnvelope`, the
+extraction-indexed view of selected prefix plus selected envelope Mem-row
+evidence. It also adds lowering helpers from row extraction/selection to
+ordinary coverage and cursor-source evidence, and changes the top-level
+row-extraction selection wrapper to consume this named selection package.
+Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
 `lake build`, trust regeneration, both trust gates, and `nix run .#test` pass
 for this slice.
