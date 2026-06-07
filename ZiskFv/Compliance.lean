@@ -243,6 +243,26 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTraceCurs
   zisk_riscv_compliant_program_bus env h_burden providerCursorSource
     h_known_bugs
 
+/-- Variant of the global theorem whose memory input is provider-row prefix
+    evidence without caller-supplied selected occurrence uniqueness.
+
+    This is the accepted-execution-facing provider boundary: construct the
+    shared full-execution Mem trace, selected provider-row replay coverage, and
+    selected chronological prefix cursor. The stronger cursor source consumed
+    by the primary theorem is derived internally from `rowsNodup`. -/
+theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderPrefixSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (providerPrefixSource :
+      env.AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerPrefixSource
+      providerPrefixSource)
+    h_known_bugs
+
 /-- Variant of the global theorem whose memory input is provider-row cursor
     evidence for the concrete FullEnsemble Mem table identified by upstream
     routing.

@@ -129,6 +129,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Prove selected-row source multiplicity from `MainRowProvenance`.
 - [x] Remove direct-`LD` program-ROM source wrappers in favor of positive aligned mutable-route evidence.
 - [x] Add provider-shaped source construction from shared trace plus selected provider row and prefix cursor.
+- [x] Add a public provider-prefix source boundary that derives uniqueness internally.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -214,6 +215,19 @@ selected provider-row replay coverage in the witness-selected Mem table, and
 the selected chronological prefix cursor. The selected occurrence uniqueness
 field is derived internally from `fullTrace.acceptedTrace.construction.rowsNodup`.
 Focused `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this slice.
+
+Current provider-prefix source checkpoint: `OpEnvelope` now exposes
+`AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope`, with load cases
+carrying a shared `AcceptedFullExecutionMemoryTrace`, selected provider-row
+replay coverage, and selected chronological prefix cursor, but no caller
+supplied uniqueness proof. The lowering theorem
+`acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerPrefixSource`
+derives uniqueness from `rowsNodup`, and
+`zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderPrefixSource`
+exposes that boundary at the global compliance layer. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this slice.
 
