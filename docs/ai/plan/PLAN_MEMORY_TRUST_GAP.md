@@ -172,6 +172,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add construction-level replay-only envelope-row bridge and public wrapper.
 - [x] Add generated-split replay-envelope construction wrapper.
 - [x] Add shared generated split trace plus per-envelope replay-envelope selection wrapper.
+- [x] Add shared accepted split trace plus per-envelope replay-envelope selection wrapper.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -250,6 +251,15 @@ The shared-generated wrapper passed focused `lake build
 ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
+The accepted-trace counterpart,
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceReplayEnvelopeSelection`,
+now takes one shared `AcceptedAirMainMemFullTraceSplitAtEnvelope`, the
+load-local selected prefix, all-event replay embedding, and selected envelope
+Mem-row occurrence. This removes another packed per-envelope construction
+boundary on the accepted route; it passed focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test`.
 The follow-on wrapper slice exposes the same envelope-row state-selection shape
 at the accepted split AIR/Main/Mem and generated split Mem construction theorem
 levels; it passed focused `lake build ZiskFv.Compliance`, full `lake build`,

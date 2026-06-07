@@ -1490,6 +1490,49 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemReplayEnvelopeSpli
       program witness splitConstruction replayEmbedded selectedEnvelopeRow)
     h_known_bugs
 
+/-- Shared accepted split AIR/Main/Mem trace variant with per-envelope
+    selected prefix and envelope-row occurrence.
+
+    This is the accepted-trace counterpart of
+    `zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitReplayEnvelopeSelection`:
+    the shared split trace is supplied once, while the load-local selected
+    prefix, all-event replay embedding, and selected envelope Mem-row
+    occurrence remain explicit. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceReplayEnvelopeSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitTrace :
+      env.AcceptedAirMainMemFullTraceSplitAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace
+          splitTrace))
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_splitTraceAndPrefix
+          splitTrace selectedPrefix))
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_splitTraceAndPrefix
+          splitTrace selectedPrefix)
+        replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstruction
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_acceptedAirMainMemSplitTraceAndPrefix
+      program witness splitTrace selectedPrefix replayEmbedded
+      selectedEnvelopeRow)
+    h_known_bugs
+
 /-- Generated split Mem construction variant with selected envelope Mem-row
     occurrence.
 

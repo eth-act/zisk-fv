@@ -11637,6 +11637,41 @@ def OpEnvelope.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_splitTr
         acceptedTrace := splitTrace.construction
         selectedPrefix := selectedPrefix }
 
+/-- Build replay-only envelope-row split construction evidence from a shared
+    accepted split AIR/Main/Mem trace plus an envelope-specific selected
+    prefix. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_acceptedAirMainMemSplitTraceAndPrefix
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitTrace :
+      env.AcceptedAirMainMemFullTraceSplitAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace
+          splitTrace))
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_splitTraceAndPrefix
+          splitTrace selectedPrefix))
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_splitTraceAndPrefix
+          splitTrace selectedPrefix)
+        replayEmbedded) :
+    env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope :=
+  env.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness_of_fields
+    program witness
+    (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_splitTraceAndPrefix
+      splitTrace selectedPrefix)
+    replayEmbedded selectedEnvelopeRow
+
 /-- Decompose the older load-scoped full-execution construction object into
     the newer shared trace plus selected envelope coverage package.
 
