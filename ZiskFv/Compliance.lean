@@ -9,6 +9,7 @@ import ZiskFv.Compliance.Dispatch.DIVU
 import ZiskFv.Compliance.Dispatch.Misc
 import ZiskFv.Compliance.Dispatch.Remaining
 import ZiskFv.Compliance.Defects
+import ZiskFv.Compliance.AeneasBridgeTrust
 
 /-!
 # Compliance.lean — unified channel-balance global theorem
@@ -44,9 +45,11 @@ channel-balance statement, partitioned across the ten dispatchers:
 
 ## Trust note
 
-No new axioms — the closure is exactly the union of the 63 wrappers'
-closures plus the trivial `state_effect_via_channels_eq_bus_effect_2`
-bridge. The V2 trust gate enforces this.
+Aeneas-backed row-lowering facts are still carried as `OpEnvelope` fields while
+generated Aeneas Lean is not imported by the main proof. The local
+`OpEnvelope.aeneasBridgeTrust` predicate in `AeneasBridgeTrust.lean` remains as
+an audit target for extracted-shape constructors, but the global theorem no
+longer includes a broad bridge-trust conjunct or axiom.
 
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem

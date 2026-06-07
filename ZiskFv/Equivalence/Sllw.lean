@@ -34,22 +34,10 @@ theorem equiv_SLLW
     (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sllw_input.r1_val state)
-    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sllw_input.r2_val state)
-    (h_input_rd : sllw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sllw_input.PC)
-    (h_exec_len : bus.exec_row.length = 2)
-    (h_e0_mult : bus.exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : bus.exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (bus.exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sllw_pure sllw_input).nextPC)
-    (h_m0_mult : bus.e0.multiplicity = -1) (h_m0_as : bus.e0.as.val = 1)
-    (h_m1_mult : bus.e1.multiplicity = -1) (h_m1_as : bus.e1.as.val = 1)
-    (h_m2_mult : bus.e2.multiplicity = 1) (h_m2_as : bus.e2.as.val = 1)
-    (h_rd_idx : sllw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state sllw_input.r1_val sllw_input.r2_val sllw_input.rd sllw_input.PC
+      (PureSpec.execute_RTYPE_sllw_pure sllw_input).nextPC
+      r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SLL_W)
     (h_component :
       providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
@@ -76,9 +64,7 @@ theorem equiv_SLLW
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_SLLW state sllw_input r1 r2 rd
     m providerTable providerRow r_main bus
-    h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc h_exec_len
-    h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult
-    h_m1_as h_m2_mult h_m2_as h_rd_idx pins
+    promises pins
     h_component h_table_spec h_provider_row h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 

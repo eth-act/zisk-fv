@@ -88,8 +88,10 @@ merged weakening must be represented as an explicit defect-scoped theorem
 change and documented in [`defects.md`](defects.md).
 
 A legitimate trust change must update the Lean declaration, generated ledgers,
-and [`trusted-base.md`](trusted-base.md) together. A known bug must update the
-defect ledger and theorem claim boundary together.
+and [`trusted-base.md`](trusted-base.md) together. Trust that appears as a
+caller/envelope proof field must be either discharged or represented by a named
+source axiom in the global closure. A known bug must update the defect ledger
+and theorem claim boundary together.
 
 The anti-laundering rule is unchanged: promise discharge must visibly reduce
 the generated hypothesis-count and caller-burden ledgers, unless a documented

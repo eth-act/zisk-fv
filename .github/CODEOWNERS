@@ -27,6 +27,7 @@
 /ZiskFv/ZiskCircuit/MemModel.lean                       @codygunton
 /ZiskFv/SailSpec/Auxiliaries.lean                       @codygunton
 /ZiskFv/AirsClean/Completeness.lean                     @codygunton
+/ZiskFv/Compliance/AeneasBridgeTrust.lean               @codygunton
 
 # Production-backed row-shape extraction boundary. These files do not
 # declare Lean axioms, but changes alter the evidence replacing the old

@@ -11840,6 +11840,105 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayEnvelopeSplitTrace
             OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction]
             using selectedEnvelopeRow }
 
+/-- Project the split accepted AIR/Main/Mem trace from the shared
+    full-execution memory trace object.
+
+    This derives the shared split trace required by the replay-only
+    prefix-state boundary from the older full-execution memory package, rather
+    than asking callers to provide both shapes. -/
+noncomputable def OpEnvelope.acceptedAirMainMemFullTraceSplitAtEnvelope_of_fullExecutionMemoryTrace
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) :
+    env.AcceptedAirMainMemFullTraceSplitAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceSplitAtEnvelope]
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := fullTrace.acceptedTrace.initialState
+        rows := fullTrace.acceptedTrace.rows
+        construction := fullTrace.acceptedTrace.construction.toSplit }
+
+/-- Project the all-event mutable-Mem replay embedding from a shared
+    full-execution memory trace to its split accepted-trace view. -/
+noncomputable def OpEnvelope.mutableMemReplayRowsEmbeddedAtAcceptedSplitTrace_of_fullExecutionMemoryTrace
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m) :
+    env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace
+      fullTrace.program fullTrace.witness
+      (env.acceptedAirMainMemFullTraceSplitAtEnvelope_of_fullExecutionMemoryTrace
+        fullTrace) := by
+  cases env <;>
+    simp [OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace,
+      OpEnvelope.acceptedAirMainMemFullTraceSplitAtEnvelope_of_fullExecutionMemoryTrace,
+      OpEnvelope.AcceptedAirMainMemFullTraceSplitAtEnvelope]
+  all_goals
+    exact fullTrace.replayEmbedded
+
+/-- Project selected envelope-row occurrence from source coverage over the
+    older full-execution memory trace to the replay-only split accepted trace
+    boundary. -/
+noncomputable def OpEnvelope.selectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness_of_fullExecutionMemoryTraceSourceCoverage
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (sourceCoverage :
+      env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace) :
+    env.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness
+      fullTrace.program fullTrace.witness
+      (env.acceptedAirMainMemFullTraceSplitAtEnvelope_of_fullExecutionMemoryTrace
+        fullTrace)
+      (env.mutableMemReplayRowsEmbeddedAtAcceptedSplitTrace_of_fullExecutionMemoryTrace
+        fullTrace) := by
+  cases env <;>
+    simp [OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness,
+      OpEnvelope.acceptedAirMainMemFullTraceSplitAtEnvelope_of_fullExecutionMemoryTrace,
+      OpEnvelope.AcceptedAirMainMemFullTraceSplitAtEnvelope]
+      at sourceCoverage ⊢
+  all_goals
+    exact sourceCoverage.selectedEnvelopeRow
+
+/-- Project split-indexed prefix-state equality from source coverage over the
+    older full-execution memory trace to the accepted split-trace view. -/
+noncomputable def OpEnvelope.selectedPrefixStateAtAcceptedSplitTrace_of_fullExecutionMemoryTraceSourceCoverage
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (sourceCoverage :
+      env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace) :
+    env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace
+        (env.acceptedAirMainMemFullTraceSplitAtEnvelope_of_fullExecutionMemoryTrace
+          fullTrace)) := by
+  cases env <;>
+    simp [OpEnvelope.acceptedAirMainMemFullTraceSplitAtEnvelope_of_fullExecutionMemoryTrace,
+      OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace,
+      OpEnvelope.AcceptedAirMainMemFullTraceSplitAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope]
+      at sourceCoverage ⊢
+  all_goals
+    try exact trivial
+  all_goals
+    exact sourceCoverage.selectedPrefixState
+
+/-- Lower the older shared full-execution memory trace plus source-shaped
+    coverage to the accepted split replay-envelope prefix-state boundary. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_fullExecutionMemoryTraceSourceCoverage
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (sourceCoverage :
+      env.AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope fullTrace) :
+    env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope :=
+  env.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_acceptedAirMainMemSplitTraceAndPrefixState
+    fullTrace.program fullTrace.witness
+    (env.acceptedAirMainMemFullTraceSplitAtEnvelope_of_fullExecutionMemoryTrace
+      fullTrace)
+    (env.mutableMemReplayRowsEmbeddedAtAcceptedSplitTrace_of_fullExecutionMemoryTrace
+      fullTrace)
+    (env.selectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness_of_fullExecutionMemoryTraceSourceCoverage
+      fullTrace sourceCoverage)
+    (env.selectedPrefixStateAtAcceptedSplitTrace_of_fullExecutionMemoryTraceSourceCoverage
+      fullTrace sourceCoverage)
+
 /-- Decompose the older load-scoped full-execution construction object into
     the newer shared trace plus selected envelope coverage package.
 

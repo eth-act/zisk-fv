@@ -179,6 +179,17 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 
 ## Current Notes
 
+In-flight checkpoint: `ZiskFv/Compliance/OpEnvelope.lean` has an uncommitted
+adapter slice that projects `AcceptedFullExecutionMemoryTrace` plus
+`AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope` into the newer
+accepted split replay-envelope prefix-state boundary. This lowers an older
+accepted-execution-shaped memory package into the current theorem shape, but it
+does not yet prove that raw accepted full-execution data constructs the shared
+split trace, all-event replay embedding, selected envelope-row occurrence, or
+prefix-state equality. Next verification target is a focused
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, followed by adding
+the public wrapper if the adapter remains clean.
+
 Latest checkpoint: `OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace`
 and `OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness` expose
 the accepted split trace, all-event mutable-Mem replay embedding, and selected

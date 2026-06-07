@@ -283,11 +283,27 @@ theorem zisk_riscv_compliant_program_bus_remaining
          h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SLLW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    let promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state sllw_input.r1_val sllw_input.r2_val sllw_input.rd sllw_input.PC
+        (PureSpec.execute_RTYPE_sllw_pure sllw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+      { input_r1_eq := h_input_r1_sail
+        input_r2_eq := h_input_r2_sail
+        input_rd_eq := h_input_rd
+        input_pc_eq := h_input_pc
+        exec_len := h_exec_len
+        e0_mult := h_e0_mult
+        e1_mult := h_e1_mult
+        nextPC_matches := h_nextPC_matches
+        m0_mult := h_m0_mult
+        m0_as := h_m0_as
+        m1_mult := h_m1_mult
+        m1_as := h_m1_as
+        m2_mult := h_m2_mult
+        m2_as := h_m2_as
+        rd_idx := h_rd_idx }
     exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
-      m providerTable providerRow r_main bus
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      m providerTable providerRow r_main bus promises
       pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | srlw srlw_input r1 r2 rd providerTable providerRow bus
@@ -298,11 +314,27 @@ theorem zisk_riscv_compliant_program_bus_remaining
          h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRLW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    let promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state srlw_input.r1_val srlw_input.r2_val srlw_input.rd srlw_input.PC
+        (PureSpec.execute_RTYPE_srlw_pure srlw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+      { input_r1_eq := h_input_r1_sail
+        input_r2_eq := h_input_r2_sail
+        input_rd_eq := h_input_rd
+        input_pc_eq := h_input_pc
+        exec_len := h_exec_len
+        e0_mult := h_e0_mult
+        e1_mult := h_e1_mult
+        nextPC_matches := h_nextPC_matches
+        m0_mult := h_m0_mult
+        m0_as := h_m0_as
+        m1_mult := h_m1_mult
+        m1_as := h_m1_as
+        m2_mult := h_m2_mult
+        m2_as := h_m2_as
+        rd_idx := h_rd_idx }
     exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd
-      m providerTable providerRow r_main bus
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      m providerTable providerRow r_main bus promises
       pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | sraw sraw_input r1 r2 rd providerTable providerRow bus
@@ -313,11 +345,27 @@ theorem zisk_riscv_compliant_program_bus_remaining
          h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    let promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state sraw_input.r1_val sraw_input.r2_val sraw_input.rd sraw_input.PC
+        (PureSpec.execute_RTYPE_sraw_pure sraw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+      { input_r1_eq := h_input_r1_sail
+        input_r2_eq := h_input_r2_sail
+        input_rd_eq := h_input_rd
+        input_pc_eq := h_input_pc
+        exec_len := h_exec_len
+        e0_mult := h_e0_mult
+        e1_mult := h_e1_mult
+        nextPC_matches := h_nextPC_matches
+        m0_mult := h_m0_mult
+        m0_as := h_m0_as
+        m1_mult := h_m1_mult
+        m1_as := h_m1_as
+        m2_mult := h_m2_mult
+        m2_as := h_m2_as
+        rd_idx := h_rd_idx }
     exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd
-      m providerTable providerRow r_main bus
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      m providerTable providerRow r_main bus promises
       pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | slliw slliw_input r1 rd providerTable providerRow bus promises pins
@@ -617,11 +665,27 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
          h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SLLW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    let promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state sllw_input.r1_val sllw_input.r2_val sllw_input.rd sllw_input.PC
+        (PureSpec.execute_RTYPE_sllw_pure sllw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+      { input_r1_eq := h_input_r1_sail
+        input_r2_eq := h_input_r2_sail
+        input_rd_eq := h_input_rd
+        input_pc_eq := h_input_pc
+        exec_len := h_exec_len
+        e0_mult := h_e0_mult
+        e1_mult := h_e1_mult
+        nextPC_matches := h_nextPC_matches
+        m0_mult := h_m0_mult
+        m0_as := h_m0_as
+        m1_mult := h_m1_mult
+        m1_as := h_m1_as
+        m2_mult := h_m2_mult
+        m2_as := h_m2_as
+        rd_idx := h_rd_idx }
     exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
-      m providerTable providerRow r_main bus
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      m providerTable providerRow r_main bus promises
       pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | srlw srlw_input r1 r2 rd providerTable providerRow bus
@@ -632,11 +696,27 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
          h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRLW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    let promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state srlw_input.r1_val srlw_input.r2_val srlw_input.rd srlw_input.PC
+        (PureSpec.execute_RTYPE_srlw_pure srlw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+      { input_r1_eq := h_input_r1_sail
+        input_r2_eq := h_input_r2_sail
+        input_rd_eq := h_input_rd
+        input_pc_eq := h_input_pc
+        exec_len := h_exec_len
+        e0_mult := h_e0_mult
+        e1_mult := h_e1_mult
+        nextPC_matches := h_nextPC_matches
+        m0_mult := h_m0_mult
+        m0_as := h_m0_as
+        m1_mult := h_m1_mult
+        m1_as := h_m1_as
+        m2_mult := h_m2_mult
+        m2_as := h_m2_as
+        rd_idx := h_rd_idx }
     exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd
-      m providerTable providerRow r_main bus
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      m providerTable providerRow r_main bus promises
       pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | sraw sraw_input r1 r2 rd providerTable providerRow bus
@@ -647,11 +727,27 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
          h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    let promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state sraw_input.r1_val sraw_input.r2_val sraw_input.rd sraw_input.PC
+        (PureSpec.execute_RTYPE_sraw_pure sraw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+      { input_r1_eq := h_input_r1_sail
+        input_r2_eq := h_input_r2_sail
+        input_rd_eq := h_input_rd
+        input_pc_eq := h_input_pc
+        exec_len := h_exec_len
+        e0_mult := h_e0_mult
+        e1_mult := h_e1_mult
+        nextPC_matches := h_nextPC_matches
+        m0_mult := h_m0_mult
+        m0_as := h_m0_as
+        m1_mult := h_m1_mult
+        m1_as := h_m1_as
+        m2_mult := h_m2_mult
+        m2_as := h_m2_as
+        rd_idx := h_rd_idx }
     exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd
-      m providerTable providerRow r_main bus
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      m providerTable providerRow r_main bus promises
       pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | slliw slliw_input r1 rd providerTable providerRow bus promises pins

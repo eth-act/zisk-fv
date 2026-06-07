@@ -102,7 +102,7 @@ theorem equiv_AUIPC
     change execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
     rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-    exact ZiskFv.Compliance.equiv_AUIPC_of_row_provenance
+    exact ZiskFv.Compliance.equiv_AUIPC
       state auipc_input imm rd exec_row e_rd nextPC_val m r_main route_next_pc
       store_pc_mem provenance row_mode h_auipc_subset
       h_offset_bridge h_pc_bridge promises h_no_wrap h_pc_offset_lt_2_32
