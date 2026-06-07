@@ -6584,6 +6584,45 @@ def OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
         witness construction.rows
   | _ => True
 
+/-- Split-construction version of
+    `MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction`.
+
+    This keeps the caller-facing accepted AIR/Main/Mem construction split while
+    the embedding obligation still talks only about the chronological row list. -/
+def OpEnvelope.MutableMemReadReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope) :
+    Prop :=
+  env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+    program witness
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+      splitConstruction)
+
+/-- Split-construction version of
+    `MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction`. -/
+def OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope) :
+    Prop :=
+  env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
+    program witness
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+      splitConstruction)
+
 /-- Direct `LD` table-parametric provider cursor source from split accepted
     AIR/Main/Mem construction, positive aligned/direct mutable-route coverage,
     and same-table prefix cursors.
@@ -6802,6 +6841,35 @@ def OpEnvelope.SelectedMemProviderRowAtAcceptedTraceConstructionWithWitness
             construction := construction.acceptedTrace }
           embedded replayEmbedded)
   | _ => True
+
+/-- Split-construction provider-row selected coverage at the accepted trace
+    construction boundary.
+
+    This is the split counterpart of
+    `SelectedMemProviderRowAtAcceptedTraceConstructionWithWitness`: callers keep
+    generated-row, order, and replay facts separated in `splitConstruction`. -/
+def OpEnvelope.SelectedMemProviderRowAtAcceptedSplitTraceConstructionWithWitness
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction) :
+    Prop :=
+  env.SelectedMemProviderRowAtAcceptedTraceConstructionWithWitness
+    program witness
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+      splitConstruction)
+    embedded replayEmbedded
 
 /-- Shared full-execution memory trace construction for one Main trace.
 
@@ -8815,6 +8883,34 @@ structure OpEnvelope.AcceptedFullExecutionMemoryProviderTraceConstructionWithWit
     env.SelectedMemProviderRowAtAcceptedTraceConstructionWithWitness
       program witness construction embedded replayEmbedded
 
+/-- Split provider-shaped load-scoped full-execution memory construction
+    package.
+
+    This is the construction-level predecessor of
+    `AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope`:
+    the selected prefix is carried by `splitConstruction`, while generated Mem
+    rows, row-order facts, and replay facts remain split until the final
+    lowering step. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness
+    (env : OpEnvelope state m r_main) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  splitConstruction :
+    env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope
+  embedded :
+    env.MutableMemReadReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+      program witness splitConstruction
+  replayEmbedded :
+    env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+      program witness splitConstruction
+  selectedProviderRow :
+    env.SelectedMemProviderRowAtAcceptedSplitTraceConstructionWithWitness
+      program witness splitConstruction embedded replayEmbedded
+
 /-- Load-scoped full-execution memory construction target.
 
     This is the public boundary shape one step above
@@ -8860,6 +8956,27 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderTraceConstructionAtEnvelope
       env.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
   | .lw_via_static_match .. =>
       env.AcceptedFullExecutionMemoryProviderTraceConstructionWithWitness
+  | _ => ULift.{2, 0} Unit
+
+/-- Split provider-shaped load-scoped full-execution memory construction
+    target. -/
+def OpEnvelope.AcceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness
+  | .lbu .. =>
+      env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness
+  | .lhu .. =>
+      env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness
+  | .lwu .. =>
+      env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness
+  | .lb_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness
+  | .lh_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness
+  | .lw_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness
   | _ => ULift.{2, 0} Unit
 
 /-- Package the unpacked accepted AIR/Main/Mem construction fields into the
@@ -8938,6 +9055,44 @@ def OpEnvelope.acceptedFullExecutionMemoryProviderTraceConstructionWithWitness_o
         replayEmbedded := replayEmbedded
         selectedProviderRow := selectedProviderRow }
 
+/-- Package unpacked split accepted AIR/Main/Mem construction fields into the
+    split provider-shaped load-scoped full-execution memory construction
+    object. -/
+def OpEnvelope.acceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness_of_fields
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction)
+    (selectedProviderRow :
+      env.SelectedMemProviderRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness splitConstruction embedded replayEmbedded) :
+    env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope]
+      at splitConstruction embedded replayEmbedded selectedProviderRow ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := length
+        program := program
+        witness := witness
+        splitConstruction := splitConstruction
+        embedded := embedded
+        replayEmbedded := replayEmbedded
+        selectedProviderRow := selectedProviderRow }
+
 /-- Lower provider-shaped accepted trace construction evidence to the primary
     provider-prefix source boundary.
 
@@ -8971,6 +9126,41 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderPrefixSourceAtEn
             exact construction.selectedProviderRow
           selectedPrefix := by
             exact construction.construction.selectedPrefix }
+
+/-- Lower split provider-shaped accepted trace construction evidence to the
+    split-trace provider-selection source.
+
+    This is the construction-level bridge expected before the final global
+    accepted-execution theorem: accepted execution supplies the split
+    AIR/Main/Mem construction and witness facts, and this adapter extracts the
+    shared split trace plus selected provider row/prefix package. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope_of_providerSplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope) :
+    env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope]
+      at construction ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    let acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m :=
+      { initialState := construction.splitConstruction.initialState
+        rows := construction.splitConstruction.rows
+        construction := construction.splitConstruction.acceptedTrace }
+    exact
+      ⟨{ length := construction.length
+         program := construction.program
+         witness := construction.witness
+         acceptedTrace := acceptedTrace
+         embedded := construction.embedded
+         replayEmbedded := construction.replayEmbedded },
+       { selectedProviderRow := by
+            exact construction.selectedProviderRow
+         selectedPrefix := by
+            exact construction.splitConstruction.selectedPrefix }⟩
 
 /-- Occurrence uniqueness for the selected prefix carried by the older
     load-scoped full-execution construction object. Non-load envelopes carry

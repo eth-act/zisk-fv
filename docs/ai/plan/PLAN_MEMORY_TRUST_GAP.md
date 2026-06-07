@@ -145,6 +145,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose provider-selection evidence over split accepted AIR/Main/Mem traces.
 - [x] Add extraction-indexed provider selection over split accepted AIR/Main/Mem traces.
 - [x] Add load-scoped split-trace provider selection source and compliance wrapper.
+- [x] Add split provider construction package and lower it to split-trace source evidence.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 

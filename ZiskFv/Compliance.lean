@@ -827,6 +827,27 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderR
       source)
     h_known_bugs
 
+/-- Variant whose memory input is the split provider-shaped accepted
+    AIR/Main/Mem construction package.
+
+    This is one step closer to accepted full-execution data than
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitTraceSelectionSource`:
+    the selected prefix is carried by the split construction, while selected
+    provider-row coverage and mutable-Mem embeddings remain explicit
+    witness-level obligations. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderSplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (construction :
+      env.AcceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitTraceSelectionSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope_of_providerSplitTraceConstruction
+      construction)
+    h_known_bugs
+
 /-- Variant of the global theorem whose per-envelope memory input is the
     unpacked selected-prefix and selected witness Mem-row evidence.
 
