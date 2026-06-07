@@ -222,6 +222,7 @@ clutter.
 - [x] Add shared accepted split trace plus per-envelope replay-envelope selection wrapper.
 - [x] Add shared accepted split trace plus envelope-row prefix-state replay wrapper.
 - [x] Stabilize the merged worktree with focused build verification.
+- [x] Add structural replay-row projection evidence deriving all-event Mem table embedding.
 - [ ] Identify or define the canonical raw accepted-execution memory evidence object.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
@@ -245,6 +246,24 @@ data, then prune the wrapper family. The merged baseline is stabilized:
 ZiskFv.Compliance` passes after repairing post-merge `RowProvenance` API drift
 and removing stale legacy load-address arguments from the Aeneas bridge audit
 helpers.
+
+Replay-row projection checkpoint:
+`AcceptedFullExecutionMemoryReplayRowsProjection` now names a concrete
+full-ensemble mutable Mem table plus the structural equality
+`acceptedTrace.rows = memReplayRowsOfTable table`, and
+`AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRowsProjection` derives
+`MemReplayRowsEmbeddedInTrace` from that equality via
+`memReplayRowsEmbeddedInTrace_of_rows_eq`. This removes one all-event embedding
+caller field for this path, but it is not the final raw object: the accepted
+split trace still carries chronology, prefix-read soundness, and initial
+agreement, which must be proved from concrete accepted execution data.
+Focused `lake build ZiskFv.AirsClean.FullEnsemble.Balance
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance` and full `lake build` pass for
+this slice. `trust/scripts/check-all-semantic.sh` also passes.
+`trust/scripts/check-all.sh` is not clean in this worktree because broader
+caller-burden/hypothesis ledgers have shrunk versus baseline and Aeneas
+production extraction artifacts are missing/untracked; this slice did not
+regenerate those broad ledgers.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining

@@ -1411,6 +1411,19 @@ def MemReplayRowsEmbeddedInTrace
     (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
   ∀ entry, entry ∈ memReplayRowsOfTable table → entry ∈ rows
 
+/-- If the accepted chronological row list is definitionally supplied by the
+    concrete mutable-Mem table replay projection, then all projected replay
+    rows are embedded in that trace. This is the structural projection lemma
+    used before proving the harder chronological/replay facts. -/
+theorem memReplayRowsEmbeddedInTrace_of_rows_eq
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_rows : rows = memReplayRowsOfTable table) :
+    MemReplayRowsEmbeddedInTrace table rows := by
+  intro entry h_entry
+  rw [h_rows]
+  exact h_entry
+
 /-- Witness-level embedding obligation for mutable Mem tables. Accepted
     full-execution integration should prove this from the chronological
     AIR/Main/Mem trace: every dual-aware mutable Mem table in the full

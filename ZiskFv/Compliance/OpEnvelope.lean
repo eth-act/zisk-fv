@@ -7740,6 +7740,34 @@ structure AcceptedFullExecutionMemoryReplayRowSplitExtraction
     ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
       table acceptedTrace.rows
 
+/-- Raw table-projection evidence for the replay-only shared accepted-execution
+    Mem extraction.
+
+This is intentionally weaker than
+`AcceptedFullExecutionMemoryReplayRowSplitExtraction`: it names the concrete
+mutable Mem table from the full-ensemble witness and states that the accepted
+row list is exactly the table's read/write replay-row projection. It does not
+carry the semantic `MemReplayRowsEmbeddedInTrace` field; that embedding is
+derived mechanically from `rows_eq`. Chronology and prefix replay soundness are
+still obligations of `acceptedTrace`, so this is only the first raw structural
+slice, not the final memory-state agreement proof. -/
+structure AcceptedFullExecutionMemoryReplayRowsProjection
+    (main : Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit main
+  table : Air.Flat.Table FGL
+  table_mem : table ∈ witness.allTables
+  table_component :
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  rows_eq :
+    acceptedTrace.rows =
+      ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
+
 /-- Lower the named row-extraction target to the shared full-execution memory
     trace package already consumed by the load replay bridge. -/
 def AcceptedFullExecutionMemoryRowExtraction.toFullTrace
@@ -7856,6 +7884,19 @@ def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrac
     table_mem := table_mem
     table_component := table_component
     replayEmbedded := replayEmbedded }
+
+/-- Derive the replay-only shared extraction from raw table-row projection
+    evidence. This removes `MemReplayRowsEmbeddedInTrace` as a caller field for
+    this path; it follows from the concrete row-list equality. -/
+def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRowsProjection
+    {main : Valid_Main FGL FGL}
+    (projection : AcceptedFullExecutionMemoryReplayRowsProjection main) :
+    AcceptedFullExecutionMemoryReplayRowSplitExtraction main :=
+  AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTraceTable
+    projection.program projection.witness projection.acceptedTrace
+    projection.table projection.table_mem projection.table_component
+    (ZiskFv.AirsClean.FullEnsemble.memReplayRowsEmbeddedInTrace_of_rows_eq
+      projection.rows_eq)
 
 /-- Package generated split Mem construction plus a concrete mutable-Mem
     replay embedding into the replay-only extraction target. -/
