@@ -3752,6 +3752,43 @@ noncomputable def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
       embedded := embedded table h_table h_component
       replayEmbedded := replayEmbedded table h_table h_component }
 
+/-- Construct the full-ensemble Mem-table bridge from a concrete mutable Mem
+    table in the witness.
+
+    Unlike `of_witness`, this does not choose an arbitrary mutable Mem table.
+    It is the shape needed by balanced-provider extraction: when the balance
+    proof identifies a concrete Mem provider table, selected-row coverage can
+    target that same table directly. -/
+def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_table
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (table : Air.Flat.Table FGL)
+    (table_mem : table ∈ witness.allTables)
+    (table_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+        table acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+        table acceptedTrace.rows) :
+    AcceptedAirMainMemFullTraceWithFullEnsembleMemTable m :=
+  { length := length
+    program := program
+    witness := witness
+    acceptedTrace := acceptedTrace
+    table := table
+    table_mem := table_mem
+    table_component := table_component
+    embedded := embedded
+    replayEmbedded := replayEmbedded }
+
 /-- Forget full-ensemble provenance and keep the trace/table bridge consumed
     by the current replay theorem. -/
 def AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.toTraceWithMemTable
@@ -3885,6 +3922,71 @@ noncomputable def OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTable
     exact
       AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_witness
         program witness acceptedTrace embedded replayEmbedded
+  all_goals exact ULift.up ()
+
+/-- Envelope-scoped constructor for a concrete full-ensemble Mem table.
+
+    This is the provider-table counterpart of
+    `acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness`.
+    It avoids losing the table identified by channel balance before selected
+    provider-row coverage is proved. -/
+def OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_table
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (table : Air.Flat.Table FGL)
+    (table_mem : table ∈ witness.allTables)
+    (table_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+        table acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+        table acceptedTrace.rows) :
+    env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope]
+  case ld =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_table
+        program witness acceptedTrace table table_mem table_component
+        embedded replayEmbedded
+  case lbu =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_table
+        program witness acceptedTrace table table_mem table_component
+        embedded replayEmbedded
+  case lhu =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_table
+        program witness acceptedTrace table table_mem table_component
+        embedded replayEmbedded
+  case lwu =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_table
+        program witness acceptedTrace table table_mem table_component
+        embedded replayEmbedded
+  case lb_via_static_match =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_table
+        program witness acceptedTrace table table_mem table_component
+        embedded replayEmbedded
+  case lh_via_static_match =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_table
+        program witness acceptedTrace table table_mem table_component
+        embedded replayEmbedded
+  case lw_via_static_match =>
+    exact
+      AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_table
+        program witness acceptedTrace table table_mem table_component
+        embedded replayEmbedded
   all_goals exact ULift.up ()
 
 /-- The accepted trace contained in the shared trace/table bridge object. -/
@@ -4695,6 +4797,41 @@ theorem OpEnvelope.selectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope_o
             ZiskFv.AirsClean.FullEnsemble.memDualReadReplayRowsOfTable]
             using h_selected⟩
 
+/-- Concrete provider-row coverage in the FullEnsemble Mem table gives
+    ordinary selected-row membership in the accepted chronological trace.
+
+    This is the balanced-provider route: selected membership can be derived
+    from a table-local primary/dual replay match directly, without first
+    identifying the provider row with the older envelope-carried Clean Mem
+    row. -/
+theorem OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_providerReplay
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
+    (h_provider :
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        construction) :
+    env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedTraceOfFullTraceWithMemTable
+        (env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+          construction)) := by
+  let traceWithTable :=
+    env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      construction
+  have h_selected :
+      env.SelectedMemReadReplayRowInTraceTableAtEnvelope traceWithTable :=
+    env.selectedMemReadReplayRowInTraceTableAtEnvelope_of_providerRow
+      traceWithTable h_provider
+  have h_at_trace :
+      env.SelectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedTraceOfFullTraceWithMemTable traceWithTable) :=
+    env.selectedMemReadReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_traceTable
+      traceWithTable h_selected
+  exact
+    env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReadReplayRow
+      (env.acceptedTraceOfFullTraceWithMemTable traceWithTable)
+      h_at_trace
+
 /-- Build the current public accepted-memory evidence object from concrete
     provider-row coverage in the shared FullEnsemble Mem table. This composes
     the table-local primary/dual provider-row adapter with the trace/table
@@ -4754,6 +4891,63 @@ noncomputable def OpEnvelope.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_o
     exact SelectedLoadMemoryBusRowPrefixCursor.of_mem_state_for_split
       h_mem h_state
   all_goals exact ()
+
+/-- Cursor-shaped extraction target using provider-row coverage instead of
+    equality with the envelope-carried Clean Mem row.
+
+    This is the route expected from balanced full-execution interactions:
+    construct a concrete FullEnsemble Mem-table bridge, prove that the
+    selected load bus row is matched by a primary/dual provider row in that
+    table, and provide the split-indexed Sail prefix-state equality for the
+    same accepted trace. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 where
+  fullTraceTable :
+    env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope
+  selectedProviderRow :
+    env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+      fullTraceTable
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+      fullTraceTable
+
+/-- Build provider-row cursor extraction from provider replay coverage and
+    prefix-state equality. Selected chronological-row membership is derived
+    internally from the provider replay match and table embedding. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+    (env : OpEnvelope state m r_main)
+    (fullTraceTable :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
+    (selectedProviderRow :
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        fullTraceTable)
+    (selectedPrefixState :
+      env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+        fullTraceTable) :
+    env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope := by
+  let traceWithTable :=
+    env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      fullTraceTable
+  let acceptedTrace :=
+    env.acceptedTraceOfFullTraceWithMemTable traceWithTable
+  have selectedPrefixStateAtAccepted :
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace := by
+    change
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedTraceOfFullTraceWithMemTable traceWithTable)
+    exact selectedPrefixState
+  have selectedMembership :
+      env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace :=
+    env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_providerReplay
+      fullTraceTable selectedProviderRow
+  exact
+    { fullTraceTable := fullTraceTable
+      selectedProviderRow := selectedProviderRow
+      selectedPrefix :=
+        env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
+          acceptedTrace selectedMembership selectedPrefixStateAtAccepted }
 
 /-- Build the cursor-shaped extraction target from FullEnsemble-aligned facts:
     the concrete Mem-table bridge, the selected envelope Mem-row occurrence in

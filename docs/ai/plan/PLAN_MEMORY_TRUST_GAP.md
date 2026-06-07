@@ -108,6 +108,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Move the primary compliance theorem boundary to the row-cursor source target.
 - [x] Name balanced active-Main memory provider row coverage from FullEnsemble.
 - [x] Split balanced provider coverage into mutable-Mem and non-mutable route branches.
+- [x] Add table-parametric FullEnsemble Mem-table construction and provider-row cursor extraction path.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -252,6 +253,20 @@ ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
 `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 slice.
+
+The current provider-row extraction slice adds
+`AcceptedAirMainMemFullTraceWithFullEnsembleMemTable.of_table`,
+`OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_table`,
+`OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_providerReplay`,
+`OpEnvelope.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope`, and
+`OpEnvelope.acceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope_of_fullEnsemblePrefixState`.
+This avoids the table-choice/equality mismatch found after the route split:
+balanced full execution naturally identifies a concrete provider table and row
+whose replay projection matches the selected load bus entry, not necessarily
+the older envelope-carried Clean Mem row. Focused `lake build
+ZiskFv.Compliance.OpEnvelope`, full `lake build`,
+`trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass.
 
 The current construction-wrapper slice adds
 `zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction`.
