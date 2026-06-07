@@ -99,6 +99,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add selected accepted-row membership from all-event replay embedding.
 - [x] Add a global wrapper that consumes packed full-execution memory construction.
 - [x] Add direct accepted AIR/Main/Mem selection to packed memory construction bridge.
+- [x] Expose top-level compliance wrappers for source and cursor-source memory evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1238,3 +1239,14 @@ accepted-execution construction has been proved. Focused
 `lake build ZiskFv.Compliance.OpEnvelope` and
 `lake build ZiskFv.Compliance` passed. Full `lake build`, trust regeneration,
 both trust gates, and `nix run .#test` also passed.
+
+The source-wrapper slice exposes
+`zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceSource` and
+`zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource`.
+These wrappers lower the already-defined source and cursor-source memory
+evidence through selected coverage and the packed construction path internally.
+The visible upstream target is now
+`OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope`: construct
+the shared accepted Mem trace, selected envelope row, selected chronological
+prefix cursor, and selected occurrence uniqueness from accepted full-execution
+data. Focused `lake build ZiskFv.Compliance` passed.

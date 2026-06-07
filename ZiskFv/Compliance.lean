@@ -217,6 +217,46 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction
       construction)
     h_known_bugs
 
+/-- Variant of the global theorem whose memory input is source-shaped
+    full-execution evidence.
+
+    This exposes the split-indexed source boundary already present in
+    `OpEnvelope`: accepted full execution supplies the shared accepted Mem trace,
+    selected envelope row, and prefix-state evidence; the selected cursor and
+    packed construction object are built internally. -/
+theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source : env.AcceptedFullExecutionMemoryTraceSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction
+    env h_burden
+    (env.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_traceWithCoverage
+      (env.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_source
+        source))
+    h_known_bugs
+
+/-- Variant of the global theorem whose memory input is cursor-shaped
+    full-execution source evidence.
+
+    This is the theorem boundary closest to accepted execution replay: prove
+    the shared accepted Mem trace, selected envelope row, selected chronological
+    prefix cursor, and selected occurrence uniqueness; the source predicate,
+    selected coverage, and packed replay construction are derived internally. -/
+theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (cursorSource :
+      env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryTraceSourceAtEnvelope_of_cursorSource
+      cursorSource)
+    h_known_bugs
+
 /-- Variant of the global theorem whose memory input is accepted AIR/Main/Mem
     trace data plus the full RV64IM witness and mutable-Mem embeddings.
 
