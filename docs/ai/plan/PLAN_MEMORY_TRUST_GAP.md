@@ -126,6 +126,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Project unified-Main ROM lookup constraints to program-ROM membership.
 - [x] Discharge `MainMemBusSourceMultiplicitySound` from witness constraints plus program-ROM source legality.
 - [x] Split `MainProgramRomSourceMultiplicitySound` through row-indexed program ROM source legality.
+- [x] Prove selected-row source multiplicity from `MainRowProvenance`.
 - [ ] Prove `MainProgramRomSourceMultiplicitySound` from actual ROM/source legality for unified Main memory interactions.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -178,6 +179,18 @@ generic ROM-message and source-sum eval lemmas, and
 `MainProgramRomRowsSourceMultiplicitySound` implies the env-shaped
 `MainProgramRomSourceMultiplicitySound`. The next source-legality task is
 proving the row-indexed predicate from actual row provenance/source facts.
+
+Current checkpoint after committed slice `93335b4e`: selected-row source
+multiplicity is now proved from `MainRowProvenance`, and `OpEnvelope` has an
+adapter to the AIR-level `MainRomRowSourceMultiplicitySound` for that concrete
+row. This slice passed focused `RowProvenance`/`OpEnvelope` builds, full `lake
+build`, both trust scripts, and `nix run .#test`. It does not discharge
+`MainProgramRomRowsSourceMultiplicitySound` yet: that predicate quantifies over
+any arbitrary row matching opaque `program i`, so provenance for one selected
+Main row is insufficient. The honest remaining choice is either to add a
+program-wide ROM provenance/well-formedness bridge for every `program i`, or to
+refactor the direct-`LD` route so it consumes selected row provenance instead of
+the program-wide source-legality predicate.
 
 The latest theorem split records the exact promotion needed when full execution
 naturally produces a selected prefix cursor rather than the stronger

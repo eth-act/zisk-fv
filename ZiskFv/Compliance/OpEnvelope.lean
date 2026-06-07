@@ -5137,6 +5137,16 @@ def OpEnvelope.DirectLoadMainRowProvenanceAtEnvelope
           ∧ eval mainEnv mainRowVar = provenance.mainRow
   | _ => True
 
+/-- Selected-row provenance implies the AIR-level source-selector multiplicity
+    fact for that concrete Main ROM row. The program-wide ROM source predicate
+    still needs a separate bridge tying every `program i` row to provenance. -/
+theorem mainRomRowSourceMultiplicitySound_of_mainRowProvenance
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (provenance : ZiskFv.Compliance.MainRowProvenance main r_main) :
+    ZiskFv.AirsClean.FullEnsemble.MainRomRowSourceMultiplicitySound
+      provenance.mainRow := by
+  exact ZiskFv.Compliance.MainRowProvenance.source_multiplicity provenance
+
 /-- Main `b` memory-channel source facts needed by the direct `LD`
     non-mutable route exclusions. -/
 def OpEnvelope.DirectLoadMainBSourceFactsAtEnvelope

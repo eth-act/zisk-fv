@@ -216,6 +216,54 @@ theorem rom_store
   ∧ p.mainRow.rom.store_offset = intF p.extractedRow.storeOffset := by
   exact ⟨p.store_mem_eq, p.store_ind_eq, p.store_reg_eq, p.store_offset_eq⟩
 
+private theorem selectorF_pair_sum_zero_or_one
+    (value tag₀ tag₁ : Nat) (h_ne : tag₀ ≠ tag₁) :
+  selectorF value tag₀ + selectorF value tag₁ = 1
+      ∨ selectorF value tag₀ + selectorF value tag₁ = 0 := by
+  unfold selectorF boolF
+  by_cases h₀ : value = tag₀ <;> by_cases h₁ : value = tag₁
+  all_goals simp_all
+
+private theorem selectorF_triple_sum_zero_or_one
+    (value tag₀ tag₁ tag₂ : Nat)
+    (h₀₁ : tag₀ ≠ tag₁) (h₀₂ : tag₀ ≠ tag₂) (h₁₂ : tag₁ ≠ tag₂) :
+    selectorF value tag₀ + selectorF value tag₁ + selectorF value tag₂ = 1
+      ∨ selectorF value tag₀ + selectorF value tag₁ + selectorF value tag₂ = 0 := by
+  unfold selectorF boolF
+  by_cases h₀ : value = tag₀ <;>
+    by_cases h₁ : value = tag₁ <;>
+    by_cases h₂ : value = tag₂
+  all_goals simp_all
+
+/-- Source selector multiplicity for a selected row with production row-shape
+    provenance. This is a selected-row fact; a program-wide theorem still needs
+    a bridge tying every `program i` row to this provenance surface. -/
+theorem source_multiplicity
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main) :
+    (p.mainRow.rom.a_src_mem + p.mainRow.rom.a_src_reg = 1
+      ∨ p.mainRow.rom.a_src_mem + p.mainRow.rom.a_src_reg = 0)
+    ∧ (p.mainRow.rom.b_src_mem + p.mainRow.rom.b_src_ind
+        + p.mainRow.rom.b_src_reg = 1
+      ∨ p.mainRow.rom.b_src_mem + p.mainRow.rom.b_src_ind
+        + p.mainRow.rom.b_src_reg = 0)
+    ∧ (p.mainRow.rom.store_mem + p.mainRow.rom.store_ind
+        + p.mainRow.rom.store_reg = 1
+      ∨ p.mainRow.rom.store_mem + p.mainRow.rom.store_ind
+        + p.mainRow.rom.store_reg = 0) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [p.a_src_mem_eq, p.a_src_reg_eq]
+    exact selectorF_pair_sum_zero_or_one
+      p.extractedRow.aSrc ExtractedConst.srcMem ExtractedConst.srcReg (by decide)
+  · rw [p.b_src_mem_eq, p.b_src_ind_eq, p.b_src_reg_eq]
+    exact selectorF_triple_sum_zero_or_one
+      p.extractedRow.bSrc ExtractedConst.srcMem ExtractedConst.srcInd
+      ExtractedConst.srcReg (by decide) (by decide) (by decide)
+  · rw [p.store_mem_eq, p.store_ind_eq, p.store_reg_eq]
+    exact selectorF_triple_sum_zero_or_one
+      p.extractedRow.store ExtractedConst.storeMem ExtractedConst.storeInd
+      ExtractedConst.storeReg (by decide) (by decide) (by decide)
+
 end MainRowProvenance
 
 end ZiskFv.Compliance
