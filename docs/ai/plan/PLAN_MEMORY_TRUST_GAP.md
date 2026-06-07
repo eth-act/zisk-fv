@@ -115,7 +115,9 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add direct-`LD` row provenance and Main `b` source-fact bridge for branch exclusions.
 - [x] Prove direct-`LD` MemAlignReadByte and MemAlignByte branch exclusions from raw width equality.
 - [x] Split the direct-`LD` residual route burden after the proved byte-width exclusions.
-- [ ] Prove direct-`LD` non-mutable branch exclusions from source facts plus raw channel route facts.
+- [x] Name Main memory-bus multiplicity invariant and use it to eliminate the direct-`LD` Main self-provider residual branch.
+- [ ] Replace the over-broad direct-`LD` generic MemAlign exclusion target with aligned direct-Mem selected-provider coverage or provider uniqueness.
+- [ ] Discharge `MainMemBusMultiplicitySound` from ROM/source legality for unified Main memory interactions.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1483,3 +1485,27 @@ ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, full
 `lake build`, `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 split.
+
+The current uncommitted split adds
+`ZiskFv.AirsClean.FullEnsemble.MainMemBusMultiplicitySound`, a witness-level
+invariant saying unified Main memory-bus interactions in the full ensemble have
+multiplicity `-1` or `0`. Under that named invariant,
+`no_activeMainSelfMemProviderRowMatchSpec_of_mainMemBusMultiplicitySound` rules
+out the direct-`LD` Main self-provider residual branch, and
+`directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_genericMemAlign`
+now needs only the generic MemAlign exclusion plus this explicit
+source-legality invariant. Focused `lake build ZiskFv.Compliance.OpEnvelope`
+passes for this split. This is intentionally not hidden trust removal yet:
+`MainMemBusMultiplicitySound` still has to be proved from ROM/source legality
+and accepted full-execution facts.
+
+Follow-up route audit: the remaining generic MemAlign exclusion cannot be
+proved as a blanket direct-`LD` fact. ZisK's emulator/counter path sends
+unaligned width-8 reads through generic MemAlign, while `PureSpec.ld`'s Sail
+equivalence is the aligned-success case. The sound route target is therefore
+not “no generic MemAlign for LD”; it is either an aligned direct-Mem provider
+coverage theorem that uses the Sail alignment assumption, or a provider
+uniqueness theorem showing the balanced provider is the concrete Mem provider
+row already carried by the `OpEnvelope.ld` constructor. The existing
+provider-row public memory boundary is compatible with that second path and
+already lowers selected envelope Mem rows to provider-row coverage.

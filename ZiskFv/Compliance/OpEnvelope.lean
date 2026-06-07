@@ -5047,6 +5047,26 @@ def OpEnvelope.DirectLoadNoResidualNonMutableMemProviderRouteAtEnvelope
         (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
   | _ => True
 
+/-- The sole direct-`LD` non-mutable provider branch left after the byte-width
+    MemAlign branches and Main self-provider branch are discharged. -/
+def OpEnvelope.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL) : Prop :=
+  match env with
+  | .ld (mainRowVar := mainRowVar)
+      (mainInteraction := mainInteraction) .. =>
+      ¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainMemAlignProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2
+  | _ => True
+
 /-- Direct `LD` row-shape provenance for the evaluated Clean Main row carried
     by an envelope.
 
@@ -5400,6 +5420,66 @@ def OpEnvelope.directLoadNoNonMutableMemProviderRouteAtEnvelope_of_byte_and_resi
   case ld =>
     exact ⟨h_byte.1, h_byte.2, h_residual.1, h_residual.2⟩
 
+/-- Direct `LD` cannot route through Main self-provider once the full
+    ensemble's unified-Main memory-bus interactions are known to be pull-or-zero
+    only. -/
+def OpEnvelope.directLoadNoMainSelfMemProviderRouteAtEnvelope_of_mainMemBusMultiplicitySound
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_mainMem :
+      ZiskFv.AirsClean.FullEnsemble.MainMemBusMultiplicitySound
+        program witness) :
+    match env with
+    | .ld (mainRowVar := mainRowVar)
+        (mainInteraction := mainInteraction) .. =>
+        ¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainSelfMemProviderRowMatchSpec
+          program witness mainTable mainRow mainInteraction
+          (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2
+    | _ => True := by
+  cases env <;> simp
+  case ld =>
+    exact
+      ZiskFv.AirsClean.FullEnsemble.no_activeMainSelfMemProviderRowMatchSpec_of_mainMemBusMultiplicitySound
+        h_mainMem
+
+/-- Combine the remaining generic-MemAlign exclusion with the named
+    Main-memory multiplicity invariant to recover the residual two-branch
+    direct-`LD` route predicate. -/
+def OpEnvelope.directLoadNoResidualNonMutableMemProviderRouteAtEnvelope_of_genericMemAlign_and_mainMemBusMultiplicitySound
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_no_memAlign :
+      env.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_mainMem :
+      ZiskFv.AirsClean.FullEnsemble.MainMemBusMultiplicitySound
+        program witness) :
+    env.DirectLoadNoResidualNonMutableMemProviderRouteAtEnvelope
+      program witness mainTable mainRow := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope,
+      OpEnvelope.DirectLoadNoResidualNonMutableMemProviderRouteAtEnvelope]
+      at h_no_memAlign ⊢
+  case ld =>
+    exact
+      ⟨h_no_memAlign,
+        ZiskFv.AirsClean.FullEnsemble.no_activeMainSelfMemProviderRowMatchSpec_of_mainMemBusMultiplicitySound
+          h_mainMem⟩
+
 /-- Promote balanced active-Main coverage to the mutable-Mem route once the
     named non-mutable branches have been ruled out. -/
 def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route
@@ -5464,6 +5544,36 @@ def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_r
       (OpEnvelope.directLoadNoByteMemAlignProviderRouteAtEnvelope_of_sourceFacts
         env program witness mainTable mainRow h_source)
       h_residual)
+
+/-- Direct `LD` mutable-route bridge after discharging byte-width branches and
+    Main self-provider. Callers now supply only the generic MemAlign exclusion,
+    plus the named Main memory-bus multiplicity invariant. -/
+def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_genericMemAlign
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_active :
+      env.DirectLoadActiveMainMemProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope)
+    (h_no_memAlign :
+      env.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_mainMem :
+      ZiskFv.AirsClean.FullEnsemble.MainMemBusMultiplicitySound
+        program witness) :
+    env.DirectLoadMutableMemProviderRouteAtEnvelope
+      program witness mainTable mainRow :=
+  OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_residual
+    env program witness mainTable mainRow h_active h_source
+    (OpEnvelope.directLoadNoResidualNonMutableMemProviderRouteAtEnvelope_of_genericMemAlign_and_mainMemBusMultiplicitySound
+      env program witness mainTable mainRow h_no_memAlign h_mainMem)
 
 /-- Direct mutable-route selected provider coverage.
 

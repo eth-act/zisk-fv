@@ -3069,6 +3069,49 @@ def ActiveMainSelfMemProviderRowMatchSpec
                           length program).rowInputVar))
                     multiplicity as)))
 
+/-- Main memory-bus interactions in the full ensemble are only active pulls
+    or inactive zero-multiplicity rows.
+
+    This is the missing source-legality invariant needed to rule out the
+    Main self-provider branch for direct loads. It is deliberately stated as
+    an explicit witness-level obligation: the current Main `Spec` only exposes
+    core Main constraints, while the needed fact depends on ROM/source flag
+    legality for every unified-Main row. -/
+def MainMemBusMultiplicitySound
+    {length : ℕ} (program : Program length)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
+    Prop :=
+  ∀ table ∈ witness.allTables,
+    table.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program →
+      ∀ interaction ∈ table.interactionsWith MemBusChannel.toRaw,
+        interaction.mult = -1 ∨ interaction.mult = 0
+
+/-- Main self-provider memory routes are impossible once unified-Main
+    memory-bus multiplicities are known to be pull-or-zero only. -/
+theorem no_activeMainSelfMemProviderRowMatchSpec_of_mainMemBusMultiplicitySound
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {multiplicity as : FGL}
+    (h_mainMem : MainMemBusMultiplicitySound program witness) :
+    ¬ ActiveMainSelfMemProviderRowMatchSpec program witness mainTable mainRow
+      mainInteraction mainMsg multiplicity as := by
+  intro h_self
+  rcases h_self with
+    ⟨providerInteraction, _h_provider_witness, _h_msg, h_nonpull,
+      h_nonzero, providerTable, h_providerTable, h_providerInteraction,
+      providerRow, _h_providerRow, _h_providerSpec, h_component, _h_branch⟩
+  have h_mult :=
+    h_mainMem providerTable h_providerTable h_component providerInteraction
+      h_providerInteraction
+  rcases h_mult with h_pull | h_zero
+  · exact h_nonpull h_pull
+  · exact h_nonzero h_zero
+
 /-- Branch split for the non-mutable active-Main provider family. -/
 theorem activeMainNonMutableMemProviderRowMatchSpec_branch_cases
     {length : ℕ} {program : Program length}
