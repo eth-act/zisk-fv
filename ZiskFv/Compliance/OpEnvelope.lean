@@ -5960,6 +5960,46 @@ def OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope
       env.AcceptedFullExecutionMemoryTraceConstructionWithWitness
   | _ => ULift.{2, 0} Unit
 
+/-- Package the unpacked accepted AIR/Main/Mem construction fields into the
+    load-scoped full-execution memory construction object.
+
+    This is an integration helper for callers that have proved the accepted
+    trace construction, mutable-Mem embeddings, and selected envelope Mem-row
+    occurrence separately. Non-load envelopes carry no memory data. -/
+def OpEnvelope.acceptedFullExecutionMemoryTraceConstructionWithWitness_of_fields
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
+        program witness construction embedded replayEmbedded) :
+    env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope]
+      at construction embedded replayEmbedded selectedEnvelopeRow ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := length
+        program := program
+        witness := witness
+        construction := construction
+        embedded := embedded
+        replayEmbedded := replayEmbedded
+        selectedEnvelopeRow := selectedEnvelopeRow }
+
 /-- Occurrence uniqueness for the selected prefix carried by the older
     load-scoped full-execution construction object. Non-load envelopes carry
     no memory occurrence obligation. -/

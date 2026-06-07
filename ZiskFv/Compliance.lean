@@ -257,6 +257,45 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
       cursorSource)
     h_known_bugs
 
+/-- Variant of the global theorem whose memory input is the unpacked accepted
+    AIR/Main/Mem trace construction plus full-ensemble witness facts.
+
+    This exposes the current upstream construction target without requiring
+    callers to first package it as
+    `AcceptedFullExecutionMemoryTraceConstructionAtEnvelope`: accepted full
+    execution must provide the accepted Mem trace construction, mutable-Mem
+    read/replay embeddings, and selected envelope Mem-row occurrence. The
+    selected cursor is already in `construction`, and occurrence uniqueness is
+    derived from the accepted trace's `rowsNodup` field. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness construction)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedTraceConstructionWithWitness
+        program witness construction embedded replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_traceConstruction
+      (env.acceptedFullExecutionMemoryTraceConstructionWithWitness_of_fields
+        program witness construction embedded replayEmbedded
+        selectedEnvelopeRow))
+    h_known_bugs
+
 /-- Variant of the global theorem whose memory input is accepted AIR/Main/Mem
     trace data plus the full RV64IM witness and mutable-Mem embeddings.
 

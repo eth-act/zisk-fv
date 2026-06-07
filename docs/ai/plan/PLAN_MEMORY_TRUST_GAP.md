@@ -100,6 +100,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add a global wrapper that consumes packed full-execution memory construction.
 - [x] Add direct accepted AIR/Main/Mem selection to packed memory construction bridge.
 - [x] Expose top-level compliance wrappers for source and cursor-source memory evidence.
+- [x] Expose a top-level wrapper for unpacked accepted AIR/Main/Mem trace construction plus witness facts.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1265,3 +1266,16 @@ cursor-source public wrapper. Focused
 both trust gates, and `nix run .#test` also pass. This still does not construct
 the accepted Mem trace, selected row occurrence, or selected prefix cursor from
 accepted full execution; those remain the upstream theorem target.
+
+The unpacked construction-wrapper slice adds
+`OpEnvelope.acceptedFullExecutionMemoryTraceConstructionWithWitness_of_fields`
+and
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemTraceConstruction`.
+This exposes the current upstream construction target as separate accepted
+AIR/Main/Mem construction, full RV64IM witness, mutable-Mem read/replay
+embeddings, and selected envelope Mem-row occurrence fields, then routes them
+through the cursor-source theorem. Focused
+`lake build ZiskFv.Compliance.OpEnvelope` and focused
+`lake build ZiskFv.Compliance` pass. This is still a boundary-sharpening step:
+it does not prove the accepted Mem trace construction, embeddings, selected row
+occurrence, or selected cursor from full execution.
