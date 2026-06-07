@@ -550,6 +550,41 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSelection
       program witness acceptedTrace embedded replayEmbedded selection)
     h_known_bugs
 
+/-- Split accepted AIR/Main/Mem trace variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSelection`.
+
+    This keeps generated Mem row facts, row-order facts, and replay facts
+    separated at the accepted-execution boundary, then repacks only through the
+    explicit split-selection adapter needed by the existing FullEnsemble table
+    predicates. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSplitSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryProviderSplitTraceSelectionAtEnvelope
+        program witness acceptedTrace embedded replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSelection
+    env h_burden program witness acceptedTrace.toAcceptedAirMainMemFullTrace
+    embedded replayEmbedded
+    (env.acceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope_of_split
+      program witness acceptedTrace embedded replayEmbedded selection)
+    h_known_bugs
+
 /-- Variant of the global theorem whose shared memory input is the named
     accepted-execution Mem row extraction package.
 

@@ -7131,6 +7131,65 @@ structure OpEnvelope.AcceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope
       (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         program witness acceptedTrace embedded replayEmbedded)
 
+/-- Split provider-row version of unpacked per-envelope selection facts.
+
+    The accepted AIR/Main/Mem trace keeps generated-row, row-order, and replay
+    facts separated. FullEnsemble table predicates still consume the packed
+    trace, so the selected provider row and selected prefix are stated against
+    `acceptedTrace.toAcceptedAirMainMemFullTrace`; this adapter boundary keeps
+    that repacking visible. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryProviderSplitTraceSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows) : Type 1 where
+  selectedProviderRow :
+    env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        program witness acceptedTrace.toAcceptedAirMainMemFullTrace
+        embedded replayEmbedded)
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        program witness acceptedTrace.toAcceptedAirMainMemFullTrace
+        embedded replayEmbedded)
+
+/-- Repack split accepted AIR/Main/Mem provider-selection evidence into the
+    existing packed provider-selection shape. -/
+def OpEnvelope.acceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope_of_split
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryProviderSplitTraceSelectionAtEnvelope
+        program witness acceptedTrace embedded replayEmbedded) :
+    env.AcceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope
+      program witness acceptedTrace.toAcceptedAirMainMemFullTrace
+      embedded replayEmbedded :=
+  { selectedProviderRow := selection.selectedProviderRow
+    selectedPrefix := selection.selectedPrefix }
+
 /-- Per-envelope selected-load extraction indexed by the named shared row
     extraction package.
 
