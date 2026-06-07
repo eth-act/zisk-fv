@@ -112,6 +112,8 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Move the primary compliance theorem boundary to provider-row cursor-source evidence.
 - [x] Add direct-`LD` mutable-provider route bridge to table-parametric provider replay coverage.
 - [x] Split direct-`LD` active-Main provider routing into named mutable promotion and four visible non-mutable branch-exclusion obligations.
+- [x] Add direct-`LD` row provenance and Main `b` source-fact bridge for branch exclusions.
+- [ ] Prove direct-`LD` non-mutable branch exclusions from source facts plus raw channel route facts.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1436,3 +1438,19 @@ ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, full
 `lake build`, `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 slice.
+
+The latest provenance/source-fact slice adds
+`MainRowProvenance.LdRowMode`,
+`OpEnvelope.DirectLoadMainRowProvenanceAtEnvelope`,
+`OpEnvelope.DirectLoadMainBSourceFactsAtEnvelope`, and
+`directLoadMainBSourceFactsAtEnvelope_of_rowProvenance`. This records the real
+production direct-`LD` row shape (`CopyB`, `b_src_ind`, `ind_width = 8`,
+`store_reg`) for the exact evaluated Clean Main row, which is stronger than the
+existing envelope `h_main_row` core-row equality and is needed for ROM selector
+facts. Focused `lake build ZiskFv.Compliance.RowProvenance`, focused
+`lake build ZiskFv.Compliance.OpEnvelope`, focused `lake build
+ZiskFv.Compliance`, full `lake build`, `trust/scripts/regenerate.sh`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this slice. The immediate remaining local route work
+is to combine these source facts with raw memory-channel provider-route facts
+to prove the four direct-`LD` non-mutable exclusions.

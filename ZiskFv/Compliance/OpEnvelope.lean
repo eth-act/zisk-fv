@@ -4998,6 +4998,68 @@ def OpEnvelope.DirectLoadNoNonMutableMemProviderRouteAtEnvelope
         (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
   | _ => True
 
+/-- Direct `LD` row-shape provenance for the evaluated Clean Main row carried
+    by an envelope.
+
+    This is intentionally stronger than the existing `h_main_row` field on
+    `OpEnvelope.ld`: that field only identifies the `core` row with
+    `rowAt m r_main`, while route exclusion needs ROM selector facts from the
+    exact evaluated `MainRowWithRom`. -/
+def OpEnvelope.DirectLoadMainRowProvenanceAtEnvelope
+    (env : OpEnvelope state m r_main) : Prop :=
+  match env with
+  | .ld (mainRowVar := mainRowVar) (mainEnv := mainEnv) .. =>
+      ∃ provenance : ZiskFv.Compliance.MainRowProvenance m r_main,
+        ZiskFv.Compliance.MainRowProvenance.LdRowMode provenance
+          ∧ eval mainEnv mainRowVar = provenance.mainRow
+  | _ => True
+
+/-- Main `b` memory-channel source facts needed by the direct `LD`
+    non-mutable route exclusions. -/
+def OpEnvelope.DirectLoadMainBSourceFactsAtEnvelope
+    (env : OpEnvelope state m r_main) : Prop :=
+  match env with
+  | .ld (mainRowVar := mainRowVar) (mainEnv := mainEnv) .. =>
+      let row := eval mainEnv mainRowVar
+      row.rom.b_src_mem = 0
+        ∧ row.rom.b_src_ind = 1
+        ∧ row.rom.b_src_reg = 0
+        ∧ row.core.ind_width = 8
+        ∧ row.rom.store_reg = 1
+  | _ => True
+
+/-- Extract direct-`LD` Main `b` source facts from row-shape provenance for
+    the exact evaluated Clean Main row. -/
+def OpEnvelope.directLoadMainBSourceFactsAtEnvelope_of_rowProvenance
+    (env : OpEnvelope state m r_main)
+    (h_provenance : env.DirectLoadMainRowProvenanceAtEnvelope) :
+    env.DirectLoadMainBSourceFactsAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadMainRowProvenanceAtEnvelope,
+      OpEnvelope.DirectLoadMainBSourceFactsAtEnvelope] at h_provenance ⊢
+  case ld =>
+    rcases h_provenance with ⟨provenance, rowMode, h_row⟩
+    rw [h_row]
+    have h_b_src_mem : provenance.mainRow.rom.b_src_mem = 0 := by
+      simpa [selectorF, boolF, rowMode.b_src_eq, ExtractedConst.srcInd,
+        ExtractedConst.srcMem] using provenance.b_src_mem_eq
+    have h_b_src_ind : provenance.mainRow.rom.b_src_ind = 1 := by
+      simpa [selectorF, boolF, rowMode.b_src_eq, ExtractedConst.srcInd]
+        using provenance.b_src_ind_eq
+    have h_b_src_reg : provenance.mainRow.rom.b_src_reg = 0 := by
+      simpa [selectorF, boolF, rowMode.b_src_eq, ExtractedConst.srcInd,
+        ExtractedConst.srcReg] using provenance.b_src_reg_eq
+    have h_ind_width : provenance.mainRow.core.ind_width = 8 := by
+      have h_main_ind : m.ind_width r_main = (8 : FGL) := by
+        simpa [natF, rowMode.ind_width_eq] using provenance.ind_width_eq
+      rw [provenance.row_eq]
+      simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_ind
+    have h_store_reg : provenance.mainRow.rom.store_reg = 1 := by
+      simpa [selectorF, boolF, rowMode.store_eq, ExtractedConst.storeReg]
+        using provenance.store_reg_eq
+    exact ⟨h_b_src_mem, h_b_src_ind, h_b_src_reg, h_ind_width,
+      h_store_reg⟩
+
 /-- Promote balanced active-Main coverage to the mutable-Mem route once the
     named non-mutable branches have been ruled out. -/
 def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route

@@ -157,6 +157,24 @@ structure JalRowMode
   set_pc_eq : p.extractedRow.setPc = false
   store_pc_eq : p.extractedRow.storePc = true
 
+/-- Row-shape mode for a direct RV64 `LD` Main row.
+
+    This records the production `load_op(..., "copyb", 8, 4)` source shape:
+    `a` reads the base register, `b` reads indirect memory, CopyB copies that
+    value to `c`, and `store_reg` writes the destination register. -/
+structure LdRowMode
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    (p : MainRowProvenance main r_main) : Prop where
+  op_eq : p.extractedRow.op = ExtractedConst.opCopyB
+  internal_eq : p.extractedRow.isExternalOp = false
+  m32_eq : p.extractedRow.m32 = false
+  set_pc_eq : p.extractedRow.setPc = false
+  store_pc_eq : p.extractedRow.storePc = false
+  ind_width_eq : p.extractedRow.indWidth = 8
+  a_src_eq : p.extractedRow.aSrc = ExtractedConst.srcReg
+  b_src_eq : p.extractedRow.bSrc = ExtractedConst.srcInd
+  store_eq : p.extractedRow.store = ExtractedConst.storeReg
+
 theorem pins
     {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
     (p : MainRowProvenance main r_main) :
