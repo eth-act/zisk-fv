@@ -114,6 +114,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split direct-`LD` active-Main provider routing into named mutable promotion and four visible non-mutable branch-exclusion obligations.
 - [x] Add direct-`LD` row provenance and Main `b` source-fact bridge for branch exclusions.
 - [x] Prove direct-`LD` MemAlignReadByte and MemAlignByte branch exclusions from raw width equality.
+- [x] Split the direct-`LD` residual route burden after the proved byte-width exclusions.
 - [ ] Prove direct-`LD` non-mutable branch exclusions from source facts plus raw channel route facts.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -1469,3 +1470,16 @@ open obligations. Focused `lake build ZiskFv.Compliance.OpEnvelope` passes for
 this slice, as do focused `lake build ZiskFv.Compliance`, full `lake build`,
 `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
+
+The residual route-boundary split adds
+`OpEnvelope.DirectLoadNoResidualNonMutableMemProviderRouteAtEnvelope` for the
+two still-open direct-`LD` branches: generic MemAlign and Main self-provider.
+`directLoadNoNonMutableMemProviderRouteAtEnvelope_of_byte_and_residual`
+combines the already-proved byte-width exclusions with that residual predicate,
+and `directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_residual`
+promotes active route coverage to the mutable-Mem route using source facts plus
+only the residual obligations. Focused `lake build
+ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, full
+`lake build`, `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+split.

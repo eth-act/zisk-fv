@@ -5021,6 +5021,32 @@ def OpEnvelope.DirectLoadNoByteMemAlignProviderRouteAtEnvelope
         (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
   | _ => True
 
+/-- The remaining direct-`LD` non-mutable provider branches after the
+    byte-width MemAlign branches have been ruled out.
+
+    These are the two branches that still need real raw-route/source facts:
+    generic MemAlign and Main self-provider. -/
+def OpEnvelope.DirectLoadNoResidualNonMutableMemProviderRouteAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL) : Prop :=
+  match env with
+  | .ld (mainRowVar := mainRowVar)
+      (mainInteraction := mainInteraction) .. =>
+      (¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainMemAlignProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
+      ∧ (¬ ZiskFv.AirsClean.FullEnsemble.ActiveMainSelfMemProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2)
+  | _ => True
+
 /-- Direct `LD` row-shape provenance for the evaluated Clean Main row carried
     by an envelope.
 
@@ -5345,6 +5371,35 @@ def OpEnvelope.directLoadNoByteMemAlignProviderRouteAtEnvelope_of_sourceFacts
             h_addr2_idx h_mem_sel h_mem_wr)
           program witness mainTable mainRow h_source⟩
 
+/-- Combine the proved byte-width exclusions with the remaining residual
+    direct-`LD` route exclusions to recover the full non-mutable exclusion
+    predicate consumed by the mutable-route bridge. -/
+def OpEnvelope.directLoadNoNonMutableMemProviderRouteAtEnvelope_of_byte_and_residual
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_byte :
+      env.DirectLoadNoByteMemAlignProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_residual :
+      env.DirectLoadNoResidualNonMutableMemProviderRouteAtEnvelope
+        program witness mainTable mainRow) :
+    env.DirectLoadNoNonMutableMemProviderRouteAtEnvelope
+      program witness mainTable mainRow := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadNoByteMemAlignProviderRouteAtEnvelope,
+      OpEnvelope.DirectLoadNoResidualNonMutableMemProviderRouteAtEnvelope,
+      OpEnvelope.DirectLoadNoNonMutableMemProviderRouteAtEnvelope]
+      at h_byte h_residual ⊢
+  case ld =>
+    exact ⟨h_byte.1, h_byte.2, h_residual.1, h_residual.2⟩
+
 /-- Promote balanced active-Main coverage to the mutable-Mem route once the
     named non-mutable branches have been ruled out. -/
 def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route
@@ -5379,6 +5434,36 @@ def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route
         (ZiskFv.AirsClean.FullEnsemble.activeMainNonMutableMemProviderRowMatchSpec_of_no_branch
           h_no_marb h_no_mab h_no_memAlign h_no_main),
         h_mainEnv⟩
+
+/-- Direct `LD` mutable-route bridge after discharging the two byte-width
+    MemAlign branches from source facts.  Callers now only supply the residual
+    generic MemAlign and Main self-provider exclusions. -/
+def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_residual
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_active :
+      env.DirectLoadActiveMainMemProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope)
+    (h_residual :
+      env.DirectLoadNoResidualNonMutableMemProviderRouteAtEnvelope
+        program witness mainTable mainRow) :
+    env.DirectLoadMutableMemProviderRouteAtEnvelope
+      program witness mainTable mainRow :=
+  OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route
+    env program witness mainTable mainRow h_active
+    (OpEnvelope.directLoadNoNonMutableMemProviderRouteAtEnvelope_of_byte_and_residual
+      env program witness mainTable mainRow
+      (OpEnvelope.directLoadNoByteMemAlignProviderRouteAtEnvelope_of_sourceFacts
+        env program witness mainTable mainRow h_source)
+      h_residual)
 
 /-- Direct mutable-route selected provider coverage.
 
