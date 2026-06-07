@@ -96,6 +96,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit effective previous-row primary/dual chronology facts.
 - [x] Expose all-event mutable-Mem replay embedding alongside selected-read embedding.
 - [x] Thread all-event replay embedding through the selected FullEnsemble Mem-table bridge.
+- [x] Add selected accepted-row membership from all-event replay embedding.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -217,16 +218,25 @@ trust regeneration, both trust gates, closure print with no project axiom names,
 targeted retired-memory scan, and `nix run .#test` passed.
 
 Current checkpoint: the replay-embedding slice is verified and committed. The
-current uncommitted patch extends the selected FullEnsemble Mem-table bridge so
-it carries both selected-read embedding and all-event read/write replay
-embedding. It threads `replayEmbedded` through the witness-selected table
-constructors, selected-row predicates, cursor extraction, source/coverage
-constructors, and accepted-trace construction bridge. The timeout-prone
-construction-witness helper was removed and the construction was inlined in
-`acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_acceptedTraceConstruction`.
-Focused `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`, trust
-regeneration, both trust gates, closure print with zero project axiom names,
-narrow retired-memory scan, and `nix run .#test` pass for this slice.
+current uncommitted patch adds selected accepted-row membership from the
+polarity-preserving all-event replay embedding:
+`mem_primary_read_replay_entry_mem_of_replay_embedded_trace_row_match`,
+`mem_dual_read_replay_entry_mem_of_replay_embedded_trace_row_match`, and
+`OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_envelopeMemRowReplay`.
+This avoids using the older read-only embedding to justify selected load-row
+membership, because that read-only embedding is too strong for write rows. The
+active top-level theorem `zisk_riscv_compliant_program_bus` now derives
+`_h_selected_mem_row` through the replay-derived theorem using
+`h_mem_extraction.fullTraceTable` and `h_mem_extraction.selectedEnvelopeRow`,
+and
+`acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState`
+uses the same replay-derived route. The older `SelectedMemReadReplayRow...`
+helpers remain as compatibility surface but are no longer on the active
+compliance/construction path. Focused `lake build ZiskFv.Compliance.OpEnvelope`
+and `lake build ZiskFv.Compliance` pass for this cleanup. Full `lake build`,
+`trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, explicit closure print with zero project
+axiom names, targeted scan, and `nix run .#test` also pass.
 
 The selected-coverage slice adds
 `OpEnvelope.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope`,
