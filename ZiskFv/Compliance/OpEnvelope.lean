@@ -6491,6 +6491,63 @@ def OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
         witness construction.rows
   | _ => True
 
+/-- Direct `LD` table-parametric provider cursor source from split accepted
+    AIR/Main/Mem construction, positive aligned/direct mutable-route coverage,
+    and same-table prefix cursors.
+
+    This is the split-construction variant of
+    `directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_alignedRoute_and_prefixCursor`:
+    generated Mem facts, row-order facts, and replay facts can remain separated
+    until this direct `LD` route bridge repacks them for the existing replay
+    proof. -/
+noncomputable def OpEnvelope.directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_alignedRoute_and_splitPrefixCursor
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+          splitConstruction))
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+          splitConstruction))
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_route :
+      env.DirectLoadAlignedMutableMemProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_prefixCursor :
+      env.DirectLoadMutableMemProviderPrefixCursorAtEnvelope) :
+    env.DirectLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope,
+      OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split,
+      OpEnvelope.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction,
+      OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction,
+      OpEnvelope.DirectLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope]
+      at splitConstruction embedded replayEmbedded h_route h_prefixCursor ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      OpEnvelope.directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_alignedRoute_and_prefixCursor
+        _ program witness
+        { initialState := splitConstruction.initialState
+          rows := splitConstruction.rows
+          construction :=
+            ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceConstruction.ofSplit
+              splitConstruction.acceptedTrace }
+        embedded replayEmbedded mainTable mainRow h_route h_prefixCursor
+
 /-- Load-scoped selected envelope Mem-row occurrence at the accepted trace
     construction boundary. The concrete Mem table is selected from the
     full-ensemble witness, and the shared accepted trace is recovered from the
