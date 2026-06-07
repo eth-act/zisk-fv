@@ -156,6 +156,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add selected replay-row coverage target to avoid relying on all-row read embedding for primary writes.
 - [x] Add provider-row replay coverage with primary read evidence.
 - [x] Add full-ensemble replay-provider bridge to selected-row membership.
+- [x] Add replay-provider cursor extraction target.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -280,6 +281,18 @@ the actual `replayEmbedded` path. This gives accepted full-execution integration
 a semantically correct bridge for selected loads without requiring primary
 writes to appear in the read-only replay projection. Focused
 `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for committed slice `ca4c40a0`.
+
+Current replay-provider cursor checkpoint:
+`OpEnvelope.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope`,
+`OpEnvelope.AcceptedFullExecutionMemoryReplayProviderTableCursorSourceAtEnvelope`,
+and
+`acceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope_of_fullEnsemblePrefixState`
+make the table-parametric cursor extraction target available for actual
+read/write replay-provider rows. The constructor derives selected chronological
+membership through `selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_providerReplayRows`.
+Focused `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this uncommitted slice.
 

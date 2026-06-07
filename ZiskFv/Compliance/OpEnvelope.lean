@@ -5419,6 +5419,25 @@ structure OpEnvelope.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelo
     env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
       fullTraceTable
 
+/-- Cursor-shaped extraction target using provider-row coverage through the
+    actual read/write replay projection.
+
+    This is the replay-correct successor of
+    `AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope`: primary
+    selected rows carry `wr = 0`, so selected loads can use the all-event
+    replay embedding without requiring all primary writes to appear in the
+    read-only replay surface. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 where
+  fullTraceTable :
+    env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope
+  selectedProviderRow :
+    env.SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope
+      fullTraceTable
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+      fullTraceTable
+
 /-- Table-parametric provider cursor evidence for one load envelope.
 
     Unlike `AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope`,
@@ -5439,6 +5458,22 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope
       env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
   | .lw_via_static_match .. =>
       env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+  | _ => ULift.{2, 0} Unit
+
+/-- Table-parametric replay-provider cursor evidence for one load envelope. -/
+def OpEnvelope.AcceptedFullExecutionMemoryReplayProviderTableCursorSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. => env.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope
+  | .lbu .. => env.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope
+  | .lhu .. => env.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope
+  | .lwu .. => env.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope
+  | .lb_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope
+  | .lh_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope
+  | .lw_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope
   | _ => ULift.{2, 0} Unit
 
 /-- Direct-`LD`-only table-parametric provider cursor source.
@@ -6487,6 +6522,44 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderCursorExtraction
       env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
         acceptedTrace :=
     env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_providerReplay
+      fullTraceTable selectedProviderRow
+  exact
+    { fullTraceTable := fullTraceTable
+      selectedProviderRow := selectedProviderRow
+      selectedPrefix :=
+        env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
+          acceptedTrace selectedMembership selectedPrefixStateAtAccepted }
+
+/-- Build replay-provider cursor extraction from provider replay coverage and
+    prefix-state equality. Selected chronological-row membership is derived
+    through the actual read/write replay embedding. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+    (env : OpEnvelope state m r_main)
+    (fullTraceTable :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
+    (selectedProviderRow :
+      env.SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope
+        fullTraceTable)
+    (selectedPrefixState :
+      env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+        fullTraceTable) :
+    env.AcceptedFullExecutionMemoryReplayProviderCursorExtractionAtEnvelope := by
+  let traceWithTable :=
+    env.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble
+      fullTraceTable
+  let acceptedTrace :=
+    env.acceptedTraceOfFullTraceWithMemTable traceWithTable
+  have selectedPrefixStateAtAccepted :
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace := by
+    change
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedTraceOfFullTraceWithMemTable traceWithTable)
+    exact selectedPrefixState
+  have selectedMembership :
+      env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+        acceptedTrace :=
+    env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_providerReplayRows
       fullTraceTable selectedProviderRow
   exact
     { fullTraceTable := fullTraceTable
