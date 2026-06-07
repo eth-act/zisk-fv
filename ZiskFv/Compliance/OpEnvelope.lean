@@ -7401,6 +7401,45 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitCursorSelectionSourceA
           extraction.toRowExtraction
   | _ => ULift.{2, 0} Unit
 
+/-- Split-trace provider-row version of the load-scoped row-extraction source.
+
+    Unlike `AcceptedFullExecutionMemoryProviderRowSplitCursorSelectionSourceAtEnvelope`,
+    the selected provider row and prefix evidence are stated directly over the
+    split accepted AIR/Main/Mem trace, instead of through
+    `AcceptedFullExecutionMemoryRowSplitExtraction.toRowExtraction`. -/
+def OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | _ => ULift.{2, 0} Unit
+
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
     full-execution coverage object consumed by the current compliance proof. -/
 def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
@@ -8601,6 +8640,47 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourc
       OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelection
         env0
         source.1.toRowExtraction source.2
+
+/-- Lower split-trace provider-row source evidence to provider-shaped public
+    memory evidence.
+
+    This keeps the upstream evidence split-indexed until the final public
+    memory source is assembled. The selected-prefix uniqueness proof is derived
+    from the split trace's row-order facts. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowSplitTraceSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨source.1.toRowExtraction.toFullTrace,
+        { selectedProviderRow := by
+            simpa [AcceptedFullExecutionMemoryRowExtraction.toFullTrace,
+              AcceptedFullExecutionMemoryRowSplitExtraction.toRowExtraction,
+              OpEnvelope.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope,
+              OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness]
+              using source.2.selectedProviderRow
+          selectedPrefix := by
+            simpa [AcceptedFullExecutionMemoryRowExtraction.toFullTrace,
+              AcceptedFullExecutionMemoryRowSplitExtraction.toRowExtraction,
+              OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+              OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+              OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+              OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+              OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+              using source.2.selectedPrefix
+          selectedPrefixUnique := by
+            exact
+              source.2.selectedPrefix.prefixUnique_of_nodup
+                source.1.acceptedTrace.construction.orderFacts.rowsNodup }⟩
 
 /-- Compatibility lowering from the older envelope-row public source package
     to provider-shaped public memory evidence. -/

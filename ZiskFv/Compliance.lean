@@ -808,6 +808,25 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderR
       source)
     h_known_bugs
 
+/-- Split-trace source variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitCursorSelectionSource`.
+
+    The per-envelope selected provider-row/prefix evidence is stated over the
+    split accepted AIR/Main/Mem trace itself, so this wrapper does not require
+    callers to provide evidence over `extraction.toRowExtraction`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitTraceSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowSplitTraceSelectionSource
+      source)
+    h_known_bugs
+
 /-- Variant of the global theorem whose per-envelope memory input is the
     unpacked selected-prefix and selected witness Mem-row evidence.
 
