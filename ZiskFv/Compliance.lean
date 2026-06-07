@@ -396,6 +396,41 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTrace
       program witness acceptedTrace embedded replayEmbedded)
     coverage h_known_bugs
 
+/-- Variant of the global theorem whose memory input is unpacked accepted
+    AIR/Main/Mem trace data plus provider-shaped selected-load evidence.
+
+    This is the provider-row successor to
+    `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSelection`: accepted
+    execution supplies the shared trace and embeddings, then each load envelope
+    supplies selected provider-row replay coverage and selected chronological
+    prefix cursor. Occurrence uniqueness is still derived internally from
+    `rowsNodup`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope
+        program witness acceptedTrace embedded replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus env h_burden
+    (env.acceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope_of_providerSelection
+      program witness acceptedTrace embedded replayEmbedded selection)
+    h_known_bugs
+
 /-- Variant of the global theorem whose shared memory input is the named
     accepted-execution Mem row extraction package.
 

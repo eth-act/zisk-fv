@@ -6762,6 +6762,38 @@ structure OpEnvelope.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
       (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
         program witness acceptedTrace embedded replayEmbedded)
 
+/-- Provider-row version of unpacked per-envelope selection facts for accepted
+    AIR/Main/Mem trace data.
+
+    This is the shape expected from balanced accepted-execution replay after
+    the shared accepted trace and mutable-Mem embeddings are known: the
+    selected load bus entry is matched by a concrete primary/dual replay row in
+    the witness-selected Mem table, and the same selected read has a
+    chronological prefix cursor. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows) : Type 1 where
+  selectedProviderRow :
+    env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        program witness acceptedTrace embedded replayEmbedded)
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        program witness acceptedTrace embedded replayEmbedded)
+
 /-- Per-envelope selected-load extraction indexed by the named shared row
     extraction package.
 
@@ -7705,6 +7737,48 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope
         env.AcceptedFullExecutionMemoryProviderPrefixCoverageAtEnvelope
           fullTrace
   | _ => ULift.{2, 0} Unit
+
+/-- Build the primary provider-prefix source package from unpacked accepted
+    AIR/Main/Mem trace data plus selected provider-row and prefix evidence. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope_of_providerSelection
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope
+        program witness acceptedTrace embedded replayEmbedded) :
+    env.AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope]
+      at selection ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
+          program witness acceptedTrace embedded replayEmbedded,
+        { selectedProviderRow := by
+            simpa [AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace,
+              OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness]
+              using selection.selectedProviderRow
+          selectedPrefix := by
+            simpa [AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace,
+              OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+              OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+              OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+              OpEnvelope.acceptedTraceOfFullTraceWithMemTable]
+              using selection.selectedPrefix }⟩
 
 /-- Forget selected occurrence uniqueness from the stronger provider cursor
     source package. This keeps existing callers compatible after the primary

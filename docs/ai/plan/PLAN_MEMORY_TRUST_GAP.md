@@ -131,6 +131,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add provider-shaped source construction from shared trace plus selected provider row and prefix cursor.
 - [x] Add a public provider-prefix source boundary that derives uniqueness internally.
 - [x] Move the primary compliance theorem to the provider-prefix source boundary.
+- [x] Add unpacked accepted AIR/Main/Mem provider-selection boundary.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -237,6 +238,17 @@ consumes `AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope` directly.
 The older provider cursor source wrapper remains as compatibility evidence and
 forgets uniqueness before calling the primary theorem. Focused `lake build
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this slice.
+
+Current accepted-provider-selection checkpoint: `OpEnvelope` now names
+`AcceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope`, and
+`Compliance.lean` exposes
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSelection`.
+This lets callers provide accepted AIR/Main/Mem trace data, read/replay
+embeddings, and selected provider-row/prefix evidence directly; the wrapper
+lowers those facts to the primary provider-prefix source boundary. Focused
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this slice.
 
