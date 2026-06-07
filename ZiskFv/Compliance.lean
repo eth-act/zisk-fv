@@ -721,6 +721,28 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderR
   zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowCursorSelection
     env h_burden extraction.toRowExtraction selection h_known_bugs
 
+/-- Split-trace provider-selection variant indexed by the named shared row
+    split extraction.
+
+    Unlike
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitCursorSelection`,
+    the selected provider-row/prefix evidence is stated over the split
+    accepted AIR/Main/Mem trace itself, not over
+    `extraction.toRowExtraction`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitTraceSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+        extraction)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSplitSelection
+    env h_burden extraction.program extraction.witness
+    extraction.acceptedTrace extraction.embedded extraction.replayEmbedded
+    selection h_known_bugs
+
 /-- Variant of the global theorem whose memory input is the load-scoped
     row-extraction/cursor-selection source package.
 

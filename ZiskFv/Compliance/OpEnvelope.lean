@@ -7190,6 +7190,18 @@ def OpEnvelope.acceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope_of_sp
   { selectedProviderRow := selection.selectedProviderRow
     selectedPrefix := selection.selectedPrefix }
 
+/-- Extraction-indexed provider selection over a split accepted
+    AIR/Main/Mem trace. This is the row-extraction-shaped view accepted full
+    execution should construct after producing
+    `AcceptedFullExecutionMemoryRowSplitExtraction`. -/
+def OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m) :
+    Type 1 :=
+  env.AcceptedFullExecutionMemoryProviderSplitTraceSelectionAtEnvelope
+    extraction.program extraction.witness extraction.acceptedTrace
+    extraction.embedded extraction.replayEmbedded
+
 /-- Per-envelope selected-load extraction indexed by the named shared row
     extraction package.
 
