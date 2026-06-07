@@ -2,11 +2,11 @@
 
 Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
 
-Current focus: generated-split replay-envelope construction wrapper is implemented and verified; preparing commit.
+Current focus: generated-split replay-envelope construction wrapper `4907f277` is committed. Next work is accepted full-execution construction of the remaining memory evidence.
 
 Blocking: no local blocker. The larger global blocker remains: accepted full execution data still does not construct the generated split Mem construction, mutable-Mem all-event replay embedding, selected load provider-row coverage, or selected prefix-state equality from actual accepted trace data.
 
-Next step: commit the verified generated-split wrapper, then continue toward accepted full execution constructing the remaining shared trace and per-load memory evidence.
+Next step: continue toward accepted full execution constructing the remaining shared trace and per-load memory evidence.
 
 Verification: generated-split replay-envelope wrapper passed focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and `nix run .#test`. Construction-level envelope-row bridge `0f87cb04` passed the same broad gates. Committed accepted/generated split wrapper slice `acb92c4d` and replay-only envelope-row state-selection boundary `4d1ca15a` passed the same broad gates.
 
