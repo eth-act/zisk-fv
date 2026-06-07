@@ -5250,6 +5250,39 @@ structure OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
         extraction.program extraction.witness extraction.acceptedTrace
         extraction.embedded extraction.replayEmbedded)
 
+/-- Load-scoped accepted full-execution row extraction plus cursor-shaped
+    selected-load evidence.
+
+    This is the per-envelope result shape expected from the final accepted
+    full-execution memory theorem: load envelopes carry the shared row
+    extraction package and the selected mutable-Mem row/prefix cursor for that
+    extraction, while non-load envelopes carry no memory data. -/
+def OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction
+  | _ => ULift.{2, 0} Unit
+
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
     full-execution coverage object consumed by the current compliance proof. -/
 def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
@@ -6015,6 +6048,25 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvel
     (env.acceptedFullExecutionMemoryRowSelectionAtEnvelope_of_cursorSelection
       extraction selection)
 
+/-- Lower the load-scoped row-extraction/cursor-selection source package to
+    the cursor-shaped public memory evidence consumed by the replay chain. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelection
+        _
+        source.1 source.2
+
 /-- Lower source-shaped full-execution memory evidence to the selected-cursor
     coverage package consumed by the existing replay bridge. -/
 noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceWithCoverageAtEnvelope_of_source
@@ -6245,6 +6297,40 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvel
     construction
     (env.selectedPrefixUniqueAtAcceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_nodup
       construction)
+
+/-- Re-express the older load-scoped full-execution construction object as
+    the newer row-extraction/cursor-selection source package.
+
+    This is packaging, not new memory semantics: the accepted AIR/Main/Mem
+    construction and witness embeddings become the shared row extraction, while
+    the selected envelope Mem-row occurrence and selected prefix cursor become
+    the cursor-shaped per-load selection. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope_of_traceConstruction
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope) :
+    env.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope]
+      at construction ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    refine
+      ⟨{ length := construction.length
+         program := construction.program
+         witness := construction.witness
+         acceptedTrace :=
+           { initialState := construction.construction.initialState
+             rows := construction.construction.rows
+             construction := construction.construction.acceptedTrace }
+         embedded := construction.embedded
+         replayEmbedded := construction.replayEmbedded },
+       ?_⟩
+    exact
+      { selectedEnvelopeRow := construction.selectedEnvelopeRow
+        selectedPrefix := construction.construction.selectedPrefix }
 
 /-- Combine shared accepted trace data with selected-prefix coverage to
     recover the packed load-scoped construction object used by the existing

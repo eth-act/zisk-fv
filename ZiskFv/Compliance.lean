@@ -389,6 +389,26 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursor
       extraction selection)
     h_known_bugs
 
+/-- Variant of the global theorem whose memory input is the load-scoped
+    row-extraction/cursor-selection source package.
+
+    This is the single per-envelope package expected from accepted
+    full-execution memory integration: non-load envelopes carry no memory
+    data, while load envelopes carry the shared row extraction plus selected
+    mutable-Mem row and selected chronological prefix cursor. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
+      source)
+    h_known_bugs
+
 /-- Variant of the global theorem whose per-envelope memory input is the
     unpacked selected-prefix and selected witness Mem-row evidence.
 

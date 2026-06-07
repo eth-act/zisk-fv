@@ -104,6 +104,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Name the shared accepted full-execution Mem row extraction target and add compliance wrappers for it.
 - [x] Index selected-load extraction evidence by the named shared Mem row extraction package.
 - [x] Split selected-load extraction evidence into cursor-shaped row selection.
+- [x] Package row extraction plus cursor selection as a load-scoped source target.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1333,3 +1334,17 @@ ZiskFv.Compliance`, full `lake build`, `trust/scripts/regenerate.sh`,
 `nix run .#test` pass for this slice. It still does not construct the accepted
 chronological Mem row trace, witness mutable-Mem embeddings, selected row
 occurrence, or selected cursor from balanced full-execution interactions.
+
+The current row-cursor source slice adds
+`OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope`, a
+load-scoped `Σ extraction, cursorSelection` package. It bridges this package to
+the existing cursor-source replay path, adds a constructor from the older
+load-scoped accepted-trace construction object, and exposes
+`zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursorSelectionSource`.
+This unifies the final per-envelope target: accepted full execution should
+produce one shared row extraction plus selected mutable-Mem row and selected
+prefix cursor for each load. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice.
