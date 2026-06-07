@@ -294,7 +294,7 @@ read/write replay-provider rows. The constructor derives selected chronological
 membership through `selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_providerReplayRows`.
 Focused `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
-`nix run .#test` pass for this uncommitted slice.
+`nix run .#test` pass for committed slice `c1287b25`.
 
 Current checkpoint after committed slice `f256fd0d`: the ROM/source-legality
 split is verified and committed, and the next row-indexed source-legality bridge
