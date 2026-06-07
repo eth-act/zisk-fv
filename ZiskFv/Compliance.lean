@@ -183,6 +183,28 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceConstruc
       splitConstruction)
     h_known_bugs
 
+/-- Shared split accepted AIR/Main/Mem trace plus selected-prefix variant of
+    the public global theorem.
+
+    This is the factored target for accepted full-execution integration:
+    construct the shared split Mem trace once, then supply the selected
+    chronological prefix cursor for the current load envelope. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceAndPrefix
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (splitTrace : env.AcceptedAirMainMemFullTraceSplitAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace
+          splitTrace))
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceConstructionAtEnvelope
+    env h_burden
+    (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_splitTraceAndPrefix
+      splitTrace selectedPrefix)
+    h_known_bugs
+
 /-- Variant of the global theorem whose memory input is the shared
     full-execution trace object plus ordinary per-envelope coverage.
 

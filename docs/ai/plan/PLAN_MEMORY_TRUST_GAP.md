@@ -141,6 +141,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add split row-cursor source boundaries and compliance wrappers.
 - [x] Factor top-level compliance through direct accepted AIR/Main/Mem trace construction.
 - [x] Move the named public compliance theorem to the direct accepted AIR/Main/Mem trace construction boundary.
+- [x] Factor split accepted AIR/Main/Mem trace construction into shared split trace plus selected prefix cursor.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 

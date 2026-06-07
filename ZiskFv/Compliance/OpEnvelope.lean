@@ -3486,6 +3486,43 @@ def OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope
       ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m
   | _ => Unit
 
+/-- Shared split accepted AIR/Main/Mem trace data scoped to load envelopes.
+    Non-load envelopes carry `Unit`; load envelopes carry the shared
+    program-level trace object with generated-row, row-order, and replay facts
+    still separated. -/
+def OpEnvelope.AcceptedAirMainMemFullTraceSplitAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m
+  | .lbu .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m
+  | .lhu .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m
+  | .lwu .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m
+  | .lb_via_static_match .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m
+  | .lh_via_static_match .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m
+  | .lw_via_static_match .. =>
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m
+  | _ => Unit
+
+/-- Repack split shared accepted AIR/Main/Mem trace data into the packed
+    shared trace object used by selected-prefix predicates. -/
+def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace
+    (env : OpEnvelope state m r_main)
+    (splitTrace : env.AcceptedAirMainMemFullTraceSplitAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceSplitAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope] at splitTrace ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact splitTrace.toAcceptedAirMainMemFullTrace
+
 /-- Recover the shared accepted AIR/Main/Mem trace object from the
     load-scoped accepted trace construction plus selected prefix cursor. -/
 def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_construction
@@ -8994,6 +9031,37 @@ def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_traceAndPref
         acceptedTrace := acceptedTrace.construction
         selectedPrefix := selectedPrefix }
   all_goals exact ()
+
+/-- Combine shared split accepted trace data with selected-prefix coverage to
+    recover the split load-scoped construction object.
+
+    This is the split counterpart of
+    `acceptedAirMainMemFullTraceConstructionAtEnvelope_of_traceAndPrefix`: the
+    future full-execution theorem can construct the shared split Mem trace once,
+    then separately identify each load envelope's selected prefix cursor. -/
+def OpEnvelope.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_splitTraceAndPrefix
+    (env : OpEnvelope state m r_main)
+    (splitTrace : env.AcceptedAirMainMemFullTraceSplitAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace
+          splitTrace)) :
+    env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceSplitAtEnvelope,
+      OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope,
+      OpEnvelope.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope]
+      at splitTrace selectedPrefix ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := splitTrace.initialState
+        rows := splitTrace.rows
+        acceptedTrace := splitTrace.construction
+        selectedPrefix := selectedPrefix }
 
 /-- Decompose the older load-scoped full-execution construction object into
     the newer shared trace plus selected envelope coverage package.
