@@ -490,6 +490,23 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursor
       extraction selection)
     h_known_bugs
 
+/-- Variant of the global theorem whose memory input is the named shared row
+    extraction plus provider-row cursor-shaped selected-load evidence. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowCursorSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+        extraction)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelection
+      extraction selection)
+    h_known_bugs
+
 /-- Variant of the global theorem whose memory input is the load-scoped
     row-extraction/cursor-selection source package.
 

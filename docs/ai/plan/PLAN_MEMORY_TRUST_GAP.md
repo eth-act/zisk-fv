@@ -132,6 +132,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add a public provider-prefix source boundary that derives uniqueness internally.
 - [x] Move the primary compliance theorem to the provider-prefix source boundary.
 - [x] Add unpacked accepted AIR/Main/Mem provider-selection boundary.
+- [x] Add direct global theorem for shared row extraction plus provider-row cursor selection.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -251,6 +252,15 @@ lowers those facts to the primary provider-prefix source boundary. Focused
 `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this slice.
+
+Current row-extraction provider-selection checkpoint: `Compliance.lean` now
+exposes
+`zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowCursorSelection`,
+the direct shared-extraction theorem for provider-row cursor-shaped selected
+load evidence. Focused `lake build ZiskFv.Compliance` passes; full gates are
+also complete: full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice.
 
 The latest theorem split records the exact promotion needed when full execution
 naturally produces a selected prefix cursor rather than the stronger
