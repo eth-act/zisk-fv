@@ -7743,6 +7743,40 @@ def OpEnvelope.acceptedFullExecutionMemoryProviderTraceSelectionAtEnvelope_of_sp
   { selectedProviderRow := selection.selectedProviderRow
     selectedPrefix := selection.selectedPrefix }
 
+/-- Replay-provider split provider-row version of unpacked per-envelope
+    selection facts.
+
+    This is the all-event replay successor of
+    `AcceptedFullExecutionMemoryProviderSplitTraceSelectionAtEnvelope`: primary
+    provider rows carry read evidence (`wr = 0`), so callers can use the
+    mutable-Mem replay embedding directly instead of routing through the
+    read-only projection. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryReplayProviderSplitTraceSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows) : Type 1 where
+  selectedProviderRow :
+    env.SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        program witness acceptedTrace.toAcceptedAirMainMemFullTrace
+        embedded replayEmbedded)
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        program witness acceptedTrace.toAcceptedAirMainMemFullTrace
+        embedded replayEmbedded)
+
 /-- Extraction-indexed provider selection over a split accepted
     AIR/Main/Mem trace. This is the row-extraction-shaped view accepted full
     execution should construct after producing
@@ -7752,6 +7786,20 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelo
     (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m) :
     Type 1 :=
   env.AcceptedFullExecutionMemoryProviderSplitTraceSelectionAtEnvelope
+    extraction.program extraction.witness extraction.acceptedTrace
+    extraction.embedded extraction.replayEmbedded
+
+/-- Extraction-indexed replay-provider selection over a split accepted
+    AIR/Main/Mem trace.
+
+    This keeps the selected provider row in the all-event replay shape, avoiding
+    an upstream read-only embedding requirement for primary rows that are not
+    part of the selected load. -/
+def OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m) :
+    Type 1 :=
+  env.AcceptedFullExecutionMemoryReplayProviderSplitTraceSelectionAtEnvelope
     extraction.program extraction.witness extraction.acceptedTrace
     extraction.embedded extraction.replayEmbedded
 
@@ -7990,6 +8038,46 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAt
   | .lw_via_static_match .. =>
       Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
         env.AcceptedFullExecutionMemoryProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | _ => ULift.{2, 0} Unit
+
+/-- Replay-provider split-trace version of the load-scoped row-extraction
+    source.
+
+    This is the preferred source shape after threading all-event mutable-Mem
+    replay embeddings: the selected provider row is primary-read-with-`wr = 0`
+    or dual-read, and selected chronological membership is derived through
+    `MutableMemReplayRowsEmbeddedInTrace`. -/
+def OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+          extraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
           extraction
   | _ => ULift.{2, 0} Unit
 
@@ -9297,6 +9385,33 @@ noncomputable def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_o
       { initialState := source.1.acceptedTrace.initialState
         rows := source.1.acceptedTrace.rows
         acceptedTrace := source.1.acceptedTrace.construction
+        selectedPrefix := source.2.selectedPrefix }
+
+/-- Lower replay-provider split source evidence to the split accepted
+    AIR/Main/Mem construction consumed by the replay proof.
+
+    The selected provider row remains a visible premise of the source object;
+    this lowering only repacks the shared split Mem trace and selected prefix
+    cursor into the existing construction-shaped boundary. -/
+noncomputable def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayProviderRowSplitTraceSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := source.1.acceptedTrace.initialState
+        rows := source.1.acceptedTrace.rows
+        acceptedTrace :=
+          ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceConstruction.ofSplit
+            source.1.acceptedTrace.construction
         selectedPrefix := source.2.selectedPrefix }
 
 /-- Lower source-shaped full-execution memory evidence to the selected-cursor

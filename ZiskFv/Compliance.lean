@@ -929,6 +929,25 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderR
       source)
     h_known_bugs
 
+/-- Replay-provider split-trace source variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitTraceSelectionSource`.
+
+    The selected provider row is stated against the all-event mutable-Mem
+    replay projection, with primary rows carrying `wr = 0`, so callers do not
+    route selected-load coverage through the read-only replay embedding. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus
+    env h_burden
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayProviderRowSplitTraceSelectionSource
+      source)
+    h_known_bugs
+
 /-- Variant whose memory input is the split provider-shaped accepted
     AIR/Main/Mem construction package.
 
