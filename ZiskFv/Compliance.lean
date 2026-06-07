@@ -139,6 +139,68 @@ theorem zisk_riscv_compliant_program_bus
   · exact zisk_riscv_compliant_program_bus_misc env h_memory_burden
   · exact zisk_riscv_compliant_program_bus_remaining env h_memory_burden h_known_bugs
 
+/-- Generated Mem construction variant of the known-defect-aware global
+    theorem.
+
+    This exposes what the current replay proof actually consumes: generated
+    Mem trace construction plus the selected prefix cursor. The accepted
+    AIR/Main/Mem provenance wrappers above this theorem remain useful
+    integration targets, but the load replay proof itself only needs this
+    generated construction boundary. -/
+theorem zisk_riscv_compliant_program_bus_of_generatedMemFullTraceConstructionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (generatedConstruction :
+      env.GeneratedMemFullTraceConstructionAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq := by
+  obtain ⟨_h_row_burden, _h_table_provider_burden, _h_route_burden⟩ :=
+    h_burden
+  have h_mem_rows_construction :
+      env.AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope :=
+    env.acceptedFullMemoryBusRowsTraceConstructionAtEnvelope_of_generatedTraceAtEnvelope
+      generatedConstruction
+  have h_mem_rows_trace : env.AcceptedFullMemoryBusRowsTraceAtEnvelope :=
+    env.acceptedFullMemoryBusRowsTraceAtEnvelope_of_construction
+      h_mem_rows_construction
+  have h_full_mem_bus_trace : env.AcceptedFullMemoryBusTraceAtEnvelope :=
+    env.acceptedFullMemoryBusTraceAtEnvelope_of_rowsTraceAtEnvelope
+      h_mem_rows_trace
+  have h_mem_execution_trace : env.AcceptedMemoryBusExecutionTraceAtEnvelope :=
+    env.acceptedMemoryBusExecutionTraceAtEnvelope_of_fullTraceAtEnvelope
+      h_full_mem_bus_trace
+  have h_full_mem_trace : env.AcceptedFullMemoryTraceAtEnvelope :=
+    env.acceptedFullMemoryTraceAtEnvelope_of_memoryBusExecutionTraceAtEnvelope
+      h_mem_execution_trace
+  have h_memory_burden : env.memoryBurden :=
+    env.memoryBurden_of_acceptedFullMemoryTraceAtEnvelope h_full_mem_trace
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact zisk_riscv_compliant_program_bus_branch env
+  · exact zisk_riscv_compliant_program_bus_nomem env
+  · exact zisk_riscv_compliant_program_bus_rtype_binary env
+  · exact zisk_riscv_compliant_program_bus_itype_binary env
+  · exact zisk_riscv_compliant_program_bus_shift env
+  · exact zisk_riscv_compliant_program_bus_add_rtypew env
+  · exact zisk_riscv_compliant_program_bus_ldsd env h_memory_burden
+  · exact zisk_riscv_compliant_program_bus_divu_except_known_defects env h_known_bugs
+  · exact zisk_riscv_compliant_program_bus_misc env h_memory_burden
+  · exact zisk_riscv_compliant_program_bus_remaining env h_memory_burden h_known_bugs
+
+/-- Split generated Mem construction variant of the known-defect-aware global
+    theorem. -/
+theorem zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (splitConstruction :
+      env.GeneratedMemFullTraceSplitConstructionAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_generatedMemFullTraceConstructionAtEnvelope
+    env h_burden
+    (env.generatedMemFullTraceConstructionAtEnvelope_of_split
+      splitConstruction)
+    h_known_bugs
+
 /-- Provider-prefix wrapper for the public global theorem.
 
     This keeps existing provider-shaped integrations available, but the public
