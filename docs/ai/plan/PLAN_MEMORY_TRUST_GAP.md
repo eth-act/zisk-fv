@@ -234,9 +234,10 @@ balanced active-Main memory-bus provider-row coverage theorem. This is a
 verified proof-surface improvement, not the final extraction theorem: the
 provider result still exposes MemAlignReadByte, MemAlignByte, MemAlign,
 mutable-Mem primary/dual, and unified-Main branches. The next proof needs to
-either rule out the non-mutable-Mem branches from stronger selector/route facts
-or explicitly carry the exact branch exclusion needed to identify the selected
-load with the witness-selected mutable Mem table.
+split by route rather than assume one blanket exclusion: LD/direct full-width
+loads should refine the provider result to the mutable-Mem branch, while
+subword loads already carry `MemAlignWitness` and likely need a chained
+Main-to-MemAlign-to-mutable-Mem selected-row proof.
 
 Current checkpoint: the replay-embedding slice is verified and committed. The
 current uncommitted patch adds selected accepted-row membership from the
