@@ -3087,6 +3087,141 @@ def MainMemBusMultiplicitySound
       ∀ interaction ∈ table.interactionsWith MemBusChannel.toRaw,
         interaction.mult = -1 ∨ interaction.mult = 0
 
+/-- Row-local ROM/source selector legality needed to make unified-Main
+    memory-bus multiplicities pull-or-zero.
+
+    The sums are stated after table evaluation because this is the exact
+    proof surface consumed by `MainMemBusMultiplicitySound`: Main emits the
+    three memory-bus interactions with multiplicities `-aSum`, `-bSum`, and
+    `-storeSum`. -/
+def MainMemBusSourceMultiplicitySound
+    {length : ℕ} (program : Program length)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
+    Prop :=
+  ∀ table ∈ witness.allTables,
+    table.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program →
+      ∀ row ∈ table.table,
+        let env := table.environment row
+        (env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.a_src_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.a_src_reg) = 1
+          ∨ env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.a_src_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.a_src_reg) = 0)
+        ∧ (env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.b_src_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.b_src_ind
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.b_src_reg) = 1
+          ∨ env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.b_src_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.b_src_ind
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.b_src_reg) = 0)
+        ∧ (env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.store_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.store_ind
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.store_reg) = 1
+          ∨ env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.store_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.store_ind
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.rom.store_reg) = 0)
+
+/-- Source selector legality discharges the coarser unified-Main memory-bus
+    multiplicity invariant used to rule out Main self-provider routes. -/
+theorem mainMemBusMultiplicitySound_of_sourceMultiplicitySound
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_source : MainMemBusSourceMultiplicitySound program witness) :
+    MainMemBusMultiplicitySound program witness := by
+  intro table h_table h_component interaction h_interaction
+  obtain ⟨row, h_row, h_eval⟩ :=
+    exists_main_mem_row_eval_of_interaction_mem h_component h_interaction
+  have h_row_source := h_source table h_table h_component row h_row
+  dsimp only at h_row_source
+  rcases h_row_source with ⟨h_a, h_b, h_store⟩
+  rcases h_eval with h_eval | h_eval | h_eval
+  · rcases h_a with h_one | h_zero
+    · left
+      rw [h_eval]
+      change
+        (-1 : FGL) * Expression.eval (table.environment row)
+          ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.a_src_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.a_src_reg) = -1
+      rw [h_one]
+      ring
+    · right
+      rw [h_eval]
+      change
+        (-1 : FGL) * Expression.eval (table.environment row)
+          ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.a_src_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.a_src_reg) = 0
+      rw [h_zero]
+      ring
+  · rcases h_b with h_one | h_zero
+    · left
+      rw [h_eval]
+      change
+        (-1 : FGL) * Expression.eval (table.environment row)
+          ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_ind
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_reg) = -1
+      rw [h_one]
+      ring
+    · right
+      rw [h_eval]
+      change
+        (-1 : FGL) * Expression.eval (table.environment row)
+          ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_ind
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_reg) = 0
+      rw [h_zero]
+      ring
+  · rcases h_store with h_one | h_zero
+    · left
+      rw [h_eval]
+      change
+        (-1 : FGL) * Expression.eval (table.environment row)
+          ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_ind
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_reg) = -1
+      rw [h_one]
+      ring
+    · right
+      rw [h_eval]
+      change
+        (-1 : FGL) * Expression.eval (table.environment row)
+          ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_mem
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_ind
+            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_reg) = 0
+      rw [h_zero]
+      ring
+
 /-- Main self-provider memory routes are impossible once unified-Main
     memory-bus multiplicities are known to be pull-or-zero only. -/
 theorem no_activeMainSelfMemProviderRowMatchSpec_of_mainMemBusMultiplicitySound

@@ -122,6 +122,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Reduce direct-`LD` same-table prefix-state replay to selected prefix cursor replay plus accepted-row uniqueness.
 - [x] Replace the over-broad direct-`LD` generic MemAlign exclusion target with aligned direct-Mem selected-provider coverage or provider uniqueness.
 - [x] Construct table-parametric provider cursor source for direct `LD` from aligned route coverage plus selected prefix replay.
+- [x] Split `MainMemBusMultiplicitySound` through row-local Main source-multiplicity legality.
 - [ ] Discharge `MainMemBusMultiplicitySound` from ROM/source legality for unified Main memory interactions.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -179,7 +180,7 @@ same-table selected prefix cursors, derives occurrence uniqueness from
 `fullTraceTable.acceptedTrace.construction.rowsNodup`, and feeds the
 route-plus-prefix source composition through a replay-shaped prefix-cursor
 wrapper. Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
-passes for this slice; full gates are pending before commit.
+passed for this slice, and later full-gate runs also passed.
 
 The current public-boundary slice adds
 `OpEnvelope.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope` and
@@ -1569,6 +1570,21 @@ generic MemAlign is impossible for every width-8 load. The wrapper
 derives table-parametric provider cursor source evidence from that positive
 route plus same-table selected prefix cursors, so aligned direct-Mem coverage
 can bypass the over-broad generic-MemAlign exclusion target. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust check scripts, and `nix run .#test` pass for this
+slice.
+
+The current source-multiplicity split adds
+`ZiskFv.AirsClean.FullEnsemble.MainMemBusSourceMultiplicitySound`, a row-local
+full-ensemble predicate saying each unified-Main `a`, `b`, and `store`
+memory-source selector sum evaluates to `1` or `0`. The theorem
+`mainMemBusMultiplicitySound_of_sourceMultiplicitySound` derives the coarser
+`MainMemBusMultiplicitySound` from that row-local source predicate, and the
+direct-`LD` generic-MemAlign route helpers now expose the source-multiplicity
+predicate instead of the coarser pull-or-zero invariant. This is a real split,
+not final closure: accepted full execution still has to prove the source sums
+from ROM/source legality for every unified-Main row. Focused `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance` and `lake build
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
 regeneration, both trust check scripts, and `nix run .#test` pass for this
 slice.
