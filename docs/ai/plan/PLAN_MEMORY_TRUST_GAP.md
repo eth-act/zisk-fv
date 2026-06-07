@@ -120,8 +120,8 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split direct-`LD` table-parametric provider cursor construction into same-table provider-row replay plus prefix-state replay.
 - [x] Compose direct-`LD` active route coverage, replay embeddings, and table-indexed prefix replay into direct source evidence.
 - [x] Reduce direct-`LD` same-table prefix-state replay to selected prefix cursor replay plus accepted-row uniqueness.
-- [ ] Replace the over-broad direct-`LD` generic MemAlign exclusion target with aligned direct-Mem selected-provider coverage or provider uniqueness.
-- [ ] Construct table-parametric provider cursor source for direct `LD` from aligned route coverage plus selected prefix replay.
+- [x] Replace the over-broad direct-`LD` generic MemAlign exclusion target with aligned direct-Mem selected-provider coverage or provider uniqueness.
+- [x] Construct table-parametric provider cursor source for direct `LD` from aligned route coverage plus selected prefix replay.
 - [ ] Discharge `MainMemBusMultiplicitySound` from ROM/source legality for unified Main memory interactions.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -1560,3 +1560,15 @@ the prefix-state predicate for the exact concrete Mem provider table selected
 by route balance. Focused `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust check
 scripts, and `nix run .#test` pass for this slice.
+
+The aligned-route split adds
+`OpEnvelope.DirectLoadAlignedMutableMemProviderRouteAtEnvelope` as the positive
+direct-Mem boundary for direct `LD`, rather than requiring callers to prove that
+generic MemAlign is impossible for every width-8 load. The wrapper
+`directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_alignedRoute_and_prefixCursor`
+derives table-parametric provider cursor source evidence from that positive
+route plus same-table selected prefix cursors, so aligned direct-Mem coverage
+can bypass the over-broad generic-MemAlign exclusion target. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, both trust check scripts, and `nix run .#test` pass for this
+slice.
