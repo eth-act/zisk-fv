@@ -6840,6 +6840,28 @@ structure AcceptedFullExecutionMemoryRowExtraction
     ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
       witness acceptedTrace.rows
 
+/-- Split shared accepted-execution Mem row extraction target.
+
+    This is the same program-level target as
+    `AcceptedFullExecutionMemoryRowExtraction`, but the accepted AIR/Main/Mem
+    trace keeps generated Mem row facts, row-order facts, and replay facts
+    separated until downstream bridges explicitly repack them. -/
+structure AcceptedFullExecutionMemoryRowSplitExtraction
+    (main : Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit main
+  embedded :
+    ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+      witness acceptedTrace.rows
+  replayEmbedded :
+    ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+      witness acceptedTrace.rows
+
 /-- Lower the named row-extraction target to the shared full-execution memory
     trace package already consumed by the load replay bridge. -/
 def AcceptedFullExecutionMemoryRowExtraction.toFullTrace
@@ -6849,6 +6871,20 @@ def AcceptedFullExecutionMemoryRowExtraction.toFullTrace
   AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
     extraction.program extraction.witness extraction.acceptedTrace
     extraction.embedded extraction.replayEmbedded
+
+/-- Repack split shared row extraction into the packed extraction package
+    consumed by existing compliance wrappers. -/
+def AcceptedFullExecutionMemoryRowSplitExtraction.toRowExtraction
+    {main : Valid_Main FGL FGL}
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction main) :
+    AcceptedFullExecutionMemoryRowExtraction main :=
+  { length := extraction.length
+    program := extraction.program
+    witness := extraction.witness
+    acceptedTrace :=
+      extraction.acceptedTrace.toAcceptedAirMainMemFullTrace
+    embedded := extraction.embedded
+    replayEmbedded := extraction.replayEmbedded }
 
 /-- Load-scoped view of the shared full-execution memory trace. -/
 def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace
@@ -7181,6 +7217,80 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderRowCursorSelectionSourceAtEnve
   | .lw_via_static_match .. =>
       Σ extraction : AcceptedFullExecutionMemoryRowExtraction m,
         env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope extraction
+  | _ => ULift.{2, 0} Unit
+
+/-- Split load-scoped accepted full-execution row extraction plus
+    cursor-shaped selected-load evidence.
+
+    This keeps accepted AIR/Main/Mem generated-row, row-order, and replay facts
+    separated in the shared extraction package, then repacks only through
+    `AcceptedFullExecutionMemoryRowSplitExtraction.toRowExtraction` when
+    consuming existing selection predicates. -/
+def OpEnvelope.AcceptedFullExecutionMemoryRowSplitCursorSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | _ => ULift.{2, 0} Unit
+
+/-- Split provider-row version of the load-scoped row-extraction source. -/
+def OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitCursorSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+          extraction.toRowExtraction
   | _ => ULift.{2, 0} Unit
 
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
@@ -8248,6 +8358,25 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvel
         _
         source.1 source.2
 
+/-- Lower split load-scoped row-extraction/cursor-selection source evidence to
+    the packed cursor-shaped public memory evidence. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowSplitCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryRowSplitCursorSelectionSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryRowSplitCursorSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelection
+        _
+        source.1.toRowExtraction source.2
+
 /-- Build provider-row cursor selection from the older envelope-row cursor
     selection. This is a compatibility adapter: envelope-row occurrence is
     lowered to provider replay coverage, while the upstream-facing provider
@@ -8344,6 +8473,26 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourc
       OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelection
         env0
         source.1 source.2
+
+/-- Lower split load-scoped provider-row extraction/cursor-selection source
+    evidence to provider-shaped public memory evidence. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowSplitCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryProviderRowSplitCursorSelectionSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderRowSplitCursorSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelection
+        env0
+        source.1.toRowExtraction source.2
 
 /-- Compatibility lowering from the older envelope-row public source package
     to provider-shaped public memory evidence. -/

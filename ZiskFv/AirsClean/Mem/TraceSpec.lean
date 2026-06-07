@@ -496,4 +496,24 @@ structure AcceptedAirMainMemFullTrace
   construction :
     AcceptedAirMainMemFullTraceConstruction main initialState rows
 
+/-- Program-level accepted AIR/Main/Mem trace data with generated row facts,
+    row-order facts, and replay facts kept split. -/
+structure AcceptedAirMainMemFullTraceSplit
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) : Type where
+  initialState : SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  construction :
+    AcceptedAirMainMemFullTraceSplitConstruction main initialState rows
+
+/-- Repack split program-level accepted AIR/Main/Mem trace data into the
+    packed trace object consumed by existing replay bridges. -/
+def AcceptedAirMainMemFullTraceSplit.toAcceptedAirMainMemFullTrace
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    (trace : AcceptedAirMainMemFullTraceSplit main) :
+    AcceptedAirMainMemFullTrace main :=
+  { initialState := trace.initialState
+    rows := trace.rows
+    construction :=
+      AcceptedAirMainMemFullTraceConstruction.ofSplit trace.construction }
+
 end ZiskFv.AirsClean.Mem

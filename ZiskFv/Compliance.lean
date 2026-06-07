@@ -524,6 +524,24 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtrac
   zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace env h_burden
     extraction.toFullTrace coverage h_known_bugs
 
+/-- Split variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtraction`.
+
+    Accepted full-execution integration can keep accepted AIR/Main/Mem
+    generated-row, row-order, and replay facts separated in `extraction`; this
+    wrapper repacks only at the existing full-trace compliance boundary. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowSplitExtraction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m)
+    (coverage :
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+        extraction.toRowExtraction.toFullTrace)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtraction
+    env h_burden extraction.toRowExtraction coverage h_known_bugs
+
 /-- Variant of the global theorem whose memory input is the named shared row
     extraction plus unpacked selected-load evidence.
 
@@ -542,6 +560,20 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtrac
     (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowSelection
       extraction selection)
     h_known_bugs
+
+/-- Split variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtractionSelection`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowSplitExtractionSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryRowSelectionAtEnvelope
+        extraction.toRowExtraction)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtractionSelection
+    env h_burden extraction.toRowExtraction selection h_known_bugs
 
 /-- Variant of the global theorem whose memory input is the named shared row
     extraction plus cursor-shaped selected-load evidence.
@@ -565,6 +597,20 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursor
       extraction selection)
     h_known_bugs
 
+/-- Split variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursorSelection`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowSplitCursorSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+        extraction.toRowExtraction)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursorSelection
+    env h_burden extraction.toRowExtraction selection h_known_bugs
+
 /-- Variant of the global theorem whose memory input is the named shared row
     extraction plus provider-row cursor-shaped selected-load evidence. -/
 theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowCursorSelection
@@ -581,6 +627,20 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderR
     (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelection
       extraction selection)
     h_known_bugs
+
+/-- Split variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowCursorSelection`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitCursorSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryProviderRowCursorSelectionAtEnvelope
+        extraction.toRowExtraction)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowCursorSelection
+    env h_burden extraction.toRowExtraction selection h_known_bugs
 
 /-- Variant of the global theorem whose memory input is the load-scoped
     row-extraction/cursor-selection source package.
@@ -602,6 +662,21 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursor
       source)
     h_known_bugs
 
+/-- Split variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursorSelectionSource`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowSplitCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryRowSplitCursorSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowSplitCursorSelectionSource
+      source)
+    h_known_bugs
+
 /-- Variant of the global theorem whose memory input is load-scoped
     provider-row extraction/cursor-selection evidence. -/
 theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowCursorSelectionSource
@@ -614,6 +689,21 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderR
   zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTraceCursorSource
     env h_burden
     (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowCursorSelectionSource
+      source)
+    h_known_bugs
+
+/-- Split variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowCursorSelectionSource`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitCursorSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryProviderRowSplitCursorSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_providerRowSplitCursorSelectionSource
       source)
     h_known_bugs
 
