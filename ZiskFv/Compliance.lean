@@ -1171,6 +1171,26 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayPro
       source)
     h_known_bugs
 
+/-- Replay-only split-trace source variant.
+
+    This is the source-shaped counterpart of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceSelection`:
+    the shared extraction carries only the all-event replay embedding for the
+    selected mutable Mem table, and selected provider coverage is stated
+    against that table directly. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus
+    env h_burden
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayRowSplitTraceSelectionSource
+      source)
+    h_known_bugs
+
 /-- Variant whose memory input is the split provider-shaped accepted
     AIR/Main/Mem construction package.
 
@@ -1189,6 +1209,25 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderS
   zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitTraceSelectionSource
     env h_burden
     (env.acceptedFullExecutionMemoryProviderRowSplitTraceSelectionSourceAtEnvelope_of_providerSplitTraceConstruction
+      construction)
+    h_known_bugs
+
+/-- Replay-only split construction variant.
+
+    This is the all-event replay successor of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderSplitTraceConstruction`:
+    it consumes split accepted AIR/Main/Mem construction plus replay-only
+    selected provider-row evidence, without a read-only mutable-Mem embedding. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplaySplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (construction :
+      env.AcceptedFullExecutionMemoryReplaySplitTraceConstructionAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope_of_replaySplitTraceConstruction
       construction)
     h_known_bugs
 
@@ -1225,6 +1264,38 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSplitTrace
     (env.acceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness_of_fields
       program witness splitConstruction embedded replayEmbedded
       selectedProviderRow)
+    h_known_bugs
+
+/-- Replay-only split-indexed variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSplitTraceConstruction`.
+
+    The caller supplies split accepted AIR/Main/Mem construction, the
+    all-event mutable-Mem replay embedding, and selected provider replay-row
+    coverage over the internally chosen mutable Mem table. The older
+    read-only mutable-Mem embedding is not part of this boundary. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemReplaySplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction)
+    (selectedProviderRow :
+      env.SelectedMemReplayProviderRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness splitConstruction replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplaySplitTraceConstruction
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplaySplitTraceConstructionWithWitness_of_fields
+      program witness splitConstruction replayEmbedded selectedProviderRow)
     h_known_bugs
 
 /-- Variant of the global theorem whose per-envelope memory input is the

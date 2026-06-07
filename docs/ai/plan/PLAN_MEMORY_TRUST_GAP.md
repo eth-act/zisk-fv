@@ -164,6 +164,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add replay-only cursor-to-state adapter using accepted trace `rowsNodup`.
 - [x] Add accepted-split replay-only extraction and compliance boundary.
 - [x] Add direct split generated/accepted Mem construction replay projections.
+- [x] Add replay-only split construction boundary without read-only Mem embedding.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -288,6 +289,24 @@ without first repacking through the older packed generated construction shape.
 This is a real projection from existing split evidence, not final closure:
 accepted full execution still has to produce the split trace and selected
 prefix/provider facts. Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this slice.
+
+Current replay-only construction checkpoint:
+`AcceptedFullExecutionMemoryReplaySplitTraceConstructionWithWitness` and
+`AcceptedFullExecutionMemoryReplaySplitTraceConstructionAtEnvelope` now carry
+split accepted AIR/Main/Mem construction, all-event mutable-Mem replay
+embedding, and selected provider replay-row coverage over the internally chosen
+mutable Mem table without requiring the older read-only mutable-Mem embedding.
+`acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope_of_replaySplitTraceConstruction`
+lowers this construction package to the existing replay-only split trace
+selection source. The new compliance wrappers
+`zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSource`,
+`zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplaySplitTraceConstruction`,
+and
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemReplaySplitTraceConstruction`
+route it to the public compliance theorem. Focused `lake build
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this slice.
