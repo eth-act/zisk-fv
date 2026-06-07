@@ -218,12 +218,12 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace
     h_known_bugs
 
 /-- Variant of the global theorem whose memory input is accepted AIR/Main/Mem
-    trace data plus the full RV64IM witness and mutable-Mem embedding.
+    trace data plus the full RV64IM witness and mutable-Mem embeddings.
 
     This exposes the next upstream integration target without changing the
     remaining proof burden: accepted full execution still has to construct the
-    `AcceptedAirMainMemFullTrace`, the witness-level embedding, and the
-    selected per-envelope coverage. -/
+    `AcceptedAirMainMemFullTrace`, the witness-level read and replay
+    embeddings, and the selected per-envelope coverage. -/
 theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTrace
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
@@ -237,22 +237,25 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTrace
     (embedded :
       ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
         witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
     (coverage :
       env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
         (AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
-          program witness acceptedTrace embedded))
+          program witness acceptedTrace embedded replayEmbedded))
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
   zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace env h_burden
     (AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
-      program witness acceptedTrace embedded)
+      program witness acceptedTrace embedded replayEmbedded)
     coverage h_known_bugs
 
 /-- Variant of the global theorem whose per-envelope memory input is the
     unpacked selected-prefix and selected witness Mem-row evidence.
 
     This is the next accepted-execution integration shape after constructing
-    the shared accepted AIR/Main/Mem trace and mutable-Mem embedding. It still
+    the shared accepted AIR/Main/Mem trace and mutable-Mem embeddings. It still
     leaves the semantic Mem trace construction itself explicit in
     `acceptedTrace`. -/
 theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSelection
@@ -268,15 +271,18 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSelection
     (embedded :
       ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
         witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
     (selection :
       env.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
-        program witness acceptedTrace embedded)
+        program witness acceptedTrace embedded replayEmbedded)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
   zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTrace
-    env h_burden program witness acceptedTrace embedded
+    env h_burden program witness acceptedTrace embedded replayEmbedded
     (env.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
-      program witness acceptedTrace embedded selection)
+      program witness acceptedTrace embedded replayEmbedded selection)
     h_known_bugs
 
 end ZiskFv.Compliance

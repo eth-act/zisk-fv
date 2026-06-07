@@ -1339,6 +1339,17 @@ def memDualReadReplayEntryOfRow
   ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
     (ZiskFv.AirsClean.Mem.memBusDualMessage row) (-1) 2
 
+/-- Public replay-row view of a primary Mem provider row, preserving the
+    read/write polarity carried by `wr`. For boolean `wr`, this maps
+    `wr = 0` to legacy read multiplicity `-1` and `wr = 1` to write
+    multiplicity `1`. -/
+@[reducible]
+def memPrimaryReplayEntryOfRow
+    (row : ZiskFv.AirsClean.Mem.MemRow FGL) :
+    Interaction.MemoryBusEntry FGL :=
+  ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+    (ZiskFv.AirsClean.Mem.memBusMessage row) (2 * row.wr - 1) 2
+
 /-- Primary-read replay rows projected from every row of a Mem table. -/
 @[reducible]
 def memPrimaryReadReplayRowsOfTable
@@ -1365,6 +1376,23 @@ def memReadReplayRowsOfTable
     (table : Table FGL) : List (Interaction.MemoryBusEntry FGL) :=
   memPrimaryReadReplayRowsOfTable table ++ memDualReadReplayRowsOfTable table
 
+/-- Primary replay rows projected from every Mem table row, preserving
+    read/write polarity. -/
+@[reducible]
+def memPrimaryReplayRowsOfTable
+    (table : Table FGL) : List (Interaction.MemoryBusEntry FGL) :=
+  table.table.map fun providerRow =>
+    memPrimaryReplayEntryOfRow
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
+
+/-- Full replay-row surface exposed by a dual-aware Mem table: primary rows
+    preserve read/write polarity, and dual rows are pinned reads. -/
+@[reducible]
+def memReplayRowsOfTable
+    (table : Table FGL) : List (Interaction.MemoryBusEntry FGL) :=
+  memPrimaryReplayRowsOfTable table ++ memDualReadReplayRowsOfTable table
+
 /-- The projected read-replay rows of a concrete Mem table are embedded in
     the accepted chronological memory-bus row trace. Proving this embedding
     is the global AIR/Main/Mem integration obligation; selected-row coverage
@@ -1373,6 +1401,15 @@ def MemReadReplayRowsEmbeddedInTrace
     (table : Table FGL)
     (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
   ∀ entry, entry ∈ memReadReplayRowsOfTable table → entry ∈ rows
+
+/-- The projected read/write replay rows of a concrete Mem table are embedded
+    in the accepted chronological memory-bus row trace. This is the stronger
+    table-level embedding needed by global memory replay: writes must be
+    present in the chronological trace so store replay can update memory. -/
+def MemReplayRowsEmbeddedInTrace
+    (table : Table FGL)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ entry, entry ∈ memReplayRowsOfTable table → entry ∈ rows
 
 /-- Witness-level embedding obligation for mutable Mem tables. Accepted
     full-execution integration should prove this from the chronological
@@ -1387,6 +1424,87 @@ def MutableMemReadReplayRowsEmbeddedInTrace
     table ∈ witness.allTables →
     table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
       MemReadReplayRowsEmbeddedInTrace table rows
+
+/-- Witness-level embedding obligation for all mutable-Mem replay rows,
+    including primary writes. This is the trace/table projection needed before
+    accepted full execution can prove chronological memory replay, while the
+    older read-only embedding remains available for selected-load coverage. -/
+def MutableMemReplayRowsEmbeddedInTrace
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+      MemReplayRowsEmbeddedInTrace table rows
+
+/-- A primary read projection is the polarity-preserving primary replay row
+    when the concrete Mem row is a read. -/
+theorem memPrimaryReadReplayEntryOfRow_eq_primaryReplayEntryOfRow_of_wr_zero
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_wr : row.wr = 0) :
+    memPrimaryReadReplayEntryOfRow row = memPrimaryReplayEntryOfRow row := by
+  simp [memPrimaryReadReplayEntryOfRow, memPrimaryReplayEntryOfRow, h_wr]
+
+/-- A concrete Mem table row contributes its primary polarity-preserving
+    projection to the table's full replay-row surface. -/
+theorem mem_primary_replay_entry_mem_of_table_row
+    {table : Table FGL} {providerRow : Array FGL}
+    (h_row : providerRow ∈ table.table) :
+    memPrimaryReplayEntryOfRow
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
+      ∈ memReplayRowsOfTable table := by
+  unfold memReplayRowsOfTable memPrimaryReplayRowsOfTable
+  exact List.mem_append_left _
+    (List.mem_map.mpr ⟨providerRow, h_row, rfl⟩)
+
+/-- A concrete Mem table row contributes its dual read projection to the
+    table's full replay-row surface. -/
+theorem mem_dual_read_replay_entry_mem_of_replay_table_row
+    {table : Table FGL} {providerRow : Array FGL}
+    (h_row : providerRow ∈ table.table) :
+    memDualReadReplayEntryOfRow
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
+      ∈ memReplayRowsOfTable table := by
+  unfold memReplayRowsOfTable memDualReadReplayRowsOfTable
+  exact List.mem_append_right _
+    (List.mem_map.mpr ⟨providerRow, h_row, rfl⟩)
+
+/-- The all-replay-row embedding implies read-only embedding for selected
+    primary reads, once the selected Mem row is known to be a read. -/
+theorem mem_primary_read_replay_entry_mem_of_replay_embedded_table_row
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {providerRow : Array FGL}
+    (h_embedded : MemReplayRowsEmbeddedInTrace table rows)
+    (h_row : providerRow ∈ table.table)
+    (h_wr :
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0) :
+    memPrimaryReadReplayEntryOfRow
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
+      ∈ rows := by
+  rw [memPrimaryReadReplayEntryOfRow_eq_primaryReplayEntryOfRow_of_wr_zero
+    h_wr]
+  exact h_embedded _
+    (mem_primary_replay_entry_mem_of_table_row h_row)
+
+/-- The all-replay-row embedding directly implies dual-read embedding. -/
+theorem mem_dual_read_replay_entry_mem_of_replay_embedded_table_row
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {providerRow : Array FGL}
+    (h_embedded : MemReplayRowsEmbeddedInTrace table rows)
+    (h_row : providerRow ∈ table.table) :
+    memDualReadReplayEntryOfRow
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
+      ∈ rows :=
+  h_embedded _
+    (mem_dual_read_replay_entry_mem_of_replay_table_row h_row)
 
 /-- A concrete Mem table row contributes its primary read projection to the
     table's read-replay row surface. -/

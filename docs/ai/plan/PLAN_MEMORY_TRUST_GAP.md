@@ -94,6 +94,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Verify and commit dual-step range/no-wrap facts for Mem chronology.
 - [x] Verify and commit previous-step same-address chronology facts for Mem replay.
 - [x] Verify and commit effective previous-row primary/dual chronology facts.
+- [x] Expose all-event mutable-Mem replay embedding alongside selected-read embedding.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1169,3 +1170,17 @@ internally. Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
 passed; full `lake build`, trust regeneration, both trust gates, closure print
 with zero project axiom names, targeted retired-memory scan, and
 `nix run .#test` also passed.
+
+The current replay-embedding slice adds polarity-preserving mutable-Mem replay
+row projections in `ZiskFv.AirsClean.FullEnsemble.Balance` and exposes
+`MutableMemReplayRowsEmbeddedInTrace` beside the existing selected-read
+embedding. `AcceptedFullExecutionMemoryTrace`,
+`AcceptedFullExecutionMemoryTraceConstructionWithWitness`, and the public
+accepted AIR/Main/Mem wrapper theorems now carry both obligations: read-only
+embedding for selected load coverage and all-event replay embedding for future
+store/update replay construction. Focused
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance` and
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
+`lake build`, trust regeneration, both trust gates, closure print with zero
+project axiom names, targeted retired-memory scan, and `nix run .#test` passed
+for this slice.
