@@ -165,6 +165,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add accepted-split replay-only extraction and compliance boundary.
 - [x] Add direct split generated/accepted Mem construction replay projections.
 - [x] Add replay-only split construction boundary without read-only Mem embedding.
+- [x] Add replay-only state-selection source boundary for shared split extraction.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -310,6 +311,21 @@ route it to the public compliance theorem. Focused `lake build
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this slice.
+
+Current replay-only state-selection checkpoint:
+`AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope`
+now packages a shared replay-only split extraction with per-load selected
+provider-row coverage and prefix-state equality, and
+`acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope_of_stateSelectionSource`
+lowers it to the existing cursor-shaped replay-only source by deriving the
+selected prefix cursor internally. The new compliance wrappers
+`zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceStateSelection`
+and
+`zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSource`
+make this proof shape available at the top level. This narrows the future
+accepted-execution obligation to provider replay-row coverage plus prefix-state
+agreement for a shared replay extraction, but it does not yet prove those facts
+from the full execution trace.
 
 Current replay-only prefix-state checkpoint:
 `selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_replayRowSplitExtractionProvider`

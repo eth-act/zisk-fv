@@ -8582,6 +8582,47 @@ def OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEn
           extraction
   | _ => ULift.{2, 0} Unit
 
+/-- Replay-only split-trace state-selection source.
+
+    This is the prefix-state predecessor of
+    `AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope`:
+    load envelopes carry a replay-only shared extraction, selected provider-row
+    coverage for that extraction's concrete Mem table, and Sail/replay
+    prefix-state equality. The selected chronological prefix cursor is derived
+    later from provider-row membership plus the prefix-state fact. -/
+def OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | _ => ULift.{2, 0} Unit
+
 /-- Package extraction-indexed replay-provider split selection as the
     load-scoped source object. -/
 def OpEnvelope.acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope_of_selection
@@ -8615,6 +8656,44 @@ def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEn
     try exact ULift.up ()
   all_goals
     exact ⟨extraction, selection⟩
+
+/-- Package replay-only extraction-indexed state selection as the load-scoped
+    source object. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope_of_stateSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope]
+      at selection ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact ⟨extraction, selection⟩
+
+/-- Lower replay-only state-selection source evidence to cursor-shaped
+    selected-prefix source evidence. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope_of_stateSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨source.1,
+        OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope_of_stateSelection
+          env0
+          source.1 source.2⟩
 
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
     full-execution coverage object consumed by the current compliance proof. -/

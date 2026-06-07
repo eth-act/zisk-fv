@@ -931,6 +931,27 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRow
         extraction selection))
     h_known_bugs
 
+/-- Replay-only split-trace state-selection variant.
+
+    This is the prefix-state predecessor of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceSelection`:
+    callers provide selected provider-row coverage plus prefix-state equality,
+    and the selected prefix cursor is derived internally. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceStateSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+        extraction)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceSelection
+    env h_burden extraction
+    (env.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope_of_stateSelection
+      extraction selection)
+    h_known_bugs
+
 /-- Accepted split AIR/Main/Mem trace variant using replay-only selected
     coverage.
 
@@ -1188,6 +1209,24 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRow
   zisk_riscv_compliant_program_bus
     env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayRowSplitTraceSelectionSource
+      source)
+    h_known_bugs
+
+/-- Replay-only split-trace state-selection source variant.
+
+    This source-shaped theorem exposes the accepted-execution proof shape one
+    step before cursor construction: a shared replay-only extraction plus
+    per-load selected provider-row coverage and prefix-state equality. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope_of_stateSelectionSource
       source)
     h_known_bugs
 
