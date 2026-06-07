@@ -168,6 +168,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add replay-only state-selection source boundary for shared split extraction.
 - [x] Add replay-provider envelope-row adapter for FullEnsemble Mem table coverage.
 - [x] Add replay-only table-local envelope-row state-selection boundary.
+- [x] Add accepted/generated split wrappers for replay-only envelope-row state selection.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -223,6 +224,11 @@ mutable-Mem embedding just to derive selected provider-row replay coverage.
 This slice passed focused `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
+The follow-on wrapper slice exposes the same envelope-row state-selection shape
+at the accepted split AIR/Main/Mem and generated split Mem construction theorem
+levels; it passed focused `lake build ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test`.
 No ZisK semantic bug has been identified so far; the issue is whether the
 accepted-execution surface already exposes enough coverage/state facts to prove
 that theorem, or whether the global construction layer must be strengthened.
