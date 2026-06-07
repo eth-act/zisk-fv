@@ -5226,6 +5226,30 @@ def OpEnvelope.AcceptedFullExecutionMemoryRowSelectionAtEnvelope
     extraction.program extraction.witness extraction.acceptedTrace
     extraction.embedded extraction.replayEmbedded
 
+/-- Cursor-shaped per-envelope selected-load extraction indexed by the named
+    shared row extraction package.
+
+    This is the shape expected from accepted full-execution replay: after the
+    shared chronological Mem trace and witness-selected mutable-Mem embeddings
+    have been constructed once, each selected load envelope must identify its
+    concrete Mem provider row in that witness-selected table and the selected
+    chronological prefix cursor for the corresponding memory-bus read. The
+    accepted trace's `rowsNodup` invariant derives occurrence uniqueness later,
+    so callers do not pass it here. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m) : Type 1 where
+  selectedEnvelopeRow :
+    env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        extraction.program extraction.witness extraction.acceptedTrace
+        extraction.embedded extraction.replayEmbedded)
+  selectedPrefix :
+    env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+      (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+        extraction.program extraction.witness extraction.acceptedTrace
+        extraction.embedded extraction.replayEmbedded)
+
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
     full-execution coverage object consumed by the current compliance proof. -/
 def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
@@ -5270,6 +5294,24 @@ def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_rowSelectio
   env.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
     extraction.program extraction.witness extraction.acceptedTrace
     extraction.embedded extraction.replayEmbedded selection
+
+/-- Repack row-extraction-indexed cursor evidence into the existing unpacked
+    selection shape. This bridge is definitional: both predicates carry the
+    same selected row and selected prefix, but the cursor form makes the
+    accepted-full-execution replay obligation clearer. -/
+def OpEnvelope.acceptedFullExecutionMemoryRowSelectionAtEnvelope_of_cursorSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction) :
+    env.AcceptedFullExecutionMemoryRowSelectionAtEnvelope extraction := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryRowSelectionAtEnvelope]
+      at selection ⊢
+  all_goals
+    exact
+      { selectedPrefix := selection.selectedPrefix
+        selectedEnvelopeRow := selection.selectedEnvelopeRow }
 
 /-- Source-shaped per-envelope coverage facts for a shared full-execution
     memory trace.
@@ -5959,6 +6001,19 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvel
   env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_selection
     extraction.program extraction.witness extraction.acceptedTrace
     extraction.embedded extraction.replayEmbedded selection
+
+/-- Build cursor-shaped public memory evidence from the named shared row
+    extraction plus cursor-shaped selected-load evidence. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction) :
+    env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope :=
+  env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowSelection
+    extraction
+    (env.acceptedFullExecutionMemoryRowSelectionAtEnvelope_of_cursorSelection
+      extraction selection)
 
 /-- Lower source-shaped full-execution memory evidence to the selected-cursor
     coverage package consumed by the existing replay bridge. -/

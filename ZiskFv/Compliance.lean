@@ -367,6 +367,28 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtrac
       extraction selection)
     h_known_bugs
 
+/-- Variant of the global theorem whose memory input is the named shared row
+    extraction plus cursor-shaped selected-load evidence.
+
+    This is the sharper accepted-full-execution integration target: construct
+    the shared chronological Mem row extraction once, then for each load prove
+    the selected mutable-Mem provider-row occurrence and selected chronological
+    prefix cursor. Occurrence uniqueness is derived internally from the
+    accepted trace's duplicate-free row invariant. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowCursorSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryRowCursorSelectionAtEnvelope extraction)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelection
+      extraction selection)
+    h_known_bugs
+
 /-- Variant of the global theorem whose per-envelope memory input is the
     unpacked selected-prefix and selected witness Mem-row evidence.
 
