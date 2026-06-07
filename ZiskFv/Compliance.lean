@@ -952,6 +952,26 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRow
       extraction selection)
     h_known_bugs
 
+/-- Replay-only split-trace envelope-row state-selection variant.
+
+    Callers supply table-local selected envelope Mem-row occurrence plus
+    prefix-state equality; provider replay-row coverage is derived internally
+    from that occurrence and the load arm's `wr = 0` proof. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+        extraction)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceStateSelection
+    env h_burden extraction
+    (env.acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope_of_envelopeStateSelection
+      extraction selection)
+    h_known_bugs
+
 /-- Accepted split AIR/Main/Mem trace variant using replay-only selected
     coverage.
 
@@ -1227,6 +1247,25 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRow
   zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSource
     env h_burden
     (env.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope_of_stateSelectionSource
+      source)
+    h_known_bugs
+
+/-- Replay-only split-trace envelope-row state-selection source variant.
+
+    This is the source-shaped wrapper for accepted-execution data that can
+    identify the selected envelope Mem row in the replay-only Mem table and
+    prove prefix-state equality, while deriving provider replay coverage
+    internally. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope_of_envelopeStateSelectionSource
       source)
     h_known_bugs
 

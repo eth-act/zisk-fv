@@ -4823,6 +4823,156 @@ theorem OpEnvelope.selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvel
       ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
         h_mainEval h_providerEval h_msg h_main_b_match
 
+/-- The envelope's selected Clean Mem provider row gives selected
+    replay-provider coverage once it is identified with a row of the
+    FullEnsemble Mem table.
+
+    This is the replay-only counterpart of
+    `selectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow`:
+    the primary branch carries the load-arm `wr = 0` proof, so selected
+    coverage can be threaded through all-event replay embeddings without a
+    read-only mutable-Mem embedding. -/
+theorem OpEnvelope.selectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope)
+    (h_row :
+      env.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope
+        construction) :
+    env.SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope
+      construction := by
+  cases env <;>
+    simp [OpEnvelope.SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope,
+      OpEnvelope.SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope,
+      OpEnvelope.SelectedMemProviderReplayRowInTraceTableAtEnvelope,
+      OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble]
+      at construction h_row ⊢
+  case ld ld_input regs mem bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lbu lbu_input regs mem bus align pins h_width promises r_mem
+      mainRowVar memRowVar mainEnv memEnv mainMult providerMult
+      mainInteraction providerInteraction h_mainEval h_providerEval h_msg
+      h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+      h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lhu lhu_input regs mem bus align pins h_width promises r_mem
+      mainRowVar memRowVar mainEnv memEnv mainMult providerMult
+      mainInteraction providerInteraction h_mainEval h_providerEval h_msg
+      h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+      h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lwu lwu_input regs mem bus align pins h_width promises r_mem
+      mainRowVar memRowVar mainEnv memEnv mainMult providerMult
+      mainInteraction providerInteraction h_mainEval h_providerEval h_msg
+      h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+      h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lb_via_static_match lb_input regs mem v r_binary offset binEnv
+      h_static h_match bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lh_via_static_match lh_input regs mem v r_binary offset binEnv
+      h_static h_match bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lw_via_static_match lw_input regs mem v r_binary offset binEnv
+      h_static h_match bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+
 /-- The selected envelope Mem-row occurrence plus replay-row embedding gives
     ordinary accepted-row membership directly. Unlike the older read-row
     bridge, this uses the polarity-preserving replay embedding and the
@@ -7844,6 +7994,193 @@ def OpEnvelope.SelectedMemProviderReplayRowInMemTableAtEnvelope
               ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
   | _ => True
 
+/-- Table-local selected envelope Mem-row occurrence.
+
+    This is the replay-only analogue of
+    `SelectedEnvelopeMemRowInFullEnsembleMemTableAtEnvelope`: it talks directly
+    about a concrete Mem table, so it can be used with
+    `AcceptedFullExecutionMemoryReplayRowSplitExtraction` without constructing
+    the full-ensemble table bridge that requires a read-only replay embedding. -/
+def OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (table : Air.Flat.Table FGL) : Prop :=
+  match env with
+  | .ld (memRowVar := memRowVar) (memEnv := memEnv) .. =>
+      ∃ providerRow ∈ table.table,
+        eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+          eval memEnv memRowVar
+  | .lbu (memRowVar := memRowVar) (memEnv := memEnv) .. =>
+      ∃ providerRow ∈ table.table,
+        eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+          eval memEnv memRowVar
+  | .lhu (memRowVar := memRowVar) (memEnv := memEnv) .. =>
+      ∃ providerRow ∈ table.table,
+        eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+          eval memEnv memRowVar
+  | .lwu (memRowVar := memRowVar) (memEnv := memEnv) .. =>
+      ∃ providerRow ∈ table.table,
+        eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+          eval memEnv memRowVar
+  | .lb_via_static_match (memRowVar := memRowVar) (memEnv := memEnv) .. =>
+      ∃ providerRow ∈ table.table,
+        eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+          eval memEnv memRowVar
+  | .lh_via_static_match (memRowVar := memRowVar) (memEnv := memEnv) .. =>
+      ∃ providerRow ∈ table.table,
+        eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+          eval memEnv memRowVar
+  | .lw_via_static_match (memRowVar := memRowVar) (memEnv := memEnv) .. =>
+      ∃ providerRow ∈ table.table,
+        eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+          eval memEnv memRowVar
+  | _ => True
+
+/-- A table-local envelope Mem-row occurrence gives replay-provider coverage.
+
+    The primary branch is read-only because every load envelope carries
+    `h_mem_wr`; dual rows are already read events in the replay projection. -/
+theorem OpEnvelope.selectedMemProviderReplayRowInMemTableAtEnvelope_of_envelopeMemRow
+    (env : OpEnvelope state m r_main)
+    (table : Air.Flat.Table FGL)
+    (h_row : env.SelectedEnvelopeMemRowInMemTableAtEnvelope table) :
+    env.SelectedMemProviderReplayRowInMemTableAtEnvelope table := by
+  cases env <;>
+    simp [OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope,
+      OpEnvelope.SelectedMemProviderReplayRowInMemTableAtEnvelope]
+      at h_row ⊢
+  case ld ld_input regs mem bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lbu lbu_input regs mem bus align pins h_width promises r_mem
+      mainRowVar memRowVar mainEnv memEnv mainMult providerMult
+      mainInteraction providerInteraction h_mainEval h_providerEval h_msg
+      h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+      h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lhu lhu_input regs mem bus align pins h_width promises r_mem
+      mainRowVar memRowVar mainEnv memEnv mainMult providerMult
+      mainInteraction providerInteraction h_mainEval h_providerEval h_msg
+      h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+      h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lwu lwu_input regs mem bus align pins h_width promises r_mem
+      mainRowVar memRowVar mainEnv memEnv mainMult providerMult
+      mainInteraction providerInteraction h_mainEval h_providerEval h_msg
+      h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
+      h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lb_via_static_match lb_input regs mem v r_binary offset binEnv
+      h_static h_match bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lh_via_static_match lh_input regs mem v r_binary offset binEnv
+      h_static h_match bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+  case lw_via_static_match lw_input regs mem v r_binary offset binEnv
+      h_static h_match bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    rcases h_row with ⟨providerRow, h_providerRow, h_row_eval⟩
+    refine ⟨providerRow, h_providerRow, Or.inl ⟨?_, ?_⟩⟩
+    · rw [h_row_eval]
+      change ZiskFv.Airs.MemoryBus.matches_memory_entry _
+        (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+          (eval _ _))
+      exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_match_of_main_b_match_and_msg_eq
+          h_mainEval h_providerEval h_msg h_main_b_match
+    · rw [h_row_eval]
+      rw [h_mem_row]
+      exact h_mem_wr
+
 /-- Replay-only selected provider-row coverage at the accepted split-trace
     construction boundary.
 
@@ -8215,6 +8552,39 @@ structure OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectio
     env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
       (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
         extraction)
+
+/-- Replay-only selected-load evidence using table-local envelope-row
+    occurrence plus prefix-state equality.
+
+    This is useful when accepted execution identifies the selected Clean Mem
+    row in the concrete mutable Mem table but has not separately packaged the
+    provider replay-row match. The provider replay coverage is a theorem from
+    the envelope row occurrence and the load arm's `wr = 0` fact. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m) :
+    Type 1 where
+  selectedEnvelopeRow :
+    env.SelectedEnvelopeMemRowInMemTableAtEnvelope extraction.table
+  selectedPrefixState :
+    env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
+        extraction)
+
+/-- Convert replay-only envelope-row state selection to provider-row state
+    selection without any read-only mutable-Mem embedding. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope_of_envelopeStateSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+      extraction :=
+  { selectedProviderRow :=
+      env.selectedMemProviderReplayRowInMemTableAtEnvelope_of_envelopeMemRow
+        extraction.table selection.selectedEnvelopeRow
+    selectedPrefixState := selection.selectedPrefixState }
 
 /-- Convert replay-only cursor-shaped selected-load evidence to the
     prefix-state shape, deriving occurrence uniqueness from the accepted split
@@ -8623,6 +8993,45 @@ def OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourc
           extraction
   | _ => ULift.{2, 0} Unit
 
+/-- Replay-only split-trace envelope-row state-selection source.
+
+    This source is one step closer to the table occurrence facts accepted
+    execution can expose: load envelopes carry a replay-only shared extraction,
+    selected envelope Mem-row occurrence in that extraction's concrete table,
+    and Sail/replay prefix-state equality. -/
+def OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+          extraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+          extraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+          extraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+          extraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+          extraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+          extraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+          extraction
+  | _ => ULift.{2, 0} Unit
+
 /-- Package extraction-indexed replay-provider split selection as the
     load-scoped source object. -/
 def OpEnvelope.acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope_of_selection
@@ -8673,6 +9082,43 @@ def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourc
     try exact ULift.up ()
   all_goals
     exact ⟨extraction, selection⟩
+
+/-- Package replay-only extraction-indexed envelope-row state selection as the
+    load-scoped source object. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope_of_envelopeStateSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope]
+      at selection ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact ⟨extraction, selection⟩
+
+/-- Lower replay-only envelope-row state-selection source evidence to
+    provider-row state-selection source evidence. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope_of_envelopeStateSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨source.1,
+        OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope_of_envelopeStateSelection
+          env0 source.1 source.2⟩
 
 /-- Lower replay-only state-selection source evidence to cursor-shaped
     selected-prefix source evidence. -/

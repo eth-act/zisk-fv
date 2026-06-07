@@ -166,6 +166,8 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add direct split generated/accepted Mem construction replay projections.
 - [x] Add replay-only split construction boundary without read-only Mem embedding.
 - [x] Add replay-only state-selection source boundary for shared split extraction.
+- [x] Add replay-provider envelope-row adapter for FullEnsemble Mem table coverage.
+- [x] Add replay-only table-local envelope-row state-selection boundary.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -206,6 +208,21 @@ failure. The remaining risk is the final global proof obligation: accepted full
 execution still has to produce one shared `AcceptedFullExecutionMemoryTrace` plus
 per-load selected table-row occurrence, selected prefix cursor, and selected-row
 occurrence uniqueness.
+The latest uncommitted adapter,
+`OpEnvelope.selectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow`,
+derives replay-provider selected coverage from an envelope Mem-row table
+occurrence plus the load-arm `wr = 0` proof; it passed focused
+`lake build ZiskFv.Compliance.OpEnvelope`.
+The replay-only path now also has table-local envelope-row evidence:
+`SelectedEnvelopeMemRowInMemTableAtEnvelope` lowers through
+`selectedMemProviderReplayRowInMemTableAtEnvelope_of_envelopeMemRow`, and
+`AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelection*`
+wrappers expose this at the compliance boundary. This avoids using the
+full-ensemble table bridge, and therefore avoids reintroducing the read-only
+mutable-Mem embedding just to derive selected provider-row replay coverage.
+This slice passed focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
 No ZisK semantic bug has been identified so far; the issue is whether the
 accepted-execution surface already exposes enough coverage/state facts to prove
 that theorem, or whether the global construction layer must be strengthened.
