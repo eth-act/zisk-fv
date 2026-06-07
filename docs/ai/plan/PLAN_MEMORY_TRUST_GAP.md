@@ -125,6 +125,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split `MainMemBusMultiplicitySound` through row-local Main source-multiplicity legality.
 - [x] Project unified-Main ROM lookup constraints to program-ROM membership.
 - [x] Discharge `MainMemBusSourceMultiplicitySound` from witness constraints plus program-ROM source legality.
+- [x] Split `MainProgramRomSourceMultiplicitySound` through row-indexed program ROM source legality.
 - [ ] Prove `MainProgramRomSourceMultiplicitySound` from actual ROM/source legality for unified Main memory interactions.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -168,6 +169,15 @@ occurrence uniqueness.
 No ZisK semantic bug has been identified so far; the issue is whether the
 accepted-execution surface already exposes enough coverage/state facts to prove
 that theorem, or whether the global construction layer must be strengthened.
+
+Current checkpoint after committed slice `f256fd0d`: the ROM/source-legality
+split is verified and committed, and the next row-indexed source-legality bridge
+is focused-build verified. `ZiskFv/AirsClean/Main/Constraints.lean` now exposes
+generic ROM-message and source-sum eval lemmas, and
+`ZiskFv/AirsClean/FullEnsemble/Balance.lean` uses those lemmas to prove that
+`MainProgramRomRowsSourceMultiplicitySound` implies the env-shaped
+`MainProgramRomSourceMultiplicitySound`. The next source-legality task is
+proving the row-indexed predicate from actual row provenance/source facts.
 
 The latest theorem split records the exact promotion needed when full execution
 naturally produces a selected prefix cursor rather than the stronger

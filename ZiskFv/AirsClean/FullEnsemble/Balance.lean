@@ -3136,6 +3136,30 @@ def MainMemBusSourceMultiplicitySound
             + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
               length program).rowInputVar.rom.store_reg) = 0)
 
+/-- Concrete source selector legality for one unified-Main row. -/
+def MainRomRowSourceMultiplicitySound
+    (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL) : Prop :=
+  (row.rom.a_src_mem + row.rom.a_src_reg = 1
+    ∨ row.rom.a_src_mem + row.rom.a_src_reg = 0)
+  ∧ (row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg = 1
+    ∨ row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg = 0)
+  ∧ (row.rom.store_mem + row.rom.store_ind + row.rom.store_reg = 1
+    ∨ row.rom.store_mem + row.rom.store_ind + row.rom.store_reg = 0)
+
+/-- Row-indexed source selector legality for every concrete program ROM row.
+
+    This is closer to the production/provenance boundary than
+    `MainProgramRomSourceMultiplicitySound`: for each `program i`, any concrete
+    unified-Main row with that ROM message has source-selector sums `1` or `0`.
+    The remaining extraction work should prove this from row-shape provenance /
+    lowered instruction facts. -/
+def MainProgramRomRowsSourceMultiplicitySound
+    {length : ℕ} (program : Program length) : Prop :=
+  ∀ i : Fin length,
+    ∀ row : ZiskFv.AirsClean.Main.MainRowWithRom FGL,
+      ZiskFv.AirsClean.Main.romMessage row = program i →
+        MainRomRowSourceMultiplicitySound row
+
 /-- Program-ROM source selector legality for unified-Main rows.
 
     This is the program-indexed source-legality burden exposed by the ROM
@@ -3182,6 +3206,80 @@ def MainProgramRomSourceMultiplicitySound
             length program).rowInputVar.rom.store_ind
           + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
             length program).rowInputVar.rom.store_reg) = 0)
+
+/-- Row-indexed program ROM source legality implies the env-shaped program-ROM
+    source burden consumed by the full-ensemble split. -/
+theorem mainProgramRomSourceMultiplicitySound_of_programRowsSourceMultiplicitySound
+    {length : ℕ} {program : Program length}
+    (h_rows : MainProgramRomRowsSourceMultiplicitySound program) :
+    MainProgramRomSourceMultiplicitySound program := by
+  intro env h_rom
+  rcases h_rom with ⟨i, h_msg⟩
+  let component := ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+  let row : ZiskFv.AirsClean.Main.MainRowWithRom FGL := component.rowInput env
+  have h_eval_row : eval env component.rowInputVar = row := by
+    simpa only [row, component, Air.Flat.Component.rowInput,
+      Air.Flat.Component.rowInputVar] using
+        (eval_varFromOffset_valueFromOffset component.Input 0 env)
+  have h_row_msg : ZiskFv.AirsClean.Main.romMessage row = program i := by
+    have h_msg' :
+        ZiskFv.AirsClean.Main.romMessage (eval env component.rowInputVar) =
+          program i := by
+      simpa only [component, ZiskFv.AirsClean.Main.eval_romMessageExpr] using h_msg
+    simpa only [h_eval_row] using h_msg'
+  have h_row_source := h_rows i row h_row_msg
+  rcases h_row_source with ⟨h_a, h_b, h_c⟩
+  have h_a_sum :
+      env (component.rowInputVar.rom.a_src_mem
+          + component.rowInputVar.rom.a_src_reg) =
+        row.rom.a_src_mem + row.rom.a_src_reg := by
+    calc
+      env (component.rowInputVar.rom.a_src_mem
+          + component.rowInputVar.rom.a_src_reg)
+          = (eval env component.rowInputVar).rom.a_src_mem
+              + (eval env component.rowInputVar).rom.a_src_reg := by
+            exact ZiskFv.AirsClean.Main.eval_aSourceSumExpr env component.rowInputVar
+      _ = row.rom.a_src_mem + row.rom.a_src_reg := by
+            exact congrArg
+              (fun r : ZiskFv.AirsClean.Main.MainRowWithRom FGL =>
+                r.rom.a_src_mem + r.rom.a_src_reg) h_eval_row
+  have h_b_sum :
+      env (component.rowInputVar.rom.b_src_mem
+          + component.rowInputVar.rom.b_src_ind
+          + component.rowInputVar.rom.b_src_reg) =
+        row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg := by
+    calc
+      env (component.rowInputVar.rom.b_src_mem
+          + component.rowInputVar.rom.b_src_ind
+          + component.rowInputVar.rom.b_src_reg)
+          = (eval env component.rowInputVar).rom.b_src_mem
+              + (eval env component.rowInputVar).rom.b_src_ind
+              + (eval env component.rowInputVar).rom.b_src_reg := by
+            exact ZiskFv.AirsClean.Main.eval_bSourceSumExpr env component.rowInputVar
+      _ = row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg := by
+            exact congrArg
+              (fun r : ZiskFv.AirsClean.Main.MainRowWithRom FGL =>
+                r.rom.b_src_mem + r.rom.b_src_ind + r.rom.b_src_reg) h_eval_row
+  have h_c_sum :
+      env (component.rowInputVar.rom.store_mem
+          + component.rowInputVar.rom.store_ind
+          + component.rowInputVar.rom.store_reg) =
+        row.rom.store_mem + row.rom.store_ind + row.rom.store_reg := by
+    calc
+      env (component.rowInputVar.rom.store_mem
+          + component.rowInputVar.rom.store_ind
+          + component.rowInputVar.rom.store_reg)
+          = (eval env component.rowInputVar).rom.store_mem
+              + (eval env component.rowInputVar).rom.store_ind
+              + (eval env component.rowInputVar).rom.store_reg := by
+            exact ZiskFv.AirsClean.Main.eval_cSourceSumExpr env component.rowInputVar
+      _ = row.rom.store_mem + row.rom.store_ind + row.rom.store_reg := by
+            exact congrArg
+              (fun r : ZiskFv.AirsClean.Main.MainRowWithRom FGL =>
+                r.rom.store_mem + r.rom.store_ind + r.rom.store_reg) h_eval_row
+  exact ⟨ by simpa only [component, h_a_sum] using h_a
+        , by simpa only [component, h_b_sum] using h_b
+        , by simpa only [component, h_c_sum] using h_c ⟩
 
 /-- Accepted row constraints plus program-ROM source legality discharge the
     row-local unified-Main source-multiplicity invariant. -/
