@@ -7026,6 +7026,46 @@ structure OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnv
         fullTrace.embedded fullTrace.replayEmbedded)
       selectedPrefix
 
+/-- Provider-shaped cursor coverage from the natural selected-provider-row
+    and selected-prefix cursor facts for a shared full-execution memory trace.
+
+    Accepted replay proves the selected prefix cursor; occurrence uniqueness is
+    derived from the accepted trace's duplicate-free row invariant. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope_of_prefixCursor
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (selectedProviderRow :
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded))
+    (selectedPrefix :
+      env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)) :
+    env.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
+      fullTrace := by
+  cases env <;>
+    try dsimp only [
+      OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope,
+      OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+      OpEnvelope.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope,
+      OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+      OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+      OpEnvelope.acceptedTraceOfFullTraceWithMemTable]
+      at selectedProviderRow selectedPrefix ⊢
+  all_goals
+    exact
+      { selectedProviderRow := selectedProviderRow
+        selectedPrefix := selectedPrefix
+        selectedPrefixUnique := by
+          first
+          | exact
+              selectedPrefix.prefixUnique_of_nodup
+                fullTrace.acceptedTrace.construction.rowsNodup
+          | trivial }
+
 
 /-- Build source-shaped coverage from cursor-shaped selected-prefix evidence
     plus a proof that the selected row occurrence is unique in the accepted
@@ -7607,6 +7647,38 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope
         env.AcceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope
           fullTrace
   | _ => ULift.{2, 0} Unit
+
+/-- Load-scoped provider-shaped source evidence from a shared full-execution
+    trace, selected provider-row replay coverage, and selected-prefix cursor.
+
+    This is the provider-row analogue of the cursor-source constructor below:
+    accepted full execution supplies the shared trace and per-load provider
+    row/prefix cursor facts, while selected occurrence uniqueness is derived
+    internally from `rowsNodup`. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_prefixCursor
+    (env : OpEnvelope state m r_main)
+    (fullTrace : AcceptedFullExecutionMemoryTrace m)
+    (selectedProviderRow :
+      env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded))
+    (selectedPrefix :
+      env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
+        (env.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness
+          fullTrace.program fullTrace.witness fullTrace.acceptedTrace
+          fullTrace.embedded fullTrace.replayEmbedded)) :
+    env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope]
+      at selectedProviderRow selectedPrefix ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨fullTrace,
+        OpEnvelope.acceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope_of_prefixCursor
+          _ fullTrace selectedProviderRow selectedPrefix⟩
 
 /-- Load-scoped source evidence from a shared full-execution trace, selected
     table-row occurrence, cursor-shaped selected-prefix evidence, and selected

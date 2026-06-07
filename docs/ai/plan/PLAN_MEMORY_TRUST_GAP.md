@@ -128,6 +128,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split `MainProgramRomSourceMultiplicitySound` through row-indexed program ROM source legality.
 - [x] Prove selected-row source multiplicity from `MainRowProvenance`.
 - [x] Remove direct-`LD` program-ROM source wrappers in favor of positive aligned mutable-route evidence.
+- [x] Add provider-shaped source construction from shared trace plus selected provider row and prefix cursor.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -202,6 +203,19 @@ route-friendly path is the positive `DirectLoadAlignedMutableMemProviderRouteAtE
 boundary plus same-table prefix cursor evidence. The focused
 `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`, both trust
 scripts, and `nix run .#test` gates pass for this cleanup.
+
+Current provider-prefix checkpoint: `OpEnvelope` now has
+`acceptedFullExecutionMemoryProviderTraceCursorCoverageAtEnvelope_of_prefixCursor`
+and
+`acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_prefixCursor`.
+These constructors build the provider-shaped public memory boundary from the
+natural accepted-execution facts: a shared `AcceptedFullExecutionMemoryTrace`,
+selected provider-row replay coverage in the witness-selected Mem table, and
+the selected chronological prefix cursor. The selected occurrence uniqueness
+field is derived internally from `fullTrace.acceptedTrace.construction.rowsNodup`.
+Focused `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this slice.
 
 The latest theorem split records the exact promotion needed when full execution
 naturally produces a selected prefix cursor rather than the stronger
