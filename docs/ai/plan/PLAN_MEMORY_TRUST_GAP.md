@@ -117,6 +117,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split the direct-`LD` residual route burden after the proved byte-width exclusions.
 - [x] Name Main memory-bus multiplicity invariant and use it to eliminate the direct-`LD` Main self-provider residual branch.
 - [x] Add table-parametric provider cursor source evidence for the concrete Mem table found by route balance.
+- [x] Split direct-`LD` table-parametric provider cursor construction into same-table provider-row replay plus prefix-state replay.
 - [ ] Replace the over-broad direct-`LD` generic MemAlign exclusion target with aligned direct-Mem selected-provider coverage or provider uniqueness.
 - [ ] Construct table-parametric provider cursor source for direct `LD` from aligned route coverage plus selected prefix replay.
 - [ ] Discharge `MainMemBusMultiplicitySound` from ROM/source legality for unified Main memory interactions.
@@ -1528,3 +1529,17 @@ slice. The next step is to construct this table-parametric cursor source for
 aligned direct `LD`: route balance supplies selected provider-row coverage in
 the concrete Mem table, while accepted replay still has to supply the selected
 prefix cursor for the same table.
+
+The current direct-`LD` join-point slice narrows that construction target before
+trying to solve it globally. `DirectLoadMutableMemProviderCursorAtEnvelope`
+packages selected provider-row replay and selected prefix-state equality for
+the same concrete FullEnsemble Mem provider table; `directLoadMutableMemProviderCursorAtEnvelope_of_replay`
+adds a table-indexed prefix-state obligation to existing provider-row replay
+coverage; and
+`directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_mutableProviderCursor`
+lowers that Prop-valued cursor predicate into direct-`LD` cursor source
+evidence. This deliberately does not claim all-load source construction:
+subword loads still need their MemAlign-to-Mem route chain, and the current
+slice passes focused `lake build ZiskFv.Compliance.OpEnvelope`,
+`lake build ZiskFv.Compliance`, full `lake build`, trust regeneration,
+both trust check scripts, and `nix run .#test`.

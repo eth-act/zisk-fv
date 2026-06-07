@@ -4933,6 +4933,18 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope
       env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
   | _ => ULift.{2, 0} Unit
 
+/-- Direct-`LD`-only table-parametric provider cursor source.
+
+    This is intentionally narrower than
+    `AcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope`: direct
+    `LD` route balance can produce a concrete mutable Mem provider cursor, but
+    the subword load arms still need their own MemAlign-to-Mem route chains. -/
+def OpEnvelope.DirectLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. => env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+  | _ => ULift.{2, 0} Unit
+
 /-- Direct mutable-Mem route coverage for one envelope.
 
     For the direct `LD` load arm this is the balanced-provider fact that the
@@ -5616,6 +5628,26 @@ def OpEnvelope.DirectLoadMutableMemProviderReplayAtEnvelope
           fullTraceTable
   | _ => True
 
+/-- Direct mutable-route selected provider coverage plus prefix-state equality
+    for the same concrete Mem table.
+
+    This is the route/replay join point for aligned direct `LD`: route balance
+    identifies a concrete mutable Mem provider table and selected provider row,
+    while replay must prove Sail prefix-state equality for that same table's
+    accepted trace. Non-`LD` arms are trivial; subword loads still need their
+    own MemAlign-to-Mem route chain. -/
+def OpEnvelope.DirectLoadMutableMemProviderCursorAtEnvelope
+    (env : OpEnvelope state m r_main) : Prop :=
+  match env with
+  | .ld .. =>
+      ∃ fullTraceTable :
+        env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope,
+        env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+          fullTraceTable
+          ∧ env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+            fullTraceTable
+  | _ => True
+
 /-- Construct selected provider-row replay coverage for a direct `LD` envelope
     from the mutable-Mem branch of balanced active-Main provider coverage.
 
@@ -5713,6 +5745,33 @@ def OpEnvelope.directLoadMutableMemProviderReplayAtEnvelope_of_route
               ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr]
               using h_providerMatch)
 
+/-- Add same-table prefix-state replay to direct mutable-route provider-row
+    coverage.
+
+    The prefix-state input is deliberately table-indexed: the selected prefix
+    must be proved for the exact concrete Mem table returned by the balanced
+    provider route, not merely for some witness-selected mutable Mem table. -/
+def OpEnvelope.directLoadMutableMemProviderCursorAtEnvelope_of_replay
+    (env : OpEnvelope state m r_main)
+    (h_replay : env.DirectLoadMutableMemProviderReplayAtEnvelope)
+    (h_prefix :
+      ∀ fullTraceTable :
+        env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope,
+        env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+          fullTraceTable →
+        env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+          fullTraceTable) :
+    env.DirectLoadMutableMemProviderCursorAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadMutableMemProviderReplayAtEnvelope,
+      OpEnvelope.DirectLoadMutableMemProviderCursorAtEnvelope]
+      at h_replay h_prefix ⊢
+  case ld =>
+    rcases h_replay with ⟨fullTraceTable, selectedProviderRow⟩
+    exact
+      ⟨fullTraceTable, selectedProviderRow,
+        h_prefix fullTraceTable selectedProviderRow⟩
+
 /-- Build provider-row cursor extraction from provider replay coverage and
     prefix-state equality. Selected chronological-row membership is derived
     internally from the provider replay match and table embedding. -/
@@ -5750,6 +5809,31 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderCursorExtraction
       selectedPrefix :=
         env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
           acceptedTrace selectedMembership selectedPrefixStateAtAccepted }
+
+/-- Build direct-`LD` table-parametric provider cursor source evidence from
+    the direct mutable-route provider cursor predicate.
+
+    The source is direct-`LD` scoped because subword loads still require
+    MemAlign route integration before they can produce the all-load provider
+    table cursor source. -/
+noncomputable def OpEnvelope.directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_mutableProviderCursor
+    (env : OpEnvelope state m r_main)
+    (h_cursor : env.DirectLoadMutableMemProviderCursorAtEnvelope) :
+    env.DirectLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadMutableMemProviderCursorAtEnvelope,
+      OpEnvelope.DirectLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope]
+      at h_cursor ⊢
+  all_goals
+    try exact ULift.up ()
+  case ld =>
+    let fullTraceTable := Classical.choose h_cursor
+    have h_selected := Classical.choose_spec h_cursor
+    let selectedProviderRow := h_selected.1
+    let selectedPrefixState := h_selected.2
+    exact
+      OpEnvelope.acceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
+        _ fullTraceTable selectedProviderRow selectedPrefixState
 
 /-- Lower table-parametric provider cursor evidence to the accepted
     AIR/Main/Mem trace construction consumed by replay.
