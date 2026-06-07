@@ -116,7 +116,9 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Prove direct-`LD` MemAlignReadByte and MemAlignByte branch exclusions from raw width equality.
 - [x] Split the direct-`LD` residual route burden after the proved byte-width exclusions.
 - [x] Name Main memory-bus multiplicity invariant and use it to eliminate the direct-`LD` Main self-provider residual branch.
+- [x] Add table-parametric provider cursor source evidence for the concrete Mem table found by route balance.
 - [ ] Replace the over-broad direct-`LD` generic MemAlign exclusion target with aligned direct-Mem selected-provider coverage or provider uniqueness.
+- [ ] Construct table-parametric provider cursor source for direct `LD` from aligned route coverage plus selected prefix replay.
 - [ ] Discharge `MainMemBusMultiplicitySound` from ROM/source legality for unified Main memory interactions.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -1486,7 +1488,7 @@ ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, full
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 split.
 
-The current uncommitted split adds
+The Main self-provider split adds
 `ZiskFv.AirsClean.FullEnsemble.MainMemBusMultiplicitySound`, a witness-level
 invariant saying unified Main memory-bus interactions in the full ensemble have
 multiplicity `-1` or `0`. Under that named invariant,
@@ -1494,10 +1496,10 @@ multiplicity `-1` or `0`. Under that named invariant,
 out the direct-`LD` Main self-provider residual branch, and
 `directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_genericMemAlign`
 now needs only the generic MemAlign exclusion plus this explicit
-source-legality invariant. Focused `lake build ZiskFv.Compliance.OpEnvelope`
-passes for this split. This is intentionally not hidden trust removal yet:
+source-legality invariant. This is intentionally not hidden trust removal yet:
 `MainMemBusMultiplicitySound` still has to be proved from ROM/source legality
-and accepted full-execution facts.
+and accepted full-execution facts. Focused and full gates passed for this split
+before commit.
 
 Follow-up route audit: the remaining generic MemAlign exclusion cannot be
 proved as a blanket direct-`LD` fact. ZisK's emulator/counter path sends
@@ -1509,3 +1511,20 @@ uniqueness theorem showing the balanced provider is the concrete Mem provider
 row already carried by the `OpEnvelope.ld` constructor. The existing
 provider-row public memory boundary is compatible with that second path and
 already lowers selected envelope Mem rows to provider-row coverage.
+
+The latest table-parametric provider-cursor split adds
+`OpEnvelope.AcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope` and
+`acceptedAirMainMemFullTraceConstructionAtEnvelope_of_providerTableCursorSource`.
+This keeps the concrete FullEnsemble Mem table found by channel balance instead
+of coercing selected provider coverage through the witness-selected Mem table.
+The compliance wrapper
+`zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTableCursorSource`
+then lowers that route-friendly cursor source directly to the accepted
+AIR/Main/Mem trace construction consumed by replay. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice. The next step is to construct this table-parametric cursor source for
+aligned direct `LD`: route balance supplies selected provider-row coverage in
+the concrete Mem table, while accepted replay still has to supply the selected
+prefix cursor for the same table.

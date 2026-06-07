@@ -4911,6 +4911,28 @@ structure OpEnvelope.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelo
     env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
       fullTraceTable
 
+/-- Table-parametric provider cursor evidence for one load envelope.
+
+    Unlike `AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope`,
+    this keeps the concrete FullEnsemble Mem table identified by channel
+    balance. That is the right direct-`LD` route shape: the provider row lives
+    in the table found by the balance proof, which need not be definitionally
+    the witness-selected mutable Mem table used by older wrappers. -/
+def OpEnvelope.AcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. => env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+  | .lbu .. => env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+  | .lhu .. => env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+  | .lwu .. => env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+  | .lb_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+  | .lh_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+  | .lw_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope
+  | _ => ULift.{2, 0} Unit
+
 /-- Direct mutable-Mem route coverage for one envelope.
 
     For the direct `LD` load arm this is the balanced-provider fact that the
@@ -5728,6 +5750,32 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderCursorExtraction
       selectedPrefix :=
         env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
           acceptedTrace selectedMembership selectedPrefixStateAtAccepted }
+
+/-- Lower table-parametric provider cursor evidence to the accepted
+    AIR/Main/Mem trace construction consumed by replay.
+
+    The selected prefix cursor already contains selected-row membership and
+    prefix-state agreement for the accepted trace behind the concrete
+    FullEnsemble Mem table. Provider-row coverage stays visible at the
+    table-parametric boundary, where direct `LD` route proofs can construct it
+    without changing tables. -/
+noncomputable def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_providerTableCursorSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := source.fullTraceTable.acceptedTrace.initialState
+        rows := source.fullTraceTable.acceptedTrace.rows
+        acceptedTrace := source.fullTraceTable.acceptedTrace.construction
+        selectedPrefix := source.selectedPrefix }
 
 /-- Build the cursor-shaped extraction target from FullEnsemble-aligned facts:
     the concrete Mem-table bridge, the selected envelope Mem-row occurrence in
