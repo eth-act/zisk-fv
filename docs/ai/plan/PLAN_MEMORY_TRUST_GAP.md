@@ -134,6 +134,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add unpacked accepted AIR/Main/Mem provider-selection boundary.
 - [x] Add direct global theorem for shared row extraction plus provider-row cursor selection.
 - [x] Add provider-shaped accepted trace construction boundary.
+- [x] Expose split accepted AIR/Main/Mem construction at the provider compliance boundary.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -232,8 +233,14 @@ ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass. The larger
 remaining gap is still the global accepted-execution theorem that constructs the
 shared Mem trace and per-envelope selected provider-row/prefix coverage.
-`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
-`nix run .#test` pass for this slice.
+
+Current checkpoint after split provider construction boundary: the split boundary exposes
+`AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope` at the provider
+compliance theorem surface. This keeps generated Mem row facts, row-order facts,
+and replay facts separated until the final lowering to the packed construction.
+Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
+`lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass.
 
 Current provider-prefix source checkpoint: `OpEnvelope` now exposes
 `AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope`, with load cases

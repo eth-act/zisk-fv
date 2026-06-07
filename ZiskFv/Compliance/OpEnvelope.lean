@@ -3317,6 +3317,23 @@ structure AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor
   selectedPrefix :
     SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry
 
+/-- Split accepted AIR/Main/Mem full-trace construction plus the selected load
+    prefix cursor for one concrete load row.
+
+    This is the more explicit upstream shape: local generated Mem facts, row
+    order facts, and replay facts remain separated in `acceptedTrace`. -/
+structure AcceptedAirMainMemFullTraceSplitConstructionWithPrefixAtCursor
+    (main : Valid_Main FGL FGL)
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type where
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  acceptedTrace :
+    ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplitConstruction
+      main initialState rows
+  selectedPrefix :
+    SelectedLoadMemoryBusRowPrefixCursor state initialState rows entry
+
 /-- Public accepted AIR/Main/Mem full-trace burden, scoped to load envelopes.
     Non-load envelopes carry `Unit`; load envelopes carry the accepted
     full-trace construction and the selected prefix cursor for the envelope's
@@ -3339,6 +3356,57 @@ def OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
       AcceptedAirMainMemFullTraceConstructionWithPrefixAtCursor m state bus.e1
   | _ => Unit
+
+/-- Public split accepted AIR/Main/Mem full-trace burden, scoped to load
+    envelopes. Non-load envelopes carry `Unit`; load envelopes keep the Mem
+    generated-row, row-order, and replay facts separated. -/
+def OpEnvelope.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      AcceptedAirMainMemFullTraceSplitConstructionWithPrefixAtCursor
+        m state bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      AcceptedAirMainMemFullTraceSplitConstructionWithPrefixAtCursor
+        m state bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      AcceptedAirMainMemFullTraceSplitConstructionWithPrefixAtCursor
+        m state bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      AcceptedAirMainMemFullTraceSplitConstructionWithPrefixAtCursor
+        m state bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedAirMainMemFullTraceSplitConstructionWithPrefixAtCursor
+        m state bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedAirMainMemFullTraceSplitConstructionWithPrefixAtCursor
+        m state bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      AcceptedAirMainMemFullTraceSplitConstructionWithPrefixAtCursor
+        m state bus.e1
+  | _ => Unit
+
+/-- Repack the split accepted AIR/Main/Mem construction burden into the packed
+    construction currently consumed by the replay bridge. -/
+def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+    (env : OpEnvelope state m r_main)
+    (split :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope]
+      at split ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := split.initialState
+        rows := split.rows
+        acceptedTrace :=
+          ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceConstruction.ofSplit
+            split.acceptedTrace
+        selectedPrefix := split.selectedPrefix }
 
 /-- Shared accepted AIR/Main/Mem trace data scoped to load envelopes.
     Non-load envelopes carry `Unit`; load envelopes carry the shared

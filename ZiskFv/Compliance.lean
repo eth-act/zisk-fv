@@ -396,6 +396,47 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderTraceConst
         selectedProviderRow))
     h_known_bugs
 
+/-- Split-construction variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderTraceConstruction`.
+
+    This exposes the accepted AIR/Main/Mem obligations before they are packed:
+    generated Mem row facts, row-order facts, and replay facts remain separated
+    in `splitConstruction`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSplitConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+          splitConstruction))
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+          splitConstruction))
+    (selectedProviderRow :
+      env.SelectedMemProviderRowAtAcceptedTraceConstructionWithWitness
+        program witness
+        (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+          splitConstruction)
+        embedded replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderTraceConstruction
+    env h_burden program witness
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
+      splitConstruction)
+    embedded replayEmbedded selectedProviderRow h_known_bugs
+
 /-- Variant of the global theorem whose memory input is accepted AIR/Main/Mem
     trace data plus the full RV64IM witness and mutable-Mem embeddings.
 
