@@ -4911,6 +4911,150 @@ structure OpEnvelope.AcceptedFullExecutionMemoryProviderCursorExtractionAtEnvelo
     env.SelectedPrefixAtFullEnsembleMemTableAtEnvelope
       fullTraceTable
 
+/-- Direct mutable-Mem route coverage for one envelope.
+
+    For the direct `LD` load arm this is the balanced-provider fact that the
+    selected active Main `b` memory interaction is matched by a concrete
+    mutable Mem provider row in the same full-ensemble witness.  The extra
+    environment equality connects the concrete Main table row used by channel
+    balance to the row environment stored in the envelope.  Non-`LD` arms are
+    intentionally trivial here; subword loads route through MemAlign and need
+    separate chained coverage. -/
+def OpEnvelope.DirectLoadMutableMemProviderRouteAtEnvelope
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL) : Prop :=
+  match env with
+  | .ld (mainRowVar := mainRowVar) (mainEnv := mainEnv)
+      (mainInteraction := mainInteraction) .. =>
+      ZiskFv.AirsClean.FullEnsemble.ActiveMainMutableMemProviderRowMatchSpec
+        program witness mainTable mainRow mainInteraction
+        (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar) (-1) 2
+        ∧ mainTable.environment mainRow = mainEnv
+  | _ => True
+
+/-- Direct mutable-route selected provider coverage.
+
+    This is Prop-valued because balanced channel coverage is also Prop-valued:
+    the provider table is obtained from an existential proof, not from
+    computational data.  In the `LD` arm this says there exists a
+    FullEnsemble Mem-table bridge for the exact provider table identified by
+    balance, and that the selected load row is matched by a provider read row
+    in that table.  Non-`LD` arms are trivial; subword loads route through
+    MemAlign and need separate chained coverage. -/
+def OpEnvelope.DirectLoadMutableMemProviderReplayAtEnvelope
+    (env : OpEnvelope state m r_main) : Prop :=
+  match env with
+  | .ld .. =>
+      ∃ fullTraceTable :
+        env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope,
+        env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+          fullTraceTable
+  | _ => True
+
+/-- Construct selected provider-row replay coverage for a direct `LD` envelope
+    from the mutable-Mem branch of balanced active-Main provider coverage.
+
+    The theorem deliberately stops at provider-row replay coverage.  The
+    selected prefix cursor/state proof remains a separate replay obligation,
+    and subword loads still require following the MemAlign route to mutable
+    Mem. -/
+def OpEnvelope.directLoadMutableMemProviderReplayAtEnvelope_of_route
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ∀ table : Air.Flat.Table FGL,
+        table ∈ witness.allTables →
+        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows)
+    (replayEmbedded :
+      ∀ table : Air.Flat.Table FGL,
+        table ∈ witness.allTables →
+        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_route :
+      env.DirectLoadMutableMemProviderRouteAtEnvelope
+        program witness mainTable mainRow) :
+    env.DirectLoadMutableMemProviderReplayAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.DirectLoadMutableMemProviderRouteAtEnvelope,
+      OpEnvelope.DirectLoadMutableMemProviderReplayAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope,
+      OpEnvelope.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope,
+      OpEnvelope.SelectedMemProviderReadReplayRowInTraceTableAtEnvelope,
+      OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble]
+      at h_route ⊢
+  case ld ld_input regs mem bus pins promises r_mem mainRowVar memRowVar
+      mainEnv memEnv mainMult providerMult mainInteraction
+      providerInteraction h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+    rcases h_route with ⟨h_mutable, h_mainEnv⟩
+    rcases h_mutable with
+      ⟨providerInteraction', h_provider_witness, h_msg', h_nonpull,
+        h_nonzero, providerTable, h_providerTable, h_providerInteraction,
+        providerRow, h_providerRow, h_providerSpec, h_providerComponent,
+        h_providerBranch⟩
+    let fullTraceTable :
+        OpEnvelope.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope
+          (OpEnvelope.ld ld_input regs mem bus pins promises r_mem h_mainEval
+            h_providerEval h_msg h_main_row h_mem_row h_main_spec h_store_pc
+            h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+            h_addr2_idx h_mem_sel h_mem_wr) :=
+      OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_table
+        (OpEnvelope.ld ld_input regs mem bus pins promises r_mem h_mainEval
+          h_providerEval h_msg h_main_row h_mem_row h_main_spec h_store_pc
+          h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
+          h_mem_sel h_mem_wr)
+        program witness acceptedTrace providerTable h_providerTable
+        h_providerComponent
+        (embedded providerTable h_providerTable h_providerComponent)
+        (replayEmbedded providerTable h_providerTable h_providerComponent)
+    refine ⟨fullTraceTable, ?_⟩
+    have h_bus_main :
+        ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+          (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+            (eval (mainTable.environment mainRow)
+              (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar))
+            (-1) 2) := by
+      rw [h_mainEnv]
+      simpa [ZiskFv.AirsClean.Main.eval_bMemMessageExpr] using h_main_b_match
+    rcases h_providerBranch with h_primary | h_dual
+    · rcases h_primary with ⟨h_providerEval', h_providerMatch⟩
+      refine ⟨providerRow, h_providerRow, Or.inl ?_⟩
+      exact
+        ZiskFv.Airs.MemoryBus.matches_memory_entry_trans h_bus_main
+          (by
+            simpa only [
+              ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow,
+              ZiskFv.AirsClean.Mem.eval_memBusMessageExpr]
+              using h_providerMatch)
+    · rcases h_dual with ⟨h_providerEval', h_providerMatch⟩
+      refine ⟨providerRow, h_providerRow, Or.inr ?_⟩
+      exact
+        ZiskFv.Airs.MemoryBus.matches_memory_entry_trans h_bus_main
+          (by
+            simpa only [
+              ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow,
+              ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr]
+              using h_providerMatch)
+
 /-- Build provider-row cursor extraction from provider replay coverage and
     prefix-state equality. Selected chronological-row membership is derived
     internally from the provider replay match and table embedding. -/

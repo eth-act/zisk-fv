@@ -110,6 +110,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split balanced provider coverage into mutable-Mem and non-mutable route branches.
 - [x] Add table-parametric FullEnsemble Mem-table construction and provider-row cursor extraction path.
 - [x] Move the primary compliance theorem boundary to provider-row cursor-source evidence.
+- [x] Add direct-`LD` mutable-provider route bridge to table-parametric provider replay coverage.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1401,3 +1402,19 @@ ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates, and
 `nix run .#test` pass for this slice. The remaining global target is still to
 derive the shared accepted Mem row extraction plus per-load provider replay
 coverage and selected prefix cursor from balanced accepted full execution.
+
+The current direct-load route slice adds
+`OpEnvelope.DirectLoadMutableMemProviderRouteAtEnvelope` and
+`OpEnvelope.DirectLoadMutableMemProviderReplayAtEnvelope`, plus
+`directLoadMutableMemProviderReplayAtEnvelope_of_route`. For `LD`, the bridge
+uses the mutable branch of balanced active-Main provider coverage to construct
+a table-parametric FullEnsemble Mem-table object for the exact provider table
+found by balance, then composes the envelope's selected Main `bMem` entry match
+with the primary/dual provider entry match. This deliberately remains
+Prop-valued because the balance provider table is obtained from Prop-level
+existential coverage. Focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, `trust/scripts/regenerate.sh`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this slice. The next route obligations are proving
+direct `LD` excludes the non-mutable branch family, and following legitimate
+subword MemAlign branches to mutable Mem.
