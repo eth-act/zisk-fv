@@ -5305,6 +5305,55 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceCoverageAtEnv
     fullTrace cursorCoverage.selectedEnvelopeRow
     cursorCoverage.selectedPrefix cursorCoverage.selectedPrefixUnique
 
+/-- Build cursor-shaped coverage from unpacked accepted AIR/Main/Mem
+    selection evidence.
+
+    The accepted trace's duplicate-free row invariant discharges selected
+    occurrence uniqueness, so accepted-execution callers that already provide
+    the selected prefix cursor and selected Mem-row occurrence do not need to
+    pass uniqueness separately. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope_of_selection
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
+        program witness acceptedTrace embedded replayEmbedded) :
+    env.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope
+      (AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
+        program witness acceptedTrace embedded replayEmbedded) := by
+  cases env <;>
+    try dsimp only [OpEnvelope.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope,
+      OpEnvelope.SelectedPrefixAtFullEnsembleMemTableAtEnvelope,
+      OpEnvelope.SelectedPrefixUniqueAtFullEnsembleMemTableAtEnvelope,
+      OpEnvelope.acceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope_of_witness,
+      OpEnvelope.acceptedAirMainMemFullTraceWithMemTableAtEnvelope_of_fullEnsemble,
+      OpEnvelope.acceptedTraceOfFullTraceWithMemTable,
+      OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace]
+      at selection ⊢
+  all_goals
+    exact
+      { selectedEnvelopeRow := selection.selectedEnvelopeRow
+        selectedPrefix := selection.selectedPrefix
+        selectedPrefixUnique := by
+          first
+          | exact
+              selection.selectedPrefix.prefixUnique_of_nodup
+                acceptedTrace.construction.rowsNodup
+          | trivial }
+
 /-- Build cursor-shaped coverage from source-shaped coverage. -/
 noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_sourceCoverage
     (env : OpEnvelope state m r_main)
@@ -5802,6 +5851,42 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceSourceAtEnvelope_of
       ⟨cursorSource.1,
         OpEnvelope.acceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope_of_cursorCoverage
           _ cursorSource.1 cursorSource.2⟩
+
+/-- Build the cursor-shaped public memory evidence from accepted AIR/Main/Mem
+    trace data, witness-level mutable-Mem embeddings, and unpacked selected
+    prefix/row evidence. Selected occurrence uniqueness is derived internally
+    from the accepted trace's duplicate-free row invariant. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_selection
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
+        program witness acceptedTrace embedded replayEmbedded) :
+    env.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryTraceCursorSourceAtEnvelope]
+      at selection ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
+          program witness acceptedTrace embedded replayEmbedded,
+        OpEnvelope.acceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope_of_selection
+          env0 program witness acceptedTrace embedded replayEmbedded selection⟩
 
 /-- Lower source-shaped full-execution memory evidence to the selected-cursor
     coverage package consumed by the existing replay bridge. -/

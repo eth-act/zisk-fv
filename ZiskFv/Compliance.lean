@@ -319,9 +319,9 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSelection
         program witness acceptedTrace embedded replayEmbedded)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
     env h_burden
-    (env.acceptedFullExecutionMemoryTraceConstructionAtEnvelope_of_acceptedAirMainMemSelection
+    (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_selection
       program witness acceptedTrace embedded replayEmbedded selection)
     h_known_bugs
 

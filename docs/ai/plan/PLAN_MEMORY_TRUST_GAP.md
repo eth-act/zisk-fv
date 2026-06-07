@@ -1250,3 +1250,18 @@ The visible upstream target is now
 the shared accepted Mem trace, selected envelope row, selected chronological
 prefix cursor, and selected occurrence uniqueness from accepted full-execution
 data. Focused `lake build ZiskFv.Compliance` passed.
+
+The current accepted-selection bridge slice adds
+`OpEnvelope.acceptedFullExecutionMemoryTraceCursorCoverageAtEnvelope_of_selection`
+and
+`OpEnvelope.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_selection`.
+This derives selected-prefix occurrence uniqueness from
+`acceptedTrace.construction.rowsNodup` instead of requiring a separate
+uniqueness input, and routes
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSelection` through the
+cursor-source public wrapper. Focused
+`lake build ZiskFv.Compliance.OpEnvelope` and focused
+`lake build ZiskFv.Compliance` pass; full `lake build`, trust regeneration,
+both trust gates, and `nix run .#test` also pass. This still does not construct
+the accepted Mem trace, selected row occurrence, or selected prefix cursor from
+accepted full execution; those remain the upstream theorem target.
