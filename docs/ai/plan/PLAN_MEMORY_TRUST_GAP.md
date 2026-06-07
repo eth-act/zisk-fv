@@ -150,6 +150,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Bridge shared row extraction plus provider selection into split provider construction.
 - [x] Add constructor for shared row-split extraction from split trace plus embeddings.
 - [x] Add generated-to-accepted split Mem trace construction constructor.
+- [x] Add program-level generated split trace and row-split extraction constructors.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -202,6 +203,20 @@ must prove from the actual trace. This slice passed focused
 `lake build ZiskFv.AirsClean.Mem.TraceSpec`, focused
 `lake build ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
+
+Current generated-construction checkpoint:
+`AcceptedAirMainMemFullTraceSplit.ofGenerated` packages generated split Mem
+construction as the program-level accepted split trace, and
+`AcceptedFullExecutionMemoryRowSplitExtraction.ofGeneratedMemTrace` packages
+that trace with the witness-level mutable-Mem read/replay embedding predicates.
+This is still record packaging: accepted full execution must still prove the
+generated split construction and both embedding predicates from actual trace
+data, while per-load provider-row and prefix selection remains a separate
+obligation. Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec`, focused
+`lake build ZiskFv.Compliance.OpEnvelope`, focused
+`lake build ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice.
 
 Current checkpoint after committed slice `f256fd0d`: the ROM/source-legality
 split is verified and committed, and the next row-indexed source-legality bridge

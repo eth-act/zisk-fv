@@ -537,4 +537,21 @@ def AcceptedAirMainMemFullTraceSplit.toAcceptedAirMainMemFullTrace
     construction :=
       AcceptedAirMainMemFullTraceConstruction.ofSplit trace.construction }
 
+/-- Attach accepted Main-trace provenance to generated split Mem construction
+    data and package it as the program-level split accepted trace object.
+
+    This is record packaging only: accepted full execution must still prove the
+    generated split construction from actual Mem AIR rows. -/
+def AcceptedAirMainMemFullTraceSplit.ofGenerated
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      GeneratedMemFullTraceSplitConstruction initialState rows) :
+    AcceptedAirMainMemFullTraceSplit main :=
+  { initialState := initialState
+    rows := rows
+    construction :=
+      AcceptedAirMainMemFullTraceSplitConstruction.ofGenerated construction }
+
 end ZiskFv.AirsClean.Mem

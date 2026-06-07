@@ -7020,6 +7020,42 @@ def AcceptedFullExecutionMemoryRowSplitExtraction.ofAcceptedAirMainMemTrace
     embedded := embedded
     replayEmbedded := replayEmbedded }
 
+/-- Package generated split Mem construction data plus mutable-Mem replay
+    embeddings into the named shared full-execution row extraction target.
+
+    This moves the shared extraction boundary one step closer to accepted full
+    execution: callers provide the generated split Mem construction directly,
+    while the two witness-level embedding predicates remain explicit proof
+    obligations. -/
+def AcceptedFullExecutionMemoryRowSplitExtraction.ofGeneratedMemTrace
+    {main : Valid_Main FGL FGL}
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    {initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplitConstruction
+        initialState rows)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness rows) :
+    AcceptedFullExecutionMemoryRowSplitExtraction main :=
+  { length := length
+    program := program
+    witness := witness
+    acceptedTrace :=
+      ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit.ofGenerated
+        construction
+    embedded := embedded
+    replayEmbedded := replayEmbedded }
+
 /-- Load-scoped view of the shared full-execution memory trace. -/
 def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace
     (env : OpEnvelope state m r_main)
