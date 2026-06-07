@@ -180,7 +180,7 @@ generic ROM-message and source-sum eval lemmas, and
 `MainProgramRomSourceMultiplicitySound`. The next source-legality task is
 proving the row-indexed predicate from actual row provenance/source facts.
 
-Current checkpoint after committed slice `93335b4e`: selected-row source
+Current checkpoint after committed slice `e89d100d`: selected-row source
 multiplicity is now proved from `MainRowProvenance`, and `OpEnvelope` has an
 adapter to the AIR-level `MainRomRowSourceMultiplicitySound` for that concrete
 row. This slice passed focused `RowProvenance`/`OpEnvelope` builds, full `lake
