@@ -2,12 +2,12 @@
 
 Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
 
-Current focus: replay-only envelope-row state-selection boundary in `ZiskFv/Compliance/OpEnvelope.lean` and `ZiskFv/Compliance.lean` is verified and ready to commit. Next work is accepted full-execution construction obligations.
+Current focus: replay-only envelope-row state-selection boundary `4d1ca15a` is committed. Next work is accepted full-execution construction obligations.
 
 Blocking: no local blocker. The larger global blocker remains: accepted full execution data still does not construct the generated split Mem construction, mutable-Mem all-event replay embedding, selected load provider-row coverage, or selected prefix-state equality from actual accepted trace data.
 
 Next step: continue toward proving accepted full execution constructs the accepted split Mem trace, all-event replay embedding, selected provider-row coverage, and selected prefix-state equality.
 
-Verification: uncommitted replay-only envelope-row state-selection boundary passes focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and `nix run .#test`. Prior committed state-selection source slice `1206cd19` passed the same broad gates.
+Verification: committed replay-only envelope-row state-selection boundary `4d1ca15a` passes focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and `nix run .#test`. Prior committed state-selection source slice `1206cd19` passed the same broad gates.
 
 Digression: latest project-arc checkpoint: overall memory-trust closure is about 65-70% complete structurally, but the final accepted-execution memory theorem remains substantially unproved. The current direct-`LD` route work has proved two of four non-mutable exclusions, reduced Main self-provider to a named global multiplicity/source-legality invariant, and added a table-parametric compliance boundary that avoids the witness-selected-table mismatch. New finding still stands: generic MemAlign is not simply impossible for width-8 loads, because unaligned width-8 accesses use MemAlign in ZisK; no ZisK bug is indicated.
