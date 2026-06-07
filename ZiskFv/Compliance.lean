@@ -1533,6 +1533,43 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceReplayEn
       selectedEnvelopeRow)
     h_known_bugs
 
+/-- Shared accepted split AIR/Main/Mem trace variant with per-envelope
+    envelope-row occurrence and prefix-state equality.
+
+    This is one step closer to the accepted-execution proof shape than
+    `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceReplayEnvelopeSelection`:
+    selected envelope-row coverage plus prefix-state equality derives the
+    selected prefix cursor internally. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceReplayEnvelopeStateSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitTrace :
+      env.AcceptedAirMainMemFullTraceSplitAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace
+        program witness splitTrace)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness
+        program witness splitTrace replayEmbedded)
+    (selectedPrefixState :
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace
+          splitTrace))
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstruction
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_acceptedAirMainMemSplitTraceAndPrefixState
+      program witness splitTrace replayEmbedded selectedEnvelopeRow
+      selectedPrefixState)
+    h_known_bugs
+
 /-- Generated split Mem construction variant with selected envelope Mem-row
     occurrence.
 

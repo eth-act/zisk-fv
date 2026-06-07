@@ -173,10 +173,28 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add generated-split replay-envelope construction wrapper.
 - [x] Add shared generated split trace plus per-envelope replay-envelope selection wrapper.
 - [x] Add shared accepted split trace plus per-envelope replay-envelope selection wrapper.
+- [x] Add shared accepted split trace plus envelope-row prefix-state replay wrapper.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
+
+Latest checkpoint: `OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace`
+and `OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness` expose
+the accepted split trace, all-event mutable-Mem replay embedding, and selected
+envelope-row occurrence without requiring a selected prefix cursor. The new
+constructor
+`acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_acceptedAirMainMemSplitTraceAndPrefixState`
+derives the selected prefix cursor from selected envelope-row coverage plus
+`SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope`, and the public wrapper
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceReplayEnvelopeStateSelection`
+exposes that shape at the compliance theorem boundary. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass. This is still conditional: accepted full execution must
+still prove the shared split trace, all-event replay embedding, selected
+envelope-row occurrence, and prefix-state equality from actual accepted trace
+data.
 
 The active load path no longer carries `LoadTraceContext` inside
 `LoadPromises`; `LoadPromises.memoryBurden` is now a standalone proposition over
@@ -213,7 +231,7 @@ failure. The remaining risk is the final global proof obligation: accepted full
 execution still has to produce one shared `AcceptedFullExecutionMemoryTrace` plus
 per-load selected table-row occurrence, selected prefix cursor, and selected-row
 occurrence uniqueness.
-The latest uncommitted adapter,
+Historical adapter checkpoint:
 `OpEnvelope.selectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope_of_envelopeMemRow`,
 derives replay-provider selected coverage from an envelope Mem-row table
 occurrence plus the load-arm `wr = 0` proof; it passed focused
@@ -431,7 +449,7 @@ embedding, selected provider-row coverage, and prefix-state equality. Focused
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 slice.
 
-Current uncommitted top-level boundary checkpoint:
+Historical top-level boundary checkpoint:
 `zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionProviderSelection`
 exposes the generated split Mem construction, mutable-Mem read/replay
 embeddings, and extraction-indexed provider/prefix selection directly in the
@@ -2058,7 +2076,7 @@ ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
 regeneration, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this slice.
 
-Current uncommitted checkpoint after the split provider construction bridge:
+Historical checkpoint after the split provider construction bridge:
 `OpEnvelope.acceptedFullExecutionMemoryProviderSplitTraceConstructionAtEnvelope_of_rowSplitExtractionSelection`
 turns the named shared split row extraction plus extraction-indexed provider
 selection into the split provider construction package. This is a boundary
@@ -2070,7 +2088,7 @@ ZiskFv.Compliance.OpEnvelope`, focused `lake build ZiskFv.Compliance`, full
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 bridge.
 
-Current uncommitted constructor checkpoint:
+Historical constructor checkpoint:
 `AcceptedFullExecutionMemoryRowSplitExtraction.ofAcceptedAirMainMemTrace`
 packages a split accepted AIR/Main/Mem trace plus the mutable-Mem read/replay
 embedding predicates into the named shared row-split extraction target. This

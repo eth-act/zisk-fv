@@ -8471,6 +8471,97 @@ theorem OpEnvelope.selectedMemReplayProviderRowAtAcceptedSplitTraceConstructionW
       OpEnvelope.selectedMemProviderReplayRowInMemTableAtEnvelope_of_envelopeMemRow
         _ _ h_row
 
+/-- Shared split-trace version of the all-event mutable-Mem replay embedding.
+
+    Unlike `MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction`, this
+    shape does not require a selected prefix cursor. It is the trace-level
+    obligation accepted execution should prove before the load-local prefix is
+    recovered from row membership and prefix-state equality. -/
+def OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitTrace :
+      env.AcceptedAirMainMemFullTraceSplitAtEnvelope) :
+    Prop :=
+  match env with
+  | .ld .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness splitTrace.rows
+  | .lbu .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness splitTrace.rows
+  | .lhu .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness splitTrace.rows
+  | .lwu .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness splitTrace.rows
+  | .lb_via_static_match .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness splitTrace.rows
+  | .lh_via_static_match .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness splitTrace.rows
+  | .lw_via_static_match .. =>
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness splitTrace.rows
+  | _ => True
+
+/-- Shared split-trace selected envelope-row occurrence.
+
+    The row is stated against the witness-selected mutable Mem table determined
+    by the shared split trace and all-event replay embedding, but no selected
+    prefix cursor is required. -/
+noncomputable def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitTrace :
+      env.AcceptedAirMainMemFullTraceSplitAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace
+        program witness splitTrace) :
+    Prop :=
+  match env with
+  | .ld .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness splitTrace replayEmbedded).table
+  | .lbu .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness splitTrace replayEmbedded).table
+  | .lhu .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness splitTrace replayEmbedded).table
+  | .lwu .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness splitTrace replayEmbedded).table
+  | .lb_via_static_match .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness splitTrace replayEmbedded).table
+  | .lh_via_static_match .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness splitTrace replayEmbedded).table
+  | .lw_via_static_match .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness splitTrace replayEmbedded).table
+  | _ => True
+
 /-- The older envelope-row occurrence shape implies provider-row replay
     coverage for the same witness-selected Mem table. -/
 theorem OpEnvelope.selectedMemProviderRowAtAcceptedFullExecutionMemoryTrace_of_envelopeRow
@@ -11671,6 +11762,83 @@ def OpEnvelope.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAt
     (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_splitTraceAndPrefix
       splitTrace selectedPrefix)
     replayEmbedded selectedEnvelopeRow
+
+/-- Build replay-only envelope-row split construction evidence from a shared
+    accepted split AIR/Main/Mem trace, selected envelope-row occurrence, and
+    split-indexed prefix-state equality.
+
+    This is the prefix-state counterpart of
+    `acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_acceptedAirMainMemSplitTraceAndPrefix`:
+    selected-row coverage plus the prefix-state invariant derive the selected
+    prefix cursor internally, so callers no longer have to provide the cursor
+    directly at this boundary. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_acceptedAirMainMemSplitTraceAndPrefixState
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitTrace :
+      env.AcceptedAirMainMemFullTraceSplitAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace
+        program witness splitTrace)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness
+        program witness splitTrace replayEmbedded)
+    (selectedPrefixState :
+      env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+        (env.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace
+          splitTrace)) :
+    env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceSplitAtEnvelope,
+      OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace,
+      OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness,
+      OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_splitTrace,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope]
+      at splitTrace replayEmbedded selectedEnvelopeRow selectedPrefixState ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    let acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m :=
+      splitTrace
+    let extraction :=
+      AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+        program witness acceptedTrace replayEmbedded
+    let selectedProviderRow :=
+      env0.selectedMemProviderReplayRowInMemTableAtEnvelope_of_envelopeMemRow
+        extraction.table selectedEnvelopeRow
+    let selectedPrefix :
+        env0.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+          acceptedTrace.toAcceptedAirMainMemFullTrace :=
+      env0.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
+        acceptedTrace.toAcceptedAirMainMemFullTrace
+        (env0.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReplayRow
+          acceptedTrace.toAcceptedAirMainMemFullTrace
+          (env0.selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_replayRowSplitExtractionProvider
+            extraction selectedProviderRow))
+        selectedPrefixState
+    exact
+      { length := length
+        program := program
+        witness := witness
+        splitConstruction :=
+          { initialState := splitTrace.initialState
+            rows := splitTrace.rows
+            acceptedTrace := splitTrace.construction
+            selectedPrefix := selectedPrefix }
+        replayEmbedded := replayEmbedded
+        selectedEnvelopeRow := by
+          simpa [acceptedTrace, extraction,
+            OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness,
+            OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction,
+            OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedTraceConstruction]
+            using selectedEnvelopeRow }
 
 /-- Decompose the older load-scoped full-execution construction object into
     the newer shared trace plus selected envelope coverage package.
