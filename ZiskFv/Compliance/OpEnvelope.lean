@@ -5572,34 +5572,6 @@ def OpEnvelope.directLoadNoResidualNonMutableMemProviderRouteAtEnvelope_of_gener
     (ZiskFv.AirsClean.FullEnsemble.mainMemBusMultiplicitySound_of_sourceMultiplicitySound
       h_mainSource)
 
-/-- Program-ROM source-legality variant of
-    `directLoadNoResidualNonMutableMemProviderRouteAtEnvelope_of_genericMemAlign_and_mainMemBusSourceMultiplicitySound`.
-    The row-local source-multiplicity invariant is derived from accepted row
-    constraints plus ROM/source legality for program-ROM Main rows. -/
-def OpEnvelope.directLoadNoResidualNonMutableMemProviderRouteAtEnvelope_of_genericMemAlign_and_programRomSourceMultiplicitySound
-    (env : OpEnvelope state m r_main)
-    {length : ℕ}
-    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
-    (witness :
-      Air.Flat.EnsembleWitness
-        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-          length program).ensemble)
-    (mainTable : Air.Flat.Table FGL)
-    (mainRow : Array FGL)
-    (h_no_memAlign :
-      env.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope
-        program witness mainTable mainRow)
-    (h_constraints : witness.Constraints)
-    (h_program :
-      ZiskFv.AirsClean.FullEnsemble.MainProgramRomSourceMultiplicitySound
-        program) :
-    env.DirectLoadNoResidualNonMutableMemProviderRouteAtEnvelope
-      program witness mainTable mainRow :=
-  OpEnvelope.directLoadNoResidualNonMutableMemProviderRouteAtEnvelope_of_genericMemAlign_and_mainMemBusSourceMultiplicitySound
-    env program witness mainTable mainRow h_no_memAlign
-    (ZiskFv.AirsClean.FullEnsemble.mainMemBusSourceMultiplicitySound_of_constraints_and_programRomSourceMultiplicitySound
-      h_constraints h_program)
-
 /-- Promote balanced active-Main coverage to the mutable-Mem route once the
     named non-mutable branches have been ruled out. -/
 def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route
@@ -5694,36 +5666,6 @@ def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_g
     env program witness mainTable mainRow h_active h_source
     (OpEnvelope.directLoadNoResidualNonMutableMemProviderRouteAtEnvelope_of_genericMemAlign_and_mainMemBusSourceMultiplicitySound
       env program witness mainTable mainRow h_no_memAlign h_mainSource)
-
-/-- Program-ROM source-legality variant of
-    `directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_genericMemAlign`. -/
-def OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_programRomSourceMultiplicitySound
-    (env : OpEnvelope state m r_main)
-    {length : ℕ}
-    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
-    (witness :
-      Air.Flat.EnsembleWitness
-        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-          length program).ensemble)
-    (mainTable : Air.Flat.Table FGL)
-    (mainRow : Array FGL)
-    (h_active :
-      env.DirectLoadActiveMainMemProviderRouteAtEnvelope
-        program witness mainTable mainRow)
-    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope)
-    (h_no_memAlign :
-      env.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope
-        program witness mainTable mainRow)
-    (h_constraints : witness.Constraints)
-    (h_program :
-      ZiskFv.AirsClean.FullEnsemble.MainProgramRomSourceMultiplicitySound
-        program) :
-    env.DirectLoadMutableMemProviderRouteAtEnvelope
-      program witness mainTable mainRow :=
-  OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_genericMemAlign
-    env program witness mainTable mainRow h_active h_source h_no_memAlign
-    (ZiskFv.AirsClean.FullEnsemble.mainMemBusSourceMultiplicitySound_of_constraints_and_programRomSourceMultiplicitySound
-      h_constraints h_program)
 
 /-- Direct mutable-route selected provider coverage.
 
@@ -6122,51 +6064,6 @@ def OpEnvelope.directLoadMutableMemProviderCursorAtEnvelope_of_active_route_and_
         h_mainSource))
     h_prefix
 
-/-- Program-ROM source-legality variant of
-    `directLoadMutableMemProviderCursorAtEnvelope_of_active_route_and_prefix`. -/
-def OpEnvelope.directLoadMutableMemProviderCursorAtEnvelope_of_active_route_and_programRomSourceMultiplicitySound
-    (env : OpEnvelope state m r_main)
-    {length : ℕ}
-    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
-    (witness :
-      Air.Flat.EnsembleWitness
-        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-          length program).ensemble)
-    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
-    (embedded :
-      ∀ table : Air.Flat.Table FGL,
-        table ∈ witness.allTables →
-        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
-        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
-          table acceptedTrace.rows)
-    (replayEmbedded :
-      ∀ table : Air.Flat.Table FGL,
-        table ∈ witness.allTables →
-        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
-        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
-          table acceptedTrace.rows)
-    (mainTable : Air.Flat.Table FGL)
-    (mainRow : Array FGL)
-    (h_active :
-      env.DirectLoadActiveMainMemProviderRouteAtEnvelope
-        program witness mainTable mainRow)
-    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope)
-    (h_no_memAlign :
-      env.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope
-        program witness mainTable mainRow)
-    (h_constraints : witness.Constraints)
-    (h_program :
-      ZiskFv.AirsClean.FullEnsemble.MainProgramRomSourceMultiplicitySound
-        program)
-    (h_prefix : env.DirectLoadMutableMemProviderPrefixStateAtEnvelope) :
-    env.DirectLoadMutableMemProviderCursorAtEnvelope :=
-  OpEnvelope.directLoadMutableMemProviderCursorAtEnvelope_of_active_route_and_prefix
-    env program witness acceptedTrace embedded replayEmbedded mainTable mainRow
-    h_active h_source h_no_memAlign
-    (ZiskFv.AirsClean.FullEnsemble.mainMemBusSourceMultiplicitySound_of_constraints_and_programRomSourceMultiplicitySound
-      h_constraints h_program)
-    h_prefix
-
 /-- Direct `LD` table-parametric provider cursor source from route coverage
     and same-table prefix replay.
 
@@ -6262,52 +6159,6 @@ noncomputable def OpEnvelope.directLoadAcceptedFullExecutionMemoryProviderTableC
     h_active h_source h_no_memAlign h_mainSource
     (OpEnvelope.directLoadMutableMemProviderPrefixStateAtEnvelope_of_prefixCursor
       env h_prefixCursor)
-
-/-- Program-ROM source-legality variant of
-    `directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_active_route_and_prefixCursor`. -/
-noncomputable def OpEnvelope.directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_active_route_and_programRomSourceMultiplicitySound
-    (env : OpEnvelope state m r_main)
-    {length : ℕ}
-    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
-    (witness :
-      Air.Flat.EnsembleWitness
-        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
-          length program).ensemble)
-    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
-    (embedded :
-      ∀ table : Air.Flat.Table FGL,
-        table ∈ witness.allTables →
-        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
-        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
-          table acceptedTrace.rows)
-    (replayEmbedded :
-      ∀ table : Air.Flat.Table FGL,
-        table ∈ witness.allTables →
-        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
-        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
-          table acceptedTrace.rows)
-    (mainTable : Air.Flat.Table FGL)
-    (mainRow : Array FGL)
-    (h_active :
-      env.DirectLoadActiveMainMemProviderRouteAtEnvelope
-        program witness mainTable mainRow)
-    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope)
-    (h_no_memAlign :
-      env.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope
-        program witness mainTable mainRow)
-    (h_constraints : witness.Constraints)
-    (h_program :
-      ZiskFv.AirsClean.FullEnsemble.MainProgramRomSourceMultiplicitySound
-        program)
-    (h_prefixCursor :
-      env.DirectLoadMutableMemProviderPrefixCursorAtEnvelope) :
-    env.DirectLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope :=
-  OpEnvelope.directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_active_route_and_prefixCursor
-    env program witness acceptedTrace embedded replayEmbedded mainTable mainRow
-    h_active h_source h_no_memAlign
-    (ZiskFv.AirsClean.FullEnsemble.mainMemBusSourceMultiplicitySound_of_constraints_and_programRomSourceMultiplicitySound
-      h_constraints h_program)
-    h_prefixCursor
 
 /-- Direct `LD` table-parametric provider cursor source from positive
     aligned/direct mutable-route coverage and same-table prefix cursors.

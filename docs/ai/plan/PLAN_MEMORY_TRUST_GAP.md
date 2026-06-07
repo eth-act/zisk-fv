@@ -127,7 +127,8 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Discharge `MainMemBusSourceMultiplicitySound` from witness constraints plus program-ROM source legality.
 - [x] Split `MainProgramRomSourceMultiplicitySound` through row-indexed program ROM source legality.
 - [x] Prove selected-row source multiplicity from `MainRowProvenance`.
-- [ ] Prove `MainProgramRomSourceMultiplicitySound` from actual ROM/source legality for unified Main memory interactions.
+- [x] Remove direct-`LD` program-ROM source wrappers in favor of positive aligned mutable-route evidence.
+- [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -191,6 +192,16 @@ Main row is insufficient. The honest remaining choice is either to add a
 program-wide ROM provenance/well-formedness bridge for every `program i`, or to
 refactor the direct-`LD` route so it consumes selected row provenance instead of
 the program-wide source-legality predicate.
+
+Current checkpoint after the direct-route cleanup: selected-row provenance also
+cannot rule out the Main self-provider branch by itself, because that branch can
+select an arbitrary Main provider row from the witness. `OpEnvelope` therefore
+no longer provides direct-`LD` active-route wrappers that silently derive
+provider cursor evidence from `MainProgramRomSourceMultiplicitySound`; the
+route-friendly path is the positive `DirectLoadAlignedMutableMemProviderRouteAtEnvelope`
+boundary plus same-table prefix cursor evidence. The focused
+`lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`, both trust
+scripts, and `nix run .#test` gates pass for this cleanup.
 
 The latest theorem split records the exact promotion needed when full execution
 naturally produces a selected prefix cursor rather than the stronger
