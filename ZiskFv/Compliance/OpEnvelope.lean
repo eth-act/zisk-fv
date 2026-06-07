@@ -8262,6 +8262,116 @@ noncomputable def OpEnvelope.SelectedMemReplayProviderRowAtAcceptedSplitTraceCon
           replayEmbedded).table
   | _ => True
 
+/-- Replay-only selected envelope-row occurrence at the accepted split-trace
+    construction boundary.
+
+    This is the construction-shaped counterpart of
+    `SelectedEnvelopeMemRowInMemTableAtEnvelope`: the selected row is stated
+    against the concrete mutable Mem table selected from the witness and the
+    all-event replay embedding. Provider replay coverage is a theorem from this
+    occurrence plus the load arm's `wr = 0` fact. -/
+noncomputable def OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction) :
+    Prop :=
+  match env with
+  | .ld .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness
+          { initialState := splitConstruction.initialState
+            rows := splitConstruction.rows
+            construction := splitConstruction.acceptedTrace }
+          replayEmbedded).table
+  | .lbu .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness
+          { initialState := splitConstruction.initialState
+            rows := splitConstruction.rows
+            construction := splitConstruction.acceptedTrace }
+          replayEmbedded).table
+  | .lhu .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness
+          { initialState := splitConstruction.initialState
+            rows := splitConstruction.rows
+            construction := splitConstruction.acceptedTrace }
+          replayEmbedded).table
+  | .lwu .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness
+          { initialState := splitConstruction.initialState
+            rows := splitConstruction.rows
+            construction := splitConstruction.acceptedTrace }
+          replayEmbedded).table
+  | .lb_via_static_match .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness
+          { initialState := splitConstruction.initialState
+            rows := splitConstruction.rows
+            construction := splitConstruction.acceptedTrace }
+          replayEmbedded).table
+  | .lh_via_static_match .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness
+          { initialState := splitConstruction.initialState
+            rows := splitConstruction.rows
+            construction := splitConstruction.acceptedTrace }
+          replayEmbedded).table
+  | .lw_via_static_match .. =>
+      OpEnvelope.SelectedEnvelopeMemRowInMemTableAtEnvelope env
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness
+          { initialState := splitConstruction.initialState
+            rows := splitConstruction.rows
+            construction := splitConstruction.acceptedTrace }
+          replayEmbedded).table
+  | _ => True
+
+/-- A construction-level selected envelope Mem-row occurrence gives
+    construction-level selected provider replay-row coverage. -/
+theorem OpEnvelope.selectedMemReplayProviderRowAtAcceptedSplitTraceConstructionWithWitness_of_envelopeRow
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction)
+    (h_row :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness splitConstruction replayEmbedded) :
+    env.SelectedMemReplayProviderRowAtAcceptedSplitTraceConstructionWithWitness
+      program witness splitConstruction replayEmbedded := by
+  cases env <;>
+    simp [OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness,
+      OpEnvelope.SelectedMemReplayProviderRowAtAcceptedSplitTraceConstructionWithWitness]
+      at h_row ⊢
+  all_goals
+    exact
+      OpEnvelope.selectedMemProviderReplayRowInMemTableAtEnvelope_of_envelopeMemRow
+        _ _ h_row
+
 /-- The older envelope-row occurrence shape implies provider-row replay
     coverage for the same witness-selected Mem table. -/
 theorem OpEnvelope.selectedMemProviderRowAtAcceptedFullExecutionMemoryTrace_of_envelopeRow
@@ -10623,6 +10733,29 @@ structure OpEnvelope.AcceptedFullExecutionMemoryReplaySplitTraceConstructionWith
     env.SelectedMemReplayProviderRowAtAcceptedSplitTraceConstructionWithWitness
       program witness splitConstruction replayEmbedded
 
+/-- Replay-only split construction package with envelope-row selected coverage.
+
+    This is one step closer to accepted full-execution data than
+    `AcceptedFullExecutionMemoryReplaySplitTraceConstructionWithWitness`: the
+    caller identifies the selected Clean Mem row in the witness-selected mutable
+    Mem table, and provider replay coverage is derived internally. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness
+    (env : OpEnvelope state m r_main) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  splitConstruction :
+    env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope
+  replayEmbedded :
+    env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+      program witness splitConstruction
+  selectedEnvelopeRow :
+    env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+      program witness splitConstruction replayEmbedded
+
 /-- Load-scoped full-execution memory construction target.
 
     This is the public boundary shape one step above
@@ -10709,6 +10842,27 @@ def OpEnvelope.AcceptedFullExecutionMemoryReplaySplitTraceConstructionAtEnvelope
       env.AcceptedFullExecutionMemoryReplaySplitTraceConstructionWithWitness
   | .lw_via_static_match .. =>
       env.AcceptedFullExecutionMemoryReplaySplitTraceConstructionWithWitness
+  | _ => ULift.{2, 0} Unit
+
+/-- Replay-only split construction target with envelope-row selected coverage.
+    Non-load envelopes carry no memory obligation. -/
+def OpEnvelope.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness
+  | .lbu .. =>
+      env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness
+  | .lhu .. =>
+      env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness
+  | .lwu .. =>
+      env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness
+  | .lb_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness
+  | .lh_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness
+  | .lw_via_static_match .. =>
+      env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness
   | _ => ULift.{2, 0} Unit
 
 /-- Package the unpacked accepted AIR/Main/Mem construction fields into the
@@ -10857,6 +11011,64 @@ def OpEnvelope.acceptedFullExecutionMemoryReplaySplitTraceConstructionWithWitnes
         splitConstruction := splitConstruction
         replayEmbedded := replayEmbedded
         selectedProviderRow := selectedProviderRow }
+
+/-- Package unpacked replay-only split construction fields using selected
+    envelope Mem-row occurrence instead of prepackaged provider coverage. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness_of_fields
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness splitConstruction replayEmbedded) :
+    env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope]
+      at splitConstruction replayEmbedded selectedEnvelopeRow ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := length
+        program := program
+        witness := witness
+        splitConstruction := splitConstruction
+        replayEmbedded := replayEmbedded
+        selectedEnvelopeRow := selectedEnvelopeRow }
+
+/-- Lower replay-only envelope-row split construction evidence to the
+    provider-row construction target consumed by the existing replay chain. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplaySplitTraceConstructionAtEnvelope_of_envelopeSplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (construction :
+      env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope) :
+    env.AcceptedFullExecutionMemoryReplaySplitTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryReplaySplitTraceConstructionAtEnvelope]
+      at construction ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := construction.length
+        program := construction.program
+        witness := construction.witness
+        splitConstruction := construction.splitConstruction
+        replayEmbedded := construction.replayEmbedded
+        selectedProviderRow :=
+          OpEnvelope.selectedMemReplayProviderRowAtAcceptedSplitTraceConstructionWithWitness_of_envelopeRow
+            _ construction.program construction.witness construction.splitConstruction
+            construction.replayEmbedded construction.selectedEnvelopeRow }
 
 /-- Build split provider-shaped load-scoped construction evidence from the
     named shared split row extraction plus extraction-indexed provider

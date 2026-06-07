@@ -169,6 +169,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add replay-provider envelope-row adapter for FullEnsemble Mem table coverage.
 - [x] Add replay-only table-local envelope-row state-selection boundary.
 - [x] Add accepted/generated split wrappers for replay-only envelope-row state selection.
+- [x] Add construction-level replay-only envelope-row bridge and public wrapper.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -218,7 +219,14 @@ The replay-only path now also has table-local envelope-row evidence:
 `SelectedEnvelopeMemRowInMemTableAtEnvelope` lowers through
 `selectedMemProviderReplayRowInMemTableAtEnvelope_of_envelopeMemRow`, and
 `AcceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelection*`
-wrappers expose this at the compliance boundary. This avoids using the
+has been lifted to the construction boundary. Callers can now use
+`AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope` or
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemReplayEnvelopeSplitTraceConstruction`
+with selected envelope-row occurrence; provider replay-row coverage is derived
+internally by
+`selectedMemReplayProviderRowAtAcceptedSplitTraceConstructionWithWitness_of_envelopeRow`.
+The earlier state-selection wrappers expose the same table-local envelope-row
+shape at the compliance boundary. This avoids using the
 full-ensemble table bridge, and therefore avoids reintroducing the read-only
 mutable-Mem embedding just to derive selected provider-row replay coverage.
 This slice passed focused `lake build ZiskFv.Compliance.OpEnvelope

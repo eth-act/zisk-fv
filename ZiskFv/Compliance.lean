@@ -1371,6 +1371,26 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplaySpl
       construction)
     h_known_bugs
 
+/-- Replay-only split construction variant with selected envelope Mem-row
+    occurrence.
+
+    This exposes the construction-level boundary expected from accepted
+    execution: callers identify the selected Clean Mem row in the concrete
+    mutable Mem table, and the provider replay-row fact is derived internally
+    from the load envelope. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (construction :
+      env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplaySplitTraceConstruction
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplaySplitTraceConstructionAtEnvelope_of_envelopeSplitTraceConstruction
+      construction)
+    h_known_bugs
+
 /-- Split-indexed variant of
     `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSplitConstruction`.
 
@@ -1436,6 +1456,38 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemReplaySplitTraceCo
     env h_burden
     (env.acceptedFullExecutionMemoryReplaySplitTraceConstructionWithWitness_of_fields
       program witness splitConstruction replayEmbedded selectedProviderRow)
+    h_known_bugs
+
+/-- Replay-only split-indexed variant with selected envelope Mem-row
+    occurrence.
+
+    The caller supplies split accepted AIR/Main/Mem construction, the all-event
+    mutable-Mem replay embedding, and the selected envelope Mem-row occurrence
+    over the internally chosen mutable Mem table. Provider replay coverage is
+    proved by the envelope-row lowering theorem. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemReplayEnvelopeSplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction)
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness splitConstruction replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstruction
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionWithWitness_of_fields
+      program witness splitConstruction replayEmbedded selectedEnvelopeRow)
     h_known_bugs
 
 /-- Variant of the global theorem whose per-envelope memory input is the
