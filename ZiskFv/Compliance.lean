@@ -931,6 +931,67 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRow
         extraction selection))
     h_known_bugs
 
+/-- Accepted split AIR/Main/Mem trace variant using replay-only selected
+    coverage.
+
+    This wrapper is closer to the accepted full-execution target than the
+    generated split variant: callers provide the accepted split Mem trace plus
+    the witness-level all-event mutable-Mem replay embedding directly. The
+    concrete mutable Mem table is selected internally. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceSplitReplayRowSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness acceptedTrace replayEmbedded))
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRowSplitTraceSelection
+    env h_burden
+    (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+      program witness acceptedTrace replayEmbedded)
+    selection h_known_bugs
+
+/-- Accepted split AIR/Main/Mem trace variant whose per-load input is
+    provider-row coverage plus prefix-state equality. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceSplitReplayRowStateSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit m)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+        (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+          program witness acceptedTrace replayEmbedded))
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceSplitReplayRowSelection
+    env h_burden program witness acceptedTrace replayEmbedded
+    (env.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope_of_stateSelection
+      (AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+        program witness acceptedTrace replayEmbedded)
+      selection)
+    h_known_bugs
+
 /-- Generated split Mem construction variant using replay-only selected
     coverage.
 

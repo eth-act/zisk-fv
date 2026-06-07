@@ -7559,6 +7559,41 @@ def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofGeneratedMemTraceTable
       construction)
     table table_mem table_component replayEmbedded
 
+/-- Package split accepted AIR/Main/Mem trace data plus the witness-level
+    all-event mutable-Mem replay embedding into the replay-only extraction
+    target.
+
+    This is the accepted-trace counterpart of `ofGeneratedMemTrace`: accepted
+    full execution can provide the split accepted trace and the witness-level
+    replay embedding directly, and this constructor selects the concrete
+    mutable Mem table used by replay-only selected-load coverage. -/
+noncomputable def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace
+    {main : Valid_Main FGL FGL}
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit main)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness acceptedTrace.rows) :
+    AcceptedFullExecutionMemoryReplayRowSplitExtraction main := by
+  let existsTable :=
+    ZiskFv.AirsClean.FullEnsemble.exists_mem_table_of_fullRv64im_witness
+      witness
+  let table := Classical.choose existsTable
+  have h_table : table ∈ witness.allTables :=
+    (Classical.choose_spec existsTable).1
+  have h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus :=
+    (Classical.choose_spec existsTable).2
+  exact
+    AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTraceTable
+      program witness acceptedTrace table h_table h_component
+      (replayEmbedded table h_table h_component)
+
 /-- Package generated split Mem construction plus the witness-level all-event
     mutable-Mem replay embedding into the replay-only extraction target.
 

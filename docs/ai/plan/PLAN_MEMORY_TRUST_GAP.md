@@ -162,6 +162,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add replay-only split Mem replay-provider boundary without read-only embedding.
 - [x] Add replay-only provider plus prefix-state boundary that derives selected prefix cursor.
 - [x] Add replay-only cursor-to-state adapter using accepted trace `rowsNodup`.
+- [x] Add accepted-split replay-only extraction and compliance boundary.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -301,6 +302,23 @@ and the prefix-state/cursor facts from the actual trace. Focused `lake build
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass for this adapter.
+
+Current accepted-split replay-only checkpoint:
+`AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofAcceptedAirMainMemTrace`
+selects the concrete mutable Mem table from the full RV64IM witness for an
+accepted split AIR/Main/Mem trace, using only the witness-level all-event
+mutable-Mem replay embedding. The top-level wrappers
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceSplitReplayRowSelection`
+and
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceSplitReplayRowStateSelection`
+expose this accepted-trace replay-only boundary directly. This removes the
+generated-only detour for this route but remains conditional: accepted full
+execution still has to construct the accepted split trace, all-event replay
+embedding, selected provider-row coverage, and prefix-state equality. Focused
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
+`lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice.
 
 Current uncommitted top-level boundary checkpoint:
 `zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionProviderSelection`
