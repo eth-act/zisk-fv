@@ -242,7 +242,7 @@ execution still has to prove generated Mem construction, mutable-Mem
 read/replay embeddings, and selected provider/prefix coverage from actual trace
 data. Focused `lake build ZiskFv.Compliance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
-`nix run .#test` pass for this uncommitted slice.
+`nix run .#test` pass for committed slice `a47f641f`.
 
 Current checkpoint after committed slice `f256fd0d`: the ROM/source-legality
 split is verified and committed, and the next row-indexed source-legality bridge
