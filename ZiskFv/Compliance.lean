@@ -848,6 +848,41 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderS
       construction)
     h_known_bugs
 
+/-- Split-indexed variant of
+    `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSplitConstruction`.
+
+    The mutable-Mem embedding obligations and selected provider-row coverage
+    are stated over the split construction itself, avoiding a caller-visible
+    detour through `acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split`. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (splitConstruction :
+      env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
+    (embedded :
+      env.MutableMemReadReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness splitConstruction)
+    (selectedProviderRow :
+      env.SelectedMemProviderRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness splitConstruction embedded replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderSplitTraceConstruction
+    env h_burden
+    (env.acceptedFullExecutionMemoryProviderSplitTraceConstructionWithWitness_of_fields
+      program witness splitConstruction embedded replayEmbedded
+      selectedProviderRow)
+    h_known_bugs
+
 /-- Variant of the global theorem whose per-envelope memory input is the
     unpacked selected-prefix and selected witness Mem-row evidence.
 

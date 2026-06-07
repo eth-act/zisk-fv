@@ -146,6 +146,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add extraction-indexed provider selection over split accepted AIR/Main/Mem traces.
 - [x] Add load-scoped split-trace provider selection source and compliance wrapper.
 - [x] Add split provider construction package and lower it to split-trace source evidence.
+- [x] Expose unpacked split-indexed provider construction theorem.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -1502,6 +1503,17 @@ ZiskFv.Compliance`, full `lake build`, `trust/scripts/regenerate.sh`,
 `nix run .#test` pass for this slice. It still does not construct the accepted
 chronological Mem row trace, witness mutable-Mem embeddings, selected row
 occurrence, or selected cursor from balanced full-execution interactions.
+
+The unpacked split-indexed provider-construction wrapper slice adds
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemProviderSplitTraceConstruction`.
+It keeps the split construction, split-indexed mutable-Mem read/replay
+embeddings, and split-indexed selected provider-row coverage visible at the
+top-level wrapper instead of forcing callers through the non-split
+`acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split` detour. Focused
+`lake build ZiskFv.Compliance` passes after moving the wrapper below the lower
+split provider-construction theorem it calls. This is still boundary plumbing;
+the accepted full-execution trace still has to prove the shared split trace and
+selected coverage rather than supply them.
 
 The current row-cursor source slice adds
 `OpEnvelope.AcceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope`, a
