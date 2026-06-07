@@ -97,6 +97,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose all-event mutable-Mem replay embedding alongside selected-read embedding.
 - [x] Thread all-event replay embedding through the selected FullEnsemble Mem-table bridge.
 - [x] Add selected accepted-row membership from all-event replay embedding.
+- [x] Add a global wrapper that consumes packed full-execution memory construction.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -237,6 +238,16 @@ and `lake build ZiskFv.Compliance` pass for this cleanup. Full `lake build`,
 `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, explicit closure print with zero project
 axiom names, targeted scan, and `nix run .#test` also pass.
+
+The current construction-wrapper slice adds
+`zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction`.
+It lets upstream callers provide the packed
+`OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope` directly,
+while the theorem projects the split shared-trace and per-envelope coverage
+inputs required by `zisk_riscv_compliant_program_bus` internally. This is not
+the final global discharge theorem; it makes the next source-shaped boundary
+explicit and reusable. Focused `lake build ZiskFv.Compliance` passes; full
+`lake build`, trust regeneration, both trust gates, and `nix run .#test` pass.
 
 The selected-coverage slice adds
 `OpEnvelope.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope`,

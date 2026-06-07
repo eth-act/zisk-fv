@@ -195,6 +195,28 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace
       fullTrace coverage)
     h_known_bugs
 
+/-- Variant of the global theorem whose memory input is the packed
+    full-execution construction object.
+
+    This is useful for upstream integrations that can construct the
+    load-scoped accepted Mem trace, selected cursor, witness-selected Mem table,
+    replay embedding, and selected envelope row together. The split
+    shared-trace and per-envelope coverage inputs of
+    `zisk_riscv_compliant_program_bus` are projected internally. -/
+theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (construction :
+      env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus env h_burden
+    (env.acceptedFullExecutionMemoryTraceAtEnvelope_of_traceConstruction
+      construction)
+    (env.acceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope_of_traceConstruction
+      construction)
+    h_known_bugs
+
 /-- Variant of the global theorem whose memory input is accepted AIR/Main/Mem
     trace data plus the full RV64IM witness and mutable-Mem embeddings.
 
