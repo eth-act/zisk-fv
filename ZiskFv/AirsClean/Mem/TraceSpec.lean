@@ -445,6 +445,27 @@ def AcceptedAirMainMemFullTraceConstruction.toSplit
         prefixReadSound := construction.prefixReadSound
         initialAgreement := construction.initialAgreement } }
 
+/-- Attach accepted Main-trace provenance to generated split Mem trace
+    construction data.
+
+    This is record packaging only: the generated construction still contains
+    the local Mem rows, row-order facts, and replay facts that accepted full
+    execution must prove from the actual trace. -/
+def AcceptedAirMainMemFullTraceSplitConstruction.ofGenerated
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {initialState : SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      GeneratedMemFullTraceSplitConstruction initialState rows) :
+    AcceptedAirMainMemFullTraceSplitConstruction main initialState rows :=
+  { mem := construction.mem
+    segment := construction.segment
+    permutation := construction.permutation
+    rowCount := construction.rowCount
+    generatedRows := construction.generatedRows
+    orderFacts := construction.orderFacts
+    replayFacts := construction.replayFacts }
+
 /-- Forget the Main-trace provenance marker and produce the generated Mem
     construction object consumed by the current replay bridge. -/
 def AcceptedAirMainMemFullTraceConstruction.toGeneratedMemFullTraceConstruction

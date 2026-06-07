@@ -149,6 +149,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Expose unpacked split-indexed provider construction theorem.
 - [x] Bridge shared row extraction plus provider selection into split provider construction.
 - [x] Add constructor for shared row-split extraction from split trace plus embeddings.
+- [x] Add generated-to-accepted split Mem trace construction constructor.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -192,6 +193,15 @@ occurrence uniqueness.
 No ZisK semantic bug has been identified so far; the issue is whether the
 accepted-execution surface already exposes enough coverage/state facts to prove
 that theorem, or whether the global construction layer must be strengthened.
+
+Current generated-to-accepted checkpoint: `AcceptedAirMainMemFullTraceSplitConstruction.ofGenerated`
+attaches Main-trace provenance to a generated split Mem trace construction.
+This is record packaging only; the generated construction still contains the
+local Mem rows, row-order facts, and replay facts that accepted full execution
+must prove from the actual trace. This slice passed focused
+`lake build ZiskFv.AirsClean.Mem.TraceSpec`, focused
+`lake build ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
 
 Current checkpoint after committed slice `f256fd0d`: the ROM/source-legality
 split is verified and committed, and the next row-indexed source-legality bridge
