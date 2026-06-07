@@ -7706,6 +7706,26 @@ def OpEnvelope.AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope
           fullTrace
   | _ => ULift.{2, 0} Unit
 
+/-- Forget selected occurrence uniqueness from the stronger provider cursor
+    source package. This keeps existing callers compatible after the primary
+    compliance theorem moves to the uniqueness-free provider-prefix boundary. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope_of_providerTraceCursorSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope) :
+    env.AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryProviderPrefixSourceAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      ⟨source.1,
+        { selectedProviderRow := source.2.selectedProviderRow
+          selectedPrefix := source.2.selectedPrefix }⟩
+
 /-- Load-scoped provider-shaped source evidence from a shared full-execution
     trace, selected provider-row replay coverage, and selected-prefix cursor.
 
