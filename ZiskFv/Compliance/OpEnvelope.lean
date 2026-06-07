@@ -5076,6 +5076,39 @@ def AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
     embedded := embedded
     replayEmbedded := replayEmbedded }
 
+/-- Shared accepted-execution Mem row extraction target.
+
+    This names the program-level theorem result still missing from accepted
+    full-execution integration: construct the chronological accepted
+    AIR/Main/Mem trace and prove that the full RV64IM witness's mutable-Mem
+    table projections embed in that trace for both selected reads and full
+    read/write replay. Per-envelope selected-load coverage remains separate. -/
+structure AcceptedFullExecutionMemoryRowExtraction
+    (main : Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace main
+  embedded :
+    ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+      witness acceptedTrace.rows
+  replayEmbedded :
+    ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+      witness acceptedTrace.rows
+
+/-- Lower the named row-extraction target to the shared full-execution memory
+    trace package already consumed by the load replay bridge. -/
+def AcceptedFullExecutionMemoryRowExtraction.toFullTrace
+    {main : Valid_Main FGL FGL}
+    (extraction : AcceptedFullExecutionMemoryRowExtraction main) :
+    AcceptedFullExecutionMemoryTrace main :=
+  AcceptedFullExecutionMemoryTrace.ofAcceptedAirMainMemTrace
+    extraction.program extraction.witness extraction.acceptedTrace
+    extraction.embedded extraction.replayEmbedded
+
 /-- Load-scoped view of the shared full-execution memory trace. -/
 def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_fullExecutionMemoryTrace
     (env : OpEnvelope state m r_main)

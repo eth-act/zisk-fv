@@ -101,6 +101,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add direct accepted AIR/Main/Mem selection to packed memory construction bridge.
 - [x] Expose top-level compliance wrappers for source and cursor-source memory evidence.
 - [x] Expose a top-level wrapper for unpacked accepted AIR/Main/Mem trace construction plus witness facts.
+- [x] Name the shared accepted full-execution Mem row extraction target and add compliance wrappers for it.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1292,3 +1293,14 @@ agreement, or mutable-Mem replay embeddings from those channel facts. The next
 real proof target must therefore introduce/prove the accepted memory-bus row
 extraction from balanced full-execution interactions before the current
 cursor-source obligations can be discharged globally.
+
+The current boundary-naming slice adds
+`AcceptedFullExecutionMemoryRowExtraction` as the shared accepted-execution Mem
+row extraction result: accepted AIR/Main/Mem trace plus witness-level mutable-Mem
+read and read/write replay embeddings. `Compliance.lean` now has wrappers that
+consume this shared package with either ordinary per-envelope coverage or the
+unpacked selected-prefix/selected-row evidence. This is not the missing global
+row-extraction proof; it gives that proof a named result shape. Focused
+`lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full
+`lake build`, trust regeneration, both trust gates, and `nix run .#test` pass
+for this slice.

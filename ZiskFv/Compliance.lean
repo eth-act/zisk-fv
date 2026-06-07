@@ -330,6 +330,46 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTrace
       program witness acceptedTrace embedded replayEmbedded)
     coverage h_known_bugs
 
+/-- Variant of the global theorem whose shared memory input is the named
+    accepted-execution Mem row extraction package.
+
+    This is the current global extraction target factored into two pieces:
+    the shared chronological Mem row trace plus mutable-Mem embeddings, and the
+    per-envelope selected-load coverage for that shared extraction. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtraction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (coverage :
+      env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope
+        extraction.toFullTrace)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace env h_burden
+    extraction.toFullTrace coverage h_known_bugs
+
+/-- Variant of the global theorem whose memory input is the named shared row
+    extraction plus unpacked selected-load evidence.
+
+    Accepted full execution should eventually construct `extraction` once per
+    program trace and `selection` for each selected load envelope. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryRowExtractionSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryTraceSelectionAtEnvelope
+        extraction.program extraction.witness extraction.acceptedTrace
+        extraction.embedded extraction.replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceCursorSource
+    env h_burden
+    (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_selection
+      extraction.program extraction.witness extraction.acceptedTrace
+      extraction.embedded extraction.replayEmbedded selection)
+    h_known_bugs
+
 /-- Variant of the global theorem whose per-envelope memory input is the
     unpacked selected-prefix and selected witness Mem-row evidence.
 
