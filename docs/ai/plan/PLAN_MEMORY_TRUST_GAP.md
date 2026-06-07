@@ -106,6 +106,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Split selected-load extraction evidence into cursor-shaped row selection.
 - [x] Package row extraction plus cursor selection as a load-scoped source target.
 - [x] Move the primary compliance theorem boundary to the row-cursor source target.
+- [x] Name balanced active-Main memory provider row coverage from FullEnsemble.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -225,6 +226,17 @@ coverage; it does not prove the remaining semantic Mem fields. Focused
 `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
 trust regeneration, both trust gates, closure print with no project axiom names,
 targeted retired-memory scan, and `nix run .#test` passed.
+
+The latest FullEnsemble balance slice adds
+`ActiveMainMemProviderRowMatchSpec` and
+`activeMainMemProviderRowMatchSpec_of_active_main_eval`, a named form of the
+balanced active-Main memory-bus provider-row coverage theorem. This is a
+verified proof-surface improvement, not the final extraction theorem: the
+provider result still exposes MemAlignReadByte, MemAlignByte, MemAlign,
+mutable-Mem primary/dual, and unified-Main branches. The next proof needs to
+either rule out the non-mutable-Mem branches from stronger selector/route facts
+or explicitly carry the exact branch exclusion needed to identify the selected
+load with the witness-selected mutable Mem table.
 
 Current checkpoint: the replay-embedding slice is verified and committed. The
 current uncommitted patch adds selected accepted-row membership from the
