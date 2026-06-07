@@ -6,7 +6,7 @@ Current focus: upstream accepted full-execution memory construction. The current
 
 Blocking: accepted full execution data still does not construct the accepted Mem row trace or selected load coverage, including duplicate-free chronological rows, prefix read soundness, initial agreement, accepted row-list construction, selected row occurrence, and selected cursor construction.
 
-Next step: commit the replay-embedding slice, then inspect how accepted Mem rows should be built from the all-event projection.
+Next step: inspect how accepted Mem rows should be built from the all-event projection and identify the next concrete row-list construction bridge.
 
 Verification: focused `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust gates, closure print with zero project axiom names, targeted retired-memory scan, and `nix run .#test` passed for the replay-embedding slice.
 
