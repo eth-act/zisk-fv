@@ -161,6 +161,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add generated split Mem replay-provider selection boundary.
 - [x] Add replay-only split Mem replay-provider boundary without read-only embedding.
 - [x] Add replay-only provider plus prefix-state boundary that derives selected prefix cursor.
+- [x] Add replay-only cursor-to-state adapter using accepted trace `rowsNodup`.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -289,6 +290,17 @@ obligations. Focused
 `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 slice.
+
+Current replay-only cursor-to-state adapter checkpoint:
+`acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope_of_selection`
+converts the older replay-only cursor-shaped selected-load evidence into the
+new prefix-state shape, deriving occurrence uniqueness from the accepted split
+trace's `orderFacts.rowsNodup`. This is a compatibility bridge, not final
+closure: accepted full execution still has to prove the selected provider row
+and the prefix-state/cursor facts from the actual trace. Focused `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` pass for this adapter.
 
 Current uncommitted top-level boundary checkpoint:
 `zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionProviderSelection`

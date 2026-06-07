@@ -8100,6 +8100,33 @@ structure OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectio
       (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
         extraction)
 
+/-- Convert replay-only cursor-shaped selected-load evidence to the
+    prefix-state shape, deriving occurrence uniqueness from the accepted split
+    trace's `rowsNodup` fact. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope_of_selection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionAtEnvelope
+      extraction :=
+  { selectedProviderRow := selection.selectedProviderRow
+    selectedPrefixState :=
+      env.selectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope_of_prefixUnique
+        (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
+          extraction)
+        selection.selectedPrefix
+        (by
+          cases env <;>
+            simp [OpEnvelope.SelectedPrefixUniqueAtAcceptedAirMainMemTraceAtEnvelope,
+              OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction,
+              OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope] at selection ⊢
+          all_goals
+            exact
+              selection.selectedPrefix.prefixUnique_of_nodup
+                extraction.acceptedTrace.construction.orderFacts.rowsNodup) }
+
 /-- Build replay-only selected-prefix evidence from provider-row coverage and
     prefix-state equality. -/
 noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope_of_stateSelection
