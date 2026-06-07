@@ -1490,6 +1490,44 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemReplayEnvelopeSpli
       program witness splitConstruction replayEmbedded selectedEnvelopeRow)
     h_known_bugs
 
+/-- Generated split Mem construction variant with selected envelope Mem-row
+    occurrence.
+
+    This is the generated-construction counterpart of
+    `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemReplayEnvelopeSplitTraceConstruction`:
+    generated Mem trace construction remains explicit, while provider replay
+    coverage is derived from selected envelope-row occurrence after attaching
+    accepted AIR/Main provenance. -/
+theorem zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayEnvelopeSplitTraceConstruction
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (generatedConstruction :
+      env.GeneratedMemFullTraceSplitConstructionAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit
+          generatedConstruction))
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit
+          generatedConstruction)
+        replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstruction
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_generatedMemFullTraceSplit
+      program witness generatedConstruction replayEmbedded selectedEnvelopeRow)
+    h_known_bugs
+
 /-- Variant of the global theorem whose per-envelope memory input is the
     unpacked selected-prefix and selected witness Mem-row evidence.
 

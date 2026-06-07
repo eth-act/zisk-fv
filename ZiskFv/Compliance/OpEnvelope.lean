@@ -3464,6 +3464,31 @@ def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
             split.acceptedTrace
         selectedPrefix := split.selectedPrefix }
 
+/-- Attach accepted AIR/Main provenance to a split generated Mem construction
+    at the selected envelope cursor.
+
+    This is record packaging only: the generated construction still carries the
+    local Mem rows, row-order facts, replay facts, and selected prefix cursor. -/
+def OpEnvelope.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit
+    (env : OpEnvelope state m r_main)
+    (split :
+      env.GeneratedMemFullTraceSplitConstructionAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.GeneratedMemFullTraceSplitConstructionAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope]
+      at split ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := split.initialState
+        rows := split.rows
+        acceptedTrace :=
+          ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplitConstruction.ofGenerated
+            split.generatedTrace
+        selectedPrefix := split.selectedPrefix }
+
 /-- Shared accepted AIR/Main/Mem trace data scoped to load envelopes.
     Non-load envelopes carry `Unit`; load envelopes carry the shared
     program-level trace object, without the selected cursor. -/
@@ -11069,6 +11094,56 @@ def OpEnvelope.acceptedFullExecutionMemoryReplaySplitTraceConstructionAtEnvelope
           OpEnvelope.selectedMemReplayProviderRowAtAcceptedSplitTraceConstructionWithWitness_of_envelopeRow
             _ construction.program construction.witness construction.splitConstruction
             construction.replayEmbedded construction.selectedEnvelopeRow }
+
+/-- Build replay-only envelope-row split construction evidence from generated
+    split Mem construction.
+
+    This keeps the generated Mem construction and mutable-Mem replay embedding
+    visible to callers, while reusing the accepted-split construction boundary
+    expected by the replay-only lowering chain. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_generatedMemFullTraceSplit
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (generatedConstruction :
+      env.GeneratedMemFullTraceSplitConstructionAtEnvelope)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit
+          generatedConstruction))
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit
+          generatedConstruction)
+        replayEmbedded) :
+    env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.GeneratedMemFullTraceSplitConstructionAtEnvelope,
+      OpEnvelope.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope,
+      OpEnvelope.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit]
+      at generatedConstruction replayEmbedded selectedEnvelopeRow ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact
+      { length := length
+        program := program
+        witness := witness
+        splitConstruction :=
+          { initialState := generatedConstruction.initialState
+            rows := generatedConstruction.rows
+            acceptedTrace :=
+              ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplitConstruction.ofGenerated
+                generatedConstruction.generatedTrace
+            selectedPrefix := generatedConstruction.selectedPrefix }
+        replayEmbedded := replayEmbedded
+        selectedEnvelopeRow := selectedEnvelopeRow }
 
 /-- Build split provider-shaped load-scoped construction evidence from the
     named shared split row extraction plus extraction-indexed provider

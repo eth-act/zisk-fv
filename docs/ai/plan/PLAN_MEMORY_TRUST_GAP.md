@@ -170,6 +170,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add replay-only table-local envelope-row state-selection boundary.
 - [x] Add accepted/generated split wrappers for replay-only envelope-row state selection.
 - [x] Add construction-level replay-only envelope-row bridge and public wrapper.
+- [x] Add generated-split replay-envelope construction wrapper.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -229,6 +230,14 @@ The earlier state-selection wrappers expose the same table-local envelope-row
 shape at the compliance boundary. This avoids using the
 full-ensemble table bridge, and therefore avoids reintroducing the read-only
 mutable-Mem embedding just to derive selected provider-row replay coverage.
+Generated split Mem construction now lowers through
+`acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit`
+and
+`acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_generatedMemFullTraceSplit`.
+The public wrapper
+`zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayEnvelopeSplitTraceConstruction`
+keeps generated Mem construction, all-event replay embedding, and selected
+envelope-row occurrence visible.
 This slice passed focused `lake build ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
