@@ -107,6 +107,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Package row extraction plus cursor selection as a load-scoped source target.
 - [x] Move the primary compliance theorem boundary to the row-cursor source target.
 - [x] Name balanced active-Main memory provider row coverage from FullEnsemble.
+- [x] Split balanced provider coverage into mutable-Mem and non-mutable route branches.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -239,26 +240,18 @@ loads should refine the provider result to the mutable-Mem branch, while
 subword loads already carry `MemAlignWitness` and likely need a chained
 Main-to-MemAlign-to-mutable-Mem selected-row proof.
 
-Current checkpoint: the replay-embedding slice is verified and committed. The
-current uncommitted patch adds selected accepted-row membership from the
-polarity-preserving all-event replay embedding:
-`mem_primary_read_replay_entry_mem_of_replay_embedded_trace_row_match`,
-`mem_dual_read_replay_entry_mem_of_replay_embedded_trace_row_match`, and
-`OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_envelopeMemRowReplay`.
-This avoids using the older read-only embedding to justify selected load-row
-membership, because that read-only embedding is too strong for write rows. The
-active top-level theorem `zisk_riscv_compliant_program_bus` now derives
-`_h_selected_mem_row` through the replay-derived theorem using
-`h_mem_extraction.fullTraceTable` and `h_mem_extraction.selectedEnvelopeRow`,
-and
-`acceptedFullExecutionMemoryCursorExtractionAtEnvelope_of_fullEnsemblePrefixState`
-uses the same replay-derived route. The older `SelectedMemReadReplayRow...`
-helpers remain as compatibility surface but are no longer on the active
-compliance/construction path. Focused `lake build ZiskFv.Compliance.OpEnvelope`
-and `lake build ZiskFv.Compliance` pass for this cleanup. Full `lake build`,
+The current route-split slice adds
+`ActiveMainMutableMemProviderRowMatchSpec`,
+`ActiveMainNonMutableMemProviderRowMatchSpec`,
+`activeMainMemProviderRowMatchSpec_mutable_or_nonmutable`, and
+`activeMainMutableMemProviderRowMatchSpec_of_no_nonmutable`. These lemmas do
+not prove the route facts themselves; they make the next direct-load proof
+target exact: derive the mutable-Mem provider row by ruling out the named
+non-mutable branch family. Focused `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
 `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
-`trust/scripts/check-all-semantic.sh`, explicit closure print with zero project
-axiom names, targeted scan, and `nix run .#test` also pass.
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice.
 
 The current construction-wrapper slice adds
 `zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction`.
