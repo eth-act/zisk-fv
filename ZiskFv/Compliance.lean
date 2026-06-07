@@ -845,6 +845,70 @@ theorem zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructi
       program witness construction embedded replayEmbedded)
     selection h_known_bugs
 
+/-- Replay-provider split-trace selection variant indexed by the named shared
+    row split extraction.
+
+    This is the all-event replay counterpart of
+    `zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryProviderRowSplitTraceSelection`:
+    selected provider-row coverage uses
+    `SelectedMemProviderReplayRowInFullEnsembleMemTableAtEnvelope`, so callers
+    stay on the mutable-Mem replay embedding route. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+        extraction)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus
+    env h_burden
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayProviderRowSplitTraceSelectionSource
+      (env.acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope_of_selection
+        extraction selection))
+    h_known_bugs
+
+/-- Generated split Mem construction variant using replay-provider selected
+    coverage.
+
+    This exposes the same generated split Mem construction and mutable-Mem
+    embedding obligations as
+    `zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionProviderSelection`,
+    but the per-load selected provider row is stated against the all-event
+    replay projection. -/
+theorem zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayProviderSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    {initialState : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (construction :
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplitConstruction
+        initialState rows)
+    (embedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReadReplayRowsEmbeddedInTrace
+        witness rows)
+    (replayEmbedded :
+      ZiskFv.AirsClean.FullEnsemble.MutableMemReplayRowsEmbeddedInTrace
+        witness rows)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+        (AcceptedFullExecutionMemoryRowSplitExtraction.ofGeneratedMemTrace
+          program witness construction embedded replayEmbedded))
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelection
+    env h_burden
+    (AcceptedFullExecutionMemoryRowSplitExtraction.ofGeneratedMemTrace
+      program witness construction embedded replayEmbedded)
+    selection h_known_bugs
+
 /-- Variant of the global theorem whose memory input is the load-scoped
     row-extraction/cursor-selection source package.
 

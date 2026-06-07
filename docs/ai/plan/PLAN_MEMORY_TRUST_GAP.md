@@ -158,6 +158,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add full-ensemble replay-provider bridge to selected-row membership.
 - [x] Add replay-provider cursor extraction target.
 - [x] Add replay-provider split-trace source boundary and compliance wrapper.
+- [x] Add generated split Mem replay-provider selection boundary.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -237,6 +238,19 @@ slice after dependent-type elaboration timeouts; the source boundary keeps the
 selected replay-provider obligation visible without adding that expensive
 adapter. Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`,
 full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
+slice.
+
+Current generated replay-provider selection checkpoint:
+`acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope_of_selection`
+packages extraction-indexed replay-provider split selection into the
+load-scoped source shape, and
+`zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayProviderSelection`
+exposes generated split Mem construction plus replay-provider selected-row
+coverage directly in the compliance theorem family. This is still conditional:
+the generated split construction, mutable-Mem embeddings, selected prefix, and
+selected replay-provider row remain caller obligations. Focused
+`lake build ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this
 slice.
 

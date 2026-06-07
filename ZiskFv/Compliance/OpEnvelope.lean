@@ -8081,6 +8081,23 @@ def OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSo
           extraction
   | _ => ULift.{2, 0} Unit
 
+/-- Package extraction-indexed replay-provider split selection as the
+    load-scoped source object. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope_of_selection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope]
+      at selection ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact ⟨extraction, selection⟩
+
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
     full-execution coverage object consumed by the current compliance proof. -/
 def OpEnvelope.acceptedFullExecutionMemoryTraceCoverageAtEnvelope_of_selection
