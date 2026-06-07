@@ -531,18 +531,19 @@ event ordering, segment carry, dual emission, row-level read/write replay
 soundness, and initial memory agreement. `OpEnvelope` load arms now carry this
 global spec plus the selected read-row cursor; the prior granular row
 construction is derived internally by
-The latest uncommitted cursor-construction slice adds
+`AcceptedFullMemoryBusRowsTrace.toRowsTraceConstruction`. Focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
+passed. Full `lake build`, trust regeneration, both trust gates, global
+closure print with zero project axiom names, targeted retired-memory scans,
+the broad plan scan, and `nix run .#test` also passed for this slice.
+
+The cursor-construction slice adds
 `OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_construction`, recovering
 the shared accepted AIR/Main/Mem trace object from the load-scoped accepted
 trace construction. Focused `lake build ZiskFv.Compliance.OpEnvelope` passed.
 This is a small verified reduction: it removes one separately supplied selected
 prefix cursor from the planned next constructor, but it does not yet prove the
 remaining full-execution embedding or selected Mem-row occurrence obligations.
-`AcceptedFullMemoryBusRowsTrace.toRowsTraceConstruction`. Focused `lake build
-ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`
-passed. Full `lake build`, trust regeneration, both trust gates, global
-closure print with zero project axiom names, targeted retired-memory scans,
-the broad plan scan, and `nix run .#test` also passed for this slice.
 
 The local `rv64im-completeness` branch was checked non-destructively. It adds
 raw-instruction completeness and `OpEnvelope`/Aeneas bridge predicates, but it
@@ -583,7 +584,7 @@ the clean/global trace layer so
 `AcceptedFullMemoryBusRowsTraceConstructionAtEnvelope` can be proved from
 accepted AIR/Main/Mem full-trace data.
 
-The current uncommitted cleanup replaces the anonymous nested Sigma/PLift
+The construction-payload cleanup replaces the anonymous nested Sigma/PLift
 public memory-construction payload with
 `OpEnvelope.AcceptedFullExecutionMemoryTraceConstructionWithWitness`. This does
 not close the memory trust gap; it makes the remaining full-execution load
