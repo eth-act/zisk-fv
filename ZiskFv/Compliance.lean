@@ -1528,6 +1528,47 @@ theorem zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructi
       program witness generatedConstruction replayEmbedded selectedEnvelopeRow)
     h_known_bugs
 
+/-- Shared generated split Mem trace variant with per-envelope selected prefix
+    and envelope-row occurrence.
+
+    This factors the generated Mem construction once from the load-local
+    prefix and selected witness Mem-row obligations, matching the shape needed
+    by the future accepted full-execution construction theorem. -/
+theorem zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitReplayEnvelopeSelection
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (generatedTrace :
+      env.GeneratedMemFullTraceSplitAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtGeneratedMemFullTraceSplitAtEnvelope
+        generatedTrace)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit
+          (env.generatedMemFullTraceSplitConstructionAtEnvelope_of_traceAndPrefix
+            generatedTrace selectedPrefix)))
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit
+          (env.generatedMemFullTraceSplitConstructionAtEnvelope_of_traceAndPrefix
+            generatedTrace selectedPrefix))
+        replayEmbedded)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstruction
+    env h_burden
+    (env.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_generatedMemFullTraceSplitTraceAndPrefix
+      program witness generatedTrace selectedPrefix replayEmbedded selectedEnvelopeRow)
+    h_known_bugs
+
 /-- Variant of the global theorem whose per-envelope memory input is the
     unpacked selected-prefix and selected witness Mem-row evidence.
 

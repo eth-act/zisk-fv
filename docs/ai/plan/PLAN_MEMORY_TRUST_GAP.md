@@ -171,6 +171,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add accepted/generated split wrappers for replay-only envelope-row state selection.
 - [x] Add construction-level replay-only envelope-row bridge and public wrapper.
 - [x] Add generated-split replay-envelope construction wrapper.
+- [x] Add shared generated split trace plus per-envelope replay-envelope selection wrapper.
 - [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
@@ -238,7 +239,15 @@ The public wrapper
 `zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitConstructionReplayEnvelopeSplitTraceConstruction`
 keeps generated Mem construction, all-event replay embedding, and selected
 envelope-row occurrence visible.
-This slice passed focused `lake build ZiskFv.Compliance.OpEnvelope
+The next wrapper,
+`zisk_riscv_compliant_program_bus_of_generatedMemFullTraceSplitReplayEnvelopeSelection`,
+factors that generated evidence into one shared
+`GeneratedMemFullTraceSplit` trace plus per-envelope selected-prefix,
+all-event replay embedding, and selected envelope-row occurrence. This is still
+conditional, but it matches the eventual accepted full-execution proof shape
+more closely: shared Mem trace once, selected load coverage separately.
+The shared-generated wrapper passed focused `lake build
+ZiskFv.AirsClean.Mem.TraceSpec ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
 The follow-on wrapper slice exposes the same envelope-row state-selection shape

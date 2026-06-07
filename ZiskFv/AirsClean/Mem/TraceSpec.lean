@@ -356,6 +356,14 @@ def GeneratedMemFullTraceConstruction.toAcceptedFullMemoryBusRowsTrace
     AcceptedFullMemoryBusRowsTrace initialState rows :=
   construction.toSplit.toAcceptedFullMemoryBusRowsTrace
 
+/-- Program-level generated split Mem trace data, before selecting any
+    particular load row. -/
+structure GeneratedMemFullTraceSplit : Type where
+  initialState : SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  construction :
+    GeneratedMemFullTraceSplitConstruction initialState rows
+
 /-- Projection of the local Mem bridge obligations from generated full-trace
     construction data. -/
 theorem core_every_row_of_generated_full_trace
@@ -577,5 +585,13 @@ def AcceptedAirMainMemFullTraceSplit.ofGenerated
     rows := rows
     construction :=
       AcceptedAirMainMemFullTraceSplitConstruction.ofGenerated construction }
+
+/-- Attach accepted Main-trace provenance to a program-level generated split
+    Mem trace bundle. -/
+def AcceptedAirMainMemFullTraceSplit.ofGeneratedTrace
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    (trace : GeneratedMemFullTraceSplit) :
+    AcceptedAirMainMemFullTraceSplit main :=
+  AcceptedAirMainMemFullTraceSplit.ofGenerated trace.construction
 
 end ZiskFv.AirsClean.Mem

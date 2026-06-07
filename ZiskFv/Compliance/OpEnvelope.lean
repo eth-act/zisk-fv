@@ -3337,6 +3337,80 @@ def OpEnvelope.GeneratedMemFullTraceSplitConstructionAtEnvelope
       GeneratedMemFullTraceSplitConstructionWithPrefixAtCursor state bus.e1
   | _ => Unit
 
+/-- Shared generated split Mem trace data scoped to load envelopes.
+    Non-load envelopes carry `Unit`; load envelopes carry the program-level
+    generated split trace without an envelope-specific prefix cursor. -/
+def OpEnvelope.GeneratedMemFullTraceSplitAtEnvelope
+    (env : OpEnvelope state m r_main) : Type :=
+  match env with
+  | .ld .. =>
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplit
+  | .lbu .. =>
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplit
+  | .lhu .. =>
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplit
+  | .lwu .. =>
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplit
+  | .lb_via_static_match .. =>
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplit
+  | .lh_via_static_match .. =>
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplit
+  | .lw_via_static_match .. =>
+      ZiskFv.AirsClean.Mem.GeneratedMemFullTraceSplit
+  | _ => Unit
+
+/-- Selected-prefix coverage for a shared generated split Mem trace at one
+    envelope. -/
+def OpEnvelope.SelectedPrefixAtGeneratedMemFullTraceSplitAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (generatedTrace : env.GeneratedMemFullTraceSplitAtEnvelope) : Type :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        generatedTrace.initialState generatedTrace.rows bus.e1
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        generatedTrace.initialState generatedTrace.rows bus.e1
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        generatedTrace.initialState generatedTrace.rows bus.e1
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        generatedTrace.initialState generatedTrace.rows bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        generatedTrace.initialState generatedTrace.rows bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        generatedTrace.initialState generatedTrace.rows bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      SelectedLoadMemoryBusRowPrefixCursor state
+        generatedTrace.initialState generatedTrace.rows bus.e1
+  | _ => Unit
+
+/-- Combine shared generated split Mem trace data with the selected prefix for
+    one envelope, recovering the existing load-scoped construction shape. -/
+def OpEnvelope.generatedMemFullTraceSplitConstructionAtEnvelope_of_traceAndPrefix
+    (env : OpEnvelope state m r_main)
+    (generatedTrace : env.GeneratedMemFullTraceSplitAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtGeneratedMemFullTraceSplitAtEnvelope
+        generatedTrace) :
+    env.GeneratedMemFullTraceSplitConstructionAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.GeneratedMemFullTraceSplitAtEnvelope,
+      OpEnvelope.SelectedPrefixAtGeneratedMemFullTraceSplitAtEnvelope,
+      OpEnvelope.GeneratedMemFullTraceSplitConstructionAtEnvelope]
+      at generatedTrace selectedPrefix ⊢
+  all_goals
+    try exact ()
+  all_goals
+    exact
+      { initialState := generatedTrace.initialState
+        rows := generatedTrace.rows
+        generatedTrace := generatedTrace.construction
+        selectedPrefix := selectedPrefix }
+
 /-- Repack split generated Mem construction evidence into the packed
     generated construction consumed by the current replay bridge. -/
 def OpEnvelope.generatedMemFullTraceConstructionAtEnvelope_of_split
@@ -11144,6 +11218,41 @@ def OpEnvelope.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAt
             selectedPrefix := generatedConstruction.selectedPrefix }
         replayEmbedded := replayEmbedded
         selectedEnvelopeRow := selectedEnvelopeRow }
+
+/-- Build replay-only envelope-row split construction evidence from a shared
+    generated split Mem trace plus an envelope-specific selected prefix. -/
+def OpEnvelope.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_generatedMemFullTraceSplitTraceAndPrefix
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (generatedTrace :
+      env.GeneratedMemFullTraceSplitAtEnvelope)
+    (selectedPrefix :
+      env.SelectedPrefixAtGeneratedMemFullTraceSplitAtEnvelope
+        generatedTrace)
+    (replayEmbedded :
+      env.MutableMemReplayRowsEmbeddedAtAcceptedSplitTraceConstruction
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit
+          (env.generatedMemFullTraceSplitConstructionAtEnvelope_of_traceAndPrefix
+            generatedTrace selectedPrefix)))
+    (selectedEnvelopeRow :
+      env.SelectedEnvelopeMemRowAtAcceptedSplitTraceConstructionWithWitness
+        program witness
+        (env.acceptedAirMainMemFullTraceSplitConstructionAtEnvelope_of_generatedMemFullTraceSplit
+          (env.generatedMemFullTraceSplitConstructionAtEnvelope_of_traceAndPrefix
+            generatedTrace selectedPrefix))
+        replayEmbedded) :
+    env.AcceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope :=
+  env.acceptedFullExecutionMemoryReplayEnvelopeSplitTraceConstructionAtEnvelope_of_generatedMemFullTraceSplit
+    program witness
+    (env.generatedMemFullTraceSplitConstructionAtEnvelope_of_traceAndPrefix
+      generatedTrace selectedPrefix)
+    replayEmbedded selectedEnvelopeRow
 
 /-- Build split provider-shaped load-scoped construction evidence from the
     named shared split row extraction plus extraction-indexed provider
