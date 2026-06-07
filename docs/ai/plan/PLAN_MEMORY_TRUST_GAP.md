@@ -123,7 +123,9 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Replace the over-broad direct-`LD` generic MemAlign exclusion target with aligned direct-Mem selected-provider coverage or provider uniqueness.
 - [x] Construct table-parametric provider cursor source for direct `LD` from aligned route coverage plus selected prefix replay.
 - [x] Split `MainMemBusMultiplicitySound` through row-local Main source-multiplicity legality.
-- [ ] Discharge `MainMemBusMultiplicitySound` from ROM/source legality for unified Main memory interactions.
+- [x] Project unified-Main ROM lookup constraints to program-ROM membership.
+- [x] Discharge `MainMemBusSourceMultiplicitySound` from witness constraints plus program-ROM source legality.
+- [ ] Prove `MainProgramRomSourceMultiplicitySound` from actual ROM/source legality for unified Main memory interactions.
 - [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
 
 ## Current Notes
@@ -1589,3 +1591,20 @@ ZiskFv.AirsClean.FullEnsemble.Balance` and `lake build
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
 regeneration, both trust check scripts, and `nix run .#test` pass for this
 slice.
+
+The ROM/source-legality split projects the ROM lookup carried by unified-Main
+row constraints to exact program-ROM membership using Clean table soundness, via
+`ZiskFv.AirsClean.Main.romSpec_of_mainWithRomAndMemBus_constraints`,
+`romSpec_of_mainWithRomMemAndOpBus_constraints`, and
+`romSpec_of_componentWithRomMemAndOpBus_constraints`. `Balance.lean` now exposes
+`MainProgramRomSourceMultiplicitySound`, then proves
+`mainMemBusSourceMultiplicitySound_of_constraints_and_programRomSourceMultiplicitySound`
+from `witness.Constraints` plus that program-ROM source-legality predicate.
+`OpEnvelope` has direct-`LD` compatibility adapters that consume this lower
+burden for the generic-MemAlign route, mutable-route, mutable cursor, and
+table-parametric provider cursor-source constructions. Focused `lake build
+ZiskFv.AirsClean.Main.Circuit`, `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance`, and `lake build
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, trust
+regeneration, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass for this slice.

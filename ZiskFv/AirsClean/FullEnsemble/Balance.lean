@@ -3136,6 +3136,70 @@ def MainMemBusSourceMultiplicitySound
             + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
               length program).rowInputVar.rom.store_reg) = 0)
 
+/-- Program-ROM source selector legality for unified-Main rows.
+
+    This is the program-indexed source-legality burden exposed by the ROM
+    lookup split: accepted row constraints prove that a unified-Main row's ROM
+    message is in the program ROM, while this predicate says every such ROM row
+    has the source-selector sums needed by the memory-bus proof. -/
+def MainProgramRomSourceMultiplicitySound
+    {length : ℕ} (program : Program length) : Prop :=
+  ∀ env : Environment FGL,
+    (ZiskFv.AirsClean.ZiskInstructionRom.romStaticTable length program).Spec
+      (eval env
+        (ZiskFv.AirsClean.Main.romMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar)) →
+      (env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.a_src_mem
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.a_src_reg) = 1
+        ∨ env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.a_src_mem
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.a_src_reg) = 0)
+      ∧ (env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_mem
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_ind
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_reg) = 1
+        ∨ env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_mem
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_ind
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_reg) = 0)
+      ∧ (env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_mem
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_ind
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_reg) = 1
+        ∨ env ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_mem
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_ind
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_reg) = 0)
+
+/-- Accepted row constraints plus program-ROM source legality discharge the
+    row-local unified-Main source-multiplicity invariant. -/
+theorem mainMemBusSourceMultiplicitySound_of_constraints_and_programRomSourceMultiplicitySound
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_constraints : witness.Constraints)
+    (h_program : MainProgramRomSourceMultiplicitySound program) :
+    MainMemBusSourceMultiplicitySound program witness := by
+  intro table h_table h_component row h_row
+  have h_row_constraints :
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        length program).operations.ConstraintsHold (table.environment row) := by
+    simpa [h_component] using h_constraints table h_table row h_row
+  exact h_program (table.environment row)
+    (ZiskFv.AirsClean.Main.romSpec_of_componentWithRomMemAndOpBus_constraints
+      length program (table.environment row) h_row_constraints)
+
 /-- Source selector legality discharges the coarser unified-Main memory-bus
     multiplicity invariant used to rule out Main self-provider routes. -/
 theorem mainMemBusMultiplicitySound_of_sourceMultiplicitySound
