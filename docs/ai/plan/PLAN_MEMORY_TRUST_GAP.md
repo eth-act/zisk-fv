@@ -221,7 +221,7 @@ clutter.
 - [x] Add shared generated split trace plus per-envelope replay-envelope selection wrapper.
 - [x] Add shared accepted split trace plus per-envelope replay-envelope selection wrapper.
 - [x] Add shared accepted split trace plus envelope-row prefix-state replay wrapper.
-- [ ] Stabilize the merged worktree with focused build verification.
+- [x] Stabilize the merged worktree with focused build verification.
 - [ ] Identify or define the canonical raw accepted-execution memory evidence object.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
@@ -240,11 +240,11 @@ large wrapper/adapter family that exposes progressively more honest memory
 evidence shapes, but the next work should not add another equivalent wrapper.
 The efficient closeout is to prove the accepted-execution extraction theorem
 that supplies the existing replay-envelope construction from raw accepted trace
-data, then prune the wrapper family. A focused
+data, then prune the wrapper family. The merged baseline is stabilized:
 `lake build ZiskFv.Compliance.RowProvenance ZiskFv.Compliance.OpEnvelope
-ZiskFv.Compliance` was attempted after the merge but stopped while rebuilding
-dependency cache before reaching project modules; the next verification target
-is to rerun focused build from the merged worktree.
+ZiskFv.Compliance` passes after repairing post-merge `RowProvenance` API drift
+and removing stale legacy load-address arguments from the Aeneas bridge audit
+helpers.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining

@@ -5937,7 +5937,85 @@ theorem mainRomRowSourceMultiplicitySound_of_mainRowProvenance
     (provenance : ZiskFv.Compliance.MainRowProvenance main r_main) :
     ZiskFv.AirsClean.FullEnsemble.MainRomRowSourceMultiplicitySound
       provenance.mainRow := by
-  exact ZiskFv.Compliance.MainRowProvenance.source_multiplicity provenance
+  unfold ZiskFv.AirsClean.FullEnsemble.MainRomRowSourceMultiplicitySound
+  constructor
+  · rw [provenance.a_src_mem_eq, provenance.a_src_reg_eq]
+    by_cases h_mem :
+        provenance.extractedRow.aSrc =
+          ZiskFv.Compliance.ExtractedConst.srcMem
+    · left
+      simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+        ZiskFv.Compliance.ExtractedConst.srcMem,
+        ZiskFv.Compliance.ExtractedConst.srcReg, h_mem]
+    · by_cases h_reg :
+        provenance.extractedRow.aSrc =
+          ZiskFv.Compliance.ExtractedConst.srcReg
+      · left
+        simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+          ZiskFv.Compliance.ExtractedConst.srcMem,
+          ZiskFv.Compliance.ExtractedConst.srcReg, h_reg]
+      · right
+        simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+          h_mem, h_reg]
+  constructor
+  · rw [provenance.b_src_mem_eq, provenance.b_src_ind_eq,
+      provenance.b_src_reg_eq]
+    by_cases h_mem :
+        provenance.extractedRow.bSrc =
+          ZiskFv.Compliance.ExtractedConst.srcMem
+    · left
+      simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+        ZiskFv.Compliance.ExtractedConst.srcMem,
+        ZiskFv.Compliance.ExtractedConst.srcInd,
+        ZiskFv.Compliance.ExtractedConst.srcReg, h_mem]
+    · by_cases h_ind :
+        provenance.extractedRow.bSrc =
+          ZiskFv.Compliance.ExtractedConst.srcInd
+      · left
+        simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+          ZiskFv.Compliance.ExtractedConst.srcMem,
+          ZiskFv.Compliance.ExtractedConst.srcInd,
+          ZiskFv.Compliance.ExtractedConst.srcReg, h_ind]
+      · by_cases h_reg :
+          provenance.extractedRow.bSrc =
+            ZiskFv.Compliance.ExtractedConst.srcReg
+        · left
+          simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+            ZiskFv.Compliance.ExtractedConst.srcMem,
+            ZiskFv.Compliance.ExtractedConst.srcInd,
+            ZiskFv.Compliance.ExtractedConst.srcReg, h_reg]
+        · right
+          simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+            h_mem, h_ind, h_reg]
+  · rw [provenance.store_mem_eq, provenance.store_ind_eq,
+      provenance.store_reg_eq]
+    by_cases h_mem :
+        provenance.extractedRow.store =
+          ZiskFv.Compliance.ExtractedConst.storeMem
+    · left
+      simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+        ZiskFv.Compliance.ExtractedConst.storeMem,
+        ZiskFv.Compliance.ExtractedConst.storeInd,
+        ZiskFv.Compliance.ExtractedConst.storeReg, h_mem]
+    · by_cases h_ind :
+        provenance.extractedRow.store =
+          ZiskFv.Compliance.ExtractedConst.storeInd
+      · left
+        simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+          ZiskFv.Compliance.ExtractedConst.storeMem,
+          ZiskFv.Compliance.ExtractedConst.storeInd,
+          ZiskFv.Compliance.ExtractedConst.storeReg, h_ind]
+      · by_cases h_reg :
+          provenance.extractedRow.store =
+            ZiskFv.Compliance.ExtractedConst.storeReg
+        · left
+          simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+            ZiskFv.Compliance.ExtractedConst.storeMem,
+            ZiskFv.Compliance.ExtractedConst.storeInd,
+            ZiskFv.Compliance.ExtractedConst.storeReg, h_reg]
+        · right
+          simp [ZiskFv.Compliance.selectorF, ZiskFv.Compliance.boolF,
+            h_mem, h_ind, h_reg]
 
 /-- Main `b` memory-channel source facts needed by the direct `LD`
     non-mutable route exclusions. -/
