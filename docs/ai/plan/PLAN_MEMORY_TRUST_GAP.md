@@ -118,6 +118,7 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Name Main memory-bus multiplicity invariant and use it to eliminate the direct-`LD` Main self-provider residual branch.
 - [x] Add table-parametric provider cursor source evidence for the concrete Mem table found by route balance.
 - [x] Split direct-`LD` table-parametric provider cursor construction into same-table provider-row replay plus prefix-state replay.
+- [x] Compose direct-`LD` active route coverage, replay embeddings, and table-indexed prefix replay into direct source evidence.
 - [ ] Replace the over-broad direct-`LD` generic MemAlign exclusion target with aligned direct-Mem selected-provider coverage or provider uniqueness.
 - [ ] Construct table-parametric provider cursor source for direct `LD` from aligned route coverage plus selected prefix replay.
 - [ ] Discharge `MainMemBusMultiplicitySound` from ROM/source legality for unified Main memory interactions.
@@ -1543,3 +1544,16 @@ subword loads still need their MemAlign-to-Mem route chain, and the current
 slice passes focused `lake build ZiskFv.Compliance.OpEnvelope`,
 `lake build ZiskFv.Compliance`, full `lake build`, trust regeneration,
 both trust check scripts, and `nix run .#test`.
+
+The route-plus-prefix composition slice adds
+`directLoadMutableMemProviderCursorAtEnvelope_of_active_route_and_prefix` and
+`directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_active_route_and_prefix`.
+These theorems compose active direct-`LD` route coverage, Main `b` source
+facts, generic-MemAlign exclusion, `MainMemBusMultiplicitySound`, all-table Mem
+read/replay embeddings, and a table-indexed selected prefix-state theorem into
+the direct-only table-parametric source boundary. The important remaining
+obligation is still visible rather than laundered: accepted replay must prove
+the prefix-state predicate for the exact concrete Mem provider table selected
+by route balance. Focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, trust regeneration, both trust check
+scripts, and `nix run .#test` pass for this slice.

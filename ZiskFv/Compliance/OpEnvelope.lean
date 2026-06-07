@@ -5835,6 +5835,117 @@ noncomputable def OpEnvelope.directLoadAcceptedFullExecutionMemoryProviderTableC
       OpEnvelope.acceptedFullExecutionMemoryProviderCursorExtractionAtEnvelope_of_fullEnsemblePrefixState
         _ fullTraceTable selectedProviderRow selectedPrefixState
 
+/-- Direct `LD` same-table provider cursor from active route coverage plus
+    table-indexed prefix replay.
+
+    Route balance and the already-named branch exclusions identify the concrete
+    mutable Mem provider table and selected provider row.  The remaining replay
+    input is intentionally indexed over that concrete table: for any provider
+    row selected by the route proof, accepted replay must prove the selected
+    Sail prefix-state equality for the same table. -/
+def OpEnvelope.directLoadMutableMemProviderCursorAtEnvelope_of_active_route_and_prefix
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ∀ table : Air.Flat.Table FGL,
+        table ∈ witness.allTables →
+        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows)
+    (replayEmbedded :
+      ∀ table : Air.Flat.Table FGL,
+        table ∈ witness.allTables →
+        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_active :
+      env.DirectLoadActiveMainMemProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope)
+    (h_no_memAlign :
+      env.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_mainMem :
+      ZiskFv.AirsClean.FullEnsemble.MainMemBusMultiplicitySound
+        program witness)
+    (h_prefix :
+      ∀ fullTraceTable :
+        env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope,
+        env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+          fullTraceTable →
+        env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+          fullTraceTable) :
+    env.DirectLoadMutableMemProviderCursorAtEnvelope :=
+  OpEnvelope.directLoadMutableMemProviderCursorAtEnvelope_of_replay
+    env
+    (OpEnvelope.directLoadMutableMemProviderReplayAtEnvelope_of_route
+      env program witness acceptedTrace embedded replayEmbedded mainTable mainRow
+      (OpEnvelope.directLoadMutableMemProviderRouteAtEnvelope_of_active_route_and_genericMemAlign
+        env program witness mainTable mainRow h_active h_source h_no_memAlign
+        h_mainMem))
+    h_prefix
+
+/-- Direct `LD` table-parametric provider cursor source from route coverage
+    and same-table prefix replay.
+
+    This is still direct-`LD` scoped: it does not manufacture subword load
+    MemAlign route evidence.  It is the aligned direct-Mem path needed before
+    the all-load provider boundary can be assembled. -/
+noncomputable def OpEnvelope.directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_active_route_and_prefix
+    (env : OpEnvelope state m r_main)
+    {length : ℕ}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+          length program).ensemble)
+    (acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTrace m)
+    (embedded :
+      ∀ table : Air.Flat.Table FGL,
+        table ∈ witness.allTables →
+        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        ZiskFv.AirsClean.FullEnsemble.MemReadReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows)
+    (replayEmbedded :
+      ∀ table : Air.Flat.Table FGL,
+        table ∈ witness.allTables →
+        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
+          table acceptedTrace.rows)
+    (mainTable : Air.Flat.Table FGL)
+    (mainRow : Array FGL)
+    (h_active :
+      env.DirectLoadActiveMainMemProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_source : env.DirectLoadMainBSourceFactsAtEnvelope)
+    (h_no_memAlign :
+      env.DirectLoadNoGenericMemAlignProviderRouteAtEnvelope
+        program witness mainTable mainRow)
+    (h_mainMem :
+      ZiskFv.AirsClean.FullEnsemble.MainMemBusMultiplicitySound
+        program witness)
+    (h_prefix :
+      ∀ fullTraceTable :
+        env.AcceptedAirMainMemFullTraceWithFullEnsembleMemTableAtEnvelope,
+        env.SelectedMemProviderReadReplayRowInFullEnsembleMemTableAtEnvelope
+          fullTraceTable →
+        env.SelectedPrefixStateAtFullEnsembleMemTableAtEnvelope
+          fullTraceTable) :
+    env.DirectLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope :=
+  OpEnvelope.directLoadAcceptedFullExecutionMemoryProviderTableCursorSourceAtEnvelope_of_mutableProviderCursor
+    env
+    (OpEnvelope.directLoadMutableMemProviderCursorAtEnvelope_of_active_route_and_prefix
+      env program witness acceptedTrace embedded replayEmbedded mainTable mainRow
+      h_active h_source h_no_memAlign h_mainMem h_prefix)
+
 /-- Lower table-parametric provider cursor evidence to the accepted
     AIR/Main/Mem trace construction consumed by replay.
 
