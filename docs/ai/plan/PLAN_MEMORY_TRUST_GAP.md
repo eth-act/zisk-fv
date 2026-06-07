@@ -2,7 +2,54 @@
 
 ## Goal
 
-Remove caller-supplied per-load Sail memory byte facts from load promises and replace them with a trace-indexed context whose agreement theorem is derived from accepted Mem trace data.
+Close the load-memory soundness gap left by
+`row_models_sail_state_load`: selected load bytes must come from a proved
+agreement between the Sail memory state and the accepted Mem trace replay, not
+from caller-supplied semantic memory facts.
+
+## Current Assessment
+
+The long implementation phase was useful but inefficient. It removed the
+visible source axiom, added byte-addressed trace/replay machinery, made the
+current theorem boundary more honest, and kept the trust ledger at zero project
+axioms. It did not fully close the memory trust gap: the hard memory-state
+agreement proof is still represented by strong construction, embedding,
+selected-row, and prefix-state hypotheses.
+
+The closeout strategy is to refine, not scrap. Keep the trace/replay/load
+infrastructure, stop adding equivalent public wrappers, prove the missing
+accepted-execution memory extraction theorem directly, and then prune adapter
+clutter.
+
+## Closeout Plan
+
+- Final target: `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` should not
+  take memory-specific semantic hypotheses such as selected prefix-state
+  equality, replay embeddings, `prefixReadSound`, row chronology/nodup facts, or
+  `AcceptedAirMainMemFullTraceConstructionAtEnvelope`. Existing non-memory
+  `env.completenessBurden` may remain; closing the broader OpEnvelope
+  completeness gap is a separate stream.
+- Introduce one canonical raw accepted-execution memory evidence object, or use
+  an existing accepted-execution object if it already has the needed fields. It
+  may carry concrete program/witness data, the selected mutable Mem table,
+  accepted Mem trace tables, initial Sail state, and full-ensemble structural
+  links. It must not carry semantic replay facts as assumptions.
+- Prove a program-level memory extraction theorem from that raw data:
+  construct the chronological memory-bus rows, prove generated-row legality,
+  nodup/order facts, all-event mutable-Mem replay embedding, initial agreement,
+  and `prefixReadSound` by replay induction over accepted Mem rows.
+- Prove per-load envelope coverage from raw accepted execution plus the existing
+  envelope burden: selected provider-row occurrence in the concrete Mem table,
+  selected accepted-row membership, and selected prefix cursor construction.
+- Treat selected prefix-state equality as the critical proof. For a selected
+  load, prove that the Sail memory before the load equals replay after all
+  earlier accepted Mem events. If the current repo lacks a usable execution
+  timeline, add the minimum memory-only timeline theorem connecting Main-row
+  order, Mem timestamps, stores, loads, and replay state; do not expose this as
+  a public compliance hypothesis.
+- Retarget the compliance proof through this canonical extraction path, then
+  demote or delete compatibility wrappers whose only purpose is translating
+  between equivalent memory-evidence packages.
 
 ## Checklist
 
@@ -174,27 +221,35 @@ Remove caller-supplied per-load Sail memory byte facts from load promises and re
 - [x] Add shared generated split trace plus per-envelope replay-envelope selection wrapper.
 - [x] Add shared accepted split trace plus per-envelope replay-envelope selection wrapper.
 - [x] Add shared accepted split trace plus envelope-row prefix-state replay wrapper.
-- [ ] Prove any remaining needed program-wide ROM/source legality from actual provenance, or keep callers on narrower route/provider evidence.
-- [ ] Prove shared `AcceptedFullExecutionMemoryTrace` and per-envelope coverage from the accepted full execution trace.
+- [ ] Stabilize the merged worktree with focused build verification.
+- [ ] Identify or define the canonical raw accepted-execution memory evidence object.
+- [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
+- [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
+- [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
+- [ ] Prove selected prefix-state equality from accepted execution order and memory replay.
+- [ ] Retarget the primary compliance theorem to derive memory construction internally from raw accepted execution data.
+- [ ] Prune redundant wrapper/adapters and stale comments after the canonical path builds.
+- [ ] Regenerate trust ledgers and rerun the full verification suite.
 
 ## Current Notes
 
-Worktree checkpoint: this stream now lives at
+Closeout checkpoint: this stream now lives at
 `/home/cody/zisk-fv/.worktrees/memory-trust-gap` on branch `memory-trust-gap`.
-Merge commit `a058ff0b` incorporates `origin/main` and includes the adapter
-slice in `ZiskFv/Compliance/OpEnvelope.lean` that projects
-`AcceptedFullExecutionMemoryTrace` plus
-`AcceptedFullExecutionMemoryTraceSourceCoverageAtEnvelope` into the newer
-accepted split replay-envelope prefix-state boundary. This lowers an older
-accepted-execution-shaped memory package into the current theorem shape, but it
-does not yet prove that raw accepted full-execution data constructs the shared
-split trace, all-event replay embedding, selected envelope-row occurrence, or
-prefix-state equality. A focused
+Merge commit `a058ff0b` incorporates `origin/main`. The branch currently has a
+large wrapper/adapter family that exposes progressively more honest memory
+evidence shapes, but the next work should not add another equivalent wrapper.
+The efficient closeout is to prove the accepted-execution extraction theorem
+that supplies the existing replay-envelope construction from raw accepted trace
+data, then prune the wrapper family. A focused
 `lake build ZiskFv.Compliance.RowProvenance ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance` was attempted after the merge but stopped while rebuilding
 dependency cache before reaching project modules; the next verification target
-is to rerun focused build from the merged worktree, followed by adding the
-public wrapper if the adapter remains clean.
+is to rerun focused build from the merged worktree.
+
+Soundness/completeness wording: this project is closing a soundness/trust gap.
+The old axiom asserted memory-state agreement for selected loads. The remaining
+work looks "completeness-like" only because we must prove that accepted
+full-execution data covers the memory evidence needed by the soundness theorem.
 
 Latest checkpoint: `OpEnvelope.MutableMemReplayRowsEmbeddedAtAcceptedSplitTrace`
 and `OpEnvelope.SelectedEnvelopeMemRowAtAcceptedSplitTraceWithWitness` expose
