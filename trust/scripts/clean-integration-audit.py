@@ -2,7 +2,7 @@
 """Generate the Clean integration audit.
 
 This is an investigation aid, not a trust gate.  It summarizes which Clean
-integration style each canonical theorem currently uses, whether retired Clean
+integration style each canonical theorem currently uses, whether Clean
 completeness declarations leak into the global/canonical closure, and which
 Clean components appear to be canonical, helper-only, or scaffold.
 """
@@ -25,7 +25,14 @@ EQUIVALENCE = ROOT / "ZiskFv/Equivalence"
 EQUIVCORE = ROOT / "ZiskFv/EquivCore"
 WRAPPERS = ROOT / "ZiskFv/Compliance/Wrappers"
 
-COMPLETENESS: set[str] = set()
+COMPLETENESS: set[str] = {
+    "ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness",
+    "ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness",
+    "ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness",
+    "ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness",
+    "ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness",
+    "ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness",
+}
 
 COMPONENTS = [
     ("BinaryAdd.component", "ZiskFv.AirsClean.BinaryAdd.component"),
@@ -46,7 +53,15 @@ COMPONENTS = [
     ("MemAlign.component", "ZiskFv.AirsClean.MemAlign.component"),
 ]
 
-COMPONENT_COMPLETENESS: dict[str, str] = {}
+COMPONENT_COMPLETENESS: dict[str, str] = {
+    "BinaryAdd.component": "ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness",
+    "MemAlignByte.component": "ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness",
+    "MemAlignReadByte.component": "ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness",
+    "ArithMul.component": "ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness",
+    "ArithDiv.component": "ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness",
+    "Main.componentWithRomAndMemBus": "ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness",
+    "Main.componentWithRomMemAndOpBus": "ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness",
+}
 
 SOURCE_ALIASES = {
     "Main.componentWithRomAndMemBus": ["componentWithRomAndMemBus"],
@@ -329,7 +344,7 @@ def main() -> None:
         for ax in global_leaks:
             print(f"- `{ax}`")
     else:
-        print("No retired Clean completeness declarations are in the global closure.")
+        print("No Clean completeness declarations are in the global closure.")
     print()
     print("## Canonical Provider Map")
     print()

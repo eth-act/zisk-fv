@@ -31,8 +31,8 @@ when they are not trust policy or trust evidence.
 
 | Ledger                            | Count      | File                                                                                         |
 | ---                               | ---:        | ---                                                                                          |
-| Source Lean trust declarations    | 1          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Global compliance theorem closure | 1          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations    | 8          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Global compliance theorem closure | 2          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 | Per-canonical-theorem closures    | 63 entries | [`generated/baseline-equiv-axiom-deps.txt`](generated/baseline-equiv-axiom-deps.txt)         |
 
 ## Generated Files
@@ -54,10 +54,11 @@ Policy/configuration files remain in `trust/` root: `allowed-axiom-files.txt`,
 `theorem-keep-list.txt`, `dead-code-entry-points.txt`,
 `op-envelope-route-constructors.txt`, and `.shrinkage-floor`.
 
-The Clean integration gate enforces the final cleanup model: no Clean
-completeness declarations in the global soundness closure, canonical active
-dispatch targets, no public-looking `Equivalence.equiv_*` helper theorem
-surfaces, and explicit classification for route-named `OpEnvelope` variants.
+The Clean integration gate enforces the soundness boundary: Clean completeness
+declarations may exist in the source trust ledger, but they must stay out of
+the global soundness closure; canonical active dispatch targets, public-looking
+`Equivalence.equiv_*` helper theorem surfaces, and route-named `OpEnvelope`
+variants are also checked.
 The intended public theorem API is `zisk_riscv_compliant_program_bus` plus the
 63 canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems. Wrapper and
 EquivCore routes are implementation details; the wrapper caller-burden gate

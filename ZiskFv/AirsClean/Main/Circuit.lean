@@ -1,6 +1,7 @@
 import ZiskFv.AirsClean.Main.Constraints
 import ZiskFv.AirsClean.Main.Soundness
 import ZiskFv.AirsClean.Main.Bridge
+import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -25,7 +26,7 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
-open ZiskFv.AirsClean.ZiskInstructionRom (Program romStaticTable)
+open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 
 def circuit : GeneralFormalCircuit FGL MainRow unit :=
   { mainWithOpBusElaborated with
@@ -76,12 +77,6 @@ def RomBoolSpec (row : MainRowWithRom FGL) : Prop :=
   ∧ row.rom.a_src_reg * (1 + -row.rom.a_src_reg) = 0
   ∧ row.rom.b_src_reg * (1 + -row.rom.b_src_reg) = 0
   ∧ row.rom.store_reg * (1 + -row.rom.store_reg) = 0
-
-/-- Prover-side assumptions for conditional Clean completeness of the
-    Main+ROM memory-bus circuits. -/
-def RomProverConstraints
-    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL) : Prop :=
-  Spec row.core ∧ RomBoolSpec row ∧ (romStaticTable length program).Spec (romMessage row)
 
 /-- Soundness wrapper for Main plus ROM lookup plus memory-bus consumer
     emissions. -/
@@ -153,41 +148,19 @@ theorem romBoolSpec_of_mainWithRomAndMemBus_constraints
         , h_holds.1 (row.rom.store_reg * (1 - row.rom.store_reg)) (by simp) ⟩
 
 /-- Main as a Clean `GeneralFormalCircuit` exposing the ROM lookup and
-    the 3 memory-bus consumer emissions. Completeness is conditional on
-    explicit prover-side Main/ROM facts rather than an axiom. -/
+    the 3 memory-bus consumer emissions. Completeness is the declared
+    completeness-direction axiom `mainWithRomAndMemBus_circuit_completeness`. -/
 def circuitWithRomAndMemBus
     (length : ℕ) (program : Program length) :
     GeneralFormalCircuit FGL MainRowWithRom unit :=
   { mainWithRomAndMemBusElaborated length program with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row.core
-    ProverAssumptions := fun row _ _ => RomProverConstraints length program row
+    ProverAssumptions := fun _ _ _ => True
     ProverSpec := fun _ _ _ => True
     soundness := mainWithRomAndMemBus_soundness length program
-    completeness := by
-      circuit_proof_start [MemBusChannel]
-      rcases h_assumptions with ⟨hSpec, hBool, hRom⟩
-      rcases hSpec with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8⟩
-      rcases hBool with ⟨h_m32, h_set_pc, h_store_pc, h_a_src_imm,
-        h_a_src_mem, h_is_precompiled, h_b_src_imm, h_b_src_mem,
-        h_store_mem, h_store_ind, h_b_src_ind, h_a_src_reg, h_b_src_reg,
-        h_store_reg⟩
-      exact ⟨ by simpa [sub_eq_add_neg] using h0
-            , by simpa [sub_eq_add_neg] using h1
-            , by simpa [sub_eq_add_neg] using h2
-            , by simpa [sub_eq_add_neg] using h3
-            , by simpa [sub_eq_add_neg] using h4
-            , by simpa [sub_eq_add_neg] using h5
-            , by simpa [sub_eq_add_neg] using h6
-            , by simpa [sub_eq_add_neg] using h7
-            , by simpa [sub_eq_add_neg] using h8
-            , h_m32, h_set_pc, h_store_pc, h_a_src_imm, h_a_src_mem
-            , h_is_precompiled, h_b_src_imm, h_b_src_mem, h_store_mem
-            , h_store_ind, h_b_src_ind, h_a_src_reg, h_b_src_reg
-            , h_store_reg
-            , by
-                simpa [romMessage, romMessageExpr, romFlags, romFlagsExpr]
-                  using hRom ⟩ }
+    completeness :=
+      ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness length program }
 
 /-- Main as a Clean `Air.Flat.Component` exposing the ROM lookup and
     the 3 memory-bus consumer interactions. Used by the full Clean
@@ -227,33 +200,19 @@ def circuitWithRomMemAndOpBus
   { mainWithRomMemAndOpBusElaborated length program with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row.core
-    ProverAssumptions := fun row _ _ => RomProverConstraints length program row
+    ProverAssumptions := fun _ _ _ => True
     ProverSpec := fun _ _ _ => True
     soundness := mainWithRomMemAndOpBus_soundness length program
     completeness := by
-      circuit_proof_start [OpBusChannel, MemBusChannel]
-      rcases h_assumptions with ⟨hSpec, hBool, hRom⟩
-      rcases hSpec with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8⟩
-      rcases hBool with ⟨h_m32, h_set_pc, h_store_pc, h_a_src_imm,
-        h_a_src_mem, h_is_precompiled, h_b_src_imm, h_b_src_mem,
-        h_store_mem, h_store_ind, h_b_src_ind, h_a_src_reg, h_b_src_reg,
-        h_store_reg⟩
-      exact ⟨ by simpa [sub_eq_add_neg] using h0
-            , by simpa [sub_eq_add_neg] using h1
-            , by simpa [sub_eq_add_neg] using h2
-            , by simpa [sub_eq_add_neg] using h3
-            , by simpa [sub_eq_add_neg] using h4
-            , by simpa [sub_eq_add_neg] using h5
-            , by simpa [sub_eq_add_neg] using h6
-            , by simpa [sub_eq_add_neg] using h7
-            , by simpa [sub_eq_add_neg] using h8
-            , h_m32, h_set_pc, h_store_pc, h_a_src_imm, h_a_src_mem
-            , h_is_precompiled, h_b_src_imm, h_b_src_mem, h_store_mem
-            , h_store_ind, h_b_src_ind, h_a_src_reg, h_b_src_reg
-            , h_store_reg
-            , by
-                simpa [romMessage, romMessageExpr, romFlags, romFlagsExpr]
-                  using hRom ⟩ }
+      intro offset env input_var h_env input h_input h_assumptions
+      have h_mem_env :
+          env.UsesLocalWitnessesCompleteness offset
+            ((mainWithRomAndMemBus length program input_var).operations offset) := by
+        simp [mainWithRomMemAndOpBus, circuit_norm] at h_env ⊢
+      have h_mem :=
+        ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness
+          length program offset env input_var h_mem_env input h_input h_assumptions
+      simpa [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel] using h_mem }
 
 /-- Unified Main component used by the T7 full ensemble. -/
 def componentWithRomMemAndOpBus

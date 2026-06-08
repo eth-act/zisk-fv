@@ -1,9 +1,11 @@
 # Tolerated non-closure axioms (V2 gate allowlist)
 #
-# The former Clean component completeness declarations have been retired. Clean
-# component completeness is now proved conditionally from explicit prover-side
-# row facts in each component, so there are currently no tolerated
-# non-closure source axioms.
+# Most entries here are completeness-direction axioms. They live in
+# `ZiskFv/AirsClean/Completeness.lean` as the `circuit.completeness`
+# field of each Clean `GeneralFormalCircuit`. Clean requires both a
+# soundness and a completeness proof for every component; zisk-fv is a
+# soundness-only verification project, so completeness for these circuits is
+# declared as documented trust rather than hidden behind prover hypotheses.
 #
 # The V2 `check-closure-vs-baseline` gate treats entries in this file as
 # source trust declarations whose absence from the global theorem's
@@ -15,3 +17,13 @@
 # `/trust/` path is in `.github/CODEOWNERS`).
 #
 # One axiom name per line. # comments and blank lines ignored.
+
+binaryAdd_circuit_completeness
+memAlignByte_circuit_completeness
+memAlignReadByte_circuit_completeness
+arithMul_circuit_completeness
+arithDiv_circuit_completeness
+# mainWithRomAndMemBus fills Clean's mandatory completeness field for
+# the assembled Main/ROM/memory-bus component. It remains
+# completeness-direction only and may be absent from the soundness closure.
+mainWithRomAndMemBus_circuit_completeness

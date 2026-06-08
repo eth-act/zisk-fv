@@ -21,12 +21,14 @@ Current generated counts:
 
 | Surface                                                                | Count | Ledger                                                                                       |
 | ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 1     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 1     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations                                         | 8     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 2     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
-The source trust ledger and global theorem closure now match: the only active
-Lean trust declaration is the memory state load bridge reached by the global
-compliance theorem.
+The source trust ledger contains six Clean completeness declarations plus two
+soundness-relevant bridge declarations. The global theorem closure reaches the
+Aeneas row-lowering bridge and memory state load bridge; the Clean completeness
+declarations remain source-ledger trust but are outside the global soundness
+closure.
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
@@ -36,9 +38,11 @@ Lean axiom ledger:
 
 ## Current Classes
 
-| Class                    | Declarations | In global closure | Removability                                                                                        |
-| ---                      | ---:         | ---:              | ---                                                                                                 |
-| Memory state load bridge | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory. |
+| Class                    | Declarations | In global closure | Removability                                                                                             |
+| ---                      | ---:         | ---:              | ---                                                                                                      |
+| Aeneas row-lowering bridge | 1          | 1                 | Removable by importing generated Aeneas Lean into main Lake and deriving the envelope bridge fields.      |
+| Memory state load bridge | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory.      |
+| Clean completeness       | 6            | 0                 | Completeness-only placeholders; removable by proving each Clean circuit completeness theorem internally. |
 
 
 ## Retired Row-Shape Bridge
@@ -55,14 +59,18 @@ provenance and provider rows: static mode/control pins from provenance,
 runtime source/data lanes from caller facts, and jump/PC facts from explicit
 route obligations.
 
-## Retired Aeneas Row-Lowering Bridge
+## Aeneas Row-Lowering Bridge
 
 The production-backed Aeneas extraction is checked by the repository test path,
 but the generated Aeneas Lean is not yet imported by the main Lake proof to
 derive every row-provenance, row-mode, source-lane, immediate, PC, and link
-bridge fact consumed by the compliance wrappers. Earlier slices exposed this
-gap through the broad `ZiskFv.Compliance.aeneas_bridge_trust` axiom; that axiom
-has now been retired from source and from the global theorem closure.
+bridge fact consumed by the compliance wrappers. Until those generated facts
+are imported and used inside main Lake, the gap is represented by this explicit
+global trust declaration:
+
+```text
+ZiskFv.Compliance.aeneas_bridge_trust
+```
 
 The existing wrapper and `OpEnvelope` signatures still expose those fields
 because the dispatch proofs pass them to the current wrapper layer. The
@@ -173,14 +181,21 @@ the trusted axiom ledger.
 
 ## Clean Completeness
 
-The former Clean component completeness placeholders have been retired. The
-old dedicated completeness-axiom module no longer exists, and the six former
-declarations are no longer source-ledger entries.
+The Clean component completeness placeholders are explicit source-ledger trust
+declarations again:
 
-Clean components still expose `GeneralFormalCircuit.completeness`, but those
-fields are now ordinary Lean proofs conditional on explicit prover-side row
-facts. They do not add trust declarations and they still do not state
-per-opcode output equality.
+```text
+ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness
+ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
+ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness
+ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
+ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
+ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness
+```
+
+These are completeness-direction placeholders for Clean circuits, not
+per-opcode output-equality soundness axioms. The Clean integration gate keeps
+them out of the global compliance theorem's project-axiom closure.
 
 ## ArithTable And DIV/REM Audit Conclusions
 

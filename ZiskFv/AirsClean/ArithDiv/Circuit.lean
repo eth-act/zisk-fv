@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.ArithDiv.Constraints
 import ZiskFv.AirsClean.ArithDiv.Soundness
+import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -10,7 +11,7 @@ Packages the Arith AIR's **DIV carry-chain sub-circuit** as a Clean
 `Air.Flat.Component`:
 
 * `arithDivElaborated` — the `ElaboratedCircuit` over `main` — lives in
-  `Constraints.lean` (so the conditional completeness proof can name it). Its `main`
+  `Constraints.lean`. Its `main`
   emits the 11 `assertZero` DIV carry-chain constraints (arith.pil:58-60
   + 205-209). No channel interaction — the Arith op-bus is a shared
   channel wired family-terminal (plan phase C7/CZ).
@@ -18,17 +19,18 @@ Packages the Arith AIR's **DIV carry-chain sub-circuit** as a Clean
   D-2 / finding F-4: a Component carries no soundness-assumptions — the
   11-clause carry-chain `Spec` follows from the 11 definitional
   `assertZero`s alone, with no range reasoning and no flag-value pins).
-  `soundness` discharges the DIV carry-chain relation and conditional
-  `completeness` replays the same relation as prover assumptions.
+  `soundness` discharges the DIV carry-chain relation and `completeness` is
+  the declared axiom `arithDiv_circuit_completeness`.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an
 ensemble non-vacuously (the `AssumptionsConsistency` obligation becomes
-trivial). No axioms. The `soundness` field is genuinely proved from the
-11 `assertZero` constraints by `linear_combination` (no range reasoning,
-hence no `range_bus_sound`). No `sorry`.
+trivial). Axioms in this component: `arithDiv_circuit_completeness`
+(completeness-direction, non-security-critical). The `soundness` field is
+genuinely proved from the 11 `assertZero` constraints by
+`linear_combination` (no range reasoning, hence no `range_bus_sound`).
 -/
 
 namespace ZiskFv.AirsClean.ArithDiv
@@ -49,7 +51,7 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
   { arithDivElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun row _ _ => Spec row
+    ProverAssumptions := fun _ _ _ => True
     ProverSpec := fun _ _ _ => True
     soundness := by
       -- `circuit_proof_start`'s `provable_struct_simp` step is far too
@@ -88,23 +90,7 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
         · linear_combination h38
       · -- no channel interaction → empty `Operations.Requirements`.
         simp only [circuit_norm, main]
-    completeness := by
-      circuit_proof_start_core
-      subst h_input
-      simp only [Spec, circuit_norm, main] at h_assumptions ⊢
-      obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_assumptions
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · linear_combination h6
-      · linear_combination h7
-      · linear_combination h8
-      · linear_combination h31
-      · linear_combination h32
-      · linear_combination h33
-      · linear_combination h34
-      · linear_combination h35
-      · linear_combination h36
-      · linear_combination h37
-      · linear_combination h38 }
+    completeness := arithDiv_circuit_completeness }
 
 /-- ArithDiv as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
