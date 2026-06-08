@@ -1315,6 +1315,24 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRow
       source)
     h_known_bugs
 
+/-- Active replay split-trace state-selection source variant.
+
+    This is the selector-gated replay boundary: load envelopes carry an active
+    replay extraction, selected active provider-row coverage, and prefix-state
+    equality. Inactive Mem emissions are not part of the replay extraction. -/
+theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSource
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus
+    env h_burden
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_activeReplayRowSplitTraceStateSelectionSource
+      source)
+    h_known_bugs
+
 /-- Replay-only split-trace envelope-row state-selection source variant.
 
     This is the source-shaped wrapper for accepted-execution data that can

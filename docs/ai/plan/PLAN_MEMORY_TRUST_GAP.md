@@ -248,6 +248,11 @@ clutter.
 - [x] Verify active replay projection with full build and semantic trust gate.
 - [x] Commit active replay projection slice.
 - [ ] Retarget the main replay boundary from unconditional to active replay extraction.
+  Current uncommitted slice adds active match-to-membership lemmas, an
+  active extraction-indexed state-selection/source boundary, and a top-level
+  compliance wrapper through active replay source evidence. This is a
+  stepping-stone: the primary named compliance theorem still needs to be moved
+  fully off the unconditional memory construction path.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
@@ -383,6 +388,20 @@ active projection equality plus active table-local order/prefix facts. Focused
 ZiskFv.Compliance.OpEnvelope`, full `lake build`, `git diff --check`, and
 `trust/scripts/check-all-semantic.sh` pass. This adds the honest active replay
 target; the primary compliance boundary is not yet retargeted to consume it.
+
+Active source-boundary checkpoint:
+`ZiskFv/AirsClean/FullEnsemble/Balance.lean` now proves selected active
+primary/dual row-match facts imply membership in the active replay projection.
+`ZiskFv/Compliance/OpEnvelope.lean` packages active replay extraction-indexed
+provider selection, state selection, and source evidence, and lowers that source
+through `AcceptedAirMainMemFullTraceConstruction.ofSplit` to the current
+memory construction burden. `ZiskFv/Compliance.lean` exposes a top-level wrapper
+from this active source evidence. Focused `lake build
+ZiskFv.Compliance.OpEnvelope`, `lake build ZiskFv.Compliance`, full
+`lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh`
+pass for this slice. This is still a stepping-stone: the primary named theorem
+is not yet fully moved off the unconditional construction path, and selected
+envelope-row occurrence still has to imply active provider coverage.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining

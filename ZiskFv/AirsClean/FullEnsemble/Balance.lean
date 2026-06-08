@@ -1743,6 +1743,45 @@ theorem mem_primary_read_replay_entry_mem_of_active_replay_embedded_table_row
   exact h_embedded _
     (active_mem_primary_replay_entry_mem_of_table_row h_row h_sel)
 
+/-- A matched primary Mem provider read projection is covered by the accepted
+    chronological row trace from active replay-row embedding, provided the
+    concrete Mem row is selected and is a read. -/
+theorem mem_primary_read_replay_entry_mem_of_active_replay_embedded_trace_row_match
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {providerRow : Array FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_embedded : ActiveMemReplayRowsEmbeddedInTrace table rows)
+    (h_row : providerRow ∈ table.table)
+    (h_sel :
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1)
+    (h_wr :
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+    (h_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (memPrimaryReadReplayEntryOfRow
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))) :
+    entry ∈ rows := by
+  have h_eq :
+      entry =
+        memPrimaryReadReplayEntryOfRow
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) := by
+    obtain ⟨h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
+    cases entry
+    simp [memPrimaryReadReplayEntryOfRow,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry]
+      at h_mult h_as h_ptr h_v0 h_v1 h_ts ⊢
+    rw [h_mult, h_as, h_ptr, h_v0, h_v1, h_ts]
+    simp
+  rw [h_eq]
+  exact
+    mem_primary_read_replay_entry_mem_of_active_replay_embedded_table_row
+      h_embedded h_row h_sel h_wr
+
 /-- The all-replay-row embedding directly implies dual-read embedding. -/
 theorem mem_dual_read_replay_entry_mem_of_replay_embedded_table_row
     {table : Table FGL}
@@ -1775,6 +1814,42 @@ theorem mem_dual_read_replay_entry_mem_of_active_replay_embedded_table_row
   h_embedded _
     (active_mem_dual_read_replay_entry_mem_of_replay_table_row
       h_row h_sel_dual)
+
+/-- A matched dual Mem provider read projection is covered by the accepted
+    chronological row trace from active replay-row embedding, provided the
+    concrete dual emission is selected. -/
+theorem mem_dual_read_replay_entry_mem_of_active_replay_embedded_trace_row_match
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {providerRow : Array FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_embedded : ActiveMemReplayRowsEmbeddedInTrace table rows)
+    (h_row : providerRow ∈ table.table)
+    (h_sel_dual :
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel_dual = 1)
+    (h_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (memDualReadReplayEntryOfRow
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))) :
+    entry ∈ rows := by
+  have h_eq :
+      entry =
+        memDualReadReplayEntryOfRow
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) := by
+    obtain ⟨h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
+    cases entry
+    simp [memDualReadReplayEntryOfRow,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry]
+      at h_mult h_as h_ptr h_v0 h_v1 h_ts ⊢
+    rw [h_mult, h_as, h_ptr, h_v0, h_v1, h_ts]
+    simp
+  rw [h_eq]
+  exact
+    mem_dual_read_replay_entry_mem_of_active_replay_embedded_table_row
+      h_embedded h_row h_sel_dual
 
 /-- A concrete Mem table row contributes its primary read projection to the
     table's read-replay row surface. -/

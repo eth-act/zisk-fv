@@ -8,7 +8,7 @@ Expose the proof obligations hidden inside `OpEnvelope` at the public `zisk_risc
 
 # Memory Trust Gap
 
-Close the load-memory soundness gap left by the retired `row_models_sail_state_load` axiom. The branch has useful trace/replay infrastructure and honest theorem boundaries, but the hard agreement proof is still packaged as accepted Mem construction, replay embedding, selected provider-row coverage, and selected prefix-state hypotheses. The closeout plan is to refine rather than scrap: prove one canonical extraction theorem from raw accepted full-execution/full-ensemble Mem data to those memory facts, retarget the public compliance theorem through that extraction, then prune the accumulated wrapper/adaptor family. The critical proof is selected prefix-state equality: the Sail memory before a selected load must equal replay after all earlier accepted Mem events.
+Close the load-memory soundness gap left by the retired `row_models_sail_state_load` axiom. The branch now has active selector-gated Mem replay projections and a verified active replay source-boundary wrapper, but the hard agreement proof is still packaged as accepted Mem construction, active replay embedding/coverage, and selected prefix-state hypotheses. The closeout plan is to prove the canonical extraction theorem from raw accepted full-execution/full-ensemble Mem data to those memory facts, retarget the primary compliance theorem through that extraction, then prune the accumulated wrapper/adaptor family. The critical proof is selected prefix-state equality: the Sail memory before a selected load must equal replay after all earlier accepted Mem events.
 
 # Op Envelope Gap
 

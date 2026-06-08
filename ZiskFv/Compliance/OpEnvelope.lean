@@ -8356,6 +8356,18 @@ def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
   all_goals
     exact extraction.acceptedTrace.toAcceptedAirMainMemFullTrace
 
+/-- Load-scoped accepted trace carried by an active replay split extraction. -/
+def OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_activeReplayRowSplitExtraction
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m) :
+    env.AcceptedAirMainMemFullTraceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope]
+  all_goals
+    try exact ()
+  all_goals
+    exact extraction.acceptedTrace.toAcceptedAirMainMemFullTrace
+
 /-- Provider-row selected coverage through a concrete Mem table's actual
     read/write replay projection.
 
@@ -8451,6 +8463,131 @@ def OpEnvelope.SelectedMemProviderReplayRowInMemTableAtEnvelope
           (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
             (eval (table.environment providerRow)
               ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+  | _ => True
+
+/-- Provider-row selected coverage through a concrete Mem table's active
+    replay projection.
+
+    This is the selector-gated counterpart of
+    `SelectedMemProviderReplayRowInMemTableAtEnvelope`: selected primary rows
+    carry `sel = 1` and `wr = 0`, while selected dual rows carry
+    `sel_dual = 1`. -/
+def OpEnvelope.SelectedMemProviderActiveReplayRowInMemTableAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (table : Air.Flat.Table FGL) : Prop :=
+  match env with
+  | .ld _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel_dual = 1)
+  | .lbu _ _ _ bus _ _ _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel_dual = 1)
+  | .lhu _ _ _ bus _ _ _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel_dual = 1)
+  | .lwu _ _ _ bus _ _ _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel_dual = 1)
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel_dual = 1)
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel_dual = 1)
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus _ _ .. =>
+      ∃ providerRow ∈ table.table,
+        (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memPrimaryReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0)
+        ∨ (ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+            (ZiskFv.AirsClean.FullEnsemble.memDualReadReplayEntryOfRow
+              (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+          ∧ (eval (table.environment providerRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel_dual = 1)
   | _ => True
 
 /-- Table-local selected envelope Mem-row occurrence.
@@ -9164,6 +9301,24 @@ structure OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEn
       (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
         extraction)
 
+/-- Active replay extraction-indexed selected-load evidence.
+
+    This is the selector-gated counterpart of
+    `AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope`: the
+    shared extraction carries active replay embedding, and the selected
+    provider row explicitly carries selector activity. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m) :
+    Type 1 where
+  selectedProviderRow :
+    env.SelectedMemProviderActiveReplayRowInMemTableAtEnvelope
+      extraction.table
+  selectedPrefix :
+    env.SelectedPrefixAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_activeReplayRowSplitExtraction
+        extraction)
+
 /-- Replay-only provider-row coverage projects to accepted chronological-row
     coverage for the accepted trace carried by the replay-only extraction. -/
 theorem OpEnvelope.selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_replayRowSplitExtractionProvider
@@ -9198,6 +9353,34 @@ theorem OpEnvelope.selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_re
           ZiskFv.AirsClean.FullEnsemble.mem_dual_read_replay_entry_mem_of_replay_embedded_trace_row_match
             (fun entry h_entry => h_entry) h_providerRow h_dual
 
+/-- Active replay extraction provider-row coverage projects to ordinary
+    accepted chronological-row membership for the accepted trace carried by
+    the active replay extraction. -/
+theorem OpEnvelope.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_activeReplayRowSplitExtractionProvider
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m)
+    (h_provider :
+      env.SelectedMemProviderActiveReplayRowInMemTableAtEnvelope
+        extraction.table) :
+    env.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_activeReplayRowSplitExtraction
+        extraction) := by
+  cases env <;>
+    simp [OpEnvelope.SelectedMemProviderActiveReplayRowInMemTableAtEnvelope,
+      OpEnvelope.SelectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope,
+      OpEnvelope.acceptedAirMainMemFullTraceAtEnvelope_of_activeReplayRowSplitExtraction,
+      OpEnvelope.AcceptedAirMainMemFullTraceAtEnvelope]
+      at h_provider ⊢
+  all_goals
+    rcases h_provider with ⟨providerRow, h_providerRow,
+      ⟨h_primary, h_sel, h_wr⟩ | ⟨h_dual, h_sel_dual⟩⟩
+    · exact
+        ZiskFv.AirsClean.FullEnsemble.mem_primary_read_replay_entry_mem_of_active_replay_embedded_trace_row_match
+          extraction.activeReplayEmbedded h_providerRow h_sel h_wr h_primary
+    · exact
+        ZiskFv.AirsClean.FullEnsemble.mem_dual_read_replay_entry_mem_of_active_replay_embedded_trace_row_match
+          extraction.activeReplayEmbedded h_providerRow h_sel_dual h_dual
+
 /-- Replay-only selected-load evidence with prefix-state equality instead of
     an already assembled selected-prefix cursor. This is closer to the final
     accepted-execution proof shape: selected provider coverage gives row
@@ -9211,6 +9394,20 @@ structure OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectio
   selectedPrefixState :
     env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
       (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
+        extraction)
+
+/-- Active replay selected-load evidence with prefix-state equality instead
+    of an already assembled selected-prefix cursor. -/
+structure OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m) :
+    Type 1 where
+  selectedProviderRow :
+    env.SelectedMemProviderActiveReplayRowInMemTableAtEnvelope
+      extraction.table
+  selectedPrefixState :
+    env.SelectedPrefixStateAtAcceptedAirMainMemTraceAtEnvelope
+      (env.acceptedAirMainMemFullTraceAtEnvelope_of_activeReplayRowSplitExtraction
         extraction)
 
 /-- Replay-only selected-load evidence using table-local envelope-row
@@ -9291,8 +9488,27 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceSelec
         (env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_memReplayRow
           (env.acceptedAirMainMemFullTraceAtEnvelope_of_replayRowSplitExtraction
             extraction)
-          (env.selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_replayRowSplitExtractionProvider
+        (env.selectedMemReplayRowAtAcceptedAirMainMemTraceAtEnvelope_of_replayRowSplitExtractionProvider
             extraction selection.selectedProviderRow))
+        selection.selectedPrefixState }
+
+/-- Build active replay selected-prefix evidence from active provider-row
+    coverage and prefix-state equality. -/
+noncomputable def OpEnvelope.acceptedFullExecutionMemoryActiveReplayRowSplitTraceSelectionAtEnvelope_of_stateSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceSelectionAtEnvelope
+      extraction :=
+  { selectedProviderRow := selection.selectedProviderRow
+    selectedPrefix :=
+      env.selectedPrefixAtAcceptedAirMainMemTraceAtEnvelope_of_rowMembership
+        (env.acceptedAirMainMemFullTraceAtEnvelope_of_activeReplayRowSplitExtraction
+          extraction)
+        (env.selectedRowMembershipAtAcceptedAirMainMemTraceAtEnvelope_of_activeReplayRowSplitExtractionProvider
+          extraction selection.selectedProviderRow)
         selection.selectedPrefixState }
 
 /-- Per-envelope selected-load extraction indexed by the named shared row
@@ -9653,6 +9869,45 @@ def OpEnvelope.AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourc
           extraction
   | _ => ULift.{2, 0} Unit
 
+/-- Active replay split-trace state-selection source.
+
+    This is the selector-gated successor to
+    `AcceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourceAtEnvelope`:
+    load envelopes carry an active replay extraction, selected active provider
+    row coverage, and Sail/replay prefix-state equality. -/
+def OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope
+    (env : OpEnvelope state m r_main) : Type 2 :=
+  match env with
+  | .ld .. =>
+      Σ extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lbu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lhu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lwu .. =>
+      Σ extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lb_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lh_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | .lw_via_static_match .. =>
+      Σ extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m,
+        env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+          extraction
+  | _ => ULift.{2, 0} Unit
+
 /-- Replay-only split-trace envelope-row state-selection source.
 
     This source is one step closer to the table occurrence facts accepted
@@ -9743,6 +9998,23 @@ def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceStateSelectionSourc
   all_goals
     exact ⟨extraction, selection⟩
 
+/-- Package active replay extraction-indexed state selection as the
+    load-scoped source object. -/
+def OpEnvelope.acceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope_of_stateSelection
+    (env : OpEnvelope state m r_main)
+    (extraction : AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction m)
+    (selection :
+      env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionAtEnvelope
+        extraction) :
+    env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope := by
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope]
+      at selection ⊢
+  all_goals
+    try exact ULift.up ()
+  all_goals
+    exact ⟨extraction, selection⟩
+
 /-- Package replay-only extraction-indexed envelope-row state selection as the
     load-scoped source object. -/
 def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope_of_envelopeStateSelection
@@ -9800,6 +10072,36 @@ noncomputable def OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceSelec
         OpEnvelope.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionAtEnvelope_of_stateSelection
           env0
           source.1 source.2⟩
+
+/-- Lower active replay state-selection source evidence to the memory
+    construction burden consumed by the current compliance proof.
+
+    This is the active/gated replay analogue of the replay-only source
+    lowering: selected active provider coverage gives row membership, and
+    prefix-state equality gives the selected prefix cursor. -/
+noncomputable def OpEnvelope.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_activeReplayRowSplitTraceStateSelectionSource
+    (env : OpEnvelope state m r_main)
+    (source :
+      env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope) :
+    env.AcceptedAirMainMemFullTraceConstructionAtEnvelope := by
+  let env0 := env
+  cases env <;>
+    simp [OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope,
+      OpEnvelope.AcceptedAirMainMemFullTraceConstructionAtEnvelope]
+      at source ⊢
+  all_goals
+    try exact ()
+  all_goals
+    let selection :=
+      OpEnvelope.acceptedFullExecutionMemoryActiveReplayRowSplitTraceSelectionAtEnvelope_of_stateSelection
+        env0 source.1 source.2
+    exact
+      { initialState := source.1.acceptedTrace.initialState
+        rows := source.1.acceptedTrace.rows
+        acceptedTrace :=
+          ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceConstruction.ofSplit
+            source.1.acceptedTrace.construction
+        selectedPrefix := selection.selectedPrefix }
 
 /-- Repack unpacked selected-prefix/selected-row evidence into the shared
     full-execution coverage object consumed by the current compliance proof. -/
