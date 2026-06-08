@@ -246,7 +246,7 @@ clutter.
 - [x] Add active raw-table replay extraction package and lowering constructors.
 - [x] Verify active replay projection with focused `Balance` and `OpEnvelope` builds.
 - [x] Verify active replay projection with full build and semantic trust gate.
-- [ ] Commit active replay projection slice.
+- [x] Commit active replay projection slice.
 - [ ] Retarget the main replay boundary from unconditional to active replay extraction.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
