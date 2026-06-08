@@ -240,7 +240,7 @@ clutter.
 - [x] Check selector-gating requirements for inactive Mem primary/dual emissions.
 - [x] Add dual Mem component selector projection facts from component `Spec`.
 - [x] Verify selector projection slice.
-- [ ] Commit selector projection slice.
+- [x] Commit selector projection slice.
 - [ ] Introduce active/gated replay projection, or prove inactive replay rows are semantically harmless.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
