@@ -241,7 +241,13 @@ clutter.
 - [x] Add dual Mem component selector projection facts from component `Spec`.
 - [x] Verify selector projection slice.
 - [x] Commit selector projection slice.
-- [ ] Introduce active/gated replay projection, or prove inactive replay rows are semantically harmless.
+- [x] Introduce active/gated replay projection, or prove inactive replay rows are semantically harmless.
+- [x] Add selected active primary/dual replay membership lemmas.
+- [x] Add active raw-table replay extraction package and lowering constructors.
+- [x] Verify active replay projection with focused `Balance` and `OpEnvelope` builds.
+- [x] Verify active replay projection with full build and semantic trust gate.
+- [ ] Commit active replay projection slice.
+- [ ] Retarget the main replay boundary from unconditional to active replay extraction.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
@@ -361,6 +367,22 @@ close the memory soundness gap by itself. Focused `lake build
 ZiskFv.AirsClean.Mem.Circuit`, focused `lake build
 ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, `git diff --check`,
 and `trust/scripts/check-all-semantic.sh` pass for this slice.
+
+Active replay projection checkpoint:
+`ZiskFv/AirsClean/FullEnsemble/Balance.lean` now defines
+`activeMemReadReplayRowsOfTable` and `activeMemReplayRowsOfTable`, which drop
+inactive primary and dual emissions instead of replaying them as memory events.
+It also names active order/prefix-read targets and selected active membership
+lemmas for primary and dual provider rows. `ZiskFv/Compliance/OpEnvelope.lean`
+now has `AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction`,
+`RawAcceptedFullExecutionMemoryActiveReplayRowsProjection`,
+`RawAcceptedFullExecutionMemoryActiveReplayTableProjection`, and lowering
+constructors that derive active embedding and raw replay evidence from the
+active projection equality plus active table-local order/prefix facts. Focused
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance` and focused `lake build
+ZiskFv.Compliance.OpEnvelope`, full `lake build`, `git diff --check`, and
+`trust/scripts/check-all-semantic.sh` pass. This adds the honest active replay
+target; the primary compliance boundary is not yet retargeted to consume it.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining

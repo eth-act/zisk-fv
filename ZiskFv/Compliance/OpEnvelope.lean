@@ -7740,6 +7740,30 @@ structure AcceptedFullExecutionMemoryReplayRowSplitExtraction
     ZiskFv.AirsClean.FullEnsemble.MemReplayRowsEmbeddedInTrace
       table acceptedTrace.rows
 
+/-- Active replay-row split extraction for the selected mutable Mem table.
+
+Unlike `AcceptedFullExecutionMemoryReplayRowSplitExtraction`, this package is
+indexed by the selector-gated replay surface: inactive Mem emissions are absent
+from the accepted chronological row list. This is the sound target for the
+global memory-state proof; selected-load coverage must additionally prove that
+the selected provider event is active. -/
+structure AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction
+    (main : Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit main
+  table : Air.Flat.Table FGL
+  table_mem : table ∈ witness.allTables
+  table_component :
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  activeReplayEmbedded :
+    ZiskFv.AirsClean.FullEnsemble.ActiveMemReplayRowsEmbeddedInTrace
+      table acceptedTrace.rows
+
 /-- Raw table-projection evidence for the replay-only shared accepted-execution
     Mem extraction.
 
@@ -7794,6 +7818,30 @@ structure RawAcceptedFullExecutionMemoryReplayRowsProjection
   rows_eq :
     raw.rows = ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
 
+/-- Raw active table-projection evidence for selector-gated Mem replay.
+
+This is the active counterpart of
+`RawAcceptedFullExecutionMemoryReplayRowsProjection`: the accepted row list is
+the concrete table projection after dropping inactive primary/dual emissions.
+The remaining replay evidence is still explicit here and is discharged by the
+table-local active projection constructor below. -/
+structure RawAcceptedFullExecutionMemoryActiveReplayRowsProjection
+    (main : Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  raw : ZiskFv.AirsClean.Mem.RawAcceptedAirMainMemFullTraceSplit main
+  evidence : ZiskFv.AirsClean.Mem.RawAcceptedAirMainMemReplayEvidence raw
+  table : Air.Flat.Table FGL
+  table_mem : table ∈ witness.allTables
+  table_component :
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  rows_eq :
+    raw.rows = ZiskFv.AirsClean.FullEnsemble.activeMemReplayRowsOfTable table
+
 /-- Raw accepted-execution Mem replay projection with table-local replay
     obligations.
 
@@ -7821,6 +7869,34 @@ structure RawAcceptedFullExecutionMemoryReplayTableProjection
     ZiskFv.AirsClean.FullEnsemble.MemReplayRowsOfTableOrderFacts table
   tablePrefixReadSound :
     ZiskFv.AirsClean.FullEnsemble.MemReplayRowsOfTablePrefixReadSound
+      raw.initialState.mem table
+
+/-- Raw accepted-execution active Mem replay projection with table-local replay
+    obligations.
+
+This is the current sound target for generated/accepted Mem integration:
+chronology and prefix-read soundness are proved over
+`activeMemReplayRowsOfTable`, so inactive selector-gated emissions do not
+become replay events. -/
+structure RawAcceptedFullExecutionMemoryActiveReplayTableProjection
+    (main : Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  raw : ZiskFv.AirsClean.Mem.RawAcceptedAirMainMemFullTraceSplit main
+  table : Air.Flat.Table FGL
+  table_mem : table ∈ witness.allTables
+  table_component :
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  rows_eq :
+    raw.rows = ZiskFv.AirsClean.FullEnsemble.activeMemReplayRowsOfTable table
+  tableOrderFacts :
+    ZiskFv.AirsClean.FullEnsemble.ActiveMemReplayRowsOfTableOrderFacts table
+  tablePrefixReadSound :
+    ZiskFv.AirsClean.FullEnsemble.ActiveMemReplayRowsOfTablePrefixReadSound
       raw.initialState.mem table
 
 /-- Lower the named row-extraction target to the shared full-execution memory
@@ -7975,6 +8051,34 @@ def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRawRowsProjection
     (ZiskFv.AirsClean.FullEnsemble.memReplayRowsEmbeddedInTrace_of_rows_eq
       projection.rows_eq)
 
+/-- Lower raw active Mem data plus concrete active replay-row projection into
+    the active replay split extraction target.
+
+This proves initial Sail/replay agreement and active table embedding
+internally. It intentionally still consumes `projection.evidence`, so row
+order and prefix-read soundness remain visible unless the table-local active
+constructor below is used. -/
+def AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction.ofRawRowsProjection
+    {main : Valid_Main FGL FGL}
+    (projection : RawAcceptedFullExecutionMemoryActiveReplayRowsProjection main) :
+    AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction main :=
+  let acceptedTrace : ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplit main :=
+    { initialState := projection.raw.initialState
+      rows := projection.raw.rows
+      construction :=
+        ZiskFv.AirsClean.Mem.AcceptedAirMainMemFullTraceSplitConstruction.ofRaw
+          projection.raw projection.evidence }
+  { length := projection.length
+    program := projection.program
+    witness := projection.witness
+    acceptedTrace := acceptedTrace
+    table := projection.table
+    table_mem := projection.table_mem
+    table_component := projection.table_component
+    activeReplayEmbedded :=
+      ZiskFv.AirsClean.FullEnsemble.activeMemReplayRowsEmbeddedInTrace_of_rows_eq
+        projection.rows_eq }
+
 /-- Lower raw accepted Mem table-projection evidence into the replay-only
     shared extraction target.
 
@@ -7995,6 +8099,36 @@ def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRawTableProjection
         ZiskFv.AirsClean.FullEnsemble.memoryBusRowsPrefixReadSound_of_memReplayRowsOfTable
           projection.rows_eq projection.tablePrefixReadSound }
   AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRawRowsProjection
+    { length := projection.length
+      program := projection.program
+      witness := projection.witness
+      raw := projection.raw
+      evidence := evidence
+      table := projection.table
+      table_mem := projection.table_mem
+      table_component := projection.table_component
+      rows_eq := projection.rows_eq }
+
+/-- Lower raw accepted Mem active table-projection evidence into the active
+    replay split extraction target.
+
+This is the selector-gated counterpart of `ofRawTableProjection`: inactive
+Mem emissions are omitted from the replay rows, and the raw replay evidence is
+built from table-local active order and prefix-read facts. -/
+def AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction.ofRawTableProjection
+    {main : Valid_Main FGL FGL}
+    (projection : RawAcceptedFullExecutionMemoryActiveReplayTableProjection main) :
+    AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction main :=
+  let evidence :
+      ZiskFv.AirsClean.Mem.RawAcceptedAirMainMemReplayEvidence
+        projection.raw :=
+    { orderFacts :=
+        ZiskFv.AirsClean.FullEnsemble.generatedMemRowOrderFacts_of_activeMemReplayRowsOfTable
+          projection.rows_eq projection.tableOrderFacts
+      prefixReadSound :=
+        ZiskFv.AirsClean.FullEnsemble.memoryBusRowsPrefixReadSound_of_activeMemReplayRowsOfTable
+          projection.rows_eq projection.tablePrefixReadSound }
+  AcceptedFullExecutionMemoryActiveReplayRowSplitExtraction.ofRawRowsProjection
     { length := projection.length
       program := projection.program
       witness := projection.witness
