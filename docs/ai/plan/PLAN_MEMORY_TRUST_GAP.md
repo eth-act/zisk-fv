@@ -223,7 +223,9 @@ clutter.
 - [x] Add shared accepted split trace plus envelope-row prefix-state replay wrapper.
 - [x] Stabilize the merged worktree with focused build verification.
 - [x] Add structural replay-row projection evidence deriving all-event Mem table embedding.
-- [ ] Identify or define the canonical raw accepted-execution memory evidence object.
+- [x] Identify or define the canonical raw accepted-execution memory evidence object.
+- [x] Verify raw accepted split-trace surface.
+- [ ] Commit raw accepted split-trace surface.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
@@ -264,6 +266,21 @@ this slice. `trust/scripts/check-all-semantic.sh` also passes.
 caller-burden/hypothesis ledgers have shrunk versus baseline and Aeneas
 production extraction artifacts are missing/untracked; this slice did not
 regenerate those broad ledgers.
+
+Raw split-trace checkpoint:
+`RawAcceptedAirMainMemFullTraceSplit` now names the canonical upstream accepted
+AIR/Main/Mem split-trace data: initial Sail state, public memory-bus row
+projection, concrete Mem trace columns, row count, and generated Mem rows. It
+does not carry row ordering, prefix-read soundness, or initial Sail/replay
+agreement as fields. `RawAcceptedAirMainMemReplayEvidence` isolates the two
+remaining nonlocal replay obligations, `GeneratedMemRowOrderFacts` and
+`MemoryBusRowsPrefixReadSound`, and
+`AcceptedAirMainMemFullTraceSplitConstruction.ofRaw` lowers raw data plus those
+proofs into the existing construction while proving initial agreement
+internally by reflexivity. Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec`,
+focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, and full
+`lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh`
+pass for this uncommitted slice.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining

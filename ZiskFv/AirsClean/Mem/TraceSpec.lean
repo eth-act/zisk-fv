@@ -498,6 +498,59 @@ def AcceptedAirMainMemFullTraceSplitConstruction.ofGenerated
     orderFacts := construction.orderFacts
     replayFacts := construction.replayFacts }
 
+/-- Raw accepted AIR/Main/Mem split-trace data before replay facts are proved.
+
+This is the canonical upstream shape for the Mem trace itself: it contains the
+accepted Main trace marker, concrete generated Mem rows, and the public
+memory-bus row projection, but it does not carry row ordering, prefix-read
+soundness, or initial Sail/replay agreement as fields. -/
+structure RawAcceptedAirMainMemFullTraceSplit
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) : Type where
+  initialState : SailState
+  rows : List (Interaction.MemoryBusEntry FGL)
+  mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL
+  segment : ZiskFv.Airs.Mem.SegmentColumns FGL
+  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
+  rowCount : ℕ
+  generatedRows : GeneratedMemRows mem segment permutation rowCount
+
+/-- The nonlocal Mem facts still required to turn raw accepted split-trace data
+    into replay construction evidence.
+
+Unlike the previous accepted construction records, this evidence does not ask
+for an initial-memory agreement proof: the replay initial memory is fixed to
+`raw.initialState.mem`, so agreement is proved by reflexivity when lowering. -/
+structure RawAcceptedAirMainMemReplayEvidence
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    (raw : RawAcceptedAirMainMemFullTraceSplit main) : Type where
+  orderFacts : GeneratedMemRowOrderFacts raw.rows
+  prefixReadSound :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
+      raw.initialState.mem raw.rows
+
+/-- Lower raw accepted split-trace data plus proved order/prefix-read facts to
+    the existing accepted split construction. This discharges the initial
+    Sail/replay memory agreement internally by choosing `initialMemory` to be
+    `raw.initialState.mem`. -/
+def AcceptedAirMainMemFullTraceSplitConstruction.ofRaw
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    (raw : RawAcceptedAirMainMemFullTraceSplit main)
+    (evidence : RawAcceptedAirMainMemReplayEvidence raw) :
+    AcceptedAirMainMemFullTraceSplitConstruction
+      main raw.initialState raw.rows :=
+  { mem := raw.mem
+    segment := raw.segment
+    permutation := raw.permutation
+    rowCount := raw.rowCount
+    generatedRows := raw.generatedRows
+    orderFacts := evidence.orderFacts
+    replayFacts :=
+      { initialMemory := raw.initialState.mem
+        prefixReadSound := evidence.prefixReadSound
+        initialAgreement := by
+          intro _addr
+          rfl } }
+
 /-- Forget the Main-trace provenance marker and produce the generated Mem
     construction object consumed by the current replay bridge. -/
 def AcceptedAirMainMemFullTraceConstruction.toGeneratedMemFullTraceConstruction
