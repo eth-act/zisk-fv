@@ -247,15 +247,17 @@ clutter.
 - [x] Verify active replay projection with focused `Balance` and `OpEnvelope` builds.
 - [x] Verify active replay projection with full build and semantic trust gate.
 - [x] Commit active replay projection slice.
-- [ ] Retarget the main replay boundary from unconditional to active replay extraction.
+- [x] Retarget the main replay boundary from unconditional to active replay extraction.
   The latest active slice adds active match-to-membership lemmas, an active
   extraction-indexed state-selection/source boundary, and a top-level
   compliance wrapper through active replay source evidence. The current verified
   slice also proves selected envelope Mem-row occurrence implies selected active
   provider-row coverage and lowers active envelope-row state selection to active
-  provider-row state selection. This is a stepping-stone: the primary named
-  compliance theorem still needs to be moved fully off the unconditional memory
-  construction path.
+  provider-row state selection. The primary named theorem
+  `zisk_riscv_compliant_program_bus` now takes the active replay state-selection
+  source directly; the older accepted AIR/Main/Mem construction-shaped theorem
+  remains available under the explicit compatibility name
+  `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope`.
 - [x] Prove selected envelope Mem-row occurrence gives selected active provider coverage.
 - [x] Add active envelope-row state-selection source and lowering to active provider state-selection source.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
@@ -407,6 +409,18 @@ ZiskFv.Compliance.OpEnvelope`, `lake build ZiskFv.Compliance`, full
 pass for this slice. This is still a stepping-stone: the primary named theorem
 is not yet fully moved off the unconditional construction path, and selected
 envelope-row occurrence still has to imply active provider coverage.
+
+Primary active-boundary checkpoint:
+`zisk_riscv_compliant_program_bus` now exposes
+`OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope`
+as its memory premise. The previous construction-shaped theorem body was kept
+under
+`zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope`,
+and older wrappers call that compatibility theorem explicitly. Focused
+`lake build ZiskFv.Compliance`, full `lake build`, `git diff --check`, and
+`trust/scripts/check-all-semantic.sh` pass. This makes the active replay
+boundary visible at the top-level theorem, but it is still conditional on
+caller-supplied active extraction/source evidence.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining

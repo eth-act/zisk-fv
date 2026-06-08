@@ -55,14 +55,12 @@ longer includes a broad bridge-trust conjunct or axiom.
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
 completeness. Load-memory replay evidence is exposed separately through
-`OpEnvelope.AcceptedFullExecutionMemoryTraceAtEnvelope` and
-`OpEnvelope.AcceptedFullExecutionMemoryTraceCoverageForTraceAtEnvelope`: load
-arms carry a shared accepted full-execution memory trace plus per-envelope
-selected prefix and selected Mem-row coverage, while non-load arms carry no
-memory trace data. The accepted trace construction includes the duplicate-free
-memory-row invariant used to derive selected occurrence uniqueness internally.
-The theorem derives the load-scoped construction package, generated Mem burden,
-and replay construction internally.
+`OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope`:
+load arms carry a selector-gated accepted Mem replay extraction plus
+per-envelope selected active provider-row coverage and prefix-state equality,
+while non-load arms carry no memory trace data. The compatibility wrappers below
+continue to expose older construction-shaped surfaces, but the primary theorem
+now names the active replay boundary directly.
 It is also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
@@ -93,14 +91,14 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
     ∧ env.exec_eq_misc
     ∧ env.exec_eq_remaining
 
-/-- **Known-defect-aware channel-balance global theorem.**
+/-- Construction-shaped compatibility form of the global theorem.
 
     The memory input is exactly the accepted AIR/Main/Mem trace construction
     for the selected envelope. This is the point where the load replay proof
     actually starts: generated Mem facts, chronological rows, prefix read
     soundness, initial memory agreement, and the selected prefix cursor are
     already present in `construction`. -/
-theorem zisk_riscv_compliant_program_bus
+theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
     (construction : env.AcceptedAirMainMemFullTraceConstructionAtEnvelope)
@@ -141,6 +139,25 @@ theorem zisk_riscv_compliant_program_bus
   · exact zisk_riscv_compliant_program_bus_divu_except_known_defects env h_known_bugs
   · exact zisk_riscv_compliant_program_bus_misc env h_memory_burden
   · exact zisk_riscv_compliant_program_bus_remaining env h_memory_burden h_known_bugs
+
+/-- **Known-defect-aware channel-balance global theorem.**
+
+    The primary theorem now exposes the selector-gated replay boundary for load
+    memory soundness. For load envelopes, callers must provide an active replay
+    extraction, selected active provider-row coverage, and prefix-state equality;
+    for non-load envelopes, the source is trivial. -/
+theorem zisk_riscv_compliant_program_bus
+    (env : OpEnvelope state m r_main)
+    (h_burden : env.completenessBurden)
+    (source :
+      env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
+    env h_burden
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_activeReplayRowSplitTraceStateSelectionSource
+      source)
+    h_known_bugs
 
 /-- Generated Mem construction variant of the known-defect-aware global
     theorem.
@@ -225,7 +242,7 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderPrefixSou
     env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_providerTraceCursorSource
       h_full_memory_source
   exact
-    zisk_riscv_compliant_program_bus
+    zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
       env h_burden h_accepted_mem_trace_at_envelope h_known_bugs
 
 /-- Split accepted AIR/Main/Mem construction variant of
@@ -242,7 +259,7 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemSplitTraceConstruc
       env.AcceptedAirMainMemFullTraceSplitConstructionAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
     env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_split
       splitConstruction)
@@ -285,7 +302,7 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTrace
       env.AcceptedFullExecutionMemoryTraceCoverageAtEnvelope fullTrace)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus env h_burden
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_providerTraceCursorSource
       (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_cursorSource
         (env.acceptedFullExecutionMemoryTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
@@ -313,7 +330,7 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryTraceConstruction
       env.AcceptedFullExecutionMemoryTraceConstructionAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus env h_burden
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_providerTraceCursorSource
       (env.acceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope_of_rowCursorSelectionSource
         (env.acceptedFullExecutionMemoryRowCursorSelectionSourceAtEnvelope_of_traceConstruction
@@ -370,7 +387,7 @@ theorem zisk_riscv_compliant_program_bus_of_fullExecutionMemoryProviderTraceCurs
       env.AcceptedFullExecutionMemoryProviderTraceCursorSourceAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus env h_burden
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_providerTraceCursorSource
       providerCursorSource)
     h_known_bugs
@@ -865,7 +882,7 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayPro
         extraction)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
     env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayProviderRowSplitTraceSelectionSource
       (env.acceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope_of_selection
@@ -927,7 +944,7 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRow
         extraction)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
     env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayRowSplitTraceSelectionSource
       (env.acceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope_of_selection
@@ -1271,7 +1288,7 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayPro
       env.AcceptedFullExecutionMemoryReplayProviderRowSplitTraceSelectionSourceAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
     env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayProviderRowSplitTraceSelectionSource
       source)
@@ -1291,7 +1308,7 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRow
       env.AcceptedFullExecutionMemoryReplayRowSplitTraceSelectionSourceAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
     env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_replayRowSplitTraceSelectionSource
       source)
@@ -1328,10 +1345,7 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryActiveRep
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
   zisk_riscv_compliant_program_bus
-    env h_burden
-    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_activeReplayRowSplitTraceStateSelectionSource
-      source)
-    h_known_bugs
+    env h_burden source h_known_bugs
 
 /-- Replay-only split-trace envelope-row state-selection source variant.
 
