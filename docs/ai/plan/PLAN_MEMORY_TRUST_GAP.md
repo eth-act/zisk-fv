@@ -225,7 +225,10 @@ clutter.
 - [x] Add structural replay-row projection evidence deriving all-event Mem table embedding.
 - [x] Identify or define the canonical raw accepted-execution memory evidence object.
 - [x] Verify raw accepted split-trace surface.
-- [ ] Commit raw accepted split-trace surface.
+- [x] Commit raw accepted split-trace surface.
+- [x] Add raw replay-row projection lowering from raw accepted trace plus table row equality.
+- [x] Verify raw replay-row projection lowering.
+- [ ] Commit raw replay-row projection lowering.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
@@ -280,7 +283,22 @@ proofs into the existing construction while proving initial agreement
 internally by reflexivity. Focused `lake build ZiskFv.AirsClean.Mem.TraceSpec`,
 focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, and full
 `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh`
-pass for this uncommitted slice.
+pass for this slice. Commit `a4214da8` records it.
+
+Raw replay-row projection checkpoint:
+`RawAcceptedFullExecutionMemoryReplayRowsProjection` now combines the raw
+accepted AIR/Main/Mem split trace, the still-needed raw replay evidence, the
+concrete full-ensemble Mem table, and the structural equality
+`raw.rows = memReplayRowsOfTable table`.
+`AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRawRowsProjection`
+lowers that raw package to the existing replay-only shared extraction,
+discharging initial Sail/replay agreement through `ofRaw` and all-event table
+embedding through `memReplayRowsEmbeddedInTrace_of_rows_eq`. This does not yet
+prove `GeneratedMemRowOrderFacts` or `MemoryBusRowsPrefixReadSound`; it makes
+them the remaining explicit proof target instead of hiding them behind an
+accepted split trace. Focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, `git diff --check`, and
+`trust/scripts/check-all-semantic.sh` pass for this uncommitted slice.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining
