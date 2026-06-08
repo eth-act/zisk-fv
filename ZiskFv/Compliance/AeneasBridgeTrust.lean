@@ -8,8 +8,9 @@ row-provenance/source-lane field from the extracted production lowerer.  The
 corresponding facts are carried by `OpEnvelope` constructors as ordinary proof
 fields.  This file keeps the representative bridge predicate and
 extracted-shape constructors available for audit and generated-row-shape
-integration, but the former broad `aeneas_bridge_trust` axiom is retired from
-the global theorem boundary.
+integration. The broad `aeneas_bridge_trust` axiom is deliberately explicit in
+the current global theorem closure until generated Aeneas Lean is imported by
+main Lake and proves these fields instead.
 -/
 
 namespace ZiskFv.Compliance
@@ -6245,5 +6246,13 @@ theorem OpEnvelope.aeneasBridgeTrust_sraiOfExtractedShape
       h_input_r1_row h_shift_pin_row h_lane_rd).aeneasBridgeTrust := by
   unfold OpEnvelope.sraiOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨h_input_r1_row, h_shift_pin_row⟩
+
+/-- **Aeneas row-lowering bridge trust axiom.**
+
+The generated Aeneas extraction is checked in CI, but generated Aeneas Lean is
+not yet imported to prove these bridge facts inside the main Lake theorem. -/
+axiom aeneas_bridge_trust
+    (env : OpEnvelope state m r_main) :
+    env.aeneasBridgeTrust
 
 end ZiskFv.Compliance

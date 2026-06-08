@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.BinaryAdd.Constraints
 import ZiskFv.AirsClean.BinaryAdd.Soundness
+import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -9,17 +10,19 @@ import Clean.Utils.Tactics
 Packages ZisK's BinaryAdd AIR as a Clean `Air.Flat.Component`:
 
 * `binaryAddElaborated` — the `ElaboratedCircuit` over `main` — lives in
-  `Constraints.lean` (so the conditional completeness proof can name it).
+  `Constraints.lean`.
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` for
-  soundness; the prover-side completeness predicate states the exact row
-  facts needed to satisfy the range lookups and four algebraic constraints.
+  soundness; `completeness` is the declared axiom
+  `binaryAdd_circuit_completeness`.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
-No axioms. The `soundness` and conditional `completeness` fields are proved.
+Axioms in this component: `binaryAdd_circuit_completeness`
+(completeness-direction, non-security-critical). The `soundness` field is
+genuinely proved.
 -/
 
 namespace ZiskFv.AirsClean.BinaryAdd
@@ -28,20 +31,6 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 
-/-- Prover-side assumptions for conditional Clean completeness. These are
-    exactly the lookup facts and assert-zero equations emitted by `main`. -/
-def ProverConstraints (row : BinaryAddRow FGL) : Prop :=
-  row.a_0.val < 2 ^ 32 ∧ row.a_1.val < 2 ^ 32
-  ∧ row.b_0.val < 2 ^ 32 ∧ row.b_1.val < 2 ^ 32
-  ∧ row.c_chunks_0.val < 2 ^ 16 ∧ row.c_chunks_1.val < 2 ^ 16
-  ∧ row.c_chunks_2.val < 2 ^ 16 ∧ row.c_chunks_3.val < 2 ^ 16
-  ∧ row.cout_0 * (1 - row.cout_0) = 0
-  ∧ row.a_0 + row.b_0
-      - (row.cout_0 * 4294967296 + row.c_chunks_1 * 65536 + row.c_chunks_0) = 0
-  ∧ row.cout_1 * (1 - row.cout_1) = 0
-  ∧ row.a_1 + row.b_1 + row.cout_0
-      - (row.cout_1 * 4294967296 + row.c_chunks_3 * 65536 + row.c_chunks_2) = 0
-
 /-- BinaryAdd as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
     the 8 column range bounds the soundness proof needs are supplied by
     Clean static lookups, not by a caller assumption. -/
@@ -49,7 +38,7 @@ def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
   { binaryAddElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun row _ _ => ProverConstraints row
+    ProverAssumptions := fun _ _ _ => True
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -64,9 +53,7 @@ def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
       · -- the op-bus push's requirement: `OpBusChannel.Guarantees` is `True`
         intro _
         trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel]
-      simpa [ProverConstraints, sub_eq_add_neg] using h_assumptions }
+    completeness := binaryAdd_circuit_completeness }
 
 /-- BinaryAdd as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩

@@ -27,6 +27,7 @@ BASELINE = ROOT / "trust" / "generated" / "baseline-axioms.txt"
 FILE_CLASS = {
     "ZiskFv/ZiskCircuit/MemModel.lean":             ("2",  "Memory state bridge — load"),
     "ZiskFv/Compliance/AeneasBridgeTrust.lean":     ("A",  "Aeneas row-lowering bridge"),
+    "ZiskFv/AirsClean/Completeness.lean":           ("C",  "Clean component completeness"),
     "ZiskFv/Airs/OperationBus/Bridge.lean":         ("4",  "Bus / lookup soundness — operation bus"),
     "ZiskFv/Airs/OperationBus/Consolidated.lean":   ("4",  "Bus / lookup soundness — operation bus (consolidated)"),
     "ZiskFv/Airs/MemoryBus/MemBridge.lean":         ("4",  "Bus / lookup soundness — memory bus"),
@@ -48,6 +49,8 @@ CLASS_HEADERS = {
            "Bridges Mem AIR's column language to Sail's byte-addressable `Std.HashMap` once class #4 has placed the entry on the bus."),
     "A":  ("Aeneas row-lowering bridge",
            "Records the temporary trust boundary between the checked Aeneas extraction path and the main Lake proof, until generated Aeneas Lean is imported to derive row-provenance, row-mode, source-lane, immediate, PC, and link bridge facts directly."),
+    "C":  ("Clean component completeness",
+           "Completeness-direction placeholders required by Clean's `GeneralFormalCircuit`; zisk-fv is a soundness-only project, so these are documented source trust but tolerated outside the global soundness closure."),
     "4":  ("Bus / lookup soundness",
            "PLONK / logUp permutation-argument soundness for `bus_id = 10` (op-bus + mem-bus) and ROM-lookup soundness for the MemAlignRom table. Each axiom's docstring cites the PIL line and Rust transpile function it mirrors."),
     "5b": ("Range-bus / byte-range soundness",

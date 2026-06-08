@@ -25,8 +25,9 @@
 #     > trust/generated/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-06-05.
+# artefacts under `.lake/build/`). Last regenerated: 2026-06-08.
 #
-# Total entries: 1
+# Total entries: 2
 #
+ZiskFv.Compliance.aeneas_bridge_trust
 ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load

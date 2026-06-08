@@ -123,8 +123,8 @@ pipeline.
      `OpEnvelope.aeneasBridgeTrust` from extracted row-shape equalities plus
      the remaining dynamic LUI facts.
 
-   This is a proof-slice validation. The broad `aeneas_bridge_trust` axiom has
-   since been retired from the global theorem boundary, but generated Aeneas
+   This is a proof-slice validation. The broad `aeneas_bridge_trust` axiom is
+   currently explicit in the global theorem boundary because generated Aeneas
    facts are still staged outside main Lake and many soundness-relevant
    envelope fields remain ordinary caller obligations.
 
@@ -407,26 +407,26 @@ pipeline.
    `jal_x0` arms are explicitly documented as carrying no bridge payload. This
    is a narrowing of the bridge predicate.
 
-   The global theorem boundary no longer includes `env.aeneasBridgeTrust` as an
-   extra conjunct, and the former `ZiskFv.Compliance.aeneas_bridge_trust` axiom
-   has been deleted. The local bridge predicate remains as an audit target for
-   extracted-shape constructors, not as a global trusted premise.
+   The global theorem boundary currently includes `env.aeneasBridgeTrust` as an
+   extra conjunct discharged by the explicit
+   `ZiskFv.Compliance.aeneas_bridge_trust` axiom. The local bridge predicate
+   also remains as an audit target for extracted-shape constructors.
 
 6. **Retire the temporary trust axiom.**
 
-   The temporary `aeneas_bridge_trust` axiom is removed from the global closure.
-   The remaining work is to import or otherwise connect generated/proved
-   evidence for every soundness-relevant envelope field so the
+   This remains future work. The remaining work is to import or otherwise
+   connect generated/proved evidence for every soundness-relevant envelope field
+   so the temporary `aeneas_bridge_trust` axiom can leave the global closure and
    `bridge`, `row_shape`, `bus_shape`, and `promises` caller-burden categories
    can shrink.
 
 ## Expected Trust-Ledger Evolution
 
-The trust ledger has already shrunk by retiring the broad Aeneas bridge axiom:
+The trust ledger currently keeps the broad Aeneas bridge axiom explicit:
 
 ```text
-temporary OpEnvelope evidence axiom removed from the global closure
-aeneas_bridge_trust removed
+temporary OpEnvelope evidence axiom remains in the global closure
+aeneas_bridge_trust explicit
 ```
 
 The remaining long-term shrinkage target is:
@@ -473,16 +473,17 @@ uniform and explicit as OpenVM FV's `axiomsPerRow` /
 
 ## Acceptance Criteria
 
-- The global theorem no longer depends on caller-supplied opcode-specific
-  `OpEnvelope` bridge-trust axiom. Remaining opcode-specific wrapper/envelope
-  bridge fields are ordinary theorem inputs and are inventoried in the
-  caller-burden ledgers.
+- The global theorem depends on the explicit
+  `ZiskFv.Compliance.aeneas_bridge_trust` axiom rather than laundering that
+  trust through caller-supplied opcode-specific `OpEnvelope` fields. Remaining
+  opcode-specific wrapper/envelope bridge fields are ordinary theorem inputs
+  and are inventoried in the caller-burden ledgers.
 - `bus_shape` caller-burden has shrunk to zero. Remaining `bridge`,
   `row_shape`, and promise caller-burden categories are explicitly scoped
   generated/full-ensemble integration boundaries.
-- The global axiom closure no longer contains a broad temporary `OpEnvelope`
-  evidence trust axiom. This criterion is satisfied for the former
-  `aeneas_bridge_trust` axiom.
+- Future work removes the broad temporary `OpEnvelope` evidence trust axiom
+  once generated Aeneas Lean is imported into main Lake and proves the bridge
+  fields.
 - Remaining trust classes are stable, named, and comparable to OpenVM FV's
   extracted-row plus explicit bus/memory assumption boundary.
 

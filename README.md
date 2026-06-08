@@ -21,9 +21,9 @@ for each instruction. `lake build` typechecking is the formal check.
 ## Trust Boundary
 
 All trust-boundary documentation and all machine-checked trust ledgers live in
-[`trust/`](trust/README.md). The current source trust ledger contains 1
-Lean axiom declaration. The global compliance theorem's transitive project
-axiom closure contains that declaration, recorded in
+[`trust/`](trust/README.md). The current source trust ledger contains 8
+Lean axiom declarations. The global compliance theorem's transitive project
+axiom closure contains 2 of those declarations, recorded in
 [`trust/generated/baseline-zisk-riscv-compliant.txt`](trust/generated/baseline-zisk-riscv-compliant.txt).
 
 The narrative trust ledger is
@@ -97,10 +97,11 @@ The proof-side migration target is
 row shapes produced by the decode/lower model. The former hand-written
 row-shape axiom surface is now retired from the Lean source ledger; dynamic
 immediate/PC and operand-lane obligations are explicit route facts, and the
-former broad Aeneas-backed bridge axiom is retired from the global theorem
-boundary. Remaining provider-lane, memory, and promise facts are explicit
-theorem inputs documented in the caller-burden ledgers until generated or
-full-ensemble artifacts export those facts into main Lake.
+broad Aeneas-backed bridge axiom is explicit in the global theorem boundary
+until generated Aeneas Lean is imported by main Lake. Remaining provider-lane,
+memory, and promise facts are explicit theorem inputs documented in the
+caller-burden ledgers until generated or full-ensemble artifacts export those
+facts into main Lake.
 
 ## Layout
 
