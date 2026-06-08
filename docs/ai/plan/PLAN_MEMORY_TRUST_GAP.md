@@ -248,11 +248,16 @@ clutter.
 - [x] Verify active replay projection with full build and semantic trust gate.
 - [x] Commit active replay projection slice.
 - [ ] Retarget the main replay boundary from unconditional to active replay extraction.
-  Current uncommitted slice adds active match-to-membership lemmas, an
-  active extraction-indexed state-selection/source boundary, and a top-level
-  compliance wrapper through active replay source evidence. This is a
-  stepping-stone: the primary named compliance theorem still needs to be moved
-  fully off the unconditional memory construction path.
+  The latest active slice adds active match-to-membership lemmas, an active
+  extraction-indexed state-selection/source boundary, and a top-level
+  compliance wrapper through active replay source evidence. The current verified
+  slice also proves selected envelope Mem-row occurrence implies selected active
+  provider-row coverage and lowers active envelope-row state selection to active
+  provider-row state selection. This is a stepping-stone: the primary named
+  compliance theorem still needs to be moved fully off the unconditional memory
+  construction path.
+- [x] Prove selected envelope Mem-row occurrence gives selected active provider coverage.
+- [x] Add active envelope-row state-selection source and lowering to active provider state-selection source.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
