@@ -236,7 +236,8 @@ clutter.
 - [x] Introduce a chronological/interleaved Mem replay-row projection if the current projection is not chronologically provable.
 - [x] Retarget raw table projection lowering to the chronological replay rows.
 - [x] Verify interleaved Mem replay projection slice.
-- [ ] Commit interleaved Mem replay projection slice.
+- [x] Commit interleaved Mem replay projection slice.
+- [ ] Check selector-gating requirements for inactive Mem primary/dual emissions.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
