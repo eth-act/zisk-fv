@@ -160,6 +160,43 @@ theorem spec_of_componentWithMemBus_spec
     Spec (componentWithMemBus.rowInput env) := by
   exact h_spec
 
+/-- Project the generic Clean component `Spec` for
+    `componentWithDualMemBus` to the concrete Mem row `Spec`. -/
+theorem spec_of_componentWithDualMemBus_spec
+    (env : Environment FGL)
+    (h_spec : componentWithDualMemBus.Spec env) :
+    Spec (componentWithDualMemBus.rowInput env) := by
+  exact h_spec
+
+/-- The dual-aware component spec gives boolean primary selectors. -/
+theorem sel_boolean_of_componentWithDualMemBus_spec
+    (env : Environment FGL)
+    (h_spec : componentWithDualMemBus.Spec env) :
+    (componentWithDualMemBus.rowInput env).sel = 0
+      ∨ (componentWithDualMemBus.rowInput env).sel = 1 :=
+  sel_boolean_of_spec _
+    (spec_of_componentWithDualMemBus_spec env h_spec)
+
+/-- The dual-aware component spec gives boolean dual selectors. -/
+theorem sel_dual_boolean_of_componentWithDualMemBus_spec
+    (env : Environment FGL)
+    (h_spec : componentWithDualMemBus.Spec env) :
+    (componentWithDualMemBus.rowInput env).sel_dual = 0
+      ∨ (componentWithDualMemBus.rowInput env).sel_dual = 1 :=
+  sel_dual_boolean_of_spec _
+    (spec_of_componentWithDualMemBus_spec env h_spec)
+
+/-- A selected dual Mem emission implies the primary selector is active. -/
+theorem sel_of_sel_dual_one_of_componentWithDualMemBus_spec
+    (env : Environment FGL)
+    (h_spec : componentWithDualMemBus.Spec env)
+    (h_sel_dual :
+      (componentWithDualMemBus.rowInput env).sel_dual = 1) :
+    (componentWithDualMemBus.rowInput env).sel = 1 :=
+  sel_of_sel_dual_one_of_spec _
+    (spec_of_componentWithDualMemBus_spec env h_spec)
+    h_sel_dual
+
 /-- The Mem `Spec` for a row, derived through the Clean Component. -/
 theorem spec_via_component (row : MemRow FGL)
     (_h_assumptions : Assumptions row)

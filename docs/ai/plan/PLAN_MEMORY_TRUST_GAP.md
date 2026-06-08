@@ -237,7 +237,11 @@ clutter.
 - [x] Retarget raw table projection lowering to the chronological replay rows.
 - [x] Verify interleaved Mem replay projection slice.
 - [x] Commit interleaved Mem replay projection slice.
-- [ ] Check selector-gating requirements for inactive Mem primary/dual emissions.
+- [x] Check selector-gating requirements for inactive Mem primary/dual emissions.
+- [x] Add dual Mem component selector projection facts from component `Spec`.
+- [x] Verify selector projection slice.
+- [ ] Commit selector projection slice.
+- [ ] Introduce active/gated replay projection, or prove inactive replay rows are semantically harmless.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
@@ -343,6 +347,20 @@ build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` pass for
 this slice. This is a chronology-shape fix, not full memory soundness closure:
 selector-gating, table-local chronology, prefix-read soundness, and selected
 prefix-state equality remain to be proved from accepted execution data.
+
+Selector projection checkpoint:
+`ZiskFv/AirsClean/Mem/Circuit.lean` now exposes
+`spec_of_componentWithDualMemBus_spec`,
+`sel_boolean_of_componentWithDualMemBus_spec`,
+`sel_dual_boolean_of_componentWithDualMemBus_spec`, and
+`sel_of_sel_dual_one_of_componentWithDualMemBus_spec`. This is the proof
+surface needed for active/gated replay work when the relevant route evidence
+already carries `providerTable.component.Spec (providerTable.environment
+providerRow)`. It does not prove constraints-to-spec globally and does not
+close the memory soundness gap by itself. Focused `lake build
+ZiskFv.AirsClean.Mem.Circuit`, focused `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, `git diff --check`,
+and `trust/scripts/check-all-semantic.sh` pass for this slice.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining
