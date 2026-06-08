@@ -1351,6 +1351,23 @@ def memPrimaryReplayEntryOfRow
   ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
     (ZiskFv.AirsClean.Mem.memBusMessage row) (2 * row.wr - 1) 2
 
+/-- Read-replay events contributed by one dual-aware Mem provider row, in
+    provider emission order. -/
+@[reducible]
+def memReadReplayEntriesOfRow
+    (row : ZiskFv.AirsClean.Mem.MemRow FGL) :
+    List (Interaction.MemoryBusEntry FGL) :=
+  [memPrimaryReadReplayEntryOfRow row, memDualReadReplayEntryOfRow row]
+
+/-- Read/write replay events contributed by one dual-aware Mem provider row,
+    in provider emission order. The primary event preserves `wr`, while the
+    dual event is a pinned read. -/
+@[reducible]
+def memReplayEntriesOfRow
+    (row : ZiskFv.AirsClean.Mem.MemRow FGL) :
+    List (Interaction.MemoryBusEntry FGL) :=
+  [memPrimaryReplayEntryOfRow row, memDualReadReplayEntryOfRow row]
+
 /-- Primary-read replay rows projected from every row of a Mem table. -/
 @[reducible]
 def memPrimaryReadReplayRowsOfTable
@@ -1369,13 +1386,19 @@ def memDualReadReplayRowsOfTable
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
 
-/-- Read-replay row surface exposed by a dual-aware Mem table. This is only a
-    row projection: chronological ordering and read/write soundness remain
+/-- Read-replay row surface exposed by a dual-aware Mem table.
+
+    Unlike the legacy compatibility projections above, this list is shaped in
+    provider emission order: for each concrete Mem table row, primary comes
+    before dual. Chronological ordering and read/write soundness remain
     separate global trace obligations. -/
 @[reducible]
 def memReadReplayRowsOfTable
     (table : Table FGL) : List (Interaction.MemoryBusEntry FGL) :=
-  memPrimaryReadReplayRowsOfTable table ++ memDualReadReplayRowsOfTable table
+  table.table.flatMap fun providerRow =>
+    memReadReplayEntriesOfRow
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
 
 /-- Primary replay rows projected from every Mem table row, preserving
     read/write polarity. -/
@@ -1387,12 +1410,17 @@ def memPrimaryReplayRowsOfTable
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
 
-/-- Full replay-row surface exposed by a dual-aware Mem table: primary rows
-    preserve read/write polarity, and dual rows are pinned reads. -/
+/-- Full replay-row surface exposed by a dual-aware Mem table.
+
+    Events are projected in provider emission order: primary first, preserving
+    read/write polarity, then the pinned dual read for the same provider row. -/
 @[reducible]
 def memReplayRowsOfTable
     (table : Table FGL) : List (Interaction.MemoryBusEntry FGL) :=
-  memPrimaryReplayRowsOfTable table ++ memDualReadReplayRowsOfTable table
+  table.table.flatMap fun providerRow =>
+    memReplayEntriesOfRow
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
 
 /-- Row-order facts for the concrete mutable-Mem replay projection. This is
     the table-local target that accepted full-execution integration should
@@ -1515,9 +1543,9 @@ theorem mem_primary_replay_entry_mem_of_table_row
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
       ∈ memReplayRowsOfTable table := by
-  unfold memReplayRowsOfTable memPrimaryReplayRowsOfTable
-  exact List.mem_append_left _
-    (List.mem_map.mpr ⟨providerRow, h_row, rfl⟩)
+  unfold memReplayRowsOfTable
+  exact List.mem_flatMap.mpr
+    ⟨providerRow, h_row, by simp [memReplayEntriesOfRow]⟩
 
 /-- A concrete Mem table row contributes its dual read projection to the
     table's full replay-row surface. -/
@@ -1528,9 +1556,9 @@ theorem mem_dual_read_replay_entry_mem_of_replay_table_row
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
       ∈ memReplayRowsOfTable table := by
-  unfold memReplayRowsOfTable memDualReadReplayRowsOfTable
-  exact List.mem_append_right _
-    (List.mem_map.mpr ⟨providerRow, h_row, rfl⟩)
+  unfold memReplayRowsOfTable
+  exact List.mem_flatMap.mpr
+    ⟨providerRow, h_row, by simp [memReplayEntriesOfRow]⟩
 
 /-- The all-replay-row embedding implies read-only embedding for selected
     primary reads, once the selected Mem row is known to be a read. -/
@@ -1575,9 +1603,9 @@ theorem mem_primary_read_replay_entry_mem_of_table_row
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
       ∈ memReadReplayRowsOfTable table := by
-  unfold memReadReplayRowsOfTable memPrimaryReadReplayRowsOfTable
-  exact List.mem_append_left _
-    (List.mem_map.mpr ⟨providerRow, h_row, rfl⟩)
+  unfold memReadReplayRowsOfTable
+  exact List.mem_flatMap.mpr
+    ⟨providerRow, h_row, by simp [memReadReplayEntriesOfRow]⟩
 
 /-- A concrete Mem table row contributes its dual read projection to the
     table's read-replay row surface. -/
@@ -1588,9 +1616,9 @@ theorem mem_dual_read_replay_entry_mem_of_table_row
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
       ∈ memReadReplayRowsOfTable table := by
-  unfold memReadReplayRowsOfTable memDualReadReplayRowsOfTable
-  exact List.mem_append_right _
-    (List.mem_map.mpr ⟨providerRow, h_row, rfl⟩)
+  unfold memReadReplayRowsOfTable
+  exact List.mem_flatMap.mpr
+    ⟨providerRow, h_row, by simp [memReadReplayEntriesOfRow]⟩
 
 /-- If a selected legacy memory row matches a concrete primary Mem row's
     read projection, then it is covered by the table's read-replay rows. -/

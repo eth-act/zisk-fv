@@ -231,7 +231,12 @@ clutter.
 - [x] Commit raw replay-row projection lowering.
 - [x] Add table-local order/prefix-read replay targets and transport to raw extraction.
 - [x] Verify table-local order/prefix transport slice.
-- [ ] Commit table-local order/prefix transport slice.
+- [x] Commit table-local order/prefix transport slice.
+- [x] Inspect whether `memReplayRowsOfTable = primaryRows ++ dualRows` is a valid chronological replay projection.
+- [x] Introduce a chronological/interleaved Mem replay-row projection if the current projection is not chronologically provable.
+- [x] Retarget raw table projection lowering to the chronological replay rows.
+- [x] Verify interleaved Mem replay projection slice.
+- [ ] Commit interleaved Mem replay projection slice.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
@@ -316,7 +321,27 @@ uses that table-local evidence to build raw replay evidence internally, and
 lowers it to the existing replay-only extraction. Focused `lake build
 ZiskFv.AirsClean.FullEnsemble.Balance ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, `git diff --check`, and
-`trust/scripts/check-all-semantic.sh` pass for this uncommitted slice.
+`trust/scripts/check-all-semantic.sh` pass for this slice. Commit `25333ca8`
+records it. Follow-up inspection found that the concrete projection currently
+uses `memPrimaryReplayRowsOfTable table ++ memDualReadReplayRowsOfTable table`;
+that is probably the wrong chronological target for dual-Mem rows. The next
+step is to confirm the active emission semantics and retarget the table-local
+order/prefix obligations to an interleaved chronological projection if needed.
+
+Interleaved replay projection checkpoint:
+`memReadReplayRowsOfTable` and `memReplayRowsOfTable` now project events in
+per-provider-row order using `flatMap`: primary first, then the pinned dual
+read for that same Mem row. The raw table-projection lowering already targets
+`memReplayRowsOfTable`, so changing the canonical definition retargets the
+table-local order/prefix obligations away from the unprovable
+`primaryRows ++ dualRows` shape. The old primary-only and dual-only projections
+remain as compatibility surfaces for existing selected-row membership lemmas.
+Focused `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build
+ZiskFv.Compliance.OpEnvelope`, `lake build ZiskFv.Compliance`, full `lake
+build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` pass for
+this slice. This is a chronology-shape fix, not full memory soundness closure:
+selector-gating, table-local chronology, prefix-read soundness, and selected
+prefix-state equality remain to be proved from accepted execution data.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining
