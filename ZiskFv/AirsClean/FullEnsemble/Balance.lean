@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.Mem.Bridge
+import ZiskFv.AirsClean.Mem.TraceSpec
 
 /-!
 # Full Clean ensemble balance projections
@@ -1392,6 +1393,52 @@ def memPrimaryReplayRowsOfTable
 def memReplayRowsOfTable
     (table : Table FGL) : List (Interaction.MemoryBusEntry FGL) :=
   memPrimaryReplayRowsOfTable table ++ memDualReadReplayRowsOfTable table
+
+/-- Row-order facts for the concrete mutable-Mem replay projection. This is
+    the table-local target that accepted full-execution integration should
+    prove from Mem sorting, segment carry, and timestamp range facts. -/
+structure MemReplayRowsOfTableOrderFacts
+    (table : Table FGL) : Prop where
+  rowsNodup : (memReplayRowsOfTable table).Nodup
+  chronologicalRows :
+    ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
+      (memReplayRowsOfTable table)
+
+/-- Prefix-read soundness for the concrete mutable-Mem replay projection.
+    Proving this is the memory-continuity part of the accepted Mem trace
+    bridge, after the replay row list has been identified with the concrete
+    table projection. -/
+def MemReplayRowsOfTablePrefixReadSound
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (table : Table FGL) : Prop :=
+  ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
+    initialMemory (memReplayRowsOfTable table)
+
+/-- Transport table-local replay-row order facts across the concrete row-list
+    equality used by the raw accepted Mem extraction path. -/
+theorem generatedMemRowOrderFacts_of_memReplayRowsOfTable
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_rows : rows = memReplayRowsOfTable table)
+    (h_order : MemReplayRowsOfTableOrderFacts table) :
+    ZiskFv.AirsClean.Mem.GeneratedMemRowOrderFacts rows := by
+  rw [h_rows]
+  exact
+    { rowsNodup := h_order.rowsNodup
+      chronologicalRows := h_order.chronologicalRows }
+
+/-- Transport table-local prefix-read soundness across the concrete row-list
+    equality used by the raw accepted Mem extraction path. -/
+theorem memoryBusRowsPrefixReadSound_of_memReplayRowsOfTable
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {initialMemory : Std.ExtHashMap Nat (BitVec 8)}
+    (h_rows : rows = memReplayRowsOfTable table)
+    (h_prefix : MemReplayRowsOfTablePrefixReadSound initialMemory table) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
+      initialMemory rows := by
+  rw [h_rows]
+  exact h_prefix
 
 /-- The projected read-replay rows of a concrete Mem table are embedded in
     the accepted chronological memory-bus row trace. Proving this embedding

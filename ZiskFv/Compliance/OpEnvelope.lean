@@ -7794,6 +7794,35 @@ structure RawAcceptedFullExecutionMemoryReplayRowsProjection
   rows_eq :
     raw.rows = ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
 
+/-- Raw accepted-execution Mem replay projection with table-local replay
+    obligations.
+
+Compared with `RawAcceptedFullExecutionMemoryReplayRowsProjection`, this is
+closer to the real accepted-trace proof target: row order and prefix-read
+soundness are stated over the concrete `memReplayRowsOfTable table`, then
+transported across `rows_eq`. Accepted full-execution integration still has to
+prove these table-local facts from Mem sorting and continuity constraints. -/
+structure RawAcceptedFullExecutionMemoryReplayTableProjection
+    (main : Valid_Main FGL FGL) : Type 2 where
+  length : ℕ
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program length
+  witness :
+    Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble
+        length program).ensemble
+  raw : ZiskFv.AirsClean.Mem.RawAcceptedAirMainMemFullTraceSplit main
+  table : Air.Flat.Table FGL
+  table_mem : table ∈ witness.allTables
+  table_component :
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  rows_eq :
+    raw.rows = ZiskFv.AirsClean.FullEnsemble.memReplayRowsOfTable table
+  tableOrderFacts :
+    ZiskFv.AirsClean.FullEnsemble.MemReplayRowsOfTableOrderFacts table
+  tablePrefixReadSound :
+    ZiskFv.AirsClean.FullEnsemble.MemReplayRowsOfTablePrefixReadSound
+      raw.initialState.mem table
+
 /-- Lower the named row-extraction target to the shared full-execution memory
     trace package already consumed by the load replay bridge. -/
 def AcceptedFullExecutionMemoryRowExtraction.toFullTrace
@@ -7945,6 +7974,36 @@ def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRawRowsProjection
     projection.table projection.table_mem projection.table_component
     (ZiskFv.AirsClean.FullEnsemble.memReplayRowsEmbeddedInTrace_of_rows_eq
       projection.rows_eq)
+
+/-- Lower raw accepted Mem table-projection evidence into the replay-only
+    shared extraction target.
+
+This is the current most concrete shared extraction constructor: initial
+agreement, order-fact transport, prefix-read transport, and table embedding are
+all derived internally from the raw/table projection package. -/
+def AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRawTableProjection
+    {main : Valid_Main FGL FGL}
+    (projection : RawAcceptedFullExecutionMemoryReplayTableProjection main) :
+    AcceptedFullExecutionMemoryReplayRowSplitExtraction main :=
+  let evidence :
+      ZiskFv.AirsClean.Mem.RawAcceptedAirMainMemReplayEvidence
+        projection.raw :=
+    { orderFacts :=
+        ZiskFv.AirsClean.FullEnsemble.generatedMemRowOrderFacts_of_memReplayRowsOfTable
+          projection.rows_eq projection.tableOrderFacts
+      prefixReadSound :=
+        ZiskFv.AirsClean.FullEnsemble.memoryBusRowsPrefixReadSound_of_memReplayRowsOfTable
+          projection.rows_eq projection.tablePrefixReadSound }
+  AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRawRowsProjection
+    { length := projection.length
+      program := projection.program
+      witness := projection.witness
+      raw := projection.raw
+      evidence := evidence
+      table := projection.table
+      table_mem := projection.table_mem
+      table_component := projection.table_component
+      rows_eq := projection.rows_eq }
 
 /-- Package generated split Mem construction plus a concrete mutable-Mem
     replay embedding into the replay-only extraction target. -/

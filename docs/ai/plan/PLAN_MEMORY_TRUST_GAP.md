@@ -228,7 +228,10 @@ clutter.
 - [x] Commit raw accepted split-trace surface.
 - [x] Add raw replay-row projection lowering from raw accepted trace plus table row equality.
 - [x] Verify raw replay-row projection lowering.
-- [ ] Commit raw replay-row projection lowering.
+- [x] Commit raw replay-row projection lowering.
+- [x] Add table-local order/prefix-read replay targets and transport to raw extraction.
+- [x] Verify table-local order/prefix transport slice.
+- [ ] Commit table-local order/prefix transport slice.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
@@ -297,6 +300,21 @@ embedding through `memReplayRowsEmbeddedInTrace_of_rows_eq`. This does not yet
 prove `GeneratedMemRowOrderFacts` or `MemoryBusRowsPrefixReadSound`; it makes
 them the remaining explicit proof target instead of hiding them behind an
 accepted split trace. Focused `lake build ZiskFv.Compliance.OpEnvelope
+ZiskFv.Compliance`, full `lake build`, `git diff --check`, and
+`trust/scripts/check-all-semantic.sh` pass for this slice. Commit `db054421`
+records it.
+
+Table-local order/prefix transport checkpoint:
+`MemReplayRowsOfTableOrderFacts` and
+`MemReplayRowsOfTablePrefixReadSound` now name the order and prefix-read
+obligations over the concrete `memReplayRowsOfTable table` projection. The
+transport lemmas `generatedMemRowOrderFacts_of_memReplayRowsOfTable` and
+`memoryBusRowsPrefixReadSound_of_memReplayRowsOfTable` move those facts across
+the raw row equality. `RawAcceptedFullExecutionMemoryReplayTableProjection`
+uses that table-local evidence to build raw replay evidence internally, and
+`AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRawTableProjection`
+lowers it to the existing replay-only extraction. Focused `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance ZiskFv.Compliance.OpEnvelope
 ZiskFv.Compliance`, full `lake build`, `git diff --check`, and
 `trust/scripts/check-all-semantic.sh` pass for this uncommitted slice.
 
