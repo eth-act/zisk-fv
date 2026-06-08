@@ -260,6 +260,7 @@ clutter.
   `zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope`.
 - [x] Prove selected envelope Mem-row occurrence gives selected active provider coverage.
 - [x] Add active envelope-row state-selection source and lowering to active provider state-selection source.
+- [x] Move the primary compliance theorem from active provider-row source evidence to active envelope-row source evidence.
 - [ ] Prove shared accepted Mem split trace construction from raw accepted execution data.
 - [ ] Prove all-event mutable-Mem replay embedding from the concrete Mem table, without assuming read-only embedding for writes.
 - [ ] Prove selected load provider-row occurrence from full-ensemble route/balance/provider facts.
@@ -421,6 +422,18 @@ and older wrappers call that compatibility theorem explicitly. Focused
 `trust/scripts/check-all-semantic.sh` pass. This makes the active replay
 boundary visible at the top-level theorem, but it is still conditional on
 caller-supplied active extraction/source evidence.
+
+Primary envelope-row boundary checkpoint:
+`zisk_riscv_compliant_program_bus` now exposes
+`OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope`
+as its memory premise. Selected active provider-row coverage is derived
+internally from selected envelope Mem-row occurrence, and the provider-shaped
+active source theorem remains as a compatibility wrapper through the
+construction-shaped theorem. Focused `lake build ZiskFv.Compliance`, full
+`lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh`
+pass. The remaining public memory facts are now active extraction/table
+projection, selected envelope Mem-row occurrence, and selected prefix-state
+equality.
 
 Soundness/completeness wording: this project is closing a soundness/trust gap.
 The old axiom asserted memory-state agreement for selected loads. The remaining

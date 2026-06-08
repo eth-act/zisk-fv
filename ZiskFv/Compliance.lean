@@ -55,12 +55,12 @@ longer includes a broad bridge-trust conjunct or axiom.
 conditional on `OpEnvelope.completenessBurden`, which marks that the theorem
 starts from an already-constructed envelope rather than proving accepted-trace
 completeness. Load-memory replay evidence is exposed separately through
-`OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope`:
+`OpEnvelope.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope`:
 load arms carry a selector-gated accepted Mem replay extraction plus
-per-envelope selected active provider-row coverage and prefix-state equality,
+per-envelope selected envelope Mem-row occurrence and prefix-state equality,
 while non-load arms carry no memory trace data. The compatibility wrappers below
-continue to expose older construction-shaped surfaces, but the primary theorem
-now names the active replay boundary directly.
+continue to expose older construction-shaped and provider-shaped surfaces, but
+the primary theorem now derives selected active provider coverage internally.
 It is also defect-aware while
 `trust/defects.md` contains open claim-weakening defects: the `h_known_bugs`
 binder is orthogonal to the validity witnesses already bundled in
@@ -144,19 +144,21 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstruct
 
     The primary theorem now exposes the selector-gated replay boundary for load
     memory soundness. For load envelopes, callers must provide an active replay
-    extraction, selected active provider-row coverage, and prefix-state equality;
-    for non-load envelopes, the source is trivial. -/
+    extraction, selected envelope Mem-row occurrence in that active extraction's
+    table, and prefix-state equality; selected active provider-row coverage is
+    derived internally. For non-load envelopes, the source is trivial. -/
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
     (source :
-      env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope)
+      env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
   zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
     env h_burden
     (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_activeReplayRowSplitTraceStateSelectionSource
-      source)
+      (env.acceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope_of_envelopeStateSelectionSource
+        source))
     h_known_bugs
 
 /-- Generated Mem construction variant of the known-defect-aware global
@@ -1336,7 +1338,9 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryReplayRow
 
     This is the selector-gated replay boundary: load envelopes carry an active
     replay extraction, selected active provider-row coverage, and prefix-state
-    equality. Inactive Mem emissions are not part of the replay extraction. -/
+    equality. Inactive Mem emissions are not part of the replay extraction.
+    The primary theorem now uses the stronger envelope-row source shape, so
+    this theorem remains as a provider-shaped compatibility form. -/
 theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSource
     (env : OpEnvelope state m r_main)
     (h_burden : env.completenessBurden)
@@ -1344,8 +1348,11 @@ theorem zisk_riscv_compliant_program_bus_of_acceptedFullExecutionMemoryActiveRep
       env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceStateSelectionSourceAtEnvelope)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq :=
-  zisk_riscv_compliant_program_bus
-    env h_burden source h_known_bugs
+  zisk_riscv_compliant_program_bus_of_acceptedAirMainMemFullTraceConstructionAtEnvelope
+    env h_burden
+    (env.acceptedAirMainMemFullTraceConstructionAtEnvelope_of_activeReplayRowSplitTraceStateSelectionSource
+      source)
+    h_known_bugs
 
 /-- Replay-only split-trace envelope-row state-selection source variant.
 
