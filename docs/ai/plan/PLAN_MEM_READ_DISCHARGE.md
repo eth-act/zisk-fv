@@ -105,19 +105,19 @@ whole-execution-induction milestone, explicitly out of scope here.
 
 ### Phase A — Port the durable core (additive only, PR 1)
 
-- [ ] Port `MemTrace.lean`, trimmed: replay semantics, `TraceReplaySound`,
+- [x] Port `MemTrace.lean`, trimmed: replay semantics, `TraceReplaySound`,
       prefix-cursor projection, `MemoryBusRows{ReadWrite,PrefixRead}Sound`,
       `eventOfEntry`/`storeEventOfEntry`, `byte_facts_of_event_agreement`.
       Drop the `Accepted*` packing variants and all `: Prop` placeholder
       fields.
-- [ ] Port the `Airs/Mem.lean` segment/ordering machinery and the
+- [x] Port the `Airs/Mem.lean` segment/ordering machinery and the
       `tools/pil-extract` Mem extraction changes; re-run extraction (warm
       pilout — no 17 GiB rebuild) and commit the extractor change.
-- [ ] Port `Mem/TraceSpec.lean` reduced to the three `Generated*` obligation
+- [x] Port `Mem/TraceSpec.lean` reduced to the three `Generated*` obligation
       statements plus their direct consumers; no packing chains.
-- [ ] Port the Balance.lean replay-row projection definitions and
+- [x] Port the Balance.lean replay-row projection definitions and
       active/dual-selector lemmas actually referenced by Phase B.
-- [ ] Verify: `lake build`, V1 gate. No boundary or baseline changes expected.
+- [x] Verify: `lake build`, V1 gate. No boundary or baseline changes expected.
 
 ### Phase B — Prove the Mem-table side (PR 2, the hard provable part)
 

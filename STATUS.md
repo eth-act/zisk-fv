@@ -1,10 +1,8 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase A additive port; Phase 0 baseline is green after
-initializing `zisk`.
+Current focus: Phase A complete; full `lake build`, pil-extract tests, and
+the V1 trust gate pass after the dual-aware Mem/Balance port.
 Blocking: none.
-Next step: port the trimmed replay core (`ZiskFv/ZiskCircuit/MemTrace.lean`)
-from `memory-trust-gap`, excluding the Accepted* packing variants and placeholder
-`: Prop` fields.
+Next step: review/stage the Phase A diff and commit it.
 
 Context:
 - PR #63 landed: `LoadPromises.mem_read : LoadByteAgreement state e1` is now

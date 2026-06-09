@@ -491,26 +491,27 @@ fn render_constraint(
         .ok_or_else(|| anyhow!("constraint #{} has no expression_idx", idx))?
         .idx as usize;
 
-    // Permutation/lookup constraints mix `F`-typed witness cells with
-    // `ExtF`-typed challenges and exposed values. Lean cannot synthesize
-    // `HMul F ExtF _` without a coercion (and openvm-fv's extractor leaves
-    // these as comments rather than emitting an ill-typed `def`). We do the
-    // same: detect `Challenge`/`AirValue`/`AirGroupValue` references and
-    // skip-stub the constraint. The named-constraint layer (Airs/) provides
-    // a hand-written replacement using `OperationBusEntry`.
-    if expr_uses_extf(pilout, air, expr_idx)? {
-        bail!(
-            "constraint mixes F (witness cells) with ExtF (challenges/exposed values); cannot typecheck without coercion. The named-constraint layer should rebind it via OperationBusEntry"
-        );
-    }
-
+    // Permutation/lookup constraints mix witness cells with challenges and
+    // exposed values. The general `Circuit F ExtF C` form cannot typecheck
+    // those expressions without a coercion from `F` into `ExtF`, but the active
+    // ZisK validators are single-field (`F = ExtF`). Emit these constraints in
+    // that specialized form so the generated layer still records the PIL fact.
+    let uses_extf = expr_uses_extf(pilout, air, expr_idx)?;
     let rendered = render_expr_by_idx(pilout, air, expr_idx)?;
     let suffix = constraint_kind_suffix(kind);
     out.push_str("  @[simp]\n");
-    out.push_str(&format!(
-        "  def constraint_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
-        idx, suffix
-    ));
+    if uses_extf {
+        out.push_str("  -- Mixed witness/challenge constraint emitted for single-field circuits.\n");
+        out.push_str(&format!(
+            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F : Type}} [Field F] [Circuit F F C] (c : C F F) (row: ℕ) :=\n",
+            idx, suffix
+        ));
+    } else {
+        out.push_str(&format!(
+            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
+            idx, suffix
+        ));
+    }
     if let Some(line) = debug_line.as_deref().filter(|s| !s.is_empty()) {
         out.push_str(&format!("    -- {}\n", line));
     }
@@ -609,9 +610,9 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
         OperandKind::Constant(c) => Ok(format_basefield(&c.value)),
         OperandKind::WitnessCol(w) => {
             // `Circuit.main` rotation is `ℕ` in LeanZKCircuit, so we cannot pass
-            // a negative offset as `rotation`. PIL's `'`-prefixed cell (row -k)
-            // at evaluation row `R` is definitionally the same field element as
-            // the cell at row `R - k` with rotation 0. We emit the latter form.
+            // signed offsets as `rotation`. A PIL cell at evaluation row `R`
+            // with row offset `k` is rendered as the same field element at
+            // row `R + k` or `R - k`, with rotation 0.
             //
             // Soundness note for `R < k`: Lean's `ℕ` subtraction saturates at 0,
             // so `row - k` wraps to 0 when `row < k`. Every PIL constraint that
@@ -621,15 +622,11 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
             // by zero and the constraint remains vacuously true. This is why
             // the named-constraint layer can reason about constraint 20 (the
             // PC handshake) without ever applying it at row 0.
-            if w.row_offset > 0 {
-                bail!(
-                    "WitnessCol with positive rowOffset {} not yet supported (PIL typically only uses `'` postfix for row -1)",
-                    w.row_offset
-                );
-            }
             let row_expr = if w.row_offset < 0 {
                 let k = w.row_offset.unsigned_abs();
                 format!("row - {}", k)
+            } else if w.row_offset > 0 {
+                format!("row + {}", w.row_offset)
             } else {
                 "row".to_string()
             };
@@ -643,17 +640,12 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
         }
         OperandKind::Expression(e) => render_expr_by_idx(pilout, air, e.idx as usize),
         OperandKind::FixedCol(f) => {
-            // Same `row - k` rewrite as the WitnessCol arm above; see that
-            // comment for the SEGMENT_L1 soundness argument.
-            if f.row_offset > 0 {
-                bail!(
-                    "FixedCol with positive rowOffset {} not yet supported (PIL typically only uses `'` postfix for row -1)",
-                    f.row_offset
-                );
-            }
+            // Same signed-offset rewrite as the WitnessCol arm above.
             let row_expr = if f.row_offset < 0 {
                 let k = f.row_offset.unsigned_abs();
                 format!("row - {}", k)
+            } else if f.row_offset > 0 {
+                format!("row + {}", f.row_offset)
             } else {
                 "row".to_string()
             };
@@ -1364,12 +1356,16 @@ mod tests {
     }
 
     #[test]
-    fn render_operand_witness_col_positive_offset_still_errors() {
-        // PIL2 doesn't use positive rotations in ZisK's pilout; keep them
-        // failing loudly so we don't silently misrender a future use.
+    fn render_operand_witness_col_positive_offset_rewrites_to_row_add_k() {
+        // Positive row offsets are rendered by shifting the row argument,
+        // matching the negative-offset `row - k` rewrite above.
         let pilout = PilOut::default();
         let air = single_witness_expr_air(1, 7, 1);
-        assert!(render_expr_by_idx(&pilout, &air, 0).is_err());
+        let rendered = render_expr_by_idx(&pilout, &air, 0).expect("should render");
+        assert_eq!(
+            rendered,
+            "((Circuit.main c (id := 1) (column := 7) (row := row + 1) (rotation := 0)) + 0)"
+        );
     }
 
     #[test]
@@ -1707,12 +1703,17 @@ mod tests {
     }
 
     #[test]
-    fn render_operand_fixed_col_positive_offset_errors() {
+    fn render_operand_fixed_col_positive_offset_rewrites_row_add_k() {
         let air = Air {
             expressions: vec![add_expr(fixed_col_operand(3, 1), const_operand(vec![]))],
             ..Default::default()
         };
-        assert!(render_expr_by_idx(&PilOut::default(), &air, 0).is_err());
+        let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
+        assert!(
+            r.contains("(Circuit.preprocessed c (column := 3) (row := row + 1) (rotation := 0))"),
+            "unexpected render: {}",
+            r
+        );
     }
 
     #[test]
@@ -2053,11 +2054,11 @@ mod tests {
     }
 
     #[test]
-    fn render_air_skip_unsupported_emits_stub_for_extf_constraint() {
-        // A constraint mixing a witness cell with a Challenge is ExtF-
-        // typed; without --skip-unsupported the renderer aborts. With it,
-        // a comment stub replaces the def — the named-constraint layer
-        // takes over for these.
+    fn render_air_emits_single_field_def_for_extf_constraint() {
+        // A constraint mixing a witness cell with a Challenge is only
+        // well-typed in Lean when the circuit uses one field for witness cells,
+        // challenges, and exposed values. The renderer should keep the PIL
+        // constraint as a single-field definition instead of skip-stubbing it.
         let pilout = PilOut {
             num_challenges: vec![1],
             air_groups: vec![pilout::AirGroup {
@@ -2076,31 +2077,30 @@ mod tests {
             ..Default::default()
         };
 
-        // First confirm the strict path aborts:
-        {
-            let hit = find_air(&pilout, "Demo").unwrap();
-            let strict = RenderOpts {
-                skip_unsupported: false,
-                only: None,
-            };
-            assert!(render_air(&pilout, hit, &strict).is_err());
-        }
-
-        // Then confirm the lenient path emits a stub instead:
         let hit = find_air(&pilout, "Demo").unwrap();
-        let lenient = RenderOpts {
-            skip_unsupported: true,
+        let opts = RenderOpts {
+            skip_unsupported: false,
             only: None,
         };
-        let out = render_air(&pilout, hit, &lenient).expect("should not abort under skip");
+        let out = render_air(&pilout, hit, &opts).expect("render single-field mixed constraint");
         assert!(
-            out.contains("constraint_0_every_row skipped:"),
-            "expected skip stub for ExtF constraint, got:\n{}",
+            out.contains("Mixed witness/challenge constraint emitted for single-field circuits."),
+            "expected single-field explanatory comment, got:\n{}",
             out
         );
         assert!(
-            !out.contains("def constraint_0_every_row"),
-            "skipped constraint should not emit a def"
+            out.contains("def constraint_0_every_row {C : Type → Type → Type} {F : Type} [Field F] [Circuit F F C] (c : C F F) (row: ℕ) :="),
+            "expected a single-field constraint def, got:\n{}",
+            out
+        );
+        assert!(
+            out.contains("(Circuit.challenge c (index := 0))"),
+            "expected challenge operand to remain in the emitted constraint, got:\n{}",
+            out
+        );
+        assert!(
+            !out.contains("skipped:"),
+            "mixed F/ExtF constraint should not be skip-stubbed"
         );
     }
 

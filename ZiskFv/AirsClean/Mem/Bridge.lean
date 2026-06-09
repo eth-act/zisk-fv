@@ -78,11 +78,34 @@ def memBusMessage (row : MemRow FGL) : MemBusMessage FGL :=
     value_0 := row.value_0
     value_1 := row.value_1 }
 
+/-- Concrete counterpart of Mem's pinned `dual_mem = 1` provider-side
+memory-bus message: `[MEMORY_LOAD_OP, addr * 8, step_dual, 8, value_0,
+value_1]`. -/
+@[reducible]
+def memBusDualMessage (row : MemRow FGL) : MemBusMessage FGL :=
+  { mem_op := 1
+    ptr := row.addr * 8
+    timestamp := row.step_dual
+    width := 8
+    value_0 := row.value_0
+    value_1 := row.value_1 }
+
 theorem eval_memBusMessageExpr
     (env : Environment FGL) (row : Var MemRow FGL) :
     eval env (memBusMessageExpr row) = memBusMessage (eval env row) := by
   rw [MemBusMessage.mk.injEq]
   simp only [memBusMessageExpr,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  repeat constructor <;> simp
+
+theorem eval_memBusDualMessageExpr
+    (env : Environment FGL) (row : Var MemRow FGL) :
+    eval env (memBusDualMessageExpr row) = memBusDualMessage (eval env row) := by
+  rw [MemBusMessage.mk.injEq]
+  simp only [memBusDualMessageExpr,
     ProvableStruct.eval_eq_eval, ProvableStruct.eval,
     ProvableStruct.fromComponents, ProvableStruct.components,
     ProvableStruct.toComponents, ProvableStruct.eval.go,
@@ -150,6 +173,29 @@ def constraints_at (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : Prop :=
   ∧ v.read_same_addr r - (1 - v.addr_changes r) * (1 - v.wr r) = 0
   ∧ (v.addr_changes r * (1 - v.wr r)) * v.value_0 r = 0
   ∧ (v.addr_changes r * (1 - v.wr r)) * v.value_1 r = 0
+
+/-- The generated segment/continuity Mem surface contains the current local
+    Clean bridge constraints as a projection. -/
+theorem constraints_at_of_segment_every_row
+    (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (cols : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (r : ℕ)
+    (h_segment : ZiskFv.Airs.Mem.segment_every_row cols v r) :
+    constraints_at v r := by
+  simpa [constraints_at, ZiskFv.Airs.Mem.core_every_row] using
+    ZiskFv.Airs.Mem.core_every_row_of_segment_every_row
+      (cols := cols) (v := v) (row := r) h_segment
+
+/-- The complete generated Mem every-row surface contains the current local
+    Clean bridge constraints as a projection. -/
+theorem constraints_at_of_generated_every_row
+    (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (seg : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (perm : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (r : ℕ)
+    (h_generated : ZiskFv.Airs.Mem.generated_every_row seg perm v r) :
+    constraints_at v r := by
+  exact constraints_at_of_segment_every_row v seg r h_generated.1
 
 /-- **Bridge theorem.** Given a row of a `Valid_Mem` satisfying the
     9 Clean Component constraints and the boolean range assumptions,

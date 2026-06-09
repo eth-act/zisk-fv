@@ -97,13 +97,13 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
         (by simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component,
           ZiskFv.AirsClean.ArithDiv.circuit,
           ZiskFv.AirsClean.ArithDiv.arithDivElaborated])
-    |>.addTable ZiskFv.AirsClean.Mem.componentWithMemBus
-        (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithMemBus,
-          ZiskFv.AirsClean.Mem.circuitWithMemBus,
-          ZiskFv.AirsClean.Mem.memWithMemBusElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithMemBus,
-          ZiskFv.AirsClean.Mem.circuitWithMemBus,
-          ZiskFv.AirsClean.Mem.memWithMemBusElaborated])
+    |>.addTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
+        (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+          ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
+          ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated])
+        (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+          ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
+          ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated])
     |>.addTable ZiskFv.AirsClean.MemAlign.component
         (by simp [circuit_norm, ZiskFv.AirsClean.MemAlign.component,
           ZiskFv.AirsClean.MemAlign.circuit,
@@ -155,9 +155,9 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
                ZiskFv.AirsClean.ArithDiv.component,
                ZiskFv.AirsClean.ArithDiv.circuit,
                ZiskFv.AirsClean.ArithDiv.arithDivElaborated,
-               ZiskFv.AirsClean.Mem.componentWithMemBus,
-               ZiskFv.AirsClean.Mem.circuitWithMemBus,
-               ZiskFv.AirsClean.Mem.memWithMemBusElaborated,
+               ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+               ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
+               ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated,
                ZiskFv.AirsClean.MemAlign.component,
                ZiskFv.AirsClean.MemAlign.circuit,
                ZiskFv.AirsClean.MemAlign.memAlignWithMemBusElaborated,

@@ -70,10 +70,10 @@ MemoryBus). The byte address is `addr * 8`, `mem_op = wr + 1`
 (read = 1, write = 2), and the multiplicity is `+sel` (provider side).
 
 Modelled here as a `MemBusChannel.emit` with the 6-slot
-`MemBusMessage` shape. The optional `dual_mem` emission at
-`mem.pil:438-441` is not included; it adds a second push that's a
-mirror of the primary one with `step_dual` and `sel_dual`. It remains
-deferred until the dual_mem flag handling lands. -/
+`MemBusMessage` shape. The compatibility `memWithMemBus` circuit emits
+only the primary row; `memWithDualMemBus` also models the pinned
+`dual_mem = 1` push at `mem.pil:438-441`, using `MEMORY_LOAD_OP`,
+`step_dual`, and `sel_dual`. -/
 
 open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
 
@@ -89,6 +89,18 @@ def memBusMessageExpr (row : Var MemRow FGL) : MemBusMessage (Expression FGL) :=
     value_0 := row.value_0
     value_1 := row.value_1 }
 
+/-- Mem's dual-memory provider-side message when `dual_mem = 1`.
+    The PIL row emits a read operation at the same byte address and
+    value, but with `timestamp = step_dual` and selector `sel_dual`. -/
+@[reducible]
+def memBusDualMessageExpr (row : Var MemRow FGL) : MemBusMessage (Expression FGL) :=
+  { mem_op := 1
+    ptr := row.addr * 8
+    timestamp := row.step_dual
+    width := 8
+    value_0 := row.value_0
+    value_1 := row.value_1 }
+
 /-- Mem constraints + provider-side memory-bus emission.
 
     Clean's `pull` has fixed multiplicity `+1`; Mem needs the
@@ -97,6 +109,14 @@ def memBusMessageExpr (row : Var MemRow FGL) : MemBusMessage (Expression FGL) :=
 def memWithMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
   main row
   MemBusChannel.emit row.sel (memBusMessageExpr row)
+
+/-- Mem constraints + both provider-side memory-bus emissions for the
+    pinned `dual_mem = 1` PIL instance. -/
+@[circuit_norm]
+def memWithDualMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
+  main row
+  MemBusChannel.emit row.sel (memBusMessageExpr row)
+  MemBusChannel.emit row.sel_dual (memBusDualMessageExpr row)
 
 /-- Elaborated `memWithMemBus` circuit, ready for use in Clean
     memory-bus component assembly. -/
@@ -111,5 +131,23 @@ def memWithMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
     expose MemBusChannel [MemBusChannel.emitted row.sel (memBusMessageExpr row)]
   channelsLawful := by
     simp only [circuit_norm, memWithMemBus, main, memBusMessageExpr, MemBusChannel]
+
+/-- Elaborated dual-aware Mem circuit exposing both primary and dual
+    memory-bus provider emissions. Kept separate from `memWithMemBusElaborated`
+    so existing FullEnsemble proofs can migrate deliberately. -/
+@[reducible] def memWithDualMemBusElaborated :
+    ElaboratedCircuit FGL MemRow unit where
+  name := "MemWithDualMemBus"
+  main := memWithDualMemBus
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [MemBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose MemBusChannel
+      [ MemBusChannel.emitted row.sel (memBusMessageExpr row)
+        , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ]
+  channelsLawful := by
+    simp only [circuit_norm, memWithDualMemBus, main, memBusMessageExpr,
+      memBusDualMessageExpr, MemBusChannel]
 
 end ZiskFv.AirsClean.Mem
