@@ -67,9 +67,13 @@ Why this split is cheap (verified): each axiom has **exactly one call site**.
 - [x] Delete `axiom aeneas_bridge_trust` (`AeneasBridgeTrust.lean:6254`). Keep
   the 63 `*OfExtractedShape` bridge lemmas (Step 2 uses them).
 - [x] `lake build`. The 63 `equiv_<OP>` are unaffected (none depend on it).
-- [ ] Checkpoint: regenerate baselines; `baseline-zisk-riscv-compliant.txt`
+- [x] Checkpoint: regenerate baselines; `baseline-zisk-riscv-compliant.txt`
   drops to 1; if `AeneasBridgeTrust.lean` is now axiom-free, drop it from
   `allowed-axiom-files.txt` (CODEOWNER-flagged). Commit.
+  Outcome: this was folded into the combined Step 1 commit rather than split as
+  an intermediate commit. Final regeneration drops the global closure to 0, and
+  `AeneasBridgeTrust.lean` is axiom-free and removed from
+  `allowed-axiom-files.txt`.
 
 ## Step 1b — Memory (bounded plumbing)
 
@@ -124,6 +128,9 @@ Why this split is cheap (verified): each axiom has **exactly one call site**.
   discharge), README ledger counts (2 → 0), mark the headline resolved in
   `AUDIT_TRUST_GAPS.md`, and point at Step 2 owners
   (`PLAN_MEMORY_TRUST_GAP_CLOSURE` for memory; this plan's Step 2 for aeneas).
+  Outcome: updated the active project/trust docs and plan index. No tracked
+  `AUDIT_TRUST_GAPS.md` exists in this checkout, so there was no audit file to
+  patch.
 - [x] **Verify:** closure = 0; `nix run .#test` green; `probe_false.lean`
   rejected. Update `STATUS.md` and this checklist. Flag CODEOWNER diffs
   (`baseline-axioms.txt`, `allowed-axiom-files.txt`,
@@ -132,7 +139,9 @@ Why this split is cheap (verified): each axiom has **exactly one call site**.
   `lake build`, and `nix run .#test` passed. CODEOWNER-relevant diffs are
   `trust/generated/baseline-axioms.txt` and `trust/allowed-axiom-files.txt`;
   no `structural-unpacking-exceptions.txt` or `forbidden-param-shapes.txt`
-  change was needed.
+  change was needed. Completion audit reran the closure print, false probe,
+  positive witness, V2 semantic gate, V1 trust gate, and full flake test against
+  current HEAD.
 - [x] Commit, push `axiom-weakening`, and open the PR.
   Outcome: committed as `d16ce96b` and opened
   https://github.com/eth-act/zisk-fv/pull/63.

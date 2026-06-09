@@ -40,3 +40,7 @@ Recent state:
   and the global compliance project-axiom closure is empty.
 - Committed as `d16ce96b` and opened PR #63:
   https://github.com/eth-act/zisk-fv/pull/63.
+- Completion audit reran current-head checks: closure print is empty,
+  `probe_false.lean` is rejected, `load_byte_agreement_witness.lean`
+  typechecks, `trust/scripts/check-all-semantic.sh` passes,
+  `trust/scripts/check-all.sh` passes, and `nix run .#test` passes.
