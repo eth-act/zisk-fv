@@ -6,8 +6,8 @@ Current focus: revised closeout plan has been merged into branch
 `memory-trust-gap` in `/home/cody/zisk-fv/.worktrees/memory-trust-gap`. The
 large branch still contains useful memory replay/local-load infrastructure, but
 the primary theorem still exposes the hard memory premise through active
-replay/state-selection source evidence. PR #63's axiom-weakening change is
-has been folded in by cherry-picking its merged commit and resolving
+replay/state-selection source evidence. PR #63's axiom-weakening change has
+been folded in by cherry-picking its merged commit and resolving
 load-memory conflicts toward this branch's stronger `MemoryTraceAgreement`
 boundary.
 
