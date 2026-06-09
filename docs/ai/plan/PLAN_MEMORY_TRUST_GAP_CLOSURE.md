@@ -2,8 +2,11 @@
 
 ## Summary
 
-Close the soundness-critical load-memory trust gap currently represented by
-`ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load`.
+Close the soundness-critical load-memory trust gap now represented by visible
+load-memory replay obligations. PR #63 removed the former blanket
+`ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load` axiom from `main`; this
+branch keeps the stronger `MemoryTraceAgreement`/`LoadMemoryBurden` shape rather
+than falling back to the weaker byte-fact promise field.
 
 The prior `memory-trust-gap` branch made real progress, but it got inefficient:
 it added useful byte-addressed replay machinery and theorem-shaped local load
@@ -36,8 +39,8 @@ durable work there includes:
 - FullEnsemble/Mem projection work: useful active primary/dual replay-row
   projection lemmas exist, especially around active selector-gated Mem rows.
 
-The hard part remains unproved. In the old branch, the primary theorem still
-takes a premise equivalent to:
+The hard part remains unproved. In this branch, the primary theorem still takes
+a premise equivalent to:
 
 ```lean
 env.AcceptedFullExecutionMemoryActiveReplayRowSplitTraceEnvelopeStateSelectionSourceAtEnvelope
@@ -59,9 +62,9 @@ So the old branch names the gap but does not close it.
 - Do not chase a zero-axiom trust ledger by hiding assumptions in constructor
   fields.
 - Do not try to land the entire old memory branch as-is.
-- Do not remove `row_models_sail_state_load` until the replacement theorem is
-  genuinely proved from accepted execution data, or an explicit fallback trust
-  boundary is intentionally added and documented.
+- Do not reintroduce `row_models_sail_state_load`. The current explicit boundary
+  is the selected-load replay/source evidence that yields
+  `MemoryTraceAgreement`.
 
 ## Strategy
 
@@ -106,8 +109,9 @@ read-value replay soundness.
 - [ ] Copy this plan into that worktree's `docs/ai/plan/`.
 - [ ] Set that worktree's `STATUS.md` to this plan.
 - [ ] Confirm current explicit trust state before memory work:
-  `aeneas_bridge_trust` and `row_models_sail_state_load` are expected in the
-  global closure.
+  `aeneas_bridge_trust` and `row_models_sail_state_load` must remain absent
+  from the global closure. The active load-memory assumption is the visible
+  selected replay/source evidence that derives `MemoryTraceAgreement`.
 
 Verification:
 
@@ -137,8 +141,8 @@ Acceptance criteria:
 
 - [ ] Update `MemModel.lean` so load correctness consumes
   `MemoryTraceAgreement state (eventOfEntry e)`.
-- [ ] Keep or restore `row_models_sail_state_load` temporarily as the explicit
-  old trust boundary until all wrappers are retargeted.
+- [ ] Keep `row_models_sail_state_load` deleted. Any temporary trust boundary
+  must be narrower and named around the selected replay/timeline obligation.
 - [ ] Update the local 1/2/4/8-byte projection lemmas to use the new theorem.
 - [ ] Fix address semantics while doing this: the memory-bus pointer is the
   byte address, and the Mem AIR word address relation is `ptr = addr * 8`
@@ -262,7 +266,7 @@ Acceptance criteria:
 
 - Load equivalence theorems no longer depend on
   `row_models_sail_state_load`.
-- `row_models_sail_state_load` can be deleted or left unused before deletion.
+- `row_models_sail_state_load` remains deleted.
 
 ### 8. Remove or Replace the Axiom
 
@@ -367,7 +371,7 @@ Likely do not salvage directly:
 - Selected load `MemoryTraceAgreement` is derived from accepted Mem replay plus
   selected Sail prefix state.
 - `row_models_sail_state_load` is removed.
-- Any remaining memory trust is narrower, explicit, and visible in the global
-  axiom closure.
+- Any remaining memory trust is narrower, explicit, and visible in theorem
+  boundaries or, if it must be axiomatized, in the global axiom closure.
 - The final diff is organized around one canonical theorem, not a family of
   wrapper variants.

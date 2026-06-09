@@ -6,7 +6,10 @@ Current focus: revised closeout plan has been merged into branch
 `memory-trust-gap` in `/home/cody/zisk-fv/.worktrees/memory-trust-gap`. The
 large branch still contains useful memory replay/local-load infrastructure, but
 the primary theorem still exposes the hard memory premise through active
-replay/state-selection source evidence.
+replay/state-selection source evidence. PR #63's axiom-weakening change is
+has been folded in by cherry-picking its merged commit and resolving
+load-memory conflicts toward this branch's stronger `MemoryTraceAgreement`
+boundary.
 
 Blocking: no local compile blocker known. The real soundness blockers remain
 active table-local Mem replay order facts, active prefix-read soundness,
@@ -28,6 +31,15 @@ Branch-state note:
   +21,366/-769: roughly +13,044 compliance boundary/wrapper lines, +4,098
   AIR/Mem/full-ensemble lines, +1,351 load replay consumer lines, +2,809
   docs/trust/status lines, and only +63 net extractor lines.
+- The merged `axiom-weakening` worktree/branch was cleaned up after PR #63
+  merged. Its false-probe and byte-agreement witness are now being carried into
+  this branch's semantic gate; `LoadByteAgreement` is a named byte-fact
+  projection derived from `MemoryTraceAgreement`, not a weaker replacement for
+  the replay burden.
+- Verification after the PR #63 merge-in passed: `lake build`,
+  `trust/scripts/check-all-semantic.sh`, `trust/scripts/check-all.sh`, and
+  `nix run .#test`. Regenerated anti-laundering ledgers record pre-existing
+  branch shrinkage in SLLW/SRAW/SRLW and wrapper burdens.
 
 Prior plan note:
 - The older `PLAN_MEMORY_TRUST_GAP.md` records the long implementation history.

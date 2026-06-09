@@ -4,6 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.SailSpec.Auxiliaries
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.ZiskCircuit.MemTrace
 
 /-!
@@ -21,6 +22,31 @@ This bundle is part of the shared promise-family design in
 namespace ZiskFv.EquivCore.Promises
 
 open ZiskFv.Trusted
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
+
+/-- Sail memory byte agreement for the load-side memory-bus entry. -/
+def LoadByteAgreement
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (e : Interaction.MemoryBusEntry FGL) : Prop :=
+  state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3)
+    ∧ state.mem[e.ptr.toNat + 4]? = .some (byteAt e 4)
+    ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
+    ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
+    ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7)
+
+/-- Byte-agreement projection from the memory branch's stronger replay agreement. -/
+theorem loadByteAgreement_of_mem_trace_agreement
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (e : Interaction.MemoryBusEntry FGL)
+    (h_agree :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e)) :
+    LoadByteAgreement state e := by
+  simpa [LoadByteAgreement] using
+    ZiskFv.ZiskCircuit.MemTrace.byte_facts_of_event_agreement state e h_agree
 
 /-- 11-field structural bundle for LBU, LHU, LWU, LD. -/
 structure LoadPromises
