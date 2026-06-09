@@ -31,8 +31,8 @@ when they are not trust policy or trust evidence.
 
 | Ledger                            | Count      | File                                                                                         |
 | ---                               | ---:        | ---                                                                                          |
-| Source Lean trust declarations    | 8          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Global compliance theorem closure | 2          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations    | 6          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Global compliance theorem closure | 0          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 | Per-canonical-theorem closures    | 63 entries | [`generated/baseline-equiv-axiom-deps.txt`](generated/baseline-equiv-axiom-deps.txt)         |
 
 ## Generated Files

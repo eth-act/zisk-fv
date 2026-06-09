@@ -21,14 +21,14 @@ Current generated counts:
 
 | Surface                                                                | Count | Ledger                                                                                       |
 | ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 8     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 2     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Source Lean trust declarations                                         | 6     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 0     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
-The source trust ledger contains six Clean completeness declarations plus two
-soundness-relevant bridge declarations. The global theorem closure reaches the
-Aeneas row-lowering bridge and memory state load bridge; the Clean completeness
-declarations remain source-ledger trust but are outside the global soundness
-closure.
+The source trust ledger contains six Clean completeness declarations. The global
+theorem currently has no transitive project-axiom closure. The former Aeneas
+row-lowering and memory-state load bridge axioms are now visible conditional
+inputs: `env.aeneasBridgeTrust` on the global theorem and
+`LoadPromises.mem_read` on load promise bundles.
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
@@ -38,11 +38,11 @@ Lean axiom ledger:
 
 ## Current Classes
 
-| Class                    | Declarations | In global closure | Removability                                                                                             |
-| ---                      | ---:         | ---:              | ---                                                                                                      |
-| Aeneas row-lowering bridge | 1          | 1                 | Removable by importing generated Aeneas Lean into main Lake and deriving the envelope bridge fields.      |
-| Memory state load bridge | 1            | 1                 | Removable by proving the memory-row model directly from extracted memory AIR facts and Sail memory.      |
-| Clean completeness       | 6            | 0                 | Completeness-only placeholders; removable by proving each Clean circuit completeness theorem internally. |
+| Class                         | Declarations | In global closure | Removability                                                                                             |
+| ---                           | ---:         | ---:              | ---                                                                                                      |
+| Aeneas row-lowering condition | 0            | 0                 | Discharge `env.aeneasBridgeTrust` by importing generated Aeneas Lean into main Lake.                      |
+| Memory load byte agreement    | 0            | 0                 | Discharge `LoadPromises.mem_read` via the memory replay relation and extracted memory AIR facts.          |
+| Clean completeness            | 6            | 0                 | Completeness-only placeholders; removable by proving each Clean circuit completeness theorem internally. |
 
 
 ## Retired Row-Shape Bridge
@@ -65,11 +65,11 @@ The production-backed Aeneas extraction is checked by the repository test path,
 but the generated Aeneas Lean is not yet imported by the main Lake proof to
 derive every row-provenance, row-mode, source-lane, immediate, PC, and link
 bridge fact consumed by the compliance wrappers. Until those generated facts
-are imported and used inside main Lake, the gap is represented by this explicit
-global trust declaration:
+are imported and used inside main Lake, the gap is represented by a visible
+global theorem hypothesis:
 
 ```text
-ZiskFv.Compliance.aeneas_bridge_trust
+h_bridge : env.aeneasBridgeTrust
 ```
 
 The existing wrapper and `OpEnvelope` signatures still expose those fields
@@ -151,21 +151,25 @@ are needed to remove the remaining caller-burden bridge, row-shape, and
 promise fields from wrapper and `OpEnvelope` boundaries. The `bus_shape`
 category is already zero after the W-shift structural cleanup.
 
-## Memory State Load Bridge
+## Memory Load Byte Agreement
 
-Declaration:
+The former global load-side memory bridge axiom has been demoted to a visible
+promise field:
 
 ```text
-ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
+LoadPromises.mem_read : LoadByteAgreement state e1
 ```
 
-This bridge says that the memory row selected by the circuit-side memory model
-loads the same bytes as the Sail state memory. It is an unproved
-model-fidelity boundary, not a known bug.
+This condition says that the load-side memory-bus entry bytes agree with Sail
+memory at `e1.ptr + 0..7`. It is a conditional memory-model boundary, not a
+known bug. `trust/consistency/load_byte_agreement_witness.lean` typechecks a
+concrete state and entry satisfying the byte-agreement predicate, while
+`trust/consistency/probe_false.lean` must fail to typecheck because the former
+blanket axiom no longer exists.
 
 Retirement path: prove the end-to-end connection from extracted Mem AIR
 constraints, memory-bus matching, byte assembly, and Sail memory
-representation.
+representation via the memory replay relation.
 
 ## Platform Profile
 

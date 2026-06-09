@@ -3,6 +3,7 @@ import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.ZiskCircuit.MemModel
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.EquivCore.Bridge.SailStateBridge
+import ZiskFv.EquivCore.Promises.Load
 import ZiskFv.SailSpec.ld
 import ZiskFv.SailSpec.sd
 import ZiskFv.SailSpec.sb
@@ -258,9 +259,8 @@ This packages the two pieces needed to replace the old LD path:
 
 * Main-side load/rd-write emission facts, derived from a concrete Clean
   Main row and legacy `matches_memory_entry` adapters.
-* Sail-memory byte facts, derived from an explicit Clean Mem provider row
-  via `mem_load_correct_of_provider_row`, avoiding
-  `lookup_consumer_matches_provider_load`.
+* Sail-memory byte facts, supplied explicitly by the canonical load promise,
+  while the explicit Clean Mem provider row still checks the structural payload.
 
 The structural pins are deliberately explicit. In the final T4 migration
 they must come from the memory-family witness, balance proof, row equality,
@@ -301,7 +301,8 @@ theorem ld_discharge_full_clean_provider
       rd.toNat = (Transpiler.wrap_to_regidx mainRow.rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
     (h_mem_legacy_addr : mem.addr r_mem = e1.ptr)
-    (h_mem_wr : mem.wr r_mem = 0) :
+    (_h_mem_wr : mem.wr r_mem = 0)
+    (h_mem : ZiskFv.EquivCore.Promises.LoadByteAgreement state e1) :
     ((main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
       ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
       ∧ e1.as = 2
@@ -334,13 +335,10 @@ theorem ld_discharge_full_clean_provider
       main r_main mainRow e1 e2 r1_val imm rd
       h_main_row h_main_spec h_store_pc h_main_b_match h_main_c_match
       h_addr1 h_addr2_zero_iff h_addr2_idx
-  have h_provider :
+  have _h_provider :
       ZiskFv.Airs.MemoryBus.MemBridge.mem_row_matches_entry mem r_mem e1 :=
     ZiskFv.AirsClean.Mem.mem_row_matches_entry_of_payload_match_valid
       mem r_mem memRow e1 h_mem_row h_mem_sel h_mem_legacy_addr h_mem_match
-  have h_mem :=
-    ZiskFv.ZiskCircuit.MemModel.mem_load_correct_of_provider_row
-      mem r_mem e1 state h_provider h_mem_wr
   obtain ⟨hb0, hb1, h_as, h_mult, hc0, hc1, h_ptr, h_rd0, h_rdidx,
     h_copy0, h_copy1⟩ := h_main
   exact ⟨⟨⟨hb0, hb1, h_as, h_mult⟩, ⟨hc0, hc1⟩, h_ptr, h_rd0,
@@ -354,7 +352,8 @@ theorem ld_discharge_full_clean_provider_of_witness
     (bus : ZiskFv.Compliance.BusRows)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
-    (w : LdCleanWitness main mem r_main bus ld_input) :
+    (w : LdCleanWitness main mem r_main bus ld_input)
+    (h_mem : ZiskFv.EquivCore.Promises.LoadByteAgreement state bus.e1) :
     ((main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo bus.e1
       ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi bus.e1
       ∧ bus.e1.as = 2
@@ -389,7 +388,7 @@ theorem ld_discharge_full_clean_provider_of_witness
     w.main_row w.mem_row w.main_spec w.store_pc
     w.main_b_match w.main_c_match w.mem_match
     w.addr1 w.addr2_zero_iff w.addr2_idx
-    w.mem_sel w.mem_legacy_addr w.mem_wr
+    w.mem_sel w.mem_legacy_addr w.mem_wr h_mem
 
 /-! ## Store-side Clean adapters -/
 

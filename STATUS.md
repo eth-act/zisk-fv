@@ -1,20 +1,46 @@
-Active plan: docs/ai/plan/PLAN_EXPLICIT_TRUST_BOUNDARY_REPAIR.md
-Current focus: explicit trust-boundary repair complete; PR branch in progress.
+Active plan: docs/ai/plan/PLAN_AXIOM_WEAKENING.md
+Current focus: Step 1 is complete; PR is open.
 Blocking: none.
-Next step: open PR for `restore-explicit-trust-axioms`.
+Next step: respond to review on https://github.com/eth-act/zisk-fv/pull/63.
+Digression: scope check requested; current read is bounded plumbing, not a
+redesign, but it necessarily touches the shared load promise bundle and the 7
+load call paths.
 
 Recent state:
-- User clarified the goal is not to close trust gaps or add an
-  accepted-execution theorem layer.
-- The desired repair is to restore explicit axioms where PR #55/#56/#58 moved
-  trust into harder-to-spot hypotheses or `OpEnvelope` fields.
-- Clean completeness placeholders have been restored and the affected
-  components point at them again.
-- `aeneas_bridge_trust` has been restored and made a conjunct of
-  `OpEnvelope.exec_eq`.
-- Trust allowlists, tolerated completeness entries, generated ledgers, and
-  trust docs now record 8 source axioms and 2 global-closure axioms.
-- `lake build ZiskFv`, `trust/scripts/check-all.sh`,
-  `trust/scripts/check-all-semantic.sh`, and the global closure print all
-  passed; the closure is exactly `aeneas_bridge_trust` plus
-  `row_models_sail_state_load`.
+- Created branch/worktree `axiom-weakening` from current `origin/main`
+  (`ef4df58b Add Lean REPL dependency`).
+- `nix run .#populate` restored local `build/sail-lean` and `build/clean-lean`
+  dependencies after the first cache attempt exposed the missing local path.
+- `lake exe cache get` passed.
+- The active plan file was local-only in the parent checkout, so this branch now
+  carries `docs/ai/plan/PLAN_AXIOM_WEAKENING.md`.
+- `trust/consistency/probe_false.lean` compiles before the repair and derives
+  `False` with axiom closure containing
+  `ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load`.
+- `trust/scripts/check-all-semantic.sh` now requires that probe to be rejected.
+- `lake build` passed after replacing `aeneas_bridge_trust env` with explicit
+  `h_bridge : env.aeneasBridgeTrust` and deleting the Aeneas axiom.
+- Direct closure print now contains only
+  `ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load`.
+- `row_models_sail_state_load` has been deleted; `MemModel` now repackages
+  explicit byte facts, and the 7 load core modules build with the new
+  `LoadPromises.mem_read` field.
+- Full `lake build` passed after memory demotion.
+- `trust/consistency/probe_false.lean` is rejected, and direct closure printing
+  for `zisk_riscv_compliant_program_bus` now returns no project axioms.
+- `trust/scripts/check-no-output-eq.sh` passed; the new byte-agreement promise
+  is not a forbidden output-equality shape.
+- Generated ledgers now report 6 source trust declarations and 0 project
+  axioms in the global compliance closure.
+- Trust docs now describe Aeneas as an explicit theorem hypothesis and memory
+  agreement as `LoadPromises.mem_read`; a positive byte-agreement witness is
+  wired into the semantic gate.
+- `trust/scripts/check-all-semantic.sh`, `trust/scripts/check-all.sh`,
+  `lake build`, and `nix run .#test` all passed. The false probe is rejected,
+  and the global compliance project-axiom closure is empty.
+- Committed as `d16ce96b` and opened PR #63:
+  https://github.com/eth-act/zisk-fv/pull/63.
+- Completion audit reran current-head checks: closure print is empty,
+  `probe_false.lean` is rejected, `load_byte_agreement_witness.lean`
+  typechecks, `trust/scripts/check-all-semantic.sh` passes,
+  `trust/scripts/check-all.sh` passes, and `nix run .#test` passes.

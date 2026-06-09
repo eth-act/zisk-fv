@@ -8,9 +8,9 @@ row-provenance/source-lane field from the extracted production lowerer.  The
 corresponding facts are carried by `OpEnvelope` constructors as ordinary proof
 fields.  This file keeps the representative bridge predicate and
 extracted-shape constructors available for audit and generated-row-shape
-integration. The broad `aeneas_bridge_trust` axiom is deliberately explicit in
-the current global theorem closure until generated Aeneas Lean is imported by
-main Lake and proves these fields instead.
+integration. The `aeneasBridgeTrust` predicate is deliberately explicit as a
+global theorem hypothesis until generated Aeneas Lean is imported by main Lake
+and proves these fields instead.
 -/
 
 namespace ZiskFv.Compliance
@@ -24,10 +24,11 @@ variable {m : Valid_Main FGL FGL} {r_main : Nat}
 /-- The Aeneas-backed row-lowering facts currently carried by `OpEnvelope`.
 
 This predicate makes representative bridge facts that replaced the retired
-hand-written Lean transpiler visible for local audit. The existing wrappers
-still take their full proof-field parameter lists, so the caller-burden ledgers
-remain the mechanical inventory of fields that generated/full-ensemble proof
-integration can later remove. -/
+hand-written Lean transpiler visible for local audit. The global theorem assumes
+the predicate explicitly until generated Aeneas Lean is imported by the main
+proof. The existing wrappers still take their full proof-field parameter lists,
+so the caller-burden ledgers remain the mechanical inventory of fields that
+generated/full-ensemble proof integration can later remove. -/
 def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
   | .beq .. =>
       m.is_external_op r_main = 1
@@ -6246,13 +6247,5 @@ theorem OpEnvelope.aeneasBridgeTrust_sraiOfExtractedShape
       h_input_r1_row h_shift_pin_row h_lane_rd).aeneasBridgeTrust := by
   unfold OpEnvelope.sraiOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨h_input_r1_row, h_shift_pin_row⟩
-
-/-- **Aeneas row-lowering bridge trust axiom.**
-
-The generated Aeneas extraction is checked in CI, but generated Aeneas Lean is
-not yet imported to prove these bridge facts inside the main Lake theorem. -/
-axiom aeneas_bridge_trust
-    (env : OpEnvelope state m r_main) :
-    env.aeneasBridgeTrust
 
 end ZiskFv.Compliance

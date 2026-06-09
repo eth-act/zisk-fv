@@ -72,10 +72,16 @@ if [ -d .lake/build ]; then
     echo "#"
     body=$(lake exe trust-gate print-axiom-closure \
       ZiskFv.Compliance.zisk_riscv_compliant_program_bus)
-    n=$(echo "$body" | wc -l)
+    if [ -n "$body" ]; then
+      n=$(printf '%s\n' "$body" | grep -c .)
+    else
+      n=0
+    fi
     echo "# Total entries: $n"
     echo "#"
-    echo "$body"
+    if [ -n "$body" ]; then
+      printf '%s\n' "$body"
+    fi
   } > trust/generated/baseline-zisk-riscv-compliant.txt
   echo "  → trust/generated/baseline-zisk-riscv-compliant.txt"
 else

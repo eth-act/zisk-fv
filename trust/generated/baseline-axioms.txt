@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 8
+# Total entries: 6
 #
 fa200b1ab7404b33  ZiskFv/AirsClean/Completeness.lean:31  axiom     binaryAdd_circuit_completeness
 3f25cdecf241bf62  ZiskFv/AirsClean/Completeness.lean:44  axiom     memAlignByte_circuit_completeness
@@ -10,5 +10,3 @@ ab814329258a5f2c  ZiskFv/AirsClean/Completeness.lean:57  axiom     memAlignReadB
 7a63389181c1c135  ZiskFv/AirsClean/Completeness.lean:70  axiom     arithMul_circuit_completeness
 7dc4e1ea8c450b00  ZiskFv/AirsClean/Completeness.lean:83  axiom     arithDiv_circuit_completeness
 aac29e945284052a  ZiskFv/AirsClean/Completeness.lean:98  axiom     mainWithRomAndMemBus_circuit_completeness
-4ffe49ed45a7eff8  ZiskFv/Compliance/AeneasBridgeTrust.lean:6254  axiom     aeneas_bridge_trust
-b4ad9615202917eb  ZiskFv/ZiskCircuit/MemModel.lean:121  axiom     row_models_sail_state_load
