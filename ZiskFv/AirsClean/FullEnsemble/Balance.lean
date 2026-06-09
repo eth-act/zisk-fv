@@ -1390,6 +1390,110 @@ def activeMemReplayEntriesOfRow
     ++
   (if row.sel_dual = 1 then [memDualReadReplayEntryOfRow row] else [])
 
+/-- If neither selector is active, a Mem row contributes no active read-replay
+    entries. -/
+theorem activeMemReadReplayEntriesOfRow_eq_nil_of_inactive
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel ≠ 1)
+    (h_sel_dual : row.sel_dual ≠ 1) :
+    activeMemReadReplayEntriesOfRow row = [] := by
+  simp [activeMemReadReplayEntriesOfRow, h_sel, h_sel_dual]
+
+/-- If neither selector is active, a Mem row contributes no active
+    read/write replay entries. -/
+theorem activeMemReplayEntriesOfRow_eq_nil_of_inactive
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel ≠ 1)
+    (h_sel_dual : row.sel_dual ≠ 1) :
+    activeMemReplayEntriesOfRow row = [] := by
+  simp [activeMemReplayEntriesOfRow, h_sel, h_sel_dual]
+
+/-- A primary-only selected row contributes exactly its primary read entry to
+    the active read-replay surface. -/
+theorem activeMemReadReplayEntriesOfRow_eq_primary_of_sel_of_not_sel_dual
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel = 1)
+    (h_sel_dual : row.sel_dual ≠ 1) :
+    activeMemReadReplayEntriesOfRow row =
+      [memPrimaryReadReplayEntryOfRow row] := by
+  simp [activeMemReadReplayEntriesOfRow, h_sel, h_sel_dual]
+
+/-- A primary-only selected row contributes exactly its primary
+    polarity-preserving entry to the active read/write replay surface. -/
+theorem activeMemReplayEntriesOfRow_eq_primary_of_sel_of_not_sel_dual
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel = 1)
+    (h_sel_dual : row.sel_dual ≠ 1) :
+    activeMemReplayEntriesOfRow row =
+      [memPrimaryReplayEntryOfRow row] := by
+  simp [activeMemReplayEntriesOfRow, h_sel, h_sel_dual]
+
+/-- A dual-only selected row contributes exactly its dual read entry to the
+    active read-replay surface. -/
+theorem activeMemReadReplayEntriesOfRow_eq_dual_of_not_sel_of_sel_dual
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel ≠ 1)
+    (h_sel_dual : row.sel_dual = 1) :
+    activeMemReadReplayEntriesOfRow row =
+      [memDualReadReplayEntryOfRow row] := by
+  simp [activeMemReadReplayEntriesOfRow, h_sel, h_sel_dual]
+
+/-- A dual-only selected row contributes exactly its dual read entry to the
+    active read/write replay surface. -/
+theorem activeMemReplayEntriesOfRow_eq_dual_of_not_sel_of_sel_dual
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel ≠ 1)
+    (h_sel_dual : row.sel_dual = 1) :
+    activeMemReplayEntriesOfRow row =
+      [memDualReadReplayEntryOfRow row] := by
+  simp [activeMemReplayEntriesOfRow, h_sel, h_sel_dual]
+
+/-- When both selectors are active, active read-replay emission is primary
+    first and then dual. -/
+theorem activeMemReadReplayEntriesOfRow_eq_primary_dual_of_sel_of_sel_dual
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel = 1)
+    (h_sel_dual : row.sel_dual = 1) :
+    activeMemReadReplayEntriesOfRow row =
+      [memPrimaryReadReplayEntryOfRow row, memDualReadReplayEntryOfRow row] := by
+  simp [activeMemReadReplayEntriesOfRow, h_sel, h_sel_dual]
+
+/-- When both selectors are active, active read/write replay emission is
+    primary first and then dual. -/
+theorem activeMemReplayEntriesOfRow_eq_primary_dual_of_sel_of_sel_dual
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel = 1)
+    (h_sel_dual : row.sel_dual = 1) :
+    activeMemReplayEntriesOfRow row =
+      [memPrimaryReplayEntryOfRow row, memDualReadReplayEntryOfRow row] := by
+  simp [activeMemReplayEntriesOfRow, h_sel, h_sel_dual]
+
+/-- Under the generated per-row Mem spec, selecting the dual read emission
+    forces the primary selector too, so active read-replay emission is
+    primary first and then the pinned dual read. -/
+theorem activeMemReadReplayEntriesOfRow_eq_primary_dual_of_spec_of_sel_dual
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_spec : ZiskFv.AirsClean.Mem.Spec row)
+    (h_sel_dual : row.sel_dual = 1) :
+    activeMemReadReplayEntriesOfRow row =
+      [memPrimaryReadReplayEntryOfRow row, memDualReadReplayEntryOfRow row] := by
+  exact activeMemReadReplayEntriesOfRow_eq_primary_dual_of_sel_of_sel_dual
+    (ZiskFv.AirsClean.Mem.sel_of_sel_dual_one_of_spec row h_spec h_sel_dual)
+    h_sel_dual
+
+/-- Under the generated per-row Mem spec, selecting the dual read emission
+    forces the primary selector too, so active read/write replay emission is
+    primary first and then the pinned dual read. -/
+theorem activeMemReplayEntriesOfRow_eq_primary_dual_of_spec_of_sel_dual
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_spec : ZiskFv.AirsClean.Mem.Spec row)
+    (h_sel_dual : row.sel_dual = 1) :
+    activeMemReplayEntriesOfRow row =
+      [memPrimaryReplayEntryOfRow row, memDualReadReplayEntryOfRow row] := by
+  exact activeMemReplayEntriesOfRow_eq_primary_dual_of_sel_of_sel_dual
+    (ZiskFv.AirsClean.Mem.sel_of_sel_dual_one_of_spec row h_spec h_sel_dual)
+    h_sel_dual
+
 /-- Primary-read replay rows projected from every row of a Mem table. -/
 @[reducible]
 def memPrimaryReadReplayRowsOfTable

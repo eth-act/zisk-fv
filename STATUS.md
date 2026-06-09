@@ -1,10 +1,14 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase A complete; full `lake build`, pil-extract tests, and
-the V1 trust gate pass after the dual-aware Mem/Balance port.
+Current focus: Phase B Mem-table side. Row-local active replay projection
+slice is verified: inactive rows emit no events, and a `sel_dual = 1` row
+satisfying Mem `Spec` emits primary first and then the pinned dual read.
 Blocking: none.
-Next step: review/stage the Phase A diff and commit it.
+Next step: continue into the same-address value-carry and write-update
+continuity facts.
 
 Context:
+- Phase A is committed at `0c222595` with full `lake build`, pil-extract
+  tests, and the V1 trust gate passing.
 - PR #63 landed: `LoadPromises.mem_read : LoadByteAgreement state e1` is now
   the visible memory trust boundary (trusted-base.md class "Memory load byte
   agreement"); global project-axiom closure is 0.

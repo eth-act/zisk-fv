@@ -130,8 +130,8 @@ and read events satisfy `MemoryBusRowsPrefixReadSound` — **derived from
       bundle).
 - [ ] Write-update soundness (written lanes replace, untouched lanes carry).
 - [ ] Segment boundary carry-in/out.
-- [ ] Dual-row (`dual_mem = 1`) event emission ordering, primary-then-dual.
-- [ ] Selector gating: inactive rows emit no events.
+- [x] Dual-row (`dual_mem = 1`) event emission ordering, primary-then-dual.
+- [x] Selector gating: inactive rows emit no events.
 - [ ] Nodup/order facts for cursor uniqueness.
 - [ ] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
