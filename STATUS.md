@@ -1,9 +1,11 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: plan written (2026-06-09); execution not started.
+Current focus: Phase 0 setup cleanup in the `mem-read-discharge` worktree:
+remove completed/superseded tracked plans and stale work descriptions so the
+active stream is unambiguous.
 Blocking: none.
-Next step: Phase 0 — create `mem-read-discharge` worktree from origin/main,
-`lake exe cache get`, baseline-green check, then Phase A (port replay core +
-Mem AIR machinery from the `memory-trust-gap` branch).
+Next step: run `lake exe cache get`, `nix run .#populate`, and the baseline
+green checks before Phase A (port replay core + Mem AIR machinery from the
+`memory-trust-gap` branch).
 
 Context:
 - PR #63 landed: `LoadPromises.mem_read : LoadByteAgreement state e1` is now
@@ -16,5 +18,6 @@ Context:
   Compliance.lean is scrapped. Its two plan files
   (`PLAN_MEMORY_TRUST_GAP{,_CLOSURE}.md`) are superseded by the new plan. The
   branch stays untouched as a salvage reference until Phase D cleanup.
-- The prior AXIOM_WEAKENING stream (old contents of this file) completed with
-  PR #63 and is closed.
+- The prior AXIOM_WEAKENING, explicit trust-boundary repair, and OpEnvelope gap
+  streams are completed; their tracked planning/work-description docs are being
+  removed from this branch to avoid confusing them with active work.
