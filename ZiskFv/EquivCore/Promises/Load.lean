@@ -4,6 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.SailSpec.Auxiliaries
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 # `LoadPromises` — structural bundle for zero-extended LOAD opcodes
@@ -20,8 +21,22 @@ This bundle is part of the shared promise-family design in
 namespace ZiskFv.EquivCore.Promises
 
 open ZiskFv.Trusted
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
-/-- 12-field structural bundle for LBU, LHU, LWU, LD. -/
+/-- Sail memory byte agreement for the load-side memory-bus entry. -/
+def LoadByteAgreement
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (e : Interaction.MemoryBusEntry FGL) : Prop :=
+  state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3)
+    ∧ state.mem[e.ptr.toNat + 4]? = .some (byteAt e 4)
+    ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
+    ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
+    ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7)
+
+/-- 13-field structural bundle for LBU, LHU, LWU, LD. -/
 structure LoadPromises
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mstatus : RegisterType Register.mstatus)
@@ -46,5 +61,6 @@ structure LoadPromises
   m1_as : e1.as.val = 2
   m2_mult : e2.multiplicity = 1
   m2_as : e2.as.val = 1
+  mem_read : LoadByteAgreement state e1
 
 end ZiskFv.EquivCore.Promises

@@ -66,7 +66,7 @@ lemma equiv_LW
       w.main_row w.mem_row w.main_spec w.store_pc
       w.main_b_match w.main_c_match w.mem_match
       w.addr1 w.addr2_zero_iff w.addr2_idx
-      w.mem_sel w.mem_legacy_addr w.mem_wr
+      w.mem_sel w.mem_legacy_addr w.mem_wr promises.mem_read
   have lfd :=
     ZiskFv.EquivCore.Promises.load_full_discharge_LW_of_match_clean
       main v r_main r_binary offset env e1 h_static h_match h_main_op

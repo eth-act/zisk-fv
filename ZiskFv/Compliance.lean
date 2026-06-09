@@ -45,10 +45,10 @@ channel-balance statement, partitioned across the ten dispatchers:
 
 ## Trust note
 
-The global closure intentionally includes
-`ZiskFv.Compliance.aeneas_bridge_trust`, the explicit trust boundary for
-Aeneas-backed row-lowering facts that are still carried as `OpEnvelope` fields
-while generated Aeneas Lean is not imported by the main proof.
+The global theorem explicitly assumes `env.aeneasBridgeTrust`, the visible
+boundary for Aeneas-backed row-lowering facts that are still carried as
+`OpEnvelope` fields while generated Aeneas Lean is not imported by the main
+proof.
 
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
 defect-aware while `trust/defects.md` contains open claim-weakening defects:
@@ -88,10 +88,11 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
     defect regions recorded by `Defects.NoKnownDefect`. -/
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
+    (h_bridge : env.aeneasBridgeTrust)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact aeneas_bridge_trust env
+  · exact h_bridge
   · exact zisk_riscv_compliant_program_bus_branch env
   · exact zisk_riscv_compliant_program_bus_nomem env
   · exact zisk_riscv_compliant_program_bus_rtype_binary env
