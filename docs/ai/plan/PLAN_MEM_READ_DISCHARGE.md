@@ -99,8 +99,8 @@ whole-execution-induction milestone, explicitly out of scope here.
       (`PLAN_EXPLICIT_TRUST_BOUNDARY_REPAIR.md`, `PLAN_OP_ENVELOPE_GAP.md`,
       `docs/extraction/op-envelope-gap-plan.md`) and prune `PROJECTS.md` to the
       active stream.
-- [ ] `lake exe cache get` before proof/build work.
-- [ ] `nix run .#populate`; confirm `lake build ZiskFv.Compliance` and
+- [x] `lake exe cache get` before proof/build work.
+- [x] `nix run .#populate`; confirm `lake build ZiskFv.Compliance` and
       `trust/scripts/check-all.sh` green before any change.
 
 ### Phase A — Port the durable core (additive only, PR 1)

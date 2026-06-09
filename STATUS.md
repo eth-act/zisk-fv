@@ -1,9 +1,10 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase 0 baseline setup in the `mem-read-discharge` worktree.
+Current focus: Phase A additive port; Phase 0 baseline is green after
+initializing `zisk`.
 Blocking: none.
-Next step: run `lake exe cache get`, `nix run .#populate`, and the baseline
-green checks before Phase A (port replay core + Mem AIR machinery from the
-`memory-trust-gap` branch).
+Next step: port the trimmed replay core (`ZiskFv/ZiskCircuit/MemTrace.lean`)
+from `memory-trust-gap`, excluding the Accepted* packing variants and placeholder
+`: Prop` fields.
 
 Context:
 - PR #63 landed: `LoadPromises.mem_read : LoadByteAgreement state e1` is now
