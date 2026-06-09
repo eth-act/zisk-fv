@@ -1,17 +1,36 @@
 # Status
 
-Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP.md`
+Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP_CLOSURE.md`
 
-Current focus: closing the memory trust gap on branch `memory-trust-gap` in `/home/cody/zisk-fv/.worktrees/memory-trust-gap`. The latest committed meaningful slice is `bede5bee Retarget compliance theorem to active replay source`; the current verified uncommitted slice moves the primary `zisk_riscv_compliant_program_bus` theorem from active provider-row source evidence to active envelope-row source evidence, deriving selected active provider coverage internally.
+Current focus: revised closeout plan has been merged into branch
+`memory-trust-gap` in `/home/cody/zisk-fv/.worktrees/memory-trust-gap`. The
+large branch still contains useful memory replay/local-load infrastructure, but
+the primary theorem still exposes the hard memory premise through active
+replay/state-selection source evidence.
 
-Latest committed checkpoint: `ZiskFv/AirsClean/Mem/TraceSpec.lean` defines `RawAcceptedAirMainMemFullTraceSplit`, `RawAcceptedAirMainMemReplayEvidence`, and `AcceptedAirMainMemFullTraceSplitConstruction.ofRaw`. This gives the canonical raw accepted split-trace surface and lowers it to the existing construction while discharging initial Sail/replay agreement by reflexivity.
+Blocking: no local compile blocker known. The real soundness blockers remain
+active table-local Mem replay order facts, active prefix-read soundness,
+selected envelope Mem-row occurrence, and selected prefix-state equality from
+actual accepted execution data.
 
-Latest committed checkpoint: `ZiskFv/AirsClean/FullEnsemble/Balance.lean` names table-local `MemReplayRowsOfTableOrderFacts` and `MemReplayRowsOfTablePrefixReadSound`, plus transport lemmas from `raw.rows = memReplayRowsOfTable table`. `ZiskFv/Compliance/OpEnvelope.lean` defines `RawAcceptedFullExecutionMemoryReplayTableProjection` and `AcceptedFullExecutionMemoryReplayRowSplitExtraction.ofRawTableProjection`, so raw extraction can consume order and prefix-read facts over the concrete Mem table projection instead of generic evidence over `raw.rows`.
+Next step: stop adding compatibility wrappers. Prove one canonical
+`MemoryTraceAgreement` theorem for the selected load from raw accepted
+execution data, or introduce a narrower explicit memory-timeline trust boundary
+if the selected Sail prefix timeline is not currently available.
 
-Blocking: no local compile blocker known. The larger soundness blocker remains: accepted full execution data still does not prove active table-local Mem replay order facts, active table-local prefix-read soundness, selected envelope Mem-row occurrence, or selected prefix-state equality from actual accepted trace data.
+Branch-state note:
+- Latest committed implementation slice before this plan was
+  `e1f8c952 Expose active envelope-row memory source`.
+- `trust/scripts/check-all.sh` was already not clean in this worktree because
+  broader caller-burden/hypothesis ledgers had shrunk versus baseline and
+  Aeneas production extraction artifacts were missing/untracked.
+- Latest branch-size audit was `origin/main...HEAD` at 67 files,
+  +21,366/-769: roughly +13,044 compliance boundary/wrapper lines, +4,098
+  AIR/Mem/full-ensemble lines, +1,351 load replay consumer lines, +2,809
+  docs/trust/status lines, and only +63 net extractor lines.
 
-Next step: commit the verified primary envelope-row boundary slice, then start proving the remaining accepted-execution memory evidence instead of exposing it: active table-local order/prefix-read facts, selected envelope Mem-row occurrence, and selected prefix-state equality.
-
-Verification: focused `lake build ZiskFv.AirsClean.Mem.TraceSpec`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` passed for committed raw split-trace slice. Focused `lake build ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` passed for committed raw replay-row projection slice. Focused `lake build ZiskFv.AirsClean.FullEnsemble.Balance ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` passed for committed table-local order/prefix transport slice. For the interleaved projection slice, focused `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build ZiskFv.Compliance.OpEnvelope`, `lake build ZiskFv.Compliance`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` passed. For the selector projection slice, `lake build ZiskFv.AirsClean.Mem.Circuit`, `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` passed. For the active replay projection slice, focused `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build ZiskFv.Compliance.OpEnvelope`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` pass. For the active replay source-boundary slice, focused `lake build ZiskFv.Compliance.OpEnvelope`, `lake build ZiskFv.Compliance`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` pass. For the active envelope-row provider-coverage slice, focused `lake build ZiskFv.Compliance.OpEnvelope`, `lake build ZiskFv.Compliance`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` pass. For the primary active-boundary retarget slice, focused `lake build ZiskFv.Compliance`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` pass. For the primary envelope-row boundary slice, focused `lake build ZiskFv.Compliance`, full `lake build`, `git diff --check`, and `trust/scripts/check-all-semantic.sh` pass. `trust/scripts/check-all.sh` currently fails on broader worktree issues: caller-burden/hypothesis ledger shrinkage versus baseline and missing/untracked Aeneas production extraction artifacts (`zisk/core/src/aeneas_extract.rs`, generated bridge manifest contents).
-
-Digression: latest project-arc checkpoint: the 21-hour phase was useful but inefficient. It removed the visible memory axiom and added real replay infrastructure, but it did not complete the soundness discharge because the memory-state agreement obligation remains packaged as strong construction/coverage hypotheses. Refine rather than scrap: keep the infrastructure, prove the missing accepted-execution extraction theorem, then prune wrapper clutter.
+Prior plan note:
+- The older `PLAN_MEMORY_TRUST_GAP.md` records the long implementation history.
+  The new closure plan is the active plan for deciding what to keep, what to
+  prove next, and when to replace the current memory axiom with either a proof
+  or a narrower explicit timeline boundary.
