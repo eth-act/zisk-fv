@@ -1,5 +1,14 @@
 # Status
 
+**SUPERSEDED (2026-06-09).** This stream is closed. The closure plan here and
+`PLAN_MEMORY_TRUST_GAP.md` are superseded by
+`docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md` on `main`, which reframes the goal
+as discharging `LoadPromises.mem_read` from a fresh `mem-read-discharge`
+worktree, salvaging this branch's replay core / Mem AIR machinery /
+table-projection lemmas and scrapping the `AcceptedFullExecutionMemory*`
+wrapper stack. This branch is kept untouched as a salvage reference until
+that plan's Phase D cleanup.
+
 Plan: `docs/ai/plan/PLAN_MEMORY_TRUST_GAP_CLOSURE.md`
 
 Current focus: revised closeout plan has been merged into branch
