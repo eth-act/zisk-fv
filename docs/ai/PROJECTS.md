@@ -1,3 +1,7 @@
+# Mem Read Discharge
+
+Active stream to discharge the `LoadPromises.mem_read` promise hypothesis (the "Memory load byte agreement" trust class): prove circuit-side memory replay soundness from extracted Mem AIR continuity/ordering constraints, leaving one narrow visible Sail-memory-timeline hypothesis on the global theorem in the `aeneasBridgeTrust` idiom. Salvages the replay core, Mem AIR segment machinery, and table-projection lemmas from the derailed `memory-trust-gap` branch while scrapping its ~13k-line `AcceptedFullExecutionMemory*` wrapper stack; supersedes that branch's `PLAN_MEMORY_TRUST_GAP{,_CLOSURE}.md`. Work lands from a fresh `mem-read-discharge` worktree in three reviewable PRs: port core, prove the Mem-table side, swap the boundary.
+
 # Op Envelope Gap
 
 Depth-first stream for closing the `witness rows -> OpEnvelope` evidence gap across the opcode families while keeping generated Aeneas Lean untracked. The branch derives Main row-shape/pin/control evidence for the covered families through `MainRowProvenance`, staged production extraction checks, and extracted-shape `OpEnvelope` constructors/bridge theorems. `bus_shape` caller burden is zero, generated row-shape checks are guarded by a checked manifest, and the remaining bridge/row-shape/promise entries are documented generated/full-ensemble integration boundaries. This later repair makes `ZiskFv.Compliance.aeneas_bridge_trust` explicit again as a global trust axiom rather than hidden constructor-field trust.
