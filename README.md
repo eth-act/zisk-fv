@@ -1,7 +1,7 @@
 # zisk-fv
 
-This repository is still undergoing quality control. Do not treat it as a
-production claim that any released ZisK circuit correctly implements RV64IM.
+> [!CAUTION]
+> ⚠️This repository is still under construction. While the work has identified bugs in ZisK v0.17.0, the formal proofs should not be taken as providing any assurances about security of ZisK's RV64IM implementation.⚠️
 
 `zisk-fv` is a Lean 4 formal-verification project for
 [ZisK](https://github.com/0xPolygonHermez/zisk)'s zkVM circuit against the
