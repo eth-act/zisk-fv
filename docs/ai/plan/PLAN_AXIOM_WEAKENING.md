@@ -133,7 +133,9 @@ Why this split is cheap (verified): each axiom has **exactly one call site**.
   `trust/generated/baseline-axioms.txt` and `trust/allowed-axiom-files.txt`;
   no `structural-unpacking-exceptions.txt` or `forbidden-param-shapes.txt`
   change was needed.
-- [ ] Commit, push `axiom-weakening`, and open the PR.
+- [x] Commit, push `axiom-weakening`, and open the PR.
+  Outcome: committed as `d16ce96b` and opened
+  https://github.com/eth-act/zisk-fv/pull/63.
 
 ## Step 2 — Discharge (separate, NOT required for the consistency win)
 

@@ -1,7 +1,7 @@
 Active plan: docs/ai/plan/PLAN_AXIOM_WEAKENING.md
-Current focus: Step 1 verification is green; preparing commit and PR.
+Current focus: Step 1 is complete; PR is open.
 Blocking: none.
-Next step: review diff, commit, push `axiom-weakening`, and open the PR.
+Next step: respond to review on https://github.com/eth-act/zisk-fv/pull/63.
 Digression: scope check requested; current read is bounded plumbing, not a
 redesign, but it necessarily touches the shared load promise bundle and the 7
 load call paths.
@@ -38,3 +38,5 @@ Recent state:
 - `trust/scripts/check-all-semantic.sh`, `trust/scripts/check-all.sh`,
   `lake build`, and `nix run .#test` all passed. The false probe is rejected,
   and the global compliance project-axiom closure is empty.
+- Committed as `d16ce96b` and opened PR #63:
+  https://github.com/eth-act/zisk-fv/pull/63.
