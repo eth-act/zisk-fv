@@ -1494,6 +1494,60 @@ theorem activeMemReplayEntriesOfRow_eq_primary_dual_of_spec_of_sel_dual
     (ZiskFv.AirsClean.Mem.sel_of_sel_dual_one_of_spec row h_spec h_sel_dual)
     h_sel_dual
 
+/-- A selected primary+dual row is chronologically ordered when the primary
+    timestamp is no later than the pinned dual-read timestamp. -/
+theorem activeMemReplayEntriesOfRow_chronological_of_sel_of_sel_dual_of_step_le
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel = 1)
+    (h_sel_dual : row.sel_dual = 1)
+    (h_step_le : row.step.val ≤ row.step_dual.val) :
+    ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
+      (activeMemReplayEntriesOfRow row) := by
+  rw [activeMemReplayEntriesOfRow_eq_primary_dual_of_sel_of_sel_dual
+    h_sel h_sel_dual]
+  simpa [ZiskFv.AirsClean.Mem.MemoryBusRowsChronological,
+    memPrimaryReplayEntryOfRow, memDualReadReplayEntryOfRow,
+    ZiskFv.AirsClean.Mem.memBusMessage,
+    ZiskFv.AirsClean.Mem.memBusDualMessage] using h_step_le
+
+/-- Under the generated per-row Mem spec, a selected dual row is locally
+    chronological when the generated dual-step range check supplies
+    `step <= step_dual`. -/
+theorem activeMemReplayEntriesOfRow_chronological_of_spec_of_sel_dual_of_step_le
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_spec : ZiskFv.AirsClean.Mem.Spec row)
+    (h_sel_dual : row.sel_dual = 1)
+    (h_step_le : row.step.val ≤ row.step_dual.val) :
+    ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
+      (activeMemReplayEntriesOfRow row) := by
+  exact activeMemReplayEntriesOfRow_chronological_of_sel_of_sel_dual_of_step_le
+    (ZiskFv.AirsClean.Mem.sel_of_sel_dual_one_of_spec row h_spec h_sel_dual)
+    h_sel_dual h_step_le
+
+/-- A selected primary+dual row has no duplicate replay entries when its
+    primary and dual timestamps are distinct. PIL allows equality for
+    read-read dual rows, so this lemma intentionally records the extra
+    condition rather than hiding it. -/
+theorem activeMemReplayEntriesOfRow_nodup_of_sel_of_sel_dual_of_step_ne
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_sel : row.sel = 1)
+    (h_sel_dual : row.sel_dual = 1)
+    (h_step_ne : row.step ≠ row.step_dual) :
+    (activeMemReplayEntriesOfRow row).Nodup := by
+  rw [activeMemReplayEntriesOfRow_eq_primary_dual_of_sel_of_sel_dual
+    h_sel h_sel_dual]
+  simp only [List.nodup_cons, List.mem_cons, List.mem_nil_iff, or_false,
+    not_false_eq_true]
+  constructor
+  · intro h_eq
+    have h_ts :
+        (memPrimaryReplayEntryOfRow row).timestamp =
+          (memDualReadReplayEntryOfRow row).timestamp := by
+      rw [h_eq]
+    simp at h_ts
+    exact h_step_ne h_ts
+  · simp
+
 /-- Primary-read replay rows projected from every row of a Mem table. -/
 @[reducible]
 def memPrimaryReadReplayRowsOfTable

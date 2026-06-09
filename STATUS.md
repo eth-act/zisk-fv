@@ -1,10 +1,11 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase B Mem-table side. Continuity slice is verified:
-same-address value carry and segment carry-in/out are theorem-shaped from
-`segment_every_row`, and primary `wr = 1` rows route to replay writes.
+Current focus: Phase B Mem-table side. Order/cursor slice is verified:
+dual-row local chronological order is proved from `step_dual >= step`, and
+conditional local `Nodup` is proved under distinct primary/dual timestamps.
 Blocking: none.
-Next step: attack nodup/order facts for cursor uniqueness and the concrete
-prefix-read theorem.
+Next step: decide whether full table `Nodup`/prefix-read target needs a
+weakened theorem or residual timeline statement, since PIL allows read-read
+dual rows with `step_dual = step`.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract

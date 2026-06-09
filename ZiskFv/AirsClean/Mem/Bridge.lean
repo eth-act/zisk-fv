@@ -208,4 +208,30 @@ theorem spec_of_valid
   exact spec_via_component (rowAt v r) h_assumptions
     (by simpa only [constraints_at, Spec, rowAt] using h_constraints)
 
+/-- The generated dual-step range check exposes chronological order for the
+    Clean row projected from a `Valid_Mem` row. This mirrors
+    `mem.pil:392-397`. -/
+theorem rowAt_step_le_step_dual_of_dual_step_delta_range
+    (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ)
+    (h_steps : ZiskFv.Airs.Mem.step_columns_in_range v r)
+    (h_wr : (v.wr r).val < 2)
+    (h_delta : ZiskFv.Airs.Mem.dual_step_delta_in_range v r) :
+    (rowAt v r).step.val ≤ (rowAt v r).step_dual.val := by
+  simpa [rowAt] using
+    ZiskFv.Airs.Mem.step_le_step_dual_of_dual_step_delta_range
+      (v := v) (row := r) h_steps h_wr h_delta
+
+/-- For primary writes, the generated dual-step range check gives strict
+    Clean-row timestamp order, since `mem.pil:392-397` checks
+    `step_dual - step - wr`. -/
+theorem rowAt_step_lt_step_dual_of_wr_one_dual_step_delta_range
+    (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ)
+    (h_steps : ZiskFv.Airs.Mem.step_columns_in_range v r)
+    (h_delta : ZiskFv.Airs.Mem.dual_step_delta_in_range v r)
+    (h_wr_one : v.wr r = 1) :
+    (rowAt v r).step.val < (rowAt v r).step_dual.val := by
+  simpa [rowAt] using
+    ZiskFv.Airs.Mem.step_lt_step_dual_of_wr_one_dual_step_delta_range
+      (v := v) (row := r) h_steps h_delta h_wr_one
+
 end ZiskFv.AirsClean.Mem

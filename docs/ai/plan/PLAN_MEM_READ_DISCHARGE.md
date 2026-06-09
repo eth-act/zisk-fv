@@ -133,6 +133,10 @@ and read events satisfy `MemoryBusRowsPrefixReadSound` — **derived from
 - [x] Dual-row (`dual_mem = 1`) event emission ordering, primary-then-dual.
 - [x] Selector gating: inactive rows emit no events.
 - [ ] Nodup/order facts for cursor uniqueness.
+      Partial: row-local chronological order is proved from the dual-step
+      range check, and row-local `Nodup` is proved under distinct primary/dual
+      timestamps. Full table `Nodup` remains open because `mem.pil` allows
+      read-read dual rows with `step_dual = step`.
 - [ ] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
