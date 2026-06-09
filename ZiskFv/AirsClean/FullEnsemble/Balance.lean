@@ -1744,6 +1744,46 @@ theorem memPrimaryReadReplayEntryOfRow_eq_primaryReplayEntryOfRow_of_wr_zero
     memPrimaryReadReplayEntryOfRow row = memPrimaryReplayEntryOfRow row := by
   simp [memPrimaryReadReplayEntryOfRow, memPrimaryReplayEntryOfRow, h_wr]
 
+/-- A primary polarity-preserving replay row is a legacy read row when
+    `wr = 0`. -/
+theorem memoryBusTraceEventOfRow_memPrimaryReplayEntryOfRow_read_of_wr_zero
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_wr : row.wr = 0) :
+    ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow
+      (memPrimaryReplayEntryOfRow row) =
+        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read
+          (memPrimaryReplayEntryOfRow row)) := by
+  simp [ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow,
+    memPrimaryReplayEntryOfRow, h_wr]
+
+/-- A primary polarity-preserving replay row is a legacy write row when
+    `wr = 1`. -/
+theorem memoryBusTraceEventOfRow_memPrimaryReplayEntryOfRow_write_of_wr_one
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_wr : row.wr = 1) :
+    ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow
+      (memPrimaryReplayEntryOfRow row) =
+        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.write
+          (memPrimaryReplayEntryOfRow row)) := by
+  have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
+    native_decide
+  simp [ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow,
+    memPrimaryReplayEntryOfRow, h_wr, h_one_ne_neg_one]
+
+/-- On primary Mem writes, the raw-row replay step is exactly the store
+    update carried by the polarity-preserving primary replay entry. -/
+theorem replayMemoryAfterBusRow_memPrimaryReplayEntryOfRow_of_wr_one
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_wr : row.wr = 1) :
+    ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow
+      mem (memPrimaryReplayEntryOfRow row) =
+        ZiskFv.ZiskCircuit.MemTrace.replayStoreEvent mem
+          (ZiskFv.ZiskCircuit.MemTrace.storeEventOfEntry
+            (memPrimaryReplayEntryOfRow row)) := by
+  simp [ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow,
+    memPrimaryReplayEntryOfRow, h_wr]
+
 /-- A concrete Mem table row contributes its primary polarity-preserving
     projection to the table's full replay-row surface. -/
 theorem mem_primary_replay_entry_mem_of_table_row

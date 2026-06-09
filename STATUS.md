@@ -1,10 +1,10 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase B Mem-table side. Row-local active replay projection
-slice is verified: inactive rows emit no events, and a `sel_dual = 1` row
-satisfying Mem `Spec` emits primary first and then the pinned dual read.
+Current focus: Phase B Mem-table side. Continuity slice is verified:
+same-address value carry and segment carry-in/out are theorem-shaped from
+`segment_every_row`, and primary `wr = 1` rows route to replay writes.
 Blocking: none.
-Next step: continue into the same-address value-carry and write-update
-continuity facts.
+Next step: attack nodup/order facts for cursor uniqueness and the concrete
+prefix-read theorem.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract

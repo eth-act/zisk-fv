@@ -126,10 +126,10 @@ witness, the projected replay-row list satisfies `GeneratedMemRowOrderFacts`
 and read events satisfy `MemoryBusRowsPrefixReadSound` — **derived from
 `Valid_Mem` constraints, with no assumed soundness fields**.
 
-- [ ] Same-address value carry from continuity constraints (constraints 0–23
+- [x] Same-address value carry from continuity constraints (constraints 0–23
       bundle).
-- [ ] Write-update soundness (written lanes replace, untouched lanes carry).
-- [ ] Segment boundary carry-in/out.
+- [x] Write-update soundness (written lanes replace, untouched lanes carry).
+- [x] Segment boundary carry-in/out.
 - [x] Dual-row (`dual_mem = 1`) event emission ordering, primary-then-dual.
 - [x] Selector gating: inactive rows emit no events.
 - [ ] Nodup/order facts for cursor uniqueness.

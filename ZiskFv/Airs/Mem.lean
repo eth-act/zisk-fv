@@ -380,6 +380,20 @@ theorem value_1_eq_previous_of_read_same_addr_segment_every_row
   rw [h_prev] at h_value_1
   linear_combination h_value_1
 
+/-- The generated segment constraints imply same-address reads carry both
+    value chunks from the previous row at non-boundary positions. -/
+theorem values_eq_previous_of_read_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.value_0 row = v.value_0 (row - 1)
+      ∧ v.value_1 row = v.value_1 (row - 1) :=
+  ⟨value_0_eq_previous_of_read_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_read_same_addr h_not_boundary,
+    value_1_eq_previous_of_read_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_read_same_addr h_not_boundary⟩
+
 /-- At a segment-boundary row, the segment previous-address expression is the
     previous segment's carried-out address. -/
 theorem segment_previous_addr_eq_previous_segment_of_boundary
@@ -457,6 +471,26 @@ theorem segment_last_step_eq_of_next_boundary_segment_every_row
   rw [h_next_boundary] at h_step
   linear_combination h_step
 
+/-- The generated segment constraints carry the current row's full memory
+    state out to the segment-last columns when the next row starts a segment. -/
+theorem segment_last_carry_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.value_0 row = cols.segment_last_value_0
+      ∧ v.value_1 row = cols.segment_last_value_1
+      ∧ v.addr row = cols.segment_last_addr
+      ∧ v.sel_dual row * (v.step_dual row - v.step row) + v.step row =
+        cols.segment_last_step :=
+  ⟨segment_last_value_0_eq_of_next_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_next_boundary,
+    segment_last_value_1_eq_of_next_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_next_boundary,
+    segment_last_addr_eq_of_next_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_next_boundary,
+    segment_last_step_eq_of_next_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_next_boundary⟩
+
 /-- At a non-boundary row, the generated previous-step witness is the
     previous row's effective step. -/
 theorem previous_step_eq_previous_row_step_of_not_boundary_segment_every_row
@@ -482,6 +516,26 @@ theorem previous_step_eq_previous_segment_step_of_boundary_segment_every_row
       _, _, _, _, _, _, _, _⟩
   rw [h_boundary] at h_previous_step
   linear_combination h_previous_step
+
+/-- At a segment-boundary row, generated constraints and boundary selectors
+    carry the previous segment's full memory state into the row-local previous
+    columns. -/
+theorem segment_previous_carry_eq_previous_segment_of_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_boundary : cols.segment_l1 row = 1) :
+    segment_previous_addr cols v row = cols.previous_segment_addr
+      ∧ segment_previous_value_0 cols v row = cols.previous_segment_value_0
+      ∧ segment_previous_value_1 cols v row = cols.previous_segment_value_1
+      ∧ v.previous_step row = cols.previous_segment_step :=
+  ⟨segment_previous_addr_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary,
+    segment_previous_value_0_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary,
+    segment_previous_value_1_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary,
+    previous_step_eq_previous_segment_step_of_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_boundary⟩
 
 /-- On same-address rows, the generated increment equation reduces to the
     chronological step delta. -/
