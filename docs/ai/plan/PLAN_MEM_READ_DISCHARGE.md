@@ -720,6 +720,24 @@ no assumed soundness fields**.
       full `lake build`, `trust/scripts/check-all.sh`, `lean_verify` scans of
       the new assertion projections and Balance constructor, and
       `git diff --check`.
+      Partial: the source package now has a witness-level constructor.
+      `memTableGeneratedAirSource_of_witnessFacts` builds
+      `MemTableGeneratedAirSource` directly from
+      `MemTableGeneratedConstraintAssertionFacts`,
+      `MemTableGeneratedRangeLookupFacts`, and
+      `MemSegmentGeneratedRangeLookupFacts`, projecting those concrete Clean
+      witnesses through the previously added assertion/range constructors. The
+      extractor report and extraction notes now direct generated Lean code at
+      this constructor, while keeping `memTableGeneratedAirSource_of_constraintFacts`
+      as the lower-level fallback for modules that prove raw generated
+      constraints and range propositions directly. The remaining implementation
+      target is now to make generated/full-ensemble output supply this source
+      object for the witness-selected Mem table. Verified with clean Lean LSP
+      diagnostics, `lake build ZiskFv.AirsClean.FullEnsemble.Balance`,
+      `lean_verify` on `memTableGeneratedAirSource_of_witnessFacts`,
+      `cargo test --manifest-path tools/pil-extract/Cargo.toml`, regenerated
+      `/tmp/mem-air-facts-report.md`, `trust/scripts/check-all.sh`, and
+      `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

@@ -1257,8 +1257,11 @@ fn render_mem_air_facts_report(
     writeln!(
         out,
         "- Generated Lean code should call \
-         `memTableGeneratedAirSource_of_constraintFacts` after proving those \
-         split constraints and the explicit range-check facts."
+         `memTableGeneratedAirSource_of_witnessFacts` after supplying Clean \
+         assertion witnesses for those split constraints and lookup witnesses \
+         for the explicit range-check facts. Use \
+         `memTableGeneratedAirSource_of_constraintFacts` only when proving the \
+         raw generated constraints and range propositions directly."
     )
     .unwrap();
     writeln!(

@@ -2355,6 +2355,34 @@ def memTableGeneratedAirSource_of_constraintFacts
     h_rowRanges
     h_segmentRanges
 
+/-- Build the typed Mem AIR source from concrete Clean assertion and lookup
+    witnesses.
+
+    This is the narrow generated/full-ensemble target after the Mem source
+    surface has been made lookup-aware: generated code supplies assertion
+    witnesses for the split generated constraints plus lookup witnesses for the
+    row and segment range facts, and Lean projects those witnesses to the raw
+    AIR facts consumed by replay. -/
+def memTableGeneratedAirSource_of_witnessFacts
+    (table : Table FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (gsum im0 im1 : ℕ → FGL)
+    (h_constraints :
+      MemTableGeneratedConstraintAssertionFacts
+        table (memOfTable table gsum im0 im1)
+        (segmentWithFixedL1 segment) permutation)
+    (h_rowRanges :
+      MemTableGeneratedRangeLookupFacts table (memOfTable table gsum im0 im1))
+    (h_segmentRanges :
+      MemSegmentGeneratedRangeLookupFacts (segmentWithFixedL1 segment)) :
+    MemTableGeneratedAirSource table :=
+  memTableGeneratedAirSource_of_constraintFacts
+    table segment permutation gsum im0 im1
+    (memTableGeneratedConstraintFacts_of_assertionFacts h_constraints)
+    (memTableGeneratedRangeFacts_of_lookupFacts h_rowRanges)
+    (memSegmentGeneratedRangeFacts_of_lookupFacts h_segmentRanges)
+
 /-- Any active replay entry from a generated Mem table row is either at the
     same byte pointer as the selected primary row or byte-disjoint from it.
 

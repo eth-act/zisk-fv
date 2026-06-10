@@ -233,11 +233,14 @@ extractor-facing source for `MemTableGeneratedRangeFacts` and
 coverage table: range-check hints cover `incrementChunks`, `dualStepDelta`, and
 `distanceBaseChunks`, while `addrColumns` and `stepColumns` require the
 `mem.pil` bit-width lines supplied through `--pil-source`. A generated Lean
-module should call `memTableGeneratedAirSource_of_constraintFacts` after
-proving those split constraint groups and range-check facts. Because Clean
-component emission deliberately omits stage-2 running-product columns and does
-not support previous-row witness cells, this mode records the source surface
-rather than pretending those facts follow from the existing Clean table
+module should call `memTableGeneratedAirSource_of_witnessFacts` after supplying
+Clean assertion witnesses for the split generated constraints and lookup
+witnesses for the explicit range-check facts; the lower-level
+`memTableGeneratedAirSource_of_constraintFacts` remains available when a module
+proves the raw generated constraints and range propositions directly. Because
+Clean component emission deliberately omits stage-2 running-product columns and
+does not support previous-row witness cells, this mode records the source
+surface rather than pretending those facts follow from the existing Clean table
 soundness API.
 
 ## Limitations (deliberate; expand as phases demand)

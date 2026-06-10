@@ -18,10 +18,9 @@ Current proof surface:
 - `tools/pil-extract mem-air-facts` reports generated constraint groups,
   range-check hints, witness/fixed columns, `mem.pil` range/bit lines, and
   Lean range-fact coverage for every current Mem range fact field.
-- `MemTableGeneratedAirSource` is the typed Lean target for the stage-2 source
-  columns/facts; replay and timeline constructors consume it.
-- `memTableGeneratedAirSource_of_parts` builds that source from
-  `generatedAt`, row ranges, and segment ranges.
+- `MemTableGeneratedAirSource` is the typed Lean target; replay/timeline
+  constructors consume it, and `memTableGeneratedAirSource_of_witnessFacts`
+  builds it from concrete Clean assertion and lookup witnesses.
 - `MemTableGeneratedConstraintFacts` and
   `MemTableGeneratedConstraintAssertionFacts` split generated constraints into
   `segment_every_row` (`0..=23`) and `permutation_every_row` (`24..=33`), with
@@ -31,19 +30,16 @@ Current proof surface:
   into the raw row/segment range facts.
 
 Latest verification:
-- Lean LSP diagnostics: `ZiskFv/AirsClean/Mem/Bridge.lean`,
-  `ZiskFv/AirsClean/FullEnsemble/Balance.lean`
-- `lake build ZiskFv.AirsClean.Mem.Bridge`
+- Lean LSP diagnostics and `lean_verify` on
+  `memTableGeneratedAirSource_of_witnessFacts`: no `sorryAx`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
-- MCP `lean_build` / incremental full `lake build` after the new imports
+- `cargo test --manifest-path tools/pil-extract/Cargo.toml`
+- regenerated `/tmp/mem-air-facts-report.md`
 - `trust/scripts/check-all.sh`
-- `lean_verify` on new Mem lookup/assertion projections and constructors: no
-  `sorryAx`
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: supply/derive the concrete lookup and assertion witnesses for the
-witness-selected Mem table from generated Lean/extractor output, then construct
-`MemTableGeneratedAirSource.facts`.
+Next step: wire generated/full-ensemble output to supply
+`MemTableGeneratedAirSource` for the witness-selected Mem table.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.
