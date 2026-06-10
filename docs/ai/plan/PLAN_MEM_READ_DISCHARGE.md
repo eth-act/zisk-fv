@@ -750,6 +750,15 @@ no assumed soundness fields**.
       `lean_verify` scans of the new source-boundary accessors/constructors,
       `trust/scripts/check-all.sh`, `rg` confirming no `replayBridge :` field
       remains on `FullWitnessMemoryTimelineEvidence`, and `git diff --check`.
+      Partial: `fullWitnessMemAirSource_of_witnessFacts` is now the direct
+      full-witness entry point for generated Mem AIR source output. It packages
+      table membership, the `componentWithDualMemBus` identity, split
+      generated-constraint assertion witnesses, row range lookup witnesses, and
+      segment range lookup witnesses into `FullWitnessMemAirSource`. The next
+      generated/full-ensemble step is to provide exactly those inputs for the
+      witness-selected Mem table. Verified with clean Lean LSP diagnostics,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, `lean_verify` on the
+      new constructor, `trust/scripts/check-all.sh`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

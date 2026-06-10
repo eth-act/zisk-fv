@@ -2779,6 +2779,37 @@ def replayBridgeOfTraceSplit
 
 end FullWitnessMemAirSource
 
+/-- Build the full-witness Mem AIR source from concrete assertion and lookup
+    witnesses for the witness-selected mutable Mem table. -/
+def fullWitnessMemAirSource_of_witnessFacts
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (gsum im0 im1 : ℕ → FGL)
+    (h_constraints :
+      MemTableGeneratedConstraintAssertionFacts
+        table (memOfTable table gsum im0 im1)
+        (segmentWithFixedL1 segment) permutation)
+    (h_rowRanges :
+      MemTableGeneratedRangeLookupFacts table (memOfTable table gsum im0 im1))
+    (h_segmentRanges :
+      MemSegmentGeneratedRangeLookupFacts (segmentWithFixedL1 segment)) :
+    FullWitnessMemAirSource witness where
+  table := table
+  table_mem := h_table
+  component := h_component
+  source :=
+    memTableGeneratedAirSource_of_witnessFacts
+      table segment permutation gsum im0 im1
+      h_constraints
+      h_rowRanges
+      h_segmentRanges
+
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/
 theorem fullWitnessMemTableGeneratedRowsBridge_of_fullWitnessMemReplayBridge

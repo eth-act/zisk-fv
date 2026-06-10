@@ -30,17 +30,15 @@ Current proof surface:
   into the raw row/segment range facts.
 
 Latest verification:
-- Lean LSP diagnostics and `lean_verify` on new source-boundary accessors: no
-  `sorryAx`
+- Lean LSP diagnostics and `lean_verify` on
+  `fullWitnessMemAirSource_of_witnessFacts`: no `sorryAx`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
-- `lake build ZiskFv.Compliance`
-- `cargo test --manifest-path tools/pil-extract/Cargo.toml`
-- regenerated `/tmp/mem-air-facts-report.md`
 - `trust/scripts/check-all.sh`
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: make generated/full-ensemble output construct
-`FullWitnessMemAirSource` for the witness-selected Mem table.
+Next step: make generated/full-ensemble output provide the table membership,
+component identity, and assertion/lookup witnesses consumed by
+`fullWitnessMemAirSource_of_witnessFacts`.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.
