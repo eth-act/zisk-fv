@@ -42,8 +42,9 @@ Latest verification:
 - Rustfmt check has broad pre-existing churn outside this slice.
 - Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: make generated/full-ensemble output actually supply
-`FullWitnessMemAirSourceProverDataWitnessFacts`; broader table/component model
-support is still the fallback.
+Next step needs a design choice: supply
+`FullWitnessMemAirSourceProverDataWitnessFacts` as the generated artifact, or
+broaden the Clean table/component model so the full ensemble constrains those
+sidecar operations.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

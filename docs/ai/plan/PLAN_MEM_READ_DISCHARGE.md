@@ -952,6 +952,16 @@ no assumed soundness fields**.
       `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, the focused
       mem-air-facts report test, full `tools/pil-extract` cargo tests,
       regenerated `/tmp/mem-air-facts-report.md`, and `git diff --check`.
+      Audit result after this slice: the current full ensemble cannot derive
+      `FullWitnessMemAirSourceProverDataWitnessFacts` from
+      `componentWithDualMemBus` alone. That component constrains only the
+      row-local Mem constraints and memory-bus provider emissions; it does not
+      constrain the `witness.data` sidecar columns, segment/permutation globals,
+      or the separate assertion/lookup operations named by the target. The next
+      step is therefore a design choice: make that target the generated artifact
+      supplied alongside the residual timeline evidence, or broaden the
+      Clean table/component model so those sidecar operations are part of the
+      checked full-ensemble witness.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
