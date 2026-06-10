@@ -12,6 +12,11 @@ The local active-row ordering subgoal is now factored through
 `MemTableGeneratedRangeFacts`: selected dual rows get `step <= step_dual`
 from the selector-gated `mem.pil:397` range check, while inactive/primary-only
 rows are locally chronological by shape.
+The adjacent same-address, non-boundary cross-row ordering cases are now
+factored as concrete bridge lemmas:
+`previous_primary_step_le_step_of_memTableGeneratedRowsBridge` and
+`previous_dual_step_le_step_of_memTableGeneratedRowsBridge`. They pass LSP
+diagnostics and the full build/test gate set.
 Existing load/envelope surfaces only expose selected-row facts such as
 `h_mem_row : eval memEnv memRowVar = rowAt mem r_mem`; they do not provide the
 whole-table row-index bridge.
@@ -40,6 +45,10 @@ ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
 LSP diagnostics, `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full
 `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
+The adjacent same-address predecessor-order slice has passed LSP diagnostics,
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test`.
 Next step: attack the cross-row Pairwise order/per-address prefix-read proof
 surface from `MemTableGeneratedRowsBridge` plus `MemTableGeneratedRangeFacts`.
 

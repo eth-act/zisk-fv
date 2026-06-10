@@ -156,6 +156,15 @@ no assumed soundness fields**.
       `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
       `nix run .#test`.
+      Partial: `previous_primary_step_le_step_of_memTableGeneratedRowsBridge`
+      and `previous_dual_step_le_step_of_memTableGeneratedRowsBridge` now
+      discharge the adjacent-row same-address/non-boundary timestamp order
+      cases from `segment_every_row`, `MemTableGeneratedRangeFacts`, and the
+      previous row's dual selector. These are the two predecessor cases needed
+      before lifting adjacent order to full table `Pairwise` order. Verified
+      with LSP diagnostics, `lake build ZiskFv.AirsClean.FullEnsemble.Balance`,
+      full `lake build`, `trust/scripts/check-all.sh`,
+      `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
 - [ ] Prove `MemoryBusRowsPrefixReadSound` for the concrete projected Mem table
       from same-address carry, write update, segment carry, and chronological
       order.

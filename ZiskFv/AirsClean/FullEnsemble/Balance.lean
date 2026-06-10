@@ -1784,6 +1784,64 @@ theorem constraints_at_of_memTableGeneratedRowsBridge
   ZiskFv.AirsClean.Mem.constraints_at_of_generated_every_row
     mem segment permutation idx.val (h_bridge.generatedAt idx)
 
+/-- The indexed table bridge projects the Clean Mem row `Spec` at one
+    `Valid_Mem` row. -/
+theorem rowAt_spec_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Mem.Spec
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val) := by
+  have h_constraints :=
+    constraints_at_of_memTableGeneratedRowsBridge h_bridge idx
+  simpa [ZiskFv.AirsClean.Mem.Spec, ZiskFv.AirsClean.Mem.constraints_at,
+    ZiskFv.AirsClean.Mem.rowAt] using h_constraints
+
+/-- The indexed table bridge projects the Clean Mem row `Spec` for the
+    concrete evaluated table row at a list position. -/
+theorem tableRow_spec_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Mem.Spec
+      (eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) := by
+  have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
+  rw [h_bridge.rowAt_eq idx]
+  exact h_spec
+
+/-- A bridged generated Mem table position has a boolean current-row write
+    flag at the Nat-value level. -/
+theorem wr_val_lt_two_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length) :
+    (mem.wr idx.val).val < 2 := by
+  have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
+  rcases ZiskFv.AirsClean.Mem.wr_boolean_of_spec
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val) h_spec with
+    h_wr_zero | h_wr_one
+  · have h_wr_zero_mem : mem.wr idx.val = 0 := by
+      simpa [ZiskFv.AirsClean.Mem.rowAt] using h_wr_zero
+    rw [h_wr_zero_mem]
+    norm_num
+  · have h_wr_one_mem : mem.wr idx.val = 1 := by
+      simpa [ZiskFv.AirsClean.Mem.rowAt] using h_wr_one
+    rw [h_wr_one_mem]
+    norm_num
+
 /-- The indexed table bridge and range facts prove local chronological order
     for the active replay emissions projected from one concrete table row.
 
@@ -1811,11 +1869,8 @@ theorem activeMemReplayEntriesOfTableRow_chronological_of_memTableGeneratedRowsB
     exact h_bridge.rowAt_eq idx
   have h_spec_rowAt :
       ZiskFv.AirsClean.Mem.Spec
-        (ZiskFv.AirsClean.Mem.rowAt mem idx.val) := by
-    have h_constraints :=
-      constraints_at_of_memTableGeneratedRowsBridge h_bridge idx
-    simpa [ZiskFv.AirsClean.Mem.Spec, ZiskFv.AirsClean.Mem.constraints_at,
-      ZiskFv.AirsClean.Mem.rowAt] using h_constraints
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val) :=
+    rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
   have h_spec_row : ZiskFv.AirsClean.Mem.Spec row := by
     simpa [h_rowAt] using h_spec_rowAt
   have h_step_le_of_dual :
@@ -1823,18 +1878,7 @@ theorem activeMemReplayEntriesOfTableRow_chronological_of_memTableGeneratedRowsB
     intro h_sel_dual
     have h_sel_dual_mem : mem.sel_dual idx.val = 1 := by
       simpa [h_rowAt, ZiskFv.AirsClean.Mem.rowAt] using h_sel_dual
-    have h_wr_lt : (mem.wr idx.val).val < 2 := by
-      rcases ZiskFv.AirsClean.Mem.wr_boolean_of_spec
-          (ZiskFv.AirsClean.Mem.rowAt mem idx.val) h_spec_rowAt with
-        h_wr_zero | h_wr_one
-      · have h_wr_zero_mem : mem.wr idx.val = 0 := by
-          simpa [ZiskFv.AirsClean.Mem.rowAt] using h_wr_zero
-        rw [h_wr_zero_mem]
-        norm_num
-      · have h_wr_one_mem : mem.wr idx.val = 1 := by
-          simpa [ZiskFv.AirsClean.Mem.rowAt] using h_wr_one
-        rw [h_wr_one_mem]
-        norm_num
+    have h_wr_lt := wr_val_lt_two_of_memTableGeneratedRowsBridge h_bridge idx
     have h_step_le_rowAt :
         (ZiskFv.AirsClean.Mem.rowAt mem idx.val).step.val ≤
           (ZiskFv.AirsClean.Mem.rowAt mem idx.val).step_dual.val :=
@@ -1844,6 +1888,56 @@ theorem activeMemReplayEntriesOfTableRow_chronological_of_memTableGeneratedRowsB
     simpa [h_rowAt] using h_step_le_rowAt
   exact activeMemReplayEntriesOfRow_chronological_of_spec_of_dual_step_le
     h_spec_row h_step_le_of_dual
+
+/-- On a bridged non-boundary same-address Mem table position, if the previous
+    `Valid_Mem` row has no dual emission, the previous primary timestamp is no
+    later than the current primary timestamp. This is the adjacent-row
+    cross-row ordering step behind full chronological `Pairwise` order. -/
+theorem previous_primary_step_le_step_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (idx : Fin table.table.length)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_not_boundary : segment.segment_l1 idx.val = 0)
+    (h_no_dual : mem.sel_dual (idx.val - 1) = 0) :
+    (mem.step (idx.val - 1)).val ≤ (mem.step idx.val).val := by
+  exact
+    ZiskFv.Airs.Mem.previous_primary_step_le_step_of_same_addr_not_boundary_segment_every_row
+      (cols := segment) (v := mem) (row := idx.val)
+      (h_bridge.generatedAt idx).1 h_same_addr h_not_boundary
+      (h_ranges.stepColumns idx)
+      (wr_val_lt_two_of_memTableGeneratedRowsBridge h_bridge idx)
+      (h_ranges.incrementChunks idx) h_no_dual
+
+/-- On a bridged non-boundary same-address Mem table position, if the previous
+    `Valid_Mem` row has a dual emission, the previous dual timestamp is no
+    later than the current primary timestamp. This is the dual predecessor case
+    for adjacent-row chronological order. -/
+theorem previous_dual_step_le_step_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (idx : Fin table.table.length)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_not_boundary : segment.segment_l1 idx.val = 0)
+    (h_dual : mem.sel_dual (idx.val - 1) = 1) :
+    (mem.step_dual (idx.val - 1)).val ≤ (mem.step idx.val).val := by
+  exact
+    ZiskFv.Airs.Mem.previous_dual_step_le_step_of_same_addr_not_boundary_segment_every_row
+      (cols := segment) (v := mem) (row := idx.val)
+      (h_bridge.generatedAt idx).1 h_same_addr h_not_boundary
+      (h_ranges.stepColumns idx)
+      (wr_val_lt_two_of_memTableGeneratedRowsBridge h_bridge idx)
+      (h_ranges.incrementChunks idx) h_dual
 
 /-- Row-order facts for the concrete mutable-Mem replay projection. This is
     the table-local target that accepted full-execution integration should
