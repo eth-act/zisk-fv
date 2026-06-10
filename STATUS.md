@@ -8,8 +8,11 @@ Blocking: connect the local Mem-table theorem to concrete full-witness facts.
 `MemSegmentGeneratedRangeFacts`, `MemTableGeneratedFixedColumnFacts`, and
 nonempty table evidence expose the local inputs; `FullWitnessMemReplayBridge`
 now packages them for a concrete full-witness Mem table.
-Current sub-gap: prove/supply the fields of that full-witness replay bridge
-from extraction/Clean witness data, then connect it to the timeline path.
+Current sub-gap: add or choose the extractor/global-boundary source for that
+full-witness replay bridge, then route it through the memory-evidence boundary.
+Audit result: existing Lean has selected-load MemClean row bridges, but no
+source constructing whole-table `FullWitnessMemReplayBridge` fields from an
+`EnsembleWitness`.
 
 Latest proof surface:
 - Phase C boundary swap is done: the residual Sail timeline is visible once,
@@ -39,8 +42,8 @@ no `sorryAx` (only existing Clean component completeness axioms).
 `trust/scripts/check-all.sh` passes for the timeline-constructor slice. Full
 `nix run .#test` last passed for `98202ebc`.
 
-Next step: derive or supply `FullWitnessMemReplayBridge` fields from the
-concrete witness/extractor, then route its timeline constructor through the
-global memory-evidence boundary.
+Next step: decide whether to extend the extractor/global boundary to produce
+`FullWitnessMemReplayBridge`, then wire that source through the memory-evidence
+boundary.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

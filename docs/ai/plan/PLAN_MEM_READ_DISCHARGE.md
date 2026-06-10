@@ -548,9 +548,14 @@ no assumed soundness fields**.
       `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and an axiom scan
       with no `sorryAx`; the trust gate `trust/scripts/check-all.sh` also
       passes after updating the trust-retirement note.
-      Current sub-gap: prove/supply the fields of `FullWitnessMemReplayBridge`
-      from concrete extraction/Clean witness data, then route the resulting
-      timeline constructor through the global memory-evidence boundary.
+      Audit: current Lean sources expose selected-load MemClean row bridges
+      (`MemCleanFullEnsemble`) and the Rust witness populates the relevant Mem
+      trace/range/segment values, but there is not yet a Lean object deriving
+      the whole-table `FullWitnessMemReplayBridge` fields from an
+      `EnsembleWitness`.
+      Current sub-gap: add or choose the extractor/global-boundary source for
+      `FullWitnessMemReplayBridge`, then route that source through the memory
+      evidence boundary.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
