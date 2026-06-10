@@ -1,10 +1,14 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase C load-dispatch timeline routing. All seven load dispatch
-arms now rebuild their local `LoadPromises` from the global
-`h_memory_timeline` evidence instead of consuming the constructor-carried
-`mem_read` proof.
+Current focus: Phase C data-shape removal for `LoadPromises.mem_read`. Dispatch
+no longer consumes the constructor-carried `mem_read` proof, but the field still
+exists in `LoadPromises` and therefore in load constructor/canonical theorem
+inputs.
 Blocking: full `GeneratedMemRowOrderFacts.rowsNodup` is stronger than current
 PIL for read-read dual rows, because `mem.pil` allows `step_dual = step`.
+Also, directly deleting `LoadPromises.mem_read` conflicts with the guardrail
+that canonical `equiv_<OP>` signatures stay unchanged: those theorems have no
+access to the global `env.memoryTimelineEvidence` hypothesis and still need a
+memory-byte source.
 Verified: byte-address/MemModel prep slice and `MemoryTimelineEvidence`
 residual-object slice each passed targeted build, full `lake build`, and
 `trust/scripts/check-all.sh`. The trace-agreement adapter slice has passed the
@@ -15,8 +19,10 @@ legacy-pin cleanup slice has passed targeted build, full `lake build`, and
 `trust/scripts/check-all.sh`. The load-dispatch timeline-routing slice has
 passed `lake build ZiskFv.Compliance`, full `lake build`, and
 `trust/scripts/check-all.sh`.
-Next step: commit the dispatch-routing slice, then continue with the remaining
-Phase C data-shape removal for `LoadPromises.mem_read`.
+Next step: get a scope decision for the remaining data-shape step: either keep
+canonical signatures strict and introduce a separate dispatch-only structural
+promise shape, or permit the canonical load theorem layer to receive timeline
+evidence explicitly.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract

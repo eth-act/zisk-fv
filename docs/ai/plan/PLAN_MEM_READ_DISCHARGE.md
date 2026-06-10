@@ -177,7 +177,11 @@ bury it in a structure field.
       canonical load theorem; verified with `lake build ZiskFv.Compliance`,
       full `lake build`, and `trust/scripts/check-all.sh`. The
       constructor/canonical `LoadPromises.mem_read` field still exists and must
-      be removed in the remaining data-shape step.
+      be removed in the remaining data-shape step. Decision point: direct field
+      deletion conflicts with the current guardrail that canonical
+      `equiv_<OP>` signatures do not change, because the canonical load theorem
+      layer has no access to global `env.memoryTimelineEvidence` and still needs
+      a memory-byte source.
 - [ ] Port the `MemModel.lean` re-theoreming and the byte-address row-match
       fix (`ptr = addr * 8`); scan for legacy pins:
       `rg -n "mem_legacy_addr|mem\.addr .* = .*\.ptr" ZiskFv`.
