@@ -73,14 +73,19 @@ writeShellApplication {
       test -f build/extraction/Extraction/Circuit.lean
       test -f build/extraction/Extraction/Mem.lean
       test -f build/extraction/Extraction/MemGeneratedArtifact.lean
+      test -f build/extraction/Extraction/MemGeneratedConstraintBridge.lean
       generated_lean_path="$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)"
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/Circuit.olean \
         build/extraction/Extraction/Circuit.lean
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
+        -o build/extraction/Extraction/Mem.olean \
         build/extraction/Extraction/Mem.lean
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
+        -o build/extraction/Extraction/MemGeneratedArtifact.olean \
         build/extraction/Extraction/MemGeneratedArtifact.lean
+      LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
+        build/extraction/Extraction/MemGeneratedConstraintBridge.lean
     '
 
     # 3. Production-wrapper equivalence tests. These compare every

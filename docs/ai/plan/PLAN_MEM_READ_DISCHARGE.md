@@ -1056,23 +1056,25 @@ no assumed soundness fields**.
       full `tools/pil-extract` cargo tests, regenerated `/tmp` report/wrapper,
       `lake env lean` on the `/tmp` and populated generated wrappers,
       `trust/scripts/check-all.sh`, and `git diff --check`.
-      Current extraction-shim slice revives the generated Mem constraint
+      Current extraction-bridge slice revives the generated Mem constraint
       source without reintroducing the deleted root `ZiskFv.Circuit` API.
-      `pil-extract circuit-shim` emits a namespaced `Extraction.Circuit`
-      class for generated-only AIR files; the AIR and bus renderers now import
+      `pil-extract circuit-shim` emits a universe-polymorphic, namespaced
+      `Extraction.Circuit` class; the AIR and bus renderers now import
       `Extraction.Circuit` and emit fully qualified `Extraction.Circuit.*`
-      accessors; and the top-level generated-Mem gate compiles
-      `Extraction.Circuit`, `Extraction.Mem`, and
-      `Extraction.MemGeneratedArtifact` under the generated
-      `build/extraction` root. This does not yet prove
+      accessors. `pil-extract mem-generated-constraint-bridge` emits
+      `Extraction.MemGeneratedConstraintBridge`, which instantiates that
+      circuit interface over the ProverData-backed Mem table/source used by
+      `Extraction.MemGeneratedArtifact` and names constraints `0..=33` as
+      `ExtractedConstraintFacts`. This does not yet prove
       `FullWitnessMemAirSourceProverDataWitnessFacts`, but it makes the
       extracted Mem constraint predicates checked and available as the next
-      bridge source. Verified so far with full
-      `cargo test --manifest-path tools/pil-extract/Cargo.toml` (72 tests),
-      local regeneration of `Circuit.lean`, `Mem.lean`, and
-      `MemGeneratedArtifact.lean`, and the exact generated-Mem gate sequence:
-      compile `Circuit.lean` to `Circuit.olean`, then compile `Mem.lean` and
-      `MemGeneratedArtifact.lean` with
+      raw-facts bridge source. Verified so far with full
+      `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests),
+      local regeneration of `Circuit.lean`, `Mem.lean`,
+      `MemGeneratedArtifact.lean`, and `MemGeneratedConstraintBridge.lean`,
+      and the exact generated-Mem gate sequence: compile `Circuit.lean`,
+      `Mem.lean`, and `MemGeneratedArtifact.lean` to oleans, then compile the
+      bridge with
       `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`;
       `lake build ZiskFv.Compliance`; `trust/scripts/check-all.sh`;
       `nix flake check --no-build`; and `git diff --check`.

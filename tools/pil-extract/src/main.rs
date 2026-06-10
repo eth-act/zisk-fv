@@ -49,6 +49,9 @@ enum Cmd {
     MemAirFacts(MemAirFactsCmd),
     /// Emit the typed Lean wrapper for the Mem generated-artifact contract.
     MemGeneratedArtifact(MemGeneratedArtifactCmd),
+    /// Emit the generated bridge from `Extraction.Mem` to ProverData-backed
+    /// Mem generated-artifact sources.
+    MemGeneratedConstraintBridge(MemGeneratedConstraintBridgeCmd),
 }
 
 #[derive(Args, Debug)]
@@ -201,6 +204,13 @@ struct MemGeneratedArtifactCmd {
     output: Option<PathBuf>,
 }
 
+#[derive(Args, Debug)]
+struct MemGeneratedConstraintBridgeCmd {
+    /// Output path for the generated Lean module. If omitted, prints to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
+}
+
 fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -226,6 +236,7 @@ fn main() -> Result<()> {
         Cmd::CleanComponent(args) => run_clean_component(args),
         Cmd::MemAirFacts(args) => run_mem_air_facts(args),
         Cmd::MemGeneratedArtifact(args) => run_mem_generated_artifact(args),
+        Cmd::MemGeneratedConstraintBridge(args) => run_mem_generated_constraint_bridge(args),
     }
 }
 
@@ -254,6 +265,11 @@ fn run_mem_generated_artifact(args: MemGeneratedArtifactCmd) -> Result<()> {
     let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
     let hit = find_air(&pilout, &args.air)?;
     let rendered = render_mem_generated_artifact_module(&hit)?;
+    write_output(args.output.as_deref(), &rendered)
+}
+
+fn run_mem_generated_constraint_bridge(args: MemGeneratedConstraintBridgeCmd) -> Result<()> {
+    let rendered = render_mem_generated_constraint_bridge_module();
     write_output(args.output.as_deref(), &rendered)
 }
 
@@ -483,7 +499,7 @@ Clean's root `Circuit` monad by living under the `Extraction` namespace.
 
 namespace Extraction
 
-class Circuit (F ExtF : Type) (C : Type → Type → Type) [Field F] [Field ExtF] where
+class Circuit (F ExtF : Type) (C : Type → Type → Sort u) [Field F] [Field ExtF] where
   main : C F ExtF → (id column row rotation : ℕ) → F
   preprocessed : C F ExtF → (column row rotation : ℕ) → F
   challenge : C F ExtF → (index : ℕ) → ExtF
@@ -612,12 +628,12 @@ fn render_constraint(
     if uses_extf {
         out.push_str("  -- Mixed witness/challenge constraint emitted for single-field circuits.\n");
         out.push_str(&format!(
-            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F : Type}} [Field F] [Extraction.Circuit F F C] (c : C F F) (row: ℕ) :=\n",
+            "  def constraint_{}_{} {{C : Type → Type → Sort u}} {{F : Type}} [Field F] [Extraction.Circuit F F C] (c : C F F) (row: ℕ) :=\n",
             idx, suffix
         ));
     } else {
         out.push_str(&format!(
-            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}} [Field F] [Field ExtF] [Extraction.Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
+            "  def constraint_{}_{} {{C : Type → Type → Sort u}} {{F ExtF : Type}} [Field F] [Field ExtF] [Extraction.Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
             idx, suffix
         ));
     }
@@ -1071,7 +1087,7 @@ fn write_bus_emissions_prelude(out: &mut String, scope_doc: &str, bus_id: u64, m
         out.push_str("/-- One slot of a bus emission tuple. `name` is a debug\n");
         out.push_str("    string (verbatim from the PIL macro call site); `value`\n");
         out.push_str("    is the rendered Lean expression. -/\n");
-        out.push_str("structure BusEmissionSlot {C : Type → Type → Type} {F ExtF : Type}\n");
+        out.push_str("structure BusEmissionSlot {C : Type → Type → Sort u} {F ExtF : Type}\n");
         out.push_str("    [Field F] [Field ExtF] [Extraction.Circuit F ExtF C] where\n");
         out.push_str("  name : String\n");
         out.push_str("  value : C F ExtF → ℕ → F\n\n");
@@ -1080,7 +1096,7 @@ fn write_bus_emissions_prelude(out: &mut String, scope_doc: &str, bus_id: u64, m
         out.push_str("    `5000 = OPERATION_BUS_ID`); `is_proves = true` marks\n");
         out.push_str("    the proves-side (secondary state machine), `false` the\n");
         out.push_str("    assumes-side (the consumer, typically Main). -/\n");
-        out.push_str("structure BusEmissionSpec {C : Type → Type → Type} {F ExtF : Type}\n");
+        out.push_str("structure BusEmissionSpec {C : Type → Type → Sort u} {F ExtF : Type}\n");
         out.push_str("    [Field F] [Field ExtF] [Extraction.Circuit F ExtF C] where\n");
         out.push_str("  bus_id : ℕ\n");
         out.push_str("  is_proves : Bool\n");
@@ -1172,7 +1188,7 @@ fn write_bus_emissions_for_air(
             out.push_str(&format!("--   slot: {}\n", nm));
         }
         out.push_str(&format!(
-            "@[simp]\ndef bus_emission_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}}\n",
+            "@[simp]\ndef bus_emission_{}_{} {{C : Type → Type → Sort u}} {{F ExtF : Type}}\n",
             sanitized, n
         ));
         out.push_str(
@@ -1665,6 +1681,252 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     writeln!(out).unwrap();
     writeln!(out, "end Extraction.MemGeneratedArtifact").unwrap();
     Ok(out)
+}
+
+fn render_mem_generated_constraint_bridge_module() -> String {
+    r#"import Extraction.Mem
+import Extraction.MemGeneratedArtifact
+
+set_option linter.all false
+
+/-!
+# Mem Generated Constraint Bridge
+
+AUTO-GENERATED by `pil-extract mem-generated-constraint-bridge`.
+
+This module binds the extracted `Extraction.Mem.constraint_0..33` predicates to
+the ProverData-backed Mem source used by `Extraction.MemGeneratedArtifact`.
+It does not prove the constraints; generated proof code must supply the
+`ExtractedConstraintFacts` fields, after which later bridge code can assemble
+the raw Mem source facts consumed by the load-facing generated artifact.
+-/
+
+namespace Extraction.MemGeneratedConstraintBridge
+
+open Goldilocks
+open Air.Flat
+open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+open ZiskFv.AirsClean.FullEnsemble
+open Extraction.MemGeneratedArtifact
+
+structure ProverDataMemCircuit {length : ℕ} (program : Program length) (F ExtF : Type) where
+  witness : FullWitness program
+  table : Table FGL
+
+@[reducible]
+def proverDataMemCircuit
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (table : Table FGL) :
+    ProverDataMemCircuit program FGL FGL where
+  witness := witness
+  table := table
+
+@[reducible]
+def mainValue
+    {length : ℕ} {program : Program length}
+    (c : ProverDataMemCircuit program FGL FGL)
+    (id column row rotation : ℕ) : FGL :=
+  let mem := MemOfProverData c.witness c.table
+  if id = 1 then
+    match column with
+    | 0 => mem.addr row
+    | 1 => mem.step row
+    | 2 => mem.sel row
+    | 3 => mem.addr_changes row
+    | 4 => mem.step_dual row
+    | 5 => mem.sel_dual row
+    | 6 => mem.value_0 row
+    | 7 => mem.value_1 row
+    | 8 => mem.wr row
+    | 9 => mem.previous_step row
+    | 10 => mem.increment_0 row
+    | 11 => mem.increment_1 row
+    | 12 => mem.read_same_addr row
+    | _ => 0
+  else if id = 2 then
+    match column with
+    | 0 => mem.gsum row
+    | 1 => mem.im_0 row
+    | 2 => mem.im_1 row
+    | _ => 0
+  else
+    0
+
+@[reducible]
+def preprocessedValue
+    {length : ℕ} {program : Program length}
+    (c : ProverDataMemCircuit program FGL FGL)
+    (column row rotation : ℕ) : FGL :=
+  let segment := SegmentOfProverData c.witness
+  let permutation := PermutationOfProverData c.witness
+  match column with
+  | 0 => segment.segment_l1 row
+  | 1 => permutation.l1 row
+  | _ => 0
+
+@[reducible]
+def challengeValue
+    {length : ℕ} {program : Program length}
+    (c : ProverDataMemCircuit program FGL FGL)
+    (index : ℕ) : FGL :=
+  let permutation := PermutationOfProverData c.witness
+  match index with
+  | 0 => permutation.std_alpha
+  | 1 => permutation.std_gamma
+  | _ => 0
+
+@[reducible]
+def exposedValue
+    {length : ℕ} {program : Program length}
+    (c : ProverDataMemCircuit program FGL FGL)
+    (index : ℕ) : FGL :=
+  let segment := SegmentOfProverData c.witness
+  let permutation := PermutationOfProverData c.witness
+  match index with
+  | 0 => segment.segment_id
+  | 1 => segment.is_first_segment
+  | 2 => segment.is_last_segment
+  | 3 => segment.previous_segment_value_0
+  | 4 => segment.previous_segment_value_1
+  | 5 => segment.previous_segment_step
+  | 6 => segment.previous_segment_addr
+  | 7 => segment.segment_last_value_0
+  | 8 => segment.segment_last_value_1
+  | 9 => segment.segment_last_step
+  | 10 => segment.segment_last_addr
+  | 11 => segment.distance_base_0
+  | 12 => segment.distance_base_1
+  | 13 => segment.distance_end_0
+  | 14 => segment.distance_end_1
+  | 15 => permutation.im_direct_0
+  | 16 => permutation.im_direct_1
+  | 17 => permutation.im_direct_2
+  | 18 => permutation.im_direct_3
+  | 19 => permutation.im_direct_4
+  | 20 => permutation.im_direct_5
+  | _ => 0
+
+instance proverDataMemCircuitExtractionCircuit
+    {length : ℕ} {program : Program length} :
+    Extraction.Circuit FGL FGL (ProverDataMemCircuit program) where
+  main := mainValue
+  preprocessed := preprocessedValue
+  challenge := challengeValue
+  exposed := exposedValue
+
+/-- Extracted Mem generated constraints `0..=33` for the ProverData-backed Mem
+    circuit selected by the generated artifact wrapper. -/
+structure ExtractedConstraintFacts
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (table : Table FGL) : Prop where
+  constraint_0 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_0_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_1 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_1_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_2 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_2_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_3 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_3_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_4 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_4_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_5 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_5_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_6 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_6_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_7 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_7_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_8 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_8_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_9 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_9_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_10 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_10_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_11 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_11_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_12 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_12_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_13 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_13_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_14 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_14_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_15 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_15_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_16 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_16_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_17 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_17_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_18 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_18_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_19 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_19_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_20 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_20_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_21 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_21_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_22 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_22_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_23 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_23_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_24 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_24_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_25 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_25_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_26 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_26_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_27 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_27_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_28 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_28_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_29 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_29_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_30 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_30_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_31 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_31_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_32 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_32_every_row (proverDataMemCircuit witness table) idx.val
+  constraint_33 :
+    ∀ idx : Fin table.table.length,
+      Mem.extraction.constraint_33_every_row (proverDataMemCircuit witness table) idx.val
+
+end Extraction.MemGeneratedConstraintBridge
+"#
+    .to_string()
 }
 
 /// Extractor-side report for the Lean `MemTableGeneratedAirFacts` package.
@@ -3438,6 +3700,34 @@ mod tests {
     }
 
     #[test]
+    fn mem_generated_constraint_bridge_names_extracted_constraint_surface() {
+        let out = render_mem_generated_constraint_bridge_module();
+        assert!(
+            out.contains("namespace Extraction.MemGeneratedConstraintBridge")
+                && out.contains("structure ProverDataMemCircuit")
+                && out.contains("instance proverDataMemCircuitExtractionCircuit")
+                && out.contains("structure ExtractedConstraintFacts"),
+            "bridge should expose the ProverData-backed extracted constraint surface:\n{}",
+            out
+        );
+        assert!(
+            out.contains("Mem.extraction.constraint_0_every_row")
+                && out.contains("Mem.extraction.constraint_23_every_row")
+                && out.contains("Mem.extraction.constraint_24_every_row")
+                && out.contains("Mem.extraction.constraint_33_every_row"),
+            "bridge should name the full Mem constraint range:\n{}",
+            out
+        );
+        assert!(
+            out.contains("MemOfProverData c.witness c.table")
+                && out.contains("SegmentOfProverData c.witness")
+                && out.contains("PermutationOfProverData c.witness"),
+            "bridge should use the same ProverData-backed sources as the wrapper:\n{}",
+            out
+        );
+    }
+
+    #[test]
     fn find_air_no_match_errors_with_helpful_message() {
         let pilout = PilOut {
             air_groups: vec![pilout::AirGroup {
@@ -3597,7 +3887,7 @@ mod tests {
             out
         );
         assert!(
-            out.contains("def constraint_0_every_row {C : Type → Type → Type} {F : Type} [Field F] [Extraction.Circuit F F C] (c : C F F) (row: ℕ) :="),
+            out.contains("def constraint_0_every_row {C : Type → Type → Sort u} {F : Type} [Field F] [Extraction.Circuit F F C] (c : C F F) (row: ℕ) :="),
             "expected a single-field constraint def, got:\n{}",
             out
         );

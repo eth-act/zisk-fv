@@ -14,11 +14,11 @@ emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
 table-global segment/permutation constants, challenges, ranges, and generated
 assertions are outside the component.
 
-Current slice: the generated extraction layer is being revived without the old
-root `ZiskFv.Circuit` API. `pil-extract` now emits an `Extraction.Circuit`
-shim, per-AIR extraction imports use `Extraction.Circuit.*`, and the generated
-Mem gate compiles `Extraction.Circuit`, `Extraction.Mem`, and
-`Extraction.MemGeneratedArtifact` under `build/extraction`.
+Current slice: generated Mem constraints now have a checked ProverData bridge
+surface. `Extraction.Circuit` is universe-polymorphic, `Extraction.Mem`
+compiles, and `MemGeneratedConstraintBridge.lean` instantiates the generated
+circuit interface over the ProverData-backed Mem table/source while naming
+`constraint_0..33` as `ExtractedConstraintFacts`.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -31,16 +31,17 @@ Current proof surface:
   hints, ProverData keys, generated timeline constructor, witness contract, and
   the raw-facts adapter path.
 - `tools/pil-extract mem-generated-artifact` emits checked witness/raw assembly
-  helpers and the timeline constructor wrapper; the gate now also checks the
-  generated Mem constraint source.
+  helpers and the timeline constructor wrapper; the gate also checks the
+  generated Mem constraint source and bridge module.
 
 Latest verification:
-- Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (72 tests).
-- Regenerated local `Circuit.lean`, `Mem.lean`, and
-  `MemGeneratedArtifact.lean` under `build/extraction/Extraction`.
+- Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests).
+- Regenerated local `Circuit.lean`, `Mem.lean`, `MemGeneratedArtifact.lean`,
+  and `MemGeneratedConstraintBridge.lean` under `build/extraction/Extraction`.
 - Exact generated-Mem gate sequence passes: compile `Circuit.lean` to
-  `Circuit.olean`, then compile `Mem.lean` and `MemGeneratedArtifact.lean`
-  with `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`.
+  `Circuit.olean`, compile `Mem.lean` and `MemGeneratedArtifact.lean` to
+  oleans, then compile `MemGeneratedConstraintBridge.lean` with
+  `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`.
 - `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`,
   `nix flake check --no-build`, and `git diff --check`.
 - Last full `nix run .#test`: commit `98202ebc`.

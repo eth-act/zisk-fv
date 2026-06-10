@@ -199,8 +199,10 @@ ProverData fact callbacks to the same witness target. It also exposes
 `nix run .#test` gate compiles the generated `Extraction.Circuit` shim,
 `Extraction.Mem` constraint source, and
 `Extraction.MemGeneratedArtifact` wrapper directly under the generated
-`build/extraction` root so this surface stays synchronized with the checked
-Lean API.
+`build/extraction` root. It also compiles
+`Extraction.MemGeneratedConstraintBridge`, which binds those extracted Mem
+constraints to the ProverData-backed source view used by the wrapper, so this
+surface stays synchronized with the checked Lean API.
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` packages that
 target into the load-facing boundary. Lean packages the resulting sidecar
 callback into the witness-selected `FullWitnessMemAirSource` via

@@ -292,15 +292,24 @@ that target, and
 prove the witness facts; it pins the generated module's public entry point to
 the current load-facing constructor.
 
+The generated `MemGeneratedConstraintBridge.lean` companion instantiates the
+extracted `Extraction.Circuit` interface with the same ProverData-backed Mem
+source view and names `Extraction.Mem.constraint_0..33` as
+`ExtractedConstraintFacts` for that concrete view. This is still a proof
+surface, not a proof of the constraints; the next bridge step is to assemble
+those checked extracted predicates into the wrapper's raw ProverData facts.
+
 `nix run .#populate` also materializes the same report at
 `build/extraction/MemAirFacts.md`, the generated-only circuit shim at
 `build/extraction/Extraction/Circuit.lean`, the Mem extracted constraints at
-`build/extraction/Extraction/Mem.lean`, and the wrapper at
-`build/extraction/Extraction/MemGeneratedArtifact.lean`, produced by the pinned
-`extracted-lean` derivation from `build/zisk.pilout` and upstream `mem.pil`.
-Those files are reproducible generated artifacts, not Lake dependencies; the
-top-level test gate compiles the checked Mem extraction surface with
-`lake env lean -R build/extraction ...`.
+`build/extraction/Extraction/Mem.lean`, the wrapper at
+`build/extraction/Extraction/MemGeneratedArtifact.lean`, and the ProverData
+constraint bridge at
+`build/extraction/Extraction/MemGeneratedConstraintBridge.lean`, produced by
+the pinned `extracted-lean` derivation from `build/zisk.pilout` and upstream
+`mem.pil`. Those files are reproducible generated artifacts, not Lake
+dependencies; the top-level test gate compiles the checked Mem extraction
+surface with `lake env lean -R build/extraction ...`.
 
 ## Limitations (deliberate; expand as phases demand)
 

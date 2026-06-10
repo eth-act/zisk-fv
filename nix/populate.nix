@@ -8,7 +8,7 @@
 #   build/zisk.pilout                      ← zisk-pilout
 #   build/extraction/Extraction/*.lean     ← extracted-lean, including the
 #                                             Circuit shim and
-#                                             MemGeneratedArtifact.lean
+#                                             MemGeneratedArtifact/bridge files
 #   build/extraction/MemAirFacts.md        ← extracted-lean
 #   build/clean-lean/                      ← clean-source.
 #
