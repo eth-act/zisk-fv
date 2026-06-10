@@ -2369,6 +2369,60 @@ theorem toFacts {table : Table FGL} (source : MemTableGeneratedAirSource table) 
 
 end MemTableGeneratedAirSource
 
+/-- Table-level sidecar for generated raw Mem AIR source data.
+
+    Generated/full-ensemble code can use this object when it has the concrete
+    stage-2 columns and raw split facts for one witness table, but has not yet
+    packaged them into the witness-wide `FullWitnessMemAirSourceRawFacts`
+    callback. This remains a source-data contract: the raw facts are supplied
+    explicitly, and replay evidence is still derived downstream. -/
+structure MemTableGeneratedRawSourceSidecar
+    (table : Table FGL) : Type 1 where
+  segment : ZiskFv.Airs.Mem.SegmentColumns FGL
+  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
+  gsum : ℕ → FGL
+  im0 : ℕ → FGL
+  im1 : ℕ → FGL
+  facts :
+    MemTableGeneratedRawSourceFacts
+      table (memOfTable table gsum im0 im1)
+      (segmentWithFixedL1 segment) permutation
+
+namespace MemTableGeneratedRawSourceSidecar
+
+@[reducible]
+def mem {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar table) :
+    ZiskFv.Airs.Mem.Valid_Mem FGL FGL :=
+  memOfTable table sidecar.gsum sidecar.im0 sidecar.im1
+
+@[reducible]
+def fixedSegment {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar table) :
+    ZiskFv.Airs.Mem.SegmentColumns FGL :=
+  segmentWithFixedL1 sidecar.segment
+
+def toRawFacts {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar table) :
+    MemTableGeneratedRawSourceFacts
+      table sidecar.mem sidecar.fixedSegment sidecar.permutation :=
+  sidecar.facts
+
+def toAirFacts {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar table) :
+    MemTableGeneratedAirFacts table sidecar.mem sidecar.fixedSegment sidecar.permutation :=
+  memTableGeneratedAirFacts_of_constraintFacts
+    sidecar.facts.constraints
+    sidecar.facts.rowRanges
+    sidecar.facts.segmentRanges
+
+def toAirSource {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar table) :
+    MemTableGeneratedAirSource table where
+  segment := sidecar.segment
+  permutation := sidecar.permutation
+  gsum := sidecar.gsum
+  im0 := sidecar.im0
+  im1 := sidecar.im1
+  facts := sidecar.toAirFacts
+
+end MemTableGeneratedRawSourceSidecar
+
 /-- Build the typed Mem AIR source from the three extractor-facing fact
     families. This is the narrow constructor a future generated Lean module can
     call after proving the pilout-generated row constraints and range facts for
@@ -2948,6 +3002,34 @@ def FullWitnessMemAirSourceRawFacts
             table (memOfTable table gsum im0 im1)
             (segmentWithFixedL1 segment) permutation
 
+/-- Generated/full-ensemble raw Mem source sidecars for every mutable Mem table
+    in one full witness.
+
+    This is a structured generated-code target for the current sidecar route:
+    the full witness supplies table membership and component identity, while the
+    sidecar supplies the concrete stage-2 columns and raw split facts for that
+    table. -/
+def FullWitnessMemAirSourceRawSidecars
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) : Type 1 :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        MemTableGeneratedRawSourceSidecar table
+
+/-- Package generated raw Mem source sidecars into the existing raw full-witness
+    callback. -/
+def fullWitnessMemAirSourceRawFacts_of_sidecars
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_sidecars : FullWitnessMemAirSourceRawSidecars witness) :
+    FullWitnessMemAirSourceRawFacts witness := by
+  intro table h_table h_component
+  let sidecar := h_sidecars table h_table h_component
+  exact
+    ⟨ sidecar.segment, sidecar.permutation, sidecar.gsum, sidecar.im0, sidecar.im1,
+      sidecar.facts ⟩
+
 /-- Package raw generated/full-ensemble Mem facts into the witness-aware source
     callback. -/
 def fullWitnessMemAirSourceFacts_of_rawFacts
@@ -2990,6 +3072,16 @@ theorem exists_fullWitnessMemAirSource_of_rawFacts
     witness
     (fullWitnessMemAirSourceFacts_of_rawFacts h_raw)
 
+/-- Select the concrete mutable Mem table from sidecar-form raw source facts. -/
+theorem exists_fullWitnessMemAirSource_of_rawSidecars
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_sidecars : FullWitnessMemAirSourceRawSidecars witness) :
+    Nonempty (FullWitnessMemAirSource witness) :=
+  exists_fullWitnessMemAirSource_of_rawFacts
+    witness
+    (fullWitnessMemAirSourceRawFacts_of_sidecars h_sidecars)
+
 /-- A named Mem AIR source selected from raw full-witness facts.
 
     This is only a choice of the concrete mutable Mem table already proved to
@@ -3001,6 +3093,14 @@ noncomputable def fullWitnessMemAirSourceOfRawFacts
     (h_raw : FullWitnessMemAirSourceRawFacts witness) :
     FullWitnessMemAirSource witness :=
   Classical.choice (exists_fullWitnessMemAirSource_of_rawFacts witness h_raw)
+
+/-- A named Mem AIR source selected from sidecar-form raw full-witness facts. -/
+noncomputable def fullWitnessMemAirSourceOfRawSidecars
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_sidecars : FullWitnessMemAirSourceRawSidecars witness) :
+    FullWitnessMemAirSource witness :=
+  Classical.choice (exists_fullWitnessMemAirSource_of_rawSidecars witness h_sidecars)
 
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/

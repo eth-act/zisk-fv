@@ -1256,11 +1256,12 @@ fn render_mem_air_facts_report(
     .unwrap();
     writeln!(
         out,
-        "- Generated Lean code should call \
-         `exists_fullWitnessMemAirSource_of_rawFacts` after supplying a \
-         `FullWitnessMemAirSourceRawFacts` callback for the full witness. \
-         Lean packages the raw split constraints and range propositions into \
-         the witness-aware source shape consumed by the replay source selector. \
+        "- Generated Lean code should build `MemTableGeneratedRawSourceSidecar` \
+         values for mutable Mem tables and expose them through a \
+         `FullWitnessMemAirSourceRawSidecars` callback. Lean converts that \
+         sidecar callback with `fullWitnessMemAirSourceRawFacts_of_sidecars`; \
+         `exists_fullWitnessMemAirSource_of_rawSidecars` then selects the \
+         concrete replay source. \
          Use `memTableGeneratedAirSource_of_witnessFacts` only for a concrete \
          table-level source with explicit Clean assertion/lookup witnesses."
     )

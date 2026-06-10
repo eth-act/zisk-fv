@@ -233,10 +233,12 @@ extractor-facing source for `MemTableGeneratedRangeFacts` and
 coverage table: range-check hints cover `incrementChunks`, `dualStepDelta`, and
 `distanceBaseChunks`, while `addrColumns` and `stepColumns` require the
 `mem.pil` bit-width lines supplied through `--pil-source`. A generated Lean
-module should supply `FullWitnessMemAirSourceRawFacts` and call
-`exists_fullWitnessMemAirSource_of_rawFacts`; Lean then packages the raw split
-constraints and range propositions into the witness-aware source shape consumed
-by the replay source selector. The table-level
+module should build `MemTableGeneratedRawSourceSidecar` values for mutable Mem
+tables and expose them through `FullWitnessMemAirSourceRawSidecars`. Lean
+converts that sidecar callback with
+`fullWitnessMemAirSourceRawFacts_of_sidecars`, and
+`exists_fullWitnessMemAirSource_of_rawSidecars` then selects the concrete replay
+source. The table-level
 `memTableGeneratedAirSource_of_witnessFacts` constructor remains available when
 a concrete source already has explicit Clean assertion/lookup witnesses.
 Because Clean component emission deliberately omits stage-2 running-product

@@ -839,6 +839,21 @@ no assumed soundness fields**.
       check a concrete witness artifact that proves
       `FullWitnessMemAirSourceRawFacts`, or extend the table/component model so
       those Mem AIR source columns are represented generically.
+      Current sidecar slice: Lean now names the concrete generated-output
+      contract as `MemTableGeneratedRawSourceSidecar` per mutable Mem table and
+      `FullWitnessMemAirSourceRawSidecars` for a full witness. The adapter
+      `fullWitnessMemAirSourceRawFacts_of_sidecars` converts sidecars to the
+      existing `FullWitnessMemAirSourceRawFacts` boundary, and
+      `exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete Mem
+      replay source from that structured callback. The extractor report and
+      extraction notes now point generated code at the sidecar target. Verified
+      with clean Lean LSP diagnostics for `Balance.lean`, `lean_verify` scans of
+      the sidecar adapters/selectors, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, `cargo test --manifest-path
+      tools/pil-extract/Cargo.toml`, regenerated `/tmp/mem-air-facts-report.md`,
+      and `git diff --check`. Note: `cargo fmt --check` still reports broad
+      pre-existing rustfmt churn in `tools/pil-extract`, so it was not used as a
+      narrow gate for this slice.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
