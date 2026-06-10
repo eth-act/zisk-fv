@@ -234,6 +234,18 @@ no assumed soundness fields**.
       ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
       `nix run .#test`.
+      Partial: table-level row-chunk composition is now separated from the
+      semantic selected-primary-read proof.
+      `memoryBusRowsReadWriteSound_flatMap_activeMemReplayEntriesOfRow`
+      composes row-local active replay soundness over any `flatMap`, and
+      `memoryBusRowsReadWriteSound_activeMemReplayRowsOfTable_of_primary_reads`
+      specializes that induction to `activeMemReplayRowsOfTable`. The remaining
+      input is exactly the explicit prefix agreement for each selected primary
+      read. Verified with clean Lean LSP diagnostics for
+      `ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+      `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.

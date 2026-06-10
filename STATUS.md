@@ -37,15 +37,18 @@ Latest proof surface:
   `zeroedMemoryEntryOfEntry`, `zeroMemoryOfEntry`, `zeroMemoryOfRows`, and
   `readEventReplayAgreement_of_zeroMemoryOfEntry`, with Balance projections
   for generated address-change primary reads.
+- Row-local active replay soundness now composes over a table `flatMap` via
+  `memoryBusRowsReadWriteSound_flatMap_activeMemReplayEntriesOfRow` and
+  `memoryBusRowsReadWriteSound_activeMemReplayRowsOfTable_of_primary_reads`.
 
-Verification for latest slice: Lean LSP diagnostics are clean after an LSP
-build hook, `lake build ZiskFv.ZiskCircuit.MemTrace`, `lake build
-ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+Verification for latest slice: Lean LSP diagnostics are clean for
+`ZiskFv.AirsClean.FullEnsemble.Balance`, and `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance` plus full `lake build` pass.
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
-`nix run .#test` all pass.
+`nix run .#test` pass.
 
-Next step: commit the zero-preload first-read slice, then thread these lemmas
-through a table-level induction over `activeMemReplayRowsOfTable`.
+Next step: commit the table-level fold slice, then use the bridge/range facts
+to discharge the selected-primary-read prefix hypothesis.
 
 Context: Phase A is committed at `0c222595`. The old
 `.worktrees/memory-trust-gap` branch remains only as salvage reference until

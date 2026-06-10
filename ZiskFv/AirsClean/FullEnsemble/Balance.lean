@@ -2252,6 +2252,100 @@ theorem memoryBusRowsReadWriteSound_activeMemReplayEntriesOfRow_of_spec
               initialMemory row h_wr_one
         · simp
 
+/-- Row-local active replay soundness composes over a list of generated Mem
+    rows. The only semantic input still required at each row is the replay
+    agreement for a selected primary read at the memory obtained from the
+    preceding active rows. -/
+theorem memoryBusRowsReadWriteSound_flatMap_activeMemReplayEntriesOfRow
+    {α : Type}
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (items : List α)
+    (rowOf : α → ZiskFv.AirsClean.Mem.MemRow FGL)
+    (h_specs :
+      ∀ item, item ∈ items → ZiskFv.AirsClean.Mem.Spec (rowOf item))
+    (h_primary_read :
+      ∀ priorItems item laterItems,
+        items = priorItems ++ item :: laterItems →
+        (rowOf item).sel = 1 →
+        (rowOf item).wr = 0 →
+          ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+            (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows initialMemory
+              (priorItems.flatMap fun priorItem =>
+                activeMemReplayEntriesOfRow (rowOf priorItem)))
+            (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+              (memPrimaryReplayEntryOfRow (rowOf item)))) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound
+      initialMemory
+      (items.flatMap fun item => activeMemReplayEntriesOfRow (rowOf item)) := by
+  induction items generalizing initialMemory with
+  | nil =>
+      simp [ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound]
+  | cons item rest ih =>
+      simp only [List.flatMap_cons]
+      apply ZiskFv.ZiskCircuit.MemTrace.memoryBusRowsReadWriteSound_append
+      · exact
+          memoryBusRowsReadWriteSound_activeMemReplayEntriesOfRow_of_spec
+            initialMemory
+            (h_specs item (by simp))
+            (fun h_sel h_wr =>
+              h_primary_read [] item rest (by simp) h_sel h_wr)
+      · exact
+          ih
+            (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows initialMemory
+              (activeMemReplayEntriesOfRow (rowOf item)))
+            (fun restItem h_restItem =>
+              h_specs restItem (by simp [h_restItem]))
+            (fun priorItems restItem laterItems h_split h_sel h_wr => by
+              have h_split_full :
+                  item :: rest = (item :: priorItems) ++ restItem :: laterItems := by
+                simp [h_split]
+              have h_agreement :=
+                h_primary_read (item :: priorItems) restItem laterItems
+                  h_split_full h_sel h_wr
+              simpa [List.flatMap_cons,
+                ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows_append]
+                using h_agreement)
+
+/-- Table-level wrapper for the active replay-row fold. It packages the
+    mechanical `flatMap` induction while keeping the selected-primary-read
+    prefix obligation explicit. -/
+theorem memoryBusRowsReadWriteSound_activeMemReplayRowsOfTable_of_primary_reads
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (table : Table FGL)
+    (h_specs :
+      ∀ providerRow, providerRow ∈ table.table →
+        ZiskFv.AirsClean.Mem.Spec
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+    (h_primary_read :
+      ∀ priorRows providerRow laterRows,
+        table.table = priorRows ++ providerRow :: laterRows →
+        (eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1 →
+        (eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0 →
+          ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+            (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows initialMemory
+              (priorRows.flatMap fun priorProviderRow =>
+                activeMemReplayEntriesOfRow
+                  (eval (table.environment priorProviderRow)
+                    ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+            (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+              (memPrimaryReplayEntryOfRow
+                (eval (table.environment providerRow)
+                  ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound
+      initialMemory (activeMemReplayRowsOfTable table) := by
+  unfold activeMemReplayRowsOfTable
+  exact
+    memoryBusRowsReadWriteSound_flatMap_activeMemReplayEntriesOfRow
+      initialMemory table.table
+      (fun providerRow =>
+        eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
+      h_specs
+      h_primary_read
+
 /-- The indexed table bridge and range facts prove local chronological order
     for the active replay emissions projected from one concrete table row.
 
