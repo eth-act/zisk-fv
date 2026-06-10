@@ -63,11 +63,9 @@ EOF
       chmod u+w "build/extraction/Extraction/$base"
     done
 
-    if [ -f "${extracted-lean}/MemAirFacts.md" ]; then
-      echo "▶ build/extraction/MemAirFacts.md ← ${extracted-lean}"
-      cp --no-preserve=mode "${extracted-lean}/MemAirFacts.md" build/extraction/MemAirFacts.md
-      chmod u+w build/extraction/MemAirFacts.md
-    fi
+    echo "▶ build/extraction/MemAirFacts.md ← ${extracted-lean}"
+    cp --no-preserve=mode "${extracted-lean}/MemAirFacts.md" build/extraction/MemAirFacts.md
+    chmod u+w build/extraction/MemAirFacts.md
 
     echo "▶ build/clean-lean/ ← ${clean-source}"
     rm -rf build/clean-lean

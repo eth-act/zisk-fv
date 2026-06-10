@@ -39,6 +39,7 @@ Latest verification:
 - Lean LSP + `lean_verify` clean for direct sidecar timeline constructor
 - Nix eval for `.#packages.x86_64-linux.extracted-lean` and `.#apps.x86_64-linux.populate`
 - local `pil-extract mem-air-facts`; `nix flake check --no-build`
+- `populate` now requires generated `MemAirFacts.md` rather than copying it opportunistically
 - Last full `nix run .#test`: commit `98202ebc`
 
 Next step: generate or check `FullWitnessMemAirSourceRawSidecars` for the

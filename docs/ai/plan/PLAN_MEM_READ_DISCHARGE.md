@@ -897,6 +897,11 @@ no assumed soundness fields**.
       wording to the sidecar boundary. Verified with
       `cargo test --manifest-path tools/pil-extract/Cargo.toml` (68 tests) and
       local `pil-extract mem-air-facts` regeneration.
+      Follow-up populate hardening: `nix run .#populate` now requires
+      `MemAirFacts.md` from the `extracted-lean` derivation instead of copying
+      it only if present. This makes missing sidecar source reports a populate
+      failure. Verified with Nix evaluation of `.#apps.x86_64-linux.populate`
+      and `nix flake check --no-build`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
