@@ -189,8 +189,10 @@ no assumed soundness fields**.
       `readEventReplayAgreement_after_previous_primary_write_memTableGeneratedRowsBridge`
       combines those with the replay-core theorem
       `readEventReplayAgreement_of_writeMemoryOfEntry_same` to prove the local
-      previous-primary-write -> current-read byte agreement step. Verified
-      with LSP diagnostics, LSP restart/build, `lake build
+      previous-primary-write -> current-read byte agreement step. The same
+      replay theorem also factors the intra-row primary-write -> dual-read case
+      as `readEventReplayAgreement_after_primary_write_dual_read_of_row`.
+      Verified with LSP diagnostics, LSP restart/build, `lake build
       ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
       `nix run .#test`.

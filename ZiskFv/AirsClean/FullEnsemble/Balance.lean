@@ -1978,6 +1978,36 @@ theorem readEventReplayAgreement_after_previous_primary_write_memTableGeneratedR
     ZiskFv.AirsClean.Mem.rowAt, h_previous_write,
     ZiskFv.ZiskCircuit.MemTrace.replayStoreEvent_storeEventOfEntry] using h_replay
 
+/-- Replaying a primary write from one Mem row justifies the pinned dual read
+    emitted by the same row, because the dual message has the same pointer and
+    value chunks and appears after the primary emission. -/
+theorem readEventReplayAgreement_after_primary_write_dual_read_of_row
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (row : ZiskFv.AirsClean.Mem.MemRow FGL)
+    (h_write : row.wr = 1) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow initialMemory
+        (memPrimaryReplayEntryOfRow row))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memDualReadReplayEntryOfRow row)) := by
+  let writeEntry := memPrimaryReplayEntryOfRow row
+  let readEntry := memDualReadReplayEntryOfRow row
+  have h_ptr : readEntry.ptr = writeEntry.ptr := by
+    simp [readEntry, writeEntry]
+  have h_value_0 : readEntry.value_0 = writeEntry.value_0 := by
+    simp [readEntry, writeEntry]
+  have h_value_1 : readEntry.value_1 = writeEntry.value_1 := by
+    simp [readEntry, writeEntry]
+  have h_replay :
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+        (ZiskFv.ZiskCircuit.MemTrace.writeMemoryOfEntry initialMemory writeEntry)
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry readEntry) :=
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_writeMemoryOfEntry_same
+      initialMemory h_ptr h_value_0 h_value_1
+  simpa [writeEntry, readEntry, ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow,
+    memPrimaryReplayEntryOfRow, ZiskFv.AirsClean.Mem.memBusMessage, h_write,
+    ZiskFv.ZiskCircuit.MemTrace.replayStoreEvent_storeEventOfEntry] using h_replay
+
 /-- The indexed table bridge and range facts prove local chronological order
     for the active replay emissions projected from one concrete table row.
 
