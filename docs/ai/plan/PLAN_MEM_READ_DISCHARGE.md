@@ -862,6 +862,14 @@ no assumed soundness fields**.
       global `std_alpha`/`std_gamma` challenge symbols. Verified with `cargo
       test --manifest-path tools/pil-extract/Cargo.toml` and regenerated
       `/tmp/mem-air-facts-report.md`; `git diff --check` is clean.
+      Current sidecar-entry slice: `fullWitnessMemAirSourceOfRawSidecars` is
+      now definitionally identified with the adapted raw-facts source, and
+      `fullWitnessMemoryTimelineEvidence_of_rawSidecars` lets generated
+      sidecars feed the Compliance-facing memory-timeline evidence constructor
+      directly. This is still adapter plumbing, not proof of sidecar production.
+      Verified with clean Lean LSP diagnostics for `Balance.lean`, `lean_verify`
+      scans of the sidecar source equality and timeline constructor, `lake
+      build ZiskFv.AirsClean.FullEnsemble.Balance`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

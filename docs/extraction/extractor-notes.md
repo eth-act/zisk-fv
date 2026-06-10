@@ -241,7 +241,10 @@ for mutable Mem tables and expose them through `FullWitnessMemAirSourceRawSideca
 Lean converts that sidecar callback with
 `fullWitnessMemAirSourceRawFacts_of_sidecars`, and
 `exists_fullWitnessMemAirSource_of_rawSidecars` then selects the concrete replay
-source. The table-level
+source. Downstream code can use
+`fullWitnessMemoryTimelineEvidence_of_rawSidecars` to feed the compliance
+timeline boundary directly from sidecars plus the residual Sail timeline facts.
+The table-level
 `memTableGeneratedAirSource_of_witnessFacts` constructor remains available when
 a concrete source already has explicit Clean assertion/lookup witnesses.
 Because Clean component emission deliberately omits stage-2 running-product

@@ -18,6 +18,8 @@ Current slice: add a table-level generated-output contract. Lean now has
 existing `FullWitnessMemAirSourceRawFacts` / source-selector path. Extractor
 and docs text now point generated code at the sidecar target; the report also
 maps sidecar fields to concrete pilout witness/fixed/AIR_VALUE/challenge symbols.
+`fullWitnessMemoryTimelineEvidence_of_rawSidecars` now feeds the Compliance
+timeline boundary directly from generated sidecars plus residual Sail facts.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -35,6 +37,7 @@ Latest verification:
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
 - `cargo test --manifest-path tools/pil-extract/Cargo.toml` (67 tests)
 - Regenerated `/tmp/mem-air-facts-report.md`; `git diff --check`
+- Lean LSP + `lean_verify` clean for direct sidecar timeline constructor
 - Last wider build: `Compliance`; last trust gate: `check-all.sh`
 - Last full `nix run .#test`: commit `98202ebc`
 
