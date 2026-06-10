@@ -31,7 +31,7 @@ Current proof surface:
   helpers and the timeline constructor wrapper.
 - `tools/pil-extract mem-generated-constraint-bridge` emits the checked
   ProverData circuit instance, extracted constraint/range surfaces,
-  `ExtractedSidecarFacts`, and raw/witness builders.
+  `ExtractedSidecarFacts`, and raw/witness/timeline builders.
 
 Latest verification:
 - Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests).

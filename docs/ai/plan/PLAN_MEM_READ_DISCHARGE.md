@@ -1070,7 +1070,7 @@ no assumed soundness fields**.
       predicates to the wrapper's split `RawConstraintFacts`, maps explicit
       bit-width/range inequalities to raw row/segment range facts, and exposes
       `ExtractedSidecarFacts` as the preferred generated target, with
-      raw/witness builders for that target. This still does not prove
+      raw/witness/timeline builders for that target. This still does not prove
       `FullWitnessMemAirSourceProverDataWitnessFacts`; the remaining generated
       production work is proving the `ExtractedSidecarFacts` fields. Audit note:
       the lookup-witness

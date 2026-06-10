@@ -299,9 +299,10 @@ source view and names `Extraction.Mem.constraint_0..33` as
 definitional adapter from those extracted predicates to the wrapper's split
 `RawConstraintFacts`, maps explicit bit-width/range inequalities to raw
 row/segment range facts, and exposes `ExtractedSidecarFacts` as the preferred
-source-level generated target. This is still a source surface, not a proof of
-the constraints or ranges; the remaining generated bridge step is to produce
-the `ExtractedSidecarFacts` fields for the witness.
+source-level generated target, including a direct builder for
+`GeneratedTimelineEvidence`. This is still a source surface, not a proof of the
+constraints or ranges; the remaining generated bridge step is to produce the
+`ExtractedSidecarFacts` fields for the witness.
 
 `nix run .#populate` also materializes the same report at
 `build/extraction/MemAirFacts.md`, the generated-only circuit shim at

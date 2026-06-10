@@ -2162,6 +2162,49 @@ def buildWitnessFactsFromExtractedSidecarFacts
   buildWitnessFactsFromRawFacts
     (buildRawFactsFromExtractedSidecarFacts witness facts)
 
+@[reducible]
+noncomputable def buildTimelineEvidenceFromExtractedSidecarFacts
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (facts :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            ExtractedSidecarFacts witness table)
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
+    (h_traceSplit :
+      (fullWitnessMemAirSourceOfRawSidecars witness
+          (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts
+            (buildWitnessFactsFromExtractedSidecarFacts witness facts))).rows =
+        priorRows ++ entry :: laterRows)
+    (h_selectedRead :
+      ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
+        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))
+    (h_initialAgreement :
+      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
+        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          ((fullWitnessMemAirSourceOfRawSidecars witness
+              (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts
+                (buildWitnessFactsFromExtractedSidecarFacts witness facts)))
+            |>.replayBridgeOfTraceSplit h_traceSplit)).initialMemory)
+    (h_stateAtPrefix :
+      state =
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
+    GeneratedTimelineEvidence state entry :=
+  buildTimelineEvidence
+    witness
+    (buildWitnessFactsFromExtractedSidecarFacts witness facts)
+    initialState
+    priorRows
+    laterRows
+    h_traceSplit
+    h_selectedRead
+    h_initialAgreement
+    h_stateAtPrefix
+
 end Extraction.MemGeneratedConstraintBridge
 "#
     .to_string()
@@ -4001,6 +4044,13 @@ mod tests {
                 && out.contains("structure ExtractedSidecarFacts")
                 && out.contains("def buildWitnessFactsFromExtractedSidecarFacts"),
             "bridge should expose generator-friendly range facts and sidecar builders:\n{}",
+            out
+        );
+        assert!(
+            out.contains("def buildTimelineEvidenceFromExtractedSidecarFacts")
+                && out.contains("GeneratedTimelineEvidence state entry")
+                && out.contains("buildTimelineEvidence"),
+            "bridge should expose the load-facing timeline constructor path:\n{}",
             out
         );
     }
