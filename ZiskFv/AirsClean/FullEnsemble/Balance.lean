@@ -3030,6 +3030,28 @@ def fullWitnessMemAirSourceRawFacts_of_sidecars
     ⟨ sidecar.segment, sidecar.permutation, sidecar.gsum, sidecar.im0, sidecar.im1,
       sidecar.facts ⟩
 
+/-- Package raw generated/full-ensemble Mem facts into sidecar form.
+
+    This is a compatibility adapter for callers that can still prove the raw
+    sigma callback directly. The full-witness timeline boundary stores
+    sidecars, so generated artifacts should prefer
+    `FullWitnessMemAirSourceRawSidecars` when possible. -/
+def fullWitnessMemAirSourceRawSidecars_of_rawFacts
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_raw : FullWitnessMemAirSourceRawFacts witness) :
+    FullWitnessMemAirSourceRawSidecars witness := by
+  intro table h_table h_component
+  rcases h_raw table h_table h_component with
+    ⟨segment, permutation, gsum, im0, im1, h_rawFacts⟩
+  exact
+    { segment := segment
+      permutation := permutation
+      gsum := gsum
+      im0 := im0
+      im1 := im1
+      facts := h_rawFacts }
+
 /-- Package raw generated/full-ensemble Mem facts into the witness-aware source
     callback. -/
 def fullWitnessMemAirSourceFacts_of_rawFacts
@@ -6214,21 +6236,21 @@ def memoryTimelineEvidence_of_fullWitnessMemReplayBridge
 
     This keeps the circuit-side replay source explicit without mentioning the
     full Clean ensemble in the public compliance theorem signature. The
-    evidence object carries the raw full-witness Mem AIR facts that derive the
-    replay bridge and accepted replay object; the remaining fields are only
-    the residual whole-execution timeline facts. -/
+    evidence object carries generated sidecars for the raw full-witness Mem AIR
+    facts that derive the replay bridge and accepted replay object; the
+    remaining fields are only the residual whole-execution timeline facts. -/
 structure FullWitnessMemoryTimelineEvidence
     (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
     (entry : Interaction.MemoryBusEntry FGL) : Type 2 where
   length : ℕ
   program : Program length
   witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble
-  rawFacts : FullWitnessMemAirSourceRawFacts witness
+  sidecars : FullWitnessMemAirSourceRawSidecars witness
   initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
   priorRows : List (Interaction.MemoryBusEntry FGL)
   laterRows : List (Interaction.MemoryBusEntry FGL)
   traceSplit :
-    (fullWitnessMemAirSourceOfRawFacts witness rawFacts).rows =
+    (fullWitnessMemAirSourceOfRawSidecars witness sidecars).rows =
       priorRows ++ entry :: laterRows
   selectedRead :
     ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
@@ -6236,7 +6258,7 @@ structure FullWitnessMemoryTimelineEvidence
   initialAgreement :
     ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
       (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
-        ((fullWitnessMemAirSourceOfRawFacts witness rawFacts).replayBridgeOfTraceSplit
+        ((fullWitnessMemAirSourceOfRawSidecars witness sidecars).replayBridgeOfTraceSplit
           traceSplit)).initialMemory
   stateAtPrefix :
     state =
@@ -6252,7 +6274,7 @@ noncomputable def memSource
     {entry : Interaction.MemoryBusEntry FGL}
     (evidence : FullWitnessMemoryTimelineEvidence state entry) :
     FullWitnessMemAirSource evidence.witness :=
-  fullWitnessMemAirSourceOfRawFacts evidence.witness evidence.rawFacts
+  fullWitnessMemAirSourceOfRawSidecars evidence.witness evidence.sidecars
 
 /-- The replay bridge determined by the carried raw full-witness Mem AIR facts.
     This is an accessor, not an independent structure field. -/
@@ -6276,61 +6298,14 @@ noncomputable def acceptedReplay
 
 end FullWitnessMemoryTimelineEvidence
 
-/-- Construct full-witness timeline evidence from raw full-witness Mem AIR
-    source facts plus the residual Sail timeline facts.
-
-    The raw facts select a concrete full-witness Mem AIR source via
-    `fullWitnessMemAirSourceOfRawFacts`; the remaining parameters are still the
-    intended residual boundary: selected read tag, initial Sail/replay memory
-    agreement, and state-at-prefix alignment. -/
-@[reducible]
-noncomputable def fullWitnessMemoryTimelineEvidence_of_rawFacts
-    {length : ℕ} {program : Program length}
-    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
-    (h_raw : FullWitnessMemAirSourceRawFacts witness)
-    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
-    {entry : Interaction.MemoryBusEntry FGL}
-    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
-    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
-    (h_traceSplit :
-      (fullWitnessMemAirSourceOfRawFacts witness h_raw).rows =
-        priorRows ++ entry :: laterRows)
-    (h_selectedRead :
-      ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
-        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))
-    (h_initialAgreement :
-      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
-        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
-          ((fullWitnessMemAirSourceOfRawFacts witness h_raw).replayBridgeOfTraceSplit
-            h_traceSplit)).initialMemory)
-    (h_stateAtPrefix :
-      state =
-        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
-    FullWitnessMemoryTimelineEvidence state entry :=
-  let memSource := fullWitnessMemAirSourceOfRawFacts witness h_raw
-  let bridge := memSource.replayBridgeOfTraceSplit h_traceSplit
-  let timeline :=
-    memoryTimelineEvidence_of_fullWitnessMemReplayBridge
-      bridge initialState priorRows laterRows h_traceSplit h_selectedRead
-      h_initialAgreement h_stateAtPrefix
-  { length := length
-    program := program
-    witness := witness
-    rawFacts := h_raw
-    initialState := initialState
-    priorRows := priorRows
-    laterRows := laterRows
-    traceSplit := h_traceSplit
-    selectedRead := h_selectedRead
-    initialAgreement := timeline.initialAgreement
-    stateAtPrefix := h_stateAtPrefix }
-
 /-- Construct full-witness timeline evidence from sidecar-form raw Mem AIR
     source facts plus the residual Sail timeline facts.
 
-    This is the generated-sidecar entry point: it is definitionally the
-    `fullWitnessMemoryTimelineEvidence_of_rawFacts` constructor after applying
-    `fullWitnessMemAirSourceRawFacts_of_sidecars`. -/
+    This is the generated-sidecar entry point. The sidecars select a concrete
+    full-witness Mem AIR source via `fullWitnessMemAirSourceOfRawSidecars`; the
+    remaining parameters are still the intended residual boundary: selected
+    read tag, initial Sail/replay memory agreement, and state-at-prefix
+    alignment. -/
 @[reducible]
 noncomputable def fullWitnessMemoryTimelineEvidence_of_rawSidecars
     {length : ℕ} {program : Program length}
@@ -6355,9 +6330,60 @@ noncomputable def fullWitnessMemoryTimelineEvidence_of_rawSidecars
       state =
         ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
     FullWitnessMemoryTimelineEvidence state entry :=
-  fullWitnessMemoryTimelineEvidence_of_rawFacts
+  let memSource := fullWitnessMemAirSourceOfRawSidecars witness h_sidecars
+  let bridge := memSource.replayBridgeOfTraceSplit h_traceSplit
+  let timeline :=
+    memoryTimelineEvidence_of_fullWitnessMemReplayBridge
+      bridge initialState priorRows laterRows h_traceSplit h_selectedRead
+      h_initialAgreement h_stateAtPrefix
+  { length := length
+    program := program
+    witness := witness
+    sidecars := h_sidecars
+    initialState := initialState
+    priorRows := priorRows
+    laterRows := laterRows
+    traceSplit := h_traceSplit
+    selectedRead := h_selectedRead
+    initialAgreement := timeline.initialAgreement
+    stateAtPrefix := h_stateAtPrefix }
+
+/-- Construct full-witness timeline evidence from raw full-witness Mem AIR
+    source facts plus the residual Sail timeline facts.
+
+    This is a compatibility constructor for callers that can still prove the
+    raw sigma callback directly. It packages those raw facts into sidecar form
+    before constructing the timeline evidence, matching the generated sidecar
+    boundary stored by `FullWitnessMemoryTimelineEvidence`. -/
+@[reducible]
+noncomputable def fullWitnessMemoryTimelineEvidence_of_rawFacts
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_raw : FullWitnessMemAirSourceRawFacts witness)
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
+    (h_traceSplit :
+      (fullWitnessMemAirSourceOfRawSidecars witness
+          (fullWitnessMemAirSourceRawSidecars_of_rawFacts h_raw)).rows =
+        priorRows ++ entry :: laterRows)
+    (h_selectedRead :
+      ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
+        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))
+    (h_initialAgreement :
+      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
+        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          ((fullWitnessMemAirSourceOfRawSidecars witness
+              (fullWitnessMemAirSourceRawSidecars_of_rawFacts h_raw)).replayBridgeOfTraceSplit
+            h_traceSplit)).initialMemory)
+    (h_stateAtPrefix :
+      state =
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
+    FullWitnessMemoryTimelineEvidence state entry :=
+  fullWitnessMemoryTimelineEvidence_of_rawSidecars
     witness
-    (fullWitnessMemAirSourceRawFacts_of_sidecars h_sidecars)
+    (fullWitnessMemAirSourceRawSidecars_of_rawFacts h_raw)
     initialState
     priorRows
     laterRows

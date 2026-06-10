@@ -870,6 +870,17 @@ no assumed soundness fields**.
       Verified with clean Lean LSP diagnostics for `Balance.lean`, `lean_verify`
       scans of the sidecar source equality and timeline constructor, `lake
       build ZiskFv.AirsClean.FullEnsemble.Balance`, and `git diff --check`.
+      Current boundary-shape slice: `FullWitnessMemoryTimelineEvidence` now
+      carries `FullWitnessMemAirSourceRawSidecars` directly. Raw facts remain a
+      compatibility input via `fullWitnessMemAirSourceRawSidecars_of_rawFacts`
+      and `fullWitnessMemoryTimelineEvidence_of_rawFacts`, but the stored
+      Compliance-facing boundary is now the generated sidecar artifact. This
+      moves the remaining non-residual target from raw callback production to
+      sidecar production for the witness-selected mutable Mem table. Verified
+      with clean Lean LSP diagnostics for `Balance.lean`, `lean_verify` scans
+      of the sidecar/raw compatibility adapter and both timeline constructors,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build
+      ZiskFv.Compliance`, `trust/scripts/check-all.sh`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

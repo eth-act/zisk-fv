@@ -238,12 +238,13 @@ a Lean range-fact coverage table: range-check hints cover `incrementChunks`,
 require the `mem.pil` bit-width lines supplied through `--pil-source`. A
 generated Lean module should build `MemTableGeneratedRawSourceSidecar` values
 for mutable Mem tables and expose them through `FullWitnessMemAirSourceRawSidecars`.
-Lean converts that sidecar callback with
-`fullWitnessMemAirSourceRawFacts_of_sidecars`, and
-`exists_fullWitnessMemAirSource_of_rawSidecars` then selects the concrete replay
-source. Downstream code can use
-`fullWitnessMemoryTimelineEvidence_of_rawSidecars` to feed the compliance
-timeline boundary directly from sidecars plus the residual Sail timeline facts.
+Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`;
+`exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete replay
+source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` feeds the
+compliance timeline boundary directly from sidecars plus the residual Sail
+timeline facts. `fullWitnessMemAirSourceRawFacts_of_sidecars` and the inverse
+raw-facts compatibility adapter remain available for lower-level generated
+modules that still expose the raw sigma callback.
 The table-level
 `memTableGeneratedAirSource_of_witnessFacts` constructor remains available when
 a concrete source already has explicit Clean assertion/lookup witnesses.
