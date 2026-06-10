@@ -667,6 +667,21 @@ no assumed soundness fields**.
       present when `--pil-source` is supplied. Verified with
       `cargo test --manifest-path tools/pil-extract/Cargo.toml` and a
       regenerated `/tmp/mem-air-facts-report.md`.
+      Partial: `FullWitnessMemoryTimelineEvidence` no longer stores an
+      independent `AcceptedMemoryReplayEvidence`. It now carries
+      `length`/`program`/`witness`/`rows` plus the concrete
+      `FullWitnessMemReplayBridge`; `acceptedReplay` is a reducible accessor
+      derived from that bridge, and coercion to `MemoryTimelineEvidence` goes
+      through `memoryTimelineEvidence_of_fullWitnessMemReplayBridge`. This
+      prevents the full-witness load boundary from smuggling circuit-side
+      `prefixReadSound` as a raw field while leaving the current sub-gap
+      unchanged: generated Lean still has to construct the constraint, row
+      range, and segment range fact packages for the witness-selected Mem
+      table. Verified with clean Lean LSP diagnostics, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build ZiskFv.Compliance`,
+      `trust/scripts/check-all.sh`, `rg` confirming no `acceptedReplay :`
+      field on `FullWitnessMemoryTimelineEvidence`, `lean_verify` scans of the
+      affected accessor/constructors, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

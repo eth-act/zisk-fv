@@ -10,9 +10,9 @@ Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
   bridge, row/segment ranges, fixed-column facts, active-row equality, and
   nonempty evidence.
-- `FullWitnessMemoryTimelineEvidence` is the Compliance-facing load boundary;
-  it derives accepted replay from `FullWitnessMemReplayBridge` and carries only
-  the residual timeline facts.
+- `FullWitnessMemoryTimelineEvidence` is the Compliance-facing load boundary.
+  It now carries the concrete full witness and `FullWitnessMemReplayBridge`;
+  `acceptedReplay` is a derived accessor, not a structure field.
 - Public load boundaries no longer mention `fullRv64imEnsemble` or the legacy
   `mem.addr r_mem = bus.e1.ptr` pin.
 - `tools/pil-extract mem-air-facts` reports generated constraint groups,
@@ -30,13 +30,12 @@ Current proof surface:
 Latest verification:
 - Lean LSP diagnostics: `ZiskFv/AirsClean/FullEnsemble/Balance.lean`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
+- `lake build ZiskFv.Compliance`
 - `trust/scripts/check-all.sh`
-- `cargo test --manifest-path tools/pil-extract/Cargo.toml`
-- `cargo run --manifest-path tools/pil-extract/Cargo.toml --quiet -- \
-  mem-air-facts --pilout build/zisk.pilout --air Mem \
-  --pil-source zisk/state-machines/mem/pil/mem.pil \
-  --output /tmp/mem-air-facts-report.md`
-- `lean_verify` on the new split-facts theorem/constructors: no `sorryAx`
+- `lean_verify` on the full-witness timeline accessor/constructors: no
+  `sorryAx`
+- `rg` confirms no `acceptedReplay :` field on
+  `FullWitnessMemoryTimelineEvidence`
 - `git diff --check`
 - `rg -n "h_mem_legacy_addr|_h_mem_legacy_addr|mem_legacy_addr" ZiskFv/Compliance`
   returns no hits.
