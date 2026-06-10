@@ -32,6 +32,8 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Cmd {
+    /// Emit the small circuit typeclass shim used by generated extraction files.
+    CircuitShim(CircuitShimCmd),
     /// Emit Lean4 constraint definitions for a single AIR (or list AIRs).
     Air(AirCmd),
     /// Emit bus-emission specs extracted from `gsum_debug_data` hints.
@@ -47,6 +49,13 @@ enum Cmd {
     MemAirFacts(MemAirFactsCmd),
     /// Emit the typed Lean wrapper for the Mem generated-artifact contract.
     MemGeneratedArtifact(MemGeneratedArtifactCmd),
+}
+
+#[derive(Args, Debug)]
+struct CircuitShimCmd {
+    /// Output path for the generated Lean module. If omitted, prints to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
 }
 
 #[derive(Args, Debug)]
@@ -211,12 +220,20 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
+        Cmd::CircuitShim(args) => run_circuit_shim(args),
         Cmd::Air(args) => run_air(args),
         Cmd::BusEmissions(args) => run_bus_emissions(args),
         Cmd::CleanComponent(args) => run_clean_component(args),
         Cmd::MemAirFacts(args) => run_mem_air_facts(args),
         Cmd::MemGeneratedArtifact(args) => run_mem_generated_artifact(args),
     }
+}
+
+/// Emit the generated-only circuit interface consumed by old per-AIR
+/// extraction files.
+fn run_circuit_shim(args: CircuitShimCmd) -> Result<()> {
+    let rendered = render_extraction_circuit_module();
+    write_output(args.output.as_deref(), &rendered)
 }
 
 /// Emit the extractor-facing source report for the Lean
@@ -450,6 +467,33 @@ struct RenderOpts {
     only: Option<std::collections::BTreeSet<usize>>,
 }
 
+fn render_extraction_circuit_module() -> String {
+    r#"import Mathlib
+
+set_option linter.all false
+
+/-!
+# Generated Extraction Circuit Shim
+
+This module is intentionally tiny. It is the generated-only interface used by
+the old per-AIR extraction files under `build/extraction/Extraction/`.
+It avoids the deleted root `ZiskFv.Circuit` API and also avoids colliding with
+Clean's root `Circuit` monad by living under the `Extraction` namespace.
+-/
+
+namespace Extraction
+
+class Circuit (F ExtF : Type) (C : Type → Type → Type) [Field F] [Field ExtF] where
+  main : C F ExtF → (id column row rotation : ℕ) → F
+  preprocessed : C F ExtF → (column row rotation : ℕ) → F
+  challenge : C F ExtF → (index : ℕ) → ExtF
+  exposed : C F ExtF → (index : ℕ) → ExtF
+
+end Extraction
+"#
+    .to_string()
+}
+
 fn render_air(pilout: &PilOut, hit: AirHit<'_>, opts: &RenderOpts) -> Result<String> {
     let name = hit
         .air
@@ -461,7 +505,7 @@ fn render_air(pilout: &PilOut, hit: AirHit<'_>, opts: &RenderOpts) -> Result<Str
 
     let mut out = String::new();
     out.push_str("import Mathlib\n\n");
-    out.push_str("import ZiskFv.Circuit\n\n");
+    out.push_str("import Extraction.Circuit\n\n");
     out.push_str("set_option linter.all false\n\n");
     out.push_str(&format!(
         "register_simp_attr {}_air_simplification\n",
@@ -568,12 +612,12 @@ fn render_constraint(
     if uses_extf {
         out.push_str("  -- Mixed witness/challenge constraint emitted for single-field circuits.\n");
         out.push_str(&format!(
-            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F : Type}} [Field F] [Circuit F F C] (c : C F F) (row: ℕ) :=\n",
+            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F : Type}} [Field F] [Extraction.Circuit F F C] (c : C F F) (row: ℕ) :=\n",
             idx, suffix
         ));
     } else {
         out.push_str(&format!(
-            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
+            "  def constraint_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}} [Field F] [Field ExtF] [Extraction.Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
             idx, suffix
         ));
     }
@@ -696,7 +740,7 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
                 "row".to_string()
             };
             Ok(format!(
-                "(Circuit.main c (id := {}) (column := {}) (row := {}) (rotation := 0))",
+                "(Extraction.Circuit.main c (id := {}) (column := {}) (row := {}) (rotation := 0))",
                 /* airgroup-level id used by openvm-fv is the stage index here: */
                 w.stage,
                 w.col_idx,
@@ -715,16 +759,16 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
                 "row".to_string()
             };
             Ok(format!(
-                "(Circuit.preprocessed c (column := {}) (row := {}) (rotation := 0))",
+                "(Extraction.Circuit.preprocessed c (column := {}) (row := {}) (rotation := 0))",
                 f.idx, row_expr,
             ))
         }
         OperandKind::Challenge(ch) => {
             let flat = flatten_challenge_index(pilout, ch.stage, ch.idx)?;
-            Ok(format!("(Circuit.challenge c (index := {}))", flat))
+            Ok(format!("(Extraction.Circuit.challenge c (index := {}))", flat))
         }
         OperandKind::AirValue(av) => Ok(format!(
-            "(Circuit.exposed c (index := {}))",
+            "(Extraction.Circuit.exposed c (index := {}))",
             av.idx,
         )),
         // AirGroupValue is shared across the AIRs of a group (e.g. bus
@@ -735,7 +779,7 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
         // identifiers. Index spaces overlap with AirValue — see
         // docs/extraction/extractor-notes.md.
         OperandKind::AirGroupValue(av) => Ok(format!(
-            "(Circuit.exposed c (index := {}))",
+            "(Extraction.Circuit.exposed c (index := {}))",
             av.idx,
         )),
         OperandKind::PeriodicCol(_)
@@ -1000,7 +1044,7 @@ fn parse_bus_emission(pilout: &PilOut, air: &Air, hint: &Hint) -> Result<BusEmis
 /// (`render_bus_emissions_multi`) paths.
 fn write_bus_emissions_prelude(out: &mut String, scope_doc: &str, bus_id: u64, module: &str) {
     out.push_str("import Mathlib\n\n");
-    out.push_str("import ZiskFv.Circuit\n");
+    out.push_str("import Extraction.Circuit\n");
     // The `Buses` module owns the canonical `BusEmissionSpec` /
     // `BusEmissionSlot` declarations. Secondary bus files (memory bus,
     // future per-bus projections) import them from there to avoid
@@ -1028,7 +1072,7 @@ fn write_bus_emissions_prelude(out: &mut String, scope_doc: &str, bus_id: u64, m
         out.push_str("    string (verbatim from the PIL macro call site); `value`\n");
         out.push_str("    is the rendered Lean expression. -/\n");
         out.push_str("structure BusEmissionSlot {C : Type → Type → Type} {F ExtF : Type}\n");
-        out.push_str("    [Field F] [Field ExtF] [Circuit F ExtF C] where\n");
+        out.push_str("    [Field F] [Field ExtF] [Extraction.Circuit F ExtF C] where\n");
         out.push_str("  name : String\n");
         out.push_str("  value : C F ExtF → ℕ → F\n\n");
 
@@ -1037,7 +1081,7 @@ fn write_bus_emissions_prelude(out: &mut String, scope_doc: &str, bus_id: u64, m
         out.push_str("    the proves-side (secondary state machine), `false` the\n");
         out.push_str("    assumes-side (the consumer, typically Main). -/\n");
         out.push_str("structure BusEmissionSpec {C : Type → Type → Type} {F ExtF : Type}\n");
-        out.push_str("    [Field F] [Field ExtF] [Circuit F ExtF C] where\n");
+        out.push_str("    [Field F] [Field ExtF] [Extraction.Circuit F ExtF C] where\n");
         out.push_str("  bus_id : ℕ\n");
         out.push_str("  is_proves : Bool\n");
         out.push_str("  piop : String\n");
@@ -1132,7 +1176,7 @@ fn write_bus_emissions_for_air(
             sanitized, n
         ));
         out.push_str(
-            "    [Field F] [Field ExtF] [Circuit F ExtF C]\n\
+            "    [Field F] [Field ExtF] [Extraction.Circuit F ExtF C]\n\
              : @BusEmissionSpec C F ExtF _ _ _ :=\n",
         );
         out.push_str(&format!("  {{ bus_id := {}\n", em.busid));
@@ -2350,6 +2394,24 @@ mod tests {
     use crate::pilout::HintFieldArray;
 
     #[test]
+    fn extraction_circuit_shim_is_namespaced() {
+        let out = render_extraction_circuit_module();
+        assert!(
+            out.contains("namespace Extraction")
+                && out.contains("class Circuit")
+                && out.contains("main : C F ExtF → (id column row rotation : ℕ) → F")
+                && out.contains("challenge : C F ExtF → (index : ℕ) → ExtF"),
+            "shim should expose the generated-only circuit interface:\n{}",
+            out
+        );
+        assert!(
+            !out.contains("namespace Circuit"),
+            "shim should not create or open a root Circuit namespace:\n{}",
+            out
+        );
+    }
+
+    #[test]
     fn format_basefield_empty() {
         assert_eq!(format_basefield(&[]), "0");
     }
@@ -2534,7 +2596,7 @@ mod tests {
         let rendered = render_expr_by_idx(&pilout, &air, 0).expect("should render");
         assert_eq!(
             rendered,
-            "((Circuit.main c (id := 1) (column := 7) (row := row - 1) (rotation := 0)) + 0)"
+            "((Extraction.Circuit.main c (id := 1) (column := 7) (row := row - 1) (rotation := 0)) + 0)"
         );
     }
 
@@ -2546,7 +2608,7 @@ mod tests {
         let rendered = render_expr_by_idx(&pilout, &air, 0).expect("should render");
         assert_eq!(
             rendered,
-            "((Circuit.main c (id := 1) (column := 7) (row := row) (rotation := 0)) + 0)"
+            "((Extraction.Circuit.main c (id := 1) (column := 7) (row := row) (rotation := 0)) + 0)"
         );
     }
 
@@ -2559,7 +2621,7 @@ mod tests {
         let rendered = render_expr_by_idx(&pilout, &air, 0).expect("should render");
         assert_eq!(
             rendered,
-            "((Circuit.main c (id := 1) (column := 7) (row := row + 1) (rotation := 0)) + 0)"
+            "((Extraction.Circuit.main c (id := 1) (column := 7) (row := row + 1) (rotation := 0)) + 0)"
         );
     }
 
@@ -2815,7 +2877,7 @@ mod tests {
         let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
         assert_eq!(
             r,
-            "((Circuit.main c (id := 1) (column := 0) (row := row) (rotation := 0)) - (Circuit.main c (id := 1) (column := 1) (row := row) (rotation := 0)))"
+            "((Extraction.Circuit.main c (id := 1) (column := 0) (row := row) (rotation := 0)) - (Extraction.Circuit.main c (id := 1) (column := 1) (row := row) (rotation := 0)))"
         );
     }
 
@@ -2831,7 +2893,7 @@ mod tests {
         let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
         assert_eq!(
             r,
-            "(3 * (Circuit.main c (id := 1) (column := 7) (row := row) (rotation := 0)))"
+            "(3 * (Extraction.Circuit.main c (id := 1) (column := 7) (row := row) (rotation := 0)))"
         );
     }
 
@@ -2844,7 +2906,7 @@ mod tests {
         let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
         assert_eq!(
             r,
-            "(-(Circuit.main c (id := 1) (column := 4) (row := row) (rotation := 0)))"
+            "(-(Extraction.Circuit.main c (id := 1) (column := 4) (row := row) (rotation := 0)))"
         );
     }
 
@@ -2863,7 +2925,7 @@ mod tests {
         let r = render_expr_by_idx(&PilOut::default(), &air, 1).expect("render");
         assert_eq!(
             r,
-            "(((Circuit.main c (id := 1) (column := 0) (row := row) (rotation := 0)) + (Circuit.main c (id := 1) (column := 1) (row := row) (rotation := 0))) * (Circuit.main c (id := 1) (column := 2) (row := row) (rotation := 0)))"
+            "(((Extraction.Circuit.main c (id := 1) (column := 0) (row := row) (rotation := 0)) + (Extraction.Circuit.main c (id := 1) (column := 1) (row := row) (rotation := 0))) * (Extraction.Circuit.main c (id := 1) (column := 2) (row := row) (rotation := 0)))"
         );
     }
 
@@ -2875,7 +2937,7 @@ mod tests {
         };
         let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
         assert!(
-            r.contains("(Circuit.preprocessed c (column := 3) (row := row) (rotation := 0))"),
+            r.contains("(Extraction.Circuit.preprocessed c (column := 3) (row := row) (rotation := 0))"),
             "unexpected render: {}",
             r
         );
@@ -2891,7 +2953,7 @@ mod tests {
         };
         let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
         assert!(
-            r.contains("(Circuit.preprocessed c (column := 3) (row := row - 2) (rotation := 0))"),
+            r.contains("(Extraction.Circuit.preprocessed c (column := 3) (row := row - 2) (rotation := 0))"),
             "unexpected render: {}",
             r
         );
@@ -2905,7 +2967,7 @@ mod tests {
         };
         let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
         assert!(
-            r.contains("(Circuit.preprocessed c (column := 3) (row := row + 1) (rotation := 0))"),
+            r.contains("(Extraction.Circuit.preprocessed c (column := 3) (row := row + 1) (rotation := 0))"),
             "unexpected render: {}",
             r
         );
@@ -2919,7 +2981,7 @@ mod tests {
         };
         let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
         assert!(
-            r.contains("(Circuit.exposed c (index := 7))"),
+            r.contains("(Extraction.Circuit.exposed c (index := 7))"),
             "unexpected render: {}",
             r
         );
@@ -2958,7 +3020,7 @@ mod tests {
         };
         let r = render_expr_by_idx(&pilout, &air, 0).expect("render");
         assert!(
-            r.contains("(Circuit.challenge c (index := 3))"),
+            r.contains("(Extraction.Circuit.challenge c (index := 3))"),
             "unexpected render: {}",
             r
         );
@@ -3480,7 +3542,7 @@ mod tests {
         let out = render_air(&pilout, hit, &opts).expect("render");
 
         assert!(out.starts_with("import Mathlib\n"));
-        assert!(out.contains("import ZiskFv.Circuit"));
+        assert!(out.contains("import Extraction.Circuit"));
         assert!(out.contains("namespace Demo.extraction"));
         assert!(
             out.contains("-- airgroup: Zisk (id 0)  air: Demo (id 0)"),
@@ -3535,12 +3597,12 @@ mod tests {
             out
         );
         assert!(
-            out.contains("def constraint_0_every_row {C : Type → Type → Type} {F : Type} [Field F] [Circuit F F C] (c : C F F) (row: ℕ) :="),
+            out.contains("def constraint_0_every_row {C : Type → Type → Type} {F : Type} [Field F] [Extraction.Circuit F F C] (c : C F F) (row: ℕ) :="),
             "expected a single-field constraint def, got:\n{}",
             out
         );
         assert!(
-            out.contains("(Circuit.challenge c (index := 0))"),
+            out.contains("(Extraction.Circuit.challenge c (index := 0))"),
             "expected challenge operand to remain in the emitted constraint, got:\n{}",
             out
         );

@@ -1,11 +1,11 @@
 { stdenv, lib, pil-extract, zisk-pilout, zisk-src }:
 
 # Run `pil-extract` over `zisk-pilout` (and `zisk-src` for the
-# arith-table data / original PIL source) to produce per-AIR Lean files,
-# the operation-bus `Buses.lean`, the memory-bus `MemoryBuses.lean`, the
-# 74-row `ArithTable.lean` lookup data, the Mem AIR sidecar source
-# report, and the typed Mem generated-artifact wrapper. All output lands
-# in $out/.
+# arith-table data / original PIL source) to produce the generated extraction
+# circuit shim, per-AIR Lean files, the operation-bus `Buses.lean`, the
+# memory-bus `MemoryBuses.lean`, the 74-row `ArithTable.lean` lookup data, the
+# Mem AIR sidecar source report, and the typed Mem generated-artifact wrapper.
+# All output lands in $out/.
 
 stdenv.mkDerivation {
   pname = "zisk-fv-extracted-lean";
@@ -15,6 +15,13 @@ stdenv.mkDerivation {
   buildPhase = ''
     runHook preBuild
     mkdir -p $out
+
+    # Generated-only circuit interface consumed by the old per-AIR extraction
+    # files. It is namespaced under `Extraction` so it does not collide with
+    # Clean's root `Circuit` monad when generated modules are compiled together
+    # with the maintained FV library.
+    ${pil-extract}/bin/pil-extract circuit-shim \
+      --output $out/Circuit.lean
 
     # Full-AIR extractions (with --skip-unsupported for the
     # FixedCol/Challenge operands the V1 extractor doesn't render).

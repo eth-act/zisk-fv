@@ -14,11 +14,11 @@ emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
 table-global segment/permutation constants, challenges, ranges, and generated
 assertions are outside the component.
 
-Current slice: raw ProverData facts now have checked assembly routes into the
-generated witness target. Lean provides
-`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`; the generated
-wrapper emits `RawFacts`, raw per-table aliases, `buildRawFacts`,
-`buildWitnessFactsFromRawFacts`, and `buildWitnessFactsFromRawParts`.
+Current slice: the generated extraction layer is being revived without the old
+root `ZiskFv.Circuit` API. `pil-extract` now emits an `Extraction.Circuit`
+shim, per-AIR extraction imports use `Extraction.Circuit.*`, and the generated
+Mem gate compiles `Extraction.Circuit`, `Extraction.Mem`, and
+`Extraction.MemGeneratedArtifact` under `build/extraction`.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -31,17 +31,18 @@ Current proof surface:
   hints, ProverData keys, generated timeline constructor, witness contract, and
   the raw-facts adapter path.
 - `tools/pil-extract mem-generated-artifact` emits checked witness/raw assembly
-  helpers and the timeline constructor wrapper; trust docs name the gate.
+  helpers and the timeline constructor wrapper; the gate now also checks the
+  generated Mem constraint source.
 
 Latest verification:
-- `lake build ZiskFv.AirsClean.FullEnsemble.Balance`.
-- `lake build ZiskFv.Compliance`.
-- Focused wrapper/report tests and full
-  `cargo test --manifest-path tools/pil-extract/Cargo.toml` (71 tests).
-- Regenerated `/tmp` report/wrapper; `lake env lean /tmp/MemGeneratedArtifact.lean`.
-- Regenerated populated wrapper; exact gate command
-  `test -f build/extraction/Extraction/MemGeneratedArtifact.lean && lake env lean ...`.
-- `trust/scripts/check-all.sh` and `git diff --check`.
+- Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (72 tests).
+- Regenerated local `Circuit.lean`, `Mem.lean`, and
+  `MemGeneratedArtifact.lean` under `build/extraction/Extraction`.
+- Exact generated-Mem gate sequence passes: compile `Circuit.lean` to
+  `Circuit.olean`, then compile `Mem.lean` and `MemGeneratedArtifact.lean`
+  with `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`.
+- `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`,
+  `nix flake check --no-build`, and `git diff --check`.
 - Last full `nix run .#test`: commit `98202ebc`.
 
 Next step: generate/prove the raw or witness ProverData Mem facts. Broadening

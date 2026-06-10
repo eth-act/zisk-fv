@@ -6,7 +6,8 @@
 #
 #   build/sail-lean/                       ← sail-lean-tree
 #   build/zisk.pilout                      ← zisk-pilout
-#   build/extraction/Extraction/*.lean     ← extracted-lean, including
+#   build/extraction/Extraction/*.lean     ← extracted-lean, including the
+#                                             Circuit shim and
 #                                             MemGeneratedArtifact.lean
 #   build/extraction/MemAirFacts.md        ← extracted-lean
 #   build/clean-lean/                      ← clean-source.
@@ -53,7 +54,8 @@ EOF
 -- Root module of the auto-generated Extraction library.
 --
 -- Per-AIR submodules are emitted by `tools/pil-extract` from
--- `build/zisk.pilout` and copied here by `nix run .#populate`.
+-- `build/zisk.pilout` and copied here by `nix run .#populate`; the generated
+-- `Extraction.Circuit` shim provides their standalone circuit interface.
 -- This file exists to give Lake a defaultTarget; it is intentionally
 -- empty.
 EOF

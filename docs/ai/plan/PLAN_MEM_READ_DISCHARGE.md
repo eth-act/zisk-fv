@@ -887,7 +887,7 @@ no assumed soundness fields**.
       emits `MemAirFacts.md` with the Mem generated constraint/range/sidecar
       source map, and `nix run .#populate` copies it to
       `build/extraction/MemAirFacts.md`. This makes the sidecar source surface a
-      reproducible generated artifact beside the orphaned extraction files
+      reproducible generated artifact beside the generated extraction files
       instead of a manual `/tmp` report. Verified with Nix evaluation of
       `.#packages.x86_64-linux.extracted-lean` and `.#apps.x86_64-linux.populate`,
       local `pil-extract mem-air-facts` regeneration, and
@@ -1056,6 +1056,26 @@ no assumed soundness fields**.
       full `tools/pil-extract` cargo tests, regenerated `/tmp` report/wrapper,
       `lake env lean` on the `/tmp` and populated generated wrappers,
       `trust/scripts/check-all.sh`, and `git diff --check`.
+      Current extraction-shim slice revives the generated Mem constraint
+      source without reintroducing the deleted root `ZiskFv.Circuit` API.
+      `pil-extract circuit-shim` emits a namespaced `Extraction.Circuit`
+      class for generated-only AIR files; the AIR and bus renderers now import
+      `Extraction.Circuit` and emit fully qualified `Extraction.Circuit.*`
+      accessors; and the top-level generated-Mem gate compiles
+      `Extraction.Circuit`, `Extraction.Mem`, and
+      `Extraction.MemGeneratedArtifact` under the generated
+      `build/extraction` root. This does not yet prove
+      `FullWitnessMemAirSourceProverDataWitnessFacts`, but it makes the
+      extracted Mem constraint predicates checked and available as the next
+      bridge source. Verified so far with full
+      `cargo test --manifest-path tools/pil-extract/Cargo.toml` (72 tests),
+      local regeneration of `Circuit.lean`, `Mem.lean`, and
+      `MemGeneratedArtifact.lean`, and the exact generated-Mem gate sequence:
+      compile `Circuit.lean` to `Circuit.olean`, then compile `Mem.lean` and
+      `MemGeneratedArtifact.lean` with
+      `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`;
+      `lake build ZiskFv.Compliance`; `trust/scripts/check-all.sh`;
+      `nix flake check --no-build`; and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

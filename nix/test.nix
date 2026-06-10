@@ -66,12 +66,21 @@ writeShellApplication {
       cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet
     '
 
-    # 2. The Mem generated-artifact wrapper is intentionally outside the
-    # main Lake library, but it must stay synchronized with the current
-    # FullEnsemble API.
+    # 2. The generated extraction files are intentionally outside the main
+    # Lake library, but the Mem constraint source and generated-artifact
+    # wrapper must stay synchronized with the current FV APIs.
     run "2/8 Mem generated artifact wrapper" bash -c '
+      test -f build/extraction/Extraction/Circuit.lean
+      test -f build/extraction/Extraction/Mem.lean
       test -f build/extraction/Extraction/MemGeneratedArtifact.lean
-      lake env lean build/extraction/Extraction/MemGeneratedArtifact.lean
+      generated_lean_path="$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)"
+      LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
+        -o build/extraction/Extraction/Circuit.olean \
+        build/extraction/Extraction/Circuit.lean
+      LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
+        build/extraction/Extraction/Mem.lean
+      LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
+        build/extraction/Extraction/MemGeneratedArtifact.lean
     '
 
     # 3. Production-wrapper equivalence tests. These compare every

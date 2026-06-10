@@ -196,9 +196,11 @@ that target from the three per-table callback families, plus
 ProverData fact callbacks to the same witness target. It also exposes
 `buildTimelineEvidence`, which passes the assembled facts to
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. The top-level
-`nix run .#test` gate compiles
-`build/extraction/Extraction/MemGeneratedArtifact.lean` directly so this
-orphaned generated wrapper stays synchronized with the checked Lean API.
+`nix run .#test` gate compiles the generated `Extraction.Circuit` shim,
+`Extraction.Mem` constraint source, and
+`Extraction.MemGeneratedArtifact` wrapper directly under the generated
+`build/extraction` root so this surface stays synchronized with the checked
+Lean API.
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` packages that
 target into the load-facing boundary. Lean packages the resulting sidecar
 callback into the witness-selected `FullWitnessMemAirSource` via
