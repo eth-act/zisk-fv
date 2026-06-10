@@ -180,8 +180,16 @@ and the selected Sail state is the state reached by replaying the accepted
 prefix. The canonical load proofs derive `LoadByteAgreement` from the resulting
 timeline evidence and the memory replay relation.
 
-Retirement path: prove the extractor/Clean witness source of
-`FullWitnessMemReplayBridge`, then prove the whole-execution induction
+Generated/full-ensemble Mem facts target
+`FullWitnessMemAirSourceRawFacts`: raw split generated constraints, row range
+facts, segment range facts, and the stage-2 source columns. Lean packages that
+raw callback into the witness-selected `FullWitnessMemAirSource` via
+`exists_fullWitnessMemAirSource_of_rawFacts`, and
+`fullWitnessMemoryTimelineEvidence_of_rawFacts` combines it with only the
+residual Sail timeline fields above.
+
+Retirement path: emit/prove the extractor/full-ensemble
+`FullWitnessMemAirSourceRawFacts`, then prove the whole-execution induction
 connecting accepted Mem rows, initial Sail memory agreement, and selected Sail
 state without assuming `env.memoryTimelineEvidence`. The table/list-position
 part of the bridge is named as `MemTableGeneratedRowsBridge`, which connects

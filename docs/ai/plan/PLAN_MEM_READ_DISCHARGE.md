@@ -797,6 +797,17 @@ no assumed soundness fields**.
       `cargo test --manifest-path tools/pil-extract/Cargo.toml`, regenerated
       `/tmp/mem-air-facts-report.md`, `trust/scripts/check-all.sh`, and
       `git diff --check`.
+      Partial: raw Mem source facts now feed the full memory-timeline boundary
+      directly. `fullWitnessMemAirSourceOfRawFacts` names the selected Mem AIR
+      source obtained from `FullWitnessMemAirSourceRawFacts`, and
+      `fullWitnessMemoryTimelineEvidence_of_rawFacts` combines that source
+      with only the residual Sail timeline fields. The trust ledger now names
+      `FullWitnessMemAirSourceRawFacts` as the generated/full-ensemble target
+      before the future whole-execution induction retirement step. Verified
+      with clean LSP diagnostics, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, `lean_verify` on the raw source
+      and timeline constructors, `trust/scripts/check-all.sh`, and
+      `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

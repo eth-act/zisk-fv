@@ -36,13 +36,14 @@ Current proof surface:
   split constraints and range propositions are proved directly; Lean packages
   it into `FullWitnessMemAirSourceFacts` and can select a concrete
   `FullWitnessMemAirSource` from it.
+- `fullWitnessMemoryTimelineEvidence_of_rawFacts` builds the full-witness
+  memory timeline boundary from raw Mem source facts plus only the residual
+  Sail timeline fields.
 
 Latest verification:
 - Lean LSP diagnostics on `Balance`: clean
-- `lean_verify` on `exists_fullWitnessMemAirSource_of_rawFacts`: no `sorryAx`
+- `lean_verify` on raw Mem source/timeline constructors: no `sorryAx`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
-- `cargo test --manifest-path tools/pil-extract/Cargo.toml`
-- regenerated `/tmp/mem-air-facts-report.md`
 - `trust/scripts/check-all.sh`
 
 Last full `nix run .#test`: commit `98202ebc`.
