@@ -7,6 +7,7 @@
 #   build/sail-lean/                       ← sail-lean-tree
 #   build/zisk.pilout                      ← zisk-pilout
 #   build/extraction/Extraction/*.lean     ← extracted-lean
+#   build/extraction/MemAirFacts.md        ← extracted-lean
 #   build/clean-lean/                      ← clean-source.
 #
 # After this, `lake build` and `nix run .#test` work the same as they
@@ -61,6 +62,12 @@ EOF
       cp --no-preserve=mode "$f" "build/extraction/Extraction/$base"
       chmod u+w "build/extraction/Extraction/$base"
     done
+
+    if [ -f "${extracted-lean}/MemAirFacts.md" ]; then
+      echo "▶ build/extraction/MemAirFacts.md ← ${extracted-lean}"
+      cp --no-preserve=mode "${extracted-lean}/MemAirFacts.md" build/extraction/MemAirFacts.md
+      chmod u+w build/extraction/MemAirFacts.md
+    fi
 
     echo "▶ build/clean-lean/ ← ${clean-source}"
     rm -rf build/clean-lean

@@ -253,6 +253,11 @@ columns and does not support previous-row witness cells, this mode records the
 source surface rather than pretending those facts follow from the existing
 Clean table soundness API.
 
+`nix run .#populate` also materializes the same report at
+`build/extraction/MemAirFacts.md`, produced by the pinned `extracted-lean`
+derivation from `build/zisk.pilout` and upstream `mem.pil`. That file is a
+reproducible generated artifact, not a Lake dependency.
+
 ## Limitations (deliberate; expand as phases demand)
 
 The extractor renders these operand kinds: `Constant`, `WitnessCol`,

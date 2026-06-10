@@ -1,9 +1,10 @@
 { stdenv, lib, pil-extract, zisk-pilout, zisk-src }:
 
 # Run `pil-extract` over `zisk-pilout` (and `zisk-src` for the
-# arith-table data) to produce per-AIR Lean files plus the operation-bus
-# `Buses.lean`, the memory-bus `MemoryBuses.lean`, and the 74-row
-# `ArithTable.lean` lookup data. All output lands in $out/.
+# arith-table data / original PIL source) to produce per-AIR Lean files,
+# the operation-bus `Buses.lean`, the memory-bus `MemoryBuses.lean`, the
+# 74-row `ArithTable.lean` lookup data, and the Mem AIR sidecar source
+# report. All output lands in $out/.
 
 stdenv.mkDerivation {
   pname = "zisk-fv-extracted-lean";
@@ -64,13 +65,22 @@ stdenv.mkDerivation {
       --rust-source ${zisk-src}/state-machines/arith/src/arith_table_data.rs \
       --output $out/ArithTable.lean
 
+    # Mem generated AIR facts and sidecar source map. This is not a Lake
+    # dependency; it is the reproducible source manifest for the generated
+    # `FullWitnessMemAirSourceRawSidecars` proof/artifact path.
+    ${pil-extract}/bin/pil-extract mem-air-facts \
+      --pilout ${zisk-pilout} \
+      --air Mem \
+      --pil-source ${zisk-src}/state-machines/mem/pil/mem.pil \
+      --output $out/MemAirFacts.md
+
     runHook postBuild
   '';
 
   dontInstall = true;
 
   meta = with lib; {
-    description = "Per-AIR Lean files extracted from zisk-pilout";
+    description = "Per-AIR Lean files and Mem sidecar report extracted from zisk-pilout";
     license = with licenses; [ asl20 mit ];
   };
 }

@@ -12,13 +12,10 @@ Latest audit: structural gap, not a missing lemma. The Mem table input has only
 ranges, and generated assertions are outside the component, and per-row locals
 would not make table-global constants generic.
 
-Current slice: make the generated sidecar the stored boundary. Lean has
-`MemTableGeneratedRawSourceSidecar` per mutable Mem table and
-`FullWitnessMemAirSourceRawSidecars` for a full witness; raw facts are now a
-compatibility adapter via `fullWitnessMemAirSourceRawSidecars_of_rawFacts`.
-`FullWitnessMemoryTimelineEvidence` carries sidecars directly, and
-`fullWitnessMemoryTimelineEvidence_of_rawSidecars` feeds the Compliance
-timeline boundary from generated sidecars plus residual Sail facts.
+Current slice: make the sidecar source surface reproducible. The stored
+boundary now carries `FullWitnessMemAirSourceRawSidecars` directly, and the Nix
+`extracted-lean` derivation emits `MemAirFacts.md`; `populate` copies it to
+`build/extraction/MemAirFacts.md` beside the generated extraction files.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -40,6 +37,8 @@ Latest verification:
 - `cargo test --manifest-path tools/pil-extract/Cargo.toml` (67 tests)
 - Regenerated `/tmp/mem-air-facts-report.md`; `git diff --check`
 - Lean LSP + `lean_verify` clean for direct sidecar timeline constructor
+- Nix eval for `.#packages.x86_64-linux.extracted-lean` and `.#apps.x86_64-linux.populate`
+- local `pil-extract mem-air-facts`; `nix flake check --no-build`
 - Last full `nix run .#test`: commit `98202ebc`
 
 Next step: generate or check `FullWitnessMemAirSourceRawSidecars` for the
