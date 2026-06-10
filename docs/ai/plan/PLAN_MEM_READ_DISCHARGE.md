@@ -1234,10 +1234,13 @@ bury it in a structure field.
       `git diff --check` clean. The final Nix gate required a narrow
       `nix/test.nix` ShellCheck cleanup around the generated-Mem wrapper step.
 - [x] Open PRs (1–3 may collapse into 2 if A stays small; never into 1).
-      Opened as PR #64: https://github.com/eth-act/zisk-fv/pull/64.
+      Opened as PR #64, accidentally squash-merged, then `main` was reset so
+      Cody can review before landing. Reopened for review as PR #65:
+      https://github.com/eth-act/zisk-fv/pull/65.
 - [ ] After landing: delete branch/worktree `memory-trust-gap` (ask first —
       destructive), remove its plan files from `docs/ai/PROJECTS.md` history
       notes.
+      Deferred while Cody reviews PR #65.
 
 ## Decision gates
 
