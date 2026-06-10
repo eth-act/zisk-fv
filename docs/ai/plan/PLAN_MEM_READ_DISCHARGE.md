@@ -42,10 +42,11 @@ induction exists.
 
 ## Goal and trust decomposition
 
-Discharge the **promise hypothesis** `LoadPromises.mem_read : LoadByteAgreement
-state e1` (trust class "Memory load byte agreement" in `trust/trusted-base.md`).
+Discharge the original **promise hypothesis**
+`LoadPromises.mem_read : LoadByteAgreement state e1` (formerly tracked as trust
+class "Memory load byte agreement" in `trust/trusted-base.md`).
 
-Today `mem_read` is a per-load byte oracle: the constructor of any load
+At plan start, `mem_read` was a per-load byte oracle: the constructor of any load
 `OpEnvelope` arm asserts, with no provenance, that the circuit's load entry
 bytes equal Sail memory. The **promise discharge** splits it into:
 
@@ -163,30 +164,22 @@ bury it in a structure field.
       non-load arms require `True`; verified with
       `lake build ZiskFv.Compliance`, full `lake build`, and
       `trust/scripts/check-all.sh`.
-- [ ] Remove `mem_read` from `LoadPromises`; in the load dispatch arms derive
+- [x] Remove `mem_read` from `LoadPromises`; in the load dispatch arms derive
       `LoadByteAgreement` = Phase B theorem + replay core + timeline
       hypothesis (`mem_load_correct_of_provider_row` consuming
       `MemoryTraceAgreement`).
-      Partial: `MemClean.ld_discharge_full_clean_provider` now consumes
-      `MemoryTraceAgreement` and derives `LoadByteAgreement` through
-      `mem_load_correct_of_provider_row`; current callers bridge the old
-      `mem_read` promise through a temporary definitional adapter. The global
-      theorem now exposes `h_memory_timeline : env.memoryTimelineEvidence`, and
-      all seven load dispatch arms rebuild a local `LoadPromises` value with
-      `mem_read` derived from that timeline evidence before calling the
-      canonical load theorem; verified with `lake build ZiskFv.Compliance`,
-      full `lake build`, and `trust/scripts/check-all.sh`. The
-      `OpEnvelope` load constructors and Aeneas extracted-shape bridge now take
-      memory-free `LoadStructuralPromises`; dispatch reconstructs the canonical
-      `LoadPromises` value from global timeline evidence before calling the load
-      theorem, and this structural slice is verified with
-      `lake build ZiskFv.Compliance`, full `lake build`, and
-      `trust/scripts/check-all.sh`. The canonical `LoadPromises.mem_read` field
-      still exists. Decision point: direct field deletion conflicts with
-      the current guardrail that canonical
-      `equiv_<OP>` signatures do not change, because the canonical load theorem
-      layer has no access to global `env.memoryTimelineEvidence` and still needs
-      a memory-byte source.
+      Implemented: `LoadPromises` now carries
+      `memory_timeline : MemoryTimelineEvidence state e1` instead of
+      `mem_read`; canonical load proofs and wrappers project
+      `memory_timeline.memoryTraceAgreement` and derive byte agreement from the
+      replay/timeline path. Load `OpEnvelope` constructors and the Aeneas
+      extracted-shape bridge take memory-free `LoadStructuralPromises`;
+      dispatch reconstructs canonical `LoadPromises` from the global
+      `h_memory_timeline : env.memoryTimelineEvidence` before calling the load
+      theorems. Verified with the load-stack build,
+      `lake build ZiskFv.Compliance`, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+      `nix run .#test`, and the updated timeline consistency witness.
 - [ ] Port the `MemModel.lean` re-theoreming and the byte-address row-match
       fix (`ptr = addr * 8`); scan for legacy pins:
       `rg -n "mem_legacy_addr|mem\.addr .* = .*\.ptr" ZiskFv`.
@@ -198,19 +191,25 @@ bury it in a structure field.
       hits are the legacy predicate definitions plus outer OpEnvelope/Aeneas
       compatibility inputs. Verified with targeted load/dispatch build, full
       `lake build`, and `trust/scripts/check-all.sh`.
-- [ ] Update the 7 load EquivCore/Wrapper files; stores untouched beyond
+- [x] Update the 7 load EquivCore/Wrapper files; stores untouched beyond
       shared types.
-      Partial: the load EquivCore files and current Compliance wrappers compile
-      against the trace-agreement Clean bridge through the temporary adapter;
-      this is not complete until `LoadPromises.mem_read` is removed.
-- [ ] Update `trust/trusted-base.md`: retire "Memory load byte agreement",
+      Implemented for LB/LH/LW/LBU/LHU/LWU/LD: the canonical proofs and current
+      wrappers use `MemoryTimelineEvidence.memoryTraceAgreement`; stores remain
+      unchanged.
+- [x] Update `trust/trusted-base.md`: retire "Memory load byte agreement",
       add the narrower "Sail memory timeline" boundary section with its
       retirement path (whole-execution induction).
-- [ ] `trust/scripts/regenerate.sh` + regenerate caller-burden; confirm the
+- [x] `trust/scripts/regenerate.sh` + regenerate caller-burden; confirm the
       wrapper caller-burden diff is net-negative and hypothesis counts hold or
       shrink.
-- [ ] `trust/consistency/` probe updates: the old byte-oracle witness file
+      Regeneration produced no generated-file diffs because canonical/wrapper
+      theorem signatures stayed shape-compatible; `trust/scripts/check-all.sh`
+      confirmed hypothesis-count and caller-burden ledgers still match.
+- [x] `trust/consistency/` probe updates: the old byte-oracle witness file
       adapts to the new boundary; a false-probe must still fail to typecheck.
+      The witness now constructs `MemoryTimelineEvidence` and derives
+      `LoadByteAgreement` from it; the semantic gate label names the Sail memory
+      timeline witness.
 
 ### Phase D — Cleanup
 

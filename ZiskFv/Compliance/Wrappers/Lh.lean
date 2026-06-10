@@ -67,8 +67,7 @@ lemma equiv_LH
       w.main_b_match w.main_c_match w.mem_match
       w.addr1 w.addr2_zero_iff w.addr2_idx
       w.mem_sel w.mem_wr
-      (ZiskFv.EquivCore.Promises.memoryTraceAgreement_of_loadByteAgreement
-        state e1 promises.mem_read)
+      promises.memory_timeline.memoryTraceAgreement
   have lfd :=
     ZiskFv.EquivCore.Promises.load_full_discharge_LH_of_match_clean
       main v r_main r_binary offset env e1 h_static h_match h_main_op

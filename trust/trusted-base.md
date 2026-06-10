@@ -27,8 +27,8 @@ Current generated counts:
 The source trust ledger contains six Clean completeness declarations. The global
 theorem currently has no transitive project-axiom closure. The former Aeneas
 row-lowering and memory-state load bridge axioms are now visible conditional
-inputs: `env.aeneasBridgeTrust` on the global theorem and
-`LoadPromises.mem_read` on load promise bundles.
+inputs: `env.aeneasBridgeTrust` and `env.memoryTimelineEvidence` on the global
+theorem.
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
@@ -41,7 +41,7 @@ Lean axiom ledger:
 | Class                         | Declarations | In global closure | Removability                                                                                             |
 | ---                           | ---:         | ---:              | ---                                                                                                      |
 | Aeneas row-lowering condition | 0            | 0                 | Discharge `env.aeneasBridgeTrust` by importing generated Aeneas Lean into main Lake.                      |
-| Memory load byte agreement    | 0            | 0                 | Discharge `LoadPromises.mem_read` via the memory replay relation and extracted memory AIR facts.          |
+| Sail memory timeline          | 0            | 0                 | Discharge `env.memoryTimelineEvidence` by proving whole-execution memory replay/timeline induction.       |
 | Clean completeness            | 6            | 0                 | Completeness-only placeholders; removable by proving each Clean circuit completeness theorem internally. |
 
 
@@ -151,25 +151,33 @@ are needed to remove the remaining caller-burden bridge, row-shape, and
 promise fields from wrapper and `OpEnvelope` boundaries. The `bus_shape`
 category is already zero after the W-shift structural cleanup.
 
-## Memory Load Byte Agreement
+## Sail Memory Timeline
 
-The former global load-side memory bridge axiom has been demoted to a visible
-promise field:
+The former per-load byte-agreement promise has been replaced by a visible global
+timeline-evidence hypothesis:
 
 ```text
-LoadPromises.mem_read : LoadByteAgreement state e1
+h_memory_timeline : env.memoryTimelineEvidence
 ```
 
-This condition says that the load-side memory-bus entry bytes agree with Sail
-memory at `e1.ptr + 0..7`. It is a conditional memory-model boundary, not a
-known bug. `trust/consistency/load_byte_agreement_witness.lean` typechecks a
-concrete state and entry satisfying the byte-agreement predicate, while
-`trust/consistency/probe_false.lean` must fail to typecheck because the former
-blanket axiom no longer exists.
+For load `OpEnvelope` arms, `env.memoryTimelineEvidence` requires
+`Nonempty (MemoryTimelineEvidence state bus.e1)`; non-load arms require no
+memory evidence. Dispatch reconstructs canonical `LoadPromises` with
+`LoadPromises.memory_timeline : MemoryTimelineEvidence state e1` from that
+global hypothesis before calling the load theorems. The `OpEnvelope` load
+constructors themselves carry only `LoadStructuralPromises`, so they no longer
+accept a per-load byte oracle.
 
-Retirement path: prove the end-to-end connection from extracted Mem AIR
-constraints, memory-bus matching, byte assembly, and Sail memory
-representation via the memory replay relation.
+`MemoryTimelineEvidence` states the residual whole-execution memory-timeline
+boundary: the accepted Mem rows split around the selected read, the selected row
+is a read, prefix-read soundness holds for the accepted Mem rows, the initial
+Sail memory agrees with the replay memory, and the selected Sail state is the
+state reached by replaying the accepted prefix. The canonical load proofs derive
+`LoadByteAgreement` from this timeline evidence and the memory replay relation.
+
+Retirement path: prove the whole-execution induction connecting accepted Mem
+rows, prefix replay, initial Sail memory agreement, and selected Sail state
+without assuming `env.memoryTimelineEvidence`.
 
 ## Platform Profile
 

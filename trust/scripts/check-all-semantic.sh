@@ -33,7 +33,7 @@ run "1/5 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
 run "2/5 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
 run "3/5 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
 run "4/5 consistency false probe rejected" reject_false_probe
-run "5/5 load byte-agreement witness" \
+run "5/5 Sail memory timeline witness" \
   lake env lean trust/consistency/load_byte_agreement_witness.lean
 
 if [ $overall -eq 0 ]; then
