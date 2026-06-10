@@ -5091,6 +5091,57 @@ def acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
     h_bridge.fixedColumns
     h_bridge.nonempty
 
+/-- Construct the residual timeline evidence while deriving its accepted-replay
+    subobject from the compact full-witness Mem replay bridge.
+
+    The remaining parameters are exactly the intended whole-execution boundary:
+    the selected row's split in the accepted trace, its read tag, initial Sail
+    memory agreement, and the Sail state-at-prefix alignment. -/
+@[reducible]
+def memoryTimelineEvidence_of_fullWitnessMemReplayBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
+    (h_traceSplit : rows = priorRows ++ entry :: laterRows)
+    (h_selectedRead :
+      ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
+        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))
+    (h_initialAgreement :
+      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
+        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge h_bridge).initialMemory)
+    (h_stateAtPrefix :
+      state =
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state entry :=
+  { initialState := initialState
+    acceptedReplay := acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge h_bridge
+    priorRows := priorRows
+    laterRows := laterRows
+    traceSplit := by
+      by_cases h_first : h_bridge.segment.is_first_segment = 1
+      · simpa [
+          acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge,
+          acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts,
+          acceptedMemoryReplayEvidence_of_segmentSelector_memTableGeneratedRowsBridge,
+          acceptedMemoryReplayEvidence_of_firstSegment_memTableGeneratedRowsBridge,
+          h_first
+        ] using h_traceSplit
+      · simpa [
+          acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge,
+          acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts,
+          acceptedMemoryReplayEvidence_of_segmentSelector_memTableGeneratedRowsBridge,
+          acceptedMemoryReplayEvidence_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_segmentRangeFacts,
+          h_first
+        ] using h_traceSplit
+    selectedRead := h_selectedRead
+    initialAgreement := h_initialAgreement
+    stateAtPrefix := h_stateAtPrefix }
+
 /-- The projected read-replay rows of a concrete Mem table are embedded in
     the accepted chronological memory-bus row trace. Proving this embedding
     is the global AIR/Main/Mem integration obligation; selected-row coverage

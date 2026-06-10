@@ -28,15 +28,19 @@ Latest proof surface:
 - Latest local bridge slice adds `FullWitnessMemReplayBridge`, keeps the older
   generated-row bridge projectable, and constructs `AcceptedMemoryReplayEvidence`
   from the bundled full-witness facts.
+- Timeline integration now has `memoryTimelineEvidence_of_fullWitnessMemReplayBridge`,
+  deriving the accepted replay subobject while leaving only the residual split,
+  initial agreement, and state-at-prefix facts as timeline inputs.
 
 Verification: `lake build ZiskFv.Airs.Mem` and
 `lake build ZiskFv.AirsClean.FullEnsemble.Balance` pass for the recent
 segment-range/full-witness-bridge slices. New accepted-replay declarations have
-no `sorryAx` (only existing Clean component completeness axioms). Full
+no `sorryAx` (only existing Clean component completeness axioms).
+`trust/scripts/check-all.sh` passes for the timeline-constructor slice. Full
 `nix run .#test` last passed for `98202ebc`.
 
 Next step: derive or supply `FullWitnessMemReplayBridge` fields from the
-concrete witness/extractor, then feed its accepted-replay constructor into the
-timeline path.
+concrete witness/extractor, then route its timeline constructor through the
+global memory-evidence boundary.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

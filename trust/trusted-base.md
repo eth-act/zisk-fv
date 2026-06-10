@@ -181,10 +181,13 @@ Retirement path: first prove `AcceptedMemoryReplayEvidence.prefixReadSound`
 from the concrete Mem table. The table/list-position part of that proof is now
 named as `MemTableGeneratedRowsBridge`, which connects Clean `table.table`
 positions to `rowAt mem idx` and the row-indexed `generated_every_row`
-constraints; `FullWitnessMemTableGeneratedRowsBridge` names the concrete
-full-ensemble instance. Then prove chronological replay, prefix-read soundness,
-and the whole-execution induction connecting accepted Mem rows, initial Sail
-memory agreement, and selected Sail state without assuming
+constraints. `FullWitnessMemReplayBridge` packages the concrete full-ensemble
+Mem table, generated-row/range/fixed-column facts, active-row equality, and
+nonempty segment evidence; its constructor derives the accepted replay
+subobject used by `MemoryTimelineEvidence`. Then prove the extractor/Clean
+witness source of that bridge and the whole-execution induction connecting
+accepted Mem rows, initial Sail memory agreement, and selected Sail state
+without assuming
 `env.memoryTimelineEvidence`.
 
 ## Platform Profile

@@ -539,9 +539,18 @@ no assumed soundness fields**.
       hiding them as replay soundness. Verified with clean LSP diagnostics for
       the new spans, `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and
       axiom scans with no `sorryAx` in the new declarations.
+      Partial: `memoryTimelineEvidence_of_fullWitnessMemReplayBridge` now feeds
+      that accepted-replay constructor into `MemoryTimelineEvidence`: the
+      accepted replay subobject is derived from the full-witness Mem replay
+      bridge, while the trace split, selected-read tag, initial Sail agreement,
+      and state-at-prefix alignment remain the deliberately residual timeline
+      inputs. Verified with clean LSP diagnostics for the new span,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and an axiom scan
+      with no `sorryAx`; the trust gate `trust/scripts/check-all.sh` also
+      passes after updating the trust-retirement note.
       Current sub-gap: prove/supply the fields of `FullWitnessMemReplayBridge`
-      from concrete extraction/Clean witness data, then connect the resulting
-      accepted replay evidence to the timeline path.
+      from concrete extraction/Clean witness data, then route the resulting
+      timeline constructor through the global memory-evidence boundary.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
