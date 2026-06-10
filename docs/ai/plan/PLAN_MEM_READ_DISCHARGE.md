@@ -463,6 +463,24 @@ no assumed soundness fields**.
       and extraction tests. Balance LSP currently has a stale imported view of
       the new AIR theorem, but the focused compiler target and an isolated
       `import ZiskFv.Airs.Mem` check both see it.
+      Latest completed segment-range slice removes that raw 29-bit premise
+      from the public continuation constructor surface. `Airs/Mem.lean` proves
+      `previous_segment_addr_lt_two_pow_33_of_segment_every_row` from the
+      generated `mem.pil:265` base-distance equation plus the `mem.pil:267-268`
+      16-bit `distance_base` chunk ranges, and generalizes address-change
+      strictness to consume that coarse bound. `Balance.lean` introduces
+      `MemSegmentGeneratedRangeFacts`, proves
+      `previous_segment_addr_lt_two_pow_29_of_memTableGeneratedRowsBridge` by
+      combining the coarse segment bound with row-0 `SEGMENT_L1`, `addr_changes`,
+      and `addr` range facts, and packages continuation prefix soundness plus
+      accepted replay evidence from these segment range facts. It also proves
+      `is_first_segment_eq_one_or_zero_of_memTableGeneratedRowsBridge` and
+      `acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts`,
+      which chooses the first-segment or continuation constructor from the
+      generated segment selector on nonempty tables. Verified so far with
+      `lake build ZiskFv.Airs.Mem`,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and axiom scans with
+      no `sorryAx` in the new range/selector/accepted-replay declarations.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -502,20 +520,21 @@ no assumed soundness fields**.
       for the generated increment equation, `mem.pil:384-385` for increment
       range checks, and `mem.pil:109` for address no-wrap.
       Partial: the continuation seed-disjointness theorem cites the same
-      generated address-change increment equation/range checks plus an explicit
-      `segment.previous_segment_addr.val < 2^29` input; the remaining
-      constructibility task is to expose that previous-segment address range
-      from the PIL/extractor bridge.
+      generated address-change increment equation/range checks; its public
+      segment-range wrapper now derives the required
+      `segment.previous_segment_addr.val < 2^29` input from `mem.pil:265`,
+      `mem.pil:267-268`, row-0 `SEGMENT_L1` (`mem.pil:86`), row-0
+      address-change/continuity constraints, and row address range
+      (`mem.pil:109`).
       Partial: `MemTableGeneratedFixedColumnFacts` cites the deterministic
       fixed-column declaration `mem.pil:86` (`SEGMENT_L1 = [1,0...]`) and
       keeps the fixed-column constructibility obligation explicit rather than
       hiding it in replay evidence.
-      Current sub-gap: first-segment row 0 now follows from `mem.pil:377` under
-      an explicit `segment.is_first_segment = 1` input. The remaining
-      integration work is deciding whether the concrete full-witness Mem table
-      supplies that first-segment selector or whether the accepted replay
-      theorem must be generalized to continuation segments with an initial
-      memory carrying `previous_segment_*`.
+      Current sub-gap: the local accepted-replay constructor now chooses the
+      first-segment or continuation theorem from the generated segment selector.
+      The remaining integration work is proving/supplying the concrete
+      full-witness generated-row, row-range, segment-range, fixed-column,
+      nonempty, and active-row equality facts.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

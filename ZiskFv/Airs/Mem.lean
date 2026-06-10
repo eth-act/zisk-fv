@@ -961,13 +961,15 @@ theorem delta_addr_val_pos_of_addr_change_segment_every_row
 
     This mirrors the `mem.pil:375` increment equation together with the
     `mem.pil:384-385` increment range checks and the 29-bit address range from
-    `mem.pil:109`, ruling out Goldilocks wraparound. -/
-theorem segment_previous_addr_lt_addr_of_addr_change_segment_every_row
+    `mem.pil:109`, ruling out Goldilocks wraparound. The previous-address side
+    only needs the coarser two-chunk segment-distance bound from `mem.pil:265`
+    and `mem.pil:267-268`. -/
+theorem segment_previous_addr_lt_addr_of_addr_change_segment_every_row_of_previous_lt_two_pow_33
     {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
     (h : segment_every_row cols v row)
     (h_addr_change : v.addr_changes row = 1)
     (h_current_addr_range : addr_columns_in_range v row)
-    (h_previous_addr_range : (segment_previous_addr cols v row).val < 2 ^ 29)
+    (h_previous_addr_range : (segment_previous_addr cols v row).val < 2 ^ 33)
     (h_range : increment_chunks_in_range v row) :
     (segment_previous_addr cols v row).val < (v.addr row).val := by
   have h_delta_eq :=
@@ -978,7 +980,7 @@ theorem segment_previous_addr_lt_addr_of_addr_change_segment_every_row
       (cols := cols) (v := v) (row := row) h h_addr_change h_range
   have h_delta_bound := incrementNat_le_two_pow_38 (v := v) (row := row) h_range
   have h_current_addr_lt : (v.addr row).val < 2 ^ 29 := h_current_addr_range
-  have h_previous_addr_lt : (segment_previous_addr cols v row).val < 2 ^ 29 :=
+  have h_previous_addr_lt : (segment_previous_addr cols v row).val < 2 ^ 33 :=
     h_previous_addr_range
   have hmod :
       (delta_addr cols v row).val =
@@ -1025,6 +1027,22 @@ theorem segment_previous_addr_lt_addr_of_addr_change_segment_every_row
             ((segment_previous_addr cols v row).val - (v.addr row).val) := by
       omega
     omega
+
+/-- At an address-change row, the generated previous-address expression is
+    strictly smaller than the current row's address, specialized to the common
+    case where the previous-address expression is already known to be in the
+    29-bit Mem address range. -/
+theorem segment_previous_addr_lt_addr_of_addr_change_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1)
+    (h_current_addr_range : addr_columns_in_range v row)
+    (h_previous_addr_range : (segment_previous_addr cols v row).val < 2 ^ 29)
+    (h_range : increment_chunks_in_range v row) :
+    (segment_previous_addr cols v row).val < (v.addr row).val :=
+  segment_previous_addr_lt_addr_of_addr_change_segment_every_row_of_previous_lt_two_pow_33
+    (cols := cols) (v := v) (row := row)
+    h h_addr_change h_current_addr_range (by omega) h_range
 
 /-- At a non-boundary address-change row, the previous row's address is
     strictly smaller than the current row's address.
@@ -1223,6 +1241,59 @@ theorem field_distance_val_eq_distanceChunksNat
       rw [h_cast.symm]
     _ = distanceChunksNat lo hi := by
       exact Nat.mod_eq_of_lt h_lt
+
+/-- The generated large-memory base-distance equation bounds the carried
+    previous-segment address to a small Nat representative.
+
+    This cites the `mem.pil:265` equation
+    `previous_segment_addr - internal_base_address =
+      distance_base[0] + 0x10000 * distance_base[1]`
+    together with the `mem.pil:267-268` 16-bit distance-base range checks.
+    The result is intentionally the coarse `2^33` bound supplied by the two
+    16-bit chunks; table-local row 0 facts later refine it to the 29-bit
+    memory-address range. -/
+theorem previous_segment_addr_lt_two_pow_33_of_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_range : distance_chunks_in_range cols.distance_base_0 cols.distance_base_1) :
+    cols.previous_segment_addr.val < 2 ^ 33 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, h_distance, _, _, _, _, _, _, _, _, _, _⟩
+  have h_eq_field :
+      cols.previous_segment_addr - 335544320 =
+        cols.distance_base_0 + 65536 * cols.distance_base_1 := by
+    exact sub_eq_zero.mp h_distance
+  have h_distance_val :=
+    field_distance_val_eq_distanceChunksNat
+      (lo := cols.distance_base_0) (hi := cols.distance_base_1) h_range
+  have h_distance_bound :=
+    distanceChunksNat_le_two_pow_32_sub_one
+      (lo := cols.distance_base_0) (hi := cols.distance_base_1) h_range
+  have h_eq_val := congr_arg Fin.val h_eq_field
+  have h_left_mod :
+      (cols.previous_segment_addr - 335544320 : FGL).val =
+        (18446744069414584321 - 335544320 + cols.previous_segment_addr.val) %
+          18446744069414584321 := by
+    simp [Fin.val_sub, Nat.add_comm]
+  rw [h_left_mod, h_distance_val] at h_eq_val
+  by_cases h_prev_lt_base : cols.previous_segment_addr.val < 335544320
+  · have h_no_wrap :
+        18446744069414584321 - 335544320 + cols.previous_segment_addr.val <
+          18446744069414584321 := by
+      omega
+    rw [Nat.mod_eq_of_lt h_no_wrap] at h_eq_val
+    omega
+  · have h_wrap_sum :
+        18446744069414584321 - 335544320 + cols.previous_segment_addr.val =
+          18446744069414584321 + (cols.previous_segment_addr.val - 335544320) := by
+      omega
+    rw [h_wrap_sum, Nat.add_mod_left] at h_eq_val
+    have h_prev_eq :
+        cols.previous_segment_addr.val =
+          335544320 + distanceChunksNat cols.distance_base_0 cols.distance_base_1 := by
+      omega
+    rw [h_prev_eq]
+    omega
 
 /-! ## Generated permutation accumulator surface
 
