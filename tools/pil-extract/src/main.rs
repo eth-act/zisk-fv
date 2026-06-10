@@ -1973,6 +1973,87 @@ def rawSourceFacts_of_extractedRawSourceFacts
   rowRanges := h.rowRanges
   segmentRanges := h.segmentRanges
 
+/-- Generator-friendly range facts for the ProverData-backed Mem sidecar view.
+    These are the raw bit-width/range obligations from `mem.pil`, before Lean
+    repackages them as `RawRowRangeFacts` and `RawSegmentRangeFacts`. -/
+structure ExtractedRangeFacts
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (table : Table FGL) : Prop where
+  increment_0 :
+    ∀ idx : Fin table.table.length,
+      ((MemOfProverData witness table).increment_0 idx.val).val < 2 ^ 22
+  increment_1 :
+    ∀ idx : Fin table.table.length,
+      ((MemOfProverData witness table).increment_1 idx.val).val < 2 ^ 16
+  addr :
+    ∀ idx : Fin table.table.length,
+      ((MemOfProverData witness table).addr idx.val).val < 2 ^ 29
+  step :
+    ∀ idx : Fin table.table.length,
+      ((MemOfProverData witness table).step idx.val).val < 2 ^ 40
+  step_dual :
+    ∀ idx : Fin table.table.length,
+      ((MemOfProverData witness table).step_dual idx.val).val < 2 ^ 40
+  previous_step :
+    ∀ idx : Fin table.table.length,
+      ((MemOfProverData witness table).previous_step idx.val).val < 2 ^ 40
+  dual_step_delta :
+    ∀ idx : Fin table.table.length,
+      (MemOfProverData witness table).sel_dual idx.val = 1 →
+        ((MemOfProverData witness table).step_dual idx.val
+          - (MemOfProverData witness table).step idx.val
+          - (MemOfProverData witness table).wr idx.val : FGL).val < 2 ^ 24
+  distance_base_0 :
+    (SegmentOfProverData witness).distance_base_0.val < 2 ^ 16
+  distance_base_1 :
+    (SegmentOfProverData witness).distance_base_1.val < 2 ^ 16
+
+@[reducible]
+def rawRowRangeFacts_of_extractedRangeFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    {table : Table FGL}
+    (h : ExtractedRangeFacts witness table) :
+    RawRowRangeFacts witness table where
+  incrementChunks := by
+    intro idx
+    exact ⟨h.increment_0 idx, h.increment_1 idx⟩
+  addrColumns := h.addr
+  stepColumns := by
+    intro idx
+    exact ⟨h.step idx, h.step_dual idx, h.previous_step idx⟩
+  dualStepDelta := h.dual_step_delta
+
+@[reducible]
+def rawSegmentRangeFacts_of_extractedRangeFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    {table : Table FGL}
+    (h : ExtractedRangeFacts witness table) :
+    RawSegmentRangeFacts witness where
+  distanceBaseChunks := ⟨h.distance_base_0, h.distance_base_1⟩
+
+/-- Single generated target in source-level terms: extracted constraints plus
+    explicit bit-width/range facts for the ProverData-backed Mem sidecar view. -/
+structure ExtractedSidecarFacts
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (table : Table FGL) : Type where
+  constraints : ExtractedConstraintFacts witness table
+  ranges : ExtractedRangeFacts witness table
+
+@[reducible]
+def extractedRawSourceFacts_of_extractedSidecarFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    {table : Table FGL}
+    (h : ExtractedSidecarFacts witness table) :
+    ExtractedRawSourceFacts witness table where
+  constraints := h.constraints
+  rowRanges := rawRowRangeFacts_of_extractedRangeFacts h.ranges
+  segmentRanges := rawSegmentRangeFacts_of_extractedRangeFacts h.ranges
+
 @[reducible]
 def buildRawFactsFromExtractedConstraintsAndRawRanges
     {length : ℕ} {program : Program length}
@@ -2052,6 +2133,34 @@ def buildWitnessFactsFromExtractedRawSourceFacts
     WitnessFacts witness :=
   buildWitnessFactsFromRawFacts
     (buildRawFactsFromExtractedRawSourceFacts witness facts)
+
+@[reducible]
+def buildRawFactsFromExtractedSidecarFacts
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (facts :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            ExtractedSidecarFacts witness table) :
+    RawFacts witness :=
+  buildRawFactsFromExtractedRawSourceFacts
+    witness
+    (fun table h_table h_component =>
+      extractedRawSourceFacts_of_extractedSidecarFacts (facts table h_table h_component))
+
+@[reducible]
+def buildWitnessFactsFromExtractedSidecarFacts
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (facts :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            ExtractedSidecarFacts witness table) :
+    WitnessFacts witness :=
+  buildWitnessFactsFromRawFacts
+    (buildRawFactsFromExtractedSidecarFacts witness facts)
 
 end Extraction.MemGeneratedConstraintBridge
 "#
@@ -2204,13 +2313,14 @@ fn render_mem_air_facts_report(
         "Generated modules that prove raw `segment_every_row`, \
          `permutation_every_row`, and range propositions directly may instead \
          target \
-         `Extraction.MemGeneratedConstraintBridge.ExtractedRawSourceFacts` for \
-         each mutable Mem table. The generated bridge then checks the map from \
-         extracted `constraint_0..33` facts to raw split constraints and feeds \
-         the resulting raw source facts through \
-         `buildWitnessFactsFromExtractedRawSourceFacts`. Lower-level modules \
-         may still expose `FullWitnessMemAirSourceProverDataFacts witness` and \
-         use the checked adapter \
+         `Extraction.MemGeneratedConstraintBridge.ExtractedSidecarFacts` for \
+         each mutable Mem table. The generated bridge checks both maps: \
+         extracted `constraint_0..33` facts to raw split constraints, and \
+         bit-width/range inequalities to raw row/segment range facts, then \
+         feeds the resulting source facts through \
+         `buildWitnessFactsFromExtractedSidecarFacts`. Lower-level modules may \
+         still target `ExtractedRawSourceFacts`, expose \
+         `FullWitnessMemAirSourceProverDataFacts witness`, and use the checked adapter \
          `fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`."
     )
     .unwrap();
@@ -3719,10 +3829,10 @@ mod tests {
         assert!(
             out.contains("`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`")
                 && out.contains(
-                    "`Extraction.MemGeneratedConstraintBridge.ExtractedRawSourceFacts`"
+                    "`Extraction.MemGeneratedConstraintBridge.ExtractedSidecarFacts`"
                 )
                 && out.contains(
-                    "`buildWitnessFactsFromExtractedRawSourceFacts`"
+                    "`buildWitnessFactsFromExtractedSidecarFacts`"
                 ),
             "report should point raw ProverData facts at checked raw assembly adapters:\n{}",
             out
@@ -3882,6 +3992,15 @@ mod tests {
                 && out.contains("def buildRawFactsFromExtractedRawSourceFacts")
                 && out.contains("def buildWitnessFactsFromExtractedRawSourceFacts"),
             "bridge should expose one raw source target for generated code:\n{}",
+            out
+        );
+        assert!(
+            out.contains("structure ExtractedRangeFacts")
+                && out.contains("def rawRowRangeFacts_of_extractedRangeFacts")
+                && out.contains("def rawSegmentRangeFacts_of_extractedRangeFacts")
+                && out.contains("structure ExtractedSidecarFacts")
+                && out.contains("def buildWitnessFactsFromExtractedSidecarFacts"),
+            "bridge should expose generator-friendly range facts and sidecar builders:\n{}",
             out
         );
     }

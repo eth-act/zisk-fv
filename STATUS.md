@@ -13,10 +13,10 @@ emits only row constraints plus MemBus provider rows; Mem range lookup witness
 definitions exist, but the active component does not emit them, and segment
 ranges are sidecar-global rather than row inputs.
 
-Current slice: generated Mem source facts now have one raw target.
-`MemGeneratedConstraintBridge.lean` maps extracted `constraint_0..33` to
-`RawConstraintFacts`, wraps them with raw ranges as `ExtractedRawSourceFacts`,
-and exposes raw/witness builders for that target.
+Current slice: generated Mem source facts now have source-level sidecar target.
+`MemGeneratedConstraintBridge.lean` maps extracted constraints and bit-width
+inequalities to raw split constraints/ranges, then packages them as
+`ExtractedSidecarFacts`.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -30,8 +30,8 @@ Current proof surface:
 - `tools/pil-extract mem-generated-artifact` emits checked witness/raw assembly
   helpers and the timeline constructor wrapper.
 - `tools/pil-extract mem-generated-constraint-bridge` emits the checked
-  ProverData circuit instance, extracted constraint surface, `ExtractedRawSourceFacts`,
-  and raw/witness builders.
+  ProverData circuit instance, extracted constraint/range surfaces,
+  `ExtractedSidecarFacts`, and raw/witness builders.
 
 Latest verification:
 - Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests).
@@ -46,5 +46,5 @@ Latest verification:
   `git diff --check` at commit `465470dc`.
 - Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: decide whether to broaden Clean Mem/component modeling for range
-provenance or keep raw row/segment range facts as explicit generated sidecar input.
+Next step: prove/populate `ExtractedSidecarFacts` for mutable Mem tables from
+generated sidecar data; Clean component broadening remains a fallback.

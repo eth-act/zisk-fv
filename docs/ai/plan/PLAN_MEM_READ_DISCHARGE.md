@@ -1067,13 +1067,13 @@ no assumed soundness fields**.
       `Extraction.MemGeneratedArtifact` and names constraints `0..=33` as
       `ExtractedConstraintFacts`. Follow-up adapter work in the same generated
       bridge now proves the definitional mapping from those extracted
-      predicates to the wrapper's split `RawConstraintFacts` and exposes
-      `ExtractedRawSourceFacts` as the single generated target for extracted
-      constraints plus raw row/segment range facts, with raw/witness builders
-      for that target. This still does not prove
+      predicates to the wrapper's split `RawConstraintFacts`, maps explicit
+      bit-width/range inequalities to raw row/segment range facts, and exposes
+      `ExtractedSidecarFacts` as the preferred generated target, with
+      raw/witness builders for that target. This still does not prove
       `FullWitnessMemAirSourceProverDataWitnessFacts`; the remaining generated
-      production work is proving the `ExtractedRawSourceFacts` fields,
-      especially raw row/segment range facts. Audit note: the lookup-witness
+      production work is proving the `ExtractedSidecarFacts` fields. Audit note:
+      the lookup-witness
       definitions for those range facts exist, but `componentWithDualMemBus`
       still emits only the row constraints plus MemBus provider rows, and the
       segment range fields are sidecar-global rather than row inputs. Verified
