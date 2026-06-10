@@ -27,8 +27,8 @@ Current generated counts:
 The source trust ledger contains six Clean completeness declarations. The global
 theorem currently has no transitive project-axiom closure. The former Aeneas
 row-lowering and memory-state load bridge axioms are now visible conditional
-inputs: `env.aeneasBridgeTrust` on the global theorem and
-`LoadPromises.mem_read` on load promise bundles.
+inputs: `env.aeneasBridgeTrust` and `env.memoryTimelineEvidence` on the global
+theorem.
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
@@ -41,7 +41,7 @@ Lean axiom ledger:
 | Class                         | Declarations | In global closure | Removability                                                                                             |
 | ---                           | ---:         | ---:              | ---                                                                                                      |
 | Aeneas row-lowering condition | 0            | 0                 | Discharge `env.aeneasBridgeTrust` by importing generated Aeneas Lean into main Lake.                      |
-| Memory load byte agreement    | 0            | 0                 | Discharge `LoadPromises.mem_read` via the memory replay relation and extracted memory AIR facts.          |
+| Sail memory timeline          | 0            | 0                 | Discharge `env.memoryTimelineEvidence` by proving whole-execution memory replay/timeline induction.       |
 | Clean completeness            | 6            | 0                 | Completeness-only placeholders; removable by proving each Clean circuit completeness theorem internally. |
 
 
@@ -151,25 +151,82 @@ are needed to remove the remaining caller-burden bridge, row-shape, and
 promise fields from wrapper and `OpEnvelope` boundaries. The `bus_shape`
 category is already zero after the W-shift structural cleanup.
 
-## Memory Load Byte Agreement
+## Sail Memory Timeline
 
-The former global load-side memory bridge axiom has been demoted to a visible
-promise field:
+The former per-load byte-agreement promise has been replaced by a visible global
+timeline-evidence hypothesis:
 
 ```text
-LoadPromises.mem_read : LoadByteAgreement state e1
+h_memory_timeline : env.memoryTimelineEvidence
 ```
 
-This condition says that the load-side memory-bus entry bytes agree with Sail
-memory at `e1.ptr + 0..7`. It is a conditional memory-model boundary, not a
-known bug. `trust/consistency/load_byte_agreement_witness.lean` typechecks a
-concrete state and entry satisfying the byte-agreement predicate, while
-`trust/consistency/probe_false.lean` must fail to typecheck because the former
-blanket axiom no longer exists.
+For load `OpEnvelope` arms, `env.memoryTimelineEvidence` requires
+`Nonempty (MemoryTimelineEvidence state bus.e1)`; non-load arms require no
+memory evidence. Generated full-witness sidecar artifacts can construct that
+timeline evidence through `FullWitnessGeneratedTimelineEvidence`, while
+dispatch consumes only the public `MemoryTimelineEvidence state e1` API before
+reconstructing canonical `LoadPromises`. The `OpEnvelope` load constructors
+themselves carry only `LoadStructuralPromises`, so they no longer accept a
+per-load byte oracle.
 
-Retirement path: prove the end-to-end connection from extracted Mem AIR
-constraints, memory-bus matching, byte assembly, and Sail memory
-representation via the memory replay relation.
+`FullWitnessGeneratedTimelineEvidence` wraps `FullWitnessMemoryTimelineEvidence`
+as a checked generated producer and makes the generated ProverData sidecar
+source explicit: it carries
+`FullWitnessMemAirSourceProverDataWitnessFacts` and records that the stored
+sidecars are exactly the sidecars packaged from those witness facts. The inner
+`FullWitnessMemoryTimelineEvidence` contains the concrete full-ensemble witness,
+the `FullWitnessMemAirSourceRawSidecars` callback for the witness-selected
+mutable Mem table, and only the residual whole-execution memory-timeline facts.
+A derived Mem AIR source accessor selects the `FullWitnessMemReplayBridge`,
+which derives the
+`AcceptedMemoryReplayEvidence` sub-object used by `MemoryTimelineEvidence`,
+including prefix-read soundness for the accepted Mem rows. The residual
+timeline facts state that those rows split around the selected read, the
+selected row is a read, the initial Sail memory agrees with the replay memory,
+and the selected Sail state is the state reached by replaying the accepted
+prefix. The canonical load proofs derive `LoadByteAgreement` from the resulting
+timeline evidence and the memory replay relation.
+
+Generated/full-ensemble Mem facts target
+`FullWitnessMemAirSourceProverDataWitnessFacts`: Clean assertion/lookup
+witnesses plus named `witness.data` sidecar keys for raw split generated
+constraints, row range facts, segment range facts, and the stage-2 source
+columns for each mutable Mem table. The reproducible generated wrapper
+`Extraction.MemGeneratedArtifact` exposes `buildWitnessFacts`, which assembles
+that target from the three per-table callback families, plus
+`buildRawFacts` and `buildWitnessFactsFromRawParts`, which assemble/adapt raw
+ProverData fact callbacks to the same witness target. It also exposes
+`buildTimelineEvidence`, which passes the assembled facts to
+`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. The top-level
+`nix run .#test` gate compiles the generated `Extraction.Circuit` shim,
+`Extraction.Mem` constraint source, and
+`Extraction.MemGeneratedArtifact` wrapper directly under the generated
+`build/extraction` root. It also compiles
+`Extraction.MemGeneratedConstraintBridge`, which binds those extracted Mem
+constraints to the ProverData-backed source view used by the wrapper, so this
+surface stays synchronized with the checked Lean API.
+`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` packages that
+target into a checked generated producer of the public timeline boundary. Lean packages the resulting sidecar
+callback into the witness-selected `FullWitnessMemAirSource` via
+`fullWitnessMemAirSourceOfRawSidecars`, and
+`fullWitnessMemoryTimelineEvidence_of_rawSidecars` combines it with only the
+residual Sail timeline fields above. `FullWitnessMemAirSourceRawFacts` and
+`fullWitnessMemoryTimelineEvidence_of_rawFacts` remain compatibility adapters
+for lower-level generated modules that still produce the raw sigma callback;
+`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts` is the checked
+adapter for raw ProverData facts.
+
+Retirement path: emit/prove the extractor/full-ensemble
+`FullWitnessMemAirSourceProverDataWitnessFacts`, then prove the whole-execution induction
+connecting accepted Mem rows, initial Sail memory agreement, and selected Sail
+state without assuming `env.memoryTimelineEvidence`. The table/list-position
+part of the bridge is named as `MemTableGeneratedRowsBridge`, which connects
+Clean `table.table` positions to `rowAt mem idx` and the row-indexed
+`generated_every_row` constraints. `FullWitnessMemReplayBridge` packages the
+concrete full-ensemble Mem table, generated-row/range/fixed-column facts,
+active-row equality, and nonempty segment evidence; its constructor derives the
+accepted replay subobject, so `AcceptedMemoryReplayEvidence.prefixReadSound` is
+no longer a bare global-boundary assumption.
 
 ## Platform Profile
 

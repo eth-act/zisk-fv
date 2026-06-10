@@ -9,19 +9,21 @@ After the OpenVM Circuit retirement (Phase D), `Valid_Mem` is a plain
 named-column record; the canonical AIR view is the Clean
 `Air.Flat.Component` at `ZiskFv/AirsClean/Mem/`.
 
-Only the nine F-typed constraints (3, 4, 5, 6, 7, 8, 18, 21, 23) are
-named here; the rest mix `F` (witness cells) with `ExtF` (challenges /
-airvalues / permutation accumulators) and are handled compositionally
-via the memory-bus / continuation models (`Airs/MemoryBus.lean` and
-friends).
+The nine F-typed constraints (3, 4, 5, 6, 7, 8, 18, 21, 23) are named as the
+local `core_every_row` surface consumed by the current Clean bridge. The
+generated extractor now also emits the mixed segment/permutation constraints;
+this module starts naming their source-level counterparts using explicit
+segment/challenge columns. The global replay proof still has to consume those
+facts to derive chronological memory-state soundness.
 
 The F-typed surface bridged here covers the per-row local invariants
 of the `Mem` AIR's primary witness columns: booleanity of `sel`,
 `sel_dual`, `addr_changes`, `wr`; the `wr ⇒ sel` and `sel_dual ⇒ sel`
 implications (encoded as products); the `read_same_addr` definitional
 identity; and the "address change without write zeros the value"
-constraints. Continuity (cross-row) constraints involve airvalues and
-appear in the stub bucket.
+constraints. Continuity (cross-row) constraints involve segment carry columns
+and permutation accumulators. They are exposed separately rather than folded
+into the local row `Spec`.
 
 Column layout taken from the witness-column header in
 `ZiskFv/ZiskFv/Extraction/Mem.lean`. Stage-1 columns:
@@ -132,10 +134,9 @@ def addr_change_no_write_zeros_value_0 (v : Valid_Mem F ExtF) (row : ℕ) : Prop
 def addr_change_no_write_zeros_value_1 (v : Valid_Mem F ExtF) (row : ℕ) : Prop :=
   (v.addr_changes row * (1 - v.wr row)) * v.value_1 row = 0
 
-/-- The nine F-typed every-row constraints bundled. The remaining 25
-    extraction constraints (mixed F/ExtF) are the permutation /
-    direct-update / continuity stubs and are handled compositionally
-    against the memory-bus model in `Airs/MemoryBus.lean`. -/
+/-- The nine F-typed every-row constraints bundled. The remaining generated
+    segment/permutation constraints are named separately below because they
+    need full-trace context, not just one local `MemRow`. -/
 @[simp]
 def core_every_row (v : Valid_Mem F ExtF) (row : ℕ) : Prop :=
   boolean_sel_dual v row
@@ -147,5 +148,1289 @@ def core_every_row (v : Valid_Mem F ExtF) (row : ℕ) : Prop :=
   ∧ read_same_addr_def_eq v row
   ∧ addr_change_no_write_zeros_value_0 v row
   ∧ addr_change_no_write_zeros_value_1 v row
+
+/-! ## Generated segment/continuity surface
+
+The extractor emits constraints 0-23 as single-field formulas over witness,
+exposed, and preprocessed Mem columns. `SegmentColumns` names the non-witness
+columns needed for those formulas, while `segment_every_row` mirrors the
+generated constraint order. Constraints 24-33 are the permutation accumulator
+surface and will be bound in the next slice.
+-/
+
+/-- Non-witness Mem columns used by generated constraints 0-23. -/
+structure SegmentColumns (F : Type) [Field F] where
+  segment_id : F
+  is_first_segment : F
+  is_last_segment : F
+  previous_segment_value_0 : F
+  previous_segment_value_1 : F
+  previous_segment_step : F
+  previous_segment_addr : F
+  segment_last_value_0 : F
+  segment_last_value_1 : F
+  segment_last_step : F
+  segment_last_addr : F
+  distance_base_0 : F
+  distance_base_1 : F
+  distance_end_0 : F
+  distance_end_1 : F
+  segment_l1 : ℕ → F
+
+variable {F : Type} [Field F]
+
+@[simp]
+def previous_row_step (v : Valid_Mem F F) (row : ℕ) : F :=
+  v.sel_dual (row - 1) * (v.step_dual (row - 1) - v.step (row - 1))
+    + v.step (row - 1)
+
+/-- If the previous Mem row has no dual event, its effective carried step is
+    its primary step. -/
+theorem previous_row_step_eq_step_of_no_dual
+    {v : Valid_Mem F F} {row : ℕ}
+    (h_no_dual : v.sel_dual (row - 1) = 0) :
+    previous_row_step v row = v.step (row - 1) := by
+  simp [previous_row_step, h_no_dual]
+
+/-- If the previous Mem row has a dual event, its effective carried step is
+    its dual step. -/
+theorem previous_row_step_eq_step_dual_of_dual
+    {v : Valid_Mem F F} {row : ℕ}
+    (h_dual : v.sel_dual (row - 1) = 1) :
+    previous_row_step v row = v.step_dual (row - 1) := by
+  simp [previous_row_step, h_dual]
+
+/-- Nat-valued projection of `previous_row_step_eq_step_of_no_dual`. -/
+theorem previous_row_step_val_eq_step_val_of_no_dual
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_no_dual : v.sel_dual (row - 1) = 0) :
+    (previous_row_step v row).val = (v.step (row - 1)).val := by
+  rw [previous_row_step_eq_step_of_no_dual
+    (v := v) (row := row) h_no_dual]
+
+/-- Nat-valued projection of `previous_row_step_eq_step_dual_of_dual`. -/
+theorem previous_row_step_val_eq_step_dual_val_of_dual
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_dual : v.sel_dual (row - 1) = 1) :
+    (previous_row_step v row).val = (v.step_dual (row - 1)).val := by
+  rw [previous_row_step_eq_step_dual_of_dual
+    (v := v) (row := row) h_dual]
+
+@[simp]
+def segment_previous_addr
+    (cols : SegmentColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  cols.segment_l1 row * (cols.previous_segment_addr - v.addr (row - 1))
+    + v.addr (row - 1)
+
+@[simp]
+def segment_previous_value_0
+    (cols : SegmentColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  cols.segment_l1 row * (cols.previous_segment_value_0 - v.value_0 (row - 1))
+    + v.value_0 (row - 1)
+
+@[simp]
+def segment_previous_value_1
+    (cols : SegmentColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  cols.segment_l1 row * (cols.previous_segment_value_1 - v.value_1 (row - 1))
+    + v.value_1 (row - 1)
+
+@[simp]
+def delta_step (v : Valid_Mem F F) (row : ℕ) : F :=
+  (v.step row - v.previous_step row) + (1 - v.wr row)
+
+@[simp]
+def delta_addr
+    (cols : SegmentColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  v.addr row - segment_previous_addr cols v row
+
+/-- Generated Mem constraints 0-23, excluding only the later permutation
+accumulator constraints 24-33. -/
+@[simp]
+def segment_every_row
+    (cols : SegmentColumns F) (v : Valid_Mem F F) (row : ℕ) : Prop :=
+  cols.is_first_segment * (1 - cols.is_first_segment) = 0
+  ∧ cols.is_last_segment * (1 - cols.is_last_segment) = 0
+  ∧ cols.is_first_segment * cols.segment_id = 0
+  ∧ v.sel_dual row * (1 - v.sel_dual row) = 0
+  ∧ (1 - v.sel row) * v.sel_dual row = 0
+  ∧ v.sel row * (1 - v.sel row) = 0
+  ∧ v.addr_changes row * (1 - v.addr_changes row) = 0
+  ∧ v.wr row * (1 - v.wr row) = 0
+  ∧ v.wr row * (1 - v.sel row) = 0
+  ∧ cols.segment_l1 (row + 1) *
+      (v.value_0 row - cols.segment_last_value_0) = 0
+  ∧ cols.segment_l1 (row + 1) *
+      (v.value_1 row - cols.segment_last_value_1) = 0
+  ∧ cols.segment_l1 (row + 1) *
+      (v.addr row - cols.segment_last_addr) = 0
+  ∧ cols.segment_l1 (row + 1) *
+      (v.sel_dual row * (v.step_dual row - v.step row) + v.step row
+        - cols.segment_last_step) = 0
+  ∧ (cols.previous_segment_addr - 335544320)
+      - (cols.distance_base_0 + 65536 * cols.distance_base_1) = 0
+  ∧ (402653183 - cols.segment_last_addr)
+      - (cols.distance_end_0 + 65536 * cols.distance_end_1) = 0
+  ∧ v.previous_step row
+      - (cols.segment_l1 row *
+          (cols.previous_segment_step - previous_row_step v row)
+        + previous_row_step v row) = 0
+  ∧ (v.increment_0 row + 4194304 * v.increment_1 row + 1)
+      - (v.addr_changes row * (delta_addr cols v row - delta_step v row)
+        + delta_step v row) = 0
+  ∧ (cols.is_first_segment * cols.segment_l1 row) *
+      (1 - v.addr_changes row) = 0
+  ∧ v.read_same_addr row
+      - (1 - v.addr_changes row) * (1 - v.wr row) = 0
+  ∧ (1 - v.addr_changes row) *
+      (v.addr row - segment_previous_addr cols v row) = 0
+  ∧ v.read_same_addr row *
+      (v.value_0 row - segment_previous_value_0 cols v row) = 0
+  ∧ (v.addr_changes row * (1 - v.wr row)) * v.value_0 row = 0
+  ∧ v.read_same_addr row *
+      (v.value_1 row - segment_previous_value_1 cols v row) = 0
+  ∧ (v.addr_changes row * (1 - v.wr row)) * v.value_1 row = 0
+
+/-- The active local Mem bridge is a projection of the generated 0-23
+segment/continuity surface. -/
+theorem core_every_row_of_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row) :
+    core_every_row v row := by
+  rcases h with
+    ⟨_, _, _, h3, h4, h5, h6, h7, h8, _, _, _, _, _, _, _, _, _,
+      h18, _, _, h21, _, h23⟩
+  exact ⟨h3, h4, h5, h6, h7, h8, h18, h21, h23⟩
+
+/-- On the first row of the first Mem segment, `addr_changes` is forced high.
+
+    This is exactly the `mem.pil:377` constraint
+    `is_first_segment * SEGMENT_L1 * (1 - addr_changes) = 0` after exposing
+    the two segment selectors as `1`. -/
+theorem addr_changes_eq_one_of_first_segment_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_first_segment : cols.is_first_segment = 1)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.addr_changes row = 1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_first_boundary,
+      _, _, _, _, _, _⟩
+  rw [h_first_segment, h_boundary] at h_first_boundary
+  have h_zero : 1 - v.addr_changes row = 0 := by
+    simpa using h_first_boundary
+  exact (sub_eq_zero.mp h_zero).symm
+
+/-- At a non-boundary row, the segment previous-address expression is the
+    previous row's address. Segment-boundary carry-in is handled separately by
+    the global Mem trace construction. -/
+theorem segment_previous_addr_eq_previous_of_not_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    segment_previous_addr cols v row = v.addr (row - 1) := by
+  simp [segment_previous_addr, h_not_boundary]
+
+/-- At a non-boundary row, the segment previous-value expression for the low
+    chunk is the previous row's low value chunk. -/
+theorem segment_previous_value_0_eq_previous_of_not_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    segment_previous_value_0 cols v row = v.value_0 (row - 1) := by
+  simp [segment_previous_value_0, h_not_boundary]
+
+/-- At a non-boundary row, the segment previous-value expression for the high
+    chunk is the previous row's high value chunk. -/
+theorem segment_previous_value_1_eq_previous_of_not_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    segment_previous_value_1 cols v row = v.value_1 (row - 1) := by
+  simp [segment_previous_value_1, h_not_boundary]
+
+/-- The generated segment constraints imply same-address rows carry the
+    previous address at non-boundary positions. -/
+theorem addr_eq_previous_of_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.addr row = v.addr (row - 1) := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_addr, _, _, _, _⟩
+  rw [h_same_addr] at h_addr
+  have h_prev :=
+    segment_previous_addr_eq_previous_of_not_boundary
+      (cols := cols) (v := v) (row := row) h_not_boundary
+  rw [h_prev] at h_addr
+  linear_combination h_addr
+
+/-- The generated segment constraints imply same-address reads carry the
+    previous low value chunk at non-boundary positions. -/
+theorem value_0_eq_previous_of_read_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.value_0 row = v.value_0 (row - 1) := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_value_0, _, _, _⟩
+  rw [h_read_same_addr] at h_value_0
+  have h_prev :=
+    segment_previous_value_0_eq_previous_of_not_boundary
+      (cols := cols) (v := v) (row := row) h_not_boundary
+  rw [h_prev] at h_value_0
+  linear_combination h_value_0
+
+/-- The generated segment constraints imply same-address reads carry the
+    previous high value chunk at non-boundary positions. -/
+theorem value_1_eq_previous_of_read_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.value_1 row = v.value_1 (row - 1) := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_value_1, _⟩
+  rw [h_read_same_addr] at h_value_1
+  have h_prev :=
+    segment_previous_value_1_eq_previous_of_not_boundary
+      (cols := cols) (v := v) (row := row) h_not_boundary
+  rw [h_prev] at h_value_1
+  linear_combination h_value_1
+
+/-- The generated segment constraints imply same-address reads carry both
+    value chunks from the previous row at non-boundary positions. -/
+theorem values_eq_previous_of_read_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.value_0 row = v.value_0 (row - 1)
+      ∧ v.value_1 row = v.value_1 (row - 1) :=
+  ⟨value_0_eq_previous_of_read_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_read_same_addr h_not_boundary,
+    value_1_eq_previous_of_read_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_read_same_addr h_not_boundary⟩
+
+/-- At a segment-boundary row, the segment previous-address expression is the
+    previous segment's carried-out address. -/
+theorem segment_previous_addr_eq_previous_segment_of_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_boundary : cols.segment_l1 row = 1) :
+    segment_previous_addr cols v row = cols.previous_segment_addr := by
+  simp [segment_previous_addr, h_boundary]
+
+/-- At a segment-boundary row, the segment previous-value expression for the
+    low chunk is the previous segment's carried-out low value chunk. -/
+theorem segment_previous_value_0_eq_previous_segment_of_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_boundary : cols.segment_l1 row = 1) :
+    segment_previous_value_0 cols v row = cols.previous_segment_value_0 := by
+  simp [segment_previous_value_0, h_boundary]
+
+/-- At a segment-boundary row, the segment previous-value expression for the
+    high chunk is the previous segment's carried-out high value chunk. -/
+theorem segment_previous_value_1_eq_previous_segment_of_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_boundary : cols.segment_l1 row = 1) :
+    segment_previous_value_1 cols v row = cols.previous_segment_value_1 := by
+  simp [segment_previous_value_1, h_boundary]
+
+/-- At a segment-boundary row, a same-address witness identifies the current
+    address with the previous segment's carried-out address. -/
+theorem addr_eq_previous_segment_of_same_addr_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.addr row = cols.previous_segment_addr := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_addr, _, _, _, _⟩
+  rw [h_same_addr] at h_addr
+  have h_prev :=
+    segment_previous_addr_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary
+  rw [h_prev] at h_addr
+  linear_combination h_addr
+
+/-- At a segment-boundary row, a same-address read carries the previous
+    segment's low value chunk. -/
+theorem value_0_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.value_0 row = cols.previous_segment_value_0 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_value_0, _, _, _⟩
+  rw [h_read_same_addr] at h_value_0
+  have h_prev :=
+    segment_previous_value_0_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary
+  rw [h_prev] at h_value_0
+  linear_combination h_value_0
+
+/-- At a segment-boundary row, a same-address read carries the previous
+    segment's high value chunk. -/
+theorem value_1_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.value_1 row = cols.previous_segment_value_1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_value_1, _⟩
+  rw [h_read_same_addr] at h_value_1
+  have h_prev :=
+    segment_previous_value_1_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary
+  rw [h_prev] at h_value_1
+  linear_combination h_value_1
+
+/-- At a segment-boundary row, a same-address read carries both value chunks
+    from the previous segment. -/
+theorem values_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.value_0 row = cols.previous_segment_value_0
+      ∧ v.value_1 row = cols.previous_segment_value_1 :=
+  ⟨value_0_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_read_same_addr h_boundary,
+    value_1_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_read_same_addr h_boundary⟩
+
+/-- The generated segment constraints record the current low value chunk as
+    the segment's carried-out low value when the next row starts a segment. -/
+theorem segment_last_value_0_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.value_0 row = cols.segment_last_value_0 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, h_value_0, _, _, _, _, _, _, _, _, _,
+      _, _, _, _, _⟩
+  rw [h_next_boundary] at h_value_0
+  linear_combination h_value_0
+
+/-- The generated segment constraints record the current high value chunk as
+    the segment's carried-out high value when the next row starts a segment. -/
+theorem segment_last_value_1_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.value_1 row = cols.segment_last_value_1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, h_value_1, _, _, _, _, _, _, _, _,
+      _, _, _, _, _⟩
+  rw [h_next_boundary] at h_value_1
+  linear_combination h_value_1
+
+/-- The generated segment constraints record the current address as the
+    segment's carried-out address when the next row starts a segment. -/
+theorem segment_last_addr_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.addr row = cols.segment_last_addr := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, h_addr, _, _, _, _, _, _, _,
+      _, _, _, _, _⟩
+  rw [h_next_boundary] at h_addr
+  linear_combination h_addr
+
+/-- The generated segment constraints record the current effective step as the
+    segment's carried-out step when the next row starts a segment. -/
+theorem segment_last_step_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.sel_dual row * (v.step_dual row - v.step row) + v.step row =
+      cols.segment_last_step := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, h_step, _, _, _, _, _, _,
+      _, _, _, _, _⟩
+  rw [h_next_boundary] at h_step
+  linear_combination h_step
+
+/-- The generated segment constraints carry the current row's full memory
+    state out to the segment-last columns when the next row starts a segment. -/
+theorem segment_last_carry_eq_of_next_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_next_boundary : cols.segment_l1 (row + 1) = 1) :
+    v.value_0 row = cols.segment_last_value_0
+      ∧ v.value_1 row = cols.segment_last_value_1
+      ∧ v.addr row = cols.segment_last_addr
+      ∧ v.sel_dual row * (v.step_dual row - v.step row) + v.step row =
+        cols.segment_last_step :=
+  ⟨segment_last_value_0_eq_of_next_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_next_boundary,
+    segment_last_value_1_eq_of_next_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_next_boundary,
+    segment_last_addr_eq_of_next_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_next_boundary,
+    segment_last_step_eq_of_next_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_next_boundary⟩
+
+/-- At a non-boundary row, the generated previous-step witness is the
+    previous row's effective step. -/
+theorem previous_step_eq_previous_row_step_of_not_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_not_boundary : cols.segment_l1 row = 0) :
+    v.previous_step row = previous_row_step v row := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_previous_step,
+      _, _, _, _, _, _, _, _⟩
+  rw [h_not_boundary] at h_previous_step
+  linear_combination h_previous_step
+
+/-- At a segment-boundary row, the generated previous-step witness is the
+    previous segment's carried-out effective step. -/
+theorem previous_step_eq_previous_segment_step_of_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.previous_step row = cols.previous_segment_step := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_previous_step,
+      _, _, _, _, _, _, _, _⟩
+  rw [h_boundary] at h_previous_step
+  linear_combination h_previous_step
+
+/-- At a segment-boundary row, generated constraints and boundary selectors
+    carry the previous segment's full memory state into the row-local previous
+    columns. -/
+theorem segment_previous_carry_eq_previous_segment_of_boundary
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_boundary : cols.segment_l1 row = 1) :
+    segment_previous_addr cols v row = cols.previous_segment_addr
+      ∧ segment_previous_value_0 cols v row = cols.previous_segment_value_0
+      ∧ segment_previous_value_1 cols v row = cols.previous_segment_value_1
+      ∧ v.previous_step row = cols.previous_segment_step :=
+  ⟨segment_previous_addr_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary,
+    segment_previous_value_0_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary,
+    segment_previous_value_1_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary,
+    previous_step_eq_previous_segment_step_of_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_boundary⟩
+
+/-- On same-address rows, the generated increment equation reduces to the
+    chronological step delta. -/
+theorem delta_step_eq_increment_of_same_addr_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0) :
+    delta_step v row =
+      v.increment_0 row + 4194304 * v.increment_1 row + 1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_increment,
+      _, _, _, _, _, _, _⟩
+  rw [h_same_addr] at h_increment
+  linear_combination -h_increment
+
+/-- On address-change rows, the generated increment equation reduces to the
+    address delta. -/
+theorem delta_addr_eq_increment_of_addr_change_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1) :
+    delta_addr cols v row =
+      v.increment_0 row + 4194304 * v.increment_1 row + 1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_increment,
+      _, _, _, _, _, _, _⟩
+  rw [h_addr_change] at h_increment
+  linear_combination -h_increment
+
+/-- Nat interpretation of the PIL `l_increment`/`h_increment` pair.
+    In `mem.pil`, `l_increment` is `bits(22)` and `h_increment` is
+    `bits(16)`, and the field expression is
+    `l_increment + 2^22 * h_increment + 1`. -/
+@[simp]
+def incrementNat (v : Valid_Mem FGL FGL) (row : ℕ) : ℕ :=
+  (v.increment_0 row).val + 4194304 * (v.increment_1 row).val + 1
+
+/-- PIL range facts for the mutable-Mem increment chunks. These are the
+    `range_check` obligations at `mem.pil:384-385`. -/
+def increment_chunks_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
+  (v.increment_0 row).val < 2 ^ 22 ∧ (v.increment_1 row).val < 2 ^ 16
+
+/-- PIL range fact for the mutable-Mem address column. This mirrors
+    `mem.pil:109`, where `addr` is declared as `bits(29)`. -/
+def addr_columns_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
+  (v.addr row).val < 2 ^ 29
+
+/-- The increment expression is strictly positive as a Nat. -/
+theorem incrementNat_pos (v : Valid_Mem FGL FGL) (row : ℕ) :
+    0 < incrementNat v row := by
+  simp [incrementNat]
+
+/-- A 29-bit internal Mem address can be multiplied by the eight-byte word
+    size without wrapping in the Goldilocks field. -/
+theorem field_addr_times_eight_val_eq_of_lt
+    {addr : FGL}
+    (h_addr_range : addr.val < 2 ^ 29) :
+    (addr * 8 : FGL).val = addr.val * 8 := by
+  have h_lt : addr.val * 8 < 18446744069414584321 := by
+    omega
+  calc
+    (addr * 8 : FGL).val =
+        (((addr.val * 8 : ℕ) : FGL)).val := by
+      norm_num [Fin.ext_iff]
+    _ = addr.val * 8 := Nat.mod_eq_of_lt h_lt
+
+/-- Row-indexed form of `field_addr_times_eight_val_eq_of_lt`. -/
+theorem field_addr_times_eight_val_eq
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_addr_range : addr_columns_in_range v row) :
+    (v.addr row * 8 : FGL).val = (v.addr row).val * 8 :=
+  field_addr_times_eight_val_eq_of_lt h_addr_range
+
+/-- The range-checked increment expression is at most `2^38`. The upper
+    bound can be attained because the PIL expression adds one after packing
+    the two chunks. -/
+theorem incrementNat_le_two_pow_38
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_range : increment_chunks_in_range v row) :
+    incrementNat v row ≤ 2 ^ 38 := by
+  rcases h_range with ⟨h_lo, h_hi⟩
+  simp [incrementNat] at *
+  omega
+
+/-- The range-checked increment expression is far below the Goldilocks
+    modulus, so later field/Nat bridges can use it as a no-wrap witness. -/
+theorem incrementNat_lt_goldilocks_modulus
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_range : increment_chunks_in_range v row) :
+    incrementNat v row < 18446744069414584321 := by
+  have h_le := incrementNat_le_two_pow_38 (v := v) (row := row) h_range
+  norm_num at h_le ⊢
+  omega
+
+/-- The field expression in the generated increment constraint is the field
+    cast of the Nat interpretation. -/
+theorem incrementNat_cast_eq_field_increment
+    (v : Valid_Mem FGL FGL) (row : ℕ) :
+    ((incrementNat v row : ℕ) : FGL) =
+      v.increment_0 row + 4194304 * v.increment_1 row + 1 := by
+  simp [incrementNat]
+
+/-- Under the PIL chunk range checks, the field increment expression has the
+    Nat representative `incrementNat`. This is the no-wrap bridge needed by
+    chronology proofs that move from generated field equalities to Nat order. -/
+theorem field_increment_val_eq_incrementNat
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_range : increment_chunks_in_range v row) :
+    (v.increment_0 row + 4194304 * v.increment_1 row + 1 : FGL).val =
+      incrementNat v row := by
+  have h_cast := incrementNat_cast_eq_field_increment v row
+  have h_lt := incrementNat_lt_goldilocks_modulus (v := v) (row := row) h_range
+  calc
+    (v.increment_0 row + 4194304 * v.increment_1 row + 1 : FGL).val =
+        (((incrementNat v row : ℕ) : FGL)).val := by
+      rw [h_cast.symm]
+    _ = incrementNat v row := by
+      exact Nat.mod_eq_of_lt h_lt
+
+/-- Same-address generated segment constraints give the exact Nat
+    representative of the chronological step delta. -/
+theorem delta_step_val_eq_incrementNat_of_same_addr_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_range : increment_chunks_in_range v row) :
+    (delta_step v row).val = incrementNat v row := by
+  have h_delta :=
+    delta_step_eq_increment_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_same_addr
+  calc
+    (delta_step v row).val =
+        (v.increment_0 row + 4194304 * v.increment_1 row + 1 : FGL).val := by
+      rw [h_delta]
+    _ = incrementNat v row :=
+      field_increment_val_eq_incrementNat (v := v) (row := row) h_range
+
+/-- Same-address generated segment constraints make the chronological step
+    delta strictly positive at the Nat-representative level. -/
+theorem delta_step_val_pos_of_same_addr_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_range : increment_chunks_in_range v row) :
+    0 < (delta_step v row).val := by
+  rw [delta_step_val_eq_incrementNat_of_same_addr_segment_every_row
+    (cols := cols) (v := v) (row := row) h h_same_addr h_range]
+  exact incrementNat_pos v row
+
+/-- PIL bit-range facts for the mutable-Mem step columns. In `mem.pil`,
+    `step`, `step_dual`, and `previous_step` are `bits(MEM_STEP_BITS)`, and
+    the pinned RV64IM configuration has `MEM_STEP_BITS = 40`. -/
+def step_columns_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
+  (v.step row).val < 2 ^ 40
+    ∧ (v.step_dual row).val < 2 ^ 40
+    ∧ (v.previous_step row).val < 2 ^ 40
+
+/-- A small no-wrap fact for the same-address step delta. The generated
+    increment equation gives a small positive representative for
+    `step - previous_step + (1 - wr)`; since `step` and `previous_step` are
+    40-bit and `wr` is a bit, that representative cannot be a wrapped
+    subtraction. -/
+theorem previous_step_le_step_of_same_addr_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_range : increment_chunks_in_range v row) :
+    (v.previous_step row).val ≤ (v.step row).val := by
+  have h_delta_eq :=
+    delta_step_val_eq_incrementNat_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_same_addr h_range
+  have h_delta_pos :=
+    delta_step_val_pos_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_same_addr h_range
+  have h_delta_bound := incrementNat_le_two_pow_38 (v := v) (row := row) h_range
+  have hmod :
+      (delta_step v row).val =
+        (18446744069414584321 - (v.previous_step row).val
+          + (v.step row).val
+          + (18446744069414584321 - (v.wr row).val + 1)) %
+          18446744069414584321 := by
+    simp [delta_step, Fin.val_sub, Fin.val_add]
+  by_contra hle
+  have hlt : (v.step row).val < (v.previous_step row).val := by
+    omega
+  by_cases h_prev_succ :
+      (v.previous_step row).val = (v.step row).val + (1 - (v.wr row).val)
+  · have hcalc :
+        (18446744069414584321 - (v.previous_step row).val
+          + (v.step row).val
+          + (18446744069414584321 - (v.wr row).val + 1)) %
+          18446744069414584321 = 0 := by
+      have hsum :
+          18446744069414584321 - (v.previous_step row).val
+            + (v.step row).val
+            + (18446744069414584321 - (v.wr row).val + 1) =
+            2 * 18446744069414584321 := by
+        omega
+      rw [hsum]
+    rw [hmod, hcalc] at h_delta_pos
+    omega
+  · have hdiff_pos_outer :
+        0 < (v.previous_step row).val -
+          ((v.step row).val + (1 - (v.wr row).val)) := by
+      omega
+    have hdiff_small_outer :
+        (v.previous_step row).val -
+            ((v.step row).val + (1 - (v.wr row).val)) <
+          2 ^ 40 := by
+      rcases h_steps with ⟨h_step, _h_step_dual, h_previous_step⟩
+      omega
+    have hcalc :
+        (18446744069414584321 - (v.previous_step row).val
+          + (v.step row).val
+          + (18446744069414584321 - (v.wr row).val + 1)) %
+          18446744069414584321 =
+          18446744069414584321 -
+            ((v.previous_step row).val -
+              ((v.step row).val + (1 - (v.wr row).val))) := by
+      have hsum :
+          18446744069414584321 - (v.previous_step row).val
+            + (v.step row).val
+            + (18446744069414584321 - (v.wr row).val + 1) =
+            2 * 18446744069414584321 -
+              ((v.previous_step row).val -
+                ((v.step row).val + (1 - (v.wr row).val))) := by
+        omega
+      rw [hsum]
+      have hsplit :
+          2 * 18446744069414584321 -
+              ((v.previous_step row).val -
+                ((v.step row).val + (1 - (v.wr row).val))) =
+            18446744069414584321 +
+              (18446744069414584321 -
+                ((v.previous_step row).val -
+                  ((v.step row).val + (1 - (v.wr row).val)))) := by
+        omega
+      rw [hsplit]
+      rw [Nat.add_mod_left]
+      exact Nat.mod_eq_of_lt (by omega)
+    rw [hmod, hcalc] at h_delta_eq
+    have h_large :
+        2 ^ 38 <
+          18446744069414584321 -
+            ((v.previous_step row).val -
+              ((v.step row).val + (1 - (v.wr row).val))) := by
+      omega
+    omega
+
+/-- At a non-boundary same-address row, if the previous row has no dual
+    event, the previous row's primary timestamp is no later than the current
+    row's primary timestamp. -/
+theorem previous_primary_step_le_step_of_same_addr_not_boundary_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_not_boundary : cols.segment_l1 row = 0)
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_range : increment_chunks_in_range v row)
+    (h_no_dual : v.sel_dual (row - 1) = 0) :
+    (v.step (row - 1)).val ≤ (v.step row).val := by
+  have h_prev :=
+    previous_step_eq_previous_row_step_of_not_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_not_boundary
+  have h_eff :=
+    previous_row_step_eq_step_of_no_dual
+      (v := v) (row := row) h_no_dual
+  have h_le :=
+    previous_step_le_step_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row)
+      h h_same_addr h_steps h_wr h_range
+  rw [h_prev, h_eff] at h_le
+  exact h_le
+
+/-- At a non-boundary same-address row, if the previous row has a dual event,
+    the previous row's dual timestamp is no later than the current row's
+    primary timestamp. -/
+theorem previous_dual_step_le_step_of_same_addr_not_boundary_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_not_boundary : cols.segment_l1 row = 0)
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_range : increment_chunks_in_range v row)
+    (h_dual : v.sel_dual (row - 1) = 1) :
+    (v.step_dual (row - 1)).val ≤ (v.step row).val := by
+  have h_prev :=
+    previous_step_eq_previous_row_step_of_not_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_not_boundary
+  have h_eff :=
+    previous_row_step_eq_step_dual_of_dual
+      (v := v) (row := row) h_dual
+  have h_le :=
+    previous_step_le_step_of_same_addr_segment_every_row
+      (cols := cols) (v := v) (row := row)
+      h h_same_addr h_steps h_wr h_range
+  rw [h_prev, h_eff] at h_le
+  exact h_le
+
+/-- Address-change generated segment constraints give the exact Nat
+    representative of the chronological address delta. -/
+theorem delta_addr_val_eq_incrementNat_of_addr_change_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1)
+    (h_range : increment_chunks_in_range v row) :
+    (delta_addr cols v row).val = incrementNat v row := by
+  have h_delta :=
+    delta_addr_eq_increment_of_addr_change_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_addr_change
+  calc
+    (delta_addr cols v row).val =
+        (v.increment_0 row + 4194304 * v.increment_1 row + 1 : FGL).val := by
+      rw [h_delta]
+    _ = incrementNat v row :=
+      field_increment_val_eq_incrementNat (v := v) (row := row) h_range
+
+/-- Address-change generated segment constraints make the chronological address
+    delta strictly positive at the Nat-representative level. -/
+theorem delta_addr_val_pos_of_addr_change_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1)
+    (h_range : increment_chunks_in_range v row) :
+    0 < (delta_addr cols v row).val := by
+  rw [delta_addr_val_eq_incrementNat_of_addr_change_segment_every_row
+    (cols := cols) (v := v) (row := row) h h_addr_change h_range]
+  exact incrementNat_pos v row
+
+/-- At an address-change row, the generated previous-address expression is
+    strictly smaller than the current row's address.
+
+    This mirrors the `mem.pil:375` increment equation together with the
+    `mem.pil:384-385` increment range checks and the 29-bit address range from
+    `mem.pil:109`, ruling out Goldilocks wraparound. The previous-address side
+    only needs the coarser two-chunk segment-distance bound from `mem.pil:265`
+    and `mem.pil:267-268`. -/
+theorem segment_previous_addr_lt_addr_of_addr_change_segment_every_row_of_previous_lt_two_pow_33
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1)
+    (h_current_addr_range : addr_columns_in_range v row)
+    (h_previous_addr_range : (segment_previous_addr cols v row).val < 2 ^ 33)
+    (h_range : increment_chunks_in_range v row) :
+    (segment_previous_addr cols v row).val < (v.addr row).val := by
+  have h_delta_eq :=
+    delta_addr_val_eq_incrementNat_of_addr_change_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_addr_change h_range
+  have h_delta_pos :=
+    delta_addr_val_pos_of_addr_change_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_addr_change h_range
+  have h_delta_bound := incrementNat_le_two_pow_38 (v := v) (row := row) h_range
+  have h_current_addr_lt : (v.addr row).val < 2 ^ 29 := h_current_addr_range
+  have h_previous_addr_lt : (segment_previous_addr cols v row).val < 2 ^ 33 :=
+    h_previous_addr_range
+  have hmod :
+      (delta_addr cols v row).val =
+        (18446744069414584321 - (segment_previous_addr cols v row).val
+          + (v.addr row).val) %
+          18446744069414584321 := by
+    simp [delta_addr, Fin.val_sub]
+  by_contra hlt
+  have h_ge : (v.addr row).val ≤ (segment_previous_addr cols v row).val := by
+    omega
+  by_cases h_eq : (v.addr row).val = (segment_previous_addr cols v row).val
+  · have hcalc :
+        (18446744069414584321 - (segment_previous_addr cols v row).val
+          + (v.addr row).val) %
+          18446744069414584321 = 0 := by
+      have hsum :
+          18446744069414584321 - (segment_previous_addr cols v row).val
+            + (v.addr row).val =
+            18446744069414584321 := by
+        omega
+      rw [hsum]
+    rw [hmod, hcalc] at h_delta_pos
+    omega
+  · have h_addr_lt : (v.addr row).val < (segment_previous_addr cols v row).val := by
+      omega
+    have hcalc :
+        (18446744069414584321 - (segment_previous_addr cols v row).val
+          + (v.addr row).val) %
+          18446744069414584321 =
+          18446744069414584321 -
+            ((segment_previous_addr cols v row).val - (v.addr row).val) := by
+      have hsum :
+          18446744069414584321 - (segment_previous_addr cols v row).val
+            + (v.addr row).val =
+            18446744069414584321 -
+              ((segment_previous_addr cols v row).val - (v.addr row).val) := by
+        omega
+      rw [hsum]
+      exact Nat.mod_eq_of_lt (by omega)
+    rw [hmod, hcalc] at h_delta_eq
+    have h_large :
+        2 ^ 38 <
+          18446744069414584321 -
+            ((segment_previous_addr cols v row).val - (v.addr row).val) := by
+      omega
+    omega
+
+/-- At an address-change row, the generated previous-address expression is
+    strictly smaller than the current row's address, specialized to the common
+    case where the previous-address expression is already known to be in the
+    29-bit Mem address range. -/
+theorem segment_previous_addr_lt_addr_of_addr_change_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1)
+    (h_current_addr_range : addr_columns_in_range v row)
+    (h_previous_addr_range : (segment_previous_addr cols v row).val < 2 ^ 29)
+    (h_range : increment_chunks_in_range v row) :
+    (segment_previous_addr cols v row).val < (v.addr row).val :=
+  segment_previous_addr_lt_addr_of_addr_change_segment_every_row_of_previous_lt_two_pow_33
+    (cols := cols) (v := v) (row := row)
+    h h_addr_change h_current_addr_range (by omega) h_range
+
+/-- At a non-boundary address-change row, the previous row's address is
+    strictly smaller than the current row's address.
+
+    This specializes the generated previous-address theorem to the
+    non-boundary case, where `segment_previous_addr` is the previous row's
+    address. -/
+theorem previous_addr_lt_addr_of_addr_change_not_boundary_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1)
+    (h_not_boundary : cols.segment_l1 row = 0)
+    (h_current_addr_range : addr_columns_in_range v row)
+    (h_previous_addr_range : addr_columns_in_range v (row - 1))
+    (h_range : increment_chunks_in_range v row) :
+    (v.addr (row - 1)).val < (v.addr row).val := by
+  have h_prev :=
+    segment_previous_addr_eq_previous_of_not_boundary
+      (cols := cols) (v := v) (row := row) h_not_boundary
+  have h_previous_range :
+      (segment_previous_addr cols v row).val < 2 ^ 29 := by
+    rw [h_prev]
+    exact h_previous_addr_range
+  have h_lt :=
+    segment_previous_addr_lt_addr_of_addr_change_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_addr_change
+      h_current_addr_range h_previous_range h_range
+  rw [h_prev] at h_lt
+  exact h_lt
+
+/-- PIL range-check fact for the dual mutable-Mem step delta:
+    `range_check(step_dual - step - wr, 0, 2^24 - 1, sel_dual)`. -/
+def dual_step_delta_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
+  (v.step_dual row - v.step row - v.wr row : FGL).val < 2 ^ 24
+
+/-- A small Goldilocks no-wrap fact for the dual-step range check. If
+    `step_dual - step - wr` has a small representative while the step columns
+    are 40-bit and `wr` is one bit, then the field subtraction did not wrap. -/
+theorem step_dual_ge_step_add_wr_of_dual_step_delta_range
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_delta : dual_step_delta_in_range v row) :
+    (v.step row).val + (v.wr row).val ≤ (v.step_dual row).val := by
+  rcases h_steps with ⟨h_step, h_step_dual, _h_previous_step⟩
+  have hmod :
+      (v.step_dual row - v.step row - v.wr row : FGL).val =
+        (18446744069414584321 - (v.wr row).val
+          + (18446744069414584321 - (v.step row).val
+            + (v.step_dual row).val)) % 18446744069414584321 := by
+    simp [Fin.val_sub]
+  by_contra hle
+  have hlt : (v.step_dual row).val < (v.step row).val + (v.wr row).val := by
+    omega
+  have hcalc :
+      (18446744069414584321 - (v.wr row).val
+          + (18446744069414584321 - (v.step row).val
+            + (v.step_dual row).val)) % 18446744069414584321 =
+        18446744069414584321 -
+          ((v.step row).val + (v.wr row).val - (v.step_dual row).val) := by
+    have hsmall :
+        (v.step row).val + (v.wr row).val - (v.step_dual row).val <
+          18446744069414584321 := by
+      omega
+    have hsum :
+        18446744069414584321 - (v.wr row).val
+            + (18446744069414584321 - (v.step row).val
+              + (v.step_dual row).val) =
+          2 * 18446744069414584321 -
+            ((v.step row).val + (v.wr row).val - (v.step_dual row).val) := by
+      omega
+    rw [hsum]
+    have hsplit :
+        2 * 18446744069414584321 -
+            ((v.step row).val + (v.wr row).val - (v.step_dual row).val) =
+          18446744069414584321 +
+            (18446744069414584321 -
+              ((v.step row).val + (v.wr row).val - (v.step_dual row).val)) := by
+      omega
+    rw [hsplit]
+    rw [Nat.add_mod_left]
+    exact Nat.mod_eq_of_lt (by omega)
+  rw [dual_step_delta_in_range, hmod, hcalc] at h_delta
+  omega
+
+/-- Under the dual-step range check, the field expression's representative is
+    the ordinary Nat subtraction `step_dual - step - wr`. -/
+theorem dual_step_delta_val_eq_nat_sub_of_range
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_delta : dual_step_delta_in_range v row) :
+    (v.step_dual row - v.step row - v.wr row : FGL).val =
+      (v.step_dual row).val - (v.step row).val - (v.wr row).val := by
+  have h_ge :=
+    step_dual_ge_step_add_wr_of_dual_step_delta_range
+      (v := v) (row := row) h_steps h_wr h_delta
+  have hmod :
+      (v.step_dual row - v.step row - v.wr row : FGL).val =
+        (18446744069414584321 - (v.wr row).val
+          + (18446744069414584321 - (v.step row).val
+            + (v.step_dual row).val)) % 18446744069414584321 := by
+    simp [Fin.val_sub]
+  rw [hmod]
+  have hsum :
+      18446744069414584321 - (v.wr row).val
+          + (18446744069414584321 - (v.step row).val
+            + (v.step_dual row).val) =
+        2 * 18446744069414584321 +
+          ((v.step_dual row).val - (v.step row).val - (v.wr row).val) := by
+    omega
+  rw [hsum]
+  rw [Nat.add_comm]
+  rw [Nat.add_mul_mod_self_right]
+  exact Nat.mod_eq_of_lt (by
+    rcases h_steps with ⟨h_step, h_step_dual, _h_previous_step⟩
+    omega)
+
+/-- The dual-step range check gives timestamp monotonicity inside a dual Mem
+    row. -/
+theorem step_le_step_dual_of_dual_step_delta_range
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_steps : step_columns_in_range v row)
+    (h_wr : (v.wr row).val < 2)
+    (h_delta : dual_step_delta_in_range v row) :
+    (v.step row).val ≤ (v.step_dual row).val := by
+  have h_ge :=
+    step_dual_ge_step_add_wr_of_dual_step_delta_range
+      (v := v) (row := row) h_steps h_wr h_delta
+  omega
+
+/-- If the primary operation is a write (`wr = 1`), the dual Mem timestamp is
+    strictly later than the primary timestamp. -/
+theorem step_lt_step_dual_of_wr_one_dual_step_delta_range
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_steps : step_columns_in_range v row)
+    (h_delta : dual_step_delta_in_range v row)
+    (h_wr_one : v.wr row = 1) :
+    (v.step row).val < (v.step_dual row).val := by
+  have h_wr_val : (v.wr row).val = 1 := by
+    rw [h_wr_one]
+    rfl
+  have h_ge :=
+    step_dual_ge_step_add_wr_of_dual_step_delta_range
+      (v := v) (row := row) h_steps (by omega) h_delta
+  omega
+
+/-- Nat interpretation of the two 16-bit distance chunks used for large Mem
+    segment-boundary checks. -/
+@[simp]
+def distanceChunksNat (lo hi : FGL) : ℕ :=
+  lo.val + 65536 * hi.val
+
+/-- PIL range facts for a two-chunk large-memory segment distance. -/
+def distance_chunks_in_range (lo hi : FGL) : Prop :=
+  lo.val < 2 ^ 16 ∧ hi.val < 2 ^ 16
+
+/-- Two 16-bit distance chunks pack to at most `2^32 - 1`. -/
+theorem distanceChunksNat_le_two_pow_32_sub_one
+    {lo hi : FGL}
+    (h_range : distance_chunks_in_range lo hi) :
+    distanceChunksNat lo hi ≤ 2 ^ 32 - 1 := by
+  rcases h_range with ⟨h_lo, h_hi⟩
+  simp [distanceChunksNat] at *
+  omega
+
+/-- Packed two-chunk large-memory segment distances are below the Goldilocks
+    modulus. -/
+theorem distanceChunksNat_lt_goldilocks_modulus
+    {lo hi : FGL}
+    (h_range : distance_chunks_in_range lo hi) :
+    distanceChunksNat lo hi < 18446744069414584321 := by
+  have h_le :=
+    distanceChunksNat_le_two_pow_32_sub_one (lo := lo) (hi := hi) h_range
+  norm_num at h_le ⊢
+  omega
+
+/-- The field expression used for large-memory distance chunks is the field
+    cast of the Nat interpretation. -/
+theorem distanceChunksNat_cast_eq_field_distance (lo hi : FGL) :
+    ((distanceChunksNat lo hi : ℕ) : FGL) = lo + 65536 * hi := by
+  simp [distanceChunksNat]
+
+/-- Under the PIL chunk range checks, the packed distance field expression
+    has the Nat representative `distanceChunksNat`. -/
+theorem field_distance_val_eq_distanceChunksNat
+    {lo hi : FGL}
+    (h_range : distance_chunks_in_range lo hi) :
+    (lo + 65536 * hi : FGL).val = distanceChunksNat lo hi := by
+  have h_cast := distanceChunksNat_cast_eq_field_distance lo hi
+  have h_lt :=
+    distanceChunksNat_lt_goldilocks_modulus (lo := lo) (hi := hi) h_range
+  calc
+    (lo + 65536 * hi : FGL).val =
+        (((distanceChunksNat lo hi : ℕ) : FGL)).val := by
+      rw [h_cast.symm]
+    _ = distanceChunksNat lo hi := by
+      exact Nat.mod_eq_of_lt h_lt
+
+/-- The generated large-memory base-distance equation bounds the carried
+    previous-segment address to a small Nat representative.
+
+    This cites the `mem.pil:265` equation
+    `previous_segment_addr - internal_base_address =
+      distance_base[0] + 0x10000 * distance_base[1]`
+    together with the `mem.pil:267-268` 16-bit distance-base range checks.
+    The result is intentionally the coarse `2^33` bound supplied by the two
+    16-bit chunks; table-local row 0 facts later refine it to the 29-bit
+    memory-address range. -/
+theorem previous_segment_addr_lt_two_pow_33_of_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_range : distance_chunks_in_range cols.distance_base_0 cols.distance_base_1) :
+    cols.previous_segment_addr.val < 2 ^ 33 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, h_distance, _, _, _, _, _, _, _, _, _, _⟩
+  have h_eq_field :
+      cols.previous_segment_addr - 335544320 =
+        cols.distance_base_0 + 65536 * cols.distance_base_1 := by
+    exact sub_eq_zero.mp h_distance
+  have h_distance_val :=
+    field_distance_val_eq_distanceChunksNat
+      (lo := cols.distance_base_0) (hi := cols.distance_base_1) h_range
+  have h_distance_bound :=
+    distanceChunksNat_le_two_pow_32_sub_one
+      (lo := cols.distance_base_0) (hi := cols.distance_base_1) h_range
+  have h_eq_val := congr_arg Fin.val h_eq_field
+  have h_left_mod :
+      (cols.previous_segment_addr - 335544320 : FGL).val =
+        (18446744069414584321 - 335544320 + cols.previous_segment_addr.val) %
+          18446744069414584321 := by
+    simp [Fin.val_sub, Nat.add_comm]
+  rw [h_left_mod, h_distance_val] at h_eq_val
+  by_cases h_prev_lt_base : cols.previous_segment_addr.val < 335544320
+  · have h_no_wrap :
+        18446744069414584321 - 335544320 + cols.previous_segment_addr.val <
+          18446744069414584321 := by
+      omega
+    rw [Nat.mod_eq_of_lt h_no_wrap] at h_eq_val
+    omega
+  · have h_wrap_sum :
+        18446744069414584321 - 335544320 + cols.previous_segment_addr.val =
+          18446744069414584321 + (cols.previous_segment_addr.val - 335544320) := by
+      omega
+    rw [h_wrap_sum, Nat.add_mod_left] at h_eq_val
+    have h_prev_eq :
+        cols.previous_segment_addr.val =
+          335544320 + distanceChunksNat cols.distance_base_0 cols.distance_base_1 := by
+      omega
+    rw [h_prev_eq]
+    omega
+
+/-! ## Generated permutation accumulator surface
+
+The extractor emits constraints 24-33 for the `std_sum` / direct-update
+accumulator part of Mem. These formulas are still algebraic row facts; the
+semantic proof that they imply public memory-bus chronology and replay
+soundness belongs in the Clean/global trace layer.
+-/
+
+/-- Non-witness Mem columns used by generated constraints 24-33. -/
+structure PermutationColumns (F : Type) [Field F] where
+  std_alpha : F
+  std_gamma : F
+  l1 : ℕ → F
+  im_direct_0 : F
+  im_direct_1 : F
+  im_direct_2 : F
+  im_direct_3 : F
+  im_direct_4 : F
+  im_direct_5 : F
+
+@[simp]
+def gsum_increment_1
+    (cols : PermutationColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  v.increment_1 row * cols.std_alpha + 103 + cols.std_gamma
+
+@[simp]
+def gsum_dual_step
+    (cols : PermutationColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  ((v.step_dual row - v.step row) - v.wr row) * cols.std_alpha
+    + 102 + cols.std_gamma
+
+@[simp]
+def gsum_increment_0
+    (cols : PermutationColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  v.increment_0 row * cols.std_alpha + 104 + cols.std_gamma
+
+@[simp]
+def gsum_primary_mem
+    (cols : PermutationColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  (((((((v.value_1 row * cols.std_alpha + v.value_0 row) * cols.std_alpha
+      + 8) * cols.std_alpha + v.step row) * cols.std_alpha
+      + v.addr row * 8) * cols.std_alpha + (v.wr row + 1))
+      * cols.std_alpha + 10) + cols.std_gamma)
+
+@[simp]
+def gsum_dual_mem
+    (cols : PermutationColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  (((((((v.value_1 row * cols.std_alpha + v.value_0 row) * cols.std_alpha
+      + 8) * cols.std_alpha + v.step_dual row) * cols.std_alpha
+      + v.addr row * 8) * cols.std_alpha + 1)
+      * cols.std_alpha + 10) + cols.std_gamma)
+
+@[simp]
+def direct_gsum_0
+    (seg : SegmentColumns F) (cols : PermutationColumns F) : F :=
+  ((((((seg.previous_segment_value_1 * cols.std_alpha
+      + seg.previous_segment_value_0) * cols.std_alpha
+      + seg.previous_segment_step) * cols.std_alpha
+      + seg.previous_segment_addr) * cols.std_alpha
+      + seg.segment_id) * cols.std_alpha + 2684354560)
+      * cols.std_alpha + 11) + cols.std_gamma
+
+@[simp]
+def direct_gsum_1
+    (seg : SegmentColumns F) (cols : PermutationColumns F) : F :=
+  ((((((seg.segment_last_value_1 * cols.std_alpha
+      + seg.segment_last_value_0) * cols.std_alpha
+      + seg.segment_last_step) * cols.std_alpha
+      + seg.segment_last_addr) * cols.std_alpha
+      + (seg.segment_id + 1)) * cols.std_alpha + 2684354560)
+      * cols.std_alpha + 11) + cols.std_gamma
+
+@[simp]
+def direct_gsum_distance_base_0
+    (seg : SegmentColumns F) (cols : PermutationColumns F) : F :=
+  seg.distance_base_0 * cols.std_alpha + 103 + cols.std_gamma
+
+@[simp]
+def direct_gsum_distance_base_1
+    (seg : SegmentColumns F) (cols : PermutationColumns F) : F :=
+  seg.distance_base_1 * cols.std_alpha + 103 + cols.std_gamma
+
+@[simp]
+def direct_gsum_distance_end_0
+    (seg : SegmentColumns F) (cols : PermutationColumns F) : F :=
+  seg.distance_end_0 * cols.std_alpha + 103 + cols.std_gamma
+
+@[simp]
+def direct_gsum_distance_end_1
+    (seg : SegmentColumns F) (cols : PermutationColumns F) : F :=
+  seg.distance_end_1 * cols.std_alpha + 103 + cols.std_gamma
+
+@[simp]
+def gsum_accumulator_delta
+    (cols : PermutationColumns F) (v : Valid_Mem F F) (row : ℕ) : F :=
+  v.gsum row - v.gsum (row - 1) * (1 - cols.l1 row)
+    - (v.im_0 row + v.im_1 row)
+
+/-- Generated Mem constraints 24-33. -/
+@[simp]
+def permutation_every_row
+    (seg : SegmentColumns F) (cols : PermutationColumns F)
+    (v : Valid_Mem F F) (row : ℕ) : Prop :=
+  v.im_0 row * (gsum_increment_1 cols v row * gsum_dual_step cols v row)
+      - ((18446744069414584320 * gsum_dual_step cols v row)
+        + ((0 - v.sel_dual row) * gsum_increment_1 cols v row)) = 0
+  ∧ v.im_1 row * (gsum_primary_mem cols v row * gsum_dual_mem cols v row)
+      - (v.sel row * gsum_dual_mem cols v row
+        + v.sel_dual row * gsum_primary_mem cols v row) = 0
+  ∧ gsum_accumulator_delta cols v row * gsum_increment_0 cols v row + 1 = 0
+  ∧ cols.im_direct_0 * direct_gsum_0 seg cols + 1 = 0
+  ∧ cols.im_direct_1 * direct_gsum_1 seg cols
+      - (1 - seg.is_last_segment) = 0
+  ∧ cols.im_direct_2 * direct_gsum_distance_base_0 seg cols + 1 = 0
+  ∧ cols.im_direct_3 * direct_gsum_distance_base_1 seg cols + 1 = 0
+  ∧ cols.im_direct_4 * direct_gsum_distance_end_0 seg cols + 1 = 0
+  ∧ cols.im_direct_5 * direct_gsum_distance_end_1 seg cols + 1 = 0
+  ∧ cols.l1 (row + 1) *
+      (seg.segment_id - v.gsum row
+        - (((((cols.im_direct_0 + cols.im_direct_1) + cols.im_direct_2)
+          + cols.im_direct_3) + cols.im_direct_4) + cols.im_direct_5)) = 0
+
+/-- The complete generated Mem every-row surface currently named in source. -/
+@[simp]
+def generated_every_row
+    (seg : SegmentColumns F) (perm : PermutationColumns F)
+    (v : Valid_Mem F F) (row : ℕ) : Prop :=
+  segment_every_row seg v row ∧ permutation_every_row seg perm v row
+
+/-- The active local Mem bridge is also a projection of the full generated
+every-row surface. -/
+theorem core_every_row_of_generated_every_row
+    {seg : SegmentColumns F} {perm : PermutationColumns F}
+    {v : Valid_Mem F F} {row : ℕ}
+    (h : generated_every_row seg perm v row) :
+    core_every_row v row :=
+  core_every_row_of_segment_every_row h.1
 
 end ZiskFv.Airs.Mem

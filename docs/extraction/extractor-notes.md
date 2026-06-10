@@ -9,12 +9,32 @@ live under [`../../trust/`](../../trust/README.md).
 ## Contract
 
 ```
-pil-extract --pilout <path> --air <needle>
+pil-extract air --pilout <path> --air <needle>
                  [--output <path>] [--list]
                  [--skip-unsupported] [--only <i>[,<j>…]]
-                 [--bus-emissions [--bus-id <N>]]
+
+pil-extract bus-emissions --pilout <path> (--air <needle> | --airs <a,b,...>)
+                 [--output <path>] [--bus-id <N>]
+
+pil-extract arith-table --rust-source <path> [--output <path>]
+
+pil-extract clean-component --pilout <path> --air <needle>
+                 [--row-output <path>] [--constraints-output <path>]
+                 [--bus-id <N>] [--channel op-bus|mem-align-bus]
+
+pil-extract mem-air-facts --pilout <path> [--air Mem]
+                 [--pil-source <path>] [--output <path>]
 ```
 
+- `air`: emit Lean constraint definitions for one AIR, or list AIRs.
+- `bus-emissions`: emit bus-emission specs from `gsum_debug_data` hints.
+- `arith-table`: emit the extracted arithmetic lookup table from upstream
+  Rust source.
+- `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
+  one AIR and one supported channel shape.
+- `mem-air-facts`: emit a Markdown source report for the Mem generated AIR
+  facts consumed by `MemTableGeneratedAirFacts`, including the pilout source
+  map for `MemTableGeneratedRawSourceSidecar`.
 - `--pilout`: path to a compiled `.pilout` (protobuf, schema vendored at
   `tools/pil-extract/proto/pilout.proto`).
 - `--air`: substring matched against each AIR's `name` (case-sensitive). Must
@@ -31,19 +51,14 @@ pil-extract --pilout <path> --air <needle>
   aborts on an unsupported operand inside a selected constraint, even with
   `--skip-unsupported` set — the point of `--only` is to assert that a
   specific constraint extracts cleanly.
-- `--bus-emissions`: switch the tool to **bus-emission mode** (Track O POC).
-  Instead of walking `air.constraints`, it walks `pilout.hints` filtered to
-  `gsum_debug_data` entries attached to the resolved AIR, parses each into a
-  structured tuple (`piop`, `bus_id`, `is_proves`, `multiplicity`, named
-  `slots`), and emits a `BusEmissionSpec` def per emission under the
-  `ZiskFv.Extraction.Buses` namespace. Slots are rendered through the same
-  expression pipeline used for constraints, so witness cells, fixed cells,
-  and constants all type cleanly over `F` (no `ExtF` mixing — operation-bus
-  tuples reference only stage-1 cells).
-- `--bus-id <N>`: bus-id filter for `--bus-emissions` mode. Defaults to
-  `5000 = OPERATION_BUS_ID` (`zisk/pil/opids.pil:2`). Set to `0` to
-  emit every `gsum_debug_data` hint for the AIR (useful for memory-bus
-  exploration).
+- `--bus-id <N>`: bus-id filter for `bus-emissions` mode and channel selection
+  for `clean-component`. Defaults to `5000 = OPERATION_BUS_ID`
+  (`zisk/pil/opids.pil:2`). Set to `0` in `bus-emissions` mode to emit every
+  `gsum_debug_data` hint for the AIR (useful for memory-bus exploration).
+- `--pil-source <path>`: optional `mem.pil` source path for
+  `mem-air-facts`. Pilout symbols do not encode original `bits(N)`
+  declarations, so the report attaches source lines from this file when
+  supplied.
 
 Output shape mirrors `openvm-fv/OpenvmFv/Extraction/*.lean`: one `constraint_N`
 definition per pilout constraint, typed over `Circuit F ExtF C` (from
@@ -103,7 +118,7 @@ artefacts in the pilout:
 The hint is the structurally-clean rendering target. Operation-bus emissions
 in ZisK's pilout reference only stage-1 witness cells (no challenges), so
 the existing constraint renderer types them cleanly over `F`. The
-`--bus-emissions` mode walks these hints and produces `BusEmissionSpec`
+`bus-emissions` mode walks these hints and produces `BusEmissionSpec`
 defs.
 
 ## Clean `Air.Flat.Component` emission (`clean-component`, C0g)
@@ -194,6 +209,116 @@ Unlike the `air` / `bus-emissions` outputs (which land in the gitignored
 `build/extraction/`), these are *committed* source files: the regeneration
 is run deliberately when the BinaryAdd AIR changes, and the diff is the
 audit surface.
+
+## Mem AIR facts source report (`mem-air-facts`)
+
+The `mem-air-facts` subcommand emits a Markdown audit report for the source
+surface behind the Lean `MemTableGeneratedAirFacts` package. It is not a Lean
+proof generator. Its purpose is to make the remaining Mem-table proof inputs
+concrete: which pilout constraints supply `generated_every_row`, which hints
+source range-check obligations, which witness/fixed columns are named, and
+which `mem.pil` lines provide bit-width provenance that pilout does not carry.
+
+```
+pil-extract mem-air-facts --pilout build/zisk.pilout --air Mem \
+    --pil-source zisk/state-machines/mem/pil/mem.pil \
+    --output /tmp/mem-air-facts-report.md
+```
+
+The report maps constraints `0..=23` to
+`MemTableGeneratedConstraintFacts.segmentAt` / `segment_every_row` and
+constraints `24..=33` to `.permutationAt` / `permutation_every_row`. It also
+emits a sidecar source map tying `MemTableGeneratedRawSourceSidecar` fields and
+their `ProverData` keys to stage-2 witness columns, fixed columns, AIR_VALUE
+symbols, and the `std_alpha`/`std_gamma` challenges. The report lists
+`gsum_debug_data` hints whose `name_piop = "Range Check"`; those are the
+extractor-facing source for `MemTableGeneratedRangeFacts` and
+`MemSegmentGeneratedRangeFacts`. It also emits a Lean range-fact coverage table:
+range-check hints cover `incrementChunks`, `dualStepDelta`, and
+`distanceBaseChunks`, while `addrColumns` and `stepColumns` require the
+`mem.pil` bit-width lines supplied through `--pil-source`. The generated
+artifact contract section names the remaining callback exactly: a generated
+Lean module should supply `FullWitnessMemAirSourceProverDataWitnessFacts` for
+the named `witness.data` sidecar keys and pass it to
+`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`;
+`FullWitnessGeneratedTimelineEvidence` is the checked generated timeline wrapper,
+while `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts` builds its
+inner timeline evidence. Per mutable Mem table, that callback must return
+`MemTableGeneratedConstraintAssertionFacts`,
+`MemTableGeneratedRangeLookupFacts`, and
+`MemSegmentGeneratedRangeLookupFacts`.
+`fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` is the sidecar
+packager and the lower-level `FullWitnessMemAirSourceProverDataFacts` callback
+remains available for generated modules that prove raw Mem facts directly; use
+the generated wrapper's `buildRawFacts` to assemble it from raw per-table
+constraint/range families, or `buildWitnessFactsFromRawParts` to feed those
+families directly into the current witness-facts target. The underlying checked
+adapter is `fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`. A
+module can also build
+`MemTableGeneratedRawSourceSidecar` values directly for mutable Mem tables and
+expose them through `FullWitnessMemAirSourceRawSidecars`.
+Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`;
+`exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete replay
+source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` feeds the
+compliance timeline boundary directly from sidecars plus the residual Sail
+timeline facts. `fullWitnessMemAirSourceRawFacts_of_sidecars` and the inverse
+raw-facts compatibility adapter remain available for lower-level generated
+modules that still expose the raw sigma callback.
+The table-level
+`memTableGeneratedAirSource_of_witnessFacts` constructor remains available when
+a concrete source already has explicit Clean assertion/lookup witnesses.
+Because Clean component emission deliberately omits stage-2 running-product
+columns and does not support previous-row witness cells, this mode records the
+source surface rather than pretending those facts follow from the existing
+Clean table soundness API.
+
+The companion `mem-generated-artifact` subcommand emits a typed Lean wrapper
+for the same generated-artifact boundary:
+
+```
+pil-extract mem-generated-artifact --pilout build/zisk.pilout --air Mem \
+    --output /tmp/MemGeneratedArtifact.lean
+```
+
+The wrapper defines `Extraction.MemGeneratedArtifact.WitnessFacts` as the
+current `FullWitnessMemAirSourceProverDataWitnessFacts witness` target,
+`buildWitnessFacts` as the checked assembly point from the three per-table
+callback families, `RawFacts` plus `buildRawFacts` as the checked assembly
+point from raw per-table fact families, `buildWitnessFactsFromRawFacts` and
+`buildWitnessFactsFromRawParts` as checked paths from raw ProverData facts into
+that target, and
+`buildTimelineEvidence` as the call into
+`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. It does not
+prove the witness facts; it pins the generated module's public entry point to
+the current generated timeline constructor.
+
+The generated `MemGeneratedConstraintBridge.lean` companion instantiates the
+extracted `Extraction.Circuit` interface with the same ProverData-backed Mem
+source view and names `Extraction.Mem.constraint_0..33` as
+`ExtractedConstraintFacts` for that concrete view. It also checks the
+definitional adapter from those extracted predicates to the wrapper's split
+`RawConstraintFacts`, maps explicit bit-width/range inequalities to raw
+row/segment range facts, and exposes `ExtractedSidecarFacts` as the preferred
+source-level generated target, including a direct builder for
+`GeneratedTimelineEvidence`. It also checks the reverse raw-to-extracted path:
+raw split constraints and raw row/segment ranges can be repackaged as
+`ExtractedSidecarFacts` callbacks, so generated modules may target either raw
+PIL facts or the extracted source-level fields and use checked adapters between them. This
+is still a source surface, not a proof of the constraints or ranges; the
+remaining generated bridge step is to produce the raw/extracted sidecar fields
+for the witness.
+
+`nix run .#populate` also materializes the same report at
+`build/extraction/MemAirFacts.md`, the generated-only circuit shim at
+`build/extraction/Extraction/Circuit.lean`, the Mem extracted constraints at
+`build/extraction/Extraction/Mem.lean`, the wrapper at
+`build/extraction/Extraction/MemGeneratedArtifact.lean`, and the ProverData
+constraint bridge at
+`build/extraction/Extraction/MemGeneratedConstraintBridge.lean`, produced by
+the pinned `extracted-lean` derivation from `build/zisk.pilout` and upstream
+`mem.pil`. Those files are reproducible generated artifacts, not Lake
+dependencies; the top-level test gate compiles the checked Mem extraction
+surface with `lake env lean -R build/extraction ...`.
 
 ## Limitations (deliberate; expand as phases demand)
 

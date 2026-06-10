@@ -76,6 +76,32 @@ def entry_packs_mem_row_value
   mem.value_0 r_mem = memory_entry_lo e
   ∧ mem.value_1 r_mem = memory_entry_hi e
 
+/-- Byte-addressed Mem row matches a bus entry. This is the PIL-shaped
+provider relation from `mem.pil:435-436`: Mem's raw `addr` column is
+word-addressed and the memory bus carries the byte pointer `addr * 8`. -/
+@[simp]
+def mem_row_byte_addr_matches_entry
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
+  mem.sel r_mem = 1
+  ∧ e.ptr = mem.addr r_mem * 8
+  ∧ mem.step r_mem = e.timestamp
+  ∧ e.as = 2
+  ∧ entry_packs_mem_row_value mem r_mem e
+
+/-- Byte-addressed dual Mem row matches a bus entry. In the pinned
+`dual_mem = 1` PIL instance, the second Mem emission is always a read at the
+same byte address and value as the primary row, selected by `sel_dual` and
+timestamped by `step_dual` (`mem.pil:438-441`). -/
+@[simp]
+def mem_dual_row_byte_addr_matches_entry
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
+  mem.sel_dual r_mem = 1
+  ∧ e.ptr = mem.addr r_mem * 8
+  ∧ mem.step_dual r_mem = e.timestamp
+  ∧ e.as = 2
+  ∧ e.multiplicity = -1
+  ∧ entry_packs_mem_row_value mem r_mem e
+
 /-- **Mem row matches a bus entry.** A bus entry `e` corresponds to Mem
     AIR row `r_mem` of `mem` when:
 

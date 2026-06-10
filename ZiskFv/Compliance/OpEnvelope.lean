@@ -5,6 +5,7 @@ import ZiskFv.Airs.Main.OpcodeClassification
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
+import ZiskFv.ZiskCircuit.MemTrace
 import ZiskFv.Compliance.Wrappers.Lui
 import ZiskFv.Compliance.Wrappers.Auipc
 import ZiskFv.Compliance.Wrappers.Jal
@@ -69,6 +70,8 @@ import ZiskFv.Compliance.Wrappers.Sb
 import ZiskFv.Compliance.Wrappers.Sh
 import ZiskFv.Compliance.Wrappers.Sw
 import ZiskFv.Compliance.Wrappers.Sd
+import ZiskFv.ZiskCircuit.MemTrace
+import ZiskFv.AirsClean.FullEnsemble.Balance
 
 /-!
 # OpEnvelope.lean — the per-opcode input bundle for RV64IM
@@ -1411,7 +1414,7 @@ inductive OpEnvelope
     (mem : Valid_Mem FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
@@ -1458,7 +1461,6 @@ inductive OpEnvelope
       ld_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LBU =====================================
   | lbu
@@ -1469,7 +1471,7 @@ inductive OpEnvelope
     (align : ZiskFv.Compliance.MemAlignWitness m r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (1 : FGL))
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
@@ -1516,7 +1518,6 @@ inductive OpEnvelope
       lbu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LHU =====================================
   | lhu
@@ -1527,7 +1528,7 @@ inductive OpEnvelope
     (align : ZiskFv.Compliance.MemAlignWitness m r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (2 : FGL))
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
@@ -1574,7 +1575,6 @@ inductive OpEnvelope
       lhu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LWU =====================================
   | lwu
@@ -1585,7 +1585,7 @@ inductive OpEnvelope
     (align : ZiskFv.Compliance.MemAlignWitness m r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (4 : FGL))
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
@@ -1632,7 +1632,6 @@ inductive OpEnvelope
       lwu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LB via static BinaryExtension lookup ====
   -- T4 alternate provider arm: takes the BinaryExtension row witness
@@ -1651,7 +1650,7 @@ inductive OpEnvelope
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
@@ -1698,7 +1697,6 @@ inductive OpEnvelope
       lb_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LH via static BinaryExtension lookup ====
   | lh_via_static_match
@@ -1714,7 +1712,7 @@ inductive OpEnvelope
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
@@ -1761,7 +1759,6 @@ inductive OpEnvelope
       lh_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LW via static BinaryExtension lookup ====
   | lw_via_static_match
@@ -1777,7 +1774,7 @@ inductive OpEnvelope
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
@@ -1824,7 +1821,6 @@ inductive OpEnvelope
       lw_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ MUL =====================================
   | mul
@@ -2225,5 +2221,42 @@ inductive OpEnvelope
     (h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536) :
     OpEnvelope state m r_main
+
+/-- Single global residual memory-timeline boundary. Load arms require
+    timeline evidence for `state` and `bus.e1`; non-load arms impose no
+    obligation.
+
+    Generated full-witness sidecar artifacts can construct this object via
+    `FullWitnessGeneratedTimelineEvidence`, but the public compliance theorem
+    consumes only the residual timeline API so Clean full-ensemble
+    completeness does not enter the global soundness closure. -/
+@[reducible]
+def OpEnvelope.memoryTimelineEvidence
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {m : Valid_Main FGL FGL}
+    {r_main : ℕ} :
+    OpEnvelope state m r_main → Prop
+  | .ld _ _ _ bus .. =>
+      Nonempty
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lbu _ _ _ bus .. =>
+      Nonempty
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lhu _ _ _ bus .. =>
+      Nonempty
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lwu _ _ _ bus .. =>
+      Nonempty
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      Nonempty
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      Nonempty
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      Nonempty
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | _ => True
 
 end ZiskFv.Compliance

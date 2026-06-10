@@ -90,6 +90,38 @@ def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
     provider emission. Used by Clean memory-bus component assembly. -/
 def componentWithMemBus : Air.Flat.Component FGL := ⟨ circuitWithMemBus ⟩
 
+/-- Dual-aware Mem wrapper. This models both `mem.pil` provider emissions:
+    the primary row gated by `sel` and the dual read row gated by `sel_dual`.
+    It is kept separate from `componentWithMemBus` while the FullEnsemble
+    balance layer still expects the primary-only compatibility component. -/
+def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
+  { memWithDualMemBusElaborated with
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ => Spec row
+    ProverAssumptions := fun row _ _ => Spec row
+    ProverSpec := fun _ _ _ => True
+    soundness := by
+      circuit_proof_start
+      refine ⟨?_, ?_⟩
+      · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h_holds
+        exact ⟨ by simpa only [sub_eq_add_neg] using h0
+              , by simpa only [sub_eq_add_neg] using h1
+              , by simpa only [sub_eq_add_neg] using h2
+              , by simpa only [sub_eq_add_neg] using h3
+              , by simpa only [sub_eq_add_neg] using h4
+              , by simpa only [sub_eq_add_neg] using h5
+              , by simpa only [sub_eq_add_neg] using h6
+              , by simpa only [sub_eq_add_neg] using h7
+              , by simpa only [sub_eq_add_neg] using h8 ⟩
+      · exact ⟨by intro _; trivial, by intro _; trivial⟩
+    completeness := by
+      circuit_proof_start [MemBusChannel]
+      simpa only [Spec, sub_eq_add_neg] using h_assumptions }
+
+/-- Mem as a Clean `Air.Flat.Component` exposing both primary and dual
+    memory-bus provider emissions. -/
+def componentWithDualMemBus : Air.Flat.Component FGL := ⟨ circuitWithDualMemBus ⟩
+
 theorem componentWithMemBus_interactionsWith_memBus :
     componentWithMemBus.operations.interactionsWith MemBusChannel.toRaw =
       [((MemBusChannel.emitted componentWithMemBus.rowInputVar.sel
@@ -103,6 +135,23 @@ theorem componentWithMemBus_interactionsWith_memBus :
     Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
     List.map_nil]
 
+theorem componentWithDualMemBus_interactionsWith_memBus :
+    componentWithDualMemBus.operations.interactionsWith MemBusChannel.toRaw =
+      [ ((MemBusChannel.emitted componentWithDualMemBus.rowInputVar.sel
+            (memBusMessageExpr componentWithDualMemBus.rowInputVar)).toRaw)
+        , ((MemBusChannel.emitted componentWithDualMemBus.rowInputVar.sel_dual
+            (memBusDualMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨MemBusChannel.toRaw,
+      [ ((MemBusChannel.emitted componentWithDualMemBus.rowInputVar.sel
+            (memBusMessageExpr componentWithDualMemBus.rowInputVar)).toRaw)
+        , ((MemBusChannel.emitted componentWithDualMemBus.rowInputVar.sel_dual
+            (memBusDualMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ]⟩ ∈
+    componentWithDualMemBus.exposedChannels
+  simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusElaborated,
+    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+    List.map_nil]
+
 /-- Project the generic Clean component `Spec` for `componentWithMemBus` to
     the concrete Mem row `Spec`. -/
 theorem spec_of_componentWithMemBus_spec
@@ -110,6 +159,43 @@ theorem spec_of_componentWithMemBus_spec
     (h_spec : componentWithMemBus.Spec env) :
     Spec (componentWithMemBus.rowInput env) := by
   exact h_spec
+
+/-- Project the generic Clean component `Spec` for
+    `componentWithDualMemBus` to the concrete Mem row `Spec`. -/
+theorem spec_of_componentWithDualMemBus_spec
+    (env : Environment FGL)
+    (h_spec : componentWithDualMemBus.Spec env) :
+    Spec (componentWithDualMemBus.rowInput env) := by
+  exact h_spec
+
+/-- The dual-aware component spec gives boolean primary selectors. -/
+theorem sel_boolean_of_componentWithDualMemBus_spec
+    (env : Environment FGL)
+    (h_spec : componentWithDualMemBus.Spec env) :
+    (componentWithDualMemBus.rowInput env).sel = 0
+      ∨ (componentWithDualMemBus.rowInput env).sel = 1 :=
+  sel_boolean_of_spec _
+    (spec_of_componentWithDualMemBus_spec env h_spec)
+
+/-- The dual-aware component spec gives boolean dual selectors. -/
+theorem sel_dual_boolean_of_componentWithDualMemBus_spec
+    (env : Environment FGL)
+    (h_spec : componentWithDualMemBus.Spec env) :
+    (componentWithDualMemBus.rowInput env).sel_dual = 0
+      ∨ (componentWithDualMemBus.rowInput env).sel_dual = 1 :=
+  sel_dual_boolean_of_spec _
+    (spec_of_componentWithDualMemBus_spec env h_spec)
+
+/-- A selected dual Mem emission implies the primary selector is active. -/
+theorem sel_of_sel_dual_one_of_componentWithDualMemBus_spec
+    (env : Environment FGL)
+    (h_spec : componentWithDualMemBus.Spec env)
+    (h_sel_dual :
+      (componentWithDualMemBus.rowInput env).sel_dual = 1) :
+    (componentWithDualMemBus.rowInput env).sel = 1 :=
+  sel_of_sel_dual_one_of_spec _
+    (spec_of_componentWithDualMemBus_spec env h_spec)
+    h_sel_dual
 
 /-- The Mem `Spec` for a row, derived through the Clean Component. -/
 theorem spec_via_component (row : MemRow FGL)

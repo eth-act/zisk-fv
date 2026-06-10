@@ -6,7 +6,10 @@
 #
 #   build/sail-lean/                       ← sail-lean-tree
 #   build/zisk.pilout                      ← zisk-pilout
-#   build/extraction/Extraction/*.lean     ← extracted-lean
+#   build/extraction/Extraction/*.lean     ← extracted-lean, including the
+#                                             Circuit shim and
+#                                             MemGeneratedArtifact/bridge files
+#   build/extraction/MemAirFacts.md        ← extracted-lean
 #   build/clean-lean/                      ← clean-source.
 #
 # After this, `lake build` and `nix run .#test` work the same as they
@@ -51,7 +54,8 @@ EOF
 -- Root module of the auto-generated Extraction library.
 --
 -- Per-AIR submodules are emitted by `tools/pil-extract` from
--- `build/zisk.pilout` and copied here by `nix run .#populate`.
+-- `build/zisk.pilout` and copied here by `nix run .#populate`; the generated
+-- `Extraction.Circuit` shim provides their standalone circuit interface.
 -- This file exists to give Lake a defaultTarget; it is intentionally
 -- empty.
 EOF
@@ -61,6 +65,10 @@ EOF
       cp --no-preserve=mode "$f" "build/extraction/Extraction/$base"
       chmod u+w "build/extraction/Extraction/$base"
     done
+
+    echo "▶ build/extraction/MemAirFacts.md ← ${extracted-lean}"
+    cp --no-preserve=mode "${extracted-lean}/MemAirFacts.md" build/extraction/MemAirFacts.md
+    chmod u+w build/extraction/MemAirFacts.md
 
     echo "▶ build/clean-lean/ ← ${clean-source}"
     rm -rf build/clean-lean

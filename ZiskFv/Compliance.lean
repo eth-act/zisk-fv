@@ -50,6 +50,10 @@ boundary for Aeneas-backed row-lowering facts that are still carried as
 `OpEnvelope` fields while generated Aeneas Lean is not imported by the main
 proof.
 
+It also assumes `env.memoryTimelineEvidence`, the single visible residual
+memory boundary for load arms: the selected load entry agrees with the Sail
+memory timeline. Non-load arms impose no memory-timeline obligation.
+
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
 defect-aware while `trust/defects.md` contains open claim-weakening defects:
 the `h_known_bugs` binder is orthogonal to the validity witnesses already
@@ -70,6 +74,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
     non-trivially for any given arm; the others are `True`. -/
 def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
   env.aeneasBridgeTrust
+    ∧ env.memoryTimelineEvidence
     ∧ env.exec_eq_branch
     ∧ env.exec_eq_nomem
     ∧ env.exec_eq_rtype_binary
@@ -89,19 +94,21 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_bridge : env.aeneasBridgeTrust)
+    (h_memory_timeline : env.memoryTimelineEvidence)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact h_bridge
+  · exact h_memory_timeline
   · exact zisk_riscv_compliant_program_bus_branch env
   · exact zisk_riscv_compliant_program_bus_nomem env
   · exact zisk_riscv_compliant_program_bus_rtype_binary env
   · exact zisk_riscv_compliant_program_bus_itype_binary env
   · exact zisk_riscv_compliant_program_bus_shift env
   · exact zisk_riscv_compliant_program_bus_add_rtypew env
-  · exact zisk_riscv_compliant_program_bus_ldsd env
+  · exact zisk_riscv_compliant_program_bus_ldsd env h_memory_timeline
   · exact zisk_riscv_compliant_program_bus_divu_except_known_defects env h_known_bugs
-  · exact zisk_riscv_compliant_program_bus_misc env
-  · exact zisk_riscv_compliant_program_bus_remaining env h_known_bugs
+  · exact zisk_riscv_compliant_program_bus_misc env h_memory_timeline
+  · exact zisk_riscv_compliant_program_bus_remaining env h_memory_timeline h_known_bugs
 
 end ZiskFv.Compliance
