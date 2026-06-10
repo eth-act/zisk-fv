@@ -311,7 +311,7 @@ no assumed soundness fields**.
       and `ZiskFv.AirsClean.FullEnsemble.Balance`, target builds for both, and
       successful full Lake builds through the LSP build hook and regular
       `lake build`; both trust gates and `nix run .#test` pass.
-      Latest completed slice lifts the table-shaped zero-preload fact through
+      Partial: this slice lifts the table-shaped zero-preload fact through
       an arbitrary prior replay prefix when every prior active entry is
       byte-disjoint from the selected address-change read:
       `readEventReplayAgreement_after_zeroMemoryOfRows_priorPrefix_disjoint_memTableGeneratedRowsBridge`.
@@ -333,6 +333,21 @@ no assumed soundness fields**.
       Verified with clean Lean LSP diagnostics for `ZiskFv.Airs.Mem` and
       `ZiskFv.AirsClean.FullEnsemble.Balance`, target builds, full
       `lake build`, `trust/scripts/check-all.sh`,
+      `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
+      Latest completed slice exposes the fixed-column shape as
+      `MemTableGeneratedFixedColumnFacts`, citing `mem.pil:86`
+      (`SEGMENT_L1 = [1,0...]`), and uses it to lift adjacent Mem address
+      order to all prior table rows. `previous_addr_le_addr_of_nonfirst_memTableGeneratedRowsBridge`
+      proves adjacent monotonicity by splitting on the generated
+      `addr_changes` bit; `addr_le_of_index_le_memTableGeneratedRowsBridge`
+      iterates that adjacent fact; and
+      `prior_addr_ne_of_addr_change_memTableGeneratedRowsBridge` proves the
+      all-prior address inequality for a selected address-change row. The new
+      `readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_addr_change_memTableGeneratedRowsBridge`
+      closes the concrete split-prefix zero-preload proof for selected
+      address-change primary reads. Verified so far with clean Lean LSP
+      diagnostics for `ZiskFv.AirsClean.FullEnsemble.Balance`, the target
+      build, full `lake build`, `trust/scripts/check-all.sh`,
       `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
@@ -372,6 +387,15 @@ no assumed soundness fields**.
       Partial: the adjacent address-change order theorem cites `mem.pil:375`
       for the generated increment equation, `mem.pil:384-385` for increment
       range checks, and `mem.pil:109` for address no-wrap.
+      Partial: `MemTableGeneratedFixedColumnFacts` cites the deterministic
+      fixed-column declaration `mem.pil:86` (`SEGMENT_L1 = [1,0...]`) and
+      keeps the fixed-column constructibility obligation explicit rather than
+      hiding it in replay evidence.
+      Current sub-gap: the address-change selected-read prefix case is closed
+      under those fixed-column facts. The remaining primary-read prefix work is
+      the same-address selected-read case: carry address/value agreement
+      backward through same-address rows until the previous selected event or
+      the address-change zero-preload base case.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
