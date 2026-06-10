@@ -278,6 +278,15 @@ no assumed soundness fields**.
       `lake build ZiskFv.ZiskCircuit.MemTrace`, and `lake build
       ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, both trust
       gates, and `nix run .#test`.
+      Partial: replay-core disjoint preservation now lifts over raw replay
+      prefixes. `readEventReplayAgreement_of_replayMemoryAfterBusRow_disjoint`
+      and `readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint`
+      preserve a read agreement while replaying prefix rows whose write ranges
+      are byte-disjoint from the selected read entry. Verified so far with
+      clean Lean LSP diagnostics for `ZiskFv.ZiskCircuit.MemTrace` and
+      `lake build ZiskFv.ZiskCircuit.MemTrace`, and `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, and
+      both trust gates, and `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.

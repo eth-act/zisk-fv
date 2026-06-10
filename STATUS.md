@@ -19,13 +19,20 @@ Latest proof surface:
 - Latest slice adds `MemoryBusEntryByteDisjoint` and
   `readEventReplayAgreement_of_writeMemoryOfEntry_disjoint`, proving that a
   write to a disjoint eight-byte range preserves an existing read agreement.
+- Current uncommitted slice lifts that to `replayMemoryAfterBusRow` and
+  `replayMemoryAfterBusRows` prefixes when all prefix rows are byte-disjoint.
 
-Verification for latest slice: Lean LSP diagnostics are clean for
+Verification for committed slice: Lean LSP diagnostics are clean for
 `ZiskFv.ZiskCircuit.MemTrace`; both target module builds, full `lake build`,
 both trust gates, and `nix run .#test` pass.
+Verification for current slice: Lean LSP diagnostics are clean for
+`ZiskFv.ZiskCircuit.MemTrace`; `lake build ZiskFv.ZiskCircuit.MemTrace` and
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, and
+both trust gates, and `nix run .#test` pass.
 
-Next step: commit the disjoint-write preservation slice, then use it to
-discharge `ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`.
+Next step: commit the replay-prefix disjoint preservation slice, then prove the
+zero-preloaded specialization of
+`ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`.
 
 Context: Phase A is committed at `0c222595`. The old
 `.worktrees/memory-trust-gap` branch remains only as salvage reference until

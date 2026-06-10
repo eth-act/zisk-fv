@@ -618,6 +618,53 @@ def replayMemoryAfterBusRows
     Std.ExtHashMap Nat (BitVec 8) :=
   rows.foldl replayMemoryAfterBusRow mem
 
+/-- Replaying one raw memory-bus row preserves a read agreement when any write
+effect of that row targets a disjoint eight-byte range. Non-write rows preserve
+the agreement definitionally. -/
+theorem readEventReplayAgreement_of_replayMemoryAfterBusRow_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {row readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement mem (eventOfEntry readEntry))
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+      (eventOfEntry readEntry) := by
+  by_cases h_as : row.as = (2 : FGL)
+  · by_cases h_write : row.multiplicity = (1 : FGL)
+    · simpa [replayMemoryAfterBusRow, h_as, h_write,
+        replayStoreEvent_storeEventOfEntry] using
+        readEventReplayAgreement_of_writeMemoryOfEntry_disjoint h_read h_disjoint
+    · simpa [replayMemoryAfterBusRow, h_as, h_write] using h_read
+  · simpa [replayMemoryAfterBusRow, h_as] using h_read
+
+/-- Replaying a prefix of raw memory-bus rows preserves a read agreement when
+all rows in the prefix are byte-disjoint from the read entry. -/
+theorem readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {rows : List (MemoryBusEntry FGL)}
+    {readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement mem (eventOfEntry readEntry))
+    (h_disjoint :
+      ∀ row, row ∈ rows → MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (replayMemoryAfterBusRows mem rows)
+      (eventOfEntry readEntry) := by
+  induction rows generalizing mem with
+  | nil =>
+      simpa [replayMemoryAfterBusRows] using h_read
+  | cons row rest ih =>
+      have h_head :
+          ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+            (eventOfEntry readEntry) :=
+        readEventReplayAgreement_of_replayMemoryAfterBusRow_disjoint
+          h_read (h_disjoint row (by simp))
+      have h_tail :
+          ∀ restRow, restRow ∈ rest →
+            MemoryBusEntryByteDisjoint readEntry restRow := by
+        intro restRow h_rest
+        exact h_disjoint restRow (by simp [h_rest])
+      simpa [replayMemoryAfterBusRows] using ih h_head h_tail
+
 /-- Replaying raw memory-bus rows is the same memory update as replaying their
     projected read/write event list. This lets AIR-facing proofs reason over
     raw rows while the existing load bridge continues to consume Mem events. -/
