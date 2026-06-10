@@ -20,5 +20,7 @@ Context:
 - The old `memory-trust-gap` worktree/branch is intentionally preserved pending
   Cody's review.
 
-Next step: push the reset `main`, open a fresh Mem read discharge PR, and record
-the new PR URL in this status/plan trail.
+PR: https://github.com/eth-act/zisk-fv/pull/65
+
+Next step: review PR #65 before landing. Do not delete `memory-trust-gap`
+while Cody is reviewing.
