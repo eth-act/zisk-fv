@@ -818,6 +818,12 @@ no assumed soundness fields**.
       accessors/constructor with no `sorryAx`, `lake build
       ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build ZiskFv.Compliance`,
       `trust/scripts/check-all.sh`, and `git diff --check`.
+      Follow-up audit: `componentWithDualMemBus` currently emits only the nine
+      row constraints plus the primary/dual MemBus provider rows. It does not
+      emit the stage-2 permutation columns, range lookup source, or generated
+      assertion source needed to construct `FullWitnessMemAirSourceRawFacts`
+      from `witness.Constraints`; the next step is generator/full-ensemble
+      support for that raw-facts callback, not another local replay proof.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

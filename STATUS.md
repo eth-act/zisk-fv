@@ -3,8 +3,10 @@ Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 Current focus: Phase B/C bridge closure. `LoadPromises.mem_read` is gone, and
 load arms consume one global memory-timeline boundary.
 
-Blocking: make generated/full-ensemble output provide
-`FullWitnessMemAirSourceRawFacts` for the witness-selected Mem table.
+Blocking: add generated/full-ensemble support for
+`FullWitnessMemAirSourceRawFacts`. Existing `componentWithDualMemBus` emits
+only the nine row constraints plus MemBus provider rows, not the stage-2
+permutation/range/assertion source facts.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
