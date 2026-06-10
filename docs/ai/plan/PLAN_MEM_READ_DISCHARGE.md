@@ -1075,7 +1075,7 @@ no assumed soundness fields**.
       raw split constraints project back to `ExtractedConstraintFacts`, raw
       row/segment ranges project back to `ExtractedRangeFacts`, and a generated
       module that already proves `RawSourceFacts` can repackage them as
-      `ExtractedSidecarFacts`. This still does not prove
+      a witness-wide `ExtractedSidecarFacts` callback. This still does not prove
       `FullWitnessMemAirSourceProverDataWitnessFacts`; the remaining generated
       production work is proving the raw/extracted sidecar fields. Audit note:
       the lookup-witness

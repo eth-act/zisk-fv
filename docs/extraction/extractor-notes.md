@@ -302,8 +302,8 @@ row/segment range facts, and exposes `ExtractedSidecarFacts` as the preferred
 source-level generated target, including a direct builder for
 `GeneratedTimelineEvidence`. It also checks the reverse raw-to-extracted path:
 raw split constraints and raw row/segment ranges can be repackaged as
-`ExtractedSidecarFacts`, so generated modules may target either raw PIL facts or
-the extracted source-level fields and use checked adapters between them. This
+`ExtractedSidecarFacts` callbacks, so generated modules may target either raw
+PIL facts or the extracted source-level fields and use checked adapters between them. This
 is still a source surface, not a proof of the constraints or ranges; the
 remaining generated bridge step is to produce the raw/extracted sidecar fields
 for the witness.

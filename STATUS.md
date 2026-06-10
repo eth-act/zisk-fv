@@ -16,7 +16,7 @@ ranges are sidecar-global rather than row inputs.
 Current slice: generated Mem source facts now have source-level sidecar target.
 `MemGeneratedConstraintBridge.lean` maps extracted constraints and bit-width
 inequalities to raw split constraints/ranges, and now also repackages raw
-source facts back into `ExtractedSidecarFacts`.
+source facts into a witness-wide `ExtractedSidecarFacts` callback.
 
 Digression: main `AGENTS.md` commit `f8072326` relaxes build/test cadence;
 this worktree has no local `AGENTS.md`, so apply that cadence operationally.
@@ -29,7 +29,7 @@ Current proof surface:
 - `FullWitnessMemoryTimelineEvidence` carries full witness +
   `FullWitnessMemAirSourceRawSidecars`; source/bridge/replay are accessors.
 - `pil-extract` reports the Mem contract and emits generated artifact/bridge
-  wrappers both directions between raw source facts and `ExtractedSidecarFacts`.
+  wrappers between raw source facts and `ExtractedSidecarFacts` callbacks.
 
 Latest verification:
 - Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests).

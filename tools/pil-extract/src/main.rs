@@ -2486,6 +2486,28 @@ def buildWitnessFactsFromExtractedSidecarFacts
     (buildRawFactsFromExtractedSidecarFacts witness facts)
 
 @[reducible]
+def buildExtractedSidecarFactsFromRawFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    (rawFacts : RawFacts witness) :
+    ∀ table : Table FGL,
+      table ∈ witness.allTables →
+        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+          ExtractedSidecarFacts witness table := by
+  intro table h_table h_component
+  exact extractedSidecarFacts_of_rawSourceFacts (rawFacts table h_table h_component)
+
+@[reducible]
+def buildWitnessFactsFromRawFactsViaExtractedSidecarFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    (rawFacts : RawFacts witness) :
+    WitnessFacts witness :=
+  buildWitnessFactsFromExtractedSidecarFacts
+    witness
+    (buildExtractedSidecarFactsFromRawFacts rawFacts)
+
+@[reducible]
 noncomputable def buildTimelineEvidenceFromExtractedSidecarFacts
     {length : ℕ} {program : Program length}
     (witness : FullWitness program)
@@ -4369,6 +4391,8 @@ mod tests {
                 && out.contains("def extractedRangeFacts_of_rawRangeFacts")
                 && out.contains("structure ExtractedSidecarFacts")
                 && out.contains("def extractedSidecarFacts_of_rawSourceFacts")
+                && out.contains("def buildExtractedSidecarFactsFromRawFacts")
+                && out.contains("def buildWitnessFactsFromRawFactsViaExtractedSidecarFacts")
                 && out.contains("def buildWitnessFactsFromExtractedSidecarFacts"),
             "bridge should expose generator-friendly range facts and sidecar builders:\n{}",
             out
