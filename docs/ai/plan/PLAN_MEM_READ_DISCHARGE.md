@@ -1070,9 +1070,14 @@ no assumed soundness fields**.
       predicates to the wrapper's split `RawConstraintFacts`, maps explicit
       bit-width/range inequalities to raw row/segment range facts, and exposes
       `ExtractedSidecarFacts` as the preferred generated target, with
-      raw/witness/timeline builders for that target. This still does not prove
+      raw/witness/timeline builders for that target. Latest reverse-adapter
+      slice now also proves the checked raw-to-extracted direction:
+      raw split constraints project back to `ExtractedConstraintFacts`, raw
+      row/segment ranges project back to `ExtractedRangeFacts`, and a generated
+      module that already proves `RawSourceFacts` can repackage them as
+      `ExtractedSidecarFacts`. This still does not prove
       `FullWitnessMemAirSourceProverDataWitnessFacts`; the remaining generated
-      production work is proving the `ExtractedSidecarFacts` fields. Audit note:
+      production work is proving the raw/extracted sidecar fields. Audit note:
       the lookup-witness
       definitions for those range facts exist, but `componentWithDualMemBus`
       still emits only the row constraints plus MemBus provider rows, and the
@@ -1085,6 +1090,10 @@ no assumed soundness fields**.
       `Mem.lean`, and `MemGeneratedArtifact.lean` to oleans, then compile the
       bridge with
       `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`.
+      The raw-to-extracted adapter slice was also verified by targeted renderer
+      test, full extractor tests, regenerated
+      `MemGeneratedConstraintBridge.lean`, and compiling that bridge with the
+      generated `LEAN_PATH`.
       Post-`be7aed0e` broad checks now pass:
       `trust/scripts/check-all.sh`, `nix flake check --no-build`, and
       `git diff --check`. The latest tracked Lean compliance gate remains

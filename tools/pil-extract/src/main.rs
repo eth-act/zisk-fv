@@ -1952,6 +1952,280 @@ def rawConstraintFacts_of_extractedConstraintFacts
         h.constraint_28 idx, h.constraint_29 idx, h.constraint_30 idx, h.constraint_31 idx,
         h.constraint_32 idx, h.constraint_33 idx⟩
 
+@[reducible]
+def extractedConstraintFacts_of_rawConstraintFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    {table : Table FGL}
+    (h : RawConstraintFacts witness table) :
+    ExtractedConstraintFacts witness table where
+  constraint_0 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h0
+  constraint_1 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h1
+  constraint_2 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h2
+  constraint_3 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h3
+  constraint_4 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h4
+  constraint_5 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h5
+  constraint_6 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h6
+  constraint_7 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h7
+  constraint_8 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h8
+  constraint_9 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h9
+  constraint_10 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h10
+  constraint_11 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h11
+  constraint_12 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h12
+  constraint_13 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h13
+  constraint_14 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h14
+  constraint_15 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h15
+  constraint_16 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h16
+  constraint_17 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h17
+  constraint_18 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h18
+  constraint_19 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h19
+  constraint_20 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h20
+  constraint_21 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h21
+  constraint_22 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h22
+  constraint_23 := by
+    intro idx
+    rcases h.segmentAt idx with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+      h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23⟩
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using h23
+  constraint_24 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h24
+  constraint_25 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h25
+  constraint_26 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h26
+  constraint_27 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h27
+  constraint_28 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h28
+  constraint_29 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h29
+  constraint_30 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h30
+  constraint_31 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h31
+  constraint_32 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h32
+  constraint_33 := by
+    intro idx
+    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using h33
+
 /-- Per-table generated raw source facts: extracted Mem constraints plus the
     explicit raw range facts that are outside `Extraction.Mem.constraint_0..33`. -/
 structure ExtractedRawSourceFacts
@@ -1970,6 +2244,17 @@ def rawSourceFacts_of_extractedRawSourceFacts
     (h : ExtractedRawSourceFacts witness table) :
     RawSourceFacts witness table where
   constraints := rawConstraintFacts_of_extractedConstraintFacts h.constraints
+  rowRanges := h.rowRanges
+  segmentRanges := h.segmentRanges
+
+@[reducible]
+def extractedRawSourceFacts_of_rawSourceFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    {table : Table FGL}
+    (h : RawSourceFacts witness table) :
+    ExtractedRawSourceFacts witness table where
+  constraints := extractedConstraintFacts_of_rawConstraintFacts h.constraints
   rowRanges := h.rowRanges
   segmentRanges := h.segmentRanges
 
@@ -2034,6 +2319,34 @@ def rawSegmentRangeFacts_of_extractedRangeFacts
     RawSegmentRangeFacts witness where
   distanceBaseChunks := ⟨h.distance_base_0, h.distance_base_1⟩
 
+@[reducible]
+def extractedRangeFacts_of_rawRangeFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    {table : Table FGL}
+    (rowRanges : RawRowRangeFacts witness table)
+    (segmentRanges : RawSegmentRangeFacts witness) :
+    ExtractedRangeFacts witness table where
+  increment_0 := by
+    intro idx
+    exact (rowRanges.incrementChunks idx).1
+  increment_1 := by
+    intro idx
+    exact (rowRanges.incrementChunks idx).2
+  addr := rowRanges.addrColumns
+  step := by
+    intro idx
+    exact (rowRanges.stepColumns idx).1
+  step_dual := by
+    intro idx
+    exact (rowRanges.stepColumns idx).2.1
+  previous_step := by
+    intro idx
+    exact (rowRanges.stepColumns idx).2.2
+  dual_step_delta := rowRanges.dualStepDelta
+  distance_base_0 := segmentRanges.distanceBaseChunks.1
+  distance_base_1 := segmentRanges.distanceBaseChunks.2
+
 /-- Single generated target in source-level terms: extracted constraints plus
     explicit bit-width/range facts for the ProverData-backed Mem sidecar view. -/
 structure ExtractedSidecarFacts
@@ -2053,6 +2366,16 @@ def extractedRawSourceFacts_of_extractedSidecarFacts
   constraints := h.constraints
   rowRanges := rawRowRangeFacts_of_extractedRangeFacts h.ranges
   segmentRanges := rawSegmentRangeFacts_of_extractedRangeFacts h.ranges
+
+@[reducible]
+def extractedSidecarFacts_of_rawSourceFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    {table : Table FGL}
+    (h : RawSourceFacts witness table) :
+    ExtractedSidecarFacts witness table where
+  constraints := extractedConstraintFacts_of_rawConstraintFacts h.constraints
+  ranges := extractedRangeFacts_of_rawRangeFacts h.rowRanges h.segmentRanges
 
 @[reducible]
 def buildRawFactsFromExtractedConstraintsAndRawRanges
@@ -4014,6 +4337,7 @@ mod tests {
         );
         assert!(
             out.contains("def rawConstraintFacts_of_extractedConstraintFacts")
+                && out.contains("def extractedConstraintFacts_of_rawConstraintFacts")
                 && out.contains("RawConstraintFacts witness table")
                 && out.contains("segmentAt := by")
                 && out.contains("permutationAt := by"),
@@ -4032,6 +4356,7 @@ mod tests {
         assert!(
             out.contains("structure ExtractedRawSourceFacts")
                 && out.contains("def rawSourceFacts_of_extractedRawSourceFacts")
+                && out.contains("def extractedRawSourceFacts_of_rawSourceFacts")
                 && out.contains("def buildRawFactsFromExtractedRawSourceFacts")
                 && out.contains("def buildWitnessFactsFromExtractedRawSourceFacts"),
             "bridge should expose one raw source target for generated code:\n{}",
@@ -4041,7 +4366,9 @@ mod tests {
             out.contains("structure ExtractedRangeFacts")
                 && out.contains("def rawRowRangeFacts_of_extractedRangeFacts")
                 && out.contains("def rawSegmentRangeFacts_of_extractedRangeFacts")
+                && out.contains("def extractedRangeFacts_of_rawRangeFacts")
                 && out.contains("structure ExtractedSidecarFacts")
+                && out.contains("def extractedSidecarFacts_of_rawSourceFacts")
                 && out.contains("def buildWitnessFactsFromExtractedSidecarFacts"),
             "bridge should expose generator-friendly range facts and sidecar builders:\n{}",
             out
