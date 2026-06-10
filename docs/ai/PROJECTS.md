@@ -3,16 +3,13 @@
 Active stream to discharge the `LoadPromises.mem_read` promise hypothesis (the
 "Memory load byte agreement" trust class) by replacing per-load byte promises
 with a global memory-timeline evidence boundary. The load-side field removal is
-done, and the global load boundary now asks for a full-witness memory-timeline
-source whose accepted replay is derived from generated Mem sidecars
-(`FullWitnessMemAirSourceRawSidecars`); the current generated target is
-`FullWitnessMemAirSourceProverDataWitnessFacts`, supplying Clean
-assertion/lookup witnesses for named `witness.data` sidecar keys, with
-`FullWitnessGeneratedTimelineEvidence` as the load-facing wrapper and
-`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` as its direct
-constructor. The remaining hard work is making generated/full-ensemble output
-supply that target because the current Clean Mem component does not represent
-the stage-2/global Mem AIR source columns generically.
+done, and load arms now consume the public `MemoryTimelineEvidence` API while
+generated full-witness artifacts can construct it through
+`FullWitnessGeneratedTimelineEvidence`. This plan's completion route treats
+`FullWitnessMemAirSourceProverDataWitnessFacts` as the explicit
+generated-artifact producer, with `FullWitnessGeneratedTimelineEvidence` as the
+checked generated wrapper and Clean component broadening left as the retirement
+path.
 The stream salvages the replay core, Mem AIR segment machinery, and
 table-projection lemmas from the derailed `memory-trust-gap` branch while
 scrapping its ~13k-line wrapper stack.

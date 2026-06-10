@@ -61,15 +61,8 @@ writeShellApplication {
       echo
     }
 
-    # 1. Tool unit tests.
-    run "1/8 cargo test" bash -c '
-      cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet
-    '
-
-    # 2. The generated extraction files are intentionally outside the main
-    # Lake library, but the Mem constraint source and generated-artifact
-    # wrapper must stay synchronized with the current FV APIs.
-    run "2/8 Mem generated artifact wrapper" bash -c '
+    # shellcheck disable=SC2329
+    mem_generated_artifact_wrapper() {
       test -f build/extraction/Extraction/Circuit.lean
       test -f build/extraction/Extraction/Mem.lean
       test -f build/extraction/Extraction/MemGeneratedArtifact.lean
@@ -86,7 +79,17 @@ writeShellApplication {
         build/extraction/Extraction/MemGeneratedArtifact.lean
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         build/extraction/Extraction/MemGeneratedConstraintBridge.lean
+    }
+
+    # 1. Tool unit tests.
+    run "1/8 cargo test" bash -c '
+      cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet
     '
+
+    # 2. The generated extraction files are intentionally outside the main
+    # Lake library, but the Mem constraint source and generated-artifact
+    # wrapper must stay synchronized with the current FV APIs.
+    run "2/8 Mem generated artifact wrapper" mem_generated_artifact_wrapper
 
     # 3. Production-wrapper equivalence tests. These compare every
     # `aeneas_extract` wrapper against `Riscv2ZiskContext::convert` for the

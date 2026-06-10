@@ -1,13 +1,14 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 
-Current focus: Phase B/C bridge closure; `LoadPromises.mem_read` is gone and
-load arms consume one global memory-timeline boundary.
+Current focus: Phase D PR prep after final verification.
+`LoadPromises.mem_read` is gone and load arms consume one global
+memory-timeline boundary.
 
-Design decision: generated/full-ensemble production of Mem sidecar facts is the
-remaining boundary. Load arms require `FullWitnessGeneratedTimelineEvidence`,
-which wraps the full-witness timeline evidence and carries the concrete
-`witness.data` target (`FullWitnessMemAirSourceProverDataWitnessFacts`) for the
-witness-selected Mem table.
+Completion route: generated/full-ensemble production of Mem sidecar facts is
+the explicit generated-artifact producer for this plan. Load arms require
+`MemoryTimelineEvidence`; generated artifacts build it through
+`FullWitnessGeneratedTimelineEvidence` and the concrete `witness.data` target
+(`FullWitnessMemAirSourceProverDataWitnessFacts`).
 
 Latest audit: structural gap, not a missing lemma. `componentWithDualMemBus`
 emits only row constraints plus MemBus provider rows; Mem range lookup witness
@@ -29,20 +30,17 @@ ProverData witness facts and proves they match the stored sidecars; `pil-extract
 emits the generated artifact/bridge wrappers.
 
 Latest verification:
-- Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests).
-- Regenerated local `Circuit.lean`, `Mem.lean`, `MemGeneratedArtifact.lean`,
-  and `MemGeneratedConstraintBridge.lean` under `build/extraction/Extraction`.
-- Exact generated-Mem gate sequence passes: compile `Circuit.lean` to
-  `Circuit.olean`, compile `Mem.lean` and `MemGeneratedArtifact.lean` to
-  oleans, then compile `MemGeneratedConstraintBridge.lean` with
-  `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`.
-- Latest bridge regen compiles `MemGeneratedConstraintBridge.lean` with the
-  same `LEAN_PATH` after adding raw→extracted adapters.
-- Post-`be7aed0e` broad checks: `trust/scripts/check-all.sh`,
-  `nix flake check --no-build`, and `git diff --check`.
-- Last full `nix run .#test`: `98202ebc`.
+- `nix run .#test` passes all 8 checks: cargo tests, generated Mem wrapper,
+  zisk-core extraction tests, Aeneas harness, full `lake build`, both trust
+  gates, and flake repro.
+- Standalone `trust/scripts/check-all.sh` and
+  `trust/scripts/check-all-semantic.sh` pass.
+- Closure print for `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` has
+  0 stdout lines; stderr only has TrustGate `String.trim` deprecation warnings.
+- `git diff --check` passes.
+- `nix/test.nix` now invokes the generated-Mem wrapper through a ShellCheck-clean
+  helper; this fixed the final `nix run .#test` wrapper gate.
 
-Next step: choose the completion route: either treat those ProverData-backed Mem
-sidecar facts as the explicit generated artifact boundary and run Phase D gates,
-or authorize broadening the Clean table/component model so it represents those
-sidecar assertion/range operations generically.
+Next step: commit the final verification/wording/test-wrapper chunk, then push
+and open the PR. Post-landing cleanup of `memory-trust-gap` still requires
+approval after the PR lands.

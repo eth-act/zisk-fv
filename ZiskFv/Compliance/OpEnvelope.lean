@@ -5,6 +5,7 @@ import ZiskFv.Airs.Main.OpcodeClassification
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
+import ZiskFv.ZiskCircuit.MemTrace
 import ZiskFv.Compliance.Wrappers.Lui
 import ZiskFv.Compliance.Wrappers.Auipc
 import ZiskFv.Compliance.Wrappers.Jal
@@ -2221,9 +2222,14 @@ inductive OpEnvelope
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536) :
     OpEnvelope state m r_main
 
-/-- Single global residual memory-timeline boundary. Load arms require existence
-    of a generated full-witness memory-timeline source for `state` and
-    `bus.e1`; non-load arms impose no obligation. -/
+/-- Single global residual memory-timeline boundary. Load arms require
+    timeline evidence for `state` and `bus.e1`; non-load arms impose no
+    obligation.
+
+    Generated full-witness sidecar artifacts can construct this object via
+    `FullWitnessGeneratedTimelineEvidence`, but the public compliance theorem
+    consumes only the residual timeline API so Clean full-ensemble
+    completeness does not enter the global soundness closure. -/
 @[reducible]
 def OpEnvelope.memoryTimelineEvidence
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -2232,25 +2238,25 @@ def OpEnvelope.memoryTimelineEvidence
     OpEnvelope state m r_main → Prop
   | .ld _ _ _ bus .. =>
       Nonempty
-        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | .lbu _ _ _ bus .. =>
       Nonempty
-        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | .lhu _ _ _ bus .. =>
       Nonempty
-        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | .lwu _ _ _ bus .. =>
       Nonempty
-        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
       Nonempty
-        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
       Nonempty
-        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
       Nonempty
-        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | _ => True
 
 end ZiskFv.Compliance

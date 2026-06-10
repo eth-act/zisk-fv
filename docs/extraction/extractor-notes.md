@@ -241,7 +241,7 @@ artifact contract section names the remaining callback exactly: a generated
 Lean module should supply `FullWitnessMemAirSourceProverDataWitnessFacts` for
 the named `witness.data` sidecar keys and pass it to
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`;
-`FullWitnessGeneratedTimelineEvidence` is the load-facing generated wrapper,
+`FullWitnessGeneratedTimelineEvidence` is the checked generated timeline wrapper,
 while `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts` builds its
 inner timeline evidence. Per mutable Mem table, that callback must return
 `MemTableGeneratedConstraintAssertionFacts`,
@@ -290,7 +290,7 @@ that target, and
 `buildTimelineEvidence` as the call into
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. It does not
 prove the witness facts; it pins the generated module's public entry point to
-the current load-facing constructor.
+the current generated timeline constructor.
 
 The generated `MemGeneratedConstraintBridge.lean` companion instantiates the
 extracted `Extraction.Circuit` interface with the same ProverData-backed Mem

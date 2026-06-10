@@ -1282,7 +1282,7 @@ fn render_bus_emissions_multi(
 /// This module is intentionally a typed contract and constructor wrapper. It
 /// does not manufacture `FullWitnessMemAirSourceProverDataWitnessFacts`; the
 /// generated proof artifact must provide that value. Keeping this wrapper
-/// generated makes the load-facing constructor signature part of the pinned
+/// generated makes the timeline-constructor signature part of the pinned
 /// extraction output, beside the Markdown source manifest.
 fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     let air_name = hit
@@ -1698,7 +1698,7 @@ This module binds the extracted `Extraction.Mem.constraint_0..33` predicates to
 the ProverData-backed Mem source used by `Extraction.MemGeneratedArtifact`.
 It does not prove the constraints; generated proof code must supply the
 `ExtractedConstraintFacts` fields, after which later bridge code can assemble
-the raw Mem source facts consumed by the load-facing generated artifact.
+the raw Mem source facts consumed by the generated timeline artifact.
 -/
 
 namespace Extraction.MemGeneratedConstraintBridge
@@ -2631,8 +2631,8 @@ fn render_mem_air_facts_report(
          `FullWitnessMemAirSourceProverDataWitnessFacts` for the named keys \
          below and pass it to \
          `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`; \
-         `FullWitnessGeneratedTimelineEvidence` is the load-facing generated \
-         wrapper, `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts` \
+         `FullWitnessGeneratedTimelineEvidence` is the checked generated \
+         timeline wrapper, `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts` \
          builds its inner timeline evidence, \
          `fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` is the \
          sidecar packager, and `FullWitnessMemAirSourceProverDataFacts` is the \
@@ -4312,7 +4312,7 @@ mod tests {
             out.contains("abbrev GeneratedTimelineEvidence")
                 && out.contains("FullWitnessGeneratedTimelineEvidence state entry")
                 && out.contains("fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts"),
-            "generated module should wrap the load-facing generated timeline constructor:\n{}",
+            "generated module should wrap the checked generated timeline constructor:\n{}",
             out
         );
         assert!(
@@ -4401,7 +4401,7 @@ mod tests {
             out.contains("def buildTimelineEvidenceFromExtractedSidecarFacts")
                 && out.contains("GeneratedTimelineEvidence state entry")
                 && out.contains("buildTimelineEvidence"),
-            "bridge should expose the load-facing timeline constructor path:\n{}",
+            "bridge should expose the checked generated timeline constructor path:\n{}",
             out
         );
     }

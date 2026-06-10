@@ -161,15 +161,17 @@ h_memory_timeline : env.memoryTimelineEvidence
 ```
 
 For load `OpEnvelope` arms, `env.memoryTimelineEvidence` requires
-`Nonempty (FullWitnessGeneratedTimelineEvidence state bus.e1)`; non-load arms
-require no memory evidence. Dispatch coerces that generated full-witness source to
-`MemoryTimelineEvidence state e1` and reconstructs canonical `LoadPromises`
-with `LoadPromises.memory_timeline` before calling the load theorems. The
-`OpEnvelope` load constructors themselves carry only `LoadStructuralPromises`,
-so they no longer accept a per-load byte oracle.
+`Nonempty (MemoryTimelineEvidence state bus.e1)`; non-load arms require no
+memory evidence. Generated full-witness sidecar artifacts can construct that
+timeline evidence through `FullWitnessGeneratedTimelineEvidence`, while
+dispatch consumes only the public `MemoryTimelineEvidence state e1` API before
+reconstructing canonical `LoadPromises`. The `OpEnvelope` load constructors
+themselves carry only `LoadStructuralPromises`, so they no longer accept a
+per-load byte oracle.
 
 `FullWitnessGeneratedTimelineEvidence` wraps `FullWitnessMemoryTimelineEvidence`
-and makes the generated ProverData sidecar source explicit: it carries
+as a checked generated producer and makes the generated ProverData sidecar
+source explicit: it carries
 `FullWitnessMemAirSourceProverDataWitnessFacts` and records that the stored
 sidecars are exactly the sidecars packaged from those witness facts. The inner
 `FullWitnessMemoryTimelineEvidence` contains the concrete full-ensemble witness,
@@ -204,7 +206,7 @@ ProverData fact callbacks to the same witness target. It also exposes
 constraints to the ProverData-backed source view used by the wrapper, so this
 surface stays synchronized with the checked Lean API.
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` packages that
-target into the load-facing boundary. Lean packages the resulting sidecar
+target into a checked generated producer of the public timeline boundary. Lean packages the resulting sidecar
 callback into the witness-selected `FullWitnessMemAirSource` via
 `fullWitnessMemAirSourceOfRawSidecars`, and
 `fullWitnessMemoryTimelineEvidence_of_rawSidecars` combines it with only the
