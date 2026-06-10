@@ -15,9 +15,9 @@ Current proof surface:
   the residual timeline facts.
 - Public load boundaries no longer mention `fullRv64imEnsemble` or the legacy
   `mem.addr r_mem = bus.e1.ptr` pin.
-- `tools/pil-extract mem-air-facts` reports the Mem generated constraint
-  groups, range-check hints, witness/fixed columns, and `mem.pil` range/bit
-  source lines needed by `MemTableGeneratedAirFacts`.
+- `tools/pil-extract mem-air-facts` reports generated constraint groups,
+  range-check hints, witness/fixed columns, `mem.pil` range/bit lines, and
+  Lean range-fact coverage for every current Mem range fact field.
 - `MemTableGeneratedAirSource` is the typed Lean target for the stage-2 source
   columns/facts; replay and timeline constructors consume it.
 - `memTableGeneratedAirSource_of_parts` builds that source from
@@ -43,8 +43,7 @@ Latest verification:
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: make the extractor/generated Lean module prove
-`MemTableGeneratedConstraintFacts`, `MemTableGeneratedRangeFacts`, and
-`MemSegmentGeneratedRangeFacts` for the witness-selected Mem table.
+Next step: make extractor/generated Lean prove the constraint, row-range, and
+segment-range fact packages for the witness-selected Mem table.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

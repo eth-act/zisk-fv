@@ -659,6 +659,14 @@ no assumed soundness fields**.
       tools/pil-extract/Cargo.toml`, a regenerated `/tmp/mem-air-facts-report.md`,
       `trust/scripts/check-all.sh`, `lean_verify` scans of the new declarations,
       and `git diff --check`.
+      Partial: the extractor report now includes a Lean range-fact coverage
+      table. It maps `l_increment`/`h_increment`, `addr`, `step`/`step_dual`/
+      `previous_step`, `step_dual - step - wr`, and `distance_base[0..1]` to
+      the exact `MemTableGeneratedRangeFacts` and
+      `MemSegmentGeneratedRangeFacts` fields, marking all current sources
+      present when `--pil-source` is supplied. Verified with
+      `cargo test --manifest-path tools/pil-extract/Cargo.toml` and a
+      regenerated `/tmp/mem-air-facts-report.md`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

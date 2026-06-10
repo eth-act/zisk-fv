@@ -1215,6 +1215,9 @@ fn render_mem_air_facts_report(
         .into_iter()
         .filter(|(_, em)| em.name_piop != "Range Check")
         .collect::<Vec<_>>();
+    let source_lines = pil_source
+        .map(mem_pil_source_lines)
+        .transpose()?;
 
     let mut out = String::new();
     writeln!(out, "# Mem AIR Facts Source Report\n").unwrap();
@@ -1344,13 +1347,16 @@ fn render_mem_air_facts_report(
     write_mem_air_hint_table(&mut out, &range_hints);
     writeln!(out).unwrap();
 
+    writeln!(out, "## Lean Range-Fact Coverage\n").unwrap();
+    write_mem_air_range_fact_coverage(&mut out, &range_hints, source_lines.as_deref());
+    writeln!(out).unwrap();
+
     writeln!(out, "## Other `gsum_debug_data` Hints\n").unwrap();
     write_mem_air_hint_table(&mut out, &other_hints);
     writeln!(out).unwrap();
 
-    if let Some(path) = pil_source {
+    if let Some(source_lines) = source_lines {
         writeln!(out, "## `mem.pil` Source Lines\n").unwrap();
-        let source_lines = mem_pil_source_lines(path)?;
         if source_lines.is_empty() {
             writeln!(
                 out,
@@ -1469,6 +1475,96 @@ fn write_mem_air_hint_table(out: &mut String, hints: &[(usize, BusEmission)]) {
         )
         .unwrap();
     }
+}
+
+fn write_mem_air_range_fact_coverage(
+    out: &mut String,
+    range_hints: &[(usize, BusEmission)],
+    source_lines: Option<&[(usize, String)]>,
+) {
+    let source_supplied = source_lines.is_some();
+    let hint_has = |needle: &str| {
+        range_hints.iter().any(|(_, em)| {
+            em.slots
+                .iter()
+                .any(|(name, value)| name.contains(needle) || value.contains(needle))
+        })
+    };
+    let source_has = |needle: &str| {
+        source_lines.is_some_and(|lines| {
+            lines
+                .iter()
+                .any(|(_, text)| text.contains(needle))
+        })
+    };
+    let status = |hints_ok: bool, source_ok: bool, source_required: bool| {
+        if !hints_ok {
+            "missing range hint"
+        } else if source_required && !source_supplied {
+            "hint present; rerun with `--pil-source` for bit-width provenance"
+        } else if source_required && !source_ok {
+            "missing `mem.pil` source line"
+        } else {
+            "present"
+        }
+    };
+
+    let increment_hints = hint_has("l_increment") && hint_has("h_increment");
+    let increment_source =
+        source_has("range_check(expression: l_increment")
+          && source_has("range_check(expression: h_increment");
+    let addr_source = source_has("col witness bits(29) addr");
+    let step_source =
+        source_has("col witness bits(MEM_STEP_BITS) step")
+          && source_has("col witness bits(MEM_STEP_BITS) air.step_dual")
+          && source_has("col witness bits(40) air.previous_step");
+    let dual_delta_hint = hint_has("(step_dual - step) - wr");
+    let dual_delta_source = source_has("range_check(expression: step_dual - step - wr");
+    let distance_base_hints =
+        hint_has("Mem.distance_base[0]") && hint_has("Mem.distance_base[1]");
+    let distance_base_source =
+        source_has("range_check(expression: distance_base[0]")
+          && source_has("range_check(expression: distance_base[1]");
+
+    writeln!(out, "| Lean fact field | Extractor source | Status |").unwrap();
+    writeln!(out, "|---|---|---|").unwrap();
+    writeln!(
+        out,
+        "| `MemTableGeneratedRangeFacts.incrementChunks` | \
+         `l_increment` / `h_increment` range hints plus `mem.pil:384-385` | `{}` |",
+        status(increment_hints, increment_source, true)
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "| `MemTableGeneratedRangeFacts.addrColumns` | \
+         `col witness bits(29) addr` (`mem.pil:109`) | `{}` |",
+        status(true, addr_source, true)
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "| `MemTableGeneratedRangeFacts.stepColumns` | \
+         `step`, `step_dual`, and `previous_step` bit declarations \
+         (`mem.pil:110,122,365`) | `{}` |",
+        status(true, step_source, true)
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "| `MemTableGeneratedRangeFacts.dualStepDelta` | \
+         `step_dual - step - wr` range hint gated by `sel_dual` plus \
+         `mem.pil:397` | `{}` |",
+        status(dual_delta_hint, dual_delta_source, true)
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "| `MemSegmentGeneratedRangeFacts.distanceBaseChunks` | \
+         `Mem.distance_base[0]` / `[1]` range hints plus `mem.pil:267-268` | `{}` |",
+        status(distance_base_hints, distance_base_source, true)
+    )
+    .unwrap();
 }
 
 fn mem_pil_source_lines(path: &std::path::Path) -> Result<Vec<(usize, String)>> {
