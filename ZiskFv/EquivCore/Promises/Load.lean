@@ -97,4 +97,26 @@ structure LoadPromises
   m2_as : e2.as.val = 1
   mem_read : LoadByteAgreement state e1
 
+/-- Replace the legacy per-load byte agreement with the value derived from the
+timeline evidence. This lets the global dispatcher ignore the constructor-carried
+`mem_read` field while the `LoadPromises` shape is still being migrated. -/
+def LoadPromises.withMemoryTimelineEvidence
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {mstatus : RegisterType Register.mstatus}
+    {pmaRegion : PMA_Region}
+    {misa : RegisterType Register.misa}
+    {mseccfg : RegisterType Register.mseccfg}
+    {opcode_assumptions : Prop}
+    {pure_nextPC : BitVec 64}
+    {exec_row : List (Interaction.ExecutionBusEntry FGL)}
+    {e0 e1 e2 : Interaction.MemoryBusEntry FGL}
+    (promises :
+      LoadPromises state mstatus pmaRegion misa mseccfg opcode_assumptions pure_nextPC
+        exec_row e0 e1 e2)
+    (evidence : ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state e1) :
+    LoadPromises state mstatus pmaRegion misa mseccfg opcode_assumptions pure_nextPC
+      exec_row e0 e1 e2 :=
+  { promises with
+    mem_read := loadByteAgreement_of_memory_timeline_evidence state e1 evidence }
+
 end ZiskFv.EquivCore.Promises

@@ -1,8 +1,8 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase C global boundary hook commit. The
-`OpEnvelope`-level memory timeline predicate is wired into `env.exec_eq`, and
-`zisk_riscv_compliant_program_bus` now has the visible
-`h_memory_timeline : env.memoryTimelineEvidence` hypothesis.
+Current focus: Phase C load-dispatch timeline routing. All seven load dispatch
+arms now rebuild their local `LoadPromises` from the global
+`h_memory_timeline` evidence instead of consuming the constructor-carried
+`mem_read` proof.
 Blocking: full `GeneratedMemRowOrderFacts.rowsNodup` is stronger than current
 PIL for read-read dual rows, because `mem.pil` allows `step_dual = step`.
 Verified: byte-address/MemModel prep slice and `MemoryTimelineEvidence`
@@ -12,9 +12,11 @@ targeted load build, full `lake build`, and `trust/scripts/check-all.sh`. The
 legacy-pin cleanup slice has passed targeted build, full `lake build`, and
 `trust/scripts/check-all.sh`. The global boundary hook has passed
 `lake build ZiskFv.Compliance`, full `lake build`, and
+`trust/scripts/check-all.sh`. The load-dispatch timeline-routing slice has
+passed `lake build ZiskFv.Compliance`, full `lake build`, and
 `trust/scripts/check-all.sh`.
-Next step: commit the boundary-hook slice, then continue with the remaining
-Phase C `LoadPromises.mem_read` removal design/implementation.
+Next step: commit the dispatch-routing slice, then continue with the remaining
+Phase C data-shape removal for `LoadPromises.mem_read`.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract

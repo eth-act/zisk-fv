@@ -10,7 +10,6 @@ import ZiskFv.Compliance.Dispatch.Misc
 import ZiskFv.Compliance.Dispatch.Remaining
 import ZiskFv.Compliance.Defects
 import ZiskFv.Compliance.AeneasBridgeTrust
-import ZiskFv.ZiskCircuit.MemTrace
 
 /-!
 # Compliance.lean — unified channel-balance global theorem
@@ -70,27 +69,6 @@ open ZiskFv.Airs.Main (Valid_Main)
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
-/-- Single global residual memory-timeline boundary. Load arms require existence
-    of `MemoryTimelineEvidence state bus.e1`; non-load arms impose no obligation. -/
-@[reducible]
-def OpEnvelope.memoryTimelineEvidence
-    : OpEnvelope state m r_main → Prop
-  | .ld _ _ _ bus .. =>
-      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
-  | .lbu _ _ _ bus .. =>
-      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
-  | .lhu _ _ _ bus .. =>
-      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
-  | .lwu _ _ _ bus .. =>
-      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
-  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
-  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
-  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
-  | _ => True
-
 /-- Unified per-arm conclusion: conjunction of the ten family-
     specific `exec_eq_<family>` Props. Exactly one family fires
     non-trivially for any given arm; the others are `True`. -/
@@ -128,9 +106,9 @@ theorem zisk_riscv_compliant_program_bus
   · exact zisk_riscv_compliant_program_bus_itype_binary env
   · exact zisk_riscv_compliant_program_bus_shift env
   · exact zisk_riscv_compliant_program_bus_add_rtypew env
-  · exact zisk_riscv_compliant_program_bus_ldsd env
+  · exact zisk_riscv_compliant_program_bus_ldsd env h_memory_timeline
   · exact zisk_riscv_compliant_program_bus_divu_except_known_defects env h_known_bugs
-  · exact zisk_riscv_compliant_program_bus_misc env
-  · exact zisk_riscv_compliant_program_bus_remaining env h_known_bugs
+  · exact zisk_riscv_compliant_program_bus_misc env h_memory_timeline
+  · exact zisk_riscv_compliant_program_bus_remaining env h_memory_timeline h_known_bugs
 
 end ZiskFv.Compliance

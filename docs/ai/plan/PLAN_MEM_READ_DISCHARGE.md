@@ -170,8 +170,14 @@ bury it in a structure field.
       Partial: `MemClean.ld_discharge_full_clean_provider` now consumes
       `MemoryTraceAgreement` and derives `LoadByteAgreement` through
       `mem_load_correct_of_provider_row`; current callers bridge the old
-      `mem_read` promise through a temporary definitional adapter until the
-      global timeline hypothesis replaces it.
+      `mem_read` promise through a temporary definitional adapter. The global
+      theorem now exposes `h_memory_timeline : env.memoryTimelineEvidence`, and
+      all seven load dispatch arms rebuild a local `LoadPromises` value with
+      `mem_read` derived from that timeline evidence before calling the
+      canonical load theorem; verified with `lake build ZiskFv.Compliance`,
+      full `lake build`, and `trust/scripts/check-all.sh`. The
+      constructor/canonical `LoadPromises.mem_read` field still exists and must
+      be removed in the remaining data-shape step.
 - [ ] Port the `MemModel.lean` re-theoreming and the byte-address row-match
       fix (`ptr = addr * 8`); scan for legacy pins:
       `rg -n "mem_legacy_addr|mem\.addr .* = .*\.ptr" ZiskFv`.

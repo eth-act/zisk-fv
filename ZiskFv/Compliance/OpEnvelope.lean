@@ -69,6 +69,7 @@ import ZiskFv.Compliance.Wrappers.Sb
 import ZiskFv.Compliance.Wrappers.Sh
 import ZiskFv.Compliance.Wrappers.Sw
 import ZiskFv.Compliance.Wrappers.Sd
+import ZiskFv.ZiskCircuit.MemTrace
 
 /-!
 # OpEnvelope.lean — the per-opcode input bundle for RV64IM
@@ -2225,5 +2226,29 @@ inductive OpEnvelope
     (h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536) :
     OpEnvelope state m r_main
+
+/-- Single global residual memory-timeline boundary. Load arms require existence
+    of `MemoryTimelineEvidence state bus.e1`; non-load arms impose no obligation. -/
+@[reducible]
+def OpEnvelope.memoryTimelineEvidence
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {m : Valid_Main FGL FGL}
+    {r_main : ℕ} :
+    OpEnvelope state m r_main → Prop
+  | .ld _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lbu _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lhu _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lwu _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | _ => True
 
 end ZiskFv.Compliance

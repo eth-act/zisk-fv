@@ -183,6 +183,7 @@ def OpEnvelope.exec_eq_remaining
 
 theorem zisk_riscv_compliant_program_bus_remaining
     (env : OpEnvelope state m r_main)
+    (h_memory_timeline : env.memoryTimelineEvidence)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_remaining := by
   cases env with
@@ -193,6 +194,11 @@ theorem zisk_riscv_compliant_program_bus_remaining
     change execute_instruction (instruction.LOAD (
         lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
+    rcases h_memory_timeline with ⟨timeline⟩
+    let promises' :=
+      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+        promises timeline
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
       m mem r_main r_mem bus lbu_input.r1_val lbu_input.imm lbu_input.rd
@@ -200,7 +206,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lbu.equiv_LBU
-      state lbu_input regs m mem r_main bus align pins h_width promises w
+      state lbu_input regs m mem r_main bus align pins h_width promises' w
   | lhu lhu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
@@ -208,6 +214,11 @@ theorem zisk_riscv_compliant_program_bus_remaining
     change execute_instruction (instruction.LOAD (
         lhu_input.imm, regidx.Regidx lhu_input.r1, regidx.Regidx lhu_input.rd, true, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
+    rcases h_memory_timeline with ⟨timeline⟩
+    let promises' :=
+      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+        promises timeline
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
       m mem r_main r_mem bus lhu_input.r1_val lhu_input.imm lhu_input.rd
@@ -215,7 +226,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lhu.equiv_LHU
-      state lhu_input regs m mem r_main bus align pins h_width promises w
+      state lhu_input regs m mem r_main bus align pins h_width promises' w
   | lwu lwu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
@@ -223,6 +234,11 @@ theorem zisk_riscv_compliant_program_bus_remaining
     change execute_instruction (instruction.LOAD (
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
+    rcases h_memory_timeline with ⟨timeline⟩
+    let promises' :=
+      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+        promises timeline
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
       m mem r_main r_mem bus lwu_input.r1_val lwu_input.imm lwu_input.rd
@@ -230,7 +246,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lwu.equiv_LWU
-      state lwu_input regs m mem r_main bus align pins h_width promises w
+      state lwu_input regs m mem r_main bus align pins h_width promises' w
   | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
       h_b0_value h_b1_value h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7 =>
@@ -580,6 +596,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
     closures. -/
 theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     (env : OpEnvelope state m r_main)
+    (h_memory_timeline : env.memoryTimelineEvidence)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_remaining := by
   cases env with
@@ -590,8 +607,13 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     change execute_instruction (instruction.LOAD (
         lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
+    rcases h_memory_timeline with ⟨timeline⟩
+    let promises' :=
+      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+        promises timeline
     exact ZiskFv.Compliance.lbu_eq_of_full_ensemble_mem_provider
-      state lbu_input regs m mem r_main r_mem bus align pins h_width promises
+      state lbu_input regs m mem r_main r_mem bus align pins h_width promises'
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
@@ -602,8 +624,13 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     change execute_instruction (instruction.LOAD (
         lhu_input.imm, regidx.Regidx lhu_input.r1, regidx.Regidx lhu_input.rd, true, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
+    rcases h_memory_timeline with ⟨timeline⟩
+    let promises' :=
+      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+        promises timeline
     exact ZiskFv.Compliance.lhu_eq_of_full_ensemble_mem_provider
-      state lhu_input regs m mem r_main r_mem bus align pins h_width promises
+      state lhu_input regs m mem r_main r_mem bus align pins h_width promises'
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
@@ -614,8 +641,13 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     change execute_instruction (instruction.LOAD (
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
+    rcases h_memory_timeline with ⟨timeline⟩
+    let promises' :=
+      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+        promises timeline
     exact ZiskFv.Compliance.lwu_eq_of_full_ensemble_mem_provider
-      state lwu_input regs m mem r_main r_mem bus align pins h_width promises
+      state lwu_input regs m mem r_main r_mem bus align pins h_width promises'
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
