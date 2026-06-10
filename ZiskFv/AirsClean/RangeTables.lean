@@ -61,11 +61,20 @@ def rangeTable16 : StaticTable FGL field :=
 def rangeTable17 : StaticTable FGL field :=
   rangeStaticTable (2 ^ 17) (by decide) "range-17"
 
+def rangeTable22 : StaticTable FGL field :=
+  rangeStaticTable (2 ^ 22) (by decide) "range-22"
+
 def rangeTable24 : StaticTable FGL field :=
   rangeStaticTable (2 ^ 24) (by decide) "range-24"
 
+def rangeTable29 : StaticTable FGL field :=
+  rangeStaticTable (2 ^ 29) (by decide) "range-29"
+
 def rangeTable32 : StaticTable FGL field :=
   rangeStaticTable (2 ^ 32) (by decide) "range-32"
+
+def rangeTable40 : StaticTable FGL field :=
+  rangeStaticTable (2 ^ 40) (by decide) "range-40"
 
 set_option maxRecDepth 10000
 

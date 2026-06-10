@@ -682,6 +682,25 @@ no assumed soundness fields**.
       `trust/scripts/check-all.sh`, `rg` confirming no `acceptedReplay :`
       field on `FullWitnessMemoryTimelineEvidence`, `lean_verify` scans of the
       affected accessor/constructors, and `git diff --check`.
+      Partial: Mem row and segment range facts now have a concrete Clean
+      lookup-witness source. `RangeTables` exposes the missing symbolic
+      `rangeTable22`, `rangeTable29`, and `rangeTable40`; `Mem.Constraints`
+      adds `rowRangeLookups`, selector-scoped `dualStepDeltaRangeLookup`, and
+      `distanceBaseRangeLookups`; `Mem.Bridge` projects those lookup witnesses
+      to `increment_chunks_in_range`, `addr_columns_in_range`,
+      `step_columns_in_range`, `dual_step_delta_in_range`, and
+      `distance_chunks_in_range`. `Balance.lean` packages these as
+      `MemTableGeneratedRangeLookupFacts` and
+      `MemSegmentGeneratedRangeLookupFacts`, with constructors to the existing
+      `MemTableGeneratedRangeFacts` and `MemSegmentGeneratedRangeFacts`. This
+      removes the raw numeric range fields from the next proof target, but the
+      full ensemble/generated Lean still has to supply the lookup witnesses and
+      split generated constraints for the witness-selected Mem table. Verified
+      with clean Lean LSP diagnostics, `lake build
+      ZiskFv.AirsClean.Mem.Bridge`, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, MCP `lean_build` / incremental
+      full `lake build`, `trust/scripts/check-all.sh`, and `lean_verify`
+      scans of the new lookup projections and Balance constructors.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

@@ -48,6 +48,22 @@ def rowAt (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : MemRow FGL where
   read_same_addr := v.read_same_addr r
 
 @[reducible]
+def constVar (row : MemRow FGL) : Var MemRow FGL where
+  addr := .const row.addr
+  step := .const row.step
+  sel := .const row.sel
+  addr_changes := .const row.addr_changes
+  step_dual := .const row.step_dual
+  sel_dual := .const row.sel_dual
+  value_0 := .const row.value_0
+  value_1 := .const row.value_1
+  wr := .const row.wr
+  previous_step := .const row.previous_step
+  increment_0 := .const row.increment_0
+  increment_1 := .const row.increment_1
+  read_same_addr := .const row.read_same_addr
+
+@[reducible]
 def validOfRow (row : MemRow FGL) :
     ZiskFv.Airs.Mem.Valid_Mem FGL FGL where
   addr := fun _ => row.addr
@@ -253,6 +269,85 @@ theorem constraints_at_of_generated_every_row
     (h_generated : ZiskFv.Airs.Mem.generated_every_row seg perm v r) :
     constraints_at v r := by
   exact constraints_at_of_segment_every_row v seg r h_generated.1
+
+/-! ## Lookup-derived Mem range witnesses -/
+
+/-- Lookup-aware Clean witness for the ungated mutable-Mem row range checks:
+    increment chunks, address, primary step, dual step, and previous step. -/
+structure RowRangeLookupWitness
+    (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((rowRangeLookups (constVar (rowAt v r))).operations offset)
+
+/-- Project the ungated Mem row range facts supplied by `rowRangeLookups`. -/
+theorem row_ranges_of_lookup_aware_const_soundness
+    {v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL} {r : ℕ}
+    (w : RowRangeLookupWitness v r) :
+    ZiskFv.Airs.Mem.increment_chunks_in_range v r
+      ∧ ZiskFv.Airs.Mem.addr_columns_in_range v r
+      ∧ ZiskFv.Airs.Mem.step_columns_in_range v r := by
+  have h_holds := w.holds
+  simp only [rowRangeLookups, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨h_increment_0, h_increment_1, h_addr, h_step, h_step_dual, h_previous_step⟩
+  exact
+    ⟨ ⟨ by simpa [ZiskFv.Airs.Mem.increment_chunks_in_range, rowAt, constVar]
+            using h_increment_0,
+        by simpa [ZiskFv.Airs.Mem.increment_chunks_in_range, rowAt, constVar]
+            using h_increment_1 ⟩,
+      by simpa [ZiskFv.Airs.Mem.addr_columns_in_range, rowAt, constVar] using h_addr,
+      ⟨ by simpa [ZiskFv.Airs.Mem.step_columns_in_range, rowAt, constVar] using h_step,
+        by simpa [ZiskFv.Airs.Mem.step_columns_in_range, rowAt, constVar]
+            using h_step_dual,
+        by simpa [ZiskFv.Airs.Mem.step_columns_in_range, rowAt, constVar]
+            using h_previous_step ⟩ ⟩
+
+/-- Lookup-aware Clean witness for the selector-gated dual-step delta range
+    check. It should only be requested for rows with `sel_dual = 1`. -/
+structure DualStepDeltaRangeLookupWitness
+    (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((dualStepDeltaRangeLookup (constVar (rowAt v r))).operations offset)
+
+/-- Project the dual-step delta range fact supplied by
+    `dualStepDeltaRangeLookup`. -/
+theorem dual_step_delta_in_range_of_lookup_aware_const_soundness
+    {v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL} {r : ℕ}
+    (w : DualStepDeltaRangeLookupWitness v r) :
+    ZiskFv.Airs.Mem.dual_step_delta_in_range v r := by
+  have h_holds := w.holds
+  simp only [dualStepDeltaRangeLookup, circuit_norm] at h_holds
+  simpa [ZiskFv.Airs.Mem.dual_step_delta_in_range,
+    ZiskFv.AirsClean.RangeTables.rangeTable24,
+    ZiskFv.AirsClean.RangeTables.rangeStaticTable,
+    rowAt, constVar, sub_eq_add_neg] using h_holds
+
+/-- Lookup-aware Clean witness for the two segment `distance_base` chunks. -/
+structure DistanceBaseRangeLookupWitness (lo hi : FGL) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((distanceBaseRangeLookups (.const lo) (.const hi)).operations offset)
+
+/-- Project the segment distance-base range fact supplied by
+    `distanceBaseRangeLookups`. -/
+theorem distance_chunks_in_range_of_lookup_aware_const_soundness
+    {lo hi : FGL}
+    (w : DistanceBaseRangeLookupWitness lo hi) :
+    ZiskFv.Airs.Mem.distance_chunks_in_range lo hi := by
+  have h_holds := w.holds
+  simp only [distanceBaseRangeLookups, circuit_norm] at h_holds
+  rcases h_holds with ⟨h_lo, h_hi⟩
+  exact
+    ⟨ by simpa [ZiskFv.Airs.Mem.distance_chunks_in_range] using h_lo,
+      by simpa [ZiskFv.Airs.Mem.distance_chunks_in_range] using h_hi ⟩
 
 /-- **Bridge theorem.** Given a row of a `Valid_Mem` satisfying the
     9 Clean Component constraints and the boolean range assumptions,

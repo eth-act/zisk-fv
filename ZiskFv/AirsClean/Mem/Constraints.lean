@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.Mem.Spec
+import ZiskFv.AirsClean.RangeTables
 import ZiskFv.Channels.MemoryBus
 import Clean.Circuit.Basic
 
@@ -22,7 +23,8 @@ No axioms. Pure operational declaration.
 namespace ZiskFv.AirsClean.Mem
 
 open Goldilocks
-open Circuit (assertZero)
+open Circuit (assertZero lookup)
+open ZiskFv.AirsClean.RangeTables
 
 /-- The 9 F-typed Mem constraints emitted per row. Returns `Unit`
     because Mem's main constraints introduce no fresh witnesses. -/
@@ -46,6 +48,32 @@ def main (row : Var MemRow FGL) : Circuit FGL Unit := do
   assertZero ((row.addr_changes * (1 - row.wr)) * row.value_0)
   -- address change without write zeros high value chunk
   assertZero ((row.addr_changes * (1 - row.wr)) * row.value_1)
+
+/-- Lookup-aware source for the ungated mutable-Mem row range facts:
+    `l_increment : bits(22)`, `h_increment : bits(16)`, `addr : bits(29)`,
+    and the three `MEM_STEP_BITS = 40` step columns. -/
+@[circuit_norm]
+def rowRangeLookups (row : Var MemRow FGL) : Circuit FGL Unit := do
+  lookup (Table.fromStatic rangeTable22) row.increment_0
+  lookup (Table.fromStatic rangeTable16) row.increment_1
+  lookup (Table.fromStatic rangeTable29) row.addr
+  lookup (Table.fromStatic rangeTable40) row.step
+  lookup (Table.fromStatic rangeTable40) row.step_dual
+  lookup (Table.fromStatic rangeTable40) row.previous_step
+
+/-- Lookup-aware source for the selector-gated dual-step delta range check.
+    Callers should require this witness only on rows where `sel_dual = 1`,
+    matching `mem.pil:397`. -/
+@[circuit_norm]
+def dualStepDeltaRangeLookup (row : Var MemRow FGL) : Circuit FGL Unit := do
+  lookup (Table.fromStatic rangeTable24) (row.step_dual - row.step - row.wr)
+
+/-- Lookup-aware source for the segment-level `distance_base` range checks
+    used by mutable-Mem continuation segments. -/
+@[circuit_norm]
+def distanceBaseRangeLookups (lo hi : Expression FGL) : Circuit FGL Unit := do
+  lookup (Table.fromStatic rangeTable16) lo
+  lookup (Table.fromStatic rangeTable16) hi
 
 @[reducible] def memElaborated :
     ElaboratedCircuit FGL MemRow unit where

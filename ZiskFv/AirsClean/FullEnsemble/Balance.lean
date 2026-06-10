@@ -2051,6 +2051,63 @@ structure MemSegmentGeneratedRangeFacts
     ZiskFv.Airs.Mem.distance_chunks_in_range
       segment.distance_base_0 segment.distance_base_1
 
+/-- Clean lookup source for the concrete Mem table row range facts.
+
+    This exposes the range-check provenance separately from the replay proof:
+    ungated row ranges come from `rowRangeLookups`, while the dual-step delta
+    lookup is requested only for rows with `sel_dual = 1`, matching the
+    selector-gated `mem.pil:397` range check. -/
+structure MemTableGeneratedRangeLookupFacts
+    (table : Table FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) : Type 1 where
+  rowRanges :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.AirsClean.Mem.RowRangeLookupWitness mem idx.val
+  dualStepDelta :
+    ∀ idx : Fin table.table.length,
+      mem.sel_dual idx.val = 1 →
+        ZiskFv.AirsClean.Mem.DualStepDeltaRangeLookupWitness mem idx.val
+
+/-- Project concrete Mem table row range facts from lookup-aware Clean
+    witnesses. -/
+def memTableGeneratedRangeFacts_of_lookupFacts
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    (h_lookup : MemTableGeneratedRangeLookupFacts table mem) :
+    MemTableGeneratedRangeFacts table mem where
+  incrementChunks := by
+    intro idx
+    exact (ZiskFv.AirsClean.Mem.row_ranges_of_lookup_aware_const_soundness
+      (h_lookup.rowRanges idx)).1
+  addrColumns := by
+    intro idx
+    exact (ZiskFv.AirsClean.Mem.row_ranges_of_lookup_aware_const_soundness
+      (h_lookup.rowRanges idx)).2.1
+  stepColumns := by
+    intro idx
+    exact (ZiskFv.AirsClean.Mem.row_ranges_of_lookup_aware_const_soundness
+      (h_lookup.rowRanges idx)).2.2
+  dualStepDelta := by
+    intro idx h_sel_dual
+    exact ZiskFv.AirsClean.Mem.dual_step_delta_in_range_of_lookup_aware_const_soundness
+      (h_lookup.dualStepDelta idx h_sel_dual)
+
+/-- Clean lookup source for the segment-level Mem distance-base range facts. -/
+structure MemSegmentGeneratedRangeLookupFacts
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL) : Type 1 where
+  distanceBaseChunks :
+    ZiskFv.AirsClean.Mem.DistanceBaseRangeLookupWitness
+      segment.distance_base_0 segment.distance_base_1
+
+/-- Project segment-level Mem range facts from lookup-aware Clean witnesses. -/
+def memSegmentGeneratedRangeFacts_of_lookupFacts
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    (h_lookup : MemSegmentGeneratedRangeLookupFacts segment) :
+    MemSegmentGeneratedRangeFacts segment where
+  distanceBaseChunks :=
+    ZiskFv.AirsClean.Mem.distance_chunks_in_range_of_lookup_aware_const_soundness
+      h_lookup.distanceBaseChunks
+
 /-- Extractor-facing generated Mem AIR facts for one concrete table segment.
 
     This is the remaining generated/source surface after the table projection,

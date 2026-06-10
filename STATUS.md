@@ -26,23 +26,24 @@ Current proof surface:
   `segment_every_row` (`0..=23`) and `permutation_every_row` (`24..=33`);
   `memTableGeneratedAirSource_of_constraintFacts` recombines them with range
   facts for generated Lean modules.
+- `MemTableGeneratedRangeLookupFacts` and
+  `MemSegmentGeneratedRangeLookupFacts` now turn concrete Clean lookup
+  witnesses into the raw row/segment range facts.
 
 Latest verification:
-- Lean LSP diagnostics: `ZiskFv/AirsClean/FullEnsemble/Balance.lean`
+- Lean LSP diagnostics: `ZiskFv/AirsClean/Mem/Bridge.lean`,
+  `ZiskFv/AirsClean/FullEnsemble/Balance.lean`
+- `lake build ZiskFv.AirsClean.Mem.Bridge`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
-- `lake build ZiskFv.Compliance`
+- MCP `lean_build` / incremental full `lake build` after the new imports
 - `trust/scripts/check-all.sh`
-- `lean_verify` on the full-witness timeline accessor/constructors: no
+- `lean_verify` on new Mem lookup projections and Balance constructors: no
   `sorryAx`
-- `rg` confirms no `acceptedReplay :` field on
-  `FullWitnessMemoryTimelineEvidence`
-- `git diff --check`
-- `rg -n "h_mem_legacy_addr|_h_mem_legacy_addr|mem_legacy_addr" ZiskFv/Compliance`
-  returns no hits.
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: make extractor/generated Lean prove the constraint, row-range, and
-segment-range fact packages for the witness-selected Mem table.
+Next step: supply/derive the new range lookup witnesses plus split generated
+constraints for the witness-selected Mem table, then construct
+`MemTableGeneratedAirSource.facts`.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.
