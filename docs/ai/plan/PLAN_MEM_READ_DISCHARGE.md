@@ -220,6 +220,20 @@ no assumed soundness fields**.
       ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
       `nix run .#test`.
+      Partial: first-read/address-change zero initialization is now explicit.
+      `MemTrace.lean` defines `zeroedMemoryEntryOfEntry`,
+      `zeroMemoryOfEntry`, and `zeroMemoryOfRows`, and proves
+      `readEventReplayAgreement_of_zeroMemoryOfEntry` for zero-valued reads.
+      `Balance.lean` projects the generated `addr_changes = 1, wr = 0`
+      zero-value constraints to
+      `readEventReplayAgreement_after_zeroMemoryOfEntry_primary_read_of_addr_change`
+      and
+      `readEventReplayAgreement_after_zeroMemoryOfEntry_memTableGeneratedRowsBridge`.
+      Verified with clean Lean LSP diagnostics after an LSP build hook,
+      `lake build ZiskFv.ZiskCircuit.MemTrace`, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+      `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -248,6 +262,10 @@ no assumed soundness fields**.
       the already cited row spec booleans, selected dual implies selected
       primary, and the local write/read replay lemmas; it adds no generated
       constraint or replay assumption.
+      Partial: the zero-preload bridge cites the generated row-spec
+      `addr_changes * (1 - wr)` zero-value constraints for address-change
+      reads and records the initial-memory construction explicitly, rather
+      than hiding first-read bytes in a replay-soundness field.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

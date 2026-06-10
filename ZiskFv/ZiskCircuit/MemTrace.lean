@@ -283,6 +283,28 @@ def writeMemoryOfEntry
     ).insert (e.ptr.toNat + 6) (byteAt e 6)
     ).insert (e.ptr.toNat + 7) (byteAt e 7)
 
+/-- The zero-valued memory-bus entry at the same pointer as `e`.
+This is used to build the finite replay memory that supplies the initial
+zero value for reads before the first write to an address. -/
+@[reducible]
+def zeroedMemoryEntryOfEntry (e : MemoryBusEntry FGL) :
+    MemoryBusEntry FGL :=
+  { e with value_0 := 0, value_1 := 0 }
+
+/-- Preload replay memory with eight zero bytes at one memory-bus row's
+pointer. -/
+@[reducible]
+def zeroMemoryOfEntry
+    (mem : Std.ExtHashMap Nat (BitVec 8)) (e : MemoryBusEntry FGL) :
+    Std.ExtHashMap Nat (BitVec 8) :=
+  writeMemoryOfEntry mem (zeroedMemoryEntryOfEntry e)
+
+/-- Finite zero-preload memory for the pointers mentioned by a row list. -/
+@[reducible]
+def zeroMemoryOfRows (rows : List (MemoryBusEntry FGL)) :
+    Std.ExtHashMap Nat (BitVec 8) :=
+  rows.foldl zeroMemoryOfEntry ({} : Std.ExtHashMap Nat (BitVec 8))
+
 @[simp]
 lemma eventOfEntry_byteAt (e : MemoryBusEntry FGL) (i : ℕ) :
     (eventOfEntry e).byteAt i = byteAt e i := by
@@ -325,6 +347,22 @@ theorem readEventReplayAgreement_of_writeMemoryOfEntry_same
     ZiskFv.Channels.MemoryBusBytes.byteAt, Std.ExtHashMap.getElem?_insert,
     beq_iff_eq]
   set_option synthInstance.maxHeartbeats 400000 in grind
+
+/-- After preloading zero bytes at a row pointer, a zero-valued read at that
+pointer is replay-sound. This is the first-read/address-change counterpart to
+the write→read replay theorem. -/
+theorem readEventReplayAgreement_of_zeroMemoryOfEntry
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    {entry : MemoryBusEntry FGL}
+    (h_value_0 : entry.value_0 = 0)
+    (h_value_1 : entry.value_1 = 0) :
+    ReadEventReplayAgreement (zeroMemoryOfEntry mem entry)
+      (eventOfEntry entry) := by
+  unfold zeroMemoryOfEntry
+  apply readEventReplayAgreement_of_writeMemoryOfEntry_same
+  · simp
+  · simp [h_value_0]
+  · simp [h_value_1]
 
 /-- Read replay agreement transports across memory-bus entries with the same
 pointer and value chunks. -/

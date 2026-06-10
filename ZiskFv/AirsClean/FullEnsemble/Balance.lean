@@ -2115,6 +2115,63 @@ theorem readEventReplayAgreement_after_primary_read_dual_read_of_row
   rw [h_source_replay]
   simpa [targetEntry]
 
+/-- An address-change primary read is locally justified by the finite
+    zero-preload memory at its pointer. The generated row spec forces both
+    value chunks to zero when `addr_changes = 1` and `wr = 0`. -/
+theorem readEventReplayAgreement_after_zeroMemoryOfEntry_primary_read_of_addr_change
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_spec : ZiskFv.AirsClean.Mem.Spec row)
+    (h_addr_change : row.addr_changes = 1)
+    (h_read : row.wr = 0) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfEntry initialMemory
+        (memPrimaryReplayEntryOfRow row))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow row)) := by
+  have h_value_0 :=
+    ZiskFv.AirsClean.Mem.read_addr_change_value_0_zero_of_spec
+      row h_spec h_addr_change h_read
+  have h_value_1 :=
+    ZiskFv.AirsClean.Mem.read_addr_change_value_1_zero_of_spec
+      row h_spec h_addr_change h_read
+  exact
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_zeroMemoryOfEntry
+      initialMemory
+      (by
+        simpa [memPrimaryReplayEntryOfRow,
+          ZiskFv.AirsClean.Mem.memBusMessage] using h_value_0)
+      (by
+        simpa [memPrimaryReplayEntryOfRow,
+          ZiskFv.AirsClean.Mem.memBusMessage] using h_value_1)
+
+/-- The indexed table bridge projects the address-change zero-read
+    justification to a concrete Mem table row. -/
+theorem readEventReplayAgreement_after_zeroMemoryOfEntry_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length)
+    (h_addr_change : mem.addr_changes idx.val = 1)
+    (h_read : mem.wr idx.val = 0) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfEntry initialMemory
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val)))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val))) := by
+  have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
+  exact
+    readEventReplayAgreement_after_zeroMemoryOfEntry_primary_read_of_addr_change
+      initialMemory h_spec
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_change)
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_read)
+
 /-- A generated Mem row's active replay chunk is recursively read/write-sound
     once any selected primary read has already been justified against the
     incoming replay memory.
