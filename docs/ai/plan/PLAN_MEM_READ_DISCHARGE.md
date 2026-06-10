@@ -147,6 +147,15 @@ no assumed soundness fields**.
       `nix run .#test`, and the timeline consistency witness.
 - [ ] Prove full chronological row-order facts for the concrete projected Mem
       table from the Mem sorting/segment constraints.
+      Partial: `activeMemReplayEntriesOfTableRow_chronological_of_memTableGeneratedRowsBridge`
+      proves the local active-row part from `MemTableGeneratedRowsBridge` plus
+      the new `MemTableGeneratedRangeFacts`. The theorem discharges
+      primary-before-dual ordering from `mem.pil:397` when `sel_dual = 1`; rows
+      with no selected dual are chronological by shape. Cross-row `Pairwise`
+      order across provider rows remains open. Verified with LSP diagnostics,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+      `nix run .#test`.
 - [ ] Prove `MemoryBusRowsPrefixReadSound` for the concrete projected Mem table
       from same-address carry, write update, segment carry, and chronological
       order.
@@ -154,9 +163,12 @@ no assumed soundness fields**.
       `MemTableGeneratedRowsBridge` connects a Clean table's list positions to
       `rowAt mem idx` and `generated_every_row segment permutation mem idx`.
       `FullWitnessMemTableGeneratedRowsBridge` lifts that to the concrete
-      full-ensemble witness. It still has to be proved before the chronological
-      and prefix-read proofs can be closed. Existing load/envelope surfaces
-      only provide selected-row equalities such as
+      full-ensemble witness. `MemTableGeneratedRangeFacts` now names the
+      additional PIL range-check inputs needed to turn generated field
+      equations into Nat timestamp order. These still have to be proved or
+      supplied from extraction before the chronological and prefix-read proofs
+      can be closed. Existing load/envelope surfaces only provide selected-row
+      equalities such as
       `h_mem_row : eval memEnv memRowVar = rowAt mem r_mem`, not this whole-table
       bridge.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
@@ -174,6 +186,10 @@ no assumed soundness fields**.
       `nix run .#test`.
 - [ ] **Constructibility check:** every strengthened `Valid_Mem`-adjacent
       statement cites the PIL constraint it mirrors.
+      Partial: `MemTableGeneratedRangeFacts` cites `mem.pil:110`,
+      `mem.pil:122`, `mem.pil:384-385`, and the selector-gated
+      `mem.pil:397`; the new local active-row chronology theorem cites that it
+      does not assert cross-row table order.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

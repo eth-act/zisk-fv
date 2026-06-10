@@ -1524,6 +1524,36 @@ theorem activeMemReplayEntriesOfRow_chronological_of_spec_of_sel_dual_of_step_le
     (ZiskFv.AirsClean.Mem.sel_of_sel_dual_one_of_spec row h_spec h_sel_dual)
     h_sel_dual h_step_le
 
+/-- Under the generated per-row Mem spec, local active replay emissions are
+    chronological once any selected dual emission is known to have
+    `step <= step_dual`. Rows with no selected dual emit zero or one active
+    replay entry, so they are chronological without a timestamp comparison. -/
+theorem activeMemReplayEntriesOfRow_chronological_of_spec_of_dual_step_le
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_spec : ZiskFv.AirsClean.Mem.Spec row)
+    (h_step_le_of_dual :
+      row.sel_dual = 1 → row.step.val ≤ row.step_dual.val) :
+    ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
+      (activeMemReplayEntriesOfRow row) := by
+  rcases ZiskFv.AirsClean.Mem.sel_dual_boolean_of_spec row h_spec with
+    h_sel_dual_zero | h_sel_dual_one
+  · rcases ZiskFv.AirsClean.Mem.sel_boolean_of_spec row h_spec with
+      h_sel_zero | h_sel_one
+    · have h_sel_ne : row.sel ≠ 1 := by
+        simp [h_sel_zero]
+      have h_sel_dual_ne : row.sel_dual ≠ 1 := by
+        simp [h_sel_dual_zero]
+      rw [activeMemReplayEntriesOfRow_eq_nil_of_inactive
+        h_sel_ne h_sel_dual_ne]
+      simp [ZiskFv.AirsClean.Mem.MemoryBusRowsChronological]
+    · have h_sel_dual_ne : row.sel_dual ≠ 1 := by
+        simp [h_sel_dual_zero]
+      rw [activeMemReplayEntriesOfRow_eq_primary_of_sel_of_not_sel_dual
+        h_sel_one h_sel_dual_ne]
+      simp [ZiskFv.AirsClean.Mem.MemoryBusRowsChronological]
+  · exact activeMemReplayEntriesOfRow_chronological_of_spec_of_sel_dual_of_step_le
+      h_spec h_sel_dual_one (h_step_le_of_dual h_sel_dual_one)
+
 /-- A selected primary+dual row has no duplicate replay entries when its
     primary and dual timestamps are distinct. PIL allows equality for
     read-read dual rows, so this lemma intentionally records the extra
@@ -1655,6 +1685,34 @@ structure MemTableGeneratedRowsBridge
     ∀ idx : Fin table.table.length,
       ZiskFv.Airs.Mem.generated_every_row segment permutation mem idx.val
 
+/-- Concrete range facts for the indexed Mem table rows.
+
+    These facts name the non-field AIR range-check surface used when turning
+    generated field equations into Nat timestamp order:
+
+    * `incrementChunks` mirrors `mem.pil:384-385`.
+    * `stepColumns` mirrors the `bits(MEM_STEP_BITS)` witness declarations at
+      `mem.pil:110` and `mem.pil:122`, with `MEM_STEP_BITS = 40` in the pinned
+      RV64IM configuration.
+    * `dualStepDelta` mirrors the selector-gated range check
+      `mem.pil:397`; it is intentionally conditional on `sel_dual = 1`.
+
+    Keeping this separate from `MemTableGeneratedRowsBridge` avoids silently
+    treating selector-gated range checks as unconditional replay soundness. -/
+structure MemTableGeneratedRangeFacts
+    (table : Table FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) : Prop where
+  incrementChunks :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.Airs.Mem.increment_chunks_in_range mem idx.val
+  stepColumns :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.Airs.Mem.step_columns_in_range mem idx.val
+  dualStepDelta :
+    ∀ idx : Fin table.table.length,
+      mem.sel_dual idx.val = 1 →
+        ZiskFv.Airs.Mem.dual_step_delta_in_range mem idx.val
+
 /-- The indexed table bridge projects the generated row range required by
     the Mem trace spec. -/
 theorem generatedMemRows_of_memTableGeneratedRowsBridge
@@ -1725,6 +1783,67 @@ theorem constraints_at_of_memTableGeneratedRowsBridge
     ZiskFv.AirsClean.Mem.constraints_at mem idx.val :=
   ZiskFv.AirsClean.Mem.constraints_at_of_generated_every_row
     mem segment permutation idx.val (h_bridge.generatedAt idx)
+
+/-- The indexed table bridge and range facts prove local chronological order
+    for the active replay emissions projected from one concrete table row.
+
+    This discharges the primary-before-dual part of the chronological proof
+    from the generated Mem row and `mem.pil:397` range check. It does not claim
+    full table-level `Pairwise` order across different provider rows. -/
+theorem activeMemReplayEntriesOfTableRow_chronological_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
+      (activeMemReplayEntriesOfRow
+        (eval (table.environment (table.table.get idx))
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)) := by
+  let row :=
+    eval (table.environment (table.table.get idx))
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar
+  have h_rowAt : row = ZiskFv.AirsClean.Mem.rowAt mem idx.val := by
+    dsimp [row]
+    exact h_bridge.rowAt_eq idx
+  have h_spec_rowAt :
+      ZiskFv.AirsClean.Mem.Spec
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val) := by
+    have h_constraints :=
+      constraints_at_of_memTableGeneratedRowsBridge h_bridge idx
+    simpa [ZiskFv.AirsClean.Mem.Spec, ZiskFv.AirsClean.Mem.constraints_at,
+      ZiskFv.AirsClean.Mem.rowAt] using h_constraints
+  have h_spec_row : ZiskFv.AirsClean.Mem.Spec row := by
+    simpa [h_rowAt] using h_spec_rowAt
+  have h_step_le_of_dual :
+      row.sel_dual = 1 → row.step.val ≤ row.step_dual.val := by
+    intro h_sel_dual
+    have h_sel_dual_mem : mem.sel_dual idx.val = 1 := by
+      simpa [h_rowAt, ZiskFv.AirsClean.Mem.rowAt] using h_sel_dual
+    have h_wr_lt : (mem.wr idx.val).val < 2 := by
+      rcases ZiskFv.AirsClean.Mem.wr_boolean_of_spec
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val) h_spec_rowAt with
+        h_wr_zero | h_wr_one
+      · have h_wr_zero_mem : mem.wr idx.val = 0 := by
+          simpa [ZiskFv.AirsClean.Mem.rowAt] using h_wr_zero
+        rw [h_wr_zero_mem]
+        norm_num
+      · have h_wr_one_mem : mem.wr idx.val = 1 := by
+          simpa [ZiskFv.AirsClean.Mem.rowAt] using h_wr_one
+        rw [h_wr_one_mem]
+        norm_num
+    have h_step_le_rowAt :
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val).step.val ≤
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val).step_dual.val :=
+      ZiskFv.AirsClean.Mem.rowAt_step_le_step_dual_of_dual_step_delta_range
+        mem idx.val (h_ranges.stepColumns idx) h_wr_lt
+        (h_ranges.dualStepDelta idx h_sel_dual_mem)
+    simpa [h_rowAt] using h_step_le_rowAt
+  exact activeMemReplayEntriesOfRow_chronological_of_spec_of_dual_step_le
+    h_spec_row h_step_le_of_dual
 
 /-- Row-order facts for the concrete mutable-Mem replay projection. This is
     the table-local target that accepted full-execution integration should

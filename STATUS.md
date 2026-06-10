@@ -8,6 +8,10 @@ The missing table/list-position relation is now named as
 `MemTableGeneratedRowsBridge`, with `FullWitnessMemTableGeneratedRowsBridge`
 as the concrete full-ensemble obligation; it still has to be proved and then
 used to prove chronological replay and prefix-read soundness.
+The local active-row ordering subgoal is now factored through
+`MemTableGeneratedRangeFacts`: selected dual rows get `step <= step_dual`
+from the selector-gated `mem.pil:397` range check, while inactive/primary-only
+rows are locally chronological by shape.
 Existing load/envelope surfaces only expose selected-row facts such as
 `h_mem_row : eval memEnv memRowVar = rowAt mem r_mem`; they do not provide the
 whole-table row-index bridge.
@@ -32,10 +36,12 @@ targeted MemTrace/TraceSpec/Balance/load-stack builds, full `lake build`,
 row-index bridge boundary slice has passed `lake build
 ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
-`nix run .#test`.
-Next step: prove `FullWitnessMemTableGeneratedRowsBridge` for the concrete
-full-ensemble Mem table or explicitly classify that proof obligation as
-residual, then use it for chronological rows and `prefixReadSound`.
+`nix run .#test`. The local active-row chronology/range-facts slice has passed
+LSP diagnostics, `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full
+`lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
+Next step: attack the cross-row Pairwise order/per-address prefix-read proof
+surface from `MemTableGeneratedRowsBridge` plus `MemTableGeneratedRangeFacts`.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract
