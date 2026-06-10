@@ -3278,6 +3278,25 @@ def fullWitnessMemAirSourceProverDataFacts_of_witnessFacts
       h_rowRanges
       h_segmentRanges
 
+/-- Build ProverData-backed Clean assertion/lookup witnesses from raw generated
+    Mem facts over the same `witness.data` sidecar columns.
+
+    This is the generated-artifact adapter for modules that prove the raw
+    pilout/PIL propositions first: Lean repackages those propositions as the
+    assertion and lookup witnesses required by
+    `FullWitnessMemAirSourceProverDataWitnessFacts`. -/
+def fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_rawFacts : FullWitnessMemAirSourceProverDataFacts witness) :
+    FullWitnessMemAirSourceProverDataWitnessFacts witness := by
+  intro table h_table h_component
+  let h_raw := h_rawFacts table h_table h_component
+  exact
+    ⟨ memTableGeneratedConstraintAssertionFacts_of_constraintFacts h_raw.constraints,
+      memTableGeneratedRangeLookupFacts_of_rangeFacts h_raw.rowRanges,
+      memSegmentGeneratedRangeLookupFacts_of_rangeFacts h_raw.segmentRanges ⟩
+
 /-- Package generated raw Mem facts over the named `witness.data` sidecar keys
     into the stored full-witness sidecar callback. -/
 def fullWitnessMemAirSourceRawSidecars_of_proverData

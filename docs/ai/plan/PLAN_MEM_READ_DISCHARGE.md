@@ -1030,6 +1030,21 @@ no assumed soundness fields**.
       Sail memory timeline boundary at `Extraction.MemGeneratedArtifact`,
       `buildWitnessFacts`, `buildTimelineEvidence`, and the full `nix run
       .#test` wrapper compilation step. Verified with `git diff --check`.
+      Follow-up raw-adapter slice: raw ProverData facts now have a checked
+      route into the generated witness target. `Balance.lean` adds
+      `fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`, converting
+      `FullWitnessMemAirSourceProverDataFacts` into the stricter
+      `FullWitnessMemAirSourceProverDataWitnessFacts` via the existing
+      table-level raw-to-assertion/lookup adapters. `pil-extract
+      mem-generated-artifact` now emits `RawFacts` and
+      `buildWitnessFactsFromRawFacts`, while `mem-air-facts`, extractor notes,
+      and the trust ledger point generated modules at that adapter path.
+      Verified with clean Lean LSP diagnostics, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build ZiskFv.Compliance`,
+      focused wrapper/report tests, full `tools/pil-extract` cargo tests,
+      regenerated `/tmp` report/wrapper, `lake env lean` on both `/tmp` and
+      populated `MemGeneratedArtifact.lean`, `trust/scripts/check-all.sh`, and
+      `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

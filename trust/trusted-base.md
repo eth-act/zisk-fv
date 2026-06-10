@@ -191,8 +191,10 @@ witnesses plus named `witness.data` sidecar keys for raw split generated
 constraints, row range facts, segment range facts, and the stage-2 source
 columns for each mutable Mem table. The reproducible generated wrapper
 `Extraction.MemGeneratedArtifact` exposes `buildWitnessFacts`, which assembles
-that target from the three per-table callback families, and
-`buildTimelineEvidence`, which passes the assembled facts to
+that target from the three per-table callback families, plus
+`buildWitnessFactsFromRawFacts`, which adapts raw ProverData fact callbacks to
+the same witness target. It also exposes `buildTimelineEvidence`, which passes
+the assembled facts to
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. The top-level
 `nix run .#test` gate compiles
 `build/extraction/Extraction/MemGeneratedArtifact.lean` directly so this
@@ -204,7 +206,9 @@ callback into the witness-selected `FullWitnessMemAirSource` via
 `fullWitnessMemoryTimelineEvidence_of_rawSidecars` combines it with only the
 residual Sail timeline fields above. `FullWitnessMemAirSourceRawFacts` and
 `fullWitnessMemoryTimelineEvidence_of_rawFacts` remain compatibility adapters
-for lower-level generated modules that still produce the raw sigma callback.
+for lower-level generated modules that still produce the raw sigma callback;
+`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts` is the checked
+adapter for raw ProverData facts.
 
 Retirement path: emit/prove the extractor/full-ensemble
 `FullWitnessMemAirSourceProverDataWitnessFacts`, then prove the whole-execution induction

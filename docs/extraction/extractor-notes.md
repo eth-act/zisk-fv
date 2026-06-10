@@ -249,9 +249,12 @@ inner timeline evidence. Per mutable Mem table, that callback must return
 `MemSegmentGeneratedRangeLookupFacts`.
 `fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` is the sidecar
 packager and the lower-level `FullWitnessMemAirSourceProverDataFacts` callback
-remains available for generated modules that prove raw Mem facts directly. A
-module can also build `MemTableGeneratedRawSourceSidecar` values directly for
-mutable Mem tables and expose them through `FullWitnessMemAirSourceRawSidecars`.
+remains available for generated modules that prove raw Mem facts directly; use
+`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts` or the generated
+wrapper's `buildWitnessFactsFromRawFacts` adapter to feed those raw facts into
+the current witness-facts target. A module can also build
+`MemTableGeneratedRawSourceSidecar` values directly for mutable Mem tables and
+expose them through `FullWitnessMemAirSourceRawSidecars`.
 Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`;
 `exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete replay
 source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` feeds the
@@ -278,7 +281,9 @@ pil-extract mem-generated-artifact --pilout build/zisk.pilout --air Mem \
 The wrapper defines `Extraction.MemGeneratedArtifact.WitnessFacts` as the
 current `FullWitnessMemAirSourceProverDataWitnessFacts witness` target,
 `buildWitnessFacts` as the checked assembly point from the three per-table
-callback families, and `buildTimelineEvidence` as the call into
+callback families, `RawFacts` plus `buildWitnessFactsFromRawFacts` as the
+checked path from raw ProverData fact callbacks into that target, and
+`buildTimelineEvidence` as the call into
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. It does not
 prove the witness facts; it pins the generated module's public entry point to
 the current load-facing constructor.
