@@ -170,7 +170,9 @@ lemma equiv_LH_clean_provider_of_wf
       h_main_row h_mem_row h_main_spec h_store_pc
       h_main_b_match h_main_c_match h_mem_match
       h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_legacy_addr h_mem_wr h_mem_read
+      h_mem_sel h_mem_legacy_addr h_mem_wr
+      (ZiskFv.EquivCore.Promises.memoryTraceAgreement_of_loadByteAgreement
+        state e1 h_mem_read)
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match,
           h_rd_zero_iff, h_rd_idx, _h_copy0, _h_copy1⟩ := h_bundle
   rw [equiv_LH_sail state lh_input mstatus pmaRegion misa mseccfg

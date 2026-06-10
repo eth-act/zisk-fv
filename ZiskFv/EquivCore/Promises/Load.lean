@@ -49,6 +49,18 @@ theorem loadByteAgreement_of_mem_trace_agreement
   simpa [LoadByteAgreement] using
     ZiskFv.ZiskCircuit.MemTrace.byte_facts_of_event_agreement state e h_agree
 
+/-- The current byte-agreement promise is definitionally the selected
+`MemoryTraceAgreement` shape for `eventOfEntry`; this adapter keeps existing
+callers compiling while the promise field is replaced by timeline evidence. -/
+theorem memoryTraceAgreement_of_loadByteAgreement
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (e : Interaction.MemoryBusEntry FGL)
+    (h_read : LoadByteAgreement state e) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e) := by
+  simpa [LoadByteAgreement, ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement]
+    using h_read
+
 /-- Byte-agreement projection from the named residual timeline evidence. -/
 theorem loadByteAgreement_of_memory_timeline_evidence
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

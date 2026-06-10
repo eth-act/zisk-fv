@@ -162,14 +162,23 @@ bury it in a structure field.
       `LoadByteAgreement` = Phase B theorem + replay core + timeline
       hypothesis (`mem_load_correct_of_provider_row` consuming
       `MemoryTraceAgreement`).
+      Partial: `MemClean.ld_discharge_full_clean_provider` now consumes
+      `MemoryTraceAgreement` and derives `LoadByteAgreement` through
+      `mem_load_correct_of_provider_row`; current callers bridge the old
+      `mem_read` promise through a temporary definitional adapter until the
+      global timeline hypothesis replaces it.
 - [ ] Port the `MemModel.lean` re-theoreming and the byte-address row-match
       fix (`ptr = addr * 8`); scan for legacy pins:
       `rg -n "mem_legacy_addr|mem\.addr .* = .*\.ptr" ZiskFv`.
       Partial: byte-addressed primary/dual Mem-row match predicates and Clean
-      adapters are ported, and `mem_load_correct_of_provider_row` now consumes
-      `MemoryTraceAgreement`; legacy pins remain to scan/migrate.
+      adapters are ported, `mem_load_correct_of_provider_row` now consumes
+      `MemoryTraceAgreement`, and the Clean load bridge uses the byte-addressed
+      provider theorem; legacy pins remain to scan/migrate.
 - [ ] Update the 7 load EquivCore/Wrapper files; stores untouched beyond
       shared types.
+      Partial: the load EquivCore files and current Compliance wrappers compile
+      against the trace-agreement Clean bridge through the temporary adapter;
+      this is not complete until `LoadPromises.mem_read` is removed.
 - [ ] Update `trust/trusted-base.md`: retire "Memory load byte agreement",
       add the narrower "Sail memory timeline" boundary section with its
       retirement path (whole-execution induction).

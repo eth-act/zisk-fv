@@ -250,7 +250,9 @@ lemma equiv_LHU_clean_provider
       h_main_row h_mem_row h_main_spec h_store_pc
       h_main_b_match h_main_c_match h_mem_match
       h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_legacy_addr h_mem_wr promises.mem_read
+      h_mem_sel h_mem_legacy_addr h_mem_wr
+      (ZiskFv.EquivCore.Promises.memoryTraceAgreement_of_loadByteAgreement
+        state bus.e1 promises.mem_read)
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
           h_rd_idx, h_copy0, h_copy1⟩ := h_bundle
   have h_mem :
