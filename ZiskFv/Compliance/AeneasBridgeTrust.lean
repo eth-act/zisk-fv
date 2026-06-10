@@ -1594,7 +1594,6 @@ def OpEnvelope.ldOfExtractedShape
       ld_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     OpEnvelope state m r_main :=
   OpEnvelope.ld ld_input regs mem bus
@@ -1604,7 +1603,7 @@ def OpEnvelope.ldOfExtractedShape
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
     h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-    h_mem_sel h_mem_legacy_addr h_mem_wr
+    h_mem_sel h_mem_wr
 
 /-- The LD bridge predicate is derivable for the envelope constructed from
 extracted load row-shape equalities and the remaining dynamic load facts. -/
@@ -1664,14 +1663,13 @@ theorem OpEnvelope.aeneasBridgeTrust_ldOfExtractedShape
       ld_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     (OpEnvelope.ldOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
       ld_input regs mem bus provenance h_op h_internal h_width
       h_store_pc_shape promises r_mem h_mainEval h_providerEval h_msg
       h_main_row h_mem_row h_main_spec h_main_b_match h_main_c_match
-      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
       h_mem_wr).aeneasBridgeTrust := by
   unfold OpEnvelope.ldOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact by simpa [natF] using
@@ -1736,7 +1734,6 @@ def OpEnvelope.lbuOfExtractedShape
       lbu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     OpEnvelope state m r_main :=
   OpEnvelope.lbu lbu_input regs mem bus align
@@ -1748,7 +1745,7 @@ def OpEnvelope.lbuOfExtractedShape
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
     h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-    h_mem_sel h_mem_legacy_addr h_mem_wr
+    h_mem_sel h_mem_wr
 
 /-- The LBU bridge predicate is derivable for the envelope constructed from
 extracted load row-shape equalities and the remaining dynamic load facts. -/
@@ -1809,14 +1806,13 @@ theorem OpEnvelope.aeneasBridgeTrust_lbuOfExtractedShape
       lbu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     (OpEnvelope.lbuOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
       lbu_input regs mem bus align provenance h_op h_internal h_width
       h_store_pc_shape promises r_mem h_mainEval h_providerEval h_msg
       h_main_row h_mem_row h_main_spec h_main_b_match h_main_c_match
-      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
       h_mem_wr).aeneasBridgeTrust := by
   unfold OpEnvelope.lbuOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact by simpa [natF] using
@@ -1881,7 +1877,6 @@ def OpEnvelope.lhuOfExtractedShape
       lhu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     OpEnvelope state m r_main :=
   OpEnvelope.lhu lhu_input regs mem bus align
@@ -1893,7 +1888,7 @@ def OpEnvelope.lhuOfExtractedShape
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
     h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-    h_mem_sel h_mem_legacy_addr h_mem_wr
+    h_mem_sel h_mem_wr
 
 /-- The LHU bridge predicate is derivable for the envelope constructed from
 extracted load row-shape equalities and the remaining dynamic load facts. -/
@@ -1954,14 +1949,13 @@ theorem OpEnvelope.aeneasBridgeTrust_lhuOfExtractedShape
       lhu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     (OpEnvelope.lhuOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
       lhu_input regs mem bus align provenance h_op h_internal h_width
       h_store_pc_shape promises r_mem h_mainEval h_providerEval h_msg
       h_main_row h_mem_row h_main_spec h_main_b_match h_main_c_match
-      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
       h_mem_wr).aeneasBridgeTrust := by
   unfold OpEnvelope.lhuOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact by simpa [natF] using
@@ -2026,7 +2020,6 @@ def OpEnvelope.lwuOfExtractedShape
       lwu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     OpEnvelope state m r_main :=
   OpEnvelope.lwu lwu_input regs mem bus align
@@ -2038,7 +2031,7 @@ def OpEnvelope.lwuOfExtractedShape
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
     h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-    h_mem_sel h_mem_legacy_addr h_mem_wr
+    h_mem_sel h_mem_wr
 
 /-- The LWU bridge predicate is derivable for the envelope constructed from
 extracted load row-shape equalities and the remaining dynamic load facts. -/
@@ -2099,14 +2092,13 @@ theorem OpEnvelope.aeneasBridgeTrust_lwuOfExtractedShape
       lwu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     (OpEnvelope.lwuOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
       lwu_input regs mem bus align provenance h_op h_internal h_width
       h_store_pc_shape promises r_mem h_mainEval h_providerEval h_msg
       h_main_row h_mem_row h_main_spec h_main_b_match h_main_c_match
-      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr
+      h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
       h_mem_wr).aeneasBridgeTrust := by
   unfold OpEnvelope.lwuOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact by simpa [natF] using
@@ -2178,7 +2170,6 @@ def OpEnvelope.lbOfExtractedShape
       lb_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     OpEnvelope state m r_main :=
   OpEnvelope.lb_via_static_match lb_input regs mem v r_binary offset env
@@ -2189,7 +2180,7 @@ def OpEnvelope.lbOfExtractedShape
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
     h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-    h_mem_sel h_mem_legacy_addr h_mem_wr
+    h_mem_sel h_mem_wr
 
 /-- Construct the LH signed-load envelope while deriving its Main
 `OP_SIGNEXTEND_H` pins and Clean `store_pc` fact from extracted row-shape
@@ -2257,7 +2248,6 @@ def OpEnvelope.lhOfExtractedShape
       lh_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     OpEnvelope state m r_main :=
   OpEnvelope.lh_via_static_match lh_input regs mem v r_binary offset env
@@ -2268,7 +2258,7 @@ def OpEnvelope.lhOfExtractedShape
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
     h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-    h_mem_sel h_mem_legacy_addr h_mem_wr
+    h_mem_sel h_mem_wr
 
 /-- Construct the LW signed-load envelope while deriving its Main
 `OP_SIGNEXTEND_W` pins and Clean `store_pc` fact from extracted row-shape
@@ -2336,7 +2326,6 @@ def OpEnvelope.lwOfExtractedShape
       lw_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     OpEnvelope state m r_main :=
   OpEnvelope.lw_via_static_match lw_input regs mem v r_binary offset env
@@ -2347,7 +2336,7 @@ def OpEnvelope.lwOfExtractedShape
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
     h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-    h_mem_sel h_mem_legacy_addr h_mem_wr
+    h_mem_sel h_mem_wr
 
 /-- The LB bridge predicate is derivable for the envelope constructed from
 extracted signed-load row-shape equalities and the remaining dynamic facts. -/
@@ -2414,7 +2403,6 @@ theorem OpEnvelope.aeneasBridgeTrust_lbOfExtractedShape
       lb_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     (OpEnvelope.lbOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
@@ -2422,7 +2410,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lbOfExtractedShape
       provenance h_op h_external h_width h_store_pc_shape promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_legacy_addr h_mem_wr).aeneasBridgeTrust := by
+      h_mem_sel h_mem_wr).aeneasBridgeTrust := by
   unfold OpEnvelope.lbOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact by simpa [natF] using
     MainRowProvenance.indWidth_of_extracted_shape provenance h_width
@@ -2492,7 +2480,6 @@ theorem OpEnvelope.aeneasBridgeTrust_lhOfExtractedShape
       lh_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     (OpEnvelope.lhOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
@@ -2500,7 +2487,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lhOfExtractedShape
       provenance h_op h_external h_width h_store_pc_shape promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_legacy_addr h_mem_wr).aeneasBridgeTrust := by
+      h_mem_sel h_mem_wr).aeneasBridgeTrust := by
   unfold OpEnvelope.lhOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact by simpa [natF] using
     MainRowProvenance.indWidth_of_extracted_shape provenance h_width
@@ -2570,7 +2557,6 @@ theorem OpEnvelope.aeneasBridgeTrust_lwOfExtractedShape
       lw_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     (OpEnvelope.lwOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
@@ -2578,7 +2564,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lwOfExtractedShape
       provenance h_op h_external h_width h_store_pc_shape promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx
-      h_mem_sel h_mem_legacy_addr h_mem_wr).aeneasBridgeTrust := by
+      h_mem_sel h_mem_wr).aeneasBridgeTrust := by
   unfold OpEnvelope.lwOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact by simpa [natF] using
     MainRowProvenance.indWidth_of_extracted_shape provenance h_width

@@ -555,15 +555,15 @@ no assumed soundness fields**.
       `EnsembleWitness`.
       Partial: `FullWitnessMemoryTimelineEvidence` is now the global
       memory-timeline source expected by `OpEnvelope.memoryTimelineEvidence`.
-      It carries the concrete `FullWitnessMemReplayBridge` plus only the
-      residual timeline fields, and coerces to the existing
-      `MemoryTimelineEvidence` API consumed by load proofs. This means
-      `AcceptedMemoryReplayEvidence.prefixReadSound` is no longer assumed
-      directly by the global load boundary; it is derived from the full-witness
-      replay bridge. Verified with LSP diagnostics and `lake env lean` for
-      `Balance.lean`, `OpEnvelope.lean`, and the LDSD/Misc/Remaining dispatch
-      files, plus `lake build ZiskFv.Compliance`,
-      `trust/scripts/check-all.sh`, and `trust/scripts/check-all-semantic.sh`.
+      It now carries accepted replay plus only the residual timeline fields,
+      and coerces to the existing `MemoryTimelineEvidence` API consumed by load
+      proofs. The full-witness constructors derive that accepted replay from
+      `FullWitnessMemReplayBridge`, but the public Compliance-facing boundary
+      no longer mentions `fullRv64imEnsemble`; this keeps Clean completeness
+      axioms out of the global theorem closure. Verified with LSP diagnostics
+      and `lake env lean` for `Balance.lean`, `OpEnvelope.lean`, and the
+      LDSD/Misc/Remaining dispatch files, plus `lake build
+      ZiskFv.Compliance` and `trust/scripts/check-all.sh`.
       Partial: `memOfTable` now projects the primary Mem columns of a concrete
       Clean Mem table into a `Valid_Mem` named-column view, with stage-2
       permutation columns supplied explicitly. The constructor
@@ -664,7 +664,7 @@ bury it in a structure field.
       `lake build ZiskFv.Compliance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
       `nix run .#test`, and the updated timeline consistency witness.
-- [ ] Port the `MemModel.lean` re-theoreming and the byte-address row-match
+- [x] Port the `MemModel.lean` re-theoreming and the byte-address row-match
       fix (`ptr = addr * 8`); scan for legacy pins:
       `rg -n "mem_legacy_addr|mem\.addr .* = .*\.ptr" ZiskFv`.
       Partial: byte-addressed primary/dual Mem-row match predicates and Clean
@@ -675,6 +675,15 @@ bury it in a structure field.
       hits are the legacy predicate definitions plus outer OpEnvelope/Aeneas
       compatibility inputs. Verified with targeted load/dispatch build, full
       `lake build`, and `trust/scripts/check-all.sh`.
+      Completed: the outer load constructors, extracted-shape constructors,
+      Aeneas bridge theorems, dispatch pattern matches, and seven public load
+      wrappers no longer carry `h_mem_legacy_addr : mem.addr r_mem =
+      bus.e1.ptr`. The LDSD dispatcher now uses a stable `.ld ... ..` pattern
+      for its load arm, avoiding positional fragility after constructor-field
+      cleanup. Verified with `rg -n
+      "h_mem_legacy_addr|_h_mem_legacy_addr|mem_legacy_addr" ZiskFv/Compliance`
+      (no hits), `lake build ZiskFv.AirsClean.FullEnsemble.Balance`,
+      `lake build ZiskFv.Compliance`, and `trust/scripts/check-all.sh`.
 - [x] Update the 7 load EquivCore/Wrapper files; stores untouched beyond
       shared types.
       Implemented for LB/LH/LW/LBU/LHU/LWU/LD: the canonical proofs and current

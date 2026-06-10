@@ -5534,27 +5534,25 @@ def memoryTimelineEvidence_of_fullWitnessMemReplayBridge
 
 /-- Concrete full-witness source for the global memory-timeline boundary.
 
-    This keeps the circuit-side replay source explicit: the accepted replay
-    subobject is derived from `FullWitnessMemReplayBridge`, while the remaining
-    fields are exactly the residual whole-execution timeline facts. -/
+    This keeps the circuit-side replay source explicit without mentioning the
+    full Clean ensemble in the public compliance boundary. Constructors below
+    derive `acceptedReplay` from `FullWitnessMemReplayBridge`; the evidence
+    object itself carries only the accepted replay plus residual whole-execution
+    timeline facts. -/
 structure FullWitnessMemoryTimelineEvidence
     (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
     (entry : Interaction.MemoryBusEntry FGL) : Type 2 where
-  length : ℕ
-  program : Program length
-  witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble
-  rows : List (Interaction.MemoryBusEntry FGL)
-  bridge : FullWitnessMemReplayBridge witness rows
+  acceptedReplay : ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryReplayEvidence
   initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
   priorRows : List (Interaction.MemoryBusEntry FGL)
   laterRows : List (Interaction.MemoryBusEntry FGL)
-  traceSplit : rows = priorRows ++ entry :: laterRows
+  traceSplit : acceptedReplay.rows = priorRows ++ entry :: laterRows
   selectedRead :
     ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
       some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry)
   initialAgreement :
     ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
-      (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge bridge).initialMemory
+      acceptedReplay.initialMemory
   stateAtPrefix :
     state =
       ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows
@@ -5601,22 +5599,23 @@ def fullWitnessMemoryTimelineEvidence_of_memTable_airFacts
       state =
         ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
     FullWitnessMemoryTimelineEvidence state entry :=
-  { length := length
-    program := program
-    witness := witness
-    rows := activeMemReplayRowsOfTable table
-    bridge :=
-      fullWitnessMemReplayBridge_of_memTable_fixedL1_traceSplit_airFacts
-        (witness := witness) (table := table) (segment := segment)
-        (permutation := permutation) (gsum := gsum) (im0 := im0) (im1 := im1)
-        (entry := entry) (priorRows := priorRows) (laterRows := laterRows)
-        h_table h_component h_air h_traceSplit
+  let bridge :=
+    fullWitnessMemReplayBridge_of_memTable_fixedL1_traceSplit_airFacts
+      (witness := witness) (table := table) (segment := segment)
+      (permutation := permutation) (gsum := gsum) (im0 := im0) (im1 := im1)
+      (entry := entry) (priorRows := priorRows) (laterRows := laterRows)
+      h_table h_component h_air h_traceSplit
+  let timeline :=
+    memoryTimelineEvidence_of_fullWitnessMemReplayBridge
+      bridge initialState priorRows laterRows h_traceSplit h_selectedRead
+      h_initialAgreement h_stateAtPrefix
+  { acceptedReplay := timeline.acceptedReplay
     initialState := initialState
     priorRows := priorRows
     laterRows := laterRows
-    traceSplit := h_traceSplit
+    traceSplit := timeline.traceSplit
     selectedRead := h_selectedRead
-    initialAgreement := h_initialAgreement
+    initialAgreement := timeline.initialAgreement
     stateAtPrefix := h_stateAtPrefix }
 
 /-- Forget the concrete full-witness source, retaining the existing residual
@@ -5627,15 +5626,14 @@ def FullWitnessMemoryTimelineEvidence.toMemoryTimelineEvidence
     {entry : Interaction.MemoryBusEntry FGL}
     (evidence : FullWitnessMemoryTimelineEvidence state entry) :
     ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state entry :=
-  memoryTimelineEvidence_of_fullWitnessMemReplayBridge
-    evidence.bridge
-    evidence.initialState
-    evidence.priorRows
-    evidence.laterRows
-    evidence.traceSplit
-    evidence.selectedRead
-    evidence.initialAgreement
-    evidence.stateAtPrefix
+  { initialState := evidence.initialState
+    acceptedReplay := evidence.acceptedReplay
+    priorRows := evidence.priorRows
+    laterRows := evidence.laterRows
+    traceSplit := evidence.traceSplit
+    selectedRead := evidence.selectedRead
+    initialAgreement := evidence.initialAgreement
+    stateAtPrefix := evidence.stateAtPrefix }
 
 instance fullWitnessMemoryTimelineEvidenceCoe
     {state : ZiskFv.ZiskCircuit.MemTrace.SailState}

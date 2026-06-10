@@ -26,7 +26,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_ldsd
     : OpEnvelope state m r_main → Prop
-  | .ld ld_input _ _ bus _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
+  | .ld ld_input _ _ bus .. =>
       execute_instruction (instruction.LOAD (
         ld_input.imm,
         regidx.Regidx ld_input.r1,
@@ -52,8 +52,7 @@ theorem zisk_riscv_compliant_program_bus_ldsd
   cases env with
   | ld ld_input regs mem bus pins promises r_mem h_mainEval h_providerEval
       h_msg h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
-      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel
-      h_mem_legacy_addr h_mem_wr =>
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
     simp only [OpEnvelope.exec_eq_ldsd]
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩

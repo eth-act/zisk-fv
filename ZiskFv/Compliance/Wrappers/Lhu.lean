@@ -114,7 +114,6 @@ theorem lhu_eq_of_full_ensemble_mem_provider
       lhu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (_h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     execute_instruction (instruction.LOAD (
       lhu_input.imm,
