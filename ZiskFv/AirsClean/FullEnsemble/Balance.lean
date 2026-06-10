@@ -2252,6 +2252,29 @@ theorem memoryBusRowsReadWriteSound_activeMemReplayEntriesOfRow_of_spec
               initialMemory row h_wr_one
         · simp
 
+/-- The remaining semantic input required by the active table replay fold:
+    every selected primary read agrees with the memory obtained by replaying
+    the preceding active table rows. -/
+def ActiveMemReplayRowsOfTablePrimaryReadPrefixSound
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (table : Table FGL) : Prop :=
+  ∀ priorRows providerRow laterRows,
+    table.table = priorRows ++ providerRow :: laterRows →
+    (eval (table.environment providerRow)
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1 →
+    (eval (table.environment providerRow)
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0 →
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+        (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows initialMemory
+          (priorRows.flatMap fun priorProviderRow =>
+            activeMemReplayEntriesOfRow
+              (eval (table.environment priorProviderRow)
+                ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+          (memPrimaryReplayEntryOfRow
+            (eval (table.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+
 /-- Row-local active replay soundness composes over a list of generated Mem
     rows. The only semantic input still required at each row is the replay
     agreement for a selected primary read at the memory obtained from the
@@ -2318,22 +2341,7 @@ theorem memoryBusRowsReadWriteSound_activeMemReplayRowsOfTable_of_primary_reads
           (eval (table.environment providerRow)
             ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
     (h_primary_read :
-      ∀ priorRows providerRow laterRows,
-        table.table = priorRows ++ providerRow :: laterRows →
-        (eval (table.environment providerRow)
-          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1 →
-        (eval (table.environment providerRow)
-          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0 →
-          ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
-            (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows initialMemory
-              (priorRows.flatMap fun priorProviderRow =>
-                activeMemReplayEntriesOfRow
-                  (eval (table.environment priorProviderRow)
-                    ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
-            (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
-              (memPrimaryReplayEntryOfRow
-                (eval (table.environment providerRow)
-                  ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))) :
+      ActiveMemReplayRowsOfTablePrimaryReadPrefixSound initialMemory table) :
     ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound
       initialMemory (activeMemReplayRowsOfTable table) := by
   unfold activeMemReplayRowsOfTable
@@ -2481,6 +2489,26 @@ def ActiveMemReplayRowsOfTablePrefixReadSound
     (table : Table FGL) : Prop :=
   ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound
     initialMemory (activeMemReplayRowsOfTable table)
+
+/-- Once the selected-primary-read prefix obligation is proved, the active
+    table replay fold supplies prefix-read soundness for the whole projected
+    active Mem table. -/
+theorem activeMemReplayRowsOfTablePrefixReadSound_of_primary_reads
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (table : Table FGL)
+    (h_specs :
+      ∀ providerRow, providerRow ∈ table.table →
+        ZiskFv.AirsClean.Mem.Spec
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
+    (h_primary_read :
+      ActiveMemReplayRowsOfTablePrimaryReadPrefixSound initialMemory table) :
+    ActiveMemReplayRowsOfTablePrefixReadSound initialMemory table := by
+  exact
+    ZiskFv.ZiskCircuit.MemTrace.memoryBusRowsPrefixReadSound_of_readWriteSound
+      initialMemory (activeMemReplayRowsOfTable table)
+      (memoryBusRowsReadWriteSound_activeMemReplayRowsOfTable_of_primary_reads
+        initialMemory table h_specs h_primary_read)
 
 /-- Transport table-local replay-row order facts across the concrete row-list
     equality used by the raw accepted Mem extraction path. -/

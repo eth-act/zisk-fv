@@ -40,15 +40,19 @@ Latest proof surface:
 - Row-local active replay soundness now composes over a table `flatMap` via
   `memoryBusRowsReadWriteSound_flatMap_activeMemReplayEntriesOfRow` and
   `memoryBusRowsReadWriteSound_activeMemReplayRowsOfTable_of_primary_reads`.
+- The table fold's remaining read obligation is named as
+  `ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`; once supplied,
+  `activeMemReplayRowsOfTablePrefixReadSound_of_primary_reads` derives the
+  active table prefix-read theorem.
 
 Verification for latest slice: Lean LSP diagnostics are clean for
 `ZiskFv.AirsClean.FullEnsemble.Balance`, and `lake build
-ZiskFv.AirsClean.FullEnsemble.Balance` plus full `lake build` pass.
+ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass.
 
-Next step: commit the table-level fold slice, then use the bridge/range facts
-to discharge the selected-primary-read prefix hypothesis.
+Next step: commit the named-obligation/prefix theorem slice, then discharge
+`ActiveMemReplayRowsOfTablePrimaryReadPrefixSound` from bridge/range facts.
 
 Context: Phase A is committed at `0c222595`. The old
 `.worktrees/memory-trust-gap` branch remains only as salvage reference until

@@ -246,6 +246,16 @@ no assumed soundness fields**.
       ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
       `nix run .#test`.
+      Partial: the table fold's remaining semantic input is now a named
+      obligation,
+      `ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`, and
+      `activeMemReplayRowsOfTablePrefixReadSound_of_primary_reads` derives
+      `ActiveMemReplayRowsOfTablePrefixReadSound` from that obligation plus the
+      generated row specs and table fold. Verified with clean Lean LSP
+      diagnostics for `ZiskFv.AirsClean.FullEnsemble.Balance` and `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, and
+      `trust/scripts/check-all.sh`, and
+      `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
