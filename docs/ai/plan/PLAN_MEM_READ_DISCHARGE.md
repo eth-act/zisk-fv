@@ -759,6 +759,17 @@ no assumed soundness fields**.
       witness-selected Mem table. Verified with clean Lean LSP diagnostics,
       `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, `lean_verify` on the
       new constructor, `trust/scripts/check-all.sh`, and `git diff --check`.
+      Partial: `FullWitnessMemAirSourceFacts` now names the remaining
+      generated/full-ensemble fact callback for mutable Mem tables.
+      `exists_fullWitnessMemAirSource_of_facts` uses the existing
+      `exists_mem_table_of_fullRv64im_witness` selector to choose the concrete
+      Mem table and build `Nonempty (FullWitnessMemAirSource witness)`, so
+      table membership/component identity are no longer caller obligations.
+      Remaining: generated/full-ensemble output must supply the source columns
+      plus assertion/range lookup witnesses for that table. Verified with clean
+      Lean LSP diagnostics, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, `lean_verify` on the theorem,
+      `trust/scripts/check-all.sh`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

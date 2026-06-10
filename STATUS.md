@@ -3,8 +3,8 @@ Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 Current focus: Phase B/C bridge closure. `LoadPromises.mem_read` is gone, and
 load arms consume one global memory-timeline boundary.
 
-Blocking: construct `MemTableGeneratedAirSource.facts` for the witness-selected
-Mem table from generated extractor output or concrete Clean/pilout proofs.
+Blocking: make generated/full-ensemble output provide
+`FullWitnessMemAirSourceFacts` for the witness-selected Mem table.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -28,17 +28,20 @@ Current proof surface:
 - `MemTableGeneratedRangeLookupFacts` and
   `MemSegmentGeneratedRangeLookupFacts` turn concrete Clean lookup witnesses
   into the raw row/segment range facts.
+- `FullWitnessMemAirSourceFacts` names the remaining generated/full-ensemble
+  callback: choose source columns and concrete assertion/range lookup witnesses
+  for any witness Mem table; table membership and component identity come from
+  the full witness.
 
 Latest verification:
 - Lean LSP diagnostics and `lean_verify` on
-  `fullWitnessMemAirSource_of_witnessFacts`: no `sorryAx`
+  `exists_fullWitnessMemAirSource_of_facts`: no `sorryAx`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
 - `trust/scripts/check-all.sh`
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: make generated/full-ensemble output provide the table membership,
-component identity, and assertion/lookup witnesses consumed by
-`fullWitnessMemAirSource_of_witnessFacts`.
+Next step: make generated/full-ensemble output provide
+`FullWitnessMemAirSourceFacts` for the witness Mem table.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

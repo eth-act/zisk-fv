@@ -2810,6 +2810,43 @@ def fullWitnessMemAirSource_of_witnessFacts
       h_rowRanges
       h_segmentRanges
 
+/-- Generated/full-ensemble Mem AIR source facts for every mutable Mem table in
+    one full witness. The table membership and component identity are supplied
+    by the full witness; this callback supplies only the source columns and the
+    concrete assertion/lookup witnesses. -/
+def FullWitnessMemAirSourceFacts
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) : Type 1 :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        Σ segment : ZiskFv.Airs.Mem.SegmentColumns FGL,
+        Σ permutation : ZiskFv.Airs.Mem.PermutationColumns FGL,
+        Σ gsum : ℕ → FGL,
+        Σ im0 : ℕ → FGL,
+        Σ im1 : ℕ → FGL,
+          MemTableGeneratedConstraintAssertionFacts
+            table (memOfTable table gsum im0 im1)
+            (segmentWithFixedL1 segment) permutation
+          × MemTableGeneratedRangeLookupFacts
+            table (memOfTable table gsum im0 im1)
+          × MemSegmentGeneratedRangeLookupFacts (segmentWithFixedL1 segment)
+
+/-- Select the concrete mutable Mem table from a full witness and build its
+    Mem AIR source from the generated/full-ensemble source facts. -/
+theorem exists_fullWitnessMemAirSource_of_facts
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_facts : FullWitnessMemAirSourceFacts witness) :
+    Nonempty (FullWitnessMemAirSource witness) := by
+  rcases exists_mem_table_of_fullRv64im_witness witness with
+    ⟨table, h_table, h_component⟩
+  rcases h_facts table h_table h_component with
+    ⟨segment, permutation, gsum, im0, im1, h_constraints, h_rowRanges, h_segmentRanges⟩
+  exact ⟨fullWitnessMemAirSource_of_witnessFacts
+    h_table h_component segment permutation gsum im0 im1
+    h_constraints h_rowRanges h_segmentRanges⟩
+
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/
 theorem fullWitnessMemTableGeneratedRowsBridge_of_fullWitnessMemReplayBridge
