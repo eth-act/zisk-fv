@@ -2406,6 +2406,36 @@ def fullWitnessMemReplayBridge_of_memTable_fixedL1_activeRows_airFacts
     h_air
     (table_nonempty_of_activeMemReplayRowsOfTable_nonempty h_activeRows)
 
+/-- Trace-split variant of
+    `fullWitnessMemReplayBridge_of_memTable_fixedL1_activeRows_airFacts`.
+    The selected-entry split proves the active Mem replay projection is
+    nonempty, so callers only supply the generated AIR facts and residual
+    timeline split. -/
+def fullWitnessMemReplayBridge_of_memTable_fixedL1_traceSplit_airFacts
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {gsum im0 im1 : ℕ → FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    {priorRows laterRows : List (Interaction.MemoryBusEntry FGL)}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_air :
+      MemTableGeneratedAirFacts
+        table (memOfTable table gsum im0 im1)
+        (segmentWithFixedL1 segment) permutation)
+    (h_traceSplit :
+      activeMemReplayRowsOfTable table = priorRows ++ entry :: laterRows) :
+    FullWitnessMemReplayBridge witness (activeMemReplayRowsOfTable table) :=
+  fullWitnessMemReplayBridge_of_memTable_fixedL1_activeRows_airFacts
+    h_table
+    h_component
+    h_air
+    (activeMemReplayRowsOfTable_nonempty_of_split h_traceSplit)
+
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/
 theorem fullWitnessMemTableGeneratedRowsBridge_of_fullWitnessMemReplayBridge
@@ -5528,6 +5558,66 @@ structure FullWitnessMemoryTimelineEvidence
   stateAtPrefix :
     state =
       ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows
+
+/-- Construct the global full-witness timeline source directly from a concrete
+    Mem table plus the compact generated AIR facts package.
+
+    This derives the circuit-side accepted replay bridge locally. The remaining
+    inputs are still the intended residual timeline facts: selected read tag,
+    initial Sail/replay memory agreement, and state-at-prefix alignment. -/
+@[reducible]
+def fullWitnessMemoryTimelineEvidence_of_memTable_airFacts
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {gsum im0 im1 : ℕ → FGL}
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_air :
+      MemTableGeneratedAirFacts
+        table (memOfTable table gsum im0 im1)
+        (segmentWithFixedL1 segment) permutation)
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
+    (h_traceSplit :
+      activeMemReplayRowsOfTable table = priorRows ++ entry :: laterRows)
+    (h_selectedRead :
+      ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
+        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))
+    (h_initialAgreement :
+      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
+        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (fullWitnessMemReplayBridge_of_memTable_fixedL1_traceSplit_airFacts
+            (witness := witness) (table := table) (segment := segment)
+            (permutation := permutation) (gsum := gsum) (im0 := im0) (im1 := im1)
+            (entry := entry) (priorRows := priorRows) (laterRows := laterRows)
+            h_table h_component h_air h_traceSplit)).initialMemory)
+    (h_stateAtPrefix :
+      state =
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
+    FullWitnessMemoryTimelineEvidence state entry :=
+  { length := length
+    program := program
+    witness := witness
+    rows := activeMemReplayRowsOfTable table
+    bridge :=
+      fullWitnessMemReplayBridge_of_memTable_fixedL1_traceSplit_airFacts
+        (witness := witness) (table := table) (segment := segment)
+        (permutation := permutation) (gsum := gsum) (im0 := im0) (im1 := im1)
+        (entry := entry) (priorRows := priorRows) (laterRows := laterRows)
+        h_table h_component h_air h_traceSplit
+    initialState := initialState
+    priorRows := priorRows
+    laterRows := laterRows
+    traceSplit := h_traceSplit
+    selectedRead := h_selectedRead
+    initialAgreement := h_initialAgreement
+    stateAtPrefix := h_stateAtPrefix }
 
 /-- Forget the concrete full-witness source, retaining the existing residual
     timeline API consumed by load proofs. -/

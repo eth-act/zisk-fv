@@ -601,6 +601,18 @@ no assumed soundness fields**.
       ZiskFv/AirsClean/FullEnsemble/Balance.lean`, targeted `lake build
       ZiskFv.AirsClean.FullEnsemble.Balance`, and no-`sorryAx` scans of the
       new constructors.
+      Partial: the selected trace split now drives bridge/timeline
+      construction from the same package. The constructors
+      `fullWitnessMemReplayBridge_of_memTable_fixedL1_traceSplit_airFacts`
+      and `fullWitnessMemoryTimelineEvidence_of_memTable_airFacts` derive
+      active-row nonemptiness from the accepted-row split and package
+      `FullWitnessMemoryTimelineEvidence` directly from a concrete Mem table
+      plus `MemTableGeneratedAirFacts`. The only remaining non-residual input
+      is still construction of that generated/range package itself. Verified
+      with clean LSP diagnostics, `lake env lean
+      ZiskFv/AirsClean/FullEnsemble/Balance.lean`, targeted `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, and no-`sorryAx` scans of the
+      new constructors.
       Current sub-gap: derive or expose `MemTableGeneratedAirFacts` for the
       witness-selected Mem table from concrete extraction/Clean witness data.
 

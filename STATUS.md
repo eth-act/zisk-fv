@@ -3,19 +3,17 @@ Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 Current focus: Phase B/C bridge closure. `LoadPromises.mem_read` is gone, and
 the global load boundary now asks for `FullWitnessMemoryTimelineEvidence`
 instead of bare `MemoryTimelineEvidence`.
-
 Blocking: connect the local Mem-table theorem to concrete full-witness facts:
 generated rows plus row/segment range facts.
 `FullWitnessMemReplayBridge` packages them for a concrete Mem table, while
 `FullWitnessMemoryTimelineEvidence` is the global source object and coerces to
 the existing load-proof timeline API.
 Current sub-gap: supply `MemTableGeneratedAirFacts` for the witness-selected Mem
-table; table projection, row count, fixed-column shape, active-row equality, and
-nonempty evidence now have constructors.
+table; table projection, row count, fixed-column shape, active-row equality,
+trace-split nonempty evidence, and timeline packaging now have constructors.
 Audit result: existing Lean has selected-load MemClean row bridges, but no
 source constructing whole-table `FullWitnessMemReplayBridge` fields from an
 `EnsembleWitness`.
-
 Latest proof surface:
 - Phase C boundary swap is done: the residual Sail timeline is visible once,
   load wrappers consume `MemoryTimelineEvidence`, and `OpEnvelope` now requires
@@ -33,16 +31,18 @@ Latest proof surface:
   and `FullWitnessMemoryTimelineEvidence`; accepted replay is derived from the
   full-witness bridge, while split, initial agreement, and state-at-prefix remain
   residual timeline inputs.
-- Current constructor slices add `memOfTable`, fixed-`SEGMENT_L1`, active-row
-  nonempty, and `MemTableGeneratedAirFacts` constructors, so the remaining
-  extractor-facing source is one generated/range package.
+- Current constructor slices add `memOfTable`, fixed-`SEGMENT_L1`,
+  `MemTableGeneratedAirFacts`, trace-split bridge construction, and direct
+  `FullWitnessMemoryTimelineEvidence` packaging from the generated/range
+  package.
 
 Verification: recent segment-range/full-witness-bridge slices pass target
 builds and no-`sorryAx` scans (only existing Clean completeness axioms).
 Full `nix run .#test` last passed for `98202ebc`. Current slices pass LSP/file
 checks, `lake build ZiskFv.Compliance`, both trust gates, and the targeted
 Balance build; the new AIR-facts constructor slice passes `lake env lean`,
-targeted Balance build, and no-`sorryAx` scans.
+targeted Balance build, and no-`sorryAx` scans; the trace-split timeline
+constructor slice passes the same targeted checks.
 
 Next step: derive or expose `MemTableGeneratedAirFacts` from concrete
 extraction/Clean witness data.
