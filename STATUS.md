@@ -18,21 +18,26 @@ Latest proof surface:
   order, write/read carry, read-preserving rows, replay append lemmas, row/table
   fold composition, zero preload, generated row specs, and the named remaining
   obligation `ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`.
-- Latest committed slice lifts disjoint preservation to
-  `replayMemoryAfterBusRow` and `replayMemoryAfterBusRows` prefixes when all
-  prefix rows are byte-disjoint.
-- Current uncommitted slice adds the `mem.pil:109` address-column range fact,
-  the no-wrap theorem for `addr * 8`, and Balance projections that unequal Mem
-  addresses give byte-disjoint replay entries.
+- Latest committed slice (`7db237da`) adds the `mem.pil:109` address-column
+  range fact, the no-wrap theorem for `addr * 8`, and Balance projections that
+  unequal Mem addresses give byte-disjoint replay entries.
+- Current uncommitted slice adds replay-core zero-preload fold lemmas and the
+  table-shaped address-change read lemma:
+  `readEventReplayAgreement_after_zeroMemoryOfRows_memTableGeneratedRowsBridge`.
 
-Verification for current slice: Lean LSP diagnostics are clean for
+Verification for latest slice: Lean LSP diagnostics are clean for
 `ZiskFv.Airs.Mem` and `ZiskFv.AirsClean.FullEnsemble.Balance`; target builds
 for both modules pass, and both the LSP build hook and regular `lake build`
 ran full successful Lake builds. Both trust gates and `nix run .#test` pass.
+Current slice verification: Lean LSP diagnostics are clean for
+`ZiskFv.ZiskCircuit.MemTrace` and
+`ZiskFv.AirsClean.FullEnsemble.Balance`; target builds for both pass, and the
+LSP build hook and regular `lake build` both ran full successful Lake builds.
+Both trust gates and `nix run .#test` pass.
 
-Next step: commit the address-range/disjointness slice, then use committed
-replay-prefix preservation (`d27de7b5`) to prove the zero-preloaded
-specialization of
+Next step: prove the prior-prefix disjointness fact needed to lift the
+zero-preload table lemma through `replayMemoryAfterBusRows` and close the
+zero-preloaded specialization of
 `ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`.
 
 Context: Phase A is committed at `0c222595`. The old

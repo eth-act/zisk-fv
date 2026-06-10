@@ -1494,6 +1494,26 @@ theorem activeMemReplayEntriesOfRow_eq_primary_dual_of_spec_of_sel_dual
     (ZiskFv.AirsClean.Mem.sel_of_sel_dual_one_of_spec row h_spec h_sel_dual)
     h_sel_dual
 
+/-- Any active read/write replay entry from a Mem row is either that row's
+    primary polarity-preserving entry or its pinned dual-read entry. -/
+theorem activeMemReplayEntriesOfRow_mem_eq_primary_or_dual
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry : entry ∈ activeMemReplayEntriesOfRow row) :
+    entry = memPrimaryReplayEntryOfRow row
+      ∨ entry = memDualReadReplayEntryOfRow row := by
+  unfold activeMemReplayEntriesOfRow at h_entry
+  by_cases h_sel : row.sel = 1
+  · by_cases h_sel_dual : row.sel_dual = 1
+    · simp [h_sel, h_sel_dual] at h_entry
+      exact h_entry
+    · simp [h_sel, h_sel_dual] at h_entry
+      exact Or.inl h_entry
+  · by_cases h_sel_dual : row.sel_dual = 1
+    · simp [h_sel, h_sel_dual] at h_entry
+      exact Or.inr h_entry
+    · simp [h_sel, h_sel_dual] at h_entry
+
 /-- A selected primary+dual row is chronologically ordered when the primary
     timestamp is no later than the pinned dual-read timestamp. -/
 theorem activeMemReplayEntriesOfRow_chronological_of_sel_of_sel_dual_of_step_le
@@ -1795,6 +1815,76 @@ structure MemTableGeneratedRangeFacts
     ∀ idx : Fin table.table.length,
       mem.sel_dual idx.val = 1 →
         ZiskFv.Airs.Mem.dual_step_delta_in_range mem idx.val
+
+/-- Any active replay entry from a generated Mem table row is either at the
+    same byte pointer as the selected primary row or byte-disjoint from it.
+
+    This packages the `mem.pil:109` address range (`addrColumns`) with the
+    provider pointer conversion `addr * 8`. -/
+theorem activeMemReplayEntry_same_ptr_or_byteDisjoint_of_rowAt
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (selectedIdx otherIdx : Fin table.table.length)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry :
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val)) :
+    entry.ptr =
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val)).ptr
+      ∨ ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val))
+        entry := by
+  rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_entry with
+    h_entry_primary | h_entry_dual
+  · by_cases h_addr :
+      (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr =
+        (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val).addr
+    · left
+      have h_addr_mem : mem.addr otherIdx.val = mem.addr selectedIdx.val := by
+        simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr
+      simp [h_entry_primary, memPrimaryReplayEntryOfRow,
+        ZiskFv.AirsClean.Mem.memBusMessage, h_addr_mem]
+    · right
+      have h_selected_range :
+          (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val).addr.val < 2 ^ 29 := by
+        simpa [ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns selectedIdx
+      have h_other_range :
+          (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr.val < 2 ^ 29 := by
+        simpa [ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns otherIdx
+      have h_addr_ne :
+          (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val).addr ≠
+            (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr := by
+        intro h_eq
+        exact h_addr h_eq.symm
+      simpa [h_entry_primary] using
+        memoryBusEntryByteDisjoint_primary_primary_of_addr_ne
+          h_selected_range h_other_range h_addr_ne
+  · by_cases h_addr :
+      (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr =
+        (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val).addr
+    · left
+      have h_addr_mem : mem.addr otherIdx.val = mem.addr selectedIdx.val := by
+        simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr
+      simp [h_entry_dual, memDualReadReplayEntryOfRow,
+        ZiskFv.AirsClean.Mem.memBusDualMessage, h_addr_mem]
+    · right
+      have h_selected_range :
+          (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val).addr.val < 2 ^ 29 := by
+        simpa [ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns selectedIdx
+      have h_other_range :
+          (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr.val < 2 ^ 29 := by
+        simpa [ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns otherIdx
+      have h_addr_ne :
+          (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val).addr ≠
+            (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr := by
+        intro h_eq
+        exact h_addr h_eq.symm
+      simpa [h_entry_dual] using
+        memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
+          h_selected_range h_other_range h_addr_ne
 
 /-- The indexed table bridge projects the generated row range required by
     the Mem trace spec. -/
@@ -2273,6 +2363,80 @@ theorem readEventReplayAgreement_after_zeroMemoryOfEntry_memTableGeneratedRowsBr
       initialMemory h_spec
       (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_change)
       (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_read)
+
+/-- A selected address-change primary read is justified by the finite
+    zero-preload memory built from all active Mem table replay rows.
+
+    This is the table-shaped zero-preload fact. It does not yet replay the
+    selected row's prior prefix; that follow-on step additionally needs the
+    prior-prefix rows to be byte-disjoint from the selected read. -/
+theorem readEventReplayAgreement_after_zeroMemoryOfRows_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (idx : Fin table.table.length)
+    (h_sel : mem.sel idx.val = 1)
+    (h_addr_change : mem.addr_changes idx.val = 1)
+    (h_read : mem.wr idx.val = 0) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+        (activeMemReplayRowsOfTable table))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val))) := by
+  let readEntry :=
+    memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem idx.val)
+  have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
+  have h_value_0_row :=
+    ZiskFv.AirsClean.Mem.read_addr_change_value_0_zero_of_spec
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val) h_spec
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_change)
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_read)
+  have h_value_1_row :=
+    ZiskFv.AirsClean.Mem.read_addr_change_value_1_zero_of_spec
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val) h_spec
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_change)
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_read)
+  have h_value_0 : readEntry.value_0 = 0 := by
+    simpa [readEntry, memPrimaryReplayEntryOfRow,
+      ZiskFv.AirsClean.Mem.memBusMessage] using h_value_0_row
+  have h_value_1 : readEntry.value_1 = 0 := by
+    simpa [readEntry, memPrimaryReplayEntryOfRow,
+      ZiskFv.AirsClean.Mem.memBusMessage] using h_value_1_row
+  have h_row_mem : table.table.get idx ∈ table.table := by
+    exact List.mem_iff_get.mpr ⟨idx, rfl⟩
+  have h_readEntry_mem : readEntry ∈ activeMemReplayRowsOfTable table := by
+    unfold activeMemReplayRowsOfTable
+    exact List.mem_flatMap.mpr
+      ⟨table.table.get idx, h_row_mem, by
+        rw [h_bridge.rowAt_eq idx]
+        simp [activeMemReplayEntriesOfRow, readEntry,
+          ZiskFv.AirsClean.Mem.rowAt, h_sel]⟩
+  have h_same_or_disjoint :
+      ∀ entry, entry ∈ activeMemReplayRowsOfTable table →
+        entry.ptr = readEntry.ptr
+          ∨ ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint readEntry entry := by
+    intro entry h_entry
+    unfold activeMemReplayRowsOfTable at h_entry
+    rcases List.mem_flatMap.mp h_entry with
+      ⟨providerRow, h_provider_mem, h_entry_row⟩
+    rcases List.mem_iff_get.mp h_provider_mem with ⟨otherIdx, h_get⟩
+    have h_entry_rowAt :
+        entry ∈ activeMemReplayEntriesOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val) := by
+      rw [← h_get] at h_entry_row
+      rw [h_bridge.rowAt_eq otherIdx] at h_entry_row
+      exact h_entry_row
+    simpa [readEntry] using
+      activeMemReplayEntry_same_ptr_or_byteDisjoint_of_rowAt
+        h_ranges idx otherIdx h_entry_rowAt
+  simpa [readEntry] using
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_zeroMemoryOfRows_mem
+      h_value_0 h_value_1 h_readEntry_mem h_same_or_disjoint
 
 /-- A generated Mem row's active replay chunk is recursively read/write-sound
     once any selected primary read has already been justified against the

@@ -428,6 +428,123 @@ theorem readEventReplayAgreement_of_zeroMemoryOfEntry
   · simp [h_value_0]
   · simp [h_value_1]
 
+/-- Zero-preloading a same-pointer row establishes a zero-valued read
+agreement; zero-preloading a byte-disjoint row preserves an existing read
+agreement. -/
+theorem readEventReplayAgreement_of_zeroMemoryOfEntry_same_or_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {row readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement mem (eventOfEntry readEntry))
+    (h_value_0 : readEntry.value_0 = 0)
+    (h_value_1 : readEntry.value_1 = 0)
+    (h_same_or_disjoint :
+      row.ptr = readEntry.ptr ∨ MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (zeroMemoryOfEntry mem row)
+      (eventOfEntry readEntry) := by
+  rcases h_same_or_disjoint with h_same | h_disjoint
+  · unfold zeroMemoryOfEntry
+    apply readEventReplayAgreement_of_writeMemoryOfEntry_same
+    · simp [h_same]
+    · simp [h_value_0]
+    · simp [h_value_1]
+  · unfold zeroMemoryOfEntry
+    exact readEventReplayAgreement_of_writeMemoryOfEntry_disjoint
+      h_read (by simpa [zeroedMemoryEntryOfEntry] using h_disjoint)
+
+/-- Folding zero-preloads over rows that are either same-pointer or byte-
+disjoint from a zero-valued read preserves the read agreement. -/
+theorem readEventReplayAgreement_of_foldl_zeroMemoryOfEntry_same_or_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {rows : List (MemoryBusEntry FGL)}
+    {readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement mem (eventOfEntry readEntry))
+    (h_value_0 : readEntry.value_0 = 0)
+    (h_value_1 : readEntry.value_1 = 0)
+    (h_same_or_disjoint :
+      ∀ row, row ∈ rows →
+        row.ptr = readEntry.ptr ∨ MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (rows.foldl zeroMemoryOfEntry mem)
+      (eventOfEntry readEntry) := by
+  induction rows generalizing mem with
+  | nil =>
+      simpa using h_read
+  | cons row rest ih =>
+      have h_head :
+          ReadEventReplayAgreement (zeroMemoryOfEntry mem row)
+            (eventOfEntry readEntry) :=
+        readEventReplayAgreement_of_zeroMemoryOfEntry_same_or_disjoint
+          h_read h_value_0 h_value_1 (h_same_or_disjoint row (by simp))
+      have h_tail :
+          ∀ restRow, restRow ∈ rest →
+            restRow.ptr = readEntry.ptr
+              ∨ MemoryBusEntryByteDisjoint readEntry restRow := by
+        intro restRow h_rest
+        exact h_same_or_disjoint restRow (by simp [h_rest])
+      simpa using ih h_head h_tail
+
+/-- If a zero-preload fold contains the selected read entry, and every row in
+the fold is either at the same pointer or byte-disjoint from it, then the final
+preloaded memory satisfies the zero-valued read. -/
+theorem readEventReplayAgreement_of_foldl_zeroMemoryOfEntry_mem
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    {rows : List (MemoryBusEntry FGL)}
+    {readEntry : MemoryBusEntry FGL}
+    (h_value_0 : readEntry.value_0 = 0)
+    (h_value_1 : readEntry.value_1 = 0)
+    (h_mem : readEntry ∈ rows)
+    (h_same_or_disjoint :
+      ∀ row, row ∈ rows →
+        row.ptr = readEntry.ptr ∨ MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (rows.foldl zeroMemoryOfEntry mem)
+      (eventOfEntry readEntry) := by
+  induction rows generalizing mem with
+  | nil =>
+      simp at h_mem
+  | cons row rest ih =>
+      simp only [List.mem_cons] at h_mem
+      rcases h_mem with h_eq | h_mem_tail
+      · subst h_eq
+        have h_start :
+            ReadEventReplayAgreement (zeroMemoryOfEntry mem readEntry)
+              (eventOfEntry readEntry) :=
+          readEventReplayAgreement_of_zeroMemoryOfEntry mem h_value_0 h_value_1
+        have h_tail :
+            ∀ restRow, restRow ∈ rest →
+              restRow.ptr = readEntry.ptr
+                ∨ MemoryBusEntryByteDisjoint readEntry restRow := by
+          intro restRow h_rest
+          exact h_same_or_disjoint restRow (by simp [h_rest])
+        simpa using
+          readEventReplayAgreement_of_foldl_zeroMemoryOfEntry_same_or_disjoint
+            h_start h_value_0 h_value_1 h_tail
+      · have h_tail :
+            ∀ restRow, restRow ∈ rest →
+              restRow.ptr = readEntry.ptr
+                ∨ MemoryBusEntryByteDisjoint readEntry restRow := by
+          intro restRow h_rest
+          exact h_same_or_disjoint restRow (by simp [h_rest])
+        simpa using
+          ih (zeroMemoryOfEntry mem row) h_mem_tail h_tail
+
+/-- Finite zero-preload memory for a row list satisfies any contained
+zero-valued read whose other preloads are same-pointer or byte-disjoint. -/
+theorem readEventReplayAgreement_of_zeroMemoryOfRows_mem
+    {rows : List (MemoryBusEntry FGL)}
+    {readEntry : MemoryBusEntry FGL}
+    (h_value_0 : readEntry.value_0 = 0)
+    (h_value_1 : readEntry.value_1 = 0)
+    (h_mem : readEntry ∈ rows)
+    (h_same_or_disjoint :
+      ∀ row, row ∈ rows →
+        row.ptr = readEntry.ptr ∨ MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (zeroMemoryOfRows rows)
+      (eventOfEntry readEntry) := by
+  exact readEventReplayAgreement_of_foldl_zeroMemoryOfEntry_mem
+    ({} : Std.ExtHashMap Nat (BitVec 8))
+    h_value_0 h_value_1 h_mem h_same_or_disjoint
+
 /-- Read replay agreement transports across memory-bus entries with the same
 pointer and value chunks. -/
 theorem readEventReplayAgreement_of_entry_same

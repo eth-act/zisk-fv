@@ -293,11 +293,24 @@ no assumed soundness fields**.
       `field_addr_times_eight_val_eq_of_lt` for the provider pointer
       conversion. `Balance.lean` extends `MemTableGeneratedRangeFacts` with
       `addrColumns` and proves that unequal internal Mem addresses give
-      byte-disjoint primary/primary and primary/dual replay entries. Verified
-      so far with clean Lean LSP diagnostics for `ZiskFv.Airs.Mem` and
+      byte-disjoint primary/primary and primary/dual replay entries. Committed
+      as `7db237da`. Verified with clean Lean LSP diagnostics for `ZiskFv.Airs.Mem` and
       `ZiskFv.AirsClean.FullEnsemble.Balance`, target builds for both modules,
       a successful full Lake build through the LSP build hook, and a regular
       full `lake build`; both trust gates and `nix run .#test` pass.
+      Partial: replay-core zero-preload fold preservation is now factored.
+      `readEventReplayAgreement_of_zeroMemoryOfRows_mem` proves that finite
+      zero-preload memory satisfies a contained zero-valued read entry when
+      every preload row is either same-pointer or byte-disjoint from it. This
+      isolates list/fold bookkeeping before the prior-prefix proof.
+      `Balance.lean` adds
+      `readEventReplayAgreement_after_zeroMemoryOfRows_memTableGeneratedRowsBridge`,
+      proving the table-shaped address-change selected-primary-read fact from
+      `MemTableGeneratedRowsBridge` and `MemTableGeneratedRangeFacts`. Verified
+      so far with clean Lean LSP diagnostics for `ZiskFv.ZiskCircuit.MemTrace`
+      and `ZiskFv.AirsClean.FullEnsemble.Balance`, target builds for both, and
+      successful full Lake builds through the LSP build hook and regular
+      `lake build`; both trust gates and `nix run .#test` pass.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
