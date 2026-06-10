@@ -530,11 +530,18 @@ no assumed soundness fields**.
       fixed-column declaration `mem.pil:86` (`SEGMENT_L1 = [1,0...]`) and
       keeps the fixed-column constructibility obligation explicit rather than
       hiding it in replay evidence.
-      Current sub-gap: the local accepted-replay constructor now chooses the
-      first-segment or continuation theorem from the generated segment selector.
-      The remaining integration work is proving/supplying the concrete
-      full-witness generated-row, row-range, segment-range, fixed-column,
-      nonempty, and active-row equality facts.
+      Partial: `FullWitnessMemReplayBridge` now packages the concrete
+      full-witness Mem table, active-row equality, generated-row bridge,
+      row-range facts, segment-range facts, fixed-column facts, and nonempty
+      evidence; `acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge`
+      feeds that package into the first/continuation selector constructor.
+      This keeps the remaining extractor-facing facts explicit rather than
+      hiding them as replay soundness. Verified with clean LSP diagnostics for
+      the new spans, `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and
+      axiom scans with no `sorryAx` in the new declarations.
+      Current sub-gap: prove/supply the fields of `FullWitnessMemReplayBridge`
+      from concrete extraction/Clean witness data, then connect the resulting
+      accepted replay evidence to the timeline path.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

@@ -2020,6 +2020,43 @@ def FullWitnessMemTableGeneratedRowsBridge
   ∃ table ∈ witness.allTables,
     MemTableGeneratedRowsBridge table mem segment permutation rowCount
 
+/-- Full-ensemble witness obligation for constructing circuit-side accepted
+    memory replay evidence from the concrete mutable Mem table.
+
+    This is intentionally a compact extractor-facing bridge rather than a
+    replay-soundness field. It exposes every remaining concrete fact needed by
+    `acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts`:
+    the table selected from the full witness, the active replay row projection,
+    generated Mem row constraints, row/segment range checks, fixed-column shape,
+    and nonempty segment evidence. -/
+structure FullWitnessMemReplayBridge
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Type 2 where
+  table : Table FGL
+  table_mem : table ∈ witness.allTables
+  mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL
+  segment : ZiskFv.Airs.Mem.SegmentColumns FGL
+  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
+  rowCount : ℕ
+  rows_eq : rows = activeMemReplayRowsOfTable table
+  generatedRows : MemTableGeneratedRowsBridge table mem segment permutation rowCount
+  rowRanges : MemTableGeneratedRangeFacts table mem
+  segmentRanges : MemSegmentGeneratedRangeFacts segment
+  fixedColumns : MemTableGeneratedFixedColumnFacts table segment
+  nonempty : 0 < table.table.length
+
+/-- The compact full-witness replay bridge includes the older generated-row
+    bridge obligation. -/
+theorem fullWitnessMemTableGeneratedRowsBridge_of_fullWitnessMemReplayBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows) :
+    FullWitnessMemTableGeneratedRowsBridge witness
+      h_bridge.mem h_bridge.segment h_bridge.permutation h_bridge.rowCount :=
+  ⟨h_bridge.table, h_bridge.table_mem, h_bridge.generatedRows⟩
+
 /-- The full-witness bridge projects the generated row range required by the
     Mem trace spec. -/
 theorem generatedMemRows_of_fullWitnessMemTableGeneratedRowsBridge
@@ -5031,6 +5068,28 @@ def acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFact
     h_rows h_bridge h_ranges h_segment_ranges h_fixed h_nonempty
     (is_first_segment_eq_one_or_zero_of_memTableGeneratedRowsBridge
       h_bridge h_nonempty)
+
+/-- Construct accepted replay evidence from the compact full-witness Mem replay
+    bridge.
+
+    The resulting `AcceptedMemoryReplayEvidence.prefixReadSound` is still
+    derived from generated Mem AIR facts; the bridge merely collects the
+    concrete full-witness/extractor facts that identify those AIR facts with
+    the selected table. -/
+@[reducible]
+def acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows) :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryReplayEvidence :=
+  acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts
+    h_bridge.rows_eq
+    h_bridge.generatedRows
+    h_bridge.rowRanges
+    h_bridge.segmentRanges
+    h_bridge.fixedColumns
+    h_bridge.nonempty
 
 /-- The projected read-replay rows of a concrete Mem table are embedded in
     the accepted chronological memory-bus row trace. Proving this embedding

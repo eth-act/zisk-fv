@@ -6,10 +6,10 @@ Current focus: Phase B Mem-table replay closure. `LoadPromises.mem_read` is gone
 Blocking: connect the local Mem-table theorem to concrete full-witness facts.
 `MemTableGeneratedRowsBridge`, `MemTableGeneratedRangeFacts`,
 `MemSegmentGeneratedRangeFacts`, `MemTableGeneratedFixedColumnFacts`, and
-nonempty table evidence expose the local inputs; the full-witness bridge still
-has to provide them.
-Current sub-gap: integrate the first/continuation segment table theorem into the
-concrete full-witness path and expose the needed segment selector/range facts.
+nonempty table evidence expose the local inputs; `FullWitnessMemReplayBridge`
+now packages them for a concrete full-witness Mem table.
+Current sub-gap: prove/supply the fields of that full-witness replay bridge
+from extraction/Clean witness data, then connect it to the timeline path.
 
 Latest proof surface:
 - Phase C boundary swap is done: the residual Sail timeline is visible once,
@@ -25,15 +25,18 @@ Latest proof surface:
   `mem.pil:265/267/268` distance-base chunks plus row-0 Mem facts, adds
   `MemSegmentGeneratedRangeFacts`, and adds a first/continuation selector
   constructor for `AcceptedMemoryReplayEvidence`.
+- Latest local bridge slice adds `FullWitnessMemReplayBridge`, keeps the older
+  generated-row bridge projectable, and constructs `AcceptedMemoryReplayEvidence`
+  from the bundled full-witness facts.
 
 Verification: `lake build ZiskFv.Airs.Mem` and
-`lake build ZiskFv.AirsClean.FullEnsemble.Balance` pass for this segment-range
-slice. New range/selector/accepted-replay declarations have no `sorryAx`;
-Balance LSP is stale on new AIR imports, but compiler targets and isolated
-imports see them. Full `nix run .#test` last passed for `98202ebc`.
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance` pass for the recent
+segment-range/full-witness-bridge slices. New accepted-replay declarations have
+no `sorryAx` (only existing Clean component completeness axioms). Full
+`nix run .#test` last passed for `98202ebc`.
 
-Next step: prove/supply the concrete full-witness bridge, range, fixed-column,
-segment-range, nonempty, and active-row equality facts, then feed the combined
-accepted-replay constructor into the timeline path.
+Next step: derive or supply `FullWitnessMemReplayBridge` fields from the
+concrete witness/extractor, then feed its accepted-replay constructor into the
+timeline path.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.
