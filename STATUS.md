@@ -18,6 +18,9 @@ Current slice: generated Mem source facts now have source-level sidecar target.
 inequalities to raw split constraints/ranges, then packages them as
 `ExtractedSidecarFacts`.
 
+Digression: main `AGENTS.md` commit `f8072326` relaxes build/test cadence;
+this worktree has no local `AGENTS.md`, so apply that cadence operationally.
+
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
   bridge, row/segment ranges, fixed columns, active rows, and nonempty evidence.
@@ -25,13 +28,8 @@ Current proof surface:
   proves the stored sidecars match the generated sidecar packager.
 - `FullWitnessMemoryTimelineEvidence` carries full witness +
   `FullWitnessMemAirSourceRawSidecars`; source/bridge/replay are accessors.
-- `tools/pil-extract mem-air-facts` reports generated constraints, range hints,
-  ProverData keys, generated timeline constructor, and witness contract.
-- `tools/pil-extract mem-generated-artifact` emits checked witness/raw assembly
-  helpers and the timeline constructor wrapper.
-- `tools/pil-extract mem-generated-constraint-bridge` emits the checked
-  ProverData circuit instance, extracted constraint/range surfaces,
-  `ExtractedSidecarFacts`, and raw/witness/timeline builders.
+- `pil-extract` reports the Mem contract and emits generated artifact/bridge
+  wrappers through `ExtractedSidecarFacts` to raw/witness/timeline builders.
 
 Latest verification:
 - Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests).
@@ -41,10 +39,10 @@ Latest verification:
   `Circuit.olean`, compile `Mem.lean` and `MemGeneratedArtifact.lean` to
   oleans, then compile `MemGeneratedConstraintBridge.lean` with
   `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`.
-- Last broad bridge gate: `lake build ZiskFv.Compliance`,
-  `trust/scripts/check-all.sh`, `nix flake check --no-build`, and
-  `git diff --check` at commit `465470dc`.
-- Last full `nix run .#test`: commit `98202ebc`.
+- Post-`be7aed0e` broad checks: `trust/scripts/check-all.sh`,
+  `nix flake check --no-build`, and `git diff --check`.
+- Last Lean compliance gate: `lake build ZiskFv.Compliance` at `465470dc`;
+  last full `nix run .#test`: `98202ebc`.
 
 Next step: prove/populate `ExtractedSidecarFacts` for mutable Mem tables from
 generated sidecar data; Clean component broadening remains a fallback.

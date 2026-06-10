@@ -1085,9 +1085,11 @@ no assumed soundness fields**.
       `Mem.lean`, and `MemGeneratedArtifact.lean` to oleans, then compile the
       bridge with
       `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`.
-      The previous bridge commit also passed `lake build ZiskFv.Compliance`,
+      Post-`be7aed0e` broad checks now pass:
       `trust/scripts/check-all.sh`, `nix flake check --no-build`, and
-      `git diff --check`.
+      `git diff --check`. The latest tracked Lean compliance gate remains
+      `lake build ZiskFv.Compliance` at commit `465470dc`; the latest full
+      `nix run .#test` remains commit `98202ebc`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
