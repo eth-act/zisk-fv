@@ -1810,6 +1810,30 @@ def activeMemReplayRowsOfTable
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
 
+/-- If the active replay projection is nonempty, then the underlying concrete
+    Mem table is nonempty. -/
+theorem table_nonempty_of_activeMemReplayRowsOfTable_nonempty
+    {table : Table FGL}
+    (h_rows : 0 < (activeMemReplayRowsOfTable table).length) :
+    0 < table.table.length := by
+  cases h_table : table.table with
+  | nil =>
+      simp [activeMemReplayRowsOfTable, h_table] at h_rows
+  | cons _ _ =>
+      simp
+
+/-- The selected-entry split used by timeline evidence proves that the active
+    replay projection is nonempty. -/
+theorem activeMemReplayRowsOfTable_nonempty_of_split
+    {table : Table FGL}
+    {priorRows laterRows : List (Interaction.MemoryBusEntry FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_split :
+      activeMemReplayRowsOfTable table = priorRows ++ entry :: laterRows) :
+    0 < (activeMemReplayRowsOfTable table).length := by
+  rw [h_split]
+  simp
+
 /-- Zero fallback for out-of-range projections from a concrete Mem table.
     In-range rows are the only rows consumed by the table bridge below. -/
 @[reducible]
@@ -2263,6 +2287,37 @@ def fullWitnessMemReplayBridge_of_memTable_fixedL1
     h_segmentRanges
     (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 table segment)
     h_nonempty
+
+/-- Variant of `fullWitnessMemReplayBridge_of_memTable_fixedL1` that derives
+    concrete-table nonemptiness from the active replay projection. This is the
+    shape used when a selected-load timeline split is already available. -/
+def fullWitnessMemReplayBridge_of_memTable_fixedL1_activeRows
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {gsum im0 im1 : ℕ → FGL}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_generatedAt :
+      ∀ idx : Fin table.table.length,
+        ZiskFv.Airs.Mem.generated_every_row
+          (segmentWithFixedL1 segment) permutation
+          (memOfTable table gsum im0 im1) idx.val)
+    (h_rowRanges :
+      MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1))
+    (h_segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment))
+    (h_activeRows : 0 < (activeMemReplayRowsOfTable table).length) :
+    FullWitnessMemReplayBridge witness (activeMemReplayRowsOfTable table) :=
+  fullWitnessMemReplayBridge_of_memTable_fixedL1
+    h_table
+    h_component
+    h_generatedAt
+    h_rowRanges
+    h_segmentRanges
+    (table_nonempty_of_activeMemReplayRowsOfTable_nonempty h_activeRows)
 
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/

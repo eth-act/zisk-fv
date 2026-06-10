@@ -583,6 +583,13 @@ no assumed soundness fields**.
       ZiskFv/AirsClean/FullEnsemble/Balance.lean`,
       `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and axiom scans with
       no `sorryAx` in the new fixed-column constructors.
+      Partial: table nonemptiness is now derived from the nonempty active-row
+      replay projection, which in turn follows from the selected-entry split
+      used by timeline evidence. The constructor
+      `fullWitnessMemReplayBridge_of_memTable_fixedL1_activeRows` consumes
+      active-row nonemptiness instead of raw `0 < table.table.length`.
+      Verified so far with LSP diagnostics and `lake env lean
+      ZiskFv/AirsClean/FullEnsemble/Balance.lean`.
       Current sub-gap: derive the remaining generated/range facts for the
       witness-selected Mem table from concrete extraction/Clean witness data.
 

@@ -5,12 +5,13 @@ the global load boundary now asks for `FullWitnessMemoryTimelineEvidence`
 instead of bare `MemoryTimelineEvidence`.
 
 Blocking: connect the local Mem-table theorem to concrete full-witness facts:
-generated rows, row/segment ranges, and nonempty table evidence.
+generated rows plus row/segment range facts.
 `FullWitnessMemReplayBridge` packages them for a concrete Mem table, while
 `FullWitnessMemoryTimelineEvidence` is the global source object and coerces to
 the existing load-proof timeline API.
-Current sub-gap: supply generated/range facts for the witness-selected Mem
-table; table projection, row count, and fixed-column shape now have constructors.
+Current sub-gap: supply generated/range facts for the witness-selected Mem table;
+table projection, row count, fixed-column shape, and nonempty evidence now have
+constructors.
 Audit result: existing Lean has selected-load MemClean row bridges, but no
 source constructing whole-table `FullWitnessMemReplayBridge` fields from an
 `EnsembleWitness`.
@@ -32,11 +33,10 @@ Latest proof surface:
   and `FullWitnessMemoryTimelineEvidence`; accepted replay is derived from the
   full-witness bridge, while split, initial agreement, and state-at-prefix remain
   residual timeline inputs.
-- Current constructor slice adds `memOfTable` and
-  `fullWitnessMemReplayBridge_of_memTable`, so row projection, row count, and
-  accepted active-row equality are no longer external bridge facts.
-- `segmentWithFixedL1` and `fullWitnessMemReplayBridge_of_memTable_fixedL1`
-  remove the fixed `SEGMENT_L1` shape from the caller-facing source.
+- Current constructor slices add `memOfTable`,
+  `fullWitnessMemReplayBridge_of_memTable`, fixed-`SEGMENT_L1` construction,
+  and active-row nonempty -> table nonempty, so those are no longer external
+  bridge facts.
 
 Verification: recent segment-range/full-witness-bridge slices pass target
 builds and no-`sorryAx` scans (only existing Clean completeness axioms).
