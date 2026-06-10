@@ -169,9 +169,10 @@ with `LoadPromises.memory_timeline` before calling the load theorems. The
 so they no longer accept a per-load byte oracle.
 
 `FullWitnessMemoryTimelineEvidence` contains the concrete full-ensemble witness,
-a `FullWitnessMemAirSource` for the witness-selected mutable Mem table, and
-only the residual whole-execution memory-timeline facts. The Mem AIR source
-derives the `FullWitnessMemReplayBridge`, which derives the
+the `FullWitnessMemAirSourceRawFacts` callback for the witness-selected mutable
+Mem table, and only the residual whole-execution memory-timeline facts. A
+derived Mem AIR source accessor selects the `FullWitnessMemReplayBridge`, which
+derives the
 `AcceptedMemoryReplayEvidence` sub-object used by `MemoryTimelineEvidence`,
 including prefix-read soundness for the accepted Mem rows. The residual
 timeline facts state that those rows split around the selected read, the
@@ -184,7 +185,7 @@ Generated/full-ensemble Mem facts target
 `FullWitnessMemAirSourceRawFacts`: raw split generated constraints, row range
 facts, segment range facts, and the stage-2 source columns. Lean packages that
 raw callback into the witness-selected `FullWitnessMemAirSource` via
-`exists_fullWitnessMemAirSource_of_rawFacts`, and
+`fullWitnessMemAirSourceOfRawFacts`, and
 `fullWitnessMemoryTimelineEvidence_of_rawFacts` combines it with only the
 residual Sail timeline fields above.
 

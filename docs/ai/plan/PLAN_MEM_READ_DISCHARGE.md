@@ -808,6 +808,16 @@ no assumed soundness fields**.
       ZiskFv.AirsClean.FullEnsemble.Balance`, `lean_verify` on the raw source
       and timeline constructors, `trust/scripts/check-all.sh`, and
       `git diff --check`.
+      Current slice: `FullWitnessMemoryTimelineEvidence` now stores
+      `FullWitnessMemAirSourceRawFacts` directly instead of a prebuilt
+      `FullWitnessMemAirSource`. The concrete Mem AIR source, replay bridge,
+      and accepted replay object are noncomputable derived accessors from the
+      raw facts, and the table/source constructors that bypassed the raw
+      full-witness callback were removed. Verified with clean LSP diagnostics
+      for `Balance.lean`, `lean_verify` scans of the raw-fact timeline
+      accessors/constructor with no `sorryAx`, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build ZiskFv.Compliance`,
+      `trust/scripts/check-all.sh`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
@@ -832,9 +842,9 @@ bury it in a structure field.
       Initially load arms required `Nonempty (MemoryTimelineEvidence state
       bus.e1)`; the boundary has now been strengthened so load arms require
       `Nonempty (FullWitnessMemoryTimelineEvidence state bus.e1)`, while
-      non-load arms still require `True`. The full-witness source derives the
-      accepted replay subobject from `FullWitnessMemReplayBridge` and coerces to
-      the existing `MemoryTimelineEvidence` load-proof API. Verified with
+      non-load arms still require `True`. The full-witness raw Mem facts derive
+      the accepted replay subobject from `FullWitnessMemReplayBridge` and coerce
+      to the existing `MemoryTimelineEvidence` load-proof API. Verified with
       `lake env lean` on `Balance.lean`, `OpEnvelope.lean`, and the
       LDSD/Misc/Remaining dispatch files, plus
       `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`, and

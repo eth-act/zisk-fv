@@ -11,23 +11,14 @@ Current proof surface:
   bridge, row/segment ranges, fixed-column facts, active-row equality, and
   nonempty evidence.
 - `FullWitnessMemoryTimelineEvidence` is the Compliance-facing load boundary.
-  It now carries the concrete full witness and `FullWitnessMemAirSource`;
-  `replayBridge` and `acceptedReplay` are derived accessors, not fields.
-- Public load boundaries no longer mention `fullRv64imEnsemble` or the legacy
-  `mem.addr r_mem = bus.e1.ptr` pin.
+  It now carries the concrete full witness and `FullWitnessMemAirSourceRawFacts`;
+  `memSource`, `replayBridge`, and `acceptedReplay` are derived accessors, not
+  fields.
 - `tools/pil-extract mem-air-facts` reports generated constraint groups,
-  range-check hints, witness/fixed columns, `mem.pil` range/bit lines, and
-  Lean range-fact coverage for every current Mem range fact field.
-- `MemTableGeneratedAirSource` is the typed Lean target; replay/timeline
-  constructors consume it, and `memTableGeneratedAirSource_of_witnessFacts`
-  builds it from concrete Clean assertion and lookup witnesses.
-- `MemTableGeneratedConstraintFacts` and
-  `MemTableGeneratedConstraintAssertionFacts` split generated constraints into
-  `segment_every_row` (`0..=23`) and `permutation_every_row` (`24..=33`), with
-  Clean assertion witnesses projecting to those raw facts.
-- `MemTableGeneratedRangeLookupFacts` and
-  `MemSegmentGeneratedRangeLookupFacts` turn concrete Clean lookup witnesses
-  into the raw row/segment range facts.
+  range-check hints, witness/fixed columns, `mem.pil` range/bit lines, and Lean
+  range-fact coverage.
+- `MemTableGeneratedAirSource` and `memTableGeneratedAirSource_of_witnessFacts`
+  remain the table-level typed source path from Clean assertion/lookup witnesses.
 - `FullWitnessMemAirSourceFacts` names the remaining generated/full-ensemble
   callback: choose source columns and concrete assertion/range lookup witnesses
   for any witness Mem table; table membership and component identity come from
@@ -36,14 +27,12 @@ Current proof surface:
   split constraints and range propositions are proved directly; Lean packages
   it into `FullWitnessMemAirSourceFacts` and can select a concrete
   `FullWitnessMemAirSource` from it.
-- `fullWitnessMemoryTimelineEvidence_of_rawFacts` builds the full-witness
-  memory timeline boundary from raw Mem source facts plus only the residual
-  Sail timeline fields.
 
 Latest verification:
 - Lean LSP diagnostics on `Balance`: clean
-- `lean_verify` on raw Mem source/timeline constructors: no `sorryAx`
+- `lean_verify` on raw-fact timeline accessors/constructor: no `sorryAx`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
+- `lake build ZiskFv.Compliance`
 - `trust/scripts/check-all.sh`
 
 Last full `nix run .#test`: commit `98202ebc`.
