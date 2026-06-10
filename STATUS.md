@@ -13,10 +13,10 @@ emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
 table-global segment/permutation constants, challenges, ranges, and generated
 assertions are outside the component.
 
-Current slice: generated Mem constraints now assemble into raw ProverData
-constraint facts. `MemGeneratedConstraintBridge.lean` maps extracted
-`constraint_0..33` to `RawConstraintFacts` and exposes witness-level builders
-from extracted constraints plus raw row/segment range facts.
+Current slice: generated Mem source facts now have one raw target.
+`MemGeneratedConstraintBridge.lean` maps extracted `constraint_0..33` to
+`RawConstraintFacts`, wraps them with raw ranges as `ExtractedRawSourceFacts`,
+and exposes raw/witness builders for that target.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -30,8 +30,8 @@ Current proof surface:
 - `tools/pil-extract mem-generated-artifact` emits checked witness/raw assembly
   helpers and the timeline constructor wrapper.
 - `tools/pil-extract mem-generated-constraint-bridge` emits the checked
-  ProverData circuit instance, extracted constraint surface, raw-constraint
-  adapter, and witness builders from extracted constraints plus raw ranges.
+  ProverData circuit instance, extracted constraint surface, `ExtractedRawSourceFacts`,
+  and raw/witness builders.
 
 Latest verification:
 - Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests).
@@ -46,5 +46,5 @@ Latest verification:
   `git diff --check` at commit `465470dc`.
 - Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: generate/prove raw row/segment range facts, then feed the checked
-witness builder. Broadening Clean table/component modeling is only the fallback.
+Next step: generate/prove the fields of `ExtractedRawSourceFacts`; raw row/segment
+range facts are the remaining non-constraint input.

@@ -1952,6 +1952,27 @@ def rawConstraintFacts_of_extractedConstraintFacts
         h.constraint_28 idx, h.constraint_29 idx, h.constraint_30 idx, h.constraint_31 idx,
         h.constraint_32 idx, h.constraint_33 idx⟩
 
+/-- Per-table generated raw source facts: extracted Mem constraints plus the
+    explicit raw range facts that are outside `Extraction.Mem.constraint_0..33`. -/
+structure ExtractedRawSourceFacts
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (table : Table FGL) : Type where
+  constraints : ExtractedConstraintFacts witness table
+  rowRanges : RawRowRangeFacts witness table
+  segmentRanges : RawSegmentRangeFacts witness
+
+@[reducible]
+def rawSourceFacts_of_extractedRawSourceFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    {table : Table FGL}
+    (h : ExtractedRawSourceFacts witness table) :
+    RawSourceFacts witness table where
+  constraints := rawConstraintFacts_of_extractedConstraintFacts h.constraints
+  rowRanges := h.rowRanges
+  segmentRanges := h.segmentRanges
+
 @[reducible]
 def buildRawFactsFromExtractedConstraintsAndRawRanges
     {length : ℕ} {program : Program length}
@@ -2005,6 +2026,32 @@ def buildWitnessFactsFromExtractedConstraintsAndRawRanges
       constraints
       rowRanges
       segmentRanges)
+
+@[reducible]
+def buildRawFactsFromExtractedRawSourceFacts
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (facts :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            ExtractedRawSourceFacts witness table) :
+    RawFacts witness := by
+  intro table h_table h_component
+  exact rawSourceFacts_of_extractedRawSourceFacts (facts table h_table h_component)
+
+@[reducible]
+def buildWitnessFactsFromExtractedRawSourceFacts
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (facts :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            ExtractedRawSourceFacts witness table) :
+    WitnessFacts witness :=
+  buildWitnessFactsFromRawFacts
+    (buildRawFactsFromExtractedRawSourceFacts witness facts)
 
 end Extraction.MemGeneratedConstraintBridge
 "#
@@ -2156,11 +2203,14 @@ fn render_mem_air_facts_report(
         out,
         "Generated modules that prove raw `segment_every_row`, \
          `permutation_every_row`, and range propositions directly may instead \
-         expose `FullWitnessMemAirSourceProverDataFacts witness`, assemble it \
-         with `Extraction.MemGeneratedArtifact.buildRawFacts`, or feed the raw \
-         per-table families through \
-         `Extraction.MemGeneratedArtifact.buildWitnessFactsFromRawParts`. The \
-         checked Lean adapter is \
+         target \
+         `Extraction.MemGeneratedConstraintBridge.ExtractedRawSourceFacts` for \
+         each mutable Mem table. The generated bridge then checks the map from \
+         extracted `constraint_0..33` facts to raw split constraints and feeds \
+         the resulting raw source facts through \
+         `buildWitnessFactsFromExtractedRawSourceFacts`. Lower-level modules \
+         may still expose `FullWitnessMemAirSourceProverDataFacts witness` and \
+         use the checked adapter \
          `fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`."
     )
     .unwrap();
@@ -3668,9 +3718,11 @@ mod tests {
         );
         assert!(
             out.contains("`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`")
-                && out.contains("`Extraction.MemGeneratedArtifact.buildRawFacts`")
                 && out.contains(
-                    "`Extraction.MemGeneratedArtifact.buildWitnessFactsFromRawParts`"
+                    "`Extraction.MemGeneratedConstraintBridge.ExtractedRawSourceFacts`"
+                )
+                && out.contains(
+                    "`buildWitnessFactsFromExtractedRawSourceFacts`"
                 ),
             "report should point raw ProverData facts at checked raw assembly adapters:\n{}",
             out
@@ -3822,6 +3874,14 @@ mod tests {
                 && out.contains("RawRowRangeFacts witness table")
                 && out.contains("RawSegmentRangeFacts witness"),
             "bridge should build witness facts from extracted constraints plus raw ranges:\n{}",
+            out
+        );
+        assert!(
+            out.contains("structure ExtractedRawSourceFacts")
+                && out.contains("def rawSourceFacts_of_extractedRawSourceFacts")
+                && out.contains("def buildRawFactsFromExtractedRawSourceFacts")
+                && out.contains("def buildWitnessFactsFromExtractedRawSourceFacts"),
+            "bridge should expose one raw source target for generated code:\n{}",
             out
         );
     }

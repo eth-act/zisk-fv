@@ -1068,11 +1068,12 @@ no assumed soundness fields**.
       `ExtractedConstraintFacts`. Follow-up adapter work in the same generated
       bridge now proves the definitional mapping from those extracted
       predicates to the wrapper's split `RawConstraintFacts` and exposes
-      witness-level builders from extracted constraints plus raw row/segment
-      range facts. This still does not prove
+      `ExtractedRawSourceFacts` as the single generated target for extracted
+      constraints plus raw row/segment range facts, with raw/witness builders
+      for that target. This still does not prove
       `FullWitnessMemAirSourceProverDataWitnessFacts`; the remaining generated
-      production work is raw range facts and the actual extracted-constraint
-      callback. Verified so far with full
+      production work is proving the `ExtractedRawSourceFacts` fields,
+      especially raw row/segment range facts. Verified so far with full
       `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests),
       local regeneration of `Circuit.lean`, `Mem.lean`,
       `MemGeneratedArtifact.lean`, and `MemGeneratedConstraintBridge.lean`,
