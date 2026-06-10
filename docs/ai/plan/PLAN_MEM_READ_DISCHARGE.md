@@ -287,6 +287,17 @@ no assumed soundness fields**.
       `lake build ZiskFv.ZiskCircuit.MemTrace`, and `lake build
       ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, and
       both trust gates, and `nix run .#test`.
+      Partial: the address no-wrap input is now named and projected.
+      `Airs/Mem.lean` adds `addr_columns_in_range`, mirroring `mem.pil:109`
+      (`col witness bits(29) addr`), plus
+      `field_addr_times_eight_val_eq_of_lt` for the provider pointer
+      conversion. `Balance.lean` extends `MemTableGeneratedRangeFacts` with
+      `addrColumns` and proves that unequal internal Mem addresses give
+      byte-disjoint primary/primary and primary/dual replay entries. Verified
+      so far with clean Lean LSP diagnostics for `ZiskFv.Airs.Mem` and
+      `ZiskFv.AirsClean.FullEnsemble.Balance`, target builds for both modules,
+      a successful full Lake build through the LSP build hook, and a regular
+      full `lake build`; both trust gates and `nix run .#test` pass.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -319,6 +330,9 @@ no assumed soundness fields**.
       `addr_changes * (1 - wr)` zero-value constraints for address-change
       reads and records the initial-memory construction explicitly, rather
       than hiding first-read bytes in a replay-soundness field.
+      Partial: `addr_columns_in_range` and `MemTableGeneratedRangeFacts.addrColumns`
+      now cite `mem.pil:109`; the no-wrap proof is a numeric consequence of
+      that 29-bit bound and the Goldilocks modulus.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

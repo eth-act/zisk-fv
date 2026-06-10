@@ -1578,6 +1578,83 @@ theorem activeMemReplayEntriesOfRow_nodup_of_sel_of_sel_dual_of_step_ne
     exact h_step_ne h_ts
   · simp
 
+/-- Primary replay entries from different 29-bit internal Mem addresses have
+    disjoint eight-byte byte-address ranges after the provider `addr * 8`
+    pointer conversion. -/
+theorem memoryBusEntryByteDisjoint_primary_primary_of_addr_ne
+    {left right : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_left_range : left.addr.val < 2 ^ 29)
+    (h_right_range : right.addr.val < 2 ^ 29)
+    (h_addr_ne : left.addr ≠ right.addr) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+      (memPrimaryReplayEntryOfRow left) (memPrimaryReplayEntryOfRow right) := by
+  unfold ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+  intro i j hi hj h_eq
+  have h_left_ptr :
+      (memPrimaryReplayEntryOfRow left).ptr.toNat = left.addr.val * 8 := by
+    simp [ZiskFv.Airs.Mem.field_addr_times_eight_val_eq_of_lt h_left_range]
+  have h_right_ptr :
+      (memPrimaryReplayEntryOfRow right).ptr.toNat = right.addr.val * 8 := by
+    simp [ZiskFv.Airs.Mem.field_addr_times_eight_val_eq_of_lt h_right_range]
+  rw [h_left_ptr, h_right_ptr] at h_eq
+  have h_addr_val_ne : left.addr.val ≠ right.addr.val := by
+    intro h_val
+    exact h_addr_ne (Fin.ext h_val)
+  rcases lt_trichotomy left.addr.val right.addr.val with h_lt | h_eq_addr | h_gt
+  · have h_le : left.addr.val + 1 ≤ right.addr.val := Nat.succ_le_of_lt h_lt
+    have h_bound_left : left.addr.val * 8 + i < right.addr.val * 8 := by
+      have hi_le : i ≤ 7 := by omega
+      nlinarith
+    have h_bound_right : right.addr.val * 8 ≤ right.addr.val * 8 + j := by
+      omega
+    omega
+  · exact h_addr_val_ne h_eq_addr
+  · have h_le : right.addr.val + 1 ≤ left.addr.val := Nat.succ_le_of_lt h_gt
+    have h_bound_right : right.addr.val * 8 + j < left.addr.val * 8 := by
+      have hj_le : j ≤ 7 := by omega
+      nlinarith
+    have h_bound_left : left.addr.val * 8 ≤ left.addr.val * 8 + i := by
+      omega
+    omega
+
+/-- A selected primary entry is byte-disjoint from another row's dual read
+    entry when their internal Mem addresses differ. -/
+theorem memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
+    {left right : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_left_range : left.addr.val < 2 ^ 29)
+    (h_right_range : right.addr.val < 2 ^ 29)
+    (h_addr_ne : left.addr ≠ right.addr) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+      (memPrimaryReplayEntryOfRow left) (memDualReadReplayEntryOfRow right) := by
+  unfold ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+  intro i j hi hj h_eq
+  have h_left_ptr :
+      (memPrimaryReplayEntryOfRow left).ptr.toNat = left.addr.val * 8 := by
+    simp [ZiskFv.Airs.Mem.field_addr_times_eight_val_eq_of_lt h_left_range]
+  have h_right_ptr :
+      (memDualReadReplayEntryOfRow right).ptr.toNat = right.addr.val * 8 := by
+    simp [ZiskFv.Airs.Mem.field_addr_times_eight_val_eq_of_lt h_right_range]
+  rw [h_left_ptr, h_right_ptr] at h_eq
+  have h_addr_val_ne : left.addr.val ≠ right.addr.val := by
+    intro h_val
+    exact h_addr_ne (Fin.ext h_val)
+  rcases lt_trichotomy left.addr.val right.addr.val with h_lt | h_eq_addr | h_gt
+  · have h_le : left.addr.val + 1 ≤ right.addr.val := Nat.succ_le_of_lt h_lt
+    have h_bound_left : left.addr.val * 8 + i < right.addr.val * 8 := by
+      have hi_le : i ≤ 7 := by omega
+      nlinarith
+    have h_bound_right : right.addr.val * 8 ≤ right.addr.val * 8 + j := by
+      omega
+    omega
+  · exact h_addr_val_ne h_eq_addr
+  · have h_le : right.addr.val + 1 ≤ left.addr.val := Nat.succ_le_of_lt h_gt
+    have h_bound_right : right.addr.val * 8 + j < left.addr.val * 8 := by
+      have hj_le : j ≤ 7 := by omega
+      nlinarith
+    have h_bound_left : left.addr.val * 8 ≤ left.addr.val * 8 + i := by
+      omega
+    omega
+
 /-- Primary-read replay rows projected from every row of a Mem table. -/
 @[reducible]
 def memPrimaryReadReplayRowsOfTable
@@ -1691,6 +1768,9 @@ structure MemTableGeneratedRowsBridge
     generated field equations into Nat timestamp order:
 
     * `incrementChunks` mirrors `mem.pil:384-385`.
+    * `addrColumns` mirrors `mem.pil:109`, where `addr` is `bits(29)`;
+      this is the no-wrap fact needed for byte-address disjointness of
+      provider pointers `addr * 8`.
     * `stepColumns` mirrors the `bits(MEM_STEP_BITS)` witness declarations at
       `mem.pil:110` and `mem.pil:122`, with `MEM_STEP_BITS = 40` in the pinned
       RV64IM configuration.
@@ -1705,6 +1785,9 @@ structure MemTableGeneratedRangeFacts
   incrementChunks :
     ∀ idx : Fin table.table.length,
       ZiskFv.Airs.Mem.increment_chunks_in_range mem idx.val
+  addrColumns :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.Airs.Mem.addr_columns_in_range mem idx.val
   stepColumns :
     ∀ idx : Fin table.table.length,
       ZiskFv.Airs.Mem.step_columns_in_range mem idx.val

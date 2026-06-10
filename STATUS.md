@@ -8,6 +8,8 @@ Blocking: prove selected primary-read prefix soundness from concrete Mem table
 facts. `MemTableGeneratedRowsBridge` and `MemTableGeneratedRangeFacts` expose
 the row/list-position and range facts; `FullWitnessMemTableGeneratedRowsBridge`
 is still the concrete full-ensemble bridge obligation.
+Current sub-gap: use the new address-range/no-wrap facts to prove the
+zero-preloaded specialization of the primary-read prefix obligation.
 
 Latest proof surface:
 - Phase C boundary swap is done: the residual Sail timeline is visible once,
@@ -16,22 +18,21 @@ Latest proof surface:
   order, write/read carry, read-preserving rows, replay append lemmas, row/table
   fold composition, zero preload, generated row specs, and the named remaining
   obligation `ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`.
-- Latest slice adds `MemoryBusEntryByteDisjoint` and
-  `readEventReplayAgreement_of_writeMemoryOfEntry_disjoint`, proving that a
-  write to a disjoint eight-byte range preserves an existing read agreement.
-- Current uncommitted slice lifts that to `replayMemoryAfterBusRow` and
-  `replayMemoryAfterBusRows` prefixes when all prefix rows are byte-disjoint.
+- Latest committed slice lifts disjoint preservation to
+  `replayMemoryAfterBusRow` and `replayMemoryAfterBusRows` prefixes when all
+  prefix rows are byte-disjoint.
+- Current uncommitted slice adds the `mem.pil:109` address-column range fact,
+  the no-wrap theorem for `addr * 8`, and Balance projections that unequal Mem
+  addresses give byte-disjoint replay entries.
 
-Verification for committed slice: Lean LSP diagnostics are clean for
-`ZiskFv.ZiskCircuit.MemTrace`; both target module builds, full `lake build`,
-both trust gates, and `nix run .#test` pass.
 Verification for current slice: Lean LSP diagnostics are clean for
-`ZiskFv.ZiskCircuit.MemTrace`; `lake build ZiskFv.ZiskCircuit.MemTrace` and
-`lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, and
-both trust gates, and `nix run .#test` pass.
+`ZiskFv.Airs.Mem` and `ZiskFv.AirsClean.FullEnsemble.Balance`; target builds
+for both modules pass, and both the LSP build hook and regular `lake build`
+ran full successful Lake builds. Both trust gates and `nix run .#test` pass.
 
-Next step: commit the replay-prefix disjoint preservation slice, then prove the
-zero-preloaded specialization of
+Next step: commit the address-range/disjointness slice, then use committed
+replay-prefix preservation (`d27de7b5`) to prove the zero-preloaded
+specialization of
 `ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`.
 
 Context: Phase A is committed at `0c222595`. The old

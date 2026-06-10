@@ -578,10 +578,36 @@ def incrementNat (v : Valid_Mem FGL FGL) (row : ℕ) : ℕ :=
 def increment_chunks_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
   (v.increment_0 row).val < 2 ^ 22 ∧ (v.increment_1 row).val < 2 ^ 16
 
+/-- PIL range fact for the mutable-Mem address column. This mirrors
+    `mem.pil:109`, where `addr` is declared as `bits(29)`. -/
+def addr_columns_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=
+  (v.addr row).val < 2 ^ 29
+
 /-- The increment expression is strictly positive as a Nat. -/
 theorem incrementNat_pos (v : Valid_Mem FGL FGL) (row : ℕ) :
     0 < incrementNat v row := by
   simp [incrementNat]
+
+/-- A 29-bit internal Mem address can be multiplied by the eight-byte word
+    size without wrapping in the Goldilocks field. -/
+theorem field_addr_times_eight_val_eq_of_lt
+    {addr : FGL}
+    (h_addr_range : addr.val < 2 ^ 29) :
+    (addr * 8 : FGL).val = addr.val * 8 := by
+  have h_lt : addr.val * 8 < 18446744069414584321 := by
+    omega
+  calc
+    (addr * 8 : FGL).val =
+        (((addr.val * 8 : ℕ) : FGL)).val := by
+      norm_num [Fin.ext_iff]
+    _ = addr.val * 8 := Nat.mod_eq_of_lt h_lt
+
+/-- Row-indexed form of `field_addr_times_eight_val_eq_of_lt`. -/
+theorem field_addr_times_eight_val_eq
+    {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h_addr_range : addr_columns_in_range v row) :
+    (v.addr row * 8 : FGL).val = (v.addr row).val * 8 :=
+  field_addr_times_eight_val_eq_of_lt h_addr_range
 
 /-- The range-checked increment expression is at most `2^38`. The upper
     bound can be attained because the PIL expression adds one after packing
