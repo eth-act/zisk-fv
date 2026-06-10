@@ -228,16 +228,20 @@ pil-extract mem-air-facts --pilout build/zisk.pilout --air Mem \
 The report maps constraints `0..=23` to
 `MemTableGeneratedConstraintFacts.segmentAt` / `segment_every_row` and
 constraints `24..=33` to `.permutationAt` / `permutation_every_row`. It also
-emits a sidecar source map tying `MemTableGeneratedRawSourceSidecar` fields to
-stage-2 witness columns, fixed columns, AIR_VALUE symbols, and the
-`std_alpha`/`std_gamma` challenges. The report lists `gsum_debug_data` hints
-whose `name_piop = "Range Check"`; those are the extractor-facing source for
-`MemTableGeneratedRangeFacts` and `MemSegmentGeneratedRangeFacts`. It also emits
-a Lean range-fact coverage table: range-check hints cover `incrementChunks`,
-`dualStepDelta`, and `distanceBaseChunks`, while `addrColumns` and `stepColumns`
-require the `mem.pil` bit-width lines supplied through `--pil-source`. A
-generated Lean module should build `MemTableGeneratedRawSourceSidecar` values
-for mutable Mem tables and expose them through `FullWitnessMemAirSourceRawSidecars`.
+emits a sidecar source map tying `MemTableGeneratedRawSourceSidecar` fields and
+their `ProverData` keys to stage-2 witness columns, fixed columns, AIR_VALUE
+symbols, and the `std_alpha`/`std_gamma` challenges. The report lists
+`gsum_debug_data` hints whose `name_piop = "Range Check"`; those are the
+extractor-facing source for `MemTableGeneratedRangeFacts` and
+`MemSegmentGeneratedRangeFacts`. It also emits a Lean range-fact coverage table:
+range-check hints cover `incrementChunks`, `dualStepDelta`, and
+`distanceBaseChunks`, while `addrColumns` and `stepColumns` require the
+`mem.pil` bit-width lines supplied through `--pil-source`. A generated Lean
+module should prove `FullWitnessMemAirSourceProverDataFacts` for the named
+`witness.data` sidecar keys and package it with
+`fullWitnessMemAirSourceRawSidecars_of_proverData`, or build
+`MemTableGeneratedRawSourceSidecar` values directly for mutable Mem tables and
+expose them through `FullWitnessMemAirSourceRawSidecars`.
 Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`;
 `exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete replay
 source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` feeds the

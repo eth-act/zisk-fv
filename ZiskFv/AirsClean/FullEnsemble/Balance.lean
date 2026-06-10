@@ -2369,6 +2369,128 @@ theorem toFacts {table : Table FGL} (source : MemTableGeneratedAirSource table) 
 
 end MemTableGeneratedAirSource
 
+/-! ### Prover-data-backed Mem sidecar columns -/
+
+/- `ProverData` keys for the generated Mem sidecar columns.
+
+   These names are the Lean-side contract for generated/full-ensemble code:
+   each key stores a one-column array (`n = 1`) whose row `0` is used for
+   scalars and whose row index is used for table columns. The source map in
+   `MemAirFacts.md` ties these keys to pilout witness columns, fixed columns,
+   AIR_VALUE entries, and challenges. -/
+namespace MemRawSidecarDataKey
+
+abbrev gsum : String := "Mem.sidecar.gsum"
+abbrev im0 : String := "Mem.sidecar.im0"
+abbrev im1 : String := "Mem.sidecar.im1"
+
+namespace Segment
+
+abbrev segmentId : String := "Mem.sidecar.segment.segment_id"
+abbrev isFirstSegment : String := "Mem.sidecar.segment.is_first_segment"
+abbrev isLastSegment : String := "Mem.sidecar.segment.is_last_segment"
+abbrev previousSegmentValue0 : String := "Mem.sidecar.segment.previous_segment_value_0"
+abbrev previousSegmentValue1 : String := "Mem.sidecar.segment.previous_segment_value_1"
+abbrev previousSegmentStep : String := "Mem.sidecar.segment.previous_segment_step"
+abbrev previousSegmentAddr : String := "Mem.sidecar.segment.previous_segment_addr"
+abbrev segmentLastValue0 : String := "Mem.sidecar.segment.segment_last_value_0"
+abbrev segmentLastValue1 : String := "Mem.sidecar.segment.segment_last_value_1"
+abbrev segmentLastStep : String := "Mem.sidecar.segment.segment_last_step"
+abbrev segmentLastAddr : String := "Mem.sidecar.segment.segment_last_addr"
+abbrev distanceBase0 : String := "Mem.sidecar.segment.distance_base_0"
+abbrev distanceBase1 : String := "Mem.sidecar.segment.distance_base_1"
+abbrev distanceEnd0 : String := "Mem.sidecar.segment.distance_end_0"
+abbrev distanceEnd1 : String := "Mem.sidecar.segment.distance_end_1"
+abbrev segmentL1 : String := "Mem.sidecar.segment.segment_l1"
+
+end Segment
+
+namespace Permutation
+
+abbrev stdAlpha : String := "Mem.sidecar.permutation.std_alpha"
+abbrev stdGamma : String := "Mem.sidecar.permutation.std_gamma"
+abbrev l1 : String := "Mem.sidecar.permutation.l1"
+abbrev imDirect0 : String := "Mem.sidecar.permutation.im_direct_0"
+abbrev imDirect1 : String := "Mem.sidecar.permutation.im_direct_1"
+abbrev imDirect2 : String := "Mem.sidecar.permutation.im_direct_2"
+abbrev imDirect3 : String := "Mem.sidecar.permutation.im_direct_3"
+abbrev imDirect4 : String := "Mem.sidecar.permutation.im_direct_4"
+abbrev imDirect5 : String := "Mem.sidecar.permutation.im_direct_5"
+
+end Permutation
+
+end MemRawSidecarDataKey
+
+/-- Read one field element from a one-column `ProverData` array.
+
+    Missing keys or out-of-range rows default to zero, matching Clean's
+    `Environment.fromArray` convention for absent witness cells. Correctness
+    is not hidden here: generated code must still prove
+    `MemTableGeneratedRawSourceFacts` for the columns read by this function. -/
+@[reducible]
+def proverDataColumn (data : ProverData FGL) (key : String) (row : ℕ) : FGL :=
+  match (data key 1)[row]? with
+  | some values => values[0]
+  | none => 0
+
+/-- Read a scalar sidecar value from row `0` of a one-column `ProverData`
+    array. -/
+@[reducible]
+def proverDataScalar (data : ProverData FGL) (key : String) : FGL :=
+  proverDataColumn data key 0
+
+@[reducible]
+def memSidecarGsumOfProverData (data : ProverData FGL) : ℕ → FGL :=
+  proverDataColumn data MemRawSidecarDataKey.gsum
+
+@[reducible]
+def memSidecarIm0OfProverData (data : ProverData FGL) : ℕ → FGL :=
+  proverDataColumn data MemRawSidecarDataKey.im0
+
+@[reducible]
+def memSidecarIm1OfProverData (data : ProverData FGL) : ℕ → FGL :=
+  proverDataColumn data MemRawSidecarDataKey.im1
+
+/-- Segment sidecar columns read from the shared Clean `ProverData` map. -/
+@[reducible]
+def memSegmentColumnsOfProverData
+    (data : ProverData FGL) :
+    ZiskFv.Airs.Mem.SegmentColumns FGL where
+  segment_id := proverDataScalar data MemRawSidecarDataKey.Segment.segmentId
+  is_first_segment := proverDataScalar data MemRawSidecarDataKey.Segment.isFirstSegment
+  is_last_segment := proverDataScalar data MemRawSidecarDataKey.Segment.isLastSegment
+  previous_segment_value_0 :=
+    proverDataScalar data MemRawSidecarDataKey.Segment.previousSegmentValue0
+  previous_segment_value_1 :=
+    proverDataScalar data MemRawSidecarDataKey.Segment.previousSegmentValue1
+  previous_segment_step := proverDataScalar data MemRawSidecarDataKey.Segment.previousSegmentStep
+  previous_segment_addr := proverDataScalar data MemRawSidecarDataKey.Segment.previousSegmentAddr
+  segment_last_value_0 := proverDataScalar data MemRawSidecarDataKey.Segment.segmentLastValue0
+  segment_last_value_1 := proverDataScalar data MemRawSidecarDataKey.Segment.segmentLastValue1
+  segment_last_step := proverDataScalar data MemRawSidecarDataKey.Segment.segmentLastStep
+  segment_last_addr := proverDataScalar data MemRawSidecarDataKey.Segment.segmentLastAddr
+  distance_base_0 := proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase0
+  distance_base_1 := proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase1
+  distance_end_0 := proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd0
+  distance_end_1 := proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd1
+  segment_l1 := proverDataColumn data MemRawSidecarDataKey.Segment.segmentL1
+
+/-- Permutation/direct-update sidecar columns read from the shared Clean
+    `ProverData` map. -/
+@[reducible]
+def memPermutationColumnsOfProverData
+    (data : ProverData FGL) :
+    ZiskFv.Airs.Mem.PermutationColumns FGL where
+  std_alpha := proverDataScalar data MemRawSidecarDataKey.Permutation.stdAlpha
+  std_gamma := proverDataScalar data MemRawSidecarDataKey.Permutation.stdGamma
+  l1 := proverDataColumn data MemRawSidecarDataKey.Permutation.l1
+  im_direct_0 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect0
+  im_direct_1 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect1
+  im_direct_2 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect2
+  im_direct_3 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect3
+  im_direct_4 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect4
+  im_direct_5 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect5
+
 /-- Table-level sidecar for generated raw Mem AIR source data.
 
     Generated/full-ensemble code can use this object when it has the concrete
@@ -2422,6 +2544,32 @@ def toAirSource {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar
   facts := sidecar.toAirFacts
 
 end MemTableGeneratedRawSourceSidecar
+
+/-- Build a raw Mem sidecar from the shared Clean `ProverData` map.
+
+    This is the generated/full-ensemble entry point when sidecar columns are
+    stored in `witness.data`: the raw facts must be proved for the exact
+    ProverData-backed columns defined above, then this constructor packages
+    them as a `MemTableGeneratedRawSourceSidecar`. -/
+def memTableGeneratedRawSourceSidecar_of_proverData
+    (table : Table FGL)
+    (data : ProverData FGL)
+    (h_facts :
+      MemTableGeneratedRawSourceFacts
+        table
+        (memOfTable table
+          (memSidecarGsumOfProverData data)
+          (memSidecarIm0OfProverData data)
+          (memSidecarIm1OfProverData data))
+        (segmentWithFixedL1 (memSegmentColumnsOfProverData data))
+        (memPermutationColumnsOfProverData data)) :
+    MemTableGeneratedRawSourceSidecar table where
+  segment := memSegmentColumnsOfProverData data
+  permutation := memPermutationColumnsOfProverData data
+  gsum := memSidecarGsumOfProverData data
+  im0 := memSidecarIm0OfProverData data
+  im1 := memSidecarIm1OfProverData data
+  facts := h_facts
 
 /-- Build the typed Mem AIR source from the three extractor-facing fact
     families. This is the narrow constructor a future generated Lean module can
@@ -3016,6 +3164,43 @@ def FullWitnessMemAirSourceRawSidecars
     table ∈ witness.allTables →
       table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
         MemTableGeneratedRawSourceSidecar table
+
+/-- Generated/full-ensemble raw Mem facts whose source columns are read from
+    the shared `witness.data` prover-data map.
+
+    `EnsembleWitness.same_data` already requires every table in the witness to
+    share this map. This callback is therefore the concrete generated target
+    for the sidecar route: generated code proves raw Mem facts for the named
+    ProverData keys, and Lean packages those facts into the stored sidecar
+    boundary. -/
+def FullWitnessMemAirSourceProverDataFacts
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) : Type 1 :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        MemTableGeneratedRawSourceFacts
+          table
+          (memOfTable table
+            (memSidecarGsumOfProverData witness.data)
+            (memSidecarIm0OfProverData witness.data)
+            (memSidecarIm1OfProverData witness.data))
+          (segmentWithFixedL1 (memSegmentColumnsOfProverData witness.data))
+          (memPermutationColumnsOfProverData witness.data)
+
+/-- Package generated raw Mem facts over the named `witness.data` sidecar keys
+    into the stored full-witness sidecar callback. -/
+def fullWitnessMemAirSourceRawSidecars_of_proverData
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_facts : FullWitnessMemAirSourceProverDataFacts witness) :
+    FullWitnessMemAirSourceRawSidecars witness := by
+  intro table h_table h_component
+  exact
+    memTableGeneratedRawSourceSidecar_of_proverData
+      table
+      witness.data
+      (h_facts table h_table h_component)
 
 /-- Package generated raw Mem source sidecars into the existing raw full-witness
     callback. -/

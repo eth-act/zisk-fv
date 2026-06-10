@@ -1260,8 +1260,11 @@ fn render_mem_air_facts_report(
         out,
         "- Generated Lean code should build `MemTableGeneratedRawSourceSidecar` \
          values for mutable Mem tables and expose them through a \
-         `FullWitnessMemAirSourceRawSidecars` callback. Lean stores that \
-         sidecar callback on `FullWitnessMemoryTimelineEvidence`; \
+         `FullWitnessMemAirSourceRawSidecars` callback. When the sidecar \
+         columns live in Clean `ProverData`, prove \
+         `FullWitnessMemAirSourceProverDataFacts` for the named keys below \
+         and package it with `fullWitnessMemAirSourceRawSidecars_of_proverData`. \
+         Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`; \
          `exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete \
          replay source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` \
          feeds the compliance timeline boundary from sidecars plus the residual \
@@ -1547,114 +1550,136 @@ fn write_mem_air_sidecar_source_map(
     air_values: &[(u32, u32, String)],
     challenges: &[(u32, u32, String)],
 ) {
-    let mut rows: Vec<(String, String, String)> = vec![
+    let mut rows: Vec<(String, String, String, String)> = vec![
         (
             "`sidecar.gsum row`".into(),
+            "`Mem.sidecar.gsum`".into(),
             witness_source(witness_cols, 2, 0),
             "stage-2 accumulator column".into(),
         ),
         (
             "`sidecar.im0 row`".into(),
+            "`Mem.sidecar.im0`".into(),
             witness_source(witness_cols, 2, 1),
             "stage-2 intermediate product".into(),
         ),
         (
             "`sidecar.im1 row`".into(),
+            "`Mem.sidecar.im1`".into(),
             witness_source(witness_cols, 2, 2),
             "stage-2 intermediate product".into(),
         ),
         (
             "`(segmentWithFixedL1 sidecar.segment).segment_l1 row`".into(),
+            "`Mem.sidecar.segment.segment_l1`".into(),
             fixed_source(fixed_cols, 0),
             "deterministic segment boundary fixed column".into(),
         ),
         (
             "`sidecar.permutation.l1 row`".into(),
+            "`Mem.sidecar.permutation.l1`".into(),
             fixed_source(fixed_cols, 1),
             "permutation final-row fixed column".into(),
         ),
         (
             "`sidecar.segment.segment_id`".into(),
+            "`Mem.sidecar.segment.segment_id`".into(),
             air_value_source(air_values, 1, 0),
             "segment direct source".into(),
         ),
         (
             "`sidecar.segment.is_first_segment`".into(),
+            "`Mem.sidecar.segment.is_first_segment`".into(),
             air_value_source(air_values, 1, 1),
             "segment selector".into(),
         ),
         (
             "`sidecar.segment.is_last_segment`".into(),
+            "`Mem.sidecar.segment.is_last_segment`".into(),
             air_value_source(air_values, 1, 2),
             "segment selector".into(),
         ),
         (
             "`sidecar.segment.previous_segment_value_0`".into(),
+            "`Mem.sidecar.segment.previous_segment_value_0`".into(),
             air_value_source(air_values, 1, 3),
             "previous segment carried value".into(),
         ),
         (
             "`sidecar.segment.previous_segment_value_1`".into(),
+            "`Mem.sidecar.segment.previous_segment_value_1`".into(),
             air_value_source(air_values, 1, 4),
             "previous segment carried value".into(),
         ),
         (
             "`sidecar.segment.previous_segment_step`".into(),
+            "`Mem.sidecar.segment.previous_segment_step`".into(),
             air_value_source(air_values, 1, 5),
             "previous segment carried step".into(),
         ),
         (
             "`sidecar.segment.previous_segment_addr`".into(),
+            "`Mem.sidecar.segment.previous_segment_addr`".into(),
             air_value_source(air_values, 1, 6),
             "previous segment carried address".into(),
         ),
         (
             "`sidecar.segment.segment_last_value_0`".into(),
+            "`Mem.sidecar.segment.segment_last_value_0`".into(),
             air_value_source(air_values, 1, 7),
             "segment carry-out value".into(),
         ),
         (
             "`sidecar.segment.segment_last_value_1`".into(),
+            "`Mem.sidecar.segment.segment_last_value_1`".into(),
             air_value_source(air_values, 1, 8),
             "segment carry-out value".into(),
         ),
         (
             "`sidecar.segment.segment_last_step`".into(),
+            "`Mem.sidecar.segment.segment_last_step`".into(),
             air_value_source(air_values, 1, 9),
             "segment carry-out step".into(),
         ),
         (
             "`sidecar.segment.segment_last_addr`".into(),
+            "`Mem.sidecar.segment.segment_last_addr`".into(),
             air_value_source(air_values, 1, 10),
             "segment carry-out address".into(),
         ),
         (
             "`sidecar.segment.distance_base_0`".into(),
+            "`Mem.sidecar.segment.distance_base_0`".into(),
             air_value_source(air_values, 1, 11),
             "segment range chunk".into(),
         ),
         (
             "`sidecar.segment.distance_base_1`".into(),
+            "`Mem.sidecar.segment.distance_base_1`".into(),
             air_value_source(air_values, 1, 12),
             "segment range chunk".into(),
         ),
         (
             "`sidecar.segment.distance_end_0`".into(),
+            "`Mem.sidecar.segment.distance_end_0`".into(),
             air_value_source(air_values, 1, 13),
             "segment range chunk".into(),
         ),
         (
             "`sidecar.segment.distance_end_1`".into(),
+            "`Mem.sidecar.segment.distance_end_1`".into(),
             air_value_source(air_values, 1, 14),
             "segment range chunk".into(),
         ),
         (
             "`sidecar.permutation.std_alpha`".into(),
+            "`Mem.sidecar.permutation.std_alpha`".into(),
             challenge_source(challenges, 2, 0),
             "permutation compression challenge".into(),
         ),
         (
             "`sidecar.permutation.std_gamma`".into(),
+            "`Mem.sidecar.permutation.std_gamma`".into(),
             challenge_source(challenges, 2, 1),
             "permutation compression challenge".into(),
         ),
@@ -1663,15 +1688,20 @@ fn write_mem_air_sidecar_source_map(
     for idx in 0..6 {
         rows.push((
             format!("`sidecar.permutation.im_direct_{}`", idx),
+            format!("`Mem.sidecar.permutation.im_direct_{}`", idx),
             air_value_source(air_values, 2, 15 + idx),
             "direct-update inverse source".into(),
         ));
     }
 
-    writeln!(out, "| Lean sidecar field | Pilout source | Role |").unwrap();
-    writeln!(out, "|---|---|---|").unwrap();
-    for (lean, source, role) in rows {
-        writeln!(out, "| {} | {} | {} |", lean, source, role).unwrap();
+    writeln!(
+        out,
+        "| Lean sidecar field | ProverData key | Pilout source | Role |"
+    )
+    .unwrap();
+    writeln!(out, "|---|---|---|---|").unwrap();
+    for (lean, key, source, role) in rows {
+        writeln!(out, "| {} | {} | {} | {} |", lean, key, source, role).unwrap();
     }
 }
 
@@ -2681,6 +2711,44 @@ mod tests {
         assert!(
             !out.contains("Lean converts that sidecar callback"),
             "report should not describe sidecars as raw-facts adapter plumbing:\n{}",
+            out
+        );
+    }
+
+    #[test]
+    fn mem_air_facts_report_lists_prover_data_sidecar_keys() {
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                name: Some("Zisk".into()),
+                airs: vec![Air {
+                    name: Some("Mem".into()),
+                    num_rows: Some(16),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Mem").unwrap();
+        let out = render_mem_air_facts_report(&pilout, &hit, None).unwrap();
+        assert!(
+            out.contains("| Lean sidecar field | ProverData key | Pilout source | Role |"),
+            "report should include the ProverData key column:\n{}",
+            out
+        );
+        assert!(
+            out.contains("`Mem.sidecar.gsum`"),
+            "report should name the stage-2 accumulator key:\n{}",
+            out
+        );
+        assert!(
+            out.contains("`Mem.sidecar.segment.previous_segment_addr`"),
+            "report should name carried segment keys:\n{}",
+            out
+        );
+        assert!(
+            out.contains("`Mem.sidecar.permutation.im_direct_5`"),
+            "report should name all direct-update inverse keys:\n{}",
             out
         );
     }

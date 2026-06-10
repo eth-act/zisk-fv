@@ -859,8 +859,10 @@ no assumed soundness fields**.
       `MemTableGeneratedRawSourceSidecar` field to the concrete pilout source:
       stage-2 witness columns for `gsum`/`im`, fixed columns for `SEGMENT_L1`
       and `__L1__`, AIR_VALUE symbols for segment/direct constants, and the
-      global `std_alpha`/`std_gamma` challenge symbols. Verified with `cargo
-      test --manifest-path tools/pil-extract/Cargo.toml` and regenerated
+      global `std_alpha`/`std_gamma` challenge symbols. The later ProverData
+      slice extends this report with the exact `witness.data` keys generated
+      code should fill. Verified with `cargo test --manifest-path
+      tools/pil-extract/Cargo.toml` and regenerated
       `/tmp/mem-air-facts-report.md`; `git diff --check` is clean.
       Current sidecar-entry slice: `fullWitnessMemAirSourceOfRawSidecars` is
       now definitionally identified with the adapted raw-facts source, and
@@ -902,6 +904,25 @@ no assumed soundness fields**.
       it only if present. This makes missing sidecar source reports a populate
       failure. Verified with Nix evaluation of `.#apps.x86_64-linux.populate`
       and `nix flake check --no-build`.
+      Current ProverData sidecar slice: Lean now names the exact shared
+      `witness.data` key contract for Mem sidecar columns. The helpers
+      `memSidecarGsumOfProverData`, `memSegmentColumnsOfProverData`, and
+      `memPermutationColumnsOfProverData` read the stage-2, segment, and
+      permutation sidecar columns from named one-column `ProverData` arrays;
+      `memTableGeneratedRawSourceSidecar_of_proverData` packages raw facts for
+      those columns into a table sidecar; and
+      `fullWitnessMemAirSourceRawSidecars_of_proverData` packages
+      `FullWitnessMemAirSourceProverDataFacts` into the stored full-witness
+      boundary. `tools/pil-extract mem-air-facts` now emits the matching
+      `ProverData key` column in the sidecar source map, and extraction notes
+      point generated code at this data-backed target. Verified with clean Lean
+      LSP diagnostics for `Balance.lean`, `lean_verify` scans of the two new
+      constructors, `lake build ZiskFv.AirsClean.FullEnsemble.Balance`,
+      `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`, `cargo
+      test --manifest-path tools/pil-extract/Cargo.toml` (69 tests),
+      regenerated `/tmp/mem-air-facts-report.md`, and `git diff --check`.
+      `cargo fmt --manifest-path tools/pil-extract/Cargo.toml --check` still
+      reports broad pre-existing rustfmt churn outside this slice.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
