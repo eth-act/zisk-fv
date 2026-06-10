@@ -9,8 +9,8 @@ generated rows/ranges, segment ranges, fixed columns, and nonempty evidence.
 `FullWitnessMemReplayBridge` packages them for a concrete Mem table, while
 `FullWitnessMemoryTimelineEvidence` is the global source object and coerces to
 the existing load-proof timeline API.
-Current sub-gap: construct `FullWitnessMemReplayBridge` from concrete
-extraction/Clean witness data instead of carrying it as part of the boundary.
+Current sub-gap: supply generated/range/fixed-column facts for the witness-
+selected Mem table; table projection and row count now have constructors.
 Audit result: existing Lean has selected-load MemClean row bridges, but no
 source constructing whole-table `FullWitnessMemReplayBridge` fields from an
 `EnsembleWitness`.
@@ -32,14 +32,17 @@ Latest proof surface:
   and `FullWitnessMemoryTimelineEvidence`; accepted replay is derived from the
   full-witness bridge, while split, initial agreement, and state-at-prefix remain
   residual timeline inputs.
+- Current constructor slice adds `memOfTable` and
+  `fullWitnessMemReplayBridge_of_memTable`, so row projection, row count, and
+  accepted active-row equality are no longer external bridge facts.
 
 Verification: recent segment-range/full-witness-bridge slices pass target
 builds and no-`sorryAx` scans (only existing Clean completeness axioms).
-Full `nix run .#test` last passed for `98202ebc`. Current boundary-source slice
-passes LSP diagnostics, file-level Lean checks for Balance/OpEnvelope/dispatch,
-`lake build ZiskFv.Compliance`, and both trust gates.
+Full `nix run .#test` last passed for `98202ebc`. Current slices pass LSP/file
+checks, `lake build ZiskFv.Compliance`, both trust gates, and the targeted
+Balance build; new constructor scans show no `sorryAx`.
 
-Next step: continue toward constructing `FullWitnessMemReplayBridge` from the
-concrete witness.
+Next step: derive the remaining generated/range/fixed-column facts for the
+witness-selected Mem table.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

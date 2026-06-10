@@ -564,9 +564,20 @@ no assumed soundness fields**.
       `Balance.lean`, `OpEnvelope.lean`, and the LDSD/Misc/Remaining dispatch
       files, plus `lake build ZiskFv.Compliance`,
       `trust/scripts/check-all.sh`, and `trust/scripts/check-all-semantic.sh`.
-      Current sub-gap: construct `FullWitnessMemReplayBridge` from concrete
-      extraction/Clean witness data instead of carrying it as part of the
-      boundary.
+      Partial: `memOfTable` now projects the primary Mem columns of a concrete
+      Clean Mem table into a `Valid_Mem` named-column view, with stage-2
+      permutation columns supplied explicitly. The constructor
+      `fullWitnessMemReplayBridge_of_memTable` builds the full-witness replay
+      bridge from a witness-selected table plus the remaining generated/range/
+      fixed-column facts, so table membership, component identity, row
+      projection, row count, and accepted active-row equality are no longer
+      independent replay-bridge fields. Verified so far with LSP diagnostics
+      `lake env lean ZiskFv/AirsClean/FullEnsemble/Balance.lean`,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and axiom scans with
+      no `sorryAx` in the new constructors.
+      Current sub-gap: derive the remaining generated/range/fixed-column facts
+      for the witness-selected Mem table from concrete extraction/Clean witness
+      data.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

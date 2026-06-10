@@ -1810,6 +1810,103 @@ def activeMemReplayRowsOfTable
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
 
+/-- Zero fallback for out-of-range projections from a concrete Mem table.
+    In-range rows are the only rows consumed by the table bridge below. -/
+@[reducible]
+def zeroMemRow : ZiskFv.AirsClean.Mem.MemRow FGL where
+  addr := 0
+  step := 0
+  sel := 0
+  addr_changes := 0
+  step_dual := 0
+  sel_dual := 0
+  value_0 := 0
+  value_1 := 0
+  wr := 0
+  previous_step := 0
+  increment_0 := 0
+  increment_1 := 0
+  read_same_addr := 0
+
+/-- Project row `row` of a concrete Clean Mem table to the Mem row input.
+    Out-of-range rows use `zeroMemRow` only to make the named-column view total. -/
+@[reducible]
+def memTableRowAtOrZero
+    (table : Table FGL)
+    (row : ℕ) : ZiskFv.AirsClean.Mem.MemRow FGL :=
+  if h_row : row < table.table.length then
+    eval (table.environment (table.table.get ⟨row, h_row⟩))
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar
+  else
+    zeroMemRow
+
+/-- Named-column Mem view obtained from the concrete Clean Mem table.
+
+    The Clean table row input contains the primary Mem columns. The stage-2
+    permutation columns are supplied separately because they are not fields of
+    the Clean `MemRow`. -/
+@[reducible]
+def memOfTable
+    (table : Table FGL)
+    (gsum im0 im1 : ℕ → FGL) :
+    ZiskFv.Airs.Mem.Valid_Mem FGL FGL where
+  addr := fun row => (memTableRowAtOrZero table row).addr
+  step := fun row => (memTableRowAtOrZero table row).step
+  sel := fun row => (memTableRowAtOrZero table row).sel
+  addr_changes := fun row => (memTableRowAtOrZero table row).addr_changes
+  step_dual := fun row => (memTableRowAtOrZero table row).step_dual
+  sel_dual := fun row => (memTableRowAtOrZero table row).sel_dual
+  value_0 := fun row => (memTableRowAtOrZero table row).value_0
+  value_1 := fun row => (memTableRowAtOrZero table row).value_1
+  wr := fun row => (memTableRowAtOrZero table row).wr
+  previous_step := fun row => (memTableRowAtOrZero table row).previous_step
+  increment_0 := fun row => (memTableRowAtOrZero table row).increment_0
+  increment_1 := fun row => (memTableRowAtOrZero table row).increment_1
+  read_same_addr := fun row => (memTableRowAtOrZero table row).read_same_addr
+  gsum := gsum
+  im_0 := im0
+  im_1 := im1
+
+/-- In-range concrete table projection agrees with `List.get`. -/
+theorem memTableRowAtOrZero_get
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    memTableRowAtOrZero table idx.val =
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar := by
+  unfold memTableRowAtOrZero
+  rw [dif_pos idx.isLt]
+
+/-- The named-column projection of a concrete Mem table has the expected
+    `rowAt` view at every in-range index. -/
+theorem rowAt_memOfTable
+    (table : Table FGL)
+    (gsum im0 im1 : ℕ → FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Mem.rowAt (memOfTable table gsum im0 im1) idx.val =
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar := by
+  simp [ZiskFv.AirsClean.Mem.rowAt, memTableRowAtOrZero_get table idx]
+  let row :=
+    eval (table.environment (table.table.get idx))
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar
+  change
+    { addr := row.addr
+      step := row.step
+      sel := row.sel
+      addr_changes := row.addr_changes
+      step_dual := row.step_dual
+      sel_dual := row.sel_dual
+      value_0 := row.value_0
+      value_1 := row.value_1
+      wr := row.wr
+      previous_step := row.previous_step
+      increment_0 := row.increment_0
+      increment_1 := row.increment_1
+      read_same_addr := row.read_same_addr } = row
+  cases row
+  rfl
+
 /-- Continuation-segment initial memory: start from the finite zero preload for
     the table's active rows, then seed the previous segment's carried-out bytes. -/
 @[reducible]
@@ -1851,6 +1948,32 @@ structure MemTableGeneratedRowsBridge
   generatedAt :
     ∀ idx : Fin table.table.length,
       ZiskFv.Airs.Mem.generated_every_row segment permutation mem idx.val
+
+/-- Build the indexed row bridge from the concrete table projection.
+
+    This discharges the list-position/`rowAt` part definitionally. The remaining
+    caller input is exactly the generated Mem every-row fact for that projected
+    named-column view. -/
+theorem memTableGeneratedRowsBridge_of_memOfTable
+    {table : Table FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {gsum im0 im1 : ℕ → FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_generatedAt :
+      ∀ idx : Fin table.table.length,
+        ZiskFv.Airs.Mem.generated_every_row
+          segment permutation (memOfTable table gsum im0 im1) idx.val) :
+    MemTableGeneratedRowsBridge
+      table (memOfTable table gsum im0 im1)
+      segment permutation table.table.length where
+  component := h_component
+  length_eq := rfl
+  rowAt_eq := by
+    intro idx
+    exact (rowAt_memOfTable table gsum im0 im1 idx).symm
+  generatedAt := h_generatedAt
 
 /-- Concrete range facts for the indexed Mem table rows.
 
@@ -2045,6 +2168,46 @@ structure FullWitnessMemReplayBridge
   segmentRanges : MemSegmentGeneratedRangeFacts segment
   fixedColumns : MemTableGeneratedFixedColumnFacts table segment
   nonempty : 0 < table.table.length
+
+/-- Construct the full-witness replay bridge from the concrete Mem table
+    projection and the remaining generated/range/fixed-column facts.
+
+    This is the intended extractor-facing constructor: table membership,
+    component identity, row projection, row count, and accepted-row projection
+    are no longer independent bridge fields. -/
+def fullWitnessMemReplayBridge_of_memTable
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {gsum im0 im1 : ℕ → FGL}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_generatedAt :
+      ∀ idx : Fin table.table.length,
+        ZiskFv.Airs.Mem.generated_every_row
+          segment permutation (memOfTable table gsum im0 im1) idx.val)
+    (h_rowRanges :
+      MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1))
+    (h_segmentRanges : MemSegmentGeneratedRangeFacts segment)
+    (h_fixedColumns : MemTableGeneratedFixedColumnFacts table segment)
+    (h_nonempty : 0 < table.table.length) :
+    FullWitnessMemReplayBridge witness (activeMemReplayRowsOfTable table) :=
+  { table := table
+    table_mem := h_table
+    mem := memOfTable table gsum im0 im1
+    segment := segment
+    permutation := permutation
+    rowCount := table.table.length
+    rows_eq := rfl
+    generatedRows :=
+      memTableGeneratedRowsBridge_of_memOfTable h_component h_generatedAt
+    rowRanges := h_rowRanges
+    segmentRanges := h_segmentRanges
+    fixedColumns := h_fixedColumns
+    nonempty := h_nonempty }
 
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/
