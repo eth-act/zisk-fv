@@ -1073,7 +1073,11 @@ no assumed soundness fields**.
       for that target. This still does not prove
       `FullWitnessMemAirSourceProverDataWitnessFacts`; the remaining generated
       production work is proving the `ExtractedRawSourceFacts` fields,
-      especially raw row/segment range facts. Verified so far with full
+      especially raw row/segment range facts. Audit note: the lookup-witness
+      definitions for those range facts exist, but `componentWithDualMemBus`
+      still emits only the row constraints plus MemBus provider rows, and the
+      segment range fields are sidecar-global rather than row inputs. Verified
+      so far with full
       `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests),
       local regeneration of `Circuit.lean`, `Mem.lean`,
       `MemGeneratedArtifact.lean`, and `MemGeneratedConstraintBridge.lean`,

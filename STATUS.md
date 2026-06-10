@@ -9,9 +9,9 @@ timeline evidence and carries the concrete `witness.data` target
 (`FullWitnessMemAirSourceProverDataWitnessFacts`) for the witness-selected Mem table.
 
 Latest audit: structural gap, not a missing lemma. `componentWithDualMemBus`
-emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
-table-global segment/permutation constants, challenges, ranges, and generated
-assertions are outside the component.
+emits only row constraints plus MemBus provider rows; Mem range lookup witness
+definitions exist, but the active component does not emit them, and segment
+ranges are sidecar-global rather than row inputs.
 
 Current slice: generated Mem source facts now have one raw target.
 `MemGeneratedConstraintBridge.lean` maps extracted `constraint_0..33` to
@@ -46,5 +46,5 @@ Latest verification:
   `git diff --check` at commit `465470dc`.
 - Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: generate/prove the fields of `ExtractedRawSourceFacts`; raw row/segment
-range facts are the remaining non-constraint input.
+Next step: decide whether to broaden Clean Mem/component modeling for range
+provenance or keep raw row/segment range facts as explicit generated sidecar input.
