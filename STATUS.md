@@ -1,6 +1,6 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 
-Current focus: Phase D PR prep after final verification.
+Current focus: PR #64 is open; waiting on review/landing.
 `LoadPromises.mem_read` is gone and load arms consume one global
 memory-timeline boundary.
 
@@ -41,6 +41,7 @@ Latest verification:
 - `nix/test.nix` now invokes the generated-Mem wrapper through a ShellCheck-clean
   helper; this fixed the final `nix run .#test` wrapper gate.
 
-Next step: commit the final verification/wording/test-wrapper chunk, then push
-and open the PR. Post-landing cleanup of `memory-trust-gap` still requires
-approval after the PR lands.
+PR: https://github.com/eth-act/zisk-fv/pull/64
+
+Next step: monitor/review PR #64. Post-landing cleanup of `memory-trust-gap`
+still requires approval after the PR lands.

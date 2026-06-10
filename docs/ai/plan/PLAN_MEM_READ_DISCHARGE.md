@@ -1233,7 +1233,8 @@ bury it in a structure field.
       for `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`, and
       `git diff --check` clean. The final Nix gate required a narrow
       `nix/test.nix` ShellCheck cleanup around the generated-Mem wrapper step.
-- [ ] Open PRs (1–3 may collapse into 2 if A stays small; never into 1).
+- [x] Open PRs (1–3 may collapse into 2 if A stays small; never into 1).
+      Opened as PR #64: https://github.com/eth-act/zisk-fv/pull/64.
 - [ ] After landing: delete branch/worktree `memory-trust-gap` (ask first —
       destructive), remove its plan files from `docs/ai/PROJECTS.md` history
       notes.
