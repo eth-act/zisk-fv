@@ -1263,9 +1263,11 @@ fn render_mem_air_facts_report(
          `FullWitnessMemAirSourceRawSidecars` callback. When the sidecar \
          columns live in Clean `ProverData`, supply \
          `FullWitnessMemAirSourceProverDataWitnessFacts` for the named keys \
-         below and package it with \
-         `fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts`; \
-         `FullWitnessMemAirSourceProverDataFacts` is the raw-facts fallback. \
+         below and pass it to \
+         `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts`; \
+         `fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` is the \
+         sidecar packager and `FullWitnessMemAirSourceProverDataFacts` is the \
+         raw-facts fallback. \
          Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`; \
          `exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete \
          replay source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` \
@@ -2755,6 +2757,9 @@ mod tests {
         );
         assert!(
             out.contains("`FullWitnessMemAirSourceProverDataWitnessFacts`")
+                && out.contains(
+                    "`fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts`"
+                )
                 && out.contains(
                     "`fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts`"
                 ),

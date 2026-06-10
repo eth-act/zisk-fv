@@ -940,6 +940,18 @@ no assumed soundness fields**.
       `tools/pil-extract` cargo tests, regenerated
       `/tmp/mem-air-facts-report.md`, `lake build ZiskFv.Compliance`,
       `trust/scripts/check-all.sh`, and `git diff --check`.
+      Direct timeline entry slice:
+      `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts` now
+      packages ProverData-backed Clean assertion/lookup witnesses into
+      `FullWitnessMemoryTimelineEvidence` together with the residual Sail
+      timeline facts. The mem-air-facts report and extractor notes now point
+      generated code at this direct constructor, while keeping
+      `fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` as the
+      sidecar packager. Verified with clean Lean LSP diagnostics for
+      `Balance.lean`, `lean_verify` on the new constructor,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, the focused
+      mem-air-facts report test, full `tools/pil-extract` cargo tests,
+      regenerated `/tmp/mem-air-facts-report.md`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

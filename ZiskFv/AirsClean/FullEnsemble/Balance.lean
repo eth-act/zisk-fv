@@ -6677,6 +6677,49 @@ noncomputable def fullWitnessMemoryTimelineEvidence_of_rawFacts
     h_initialAgreement
     h_stateAtPrefix
 
+/-- Construct full-witness timeline evidence from ProverData-backed Clean
+    assertion/lookup witnesses plus the residual Sail timeline facts.
+
+    This is the preferred generated/full-ensemble entry point when the Mem
+    sidecar columns live in the shared `witness.data` map. -/
+@[reducible]
+noncomputable def fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_witnessFacts : FullWitnessMemAirSourceProverDataWitnessFacts witness)
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
+    (h_traceSplit :
+      (fullWitnessMemAirSourceOfRawSidecars witness
+          (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts h_witnessFacts)).rows =
+        priorRows ++ entry :: laterRows)
+    (h_selectedRead :
+      ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
+        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))
+    (h_initialAgreement :
+      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
+        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          ((fullWitnessMemAirSourceOfRawSidecars witness
+              (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts
+                h_witnessFacts)).replayBridgeOfTraceSplit
+            h_traceSplit)).initialMemory)
+    (h_stateAtPrefix :
+      state =
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
+    FullWitnessMemoryTimelineEvidence state entry :=
+  fullWitnessMemoryTimelineEvidence_of_rawSidecars
+    witness
+    (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts h_witnessFacts)
+    initialState
+    priorRows
+    laterRows
+    h_traceSplit
+    h_selectedRead
+    h_initialAgreement
+    h_stateAtPrefix
+
 /-- Forget the concrete full-witness source, retaining the existing residual
     timeline API consumed by load proofs. -/
 @[reducible]

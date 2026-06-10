@@ -13,10 +13,10 @@ emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
 table-global segment/permutation constants, challenges, ranges, and generated
 assertions are outside the component.
 
-Current slice: sidecar source surface is reproducible and data-keyed.
-`fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` packages
-ProverData-backed Clean assertion/lookup witnesses into the sidecar boundary
-stored by `FullWitnessMemoryTimelineEvidence`.
+Current slice: generated code now has a direct ProverData witness-facts entry
+point. `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts` packages
+ProverData-backed Clean assertion/lookup witnesses into the stored timeline
+boundary plus the residual Sail timeline facts.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -24,22 +24,22 @@ Current proof surface:
 - `FullWitnessMemoryTimelineEvidence` carries full witness +
   `FullWitnessMemAirSourceRawSidecars`; source/bridge/replay are accessors.
 - `tools/pil-extract mem-air-facts` reports generated constraints, range
-  hints, sidecar ProverData keys, pilout sources, and Lean coverage.
+  hints, sidecar ProverData keys, pilout sources, and the direct constructor.
 - `MemTableGeneratedAirSource` remains the table-level path from Clean
   assertion/lookup witnesses.
 
 Latest verification:
-- Lean LSP diagnostics on `Balance.lean`: clean after witness-target edit.
-- `lean_verify` on witness/raw adapters: no source warnings.
+- Lean LSP diagnostics on `Balance.lean`: clean after direct constructor edit.
+- `lean_verify` on `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts`:
+  no source warnings.
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`.
 - Focused mem-air-facts report test and full
   `cargo test --manifest-path tools/pil-extract/Cargo.toml` (69 tests).
-- Regenerated `/tmp/mem-air-facts-report.md`; it names the witness target and
-  ProverData sidecar keys.
-- `lake build ZiskFv.Compliance`.
-- `trust/scripts/check-all.sh`.
+- Regenerated `/tmp/mem-air-facts-report.md`; it names the direct constructor.
 - `git diff --check` clean.
-- Rustfmt check still has broad pre-existing churn outside this slice.
+- Latest broader gate: `lake build ZiskFv.Compliance` and
+  `trust/scripts/check-all.sh` at commit `3a30639f`.
+- Rustfmt check has broad pre-existing churn outside this slice.
 - Last full `nix run .#test`: commit `98202ebc`.
 
 Next step: make generated/full-ensemble output actually supply

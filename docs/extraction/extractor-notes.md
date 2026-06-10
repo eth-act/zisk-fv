@@ -238,12 +238,13 @@ range-check hints cover `incrementChunks`, `dualStepDelta`, and
 `distanceBaseChunks`, while `addrColumns` and `stepColumns` require the
 `mem.pil` bit-width lines supplied through `--pil-source`. A generated Lean
 module should supply `FullWitnessMemAirSourceProverDataWitnessFacts` for the
-named `witness.data` sidecar keys and package it with
-`fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts`; the lower-level
-`FullWitnessMemAirSourceProverDataFacts` callback remains available for
-generated modules that prove raw Mem facts directly. A module can also build
-`MemTableGeneratedRawSourceSidecar` values directly for mutable Mem tables and
-expose them through `FullWitnessMemAirSourceRawSidecars`.
+named `witness.data` sidecar keys and pass it to
+`fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts`;
+`fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` is the sidecar
+packager and the lower-level `FullWitnessMemAirSourceProverDataFacts` callback
+remains available for generated modules that prove raw Mem facts directly. A
+module can also build `MemTableGeneratedRawSourceSidecar` values directly for
+mutable Mem tables and expose them through `FullWitnessMemAirSourceRawSidecars`.
 Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`;
 `exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete replay
 source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` feeds the
