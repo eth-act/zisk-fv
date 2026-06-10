@@ -9,9 +9,9 @@ generated rows plus row/segment range facts.
 `FullWitnessMemReplayBridge` packages them for a concrete Mem table, while
 `FullWitnessMemoryTimelineEvidence` is the global source object and coerces to
 the existing load-proof timeline API.
-Current sub-gap: supply generated/range facts for the witness-selected Mem table;
-table projection, row count, fixed-column shape, and nonempty evidence now have
-constructors.
+Current sub-gap: supply `MemTableGeneratedAirFacts` for the witness-selected Mem
+table; table projection, row count, fixed-column shape, active-row equality, and
+nonempty evidence now have constructors.
 Audit result: existing Lean has selected-load MemClean row bridges, but no
 source constructing whole-table `FullWitnessMemReplayBridge` fields from an
 `EnsembleWitness`.
@@ -33,18 +33,18 @@ Latest proof surface:
   and `FullWitnessMemoryTimelineEvidence`; accepted replay is derived from the
   full-witness bridge, while split, initial agreement, and state-at-prefix remain
   residual timeline inputs.
-- Current constructor slices add `memOfTable`,
-  `fullWitnessMemReplayBridge_of_memTable`, fixed-`SEGMENT_L1` construction,
-  and active-row nonempty -> table nonempty, so those are no longer external
-  bridge facts.
+- Current constructor slices add `memOfTable`, fixed-`SEGMENT_L1`, active-row
+  nonempty, and `MemTableGeneratedAirFacts` constructors, so the remaining
+  extractor-facing source is one generated/range package.
 
 Verification: recent segment-range/full-witness-bridge slices pass target
 builds and no-`sorryAx` scans (only existing Clean completeness axioms).
 Full `nix run .#test` last passed for `98202ebc`. Current slices pass LSP/file
 checks, `lake build ZiskFv.Compliance`, both trust gates, and the targeted
-Balance build; new constructor scans show no `sorryAx`.
+Balance build; the new AIR-facts constructor slice passes `lake env lean`,
+targeted Balance build, and no-`sorryAx` scans.
 
-Next step: derive the remaining generated/range facts for the witness-selected
-Mem table.
+Next step: derive or expose `MemTableGeneratedAirFacts` from concrete
+extraction/Clean witness data.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

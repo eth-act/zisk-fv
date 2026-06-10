@@ -590,7 +590,18 @@ no assumed soundness fields**.
       active-row nonemptiness instead of raw `0 < table.table.length`.
       Verified so far with LSP diagnostics and `lake env lean
       ZiskFv/AirsClean/FullEnsemble/Balance.lean`.
-      Current sub-gap: derive the remaining generated/range facts for the
+      Partial: `MemTableGeneratedAirFacts` now consolidates the remaining
+      extractor-facing generated facts for the witness-selected Mem table:
+      `generated_every_row`, table row ranges, and segment range facts. The
+      new constructors `memTableGeneratedRowsBridge_of_memOfTable_airFacts`,
+      `fullWitnessMemReplayBridge_of_memTable_fixedL1_airFacts`, and
+      `fullWitnessMemReplayBridge_of_memTable_fixedL1_activeRows_airFacts`
+      consume that package, so those facts are no longer loose constructor
+      parameters. Verified with clean LSP diagnostics, `lake env lean
+      ZiskFv/AirsClean/FullEnsemble/Balance.lean`, targeted `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, and no-`sorryAx` scans of the
+      new constructors.
+      Current sub-gap: derive or expose `MemTableGeneratedAirFacts` for the
       witness-selected Mem table from concrete extraction/Clean witness data.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
