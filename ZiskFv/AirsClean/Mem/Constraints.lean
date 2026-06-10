@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.Mem.Spec
 import ZiskFv.AirsClean.RangeTables
+import ZiskFv.Airs.Mem
 import ZiskFv.Channels.MemoryBus
 import Clean.Circuit.Basic
 
@@ -74,6 +75,96 @@ def dualStepDeltaRangeLookup (row : Var MemRow FGL) : Circuit FGL Unit := do
 def distanceBaseRangeLookups (lo hi : Expression FGL) : Circuit FGL Unit := do
   lookup (Table.fromStatic rangeTable16) lo
   lookup (Table.fromStatic rangeTable16) hi
+
+/-- Lookup-independent generated Mem constraints `0..=23`, rendered as a
+    Clean assertion source over concrete named columns. -/
+@[circuit_norm]
+def segmentGeneratedConstraintAssertions
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (row : ℕ) : Circuit FGL Unit := do
+  assertZero (.const (segment.is_first_segment * (1 - segment.is_first_segment)))
+  assertZero (.const (segment.is_last_segment * (1 - segment.is_last_segment)))
+  assertZero (.const (segment.is_first_segment * segment.segment_id))
+  assertZero (.const (mem.sel_dual row * (1 - mem.sel_dual row)))
+  assertZero (.const ((1 - mem.sel row) * mem.sel_dual row))
+  assertZero (.const (mem.sel row * (1 - mem.sel row)))
+  assertZero (.const (mem.addr_changes row * (1 - mem.addr_changes row)))
+  assertZero (.const (mem.wr row * (1 - mem.wr row)))
+  assertZero (.const (mem.wr row * (1 - mem.sel row)))
+  assertZero (.const (segment.segment_l1 (row + 1) *
+    (mem.value_0 row - segment.segment_last_value_0)))
+  assertZero (.const (segment.segment_l1 (row + 1) *
+    (mem.value_1 row - segment.segment_last_value_1)))
+  assertZero (.const (segment.segment_l1 (row + 1) *
+    (mem.addr row - segment.segment_last_addr)))
+  assertZero (.const (segment.segment_l1 (row + 1) *
+    (mem.sel_dual row * (mem.step_dual row - mem.step row) + mem.step row
+      - segment.segment_last_step)))
+  assertZero (.const ((segment.previous_segment_addr - 335544320)
+    - (segment.distance_base_0 + 65536 * segment.distance_base_1)))
+  assertZero (.const ((402653183 - segment.segment_last_addr)
+    - (segment.distance_end_0 + 65536 * segment.distance_end_1)))
+  assertZero (.const (mem.previous_step row
+    - (segment.segment_l1 row *
+        (segment.previous_segment_step - ZiskFv.Airs.Mem.previous_row_step mem row)
+      + ZiskFv.Airs.Mem.previous_row_step mem row)))
+  assertZero (.const ((mem.increment_0 row + 4194304 * mem.increment_1 row + 1)
+    - (mem.addr_changes row *
+        (ZiskFv.Airs.Mem.delta_addr segment mem row - ZiskFv.Airs.Mem.delta_step mem row)
+      + ZiskFv.Airs.Mem.delta_step mem row)))
+  assertZero (.const ((segment.is_first_segment * segment.segment_l1 row) *
+    (1 - mem.addr_changes row)))
+  assertZero (.const (mem.read_same_addr row
+    - (1 - mem.addr_changes row) * (1 - mem.wr row)))
+  assertZero (.const ((1 - mem.addr_changes row) *
+    (mem.addr row - ZiskFv.Airs.Mem.segment_previous_addr segment mem row)))
+  assertZero (.const (mem.read_same_addr row *
+    (mem.value_0 row - ZiskFv.Airs.Mem.segment_previous_value_0 segment mem row)))
+  assertZero (.const ((mem.addr_changes row * (1 - mem.wr row)) * mem.value_0 row))
+  assertZero (.const (mem.read_same_addr row *
+    (mem.value_1 row - ZiskFv.Airs.Mem.segment_previous_value_1 segment mem row)))
+  assertZero (.const ((mem.addr_changes row * (1 - mem.wr row)) * mem.value_1 row))
+
+/-- Generated Mem permutation/accumulator constraints `24..=33`, rendered as
+    a Clean assertion source over concrete named columns. -/
+@[circuit_norm]
+def permutationGeneratedConstraintAssertions
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (row : ℕ) : Circuit FGL Unit := do
+  assertZero (.const (mem.im_0 row *
+    (ZiskFv.Airs.Mem.gsum_increment_1 permutation mem row *
+      ZiskFv.Airs.Mem.gsum_dual_step permutation mem row)
+    - ((18446744069414584320 * ZiskFv.Airs.Mem.gsum_dual_step permutation mem row)
+      + ((0 - mem.sel_dual row) *
+        ZiskFv.Airs.Mem.gsum_increment_1 permutation mem row))))
+  assertZero (.const (mem.im_1 row *
+    (ZiskFv.Airs.Mem.gsum_primary_mem permutation mem row *
+      ZiskFv.Airs.Mem.gsum_dual_mem permutation mem row)
+    - (mem.sel row * ZiskFv.Airs.Mem.gsum_dual_mem permutation mem row
+      + mem.sel_dual row * ZiskFv.Airs.Mem.gsum_primary_mem permutation mem row)))
+  assertZero (.const (ZiskFv.Airs.Mem.gsum_accumulator_delta permutation mem row *
+    ZiskFv.Airs.Mem.gsum_increment_0 permutation mem row + 1))
+  assertZero (.const (permutation.im_direct_0 *
+    ZiskFv.Airs.Mem.direct_gsum_0 segment permutation + 1))
+  assertZero (.const (permutation.im_direct_1 *
+    ZiskFv.Airs.Mem.direct_gsum_1 segment permutation
+      - (1 - segment.is_last_segment)))
+  assertZero (.const (permutation.im_direct_2 *
+    ZiskFv.Airs.Mem.direct_gsum_distance_base_0 segment permutation + 1))
+  assertZero (.const (permutation.im_direct_3 *
+    ZiskFv.Airs.Mem.direct_gsum_distance_base_1 segment permutation + 1))
+  assertZero (.const (permutation.im_direct_4 *
+    ZiskFv.Airs.Mem.direct_gsum_distance_end_0 segment permutation + 1))
+  assertZero (.const (permutation.im_direct_5 *
+    ZiskFv.Airs.Mem.direct_gsum_distance_end_1 segment permutation + 1))
+  assertZero (.const (permutation.l1 (row + 1) *
+    (segment.segment_id - mem.gsum row
+      - (((((permutation.im_direct_0 + permutation.im_direct_1)
+        + permutation.im_direct_2) + permutation.im_direct_3)
+        + permutation.im_direct_4) + permutation.im_direct_5))))
 
 @[reducible] def memElaborated :
     ElaboratedCircuit FGL MemRow unit where

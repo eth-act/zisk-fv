@@ -349,6 +349,54 @@ theorem distance_chunks_in_range_of_lookup_aware_const_soundness
     ⟨ by simpa [ZiskFv.Airs.Mem.distance_chunks_in_range] using h_lo,
       by simpa [ZiskFv.Airs.Mem.distance_chunks_in_range] using h_hi ⟩
 
+/-! ## Generated-constraint assertion witnesses -/
+
+/-- Clean assertion witness for generated Mem constraints `0..=23`. -/
+structure SegmentConstraintAssertionWitness
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (row : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((segmentGeneratedConstraintAssertions segment mem row).operations offset)
+
+/-- Project generated Mem constraints `0..=23` from their assertion source. -/
+theorem segment_every_row_of_constraint_assertions
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {row : ℕ}
+    (w : SegmentConstraintAssertionWitness segment mem row) :
+    ZiskFv.Airs.Mem.segment_every_row segment mem row := by
+  have h_holds := w.holds
+  simpa [segmentGeneratedConstraintAssertions, ZiskFv.Airs.Mem.segment_every_row,
+    circuit_norm] using h_holds
+
+/-- Clean assertion witness for generated Mem constraints `24..=33`. -/
+structure PermutationConstraintAssertionWitness
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (row : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((permutationGeneratedConstraintAssertions segment permutation mem row).operations offset)
+
+/-- Project generated Mem constraints `24..=33` from their assertion source. -/
+theorem permutation_every_row_of_constraint_assertions
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {row : ℕ}
+    (w : PermutationConstraintAssertionWitness segment permutation mem row) :
+    ZiskFv.Airs.Mem.permutation_every_row segment permutation mem row := by
+  have h_holds := w.holds
+  simpa [permutationGeneratedConstraintAssertions,
+    ZiskFv.Airs.Mem.permutation_every_row, circuit_norm] using h_holds
+
 /-- **Bridge theorem.** Given a row of a `Valid_Mem` satisfying the
     9 Clean Component constraints and the boolean range assumptions,
     the Mem per-row Spec holds. -/

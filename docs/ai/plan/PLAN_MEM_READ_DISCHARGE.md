@@ -701,6 +701,25 @@ no assumed soundness fields**.
       ZiskFv.AirsClean.FullEnsemble.Balance`, MCP `lean_build` / incremental
       full `lake build`, `trust/scripts/check-all.sh`, and `lean_verify`
       scans of the new lookup projections and Balance constructors.
+      Partial: the split generated constraints now also have a concrete Clean
+      assertion-witness source. `Mem.Constraints` adds
+      `segmentGeneratedConstraintAssertions` mirroring Mem constraints `0..=23`
+      and `permutationGeneratedConstraintAssertions` mirroring constraints
+      `24..=33`; `Mem.Bridge` projects
+      `SegmentConstraintAssertionWitness` and
+      `PermutationConstraintAssertionWitness` to `segment_every_row` and
+      `permutation_every_row`; and `Balance.lean` packages those witnesses as
+      `MemTableGeneratedConstraintAssertionFacts` with a constructor to
+      `MemTableGeneratedConstraintFacts`. This removes the raw split-constraint
+      callbacks from the next proof target, but generated Lean/full-ensemble
+      code still has to supply the assertion witnesses and the range lookup
+      witnesses for the witness-selected Mem table before constructing
+      `MemTableGeneratedAirSource.facts`. Verified with clean Lean LSP
+      diagnostics, targeted builds for `ZiskFv.AirsClean.Mem.Bridge` and
+      `ZiskFv.AirsClean.FullEnsemble.Balance`, MCP `lean_build` / incremental
+      full `lake build`, `trust/scripts/check-all.sh`, `lean_verify` scans of
+      the new assertion projections and Balance constructor, and
+      `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

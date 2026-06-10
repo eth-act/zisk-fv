@@ -2146,6 +2146,39 @@ structure MemTableGeneratedConstraintFacts
     ∀ idx : Fin table.table.length,
       ZiskFv.Airs.Mem.permutation_every_row segment permutation mem idx.val
 
+/-- Clean assertion source for the split generated Mem constraint groups. -/
+structure MemTableGeneratedConstraintAssertionFacts
+    (table : Table FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL) : Type 1 where
+  segmentAt :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.AirsClean.Mem.SegmentConstraintAssertionWitness segment mem idx.val
+  permutationAt :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.AirsClean.Mem.PermutationConstraintAssertionWitness
+        segment permutation mem idx.val
+
+/-- Project split generated Mem constraint facts from their Clean assertion
+    witnesses. -/
+def memTableGeneratedConstraintFacts_of_assertionFacts
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    (h_assertions :
+      MemTableGeneratedConstraintAssertionFacts table mem segment permutation) :
+    MemTableGeneratedConstraintFacts table mem segment permutation where
+  segmentAt := by
+    intro idx
+    exact ZiskFv.AirsClean.Mem.segment_every_row_of_constraint_assertions
+      (h_assertions.segmentAt idx)
+  permutationAt := by
+    intro idx
+    exact ZiskFv.AirsClean.Mem.permutation_every_row_of_constraint_assertions
+      (h_assertions.permutationAt idx)
+
 /-- Recombine the extractor's split generated-constraint groups into the
     `generated_every_row` package consumed by existing replay proofs. -/
 theorem generatedAt_of_memTableGeneratedConstraintFacts
