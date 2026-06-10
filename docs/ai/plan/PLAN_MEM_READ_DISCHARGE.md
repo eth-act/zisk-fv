@@ -349,6 +349,23 @@ no assumed soundness fields**.
       diagnostics for `ZiskFv.AirsClean.FullEnsemble.Balance`, the target
       build, full `lake build`, `trust/scripts/check-all.sh`,
       `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
+      Latest completed slice factors the same-address predecessor step.
+      `wr_eq_zero_of_sel_zero_memTableGeneratedRowsBridge` projects the
+      generated `wr * (1 - sel) = 0` constraint for inactive rows.
+      `readEventReplayAgreement_after_previous_selected_row_memTableGeneratedRowsBridge`
+      proves that a selected previous row justifies the current same-address
+      read after replaying the previous active row chunk, handling primary
+      writes, replay-sound primary reads, and replay-neutral dual reads.
+      `readEventReplayAgreement_after_previous_inactive_row_memTableGeneratedRowsBridge`
+      handles inactive padding rows that carry address/value without emitting
+      active replay entries, and
+      `readEventReplayAgreement_after_previous_row_memTableGeneratedRowsBridge`
+      packages the selected/inactive split as one predecessor lemma. Verified
+      with clean Lean LSP diagnostics for
+      `ZiskFv.AirsClean.FullEnsemble.Balance`,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+      `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -393,8 +410,8 @@ no assumed soundness fields**.
       hiding it in replay evidence.
       Current sub-gap: the address-change selected-read prefix case is closed
       under those fixed-column facts. The remaining primary-read prefix work is
-      the same-address selected-read case: carry address/value agreement
-      backward through same-address rows until the previous selected event or
+      the same-address selected-read case: iterate the one-step predecessor
+      lemma backward through same-address rows until a selected write/read or
       the address-change zero-preload base case.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
