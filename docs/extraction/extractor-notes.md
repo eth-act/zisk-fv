@@ -33,7 +33,8 @@ pil-extract mem-air-facts --pilout <path> [--air Mem]
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR
-  facts consumed by `MemTableGeneratedAirFacts`.
+  facts consumed by `MemTableGeneratedAirFacts`, including the pilout source
+  map for `MemTableGeneratedRawSourceSidecar`.
 - `--pilout`: path to a compiled `.pilout` (protobuf, schema vendored at
   `tools/pil-extract/proto/pilout.proto`).
 - `--air`: substring matched against each AIR's `name` (case-sensitive). Must
@@ -227,15 +228,17 @@ pil-extract mem-air-facts --pilout build/zisk.pilout --air Mem \
 The report maps constraints `0..=23` to
 `MemTableGeneratedConstraintFacts.segmentAt` / `segment_every_row` and
 constraints `24..=33` to `.permutationAt` / `permutation_every_row`. It also
-lists `gsum_debug_data` hints whose `name_piop = "Range Check"`; those are the
-extractor-facing source for `MemTableGeneratedRangeFacts` and
-`MemSegmentGeneratedRangeFacts`. The report also emits a Lean range-fact
-coverage table: range-check hints cover `incrementChunks`, `dualStepDelta`, and
-`distanceBaseChunks`, while `addrColumns` and `stepColumns` require the
-`mem.pil` bit-width lines supplied through `--pil-source`. A generated Lean
-module should build `MemTableGeneratedRawSourceSidecar` values for mutable Mem
-tables and expose them through `FullWitnessMemAirSourceRawSidecars`. Lean
-converts that sidecar callback with
+emits a sidecar source map tying `MemTableGeneratedRawSourceSidecar` fields to
+stage-2 witness columns, fixed columns, AIR_VALUE symbols, and the
+`std_alpha`/`std_gamma` challenges. The report lists `gsum_debug_data` hints
+whose `name_piop = "Range Check"`; those are the extractor-facing source for
+`MemTableGeneratedRangeFacts` and `MemSegmentGeneratedRangeFacts`. It also emits
+a Lean range-fact coverage table: range-check hints cover `incrementChunks`,
+`dualStepDelta`, and `distanceBaseChunks`, while `addrColumns` and `stepColumns`
+require the `mem.pil` bit-width lines supplied through `--pil-source`. A
+generated Lean module should build `MemTableGeneratedRawSourceSidecar` values
+for mutable Mem tables and expose them through `FullWitnessMemAirSourceRawSidecars`.
+Lean converts that sidecar callback with
 `fullWitnessMemAirSourceRawFacts_of_sidecars`, and
 `exists_fullWitnessMemAirSource_of_rawSidecars` then selects the concrete replay
 source. The table-level

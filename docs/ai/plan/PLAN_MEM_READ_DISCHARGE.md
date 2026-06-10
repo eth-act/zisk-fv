@@ -854,6 +854,14 @@ no assumed soundness fields**.
       and `git diff --check`. Note: `cargo fmt --check` still reports broad
       pre-existing rustfmt churn in `tools/pil-extract`, so it was not used as a
       narrow gate for this slice.
+      Follow-up report mapping: `tools/pil-extract mem-air-facts` now emits a
+      `Sidecar Source Map` section that ties each
+      `MemTableGeneratedRawSourceSidecar` field to the concrete pilout source:
+      stage-2 witness columns for `gsum`/`im`, fixed columns for `SEGMENT_L1`
+      and `__L1__`, AIR_VALUE symbols for segment/direct constants, and the
+      global `std_alpha`/`std_gamma` challenge symbols. Verified with `cargo
+      test --manifest-path tools/pil-extract/Cargo.toml` and regenerated
+      `/tmp/mem-air-facts-report.md`; `git diff --check` is clean.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

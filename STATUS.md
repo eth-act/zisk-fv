@@ -16,7 +16,8 @@ Current slice: add a table-level generated-output contract. Lean now has
 `MemTableGeneratedRawSourceSidecar` per mutable Mem table,
 `FullWitnessMemAirSourceRawSidecars` for a full witness, and adapters to the
 existing `FullWitnessMemAirSourceRawFacts` / source-selector path. Extractor
-and docs text now point generated code at the sidecar target.
+and docs text now point generated code at the sidecar target; the report also
+maps sidecar fields to concrete pilout witness/fixed/AIR_VALUE/challenge symbols.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -32,7 +33,7 @@ Latest verification:
 - Lean LSP diagnostics on `Balance`: clean after sidecar edit
 - `lean_verify` on sidecar adapters/selectors: no source warnings
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
-- `cargo test --manifest-path tools/pil-extract/Cargo.toml`
+- `cargo test --manifest-path tools/pil-extract/Cargo.toml` (67 tests)
 - Regenerated `/tmp/mem-air-facts-report.md`; `git diff --check`
 - Last wider build: `Compliance`; last trust gate: `check-all.sh`
 - Last full `nix run .#test`: commit `98202ebc`

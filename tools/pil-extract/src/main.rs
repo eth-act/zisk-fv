@@ -1210,6 +1210,8 @@ fn render_mem_air_facts_report(
         .ok_or_else(|| anyhow!("air has no name"))?;
     let witness_cols = witness_column_names(pilout, hit);
     let fixed_cols = fixed_column_names(pilout, hit);
+    let air_values = air_value_names(pilout, hit);
+    let challenges = challenge_names(pilout);
     let range_hints = mem_air_gsum_hints(pilout, hit, Some("Range Check"))?;
     let other_hints = mem_air_gsum_hints(pilout, hit, None)?
         .into_iter()
@@ -1323,6 +1325,16 @@ fn render_mem_air_facts_report(
     }
     writeln!(out).unwrap();
 
+    writeln!(out, "## Sidecar Source Map\n").unwrap();
+    write_mem_air_sidecar_source_map(
+        &mut out,
+        &witness_cols,
+        &fixed_cols,
+        &air_values,
+        &challenges,
+    );
+    writeln!(out).unwrap();
+
     writeln!(out, "## Constraint Inventory\n").unwrap();
     writeln!(out, "| Index | Domain | Lean Group | Debug Line |").unwrap();
     writeln!(out, "|---:|---|---|---|").unwrap();
@@ -1379,6 +1391,54 @@ fn render_mem_air_facts_report(
     }
 
     Ok(out)
+}
+
+fn scoped_symbol_names(
+    pilout: &PilOut,
+    hit: &AirHit<'_>,
+    ty: SymbolType,
+) -> Vec<(u32, u32, String)> {
+    let mut out = Vec::new();
+    for sym in &pilout.symbols {
+        let sym_ty = SymbolType::try_from(sym.r#type).unwrap_or(SymbolType::WitnessCol);
+        if sym_ty != ty {
+            continue;
+        }
+        if sym.air_group_id != Some(hit.airgroup_idx as u32) {
+            continue;
+        }
+        if sym.air_id != Some(hit.air_idx as u32) {
+            continue;
+        }
+        let stage = sym.stage.unwrap_or(1);
+        if sym.dim == 0 {
+            out.push((stage, sym.id, sym.name.clone()));
+        } else {
+            let total: u32 = sym.lengths.iter().product();
+            for k in 0..total {
+                out.push((stage, sym.id + k, format!("{}[{}]", sym.name, k)));
+            }
+        }
+    }
+    out.sort_by_key(|(stage, id, _)| (*stage, *id));
+    out
+}
+
+fn air_value_names(pilout: &PilOut, hit: &AirHit<'_>) -> Vec<(u32, u32, String)> {
+    scoped_symbol_names(pilout, hit, SymbolType::AirValue)
+}
+
+fn challenge_names(pilout: &PilOut) -> Vec<(u32, u32, String)> {
+    let mut out = Vec::new();
+    for sym in &pilout.symbols {
+        let ty = SymbolType::try_from(sym.r#type).unwrap_or(SymbolType::WitnessCol);
+        if ty != SymbolType::Challenge {
+            continue;
+        }
+        out.push((sym.stage.unwrap_or(0), sym.id, sym.name.clone()));
+    }
+    out.sort_by_key(|(stage, id, _)| (*stage, *id));
+    out
 }
 
 fn fixed_column_names(pilout: &PilOut, hit: &AirHit<'_>) -> Vec<(u32, String)> {
@@ -1448,6 +1508,169 @@ fn mem_air_gsum_hints(
         }
     }
     Ok(out)
+}
+
+fn witness_source(witness_cols: &HashMap<(u32, u32), String>, stage: u32, id: u32) -> String {
+    match witness_cols.get(&(stage, id)) {
+        Some(name) => format!("stage {} witness col {} `{}`", stage, id, md_escape(name)),
+        None => format!("stage {} witness col {} `<missing symbol>`", stage, id),
+    }
+}
+
+fn fixed_source(fixed_cols: &[(u32, String)], id: u32) -> String {
+    match fixed_cols.iter().find(|(idx, _)| *idx == id) {
+        Some((_, name)) => format!("fixed col {} `{}`", id, md_escape(name)),
+        None => format!("fixed col {} `<missing symbol>`", id),
+    }
+}
+
+fn air_value_source(air_values: &[(u32, u32, String)], stage: u32, id: u32) -> String {
+    match air_values.iter().find(|(s, idx, _)| *s == stage && *idx == id) {
+        Some((_, _, name)) => format!("stage {} AIR_VALUE {} `{}`", stage, id, md_escape(name)),
+        None => format!("stage {} AIR_VALUE {} `<missing symbol>`", stage, id),
+    }
+}
+
+fn challenge_source(challenges: &[(u32, u32, String)], stage: u32, id: u32) -> String {
+    match challenges.iter().find(|(s, idx, _)| *s == stage && *idx == id) {
+        Some((_, _, name)) => format!("challenge stage {} idx {} `{}`", stage, id, md_escape(name)),
+        None => format!("challenge stage {} idx {} `<missing symbol>`", stage, id),
+    }
+}
+
+fn write_mem_air_sidecar_source_map(
+    out: &mut String,
+    witness_cols: &HashMap<(u32, u32), String>,
+    fixed_cols: &[(u32, String)],
+    air_values: &[(u32, u32, String)],
+    challenges: &[(u32, u32, String)],
+) {
+    let mut rows: Vec<(String, String, String)> = vec![
+        (
+            "`sidecar.gsum row`".into(),
+            witness_source(witness_cols, 2, 0),
+            "stage-2 accumulator column".into(),
+        ),
+        (
+            "`sidecar.im0 row`".into(),
+            witness_source(witness_cols, 2, 1),
+            "stage-2 intermediate product".into(),
+        ),
+        (
+            "`sidecar.im1 row`".into(),
+            witness_source(witness_cols, 2, 2),
+            "stage-2 intermediate product".into(),
+        ),
+        (
+            "`(segmentWithFixedL1 sidecar.segment).segment_l1 row`".into(),
+            fixed_source(fixed_cols, 0),
+            "deterministic segment boundary fixed column".into(),
+        ),
+        (
+            "`sidecar.permutation.l1 row`".into(),
+            fixed_source(fixed_cols, 1),
+            "permutation final-row fixed column".into(),
+        ),
+        (
+            "`sidecar.segment.segment_id`".into(),
+            air_value_source(air_values, 1, 0),
+            "segment direct source".into(),
+        ),
+        (
+            "`sidecar.segment.is_first_segment`".into(),
+            air_value_source(air_values, 1, 1),
+            "segment selector".into(),
+        ),
+        (
+            "`sidecar.segment.is_last_segment`".into(),
+            air_value_source(air_values, 1, 2),
+            "segment selector".into(),
+        ),
+        (
+            "`sidecar.segment.previous_segment_value_0`".into(),
+            air_value_source(air_values, 1, 3),
+            "previous segment carried value".into(),
+        ),
+        (
+            "`sidecar.segment.previous_segment_value_1`".into(),
+            air_value_source(air_values, 1, 4),
+            "previous segment carried value".into(),
+        ),
+        (
+            "`sidecar.segment.previous_segment_step`".into(),
+            air_value_source(air_values, 1, 5),
+            "previous segment carried step".into(),
+        ),
+        (
+            "`sidecar.segment.previous_segment_addr`".into(),
+            air_value_source(air_values, 1, 6),
+            "previous segment carried address".into(),
+        ),
+        (
+            "`sidecar.segment.segment_last_value_0`".into(),
+            air_value_source(air_values, 1, 7),
+            "segment carry-out value".into(),
+        ),
+        (
+            "`sidecar.segment.segment_last_value_1`".into(),
+            air_value_source(air_values, 1, 8),
+            "segment carry-out value".into(),
+        ),
+        (
+            "`sidecar.segment.segment_last_step`".into(),
+            air_value_source(air_values, 1, 9),
+            "segment carry-out step".into(),
+        ),
+        (
+            "`sidecar.segment.segment_last_addr`".into(),
+            air_value_source(air_values, 1, 10),
+            "segment carry-out address".into(),
+        ),
+        (
+            "`sidecar.segment.distance_base_0`".into(),
+            air_value_source(air_values, 1, 11),
+            "segment range chunk".into(),
+        ),
+        (
+            "`sidecar.segment.distance_base_1`".into(),
+            air_value_source(air_values, 1, 12),
+            "segment range chunk".into(),
+        ),
+        (
+            "`sidecar.segment.distance_end_0`".into(),
+            air_value_source(air_values, 1, 13),
+            "segment range chunk".into(),
+        ),
+        (
+            "`sidecar.segment.distance_end_1`".into(),
+            air_value_source(air_values, 1, 14),
+            "segment range chunk".into(),
+        ),
+        (
+            "`sidecar.permutation.std_alpha`".into(),
+            challenge_source(challenges, 2, 0),
+            "permutation compression challenge".into(),
+        ),
+        (
+            "`sidecar.permutation.std_gamma`".into(),
+            challenge_source(challenges, 2, 1),
+            "permutation compression challenge".into(),
+        ),
+    ];
+
+    for idx in 0..6 {
+        rows.push((
+            format!("`sidecar.permutation.im_direct_{}`", idx),
+            air_value_source(air_values, 2, 15 + idx),
+            "direct-update inverse source".into(),
+        ));
+    }
+
+    writeln!(out, "| Lean sidecar field | Pilout source | Role |").unwrap();
+    writeln!(out, "|---|---|---|").unwrap();
+    for (lean, source, role) in rows {
+        writeln!(out, "| {} | {} | {} |", lean, source, role).unwrap();
+    }
 }
 
 fn write_mem_air_hint_table(out: &mut String, hints: &[(usize, BusEmission)]) {
@@ -2373,6 +2596,56 @@ mod tests {
         };
         let hit = find_air(&pilout, "Demo").unwrap();
         assert!(witness_column_names(&pilout, &hit).is_empty());
+    }
+
+    #[test]
+    fn air_value_names_array_symbol_expands_indexed() {
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                airs: vec![Air {
+                    name: Some("Demo".into()),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            symbols: vec![pilout::Symbol {
+                name: "Mem.im_direct".to_string(),
+                air_group_id: Some(0),
+                air_id: Some(0),
+                r#type: SymbolType::AirValue as i32,
+                id: 15,
+                stage: Some(2),
+                dim: 1,
+                lengths: vec![3],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Demo").unwrap();
+        let names = air_value_names(&pilout, &hit);
+        assert_eq!(
+            names,
+            vec![
+                (2, 15, "Mem.im_direct[0]".to_string()),
+                (2, 16, "Mem.im_direct[1]".to_string()),
+                (2, 17, "Mem.im_direct[2]".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn challenge_names_reads_global_symbols() {
+        let pilout = PilOut {
+            symbols: vec![pilout::Symbol {
+                name: "std_gamma".to_string(),
+                r#type: SymbolType::Challenge as i32,
+                id: 1,
+                stage: Some(2),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        assert_eq!(challenge_names(&pilout), vec![(2, 1, "std_gamma".to_string())]);
     }
 
     #[test]
