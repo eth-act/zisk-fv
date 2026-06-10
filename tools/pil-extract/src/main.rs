@@ -1271,6 +1271,70 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     )
     .unwrap();
     writeln!(out).unwrap();
+    writeln!(out, "abbrev MemOfProverData").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program)").unwrap();
+    writeln!(
+        out,
+        "    (table : Table FGL) : ZiskFv.Airs.Mem.Valid_Mem FGL FGL :="
+    )
+    .unwrap();
+    writeln!(out, "  memOfTable table").unwrap();
+    writeln!(out, "    (memSidecarGsumOfProverData witness.data)").unwrap();
+    writeln!(out, "    (memSidecarIm0OfProverData witness.data)").unwrap();
+    writeln!(out, "    (memSidecarIm1OfProverData witness.data)").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "abbrev SegmentOfProverData").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(
+        out,
+        "    (witness : FullWitness program) : ZiskFv.Airs.Mem.SegmentColumns FGL :="
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "  segmentWithFixedL1 (memSegmentColumnsOfProverData witness.data)"
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "abbrev PermutationOfProverData").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(
+        out,
+        "    (witness : FullWitness program) : ZiskFv.Airs.Mem.PermutationColumns FGL :="
+    )
+    .unwrap();
+    writeln!(out, "  memPermutationColumnsOfProverData witness.data").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "abbrev ConstraintAssertions").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program)").unwrap();
+    writeln!(out, "    (table : Table FGL) : Type 1 :=").unwrap();
+    writeln!(out, "  MemTableGeneratedConstraintAssertionFacts").unwrap();
+    writeln!(out, "    table").unwrap();
+    writeln!(out, "    (MemOfProverData witness table)").unwrap();
+    writeln!(out, "    (SegmentOfProverData witness)").unwrap();
+    writeln!(out, "    (PermutationOfProverData witness)").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "abbrev RowRangeLookups").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program)").unwrap();
+    writeln!(out, "    (table : Table FGL) : Type 1 :=").unwrap();
+    writeln!(
+        out,
+        "  MemTableGeneratedRangeLookupFacts table (MemOfProverData witness table)"
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "abbrev SegmentRangeLookups").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program) : Type 1 :=").unwrap();
+    writeln!(
+        out,
+        "  MemSegmentGeneratedRangeLookupFacts (SegmentOfProverData witness)"
+    )
+    .unwrap();
+    writeln!(out).unwrap();
     writeln!(out, "abbrev WitnessFacts").unwrap();
     writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
     writeln!(out, "    (witness : FullWitness program) : Type 1 :=").unwrap();
@@ -1279,6 +1343,44 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
         "  FullWitnessMemAirSourceProverDataWitnessFacts witness"
     )
     .unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "@[reducible]").unwrap();
+    writeln!(out, "def buildWitnessFacts").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program)").unwrap();
+    writeln!(out, "    (constraints :").unwrap();
+    writeln!(out, "      ∀ table : Table FGL,").unwrap();
+    writeln!(out, "        table ∈ witness.allTables →").unwrap();
+    writeln!(
+        out,
+        "          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →"
+    )
+    .unwrap();
+    writeln!(out, "            ConstraintAssertions witness table)").unwrap();
+    writeln!(out, "    (rowRanges :").unwrap();
+    writeln!(out, "      ∀ table : Table FGL,").unwrap();
+    writeln!(out, "        table ∈ witness.allTables →").unwrap();
+    writeln!(
+        out,
+        "          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →"
+    )
+    .unwrap();
+    writeln!(out, "            RowRangeLookups witness table)").unwrap();
+    writeln!(out, "    (segmentRanges :").unwrap();
+    writeln!(out, "      ∀ table : Table FGL,").unwrap();
+    writeln!(out, "        table ∈ witness.allTables →").unwrap();
+    writeln!(
+        out,
+        "          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →"
+    )
+    .unwrap();
+    writeln!(out, "            SegmentRangeLookups witness) :").unwrap();
+    writeln!(out, "    WitnessFacts witness := by").unwrap();
+    writeln!(out, "  intro table h_table h_component").unwrap();
+    writeln!(out, "  exact ⟨").unwrap();
+    writeln!(out, "    constraints table h_table h_component,").unwrap();
+    writeln!(out, "    rowRanges table h_table h_component,").unwrap();
+    writeln!(out, "    segmentRanges table h_table h_component⟩").unwrap();
     writeln!(out).unwrap();
     writeln!(out, "abbrev GeneratedTimelineEvidence").unwrap();
     writeln!(
@@ -3074,8 +3176,19 @@ mod tests {
         assert!(
             out.contains("namespace Extraction.MemGeneratedArtifact")
                 && out.contains("abbrev WitnessFacts")
+                && out.contains("abbrev ConstraintAssertions")
+                && out.contains("abbrev RowRangeLookups")
+                && out.contains("abbrev SegmentRangeLookups")
+                && out.contains("def buildWitnessFacts")
                 && out.contains("FullWitnessMemAirSourceProverDataWitnessFacts witness"),
             "generated module should expose the typed witness-facts contract:\n{}",
+            out
+        );
+        assert!(
+            out.contains("MemOfProverData witness table")
+                && out.contains("SegmentOfProverData witness")
+                && out.contains("PermutationOfProverData witness"),
+            "generated module should name the ProverData-backed table sources:\n{}",
             out
         );
         assert!(

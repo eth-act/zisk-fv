@@ -276,8 +276,9 @@ pil-extract mem-generated-artifact --pilout build/zisk.pilout --air Mem \
 ```
 
 The wrapper defines `Extraction.MemGeneratedArtifact.WitnessFacts` as the
-current `FullWitnessMemAirSourceProverDataWitnessFacts witness` target and
-`buildTimelineEvidence` as the call into
+current `FullWitnessMemAirSourceProverDataWitnessFacts witness` target,
+`buildWitnessFacts` as the checked assembly point from the three per-table
+callback families, and `buildTimelineEvidence` as the call into
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. It does not
 prove the witness facts; it pins the generated module's public entry point to
 the current load-facing constructor.

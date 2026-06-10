@@ -1005,6 +1005,18 @@ no assumed soundness fields**.
       (71 tests), local generation of `/tmp/MemGeneratedArtifact.lean`,
       `lake env lean /tmp/MemGeneratedArtifact.lean`,
       `nix flake check --no-build`, and `git diff --check`.
+      Follow-up constructor slice: the generated wrapper now also defines the
+      checked ProverData-backed source aliases `MemOfProverData`,
+      `SegmentOfProverData`, and `PermutationOfProverData`, plus
+      `ConstraintAssertions`, `RowRangeLookups`, `SegmentRangeLookups`, and
+      `buildWitnessFacts`. This assembles the exact
+      `FullWitnessMemAirSourceProverDataWitnessFacts witness` target from the
+      three per-table callback families before `buildTimelineEvidence` consumes
+      it. Verified with the focused wrapper test, full
+      `cargo test --manifest-path tools/pil-extract/Cargo.toml` (71 tests),
+      local regeneration and `lake env lean` for both `/tmp` and populated
+      `MemGeneratedArtifact.lean`, `nix flake check --no-build`, and
+      `git diff --check`.
       Follow-up gate slice: the top-level `nix run .#test` app now includes a
       dedicated `Mem generated artifact wrapper` step that compiles
       `build/extraction/Extraction/MemGeneratedArtifact.lean` with

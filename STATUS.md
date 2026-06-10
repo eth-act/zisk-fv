@@ -17,7 +17,7 @@ assertions are outside the component.
 Current slice: generated artifact production is reproducible and gated.
 `pil-extract mem-generated-artifact` emits a typed Lean wrapper that defines
 `WitnessFacts witness = FullWitnessMemAirSourceProverDataWitnessFacts witness`
-and feeds it to `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`.
+from three per-table callbacks, then feeds it to the generated timeline builder.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -30,12 +30,12 @@ Current proof surface:
   hints, ProverData keys, generated timeline constructor, and the per-table
   artifact contract.
 - `tools/pil-extract mem-generated-artifact` emits
-  `Extraction.MemGeneratedArtifact.buildTimelineEvidence`.
+  `buildWitnessFacts` and `buildTimelineEvidence`.
 
 Latest verification:
 - Focused generated-artifact wrapper test.
 - Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (71 tests).
-- Generated `/tmp/MemGeneratedArtifact.lean`; `lake env lean` elaborates it.
+- Generated `/tmp` + populated wrappers; `lake env lean` elaborates both.
 - New `nix run .#test` step compiles the populated wrapper; command verified.
 - `nix flake check --no-build` sees the updated `test` app.
 - `git diff --check` clean.
