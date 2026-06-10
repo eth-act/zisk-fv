@@ -267,6 +267,17 @@ no assumed soundness fields**.
       ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`,
       `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
+      Partial: replay-core disjoint-write preservation is now explicit.
+      `MemoryBusEntryByteDisjoint` states that two memory-bus entries have
+      disjoint eight-byte ranges, and
+      `readEventReplayAgreement_of_writeMemoryOfEntry_disjoint` proves that
+      replaying a write to such a range preserves an existing read agreement.
+      This is the core preservation fact needed to keep first-read/zero-byte
+      justifications stable across prior rows at other addresses. Verified so
+      far with clean Lean LSP diagnostics for `ZiskFv.ZiskCircuit.MemTrace`,
+      `lake build ZiskFv.ZiskCircuit.MemTrace`, and `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`, both trust
+      gates, and `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.

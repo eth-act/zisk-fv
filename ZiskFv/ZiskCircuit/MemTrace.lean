@@ -348,6 +348,70 @@ theorem readEventReplayAgreement_of_writeMemoryOfEntry_same
     beq_iff_eq]
   set_option synthInstance.maxHeartbeats 400000 in grind
 
+/-- Two memory-bus entries address disjoint eight-byte ranges. -/
+def MemoryBusEntryByteDisjoint
+    (left right : MemoryBusEntry FGL) : Prop :=
+  ∀ i j, i < 8 → j < 8 → left.ptr.toNat + i ≠ right.ptr.toNat + j
+
+/-- Replaying a write to a disjoint byte range preserves an existing read
+agreement. -/
+theorem readEventReplayAgreement_of_writeMemoryOfEntry_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {writeEntry readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement mem (eventOfEntry readEntry))
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry writeEntry) :
+    ReadEventReplayAgreement (writeMemoryOfEntry mem writeEntry)
+      (eventOfEntry readEntry) := by
+  unfold ReadEventReplayAgreement at h_read ⊢
+  have h_write_ne_read :
+      ∀ i j, i < 8 → j < 8 →
+        writeEntry.ptr.toNat + j ≠ readEntry.ptr.toNat + i := by
+    intro i j hi hj h_eq
+    exact h_disjoint i j hi hj h_eq.symm
+  have h_lookup :
+      ∀ i, i < 8 →
+        mem[readEntry.ptr.toNat + i]? = .some ((eventOfEntry readEntry).byteAt i) →
+          (writeMemoryOfEntry mem writeEntry)[readEntry.ptr.toNat + i]? =
+            .some ((eventOfEntry readEntry).byteAt i) := by
+    intro i hi h_lane
+    have h0 : writeEntry.ptr.toNat ≠ readEntry.ptr.toNat + i := by
+      simpa using h_write_ne_read i 0 hi (by norm_num)
+    have h1 : writeEntry.ptr.toNat + 1 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 1 hi (by norm_num)
+    have h2 : writeEntry.ptr.toNat + 2 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 2 hi (by norm_num)
+    have h3 : writeEntry.ptr.toNat + 3 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 3 hi (by norm_num)
+    have h4 : writeEntry.ptr.toNat + 4 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 4 hi (by norm_num)
+    have h5 : writeEntry.ptr.toNat + 5 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 5 hi (by norm_num)
+    have h6 : writeEntry.ptr.toNat + 6 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 6 hi (by norm_num)
+    have h7 : writeEntry.ptr.toNat + 7 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 7 hi (by norm_num)
+    simp only [writeMemoryOfEntry, Std.ExtHashMap.getElem?_insert,
+      beq_iff_eq, h0, h1, h2, h3, h4, h5, h6, h7]
+    exact h_lane
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simpa [eventOfEntry] using
+      h_lookup 0 (by norm_num) (by simpa [eventOfEntry] using h_read.1)
+  · simpa [eventOfEntry] using
+      h_lookup 1 (by norm_num) (by simpa [eventOfEntry] using h_read.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 2 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 3 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 4 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 5 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 6 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 7 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.2.2)
+
 /-- After preloading zero bytes at a row pointer, a zero-valued read at that
 pointer is replay-sound. This is the first-read/address-change counterpart to
 the write→read replay theorem. -/
