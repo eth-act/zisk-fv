@@ -404,7 +404,7 @@ no assumed soundness fields**.
       Existing full-witness code currently selects the Mem table but does not
       expose `segment.is_first_segment = 1`; generated-row, range,
       fixed-column, and segment-selector facts remain explicit bridge inputs.
-      Current continuation-memory slice starts the alternative closure path.
+      Continuation-memory slice `3773a889` starts the alternative closure path.
       `Airs/Mem.lean` proves that at a segment-boundary row,
       `addr_changes = 0` identifies `mem.addr` with
       `segment.previous_segment_addr`, and a same-address read carries both
@@ -424,6 +424,45 @@ no assumed soundness fields**.
       scans showing no `sorryAx` in the new continuation declarations; the
       combined checkpoint `nix run .#test` passes, including full `lake build`,
       both trust gates, flake repro, cargo tests, and extraction tests.
+      Latest completed continuation slice factors the address-change side of
+      that remaining obligation. `Balance.lean` proves
+      `readEventReplayAgreement_after_previousSegmentInitialMemory_splitPrefix_addr_change_same_addr_memTableGeneratedRowsBridge`,
+      lifting address-change reads through the seeded initial memory when the
+      previous-segment seed entry is byte-disjoint from the read. It also proves
+      `activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge`,
+      constructing the table-level selected-primary-read prefix obligation from
+      an explicit seed-disjointness premise. Verified with clean LSP diagnostics
+      for `ZiskFv.AirsClean.FullEnsemble.Balance`, the target build
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and axiom scans with
+      no `sorryAx` in the new declarations.
+      Latest completed range-closure slice removes that explicit
+      seed-disjointness callback under a single extractor-facing input.
+      `Airs/Mem.lean` proves
+      `segment_previous_addr_lt_addr_of_addr_change_segment_every_row`, a
+      boundary/general form of address-change strictness for the generated
+      previous-address expression. `Balance.lean` proves
+      `previous_segment_addr_le_addr_memTableGeneratedRowsBridge`,
+      `previous_segment_addr_lt_addr_of_addr_change_memTableGeneratedRowsBridge`,
+      and `previousSegmentSeedDisjoint_of_addr_change_memTableGeneratedRowsBridge`,
+      then packages
+      `activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_range`.
+      It also lifts that to
+      `activeMemReplayRowsOfTablePrefixReadSound_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_range`
+      and constructs
+      `acceptedMemoryReplayEvidence_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_range`,
+      the continuation counterpart of the first-segment accepted replay
+      constructor.
+      The remaining local input is
+      `segment.previous_segment_addr.val < 2^29`, which should be exposed from
+      the PIL/extractor bridge rather than assumed as replay soundness. Verified
+      with `lake build ZiskFv.Airs.Mem`,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and axiom scans with
+      no `sorryAx` in the new declarations, including the continuation accepted
+      replay constructor. The full checkpoint `nix run .#test` passes,
+      including full `lake build`, both trust gates, flake repro, cargo tests,
+      and extraction tests. Balance LSP currently has a stale imported view of
+      the new AIR theorem, but the focused compiler target and an isolated
+      `import ZiskFv.Airs.Mem` check both see it.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -462,6 +501,11 @@ no assumed soundness fields**.
       Partial: the adjacent address-change order theorem cites `mem.pil:375`
       for the generated increment equation, `mem.pil:384-385` for increment
       range checks, and `mem.pil:109` for address no-wrap.
+      Partial: the continuation seed-disjointness theorem cites the same
+      generated address-change increment equation/range checks plus an explicit
+      `segment.previous_segment_addr.val < 2^29` input; the remaining
+      constructibility task is to expose that previous-segment address range
+      from the PIL/extractor bridge.
       Partial: `MemTableGeneratedFixedColumnFacts` cites the deterministic
       fixed-column declaration `mem.pil:86` (`SEGMENT_L1 = [1,0...]`) and
       keeps the fixed-column constructibility obligation explicit rather than

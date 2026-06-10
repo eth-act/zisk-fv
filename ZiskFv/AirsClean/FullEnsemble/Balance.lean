@@ -1688,6 +1688,52 @@ theorem memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
       omega
     omega
 
+/-- A selected primary entry is byte-disjoint from the previous-segment seed
+    entry when their internal Mem addresses differ. -/
+theorem memoryBusEntryByteDisjoint_primary_previousSegment_of_addr_ne
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    (h_row_range : row.addr.val < 2 ^ 29)
+    (h_segment_range : segment.previous_segment_addr.val < 2 ^ 29)
+    (h_addr_ne : row.addr ≠ segment.previous_segment_addr) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+      (memPrimaryReplayEntryOfRow row) (memPreviousSegmentReplayEntry segment) := by
+  unfold ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+  intro i j hi hj h_eq
+  have h_row_ptr :
+      (memPrimaryReplayEntryOfRow row).ptr.toNat = row.addr.val * 8 := by
+    simp [ZiskFv.Airs.Mem.field_addr_times_eight_val_eq_of_lt h_row_range]
+  have h_segment_ptr :
+      (memPreviousSegmentReplayEntry segment).ptr.toNat =
+        segment.previous_segment_addr.val * 8 := by
+    simp [ZiskFv.Airs.Mem.field_addr_times_eight_val_eq_of_lt h_segment_range]
+  rw [h_row_ptr, h_segment_ptr] at h_eq
+  have h_addr_val_ne : row.addr.val ≠ segment.previous_segment_addr.val := by
+    intro h_val
+    exact h_addr_ne (Fin.ext h_val)
+  rcases lt_trichotomy row.addr.val segment.previous_segment_addr.val with
+    h_lt | h_eq_addr | h_gt
+  · have h_le : row.addr.val + 1 ≤ segment.previous_segment_addr.val :=
+      Nat.succ_le_of_lt h_lt
+    have h_bound_left : row.addr.val * 8 + i < segment.previous_segment_addr.val * 8 := by
+      have hi_le : i ≤ 7 := by omega
+      nlinarith
+    have h_bound_right :
+        segment.previous_segment_addr.val * 8 ≤
+          segment.previous_segment_addr.val * 8 + j := by
+      omega
+    omega
+  · exact h_addr_val_ne h_eq_addr
+  · have h_le : segment.previous_segment_addr.val + 1 ≤ row.addr.val :=
+      Nat.succ_le_of_lt h_gt
+    have h_bound_right :
+        segment.previous_segment_addr.val * 8 + j < row.addr.val * 8 := by
+      have hj_le : j ≤ 7 := by omega
+      nlinarith
+    have h_bound_left : row.addr.val * 8 ≤ row.addr.val * 8 + i := by
+      omega
+    omega
+
 /-- Primary-read replay rows projected from every row of a Mem table. -/
 @[reducible]
 def memPrimaryReadReplayRowsOfTable
@@ -3585,6 +3631,160 @@ theorem prior_addr_ne_of_addr_change_memTableGeneratedRowsBridge
   rw [h_addr_eq] at h_other_lt_current
   exact (lt_irrefl _ h_other_lt_current)
 
+/-- The previous-segment carried address is no greater than any generated Mem row
+    address, assuming the carried address has the same 29-bit no-wrap bound as
+    row addresses.
+
+    Row zero is the fixed segment boundary (`mem.pil:86`): same-address rows
+    equal the carried address, while address-change rows are strictly larger by
+    the generated increment equation (`mem.pil:375`) plus range checks. Later
+    rows inherit the bound from adjacent monotonicity. -/
+theorem previous_segment_addr_le_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29)
+    (idx : Fin table.table.length) :
+    segment.previous_segment_addr.val ≤ (mem.addr idx.val).val := by
+  have h_mono :
+      ∀ n, n < table.table.length →
+        segment.previous_segment_addr.val ≤ (mem.addr n).val := by
+    intro n h_n_lt
+    induction n with
+    | zero =>
+        let idx0 : Fin table.table.length := ⟨0, h_n_lt⟩
+        have h_segment :
+            ZiskFv.Airs.Mem.segment_every_row segment mem 0 := by
+          simpa [idx0] using (h_bridge.generatedAt idx0).1
+        have h_boundary : segment.segment_l1 0 = 1 := h_fixed.segmentL1_first h_n_lt
+        have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx0
+        rcases ZiskFv.AirsClean.Mem.addr_changes_boolean_of_spec
+            (ZiskFv.AirsClean.Mem.rowAt mem 0) h_spec with
+          h_addr_changes_zero | h_addr_changes_one
+        · have h_addr_changes_zero_mem : mem.addr_changes 0 = 0 := by
+            simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_changes_zero
+          have h_addr_eq :=
+            ZiskFv.Airs.Mem.addr_eq_previous_segment_of_same_addr_boundary_segment_every_row
+              h_segment h_addr_changes_zero_mem h_boundary
+          rw [h_addr_eq]
+        · have h_addr_changes_one_mem : mem.addr_changes 0 = 1 := by
+            simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_changes_one
+          have h_prev_expr :=
+            ZiskFv.Airs.Mem.segment_previous_addr_eq_previous_segment_of_boundary
+              (cols := segment) (v := mem) (row := 0) h_boundary
+          have h_prev_expr_range :
+              (ZiskFv.Airs.Mem.segment_previous_addr segment mem 0).val < 2 ^ 29 := by
+            rw [h_prev_expr]
+            exact h_previous_segment_addr_range
+          have h_lt :=
+            ZiskFv.Airs.Mem.segment_previous_addr_lt_addr_of_addr_change_segment_every_row
+              (cols := segment) (v := mem) (row := 0)
+              h_segment h_addr_changes_one_mem (h_ranges.addrColumns idx0)
+              h_prev_expr_range (h_ranges.incrementChunks idx0)
+          rw [h_prev_expr] at h_lt
+          exact le_of_lt h_lt
+    | succ n ih =>
+        have h_n_lt' : n < table.table.length := by omega
+        have h_adj :
+            (mem.addr n).val ≤ (mem.addr (n + 1)).val := by
+          simpa using
+            previous_addr_le_addr_of_nonfirst_memTableGeneratedRowsBridge
+              h_bridge h_ranges h_fixed ⟨n + 1, h_n_lt⟩ (Nat.succ_pos n)
+        exact le_trans (ih h_n_lt') h_adj
+  exact h_mono idx.val idx.isLt
+
+/-- At an address-change row, the previous-segment seed address is strictly less
+    than the current row address. -/
+theorem previous_segment_addr_lt_addr_of_addr_change_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29)
+    (idx : Fin table.table.length)
+    (h_addr_change : mem.addr_changes idx.val = 1) :
+    segment.previous_segment_addr.val < (mem.addr idx.val).val := by
+  by_cases h_idx_zero : idx.val = 0
+  · let idx0 : Fin table.table.length := ⟨0, by omega⟩
+    have h_segment :
+        ZiskFv.Airs.Mem.segment_every_row segment mem 0 := by
+      simpa [idx0] using (h_bridge.generatedAt idx0).1
+    have h_boundary : segment.segment_l1 0 = 1 :=
+      h_fixed.segmentL1_first idx0.isLt
+    have h_prev_expr :=
+      ZiskFv.Airs.Mem.segment_previous_addr_eq_previous_segment_of_boundary
+        (cols := segment) (v := mem) (row := 0) h_boundary
+    have h_prev_expr_range :
+        (ZiskFv.Airs.Mem.segment_previous_addr segment mem 0).val < 2 ^ 29 := by
+      rw [h_prev_expr]
+      exact h_previous_segment_addr_range
+    have h_addr_change_zero : mem.addr_changes 0 = 1 := by
+      simpa [h_idx_zero] using h_addr_change
+    have h_lt :=
+      ZiskFv.Airs.Mem.segment_previous_addr_lt_addr_of_addr_change_segment_every_row
+        (cols := segment) (v := mem) (row := 0)
+        h_segment h_addr_change_zero (h_ranges.addrColumns idx0)
+        h_prev_expr_range (h_ranges.incrementChunks idx0)
+    rw [h_prev_expr] at h_lt
+    simpa [h_idx_zero] using h_lt
+  · have h_idx_pos : 0 < idx.val := by omega
+    let previousIdx : Fin table.table.length := ⟨idx.val - 1, by omega⟩
+    have h_seed_le_previous :
+        segment.previous_segment_addr.val ≤ (mem.addr previousIdx.val).val :=
+      previous_segment_addr_le_addr_memTableGeneratedRowsBridge
+        h_bridge h_ranges h_fixed h_previous_segment_addr_range previousIdx
+    have h_not_boundary := h_fixed.segmentL1_nonfirst idx h_idx_pos
+    have h_previous_lt_current :
+        (mem.addr previousIdx.val).val < (mem.addr idx.val).val := by
+      simpa [previousIdx] using
+        previous_addr_lt_addr_of_addr_change_not_boundary_memTableGeneratedRowsBridge
+          h_bridge h_ranges idx h_addr_change h_not_boundary
+    exact lt_of_le_of_lt h_seed_le_previous h_previous_lt_current
+
+/-- Address-change primary reads are byte-disjoint from the continuation seed
+    entry once the seed address has the 29-bit no-wrap bound. -/
+theorem previousSegmentSeedDisjoint_of_addr_change_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29)
+    (idx : Fin table.table.length)
+    (h_addr_change : mem.addr_changes idx.val = 1) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+      (memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem idx.val))
+      (memPreviousSegmentReplayEntry segment) := by
+  have h_seed_lt_current :=
+    previous_segment_addr_lt_addr_of_addr_change_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed h_previous_segment_addr_range idx h_addr_change
+  have h_row_range :
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val).addr.val < 2 ^ 29 := by
+    simpa [ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns idx
+  have h_addr_ne :
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val).addr ≠
+        segment.previous_segment_addr := by
+    intro h_addr_eq
+    have h_mem_addr_eq : mem.addr idx.val = segment.previous_segment_addr := by
+      simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_eq
+    rw [h_mem_addr_eq] at h_seed_lt_current
+    exact lt_irrefl _ h_seed_lt_current
+  exact
+    memoryBusEntryByteDisjoint_primary_previousSegment_of_addr_ne
+      h_row_range h_previous_segment_addr_range h_addr_ne
+
 /-- Address-change reads are justified against their concrete split prefix when
 some selected row at the same Mem address contributes the zero-preload pointer.
 
@@ -3633,6 +3833,106 @@ theorem readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_addr_change_
   apply
     ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint
       h_zero
+  intro entry h_entry
+  rcases List.mem_flatMap.mp h_entry with
+    ⟨priorProviderRow, h_prior_mem, h_entry_row⟩
+  rcases priorRows_mem_index_lt_of_split
+      (xs := table.table) (priorRows := priorRows)
+      (laterRows := laterRows) (providerRow := providerRow)
+      h_split h_prior_mem with
+    ⟨otherIdx, h_get, h_other_lt_prior_length⟩
+  have h_other_lt_idx : otherIdx.val < idx.val := by omega
+  have h_addr_ne :=
+    prior_addr_ne_of_addr_change_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed idx h_addr_change otherIdx h_other_lt_idx
+  have h_entry_rowAt :
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val) := by
+    rw [← h_get] at h_entry_row
+    rw [h_bridge.rowAt_eq otherIdx] at h_entry_row
+    exact h_entry_row
+  have h_selected_range :
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val).addr.val < 2 ^ 29 := by
+    simpa [ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns idx
+  have h_other_range :
+      (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr.val < 2 ^ 29 := by
+    simpa [ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns otherIdx
+  have h_addr_ne_row :
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val).addr ≠
+        (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr := by
+    intro h_addr_eq_row
+    exact h_addr_ne (by
+      simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_eq_row.symm)
+  rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_entry_rowAt with
+    h_entry_primary | h_entry_dual
+  · simpa [readEntry, h_entry_primary] using
+      memoryBusEntryByteDisjoint_primary_primary_of_addr_ne
+        h_selected_range h_other_range h_addr_ne_row
+  · simpa [readEntry, h_entry_dual] using
+      memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
+        h_selected_range h_other_range h_addr_ne_row
+
+/-- Address-change reads are justified against the continuation-seeded initial
+    memory when the previous-segment seed entry is byte-disjoint from the read.
+
+    This factors the replay-fold mechanics from the remaining AIR/range fact:
+    proving the seed disjointness (or a safe overwrite alternative) is the next
+    continuation-specific obligation. -/
+theorem readEventReplayAgreement_after_previousSegmentInitialMemory_splitPrefix_addr_change_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (idx preloadIdx : Fin table.table.length)
+    (priorRows : List (Array FGL))
+    (providerRow : Array FGL)
+    (laterRows : List (Array FGL))
+    (h_split : table.table = priorRows ++ providerRow :: laterRows)
+    (h_idx_val : idx.val = priorRows.length)
+    (h_preload_sel : mem.sel preloadIdx.val = 1)
+    (h_addr_eq : mem.addr idx.val = mem.addr preloadIdx.val)
+    (h_addr_change : mem.addr_changes idx.val = 1)
+    (h_read : mem.wr idx.val = 0)
+    (h_seed_disjoint :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem idx.val))
+        (memPreviousSegmentReplayEntry segment)) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+        (previousSegmentInitialMemoryOfRows segment (activeMemReplayRowsOfTable table))
+        (priorRows.flatMap fun priorProviderRow =>
+          activeMemReplayEntriesOfRow
+            (eval (table.environment priorProviderRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val))) := by
+  let readEntry :=
+    memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem idx.val)
+  have h_zero :
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+        (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+          (activeMemReplayRowsOfTable table))
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry readEntry) := by
+    simpa [readEntry] using
+      readEventReplayAgreement_after_zeroMemoryOfRows_same_addr_memTableGeneratedRowsBridge
+        h_bridge h_ranges idx preloadIdx h_preload_sel h_addr_eq h_addr_change h_read
+  have h_seed :
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+        (previousSegmentInitialMemoryOfRows segment (activeMemReplayRowsOfTable table))
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry readEntry) := by
+    have h_lift :=
+      ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_writeMemoryOfEntry_disjoint
+        h_zero
+        (by simpa [readEntry] using h_seed_disjoint)
+    simpa [previousSegmentInitialMemoryOfRows] using h_lift
+  apply
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint
+      h_seed
   intro entry h_entry
   rcases List.mem_flatMap.mp h_entry with
     ⟨priorProviderRow, h_prior_mem, h_entry_row⟩
@@ -4110,6 +4410,108 @@ theorem readEventReplayAgreement_after_previousSegmentInitialMemory_row_zero_mem
       h_ptr h_value_0 h_value_1
   simpa [previousSegmentInitialMemoryOfRows, writeEntry, readEntry] using h_replay
 
+/-- The continuation-seeded table's selected-primary-read prefix obligation
+    follows from the generic predecessor induction plus an explicit
+    address-change seed-disjointness premise.
+
+    The row-0 same-address base is supplied by `previous_segment_*`; the
+    remaining continuation-specific work is to prove the seed cannot corrupt
+    zero-valued address-change reads. -/
+theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_addr_change_seed_disjoint :
+      ∀ currentIdx selectedIdx : Fin table.table.length,
+        ∀ currentPriorRows currentProviderRow currentLaterRows,
+          mem.sel selectedIdx.val = 1 →
+          table.table =
+              currentPriorRows ++ currentProviderRow :: currentLaterRows →
+          currentIdx.val = currentPriorRows.length →
+          currentIdx.val ≤ selectedIdx.val →
+          mem.addr currentIdx.val = mem.addr selectedIdx.val →
+          mem.addr_changes currentIdx.val = 1 →
+          mem.wr currentIdx.val = 0 →
+            ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+              (memPrimaryReplayEntryOfRow
+                (ZiskFv.AirsClean.Mem.rowAt mem currentIdx.val))
+              (memPreviousSegmentReplayEntry segment)) :
+    ActiveMemReplayRowsOfTablePrimaryReadPrefixSound
+      (previousSegmentInitialMemoryOfRows segment (activeMemReplayRowsOfTable table))
+      table := by
+  intro priorRows providerRow laterRows h_split h_sel_row h_wr_row
+  let idx : Fin table.table.length := ⟨priorRows.length, by
+    rw [h_split]
+    simp⟩
+  have h_idx_val : idx.val = priorRows.length := rfl
+  have h_provider_get : table.table.get idx = providerRow :=
+    providerRow_get_eq_of_split idx h_split h_idx_val
+  have h_rowAt :
+      eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+        ZiskFv.AirsClean.Mem.rowAt mem idx.val := by
+    rw [← h_provider_get]
+    exact h_bridge.rowAt_eq idx
+  have h_sel : mem.sel idx.val = 1 := by
+    simpa [h_rowAt, ZiskFv.AirsClean.Mem.rowAt] using h_sel_row
+  have h_read : mem.wr idx.val = 0 := by
+    simpa [h_rowAt, ZiskFv.AirsClean.Mem.rowAt] using h_wr_row
+  have h_agreement :=
+    readEventReplayAgreement_after_initialMemory_splitPrefix_to_selected_memTableGeneratedRowsBridge
+      (previousSegmentInitialMemoryOfRows segment (activeMemReplayRowsOfTable table))
+      h_bridge h_fixed idx
+      (fun boundaryProviderRow boundaryLaterRows h_boundary_split
+          h_addr_changes_zero h_boundary_read _h_boundary_addr_eq =>
+        readEventReplayAgreement_after_previousSegmentInitialMemory_row_zero_memTableGeneratedRowsBridge
+          h_bridge h_fixed h_boundary_split h_addr_changes_zero h_boundary_read)
+      (fun currentIdx currentPriorRows currentProviderRow currentLaterRows
+          h_current_split h_current_idx_val h_current_le_selected h_current_addr_eq
+          h_current_addr_change h_current_read =>
+        readEventReplayAgreement_after_previousSegmentInitialMemory_splitPrefix_addr_change_same_addr_memTableGeneratedRowsBridge
+          h_bridge h_ranges h_fixed currentIdx idx currentPriorRows currentProviderRow
+          currentLaterRows h_current_split h_current_idx_val h_sel h_current_addr_eq
+          h_current_addr_change h_current_read
+          (h_addr_change_seed_disjoint currentIdx idx currentPriorRows
+            currentProviderRow currentLaterRows h_sel h_current_split h_current_idx_val
+            h_current_le_selected h_current_addr_eq h_current_addr_change h_current_read))
+      idx priorRows providerRow laterRows h_split h_idx_val le_rfl rfl h_read
+  simpa [h_rowAt] using h_agreement
+
+/-- The continuation-seeded table's selected-primary-read prefix obligation
+    follows from concrete Mem facts plus a 29-bit range fact for the carried
+    previous-segment address.
+
+    The explicit range premise is the remaining extractor-facing input: the
+    table proof no longer assumes address-change seed disjointness. -/
+theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_range
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29) :
+    ActiveMemReplayRowsOfTablePrimaryReadPrefixSound
+      (previousSegmentInitialMemoryOfRows segment (activeMemReplayRowsOfTable table))
+      table := by
+  apply
+    activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed
+  intro currentIdx _selectedIdx _currentPriorRows _currentProviderRow _currentLaterRows
+    _h_selected_sel _h_split _h_idx_val _h_current_le_selected _h_current_addr_eq
+    h_current_addr_change _h_current_read
+  exact
+    previousSegmentSeedDisjoint_of_addr_change_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed h_previous_segment_addr_range
+      currentIdx h_current_addr_change
+
 /-- Address-change selected primary reads are justified against their concrete
     prior table prefix from the zero-preloaded Mem-table memory.
 
@@ -4256,9 +4658,34 @@ theorem activeMemReplayRowsOfTablePrefixReadSound_of_firstSegment_memTableGenera
     activeMemReplayRowsOfTablePrefixReadSound_of_memTableGeneratedRowsBridge
       (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
         (activeMemReplayRowsOfTable table))
+        h_bridge
+        (activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_firstSegment_memTableGeneratedRowsBridge
+          h_bridge h_ranges h_fixed h_first_segment)
+
+/-- Continuation-segment specialization of the generated Mem-table prefix-read
+    theorem, with initial memory seeded by `previous_segment_*`.
+
+    The remaining segment-level range input rules out overlap between the
+    previous-segment seed entry and address-change zero-valued reads. -/
+theorem activeMemReplayRowsOfTablePrefixReadSound_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_range
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29) :
+    ActiveMemReplayRowsOfTablePrefixReadSound
+      (previousSegmentInitialMemoryOfRows segment (activeMemReplayRowsOfTable table))
+      table := by
+  exact
+    activeMemReplayRowsOfTablePrefixReadSound_of_memTableGeneratedRowsBridge
+      (previousSegmentInitialMemoryOfRows segment (activeMemReplayRowsOfTable table))
       h_bridge
-      (activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_firstSegment_memTableGeneratedRowsBridge
-        h_bridge h_ranges h_fixed h_first_segment)
+      (activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_range
+        h_bridge h_ranges h_fixed h_previous_segment_addr_range)
 
 /-- Transport table-local replay-row order facts across the concrete row-list
     equality used by the raw accepted Mem extraction path. -/
@@ -4332,15 +4759,45 @@ def acceptedMemoryReplayEvidence_of_firstSegment_memTableGeneratedRowsBridge
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_first_segment : segment.is_first_segment = 1) :
     ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryReplayEvidence :=
+    { rows := rows
+      initialMemory :=
+        ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+          (activeMemReplayRowsOfTable table)
+      prefixReadSound :=
+        memoryBusRowsPrefixReadSound_of_activeMemReplayRowsOfTable
+          h_rows
+          (activeMemReplayRowsOfTablePrefixReadSound_of_firstSegment_memTableGeneratedRowsBridge
+            h_bridge h_ranges h_fixed h_first_segment) }
+
+/-- Construct the accepted replay evidence for a continuation generated Mem
+    segment whose accepted row list is the active replay projection of the
+    concrete Mem table.
+
+    This is the continuation counterpart of the first-segment constructor above:
+    `prefixReadSound` is derived from concrete table facts, with the
+    previous-segment carried memory entry used as the initial memory seed. -/
+@[reducible]
+def acceptedMemoryReplayEvidence_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_range
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_rows : rows = activeMemReplayRowsOfTable table)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29) :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryReplayEvidence :=
   { rows := rows
     initialMemory :=
-      ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
-        (activeMemReplayRowsOfTable table)
+      previousSegmentInitialMemoryOfRows segment (activeMemReplayRowsOfTable table)
     prefixReadSound :=
       memoryBusRowsPrefixReadSound_of_activeMemReplayRowsOfTable
         h_rows
-        (activeMemReplayRowsOfTablePrefixReadSound_of_firstSegment_memTableGeneratedRowsBridge
-          h_bridge h_ranges h_fixed h_first_segment) }
+        (activeMemReplayRowsOfTablePrefixReadSound_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_range
+          h_bridge h_ranges h_fixed h_previous_segment_addr_range) }
 
 /-- The projected read-replay rows of a concrete Mem table are embedded in
     the accepted chronological memory-bus row trace. Proving this embedding
