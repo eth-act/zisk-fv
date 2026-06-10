@@ -4,9 +4,9 @@ Current focus: Phase B/C bridge closure. `LoadPromises.mem_read` is gone; load
 arms consume one global memory-timeline boundary.
 
 Blocking: generated/full-ensemble production of Mem sidecar facts. Lean now has
-a concrete `witness.data` target (`FullWitnessMemAirSourceProverDataFacts`),
-but generated code still must prove/check those facts for the witness-selected
-mutable Mem table.
+a concrete `witness.data` witness target
+(`FullWitnessMemAirSourceProverDataWitnessFacts`), but generated code still
+must supply it for the witness-selected mutable Mem table.
 
 Latest audit: structural gap, not a missing lemma. `componentWithDualMemBus`
 emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
@@ -14,10 +14,9 @@ table-global segment/permutation constants, challenges, ranges, and generated
 assertions are outside the component.
 
 Current slice: sidecar source surface is reproducible and data-keyed.
-`MemTableGeneratedRawSourceSidecar` can now be built from named `ProverData`
-keys, and `fullWitnessMemAirSourceRawSidecars_of_proverData` packages
-`FullWitnessMemAirSourceProverDataFacts` into the boundary stored by
-`FullWitnessMemoryTimelineEvidence`.
+`fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` packages
+ProverData-backed Clean assertion/lookup witnesses into the sidecar boundary
+stored by `FullWitnessMemoryTimelineEvidence`.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -30,21 +29,21 @@ Current proof surface:
   assertion/lookup witnesses.
 
 Latest verification:
-- Lean LSP diagnostics on `Balance.lean`: clean after ProverData sidecar edit.
-- `lean_verify` on `memTableGeneratedRawSourceSidecar_of_proverData` and
-  `fullWitnessMemAirSourceRawSidecars_of_proverData`: no source warnings.
+- Lean LSP diagnostics on `Balance.lean`: clean after witness-target edit.
+- `lean_verify` on witness/raw adapters: no source warnings.
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`.
+- Focused mem-air-facts report test and full
+  `cargo test --manifest-path tools/pil-extract/Cargo.toml` (69 tests).
+- Regenerated `/tmp/mem-air-facts-report.md`; it names the witness target and
+  ProverData sidecar keys.
 - `lake build ZiskFv.Compliance`.
 - `trust/scripts/check-all.sh`.
-- `cargo test --manifest-path tools/pil-extract/Cargo.toml` (69 tests).
-- Regenerated `/tmp/mem-air-facts-report.md`; it includes the ProverData key
-  column and real pilout mappings.
 - `git diff --check` clean.
-- `cargo fmt --manifest-path tools/pil-extract/Cargo.toml --check` still fails on pre-existing churn.
+- Rustfmt check still has broad pre-existing churn outside this slice.
 - Last full `nix run .#test`: commit `98202ebc`.
 
 Next step: make generated/full-ensemble output actually supply
-`FullWitnessMemAirSourceProverDataFacts` for the witness-selected mutable Mem
-table; broader table/component model support is still the fallback.
+`FullWitnessMemAirSourceProverDataWitnessFacts`; broader table/component model
+support is still the fallback.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

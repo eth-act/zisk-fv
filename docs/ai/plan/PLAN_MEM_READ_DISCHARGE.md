@@ -923,6 +923,23 @@ no assumed soundness fields**.
       regenerated `/tmp/mem-air-facts-report.md`, and `git diff --check`.
       `cargo fmt --manifest-path tools/pil-extract/Cargo.toml --check` still
       reports broad pre-existing rustfmt churn outside this slice.
+      Follow-up witness-target slice: the ProverData sidecar target now has a
+      witness-aware layer. `memTableGeneratedRawSourceFacts_of_witnessFacts`
+      projects Clean assertion/range lookup witnesses to raw facts;
+      `memTableGeneratedRawSourceSidecar_of_proverDataWitnessFacts` packages
+      those facts for ProverData-backed columns;
+      `FullWitnessMemAirSourceProverDataWitnessFacts` is the preferred
+      generated/full-ensemble target; and
+      `fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` packages
+      it into the stored sidecar boundary. The mem-air-facts report and
+      extractor notes now direct generated code at this witness target, with
+      `FullWitnessMemAirSourceProverDataFacts` as the raw-facts fallback.
+      Verified with clean Lean LSP diagnostics for `Balance.lean`,
+      `lean_verify` scans of the witness/raw adapters, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, focused and full
+      `tools/pil-extract` cargo tests, regenerated
+      `/tmp/mem-air-facts-report.md`, `lake build ZiskFv.Compliance`,
+      `trust/scripts/check-all.sh`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

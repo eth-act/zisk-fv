@@ -1261,9 +1261,11 @@ fn render_mem_air_facts_report(
         "- Generated Lean code should build `MemTableGeneratedRawSourceSidecar` \
          values for mutable Mem tables and expose them through a \
          `FullWitnessMemAirSourceRawSidecars` callback. When the sidecar \
-         columns live in Clean `ProverData`, prove \
-         `FullWitnessMemAirSourceProverDataFacts` for the named keys below \
-         and package it with `fullWitnessMemAirSourceRawSidecars_of_proverData`. \
+         columns live in Clean `ProverData`, supply \
+         `FullWitnessMemAirSourceProverDataWitnessFacts` for the named keys \
+         below and package it with \
+         `fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts`; \
+         `FullWitnessMemAirSourceProverDataFacts` is the raw-facts fallback. \
          Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`; \
          `exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete \
          replay source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` \
@@ -2749,6 +2751,14 @@ mod tests {
         assert!(
             out.contains("`Mem.sidecar.permutation.im_direct_5`"),
             "report should name all direct-update inverse keys:\n{}",
+            out
+        );
+        assert!(
+            out.contains("`FullWitnessMemAirSourceProverDataWitnessFacts`")
+                && out.contains(
+                    "`fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts`"
+                ),
+            "report should point generated code at the ProverData witness target:\n{}",
             out
         );
     }

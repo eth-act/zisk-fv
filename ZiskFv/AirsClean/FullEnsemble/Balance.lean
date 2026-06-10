@@ -2274,6 +2274,22 @@ def memTableGeneratedAirFacts_of_constraintFacts
   rowRanges := h_rowRanges
   segmentRanges := h_segmentRanges
 
+/-- Assemble raw generated Mem source facts from concrete Clean assertion and
+    lookup witnesses. -/
+def memTableGeneratedRawSourceFacts_of_witnessFacts
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    (h_constraints :
+      MemTableGeneratedConstraintAssertionFacts table mem segment permutation)
+    (h_rowRanges : MemTableGeneratedRangeLookupFacts table mem)
+    (h_segmentRanges : MemSegmentGeneratedRangeLookupFacts segment) :
+    MemTableGeneratedRawSourceFacts table mem segment permutation where
+  constraints := memTableGeneratedConstraintFacts_of_assertionFacts h_constraints
+  rowRanges := memTableGeneratedRangeFacts_of_lookupFacts h_rowRanges
+  segmentRanges := memSegmentGeneratedRangeFacts_of_lookupFacts h_segmentRanges
+
 /-- Build the indexed row bridge from the concrete table projection and the
     compact generated AIR fact package. -/
 theorem memTableGeneratedRowsBridge_of_memOfTable_airFacts
@@ -2570,6 +2586,39 @@ def memTableGeneratedRawSourceSidecar_of_proverData
   im0 := memSidecarIm0OfProverData data
   im1 := memSidecarIm1OfProverData data
   facts := h_facts
+
+/-- Build a raw Mem sidecar from `ProverData` columns plus concrete Clean
+    assertion and lookup witnesses for those columns. -/
+def memTableGeneratedRawSourceSidecar_of_proverDataWitnessFacts
+    (table : Table FGL)
+    (data : ProverData FGL)
+    (h_constraints :
+      MemTableGeneratedConstraintAssertionFacts
+        table
+        (memOfTable table
+          (memSidecarGsumOfProverData data)
+          (memSidecarIm0OfProverData data)
+          (memSidecarIm1OfProverData data))
+        (segmentWithFixedL1 (memSegmentColumnsOfProverData data))
+        (memPermutationColumnsOfProverData data))
+    (h_rowRanges :
+      MemTableGeneratedRangeLookupFacts
+        table
+        (memOfTable table
+          (memSidecarGsumOfProverData data)
+          (memSidecarIm0OfProverData data)
+          (memSidecarIm1OfProverData data)))
+    (h_segmentRanges :
+      MemSegmentGeneratedRangeLookupFacts
+        (segmentWithFixedL1 (memSegmentColumnsOfProverData data))) :
+    MemTableGeneratedRawSourceSidecar table :=
+  memTableGeneratedRawSourceSidecar_of_proverData
+    table
+    data
+    (memTableGeneratedRawSourceFacts_of_witnessFacts
+      h_constraints
+      h_rowRanges
+      h_segmentRanges)
 
 /-- Build the typed Mem AIR source from the three extractor-facing fact
     families. This is the narrow constructor a future generated Lean module can
@@ -3188,6 +3237,47 @@ def FullWitnessMemAirSourceProverDataFacts
           (segmentWithFixedL1 (memSegmentColumnsOfProverData witness.data))
           (memPermutationColumnsOfProverData witness.data)
 
+/-- Generated/full-ensemble Mem assertion and lookup witnesses whose source
+    columns are read from the shared `witness.data` prover-data map. -/
+def FullWitnessMemAirSourceProverDataWitnessFacts
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) : Type 1 :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        MemTableGeneratedConstraintAssertionFacts
+          table
+          (memOfTable table
+            (memSidecarGsumOfProverData witness.data)
+            (memSidecarIm0OfProverData witness.data)
+            (memSidecarIm1OfProverData witness.data))
+          (segmentWithFixedL1 (memSegmentColumnsOfProverData witness.data))
+          (memPermutationColumnsOfProverData witness.data)
+        × MemTableGeneratedRangeLookupFacts
+          table
+          (memOfTable table
+            (memSidecarGsumOfProverData witness.data)
+            (memSidecarIm0OfProverData witness.data)
+            (memSidecarIm1OfProverData witness.data))
+        × MemSegmentGeneratedRangeLookupFacts
+          (segmentWithFixedL1 (memSegmentColumnsOfProverData witness.data))
+
+/-- Project ProverData-backed Clean assertion/lookup witnesses to raw generated
+    Mem source facts. -/
+def fullWitnessMemAirSourceProverDataFacts_of_witnessFacts
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_witnessFacts : FullWitnessMemAirSourceProverDataWitnessFacts witness) :
+    FullWitnessMemAirSourceProverDataFacts witness := by
+  intro table h_table h_component
+  rcases h_witnessFacts table h_table h_component with
+    ⟨h_constraints, h_rowRanges, h_segmentRanges⟩
+  exact
+    memTableGeneratedRawSourceFacts_of_witnessFacts
+      h_constraints
+      h_rowRanges
+      h_segmentRanges
+
 /-- Package generated raw Mem facts over the named `witness.data` sidecar keys
     into the stored full-witness sidecar callback. -/
 def fullWitnessMemAirSourceRawSidecars_of_proverData
@@ -3201,6 +3291,16 @@ def fullWitnessMemAirSourceRawSidecars_of_proverData
       table
       witness.data
       (h_facts table h_table h_component)
+
+/-- Package ProverData-backed Clean assertion/lookup witnesses into the stored
+    full-witness sidecar callback. -/
+def fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_witnessFacts : FullWitnessMemAirSourceProverDataWitnessFacts witness) :
+    FullWitnessMemAirSourceRawSidecars witness :=
+  fullWitnessMemAirSourceRawSidecars_of_proverData
+    (fullWitnessMemAirSourceProverDataFacts_of_witnessFacts h_witnessFacts)
 
 /-- Package generated raw Mem source sidecars into the existing raw full-witness
     callback. -/
