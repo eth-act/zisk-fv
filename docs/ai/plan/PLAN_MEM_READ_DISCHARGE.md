@@ -173,7 +173,11 @@ bury it in a structure field.
       Partial: byte-addressed primary/dual Mem-row match predicates and Clean
       adapters are ported, `mem_load_correct_of_provider_row` now consumes
       `MemoryTraceAgreement`, and the Clean load bridge uses the byte-addressed
-      provider theorem; legacy pins remain to scan/migrate.
+      provider theorem. The lower Clean load witness/discharge path no longer
+      stores or passes the raw `mem.addr = e.ptr` compatibility pin; remaining
+      hits are the legacy predicate definitions plus outer OpEnvelope/Aeneas
+      compatibility inputs. Verified with targeted load/dispatch build, full
+      `lake build`, and `trust/scripts/check-all.sh`.
 - [ ] Update the 7 load EquivCore/Wrapper files; stores untouched beyond
       shared types.
       Partial: the load EquivCore files and current Compliance wrappers compile

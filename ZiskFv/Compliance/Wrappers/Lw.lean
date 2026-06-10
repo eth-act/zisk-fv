@@ -66,7 +66,7 @@ lemma equiv_LW
       w.main_row w.mem_row w.main_spec w.store_pc
       w.main_b_match w.main_c_match w.mem_match
       w.addr1 w.addr2_zero_iff w.addr2_idx
-      w.mem_sel w.mem_legacy_addr w.mem_wr
+      w.mem_sel w.mem_wr
       (ZiskFv.EquivCore.Promises.memoryTraceAgreement_of_loadByteAgreement
         state e1 promises.mem_read)
   have lfd :=
@@ -91,7 +91,7 @@ lemma equiv_LW
     w.mainRow w.memRow w.main_row w.mem_row w.main_spec w.store_pc
     w.main_b_match w.main_c_match w.mem_match
     w.addr1 w.addr2_zero_iff w.addr2_idx
-    w.mem_sel w.mem_legacy_addr w.mem_wr
+    w.mem_sel w.mem_wr
 
 /-- LW wrapper rooted at selected full-ensemble Main/Mem memory rows. -/
 theorem lw_eq_of_full_ensemble_mem_provider
@@ -153,7 +153,7 @@ theorem lw_eq_of_full_ensemble_mem_provider
       lw_input.rd.toNat =
         (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
     (h_mem_sel : mem.sel r_mem = 1)
-    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
+    (_h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
     (h_mem_wr : mem.wr r_mem = 0) :
     (do
       Sail.writeReg Register.nextPC
@@ -166,7 +166,7 @@ theorem lw_eq_of_full_ensemble_mem_provider
       main mem r_main r_mem bus lw_input.r1_val lw_input.imm lw_input.rd
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
-      h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+      h_addr2_idx h_mem_sel h_mem_wr
   exact equiv_LW
     state lw_input regs main mem r_main v r_binary offset env h_static h_match
     bus pins promises w

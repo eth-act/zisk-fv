@@ -85,7 +85,7 @@ theorem zisk_riscv_compliant_program_bus_misc
       m mem r_main r_mem bus lb_input.r1_val lb_input.imm lb_input.rd
       h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
-      h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+      h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lb.equiv_LB
       state lb_input regs m mem r_main v r_binary offset env h_static
       h_match bus pins promises w
@@ -105,7 +105,7 @@ theorem zisk_riscv_compliant_program_bus_misc
       m mem r_main r_mem bus lh_input.r1_val lh_input.imm lh_input.rd
       h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
-      h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+      h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lh.equiv_LH
       state lh_input regs m mem r_main v r_binary offset env h_static
       h_match bus pins promises w
@@ -125,7 +125,7 @@ theorem zisk_riscv_compliant_program_bus_misc
       m mem r_main r_mem bus lw_input.r1_val lw_input.imm lw_input.rd
       h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
-      h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+      h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Lw.equiv_LW
       state lw_input regs m mem r_main v r_binary offset env h_static
       h_match bus pins promises w

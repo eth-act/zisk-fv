@@ -1,16 +1,18 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase C adapter migration. The Clean load bridge now consumes
-`MemoryTraceAgreement`; existing load callers temporarily convert the old
-`LoadPromises.mem_read` promise through an adapter until the global timeline
-hypothesis is wired.
+Current focus: Phase C legacy-pin cleanup after the trace-agreement bridge.
+The lower Clean load witness path no longer stores/passes the raw
+`mem.addr = e.ptr` pin; the remaining hits are outer OpEnvelope/Aeneas
+compatibility inputs and legacy predicate definitions.
 Blocking: full `GeneratedMemRowOrderFacts.rowsNodup` is stronger than current
 PIL for read-read dual rows, because `mem.pil` allows `step_dual = step`.
 Verified: byte-address/MemModel prep slice and `MemoryTimelineEvidence`
 residual-object slice each passed targeted build, full `lake build`, and
 `trust/scripts/check-all.sh`. The trace-agreement adapter slice has passed the
-targeted load build, full `lake build`, and `trust/scripts/check-all.sh`.
-Next step: commit the adapter slice, then decide how to wire the single visible
-timeline hypothesis without changing canonical `equiv_<OP>` signatures.
+targeted load build, full `lake build`, and `trust/scripts/check-all.sh`. The
+legacy-pin cleanup slice has passed targeted build, full `lake build`, and
+`trust/scripts/check-all.sh`.
+Next step: decide the Phase C boundary-wiring route. Ask before changing
+canonical load theorem signatures or weakening the Phase B `rows.Nodup` target.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract

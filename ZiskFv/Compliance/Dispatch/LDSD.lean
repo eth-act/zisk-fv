@@ -59,7 +59,7 @@ theorem zisk_riscv_compliant_program_bus_ldsd
       m mem r_main r_mem bus ld_input
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
-      h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
+      h_addr2_idx h_mem_sel h_mem_wr
     exact ZiskFv.Equivalence.Ld.equiv_LD
       state ld_input regs m mem r_main bus pins promises w
   | sd sd_input regs bus pins h_opcode_assumptions promises h_main_row
