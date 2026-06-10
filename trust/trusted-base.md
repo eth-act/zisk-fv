@@ -178,10 +178,13 @@ prefix. The canonical load proofs derive `LoadByteAgreement` from this evidence
 and the memory replay relation.
 
 Retirement path: first prove `AcceptedMemoryReplayEvidence.prefixReadSound`
-from the concrete Mem table, which requires connecting Clean `table.table`
-positions to the row-indexed `Valid_Mem`/`GeneratedMemRows` constraints. Then
-prove the whole-execution induction connecting accepted Mem rows, prefix replay,
-initial Sail memory agreement, and selected Sail state without assuming
+from the concrete Mem table. The table/list-position part of that proof is now
+named as `MemTableGeneratedRowsBridge`, which connects Clean `table.table`
+positions to `rowAt mem idx` and the row-indexed `generated_every_row`
+constraints; `FullWitnessMemTableGeneratedRowsBridge` names the concrete
+full-ensemble instance. Then prove chronological replay, prefix-read soundness,
+and the whole-execution induction connecting accepted Mem rows, initial Sail
+memory agreement, and selected Sail state without assuming
 `env.memoryTimelineEvidence`.
 
 ## Platform Profile

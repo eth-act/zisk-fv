@@ -2,12 +2,15 @@ Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 Current focus: Phase B Mem-table replay closure. `LoadPromises` no longer has
 `mem_read`; it carries `memory_timeline`, and load proofs derive byte
 agreement from `MemoryTimelineEvidence`.
-Blocking: `MemoryTimelineEvidence` now names its replay sub-obligation as
-`AcceptedMemoryReplayEvidence`, which still carries `prefixReadSound`; to
-finish the original plan, that must be proved from Mem table constraints or
-explicitly kept in the residual timeline boundary. The earlier `rowsNodup`
-target was over-strong: `mem.pil` allows read/read dual rows with
-`step_dual = step`, and duplicate reads are harmless for prefix replay.
+Blocking: `AcceptedMemoryReplayEvidence` still carries `prefixReadSound`; to
+finish the original plan, that must be proved from concrete Mem table facts.
+The missing table/list-position relation is now named as
+`MemTableGeneratedRowsBridge`, with `FullWitnessMemTableGeneratedRowsBridge`
+as the concrete full-ensemble obligation; it still has to be proved and then
+used to prove chronological replay and prefix-read soundness.
+Existing load/envelope surfaces only expose selected-row facts such as
+`h_mem_row : eval memEnv memRowVar = rowAt mem r_mem`; they do not provide the
+whole-table row-index bridge.
 Verified: byte-address/MemModel prep slice and `MemoryTimelineEvidence`
 residual-object slice each passed targeted build, full `lake build`, and
 `trust/scripts/check-all.sh`. The trace-agreement adapter slice has passed the
@@ -25,9 +28,14 @@ load-stack build, `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`,
 consistency witness. The accepted-replay/nodup correction slice has passed
 targeted MemTrace/TraceSpec/Balance/load-stack builds, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
-`nix run .#test`, and the timeline consistency witness.
-Next step: prove or explicitly boundary-class the table-to-`Valid_Mem` bridge
-needed to construct `AcceptedMemoryReplayEvidence.prefixReadSound`.
+`nix run .#test`, and the timeline consistency witness. The explicit
+row-index bridge boundary slice has passed `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test`.
+Next step: prove `FullWitnessMemTableGeneratedRowsBridge` for the concrete
+full-ensemble Mem table or explicitly classify that proof obligation as
+residual, then use it for chronological rows and `prefixReadSound`.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract

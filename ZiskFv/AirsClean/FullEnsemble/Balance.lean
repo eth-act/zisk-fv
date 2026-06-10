@@ -1624,6 +1624,108 @@ def activeMemReplayRowsOfTable
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
 
+/-- Explicit row-index bridge from a concrete Clean Mem table to the
+    row-indexed generated `Valid_Mem` surface.
+
+    `Table.Constraints` is membership-based (`∀ row ∈ table.table`) and does
+    not identify a row's list position with the index consumed by
+    `Valid_Mem`/`generated_every_row`. This structure names that missing
+    connection without turning it into an anonymous replay-soundness field:
+    each concrete table position must evaluate to `rowAt mem idx`, and the
+    generated Mem constraints must hold at the same index.
+
+    The generated constraint field cites the complete extracted Mem surface:
+    `generated_every_row = segment_every_row ∧ permutation_every_row`, whose
+    constituent lemmas mirror the cited `mem.pil` constraints. -/
+structure MemTableGeneratedRowsBridge
+    (table : Table FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (rowCount : ℕ) : Prop where
+  component :
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  length_eq : table.table.length = rowCount
+  rowAt_eq :
+    ∀ idx : Fin table.table.length,
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+        ZiskFv.AirsClean.Mem.rowAt mem idx.val
+  generatedAt :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.Airs.Mem.generated_every_row segment permutation mem idx.val
+
+/-- The indexed table bridge projects the generated row range required by
+    the Mem trace spec. -/
+theorem generatedMemRows_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount) :
+    ZiskFv.AirsClean.Mem.GeneratedMemRows mem segment permutation rowCount := by
+  intro row h_row
+  have h_len : row < table.table.length := by
+    rw [h_bridge.length_eq]
+    exact h_row
+  exact h_bridge.generatedAt ⟨row, h_len⟩
+
+/-- Full-ensemble witness obligation for the concrete mutable Mem table:
+    one witness table must be the dual-aware Mem component and must satisfy the
+    indexed `Valid_Mem` bridge above. -/
+def FullWitnessMemTableGeneratedRowsBridge
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (rowCount : ℕ) : Prop :=
+  ∃ table ∈ witness.allTables,
+    MemTableGeneratedRowsBridge table mem segment permutation rowCount
+
+/-- The full-witness bridge projects the generated row range required by the
+    Mem trace spec. -/
+theorem generatedMemRows_of_fullWitnessMemTableGeneratedRowsBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge :
+      FullWitnessMemTableGeneratedRowsBridge
+        witness mem segment permutation rowCount) :
+    ZiskFv.AirsClean.Mem.GeneratedMemRows mem segment permutation rowCount := by
+  rcases h_bridge with ⟨table, _h_table, h_table_bridge⟩
+  exact generatedMemRows_of_memTableGeneratedRowsBridge h_table_bridge
+
+/-- Project the generated Mem row fact at one concrete Clean table position. -/
+theorem generated_every_row_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length) :
+    ZiskFv.Airs.Mem.generated_every_row segment permutation mem idx.val :=
+  h_bridge.generatedAt idx
+
+/-- Project the local Clean bridge constraints at one concrete table
+    position, via the generated Mem row surface. -/
+theorem constraints_at_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Mem.constraints_at mem idx.val :=
+  ZiskFv.AirsClean.Mem.constraints_at_of_generated_every_row
+    mem segment permutation idx.val (h_bridge.generatedAt idx)
+
 /-- Row-order facts for the concrete mutable-Mem replay projection. This is
     the table-local target that accepted full-execution integration should
     prove from Mem sorting, segment carry, and timestamp range facts.

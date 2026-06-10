@@ -150,14 +150,28 @@ no assumed soundness fields**.
 - [ ] Prove `MemoryBusRowsPrefixReadSound` for the concrete projected Mem table
       from same-address carry, write update, segment carry, and chronological
       order.
-      Current gap: Clean `Table.Constraints` is per-row over `table.table`, and
-      the table list is not yet connected to a row-indexed `Valid_Mem` plus
-      `GeneratedMemRows` range. The named `AcceptedMemoryReplayEvidence`
-      sub-object makes this remaining bridge explicit instead of hiding it as
-      an anonymous timeline field.
+      Current gap is now a named proof surface:
+      `MemTableGeneratedRowsBridge` connects a Clean table's list positions to
+      `rowAt mem idx` and `generated_every_row segment permutation mem idx`.
+      `FullWitnessMemTableGeneratedRowsBridge` lifts that to the concrete
+      full-ensemble witness. It still has to be proved before the chronological
+      and prefix-read proofs can be closed. Existing load/envelope surfaces
+      only provide selected-row equalities such as
+      `h_mem_row : eval memEnv memRowVar = rowAt mem r_mem`, not this whole-table
+      bridge.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
+- [x] Name the table-to-`Valid_Mem` row-index bridge explicitly instead of
+      hiding it in replay/timeline evidence.
+      Implemented as `MemTableGeneratedRowsBridge` in
+      `FullEnsemble/Balance.lean`, with projections to `GeneratedMemRows`,
+      per-position `generated_every_row`, and local Clean `constraints_at`;
+      `FullWitnessMemTableGeneratedRowsBridge` names the concrete
+      full-ensemble obligation. Verified with `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+      `nix run .#test`.
 - [ ] **Constructibility check:** every strengthened `Valid_Mem`-adjacent
       statement cites the PIL constraint it mirrors.
 
