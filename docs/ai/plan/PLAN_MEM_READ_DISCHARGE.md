@@ -176,9 +176,14 @@ bury it in a structure field.
       `mem_read` derived from that timeline evidence before calling the
       canonical load theorem; verified with `lake build ZiskFv.Compliance`,
       full `lake build`, and `trust/scripts/check-all.sh`. The
-      constructor/canonical `LoadPromises.mem_read` field still exists and must
-      be removed in the remaining data-shape step. Decision point: direct field
-      deletion conflicts with the current guardrail that canonical
+      `OpEnvelope` load constructors and Aeneas extracted-shape bridge now take
+      memory-free `LoadStructuralPromises`; dispatch reconstructs the canonical
+      `LoadPromises` value from global timeline evidence before calling the load
+      theorem, and this structural slice is verified with
+      `lake build ZiskFv.Compliance`, full `lake build`, and
+      `trust/scripts/check-all.sh`. The canonical `LoadPromises.mem_read` field
+      still exists. Decision point: direct field deletion conflicts with
+      the current guardrail that canonical
       `equiv_<OP>` signatures do not change, because the canonical load theorem
       layer has no access to global `env.memoryTimelineEvidence` and still needs
       a memory-byte source.

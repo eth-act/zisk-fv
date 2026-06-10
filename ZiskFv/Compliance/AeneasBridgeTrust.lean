@@ -1548,7 +1548,7 @@ def OpEnvelope.ldOfExtractedShape
     (h_internal : provenance.extractedRow.isExternalOp = false)
     (_h_width : provenance.extractedRow.indWidth = 8)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
@@ -1618,7 +1618,7 @@ theorem OpEnvelope.aeneasBridgeTrust_ldOfExtractedShape
     (h_internal : provenance.extractedRow.isExternalOp = false)
     (h_width : provenance.extractedRow.indWidth = 8)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
@@ -1690,7 +1690,7 @@ def OpEnvelope.lbuOfExtractedShape
     (h_internal : provenance.extractedRow.isExternalOp = false)
     (h_width : provenance.extractedRow.indWidth = 1)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
@@ -1763,7 +1763,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lbuOfExtractedShape
     (h_internal : provenance.extractedRow.isExternalOp = false)
     (h_width : provenance.extractedRow.indWidth = 1)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
@@ -1835,7 +1835,7 @@ def OpEnvelope.lhuOfExtractedShape
     (h_internal : provenance.extractedRow.isExternalOp = false)
     (h_width : provenance.extractedRow.indWidth = 2)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
@@ -1908,7 +1908,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lhuOfExtractedShape
     (h_internal : provenance.extractedRow.isExternalOp = false)
     (h_width : provenance.extractedRow.indWidth = 2)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
@@ -1980,7 +1980,7 @@ def OpEnvelope.lwuOfExtractedShape
     (h_internal : provenance.extractedRow.isExternalOp = false)
     (h_width : provenance.extractedRow.indWidth = 4)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
@@ -2053,7 +2053,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lwuOfExtractedShape
     (h_internal : provenance.extractedRow.isExternalOp = false)
     (h_width : provenance.extractedRow.indWidth = 4)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
@@ -2132,7 +2132,7 @@ def OpEnvelope.lbOfExtractedShape
     (h_external : provenance.extractedRow.isExternalOp = true)
     (_h_width : provenance.extractedRow.indWidth = 1)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
@@ -2211,7 +2211,7 @@ def OpEnvelope.lhOfExtractedShape
     (h_external : provenance.extractedRow.isExternalOp = true)
     (_h_width : provenance.extractedRow.indWidth = 2)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
@@ -2290,7 +2290,7 @@ def OpEnvelope.lwOfExtractedShape
     (h_external : provenance.extractedRow.isExternalOp = true)
     (_h_width : provenance.extractedRow.indWidth = 4)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
@@ -2368,7 +2368,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lbOfExtractedShape
     (h_external : provenance.extractedRow.isExternalOp = true)
     (h_width : provenance.extractedRow.indWidth = 1)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
@@ -2446,7 +2446,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lhOfExtractedShape
     (h_external : provenance.extractedRow.isExternalOp = true)
     (h_width : provenance.extractedRow.indWidth = 2)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
@@ -2524,7 +2524,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lwOfExtractedShape
     (h_external : provenance.extractedRow.isExternalOp = true)
     (h_width : provenance.extractedRow.indWidth = 4)
     (h_store_pc_shape : provenance.extractedRow.storePc = false)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC

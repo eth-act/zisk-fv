@@ -84,7 +84,7 @@ theorem zisk_riscv_compliant_program_bus_misc
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩
     let promises' :=
-      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
@@ -109,7 +109,7 @@ theorem zisk_riscv_compliant_program_bus_misc
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩
     let promises' :=
-      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
@@ -134,7 +134,7 @@ theorem zisk_riscv_compliant_program_bus_misc
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩
     let promises' :=
-      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider

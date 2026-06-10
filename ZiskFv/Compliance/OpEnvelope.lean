@@ -1412,7 +1412,7 @@ inductive OpEnvelope
     (mem : Valid_Mem FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
@@ -1470,7 +1470,7 @@ inductive OpEnvelope
     (align : ZiskFv.Compliance.MemAlignWitness m r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (1 : FGL))
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
@@ -1528,7 +1528,7 @@ inductive OpEnvelope
     (align : ZiskFv.Compliance.MemAlignWitness m r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (2 : FGL))
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
@@ -1586,7 +1586,7 @@ inductive OpEnvelope
     (align : ZiskFv.Compliance.MemAlignWitness m r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (4 : FGL))
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
@@ -1652,7 +1652,7 @@ inductive OpEnvelope
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
@@ -1715,7 +1715,7 @@ inductive OpEnvelope
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
@@ -1778,7 +1778,7 @@ inductive OpEnvelope
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC

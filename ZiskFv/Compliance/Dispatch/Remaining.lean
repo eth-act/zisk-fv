@@ -197,7 +197,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩
     let promises' :=
-      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
@@ -217,7 +217,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩
     let promises' :=
-      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
@@ -237,7 +237,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩
     let promises' :=
-      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.loadCleanWitness_of_full_ensemble_main_b_mem_provider
@@ -610,7 +610,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩
     let promises' :=
-      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
     exact ZiskFv.Compliance.lbu_eq_of_full_ensemble_mem_provider
       state lbu_input regs m mem r_main r_mem bus align pins h_width promises'
@@ -627,7 +627,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩
     let promises' :=
-      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
     exact ZiskFv.Compliance.lhu_eq_of_full_ensemble_mem_provider
       state lhu_input regs m mem r_main r_mem bus align pins h_width promises'
@@ -644,7 +644,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
     rcases h_memory_timeline with ⟨timeline⟩
     let promises' :=
-      ZiskFv.EquivCore.Promises.LoadPromises.withMemoryTimelineEvidence
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
     exact ZiskFv.Compliance.lwu_eq_of_full_ensemble_mem_provider
       state lwu_input regs m mem r_main r_mem bus align pins h_width promises'
