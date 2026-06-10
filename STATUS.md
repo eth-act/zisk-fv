@@ -8,6 +8,11 @@ Blocking: add generated/full-ensemble support for
 only the nine row constraints plus MemBus provider rows, not the stage-2
 permutation/range/assertion source facts.
 
+Latest audit: this is structural, not a missing lemma. The Mem table row input
+contains only `MemRow`; stage-2 `gsum`/`im`, table-global segment/permutation
+constants, challenges, ranges, and generated assertions are outside the
+component, and per-row locals would not make table-global constants generic.
+
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
   bridge, row/segment ranges, fixed-column facts, active-row equality, and
@@ -39,7 +44,7 @@ Latest verification:
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: make generated/full-ensemble output provide
-`FullWitnessMemAirSourceRawFacts` for the witness Mem table.
-
+Next step: choose/implement the raw-facts route: either a checked concrete
+generated-witness artifact, or a broader table/component model extension that
+represents the missing Mem AIR source columns generically.
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

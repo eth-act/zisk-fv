@@ -824,6 +824,21 @@ no assumed soundness fields**.
       assertion source needed to construct `FullWitnessMemAirSourceRawFacts`
       from `witness.Constraints`; the next step is generator/full-ensemble
       support for that raw-facts callback, not another local replay proof.
+      Follow-up architecture audit: the generic Clean-witness route is not
+      missing just a theorem. `componentWithDualMemBus` has input `MemRow`,
+      output `unit`, and `localLength = 0`; the witness table therefore carries
+      only the 13 stage-1 Mem row cells used by the local constraints and
+      MemBus emissions. The required raw facts also need stage-2 `gsum`/`im`
+      cells, table-global exposed segment/permutation constants, challenge
+      columns, range metadata, and generated assertion sources. Adding
+      auxiliary per-row locals to the existing flat component would still not
+      generically prove the raw facts, because the segment/permutation source
+      constants are table-global and the flat row component has no current
+      mechanism to enforce equality of row-local copies across the whole Mem
+      table. The implementation choice is now explicit: either generate and
+      check a concrete witness artifact that proves
+      `FullWitnessMemAirSourceRawFacts`, or extend the table/component model so
+      those Mem AIR source columns are represented generically.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
