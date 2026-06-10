@@ -2044,6 +2044,28 @@ structure MemTableGeneratedFixedColumnFacts
     ∀ idx : Fin table.table.length,
       0 < idx.val → segment.segment_l1 idx.val = 0
 
+/-- Replace a segment-column package's fixed `SEGMENT_L1` column by its
+    deterministic shape: row 0 is `1`, all later rows are `0`. -/
+@[reducible]
+def segmentWithFixedL1
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL) :
+    ZiskFv.Airs.Mem.SegmentColumns FGL :=
+  { segment with segment_l1 := fun row => if row = 0 then 1 else 0 }
+
+/-- The deterministic `SEGMENT_L1` projection supplies the fixed-column facts
+    required by the Mem replay bridge. -/
+theorem memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1
+    (table : Table FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL) :
+    MemTableGeneratedFixedColumnFacts table (segmentWithFixedL1 segment) where
+  segmentL1_first := by
+    intro _h_nonempty
+    simp
+  segmentL1_nonfirst := by
+    intro idx h_pos
+    have h_ne : idx.val ≠ 0 := Nat.ne_of_gt h_pos
+    simp [h_ne]
+
 /-- Any active replay entry from a generated Mem table row is either at the
     same byte pointer as the selected primary row or byte-disjoint from it.
 
@@ -2208,6 +2230,39 @@ def fullWitnessMemReplayBridge_of_memTable
     segmentRanges := h_segmentRanges
     fixedColumns := h_fixedColumns
     nonempty := h_nonempty }
+
+/-- Construct the full-witness replay bridge using the deterministic
+    `SEGMENT_L1` fixed-column shape. The remaining caller-facing inputs are the
+    generated every-row facts, row/segment range facts, and nonempty table
+    evidence. -/
+def fullWitnessMemReplayBridge_of_memTable_fixedL1
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {gsum im0 im1 : ℕ → FGL}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_generatedAt :
+      ∀ idx : Fin table.table.length,
+        ZiskFv.Airs.Mem.generated_every_row
+          (segmentWithFixedL1 segment) permutation
+          (memOfTable table gsum im0 im1) idx.val)
+    (h_rowRanges :
+      MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1))
+    (h_segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment))
+    (h_nonempty : 0 < table.table.length) :
+    FullWitnessMemReplayBridge witness (activeMemReplayRowsOfTable table) :=
+  fullWitnessMemReplayBridge_of_memTable
+    h_table
+    h_component
+    h_generatedAt
+    h_rowRanges
+    h_segmentRanges
+    (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 table segment)
+    h_nonempty
 
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/

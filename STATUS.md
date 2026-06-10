@@ -5,12 +5,12 @@ the global load boundary now asks for `FullWitnessMemoryTimelineEvidence`
 instead of bare `MemoryTimelineEvidence`.
 
 Blocking: connect the local Mem-table theorem to concrete full-witness facts:
-generated rows/ranges, segment ranges, fixed columns, and nonempty evidence.
+generated rows, row/segment ranges, and nonempty table evidence.
 `FullWitnessMemReplayBridge` packages them for a concrete Mem table, while
 `FullWitnessMemoryTimelineEvidence` is the global source object and coerces to
 the existing load-proof timeline API.
-Current sub-gap: supply generated/range/fixed-column facts for the witness-
-selected Mem table; table projection and row count now have constructors.
+Current sub-gap: supply generated/range facts for the witness-selected Mem
+table; table projection, row count, and fixed-column shape now have constructors.
 Audit result: existing Lean has selected-load MemClean row bridges, but no
 source constructing whole-table `FullWitnessMemReplayBridge` fields from an
 `EnsembleWitness`.
@@ -35,6 +35,8 @@ Latest proof surface:
 - Current constructor slice adds `memOfTable` and
   `fullWitnessMemReplayBridge_of_memTable`, so row projection, row count, and
   accepted active-row equality are no longer external bridge facts.
+- `segmentWithFixedL1` and `fullWitnessMemReplayBridge_of_memTable_fixedL1`
+  remove the fixed `SEGMENT_L1` shape from the caller-facing source.
 
 Verification: recent segment-range/full-witness-bridge slices pass target
 builds and no-`sorryAx` scans (only existing Clean completeness axioms).
@@ -42,7 +44,7 @@ Full `nix run .#test` last passed for `98202ebc`. Current slices pass LSP/file
 checks, `lake build ZiskFv.Compliance`, both trust gates, and the targeted
 Balance build; new constructor scans show no `sorryAx`.
 
-Next step: derive the remaining generated/range/fixed-column facts for the
-witness-selected Mem table.
+Next step: derive the remaining generated/range facts for the witness-selected
+Mem table.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

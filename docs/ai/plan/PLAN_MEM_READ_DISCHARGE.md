@@ -575,9 +575,16 @@ no assumed soundness fields**.
       `lake env lean ZiskFv/AirsClean/FullEnsemble/Balance.lean`,
       `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and axiom scans with
       no `sorryAx` in the new constructors.
-      Current sub-gap: derive the remaining generated/range/fixed-column facts
-      for the witness-selected Mem table from concrete extraction/Clean witness
-      data.
+      Partial: `segmentWithFixedL1` specializes the segment package to the
+      deterministic fixed-column shape from `mem.pil:86`, and
+      `fullWitnessMemReplayBridge_of_memTable_fixedL1` removes
+      `MemTableGeneratedFixedColumnFacts` from the caller-facing bridge source.
+      Verified with LSP diagnostics, `lake env lean
+      ZiskFv/AirsClean/FullEnsemble/Balance.lean`,
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and axiom scans with
+      no `sorryAx` in the new fixed-column constructors.
+      Current sub-gap: derive the remaining generated/range facts for the
+      witness-selected Mem table from concrete extraction/Clean witness data.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
