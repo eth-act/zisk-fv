@@ -3819,6 +3819,72 @@ theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_memTableGeneratedRow
       idx priorRows providerRow laterRows h_split h_idx_val le_rfl rfl h_read
   simpa [h_rowAt] using h_agreement
 
+/-- The generated first-segment boundary constraint forces `addr_changes = 1`
+    at row 0.
+
+    This projects `mem.pil:377`
+    `is_first_segment * SEGMENT_L1 * (1 - addr_changes) = 0` through the
+    indexed table bridge, using the fixed `SEGMENT_L1 0 = 1` fact from
+    `mem.pil:86` and an explicit first-segment witness. -/
+theorem addr_changes_eq_one_of_first_segment_row_zero_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_first_segment : segment.is_first_segment = 1)
+    {providerRow : Array FGL}
+    {laterRows : List (Array FGL)}
+    (h_split : table.table = providerRow :: laterRows) :
+    mem.addr_changes 0 = 1 := by
+  let idx0 : Fin table.table.length := ⟨0, by
+    rw [h_split]
+    simp⟩
+  have h_segment :
+      ZiskFv.Airs.Mem.segment_every_row segment mem 0 := by
+    have h_generated := h_bridge.generatedAt idx0
+    simpa [idx0] using h_generated.1
+  have h_boundary : segment.segment_l1 0 = 1 := by
+    have h_nonempty : 0 < table.table.length := by
+      rw [h_split]
+      simp
+    exact h_fixed.segmentL1_first h_nonempty
+  exact
+    ZiskFv.Airs.Mem.addr_changes_eq_one_of_first_segment_boundary_segment_every_row
+      h_segment h_first_segment h_boundary
+
+/-- For the first generated Mem segment, the row-0 same-address boundary case
+    is impossible: `mem.pil:377` forces row 0 to be an address-change row.
+
+    Continuation segments still require a different initial-memory statement
+    carrying `previous_segment_*`; this theorem intentionally closes only the
+    first-segment specialization against the finite zero-preload memory. -/
+theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_firstSegment_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_first_segment : segment.is_first_segment = 1) :
+    ActiveMemReplayRowsOfTablePrimaryReadPrefixSound
+      (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+        (activeMemReplayRowsOfTable table))
+      table := by
+  refine
+    activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_memTableGeneratedRowsBridge_boundary_same_addr
+      h_bridge h_ranges h_fixed ?_
+  intro selectedIdx providerRow laterRows _h_sel h_split h_addr_changes_zero _h_read _h_addr_eq
+  have h_addr_changes_one :=
+    addr_changes_eq_one_of_first_segment_row_zero_memTableGeneratedRowsBridge
+      h_bridge h_fixed h_first_segment h_split
+  rw [h_addr_changes_zero] at h_addr_changes_one
+  exact False.elim (zero_ne_one h_addr_changes_one)
+
 /-- Address-change selected primary reads are justified against their concrete
     prior table prefix from the zero-preloaded Mem-table memory.
 
@@ -3940,6 +4006,35 @@ theorem activeMemReplayRowsOfTablePrefixReadSound_of_memTableGeneratedRowsBridge
       (tableRow_specs_of_memTableGeneratedRowsBridge h_bridge)
       h_primary_read
 
+/-- First-segment specialization of the generated Mem-table prefix-read
+    theorem, with initial memory given by the finite zero-preload table memory.
+
+    The additional first-segment input is the constructible segment selector
+    needed to rule out the row-0 continuation case. Later continuation segments
+    need an initial-memory theorem parameterized by `previous_segment_*`
+    instead of this zero-preload specialization. -/
+theorem activeMemReplayRowsOfTablePrefixReadSound_of_firstSegment_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_first_segment : segment.is_first_segment = 1) :
+    ActiveMemReplayRowsOfTablePrefixReadSound
+      (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+        (activeMemReplayRowsOfTable table))
+      table := by
+  exact
+    activeMemReplayRowsOfTablePrefixReadSound_of_memTableGeneratedRowsBridge
+      (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+        (activeMemReplayRowsOfTable table))
+      h_bridge
+      (activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_firstSegment_memTableGeneratedRowsBridge
+        h_bridge h_ranges h_fixed h_first_segment)
+
 /-- Transport table-local replay-row order facts across the concrete row-list
     equality used by the raw accepted Mem extraction path. -/
 theorem generatedMemRowOrderFacts_of_memReplayRowsOfTable
@@ -3989,6 +4084,38 @@ theorem memoryBusRowsPrefixReadSound_of_activeMemReplayRowsOfTable
       initialMemory rows := by
   rw [h_rows]
   exact h_prefix
+
+/-- Construct the accepted replay evidence for a first generated Mem segment
+    whose accepted row list is the active replay projection of the concrete
+    Mem table.
+
+    This fills the former `AcceptedMemoryReplayEvidence.prefixReadSound`
+    obligation from extracted Mem-table constraints. It is still only the
+    circuit-side replay object; the Sail timeline fields in
+    `MemoryTimelineEvidence` remain the separate whole-execution boundary. -/
+@[reducible]
+def acceptedMemoryReplayEvidence_of_firstSegment_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_rows : rows = activeMemReplayRowsOfTable table)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_first_segment : segment.is_first_segment = 1) :
+    ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryReplayEvidence :=
+  { rows := rows
+    initialMemory :=
+      ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+        (activeMemReplayRowsOfTable table)
+    prefixReadSound :=
+      memoryBusRowsPrefixReadSound_of_activeMemReplayRowsOfTable
+        h_rows
+        (activeMemReplayRowsOfTablePrefixReadSound_of_firstSegment_memTableGeneratedRowsBridge
+          h_bridge h_ranges h_fixed h_first_segment) }
 
 /-- The projected read-replay rows of a concrete Mem table are embedded in
     the accepted chronological memory-bus row trace. Proving this embedding

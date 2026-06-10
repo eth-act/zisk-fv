@@ -9,10 +9,10 @@ facts. `MemTableGeneratedRowsBridge`, `MemTableGeneratedRangeFacts`, and
 `MemTableGeneratedFixedColumnFacts` expose the row/list-position, range, and
 fixed-column facts; `FullWitnessMemTableGeneratedRowsBridge` is still the
 concrete full-ensemble bridge obligation.
-Current sub-gap: discharge the explicit row-0 same-address boundary premise.
-Same-address predecessor iteration over positive indices is factored; row 0
-needs either first-segment evidence forcing `addr_changes = 1` or a
-continuation-aware initial memory.
+Current sub-gap: integrate the first-segment row-0 closure. Row 0 is now closed
+for segments with `segment.is_first_segment = 1`; concrete full-witness
+integration must either expose that selector or use a continuation-aware
+initial memory carrying `previous_segment_*`.
 
 Latest proof surface:
 - Phase C boundary swap is done: the residual Sail timeline is visible once,
@@ -25,18 +25,32 @@ Latest proof surface:
   selected previous rows handle write/read plus replay-neutral dual reads;
   inactive previous rows carry without emitting active replay entries; and the
   combined one-step lemma abstracts that split.
-- Current uncommitted slice lifts zero-preload through same-pointer preload
-  witnesses, packages split-prefix predecessor carry, and reduces selected
-  primary-read prefix soundness to one row-0 same-address boundary input.
+- Latest committed slice (`6e52f0d7`) lifts zero-preload through same-pointer
+  preload witnesses, packages split-prefix predecessor carry, and reduces
+  selected primary-read prefix soundness to one row-0 same-address boundary
+  input.
+- Current uncommitted slice projects `mem.pil:377` to show first-segment row 0
+  must have `addr_changes = 1`, closing the same-address boundary for first
+  segments and deriving active-table prefix-read soundness under an explicit
+  `segment.is_first_segment = 1` input. It also constructs
+  `AcceptedMemoryReplayEvidence` for first-segment tables whose accepted row
+  list is the active table projection, filling `prefixReadSound` from these
+  concrete Mem-table facts.
+- Full-witness inspection found no existing source for
+  `segment.is_first_segment = 1`; current full-ensemble code selects the Mem
+  table but leaves generated-row, range, fixed-column, and segment-selector
+  facts as bridge obligations.
 
-Verification: Lean LSP diagnostics are clean for
-`ZiskFv.ZiskCircuit.MemTrace` and
-`ZiskFv.AirsClean.FullEnsemble.Balance`; both touched target builds pass.
-Full `lake build`, both trust gates, and `nix run .#test` pass for the current
-uncommitted slice.
+Verification: Lean LSP diagnostics are clean for `ZiskFv.Airs.Mem`;
+`ZiskFv.Airs.Mem` and `ZiskFv.AirsClean.FullEnsemble.Balance` target builds
+pass. New first-segment theorems/constructor have no `sorryAx` in axiom scans
+(they carry the existing Clean component axiom class). The combined checkpoint
+`nix run .#test` passes for the current uncommitted slice, including full
+`lake build`, both trust gates, flake repro, cargo tests, and extraction tests.
 
-Next step: prove or surface the row-0 segment-boundary input, then wire the
-reduced primary-read prefix theorem into the active table prefix-read theorem.
+Next step: inspect the concrete full-witness Mem segment evidence to decide
+whether to expose `segment.is_first_segment = 1` or add the continuation-memory
+initial-state theorem.
 
 Context: Phase A is committed at `0c222595`. The old
 `.worktrees/memory-trust-gap` branch remains only as salvage reference until

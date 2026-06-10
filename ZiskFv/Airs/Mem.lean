@@ -301,6 +301,25 @@ theorem core_every_row_of_segment_every_row
       h18, _, _, h21, _, h23⟩
   exact ⟨h3, h4, h5, h6, h7, h8, h18, h21, h23⟩
 
+/-- On the first row of the first Mem segment, `addr_changes` is forced high.
+
+    This is exactly the `mem.pil:377` constraint
+    `is_first_segment * SEGMENT_L1 * (1 - addr_changes) = 0` after exposing
+    the two segment selectors as `1`. -/
+theorem addr_changes_eq_one_of_first_segment_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_first_segment : cols.is_first_segment = 1)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.addr_changes row = 1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h_first_boundary,
+      _, _, _, _, _, _⟩
+  rw [h_first_segment, h_boundary] at h_first_boundary
+  have h_zero : 1 - v.addr_changes row = 0 := by
+    simpa using h_first_boundary
+  exact (sub_eq_zero.mp h_zero).symm
+
 /-- At a non-boundary row, the segment previous-address expression is the
     previous row's address. Segment-boundary carry-in is handled separately by
     the global Mem trace construction. -/

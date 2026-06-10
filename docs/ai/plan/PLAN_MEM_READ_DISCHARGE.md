@@ -366,7 +366,7 @@ no assumed soundness fields**.
       `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
       `nix run .#test`.
-      Latest in-progress slice lifts that predecessor step through concrete
+      Latest completed slice lifts that predecessor step through concrete
       split prefixes. `MemTrace.lean` now proves same-pointer zero-preload
       preservation, so an inactive predecessor row can use a later selected row
       at the same pointer as the preload witness. `Balance.lean` packages the
@@ -379,7 +379,30 @@ no assumed soundness fields**.
       diagnostics pass for `ZiskFv.ZiskCircuit.MemTrace` and
       `ZiskFv.AirsClean.FullEnsemble.Balance`, and both touched target builds
       plus full `lake build`, both trust gates, and `nix run .#test` pass for
-      this uncommitted chunk.
+      commit `6e52f0d7`.
+      Latest in-progress slice closes that explicit row-0 same-address
+      boundary for first Mem segments. `Airs/Mem.lean` proves
+      `addr_changes_eq_one_of_first_segment_boundary_segment_every_row` from
+      `mem.pil:377`
+      (`is_first_segment * SEGMENT_L1 * (1 - addr_changes) = 0`).
+      `Balance.lean` projects it as
+      `addr_changes_eq_one_of_first_segment_row_zero_memTableGeneratedRowsBridge`
+      and derives the first-segment active-table prefix-read theorem under an
+      explicit `segment.is_first_segment = 1` input. It also constructs
+      `acceptedMemoryReplayEvidence_of_firstSegment_memTableGeneratedRowsBridge`
+      when the accepted row list is the active table projection, filling
+      `AcceptedMemoryReplayEvidence.prefixReadSound` from concrete Mem-table
+      facts. This intentionally leaves continuation segments to a separate
+      initial-memory theorem carrying `previous_segment_*`. Verified so far
+      with clean Lean LSP diagnostics for `ZiskFv.Airs.Mem` and target builds
+      for `ZiskFv.Airs.Mem` and `ZiskFv.AirsClean.FullEnsemble.Balance`;
+      axiom scans of the new first-segment theorems/constructor show no
+      `sorryAx` (only the existing Clean component axiom class); the combined
+      checkpoint `nix run .#test` passes, including full `lake build`, both
+      trust gates, flake repro, cargo tests, and extraction tests.
+      Existing full-witness code currently selects the Mem table but does not
+      expose `segment.is_first_segment = 1`; generated-row, range,
+      fixed-column, and segment-selector facts remain explicit bridge inputs.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -422,14 +445,12 @@ no assumed soundness fields**.
       fixed-column declaration `mem.pil:86` (`SEGMENT_L1 = [1,0...]`) and
       keeps the fixed-column constructibility obligation explicit rather than
       hiding it in replay evidence.
-      Current sub-gap: the address-change selected-read prefix case is closed
-      under those fixed-column facts. The remaining primary-read prefix work is
-      the same-address selected-read case: iterate the one-step predecessor
-      lemma backward through nonfirst same-address rows until a selected
-      write/read or the address-change zero-preload base case. The row-0
-      same-address case is now explicit: it needs either a first-segment fact
-      forcing `addr_changes = 1` from `mem.pil:377`, or a continuation-aware
-      initial memory carrying `previous_segment_*`.
+      Current sub-gap: first-segment row 0 now follows from `mem.pil:377` under
+      an explicit `segment.is_first_segment = 1` input. The remaining
+      integration work is deciding whether the concrete full-witness Mem table
+      supplies that first-segment selector or whether the accepted replay
+      theorem must be generalized to continuation segments with an initial
+      memory carrying `previous_segment_*`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
