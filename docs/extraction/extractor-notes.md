@@ -267,10 +267,26 @@ columns and does not support previous-row witness cells, this mode records the
 source surface rather than pretending those facts follow from the existing
 Clean table soundness API.
 
+The companion `mem-generated-artifact` subcommand emits a typed Lean wrapper
+for the same generated-artifact boundary:
+
+```
+pil-extract mem-generated-artifact --pilout build/zisk.pilout --air Mem \
+    --output /tmp/MemGeneratedArtifact.lean
+```
+
+The wrapper defines `Extraction.MemGeneratedArtifact.WitnessFacts` as the
+current `FullWitnessMemAirSourceProverDataWitnessFacts witness` target and
+`buildTimelineEvidence` as the call into
+`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. It does not
+prove the witness facts; it pins the generated module's public entry point to
+the current load-facing constructor.
+
 `nix run .#populate` also materializes the same report at
-`build/extraction/MemAirFacts.md`, produced by the pinned `extracted-lean`
-derivation from `build/zisk.pilout` and upstream `mem.pil`. That file is a
-reproducible generated artifact, not a Lake dependency.
+`build/extraction/MemAirFacts.md` and the wrapper at
+`build/extraction/Extraction/MemGeneratedArtifact.lean`, produced by the pinned
+`extracted-lean` derivation from `build/zisk.pilout` and upstream `mem.pil`.
+Those files are reproducible generated artifacts, not Lake dependencies.
 
 ## Limitations (deliberate; expand as phases demand)
 

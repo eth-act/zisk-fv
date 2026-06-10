@@ -989,6 +989,22 @@ no assumed soundness fields**.
       the same contract. Verified with the focused report test, full
       `cargo test --manifest-path tools/pil-extract/Cargo.toml`, regenerated
       `/tmp/mem-air-facts-report.md`, and `git diff --check`.
+      Generated-wrapper slice: `tools/pil-extract` now has a
+      `mem-generated-artifact` subcommand that emits
+      `Extraction.MemGeneratedArtifact`. The generated Lean wrapper defines
+      `WitnessFacts witness` as the current
+      `FullWitnessMemAirSourceProverDataWitnessFacts witness` target and
+      exposes `buildTimelineEvidence`, a typed call into
+      `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`.
+      `nix/extracted-lean.nix` emits this wrapper as
+      `MemGeneratedArtifact.lean`, and `nix run .#populate` copies it with the
+      other reproducible extraction files. This still does not prove the
+      witness facts; it makes the generated module entry point concrete and
+      checked against the current Lean API. Verified with the focused wrapper
+      test, full `cargo test --manifest-path tools/pil-extract/Cargo.toml`
+      (71 tests), local generation of `/tmp/MemGeneratedArtifact.lean`,
+      `lake env lean /tmp/MemGeneratedArtifact.lean`,
+      `nix flake check --no-build`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

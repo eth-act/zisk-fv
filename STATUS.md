@@ -14,11 +14,10 @@ emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
 table-global segment/permutation constants, challenges, ranges, and generated
 assertions are outside the component.
 
-Current slice: generated artifact is explicit at the load-facing boundary.
-`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` packages
-ProverData-backed Clean assertion/lookup witnesses into
-`FullWitnessGeneratedTimelineEvidence`, whose inner timeline evidence still
-carries only the Mem sidecar source plus residual Sail timeline facts.
+Current slice: generated artifact production is now reproducible. `pil-extract
+mem-generated-artifact` emits a typed Lean wrapper that defines
+`WitnessFacts witness = FullWitnessMemAirSourceProverDataWitnessFacts witness`
+and feeds it to `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -30,12 +29,14 @@ Current proof surface:
 - `tools/pil-extract mem-air-facts` reports generated constraints, range
   hints, ProverData keys, generated timeline constructor, and the per-table
   artifact contract.
+- `tools/pil-extract mem-generated-artifact` emits
+  `Extraction.MemGeneratedArtifact.buildTimelineEvidence`.
 
 Latest verification:
-- Focused generated-artifact-contract report test.
-- Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (70 tests).
-- Regenerated `/tmp/mem-air-facts-report.md`; it lists the contract fields:
-  constraint assertions, row range lookups, and segment range lookups.
+- Focused generated-artifact wrapper test.
+- Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (71 tests).
+- Generated `/tmp/MemGeneratedArtifact.lean`; `lake env lean` elaborates it.
+- `nix flake check --no-build` sees the new `extracted-lean` output.
 - `git diff --check` clean.
 - Latest Lean/trust gate: `lake build ZiskFv.Compliance` and
   `trust/scripts/check-all.sh` at commit `e788d386`.

@@ -6,7 +6,8 @@
 #
 #   build/sail-lean/                       ← sail-lean-tree
 #   build/zisk.pilout                      ← zisk-pilout
-#   build/extraction/Extraction/*.lean     ← extracted-lean
+#   build/extraction/Extraction/*.lean     ← extracted-lean, including
+#                                             MemGeneratedArtifact.lean
 #   build/extraction/MemAirFacts.md        ← extracted-lean
 #   build/clean-lean/                      ← clean-source.
 #

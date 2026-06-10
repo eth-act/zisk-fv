@@ -3,8 +3,9 @@
 # Run `pil-extract` over `zisk-pilout` (and `zisk-src` for the
 # arith-table data / original PIL source) to produce per-AIR Lean files,
 # the operation-bus `Buses.lean`, the memory-bus `MemoryBuses.lean`, the
-# 74-row `ArithTable.lean` lookup data, and the Mem AIR sidecar source
-# report. All output lands in $out/.
+# 74-row `ArithTable.lean` lookup data, the Mem AIR sidecar source
+# report, and the typed Mem generated-artifact wrapper. All output lands
+# in $out/.
 
 stdenv.mkDerivation {
   pname = "zisk-fv-extracted-lean";
@@ -74,13 +75,21 @@ stdenv.mkDerivation {
       --pil-source ${zisk-src}/state-machines/mem/pil/mem.pil \
       --output $out/MemAirFacts.md
 
+    # Typed Lean wrapper for the generated Mem artifact. The wrapper is not
+    # a proof of the sidecar facts; it pins the generated module's public
+    # entry point to the current load-facing timeline constructor.
+    ${pil-extract}/bin/pil-extract mem-generated-artifact \
+      --pilout ${zisk-pilout} \
+      --air Mem \
+      --output $out/MemGeneratedArtifact.lean
+
     runHook postBuild
   '';
 
   dontInstall = true;
 
   meta = with lib; {
-    description = "Per-AIR Lean files and Mem sidecar report extracted from zisk-pilout";
+    description = "Per-AIR Lean files plus Mem sidecar artifacts extracted from zisk-pilout";
     license = with licenses; [ asl20 mit ];
   };
 }

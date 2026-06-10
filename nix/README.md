@@ -10,13 +10,14 @@ Reproducible-build flake replacing the previous `docker/` pipeline.
 | `sail-lean-tree.nix`| Lean tree built from the pinned `sail-riscv` source      |
 | `pil2-compiler.nix` | pil2-compiler with vendored npm deps                     |
 | `zisk-pilout.nix`   | ZisK pilout build (cargo + Node)                         |
-| `extracted-lean.nix`| Per-AIR extracted Lean files                             |
+| `extracted-lean.nix`| Per-AIR extracted Lean files and Mem sidecar artifacts   |
 | `clean.nix`         | Clean DSL source tree (Verified-zkEVM/clean), pinned     |
 | `populate.nix`      | `apps.populate`; copies derivation outputs into repo paths |
 
 The flake at the repo root composes these. Run `nix run .#populate`
 after cloning to produce `build/sail-lean/`, `build/zisk.pilout`,
-`ZiskFv/Extraction/*.lean`, and `build/clean-lean/`. Then `lake build`
+`build/extraction/Extraction/*.lean`, `build/extraction/MemAirFacts.md`,
+and `build/clean-lean/`. Then `lake build`
 works as usual. The Clean dep is pulled as a *source* tree (no
 pre-built oleans inside Nix — Lake compiles it as part of the main
 build using the shared Mathlib v4.28.0 pin).
