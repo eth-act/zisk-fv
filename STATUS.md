@@ -3,10 +3,11 @@ Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 Current focus: Phase B/C bridge closure; `LoadPromises.mem_read` is gone and
 load arms consume one global memory-timeline boundary.
 
-Blocking: generated/full-ensemble production of Mem sidecar facts. Load arms
-now require `FullWitnessGeneratedTimelineEvidence`, which wraps the full-witness
-timeline evidence and carries the concrete `witness.data` target
-(`FullWitnessMemAirSourceProverDataWitnessFacts`) for the witness-selected Mem table.
+Design decision: generated/full-ensemble production of Mem sidecar facts is the
+remaining boundary. Load arms require `FullWitnessGeneratedTimelineEvidence`,
+which wraps the full-witness timeline evidence and carries the concrete
+`witness.data` target (`FullWitnessMemAirSourceProverDataWitnessFacts`) for the
+witness-selected Mem table.
 
 Latest audit: structural gap, not a missing lemma. `componentWithDualMemBus`
 emits only row constraints plus MemBus provider rows; Mem range lookup witness
@@ -22,15 +23,10 @@ source facts into a witness-wide `ExtractedSidecarFacts` callback.
 Digression: main `AGENTS.md` commit `f8072326` relaxes build/test cadence;
 this worktree has no local `AGENTS.md`, so apply that cadence operationally.
 
-Current proof surface:
-- `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
-  bridge, row/segment ranges, fixed columns, active rows, and nonempty evidence.
-- `FullWitnessGeneratedTimelineEvidence` carries ProverData witness facts and
-  proves the stored sidecars match the generated sidecar packager.
-- `FullWitnessMemoryTimelineEvidence` carries full witness +
-  `FullWitnessMemAirSourceRawSidecars`; source/bridge/replay are accessors.
-- `pil-extract` reports the Mem contract and emits generated artifact/bridge
-  wrappers between raw source facts and `ExtractedSidecarFacts` callbacks.
+Current proof surface: `FullWitnessMemReplayBridge` derives accepted replay
+from generated-row/range facts; `FullWitnessGeneratedTimelineEvidence` carries
+ProverData witness facts and proves they match the stored sidecars; `pil-extract`
+emits the generated artifact/bridge wrappers.
 
 Latest verification:
 - Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests).
@@ -46,5 +42,7 @@ Latest verification:
   `nix flake check --no-build`, and `git diff --check`.
 - Last full `nix run .#test`: `98202ebc`.
 
-Next step: produce the raw/extracted Mem sidecar facts for mutable Mem tables;
-Clean component broadening remains a fallback.
+Next step: choose the completion route: either treat those ProverData-backed Mem
+sidecar facts as the explicit generated artifact boundary and run Phase D gates,
+or authorize broadening the Clean table/component model so it represents those
+sidecar assertion/range operations generically.

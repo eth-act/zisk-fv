@@ -1097,6 +1097,17 @@ no assumed soundness fields**.
       test, full extractor tests, regenerated
       `MemGeneratedConstraintBridge.lean`, and compiling that bridge with the
       generated `LEAN_PATH`.
+      Current decision point: the bridge now exposes a checked path from
+      extracted/raw Mem sidecar facts to the load-facing generated timeline
+      evidence, but it still requires the sidecar facts as input. The current
+      Clean `componentWithDualMemBus`/`Table`/`EnsembleWitness` model does not
+      carry the stage-2 ProverData columns, segment/permutation globals, or
+      assertion/range lookup operations needed to derive
+      `FullWitnessMemAirSourceProverDataWitnessFacts` generically. Finishing
+      the stream therefore requires an explicit choice: accept those facts as
+      the generated artifact boundary for this plan and run Phase D, or broaden
+      the Clean component/table model so those sidecar operations become part
+      of the checked full-ensemble witness.
       Post-`be7aed0e` broad checks now pass:
       `trust/scripts/check-all.sh`, `nix flake check --no-build`, and
       `git diff --check`. The latest tracked Lean compliance gate remains
