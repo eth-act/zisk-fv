@@ -26,15 +26,22 @@ Latest proof surface:
   agreement transport in `readEventReplayAgreement_of_entry_same`.
 - Adjacent previous-primary-read -> current-read and same-row primary-read ->
   dual-read replay agreement project those generic facts to bridged Mem rows.
+- Replay list append is factored in `MemTrace` via
+  `replayMemoryAfterBusRows_append`,
+  `memoryBusRowsReadWriteSound_append`, and
+  `memoryBusRowsPrefixReadSound_append`.
+- One generated row's active replay chunk is packaged as recursive read/write
+  sound by `memoryBusRowsReadWriteSound_activeMemReplayEntriesOfRow_of_spec`,
+  assuming only the incoming soundness of any selected primary read.
 
-Verification for latest slice: Lean LSP diagnostics are clean after an LSP
-restart/build hook, `lake build ZiskFv.ZiskCircuit.MemTrace` passes, and
-`lake build ZiskFv.AirsClean.FullEnsemble.Balance` passes. Full `lake build`,
+Verification for latest slice: Lean LSP diagnostics are clean, `lake build
+ZiskFv.ZiskCircuit.MemTrace` passes, and `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance` passes. Full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` also pass.
 
-Next step: commit the read-carry slice, then lift adjacent/per-address cases
-toward the table-level `MemoryBusRowsPrefixReadSound` proof.
+Next step: commit the row-chunk/append lift, then thread these lemmas through
+a table-level induction over `activeMemReplayRowsOfTable`.
 
 Context: Phase A is committed at `0c222595`. The old
 `.worktrees/memory-trust-gap` branch remains only as salvage reference until

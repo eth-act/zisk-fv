@@ -2115,6 +2115,86 @@ theorem readEventReplayAgreement_after_primary_read_dual_read_of_row
   rw [h_source_replay]
   simpa [targetEntry]
 
+/-- A generated Mem row's active replay chunk is recursively read/write-sound
+    once any selected primary read has already been justified against the
+    incoming replay memory.
+
+    The same-row dual read is then discharged from the primary event: writes
+    use the row-local write→read replay theorem, and reads use read-no-mutation
+    plus equal pointer/value transport. -/
+theorem memoryBusRowsReadWriteSound_activeMemReplayEntriesOfRow_of_spec
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_spec : ZiskFv.AirsClean.Mem.Spec row)
+    (h_primary_read :
+      row.sel = 1 →
+      row.wr = 0 →
+        ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement initialMemory
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+            (memPrimaryReplayEntryOfRow row))) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound
+      initialMemory (activeMemReplayEntriesOfRow row) := by
+  have h_primary_write_not_read :
+      row.wr = 1 →
+        ¬(memPrimaryReplayEntryOfRow row).multiplicity = (-1 : FGL) := by
+    intro h_wr_one h_mult
+    have h_mult_one :
+        (memPrimaryReplayEntryOfRow row).multiplicity = (1 : FGL) := by
+      simp [h_wr_one]
+    have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
+      native_decide
+    exact h_one_ne_neg_one (h_mult_one.symm.trans h_mult)
+  rcases ZiskFv.AirsClean.Mem.sel_dual_boolean_of_spec row h_spec with
+    h_sel_dual_zero | h_sel_dual_one
+  · rcases ZiskFv.AirsClean.Mem.sel_boolean_of_spec row h_spec with
+      h_sel_zero | h_sel_one
+    · have h_sel_ne : row.sel ≠ 1 := by
+        simp [h_sel_zero]
+      have h_sel_dual_ne : row.sel_dual ≠ 1 := by
+        simp [h_sel_dual_zero]
+      rw [activeMemReplayEntriesOfRow_eq_nil_of_inactive
+        h_sel_ne h_sel_dual_ne]
+      simp [ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound]
+    · have h_sel_dual_ne : row.sel_dual ≠ 1 := by
+        simp [h_sel_dual_zero]
+      rw [activeMemReplayEntriesOfRow_eq_primary_of_sel_of_not_sel_dual
+        h_sel_one h_sel_dual_ne]
+      simp only [ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound]
+      constructor
+      · intro _h_as h_mult
+        rcases ZiskFv.AirsClean.Mem.wr_boolean_of_spec row h_spec with
+          h_wr_zero | h_wr_one
+        · exact h_primary_read h_sel_one h_wr_zero
+        · exact False.elim (h_primary_write_not_read h_wr_one h_mult)
+      · simp
+  · have h_sel_one :=
+      ZiskFv.AirsClean.Mem.sel_of_sel_dual_one_of_spec
+        row h_spec h_sel_dual_one
+    rw [activeMemReplayEntriesOfRow_eq_primary_dual_of_sel_of_sel_dual
+      h_sel_one h_sel_dual_one]
+    simp only [ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsReadWriteSound]
+    constructor
+    · intro _h_as h_mult
+      rcases ZiskFv.AirsClean.Mem.wr_boolean_of_spec row h_spec with
+        h_wr_zero | h_wr_one
+      · exact h_primary_read h_sel_one h_wr_zero
+      · exact False.elim (h_primary_write_not_read h_wr_one h_mult)
+    · rcases ZiskFv.AirsClean.Mem.wr_boolean_of_spec row h_spec with
+        h_wr_zero | h_wr_one
+      · constructor
+        · intro _h_as _h_mult
+          exact
+            readEventReplayAgreement_after_primary_read_dual_read_of_row
+              initialMemory row h_wr_zero
+              (h_primary_read h_sel_one h_wr_zero)
+        · simp
+      · constructor
+        · intro _h_as _h_mult
+          exact
+            readEventReplayAgreement_after_primary_write_dual_read_of_row
+              initialMemory row h_wr_one
+        · simp
+
 /-- The indexed table bridge and range facts prove local chronological order
     for the active replay emissions projected from one concrete table row.
 

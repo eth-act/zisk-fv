@@ -208,6 +208,18 @@ no assumed soundness fields**.
       ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
       `nix run .#test`.
+      Partial: row-chunk composition toward the table-level induction is now
+      factored. `MemTrace.lean` proves replay/read-soundness append lemmas
+      (`replayMemoryAfterBusRows_append`,
+      `memoryBusRowsReadWriteSound_append`, and
+      `memoryBusRowsPrefixReadSound_append`), and `Balance.lean` proves
+      `memoryBusRowsReadWriteSound_activeMemReplayEntriesOfRow_of_spec` for a
+      single generated active replay chunk assuming only incoming soundness for
+      any selected primary read. Verified so far with clean LSP diagnostics,
+      `lake build ZiskFv.ZiskCircuit.MemTrace`, and `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+      `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -232,6 +244,10 @@ no assumed soundness fields**.
       constraints, the definitional eight-byte replay write, and the
       read-row no-mutation branch in `MemTrace.lean`; they do not introduce a
       replay-soundness field.
+      Partial: the new row-chunk theorem is a pure composition wrapper over
+      the already cited row spec booleans, selected dual implies selected
+      primary, and the local write/read replay lemmas; it adds no generated
+      constraint or replay assumption.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

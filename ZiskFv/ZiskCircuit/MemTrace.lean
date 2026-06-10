@@ -669,6 +669,51 @@ theorem memoryBusRowsPrefixReadSound_of_readWriteSound
           simpa [replayMemoryAfterBusRows] using h_selected
 
 @[simp]
+theorem replayMemoryAfterBusRows_append
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (xs ys : List (MemoryBusEntry FGL)) :
+    replayMemoryAfterBusRows mem (xs ++ ys) =
+      replayMemoryAfterBusRows (replayMemoryAfterBusRows mem xs) ys := by
+  simp [replayMemoryAfterBusRows, List.foldl_append]
+
+/-- Recursive read/write soundness composes across list append when the suffix
+    starts from the replay memory produced by the prefix. -/
+theorem memoryBusRowsReadWriteSound_append
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (xs ys : List (MemoryBusEntry FGL))
+    (h_xs : MemoryBusRowsReadWriteSound initialMemory xs)
+    (h_ys :
+      MemoryBusRowsReadWriteSound
+        (replayMemoryAfterBusRows initialMemory xs) ys) :
+    MemoryBusRowsReadWriteSound initialMemory (xs ++ ys) := by
+  induction xs generalizing initialMemory with
+  | nil =>
+      simpa [replayMemoryAfterBusRows] using h_ys
+  | cons row rest ih =>
+      simp only [List.cons_append, MemoryBusRowsReadWriteSound] at h_xs ⊢
+      constructor
+      · exact h_xs.1
+      · exact
+          ih (replayMemoryAfterBusRow initialMemory row) h_xs.2
+            (by simpa [replayMemoryAfterBusRows] using h_ys)
+
+/-- Prefix read soundness composes across list append when the suffix is proved
+    against the replay memory produced by the prefix. -/
+theorem memoryBusRowsPrefixReadSound_append
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (xs ys : List (MemoryBusEntry FGL))
+    (h_xs : MemoryBusRowsPrefixReadSound initialMemory xs)
+    (h_ys :
+      MemoryBusRowsPrefixReadSound
+        (replayMemoryAfterBusRows initialMemory xs) ys) :
+    MemoryBusRowsPrefixReadSound initialMemory (xs ++ ys) := by
+  exact memoryBusRowsPrefixReadSound_of_readWriteSound initialMemory (xs ++ ys)
+    (memoryBusRowsReadWriteSound_append initialMemory xs ys
+      (memoryBusRowsReadWriteSound_of_prefixReadSound initialMemory xs h_xs)
+      (memoryBusRowsReadWriteSound_of_prefixReadSound
+        (replayMemoryAfterBusRows initialMemory xs) ys h_ys))
+
+@[simp]
 lemma memoryBusTraceEventOfRow_read
     (entry : MemoryBusEntry FGL)
     (h_as : entry.as = (2 : FGL))
