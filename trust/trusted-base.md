@@ -161,34 +161,35 @@ h_memory_timeline : env.memoryTimelineEvidence
 ```
 
 For load `OpEnvelope` arms, `env.memoryTimelineEvidence` requires
-`Nonempty (MemoryTimelineEvidence state bus.e1)`; non-load arms require no
-memory evidence. Dispatch reconstructs canonical `LoadPromises` with
-`LoadPromises.memory_timeline : MemoryTimelineEvidence state e1` from that
-global hypothesis before calling the load theorems. The `OpEnvelope` load
-constructors themselves carry only `LoadStructuralPromises`, so they no longer
-accept a per-load byte oracle.
+`Nonempty (FullWitnessMemoryTimelineEvidence state bus.e1)`; non-load arms
+require no memory evidence. Dispatch coerces that full-witness source to
+`MemoryTimelineEvidence state e1` and reconstructs canonical `LoadPromises`
+with `LoadPromises.memory_timeline` before calling the load theorems. The
+`OpEnvelope` load constructors themselves carry only `LoadStructuralPromises`,
+so they no longer accept a per-load byte oracle.
 
-`MemoryTimelineEvidence` contains a named `AcceptedMemoryReplayEvidence`
-sub-object plus the residual whole-execution memory-timeline facts. The accepted
-replay sub-object states prefix-read soundness for the accepted Mem rows; the
+`FullWitnessMemoryTimelineEvidence` contains the concrete full-ensemble witness,
+the projected accepted row list, a `FullWitnessMemReplayBridge`, and only the
+residual whole-execution memory-timeline facts. The bridge derives the
+`AcceptedMemoryReplayEvidence` sub-object used by `MemoryTimelineEvidence`,
+including prefix-read soundness for the accepted Mem rows. The residual
 timeline facts state that those rows split around the selected read, the
 selected row is a read, the initial Sail memory agrees with the replay memory,
 and the selected Sail state is the state reached by replaying the accepted
-prefix. The canonical load proofs derive `LoadByteAgreement` from this evidence
-and the memory replay relation.
+prefix. The canonical load proofs derive `LoadByteAgreement` from the resulting
+timeline evidence and the memory replay relation.
 
-Retirement path: first prove `AcceptedMemoryReplayEvidence.prefixReadSound`
-from the concrete Mem table. The table/list-position part of that proof is now
-named as `MemTableGeneratedRowsBridge`, which connects Clean `table.table`
-positions to `rowAt mem idx` and the row-indexed `generated_every_row`
-constraints. `FullWitnessMemReplayBridge` packages the concrete full-ensemble
-Mem table, generated-row/range/fixed-column facts, active-row equality, and
-nonempty segment evidence; its constructor derives the accepted replay
-subobject used by `MemoryTimelineEvidence`. Then prove the extractor/Clean
-witness source of that bridge and the whole-execution induction connecting
-accepted Mem rows, initial Sail memory agreement, and selected Sail state
-without assuming
-`env.memoryTimelineEvidence`.
+Retirement path: prove the extractor/Clean witness source of
+`FullWitnessMemReplayBridge`, then prove the whole-execution induction
+connecting accepted Mem rows, initial Sail memory agreement, and selected Sail
+state without assuming `env.memoryTimelineEvidence`. The table/list-position
+part of the bridge is named as `MemTableGeneratedRowsBridge`, which connects
+Clean `table.table` positions to `rowAt mem idx` and the row-indexed
+`generated_every_row` constraints. `FullWitnessMemReplayBridge` packages the
+concrete full-ensemble Mem table, generated-row/range/fixed-column facts,
+active-row equality, and nonempty segment evidence; its constructor derives the
+accepted replay subobject, so `AcceptedMemoryReplayEvidence.prefixReadSound` is
+no longer a bare global-boundary assumption.
 
 ## Platform Profile
 

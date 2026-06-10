@@ -5142,6 +5142,59 @@ def memoryTimelineEvidence_of_fullWitnessMemReplayBridge
     initialAgreement := h_initialAgreement
     stateAtPrefix := h_stateAtPrefix }
 
+/-- Concrete full-witness source for the global memory-timeline boundary.
+
+    This keeps the circuit-side replay source explicit: the accepted replay
+    subobject is derived from `FullWitnessMemReplayBridge`, while the remaining
+    fields are exactly the residual whole-execution timeline facts. -/
+structure FullWitnessMemoryTimelineEvidence
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type 2 where
+  length : ℕ
+  program : Program length
+  witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble
+  rows : List (Interaction.MemoryBusEntry FGL)
+  bridge : FullWitnessMemReplayBridge witness rows
+  initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
+  priorRows : List (Interaction.MemoryBusEntry FGL)
+  laterRows : List (Interaction.MemoryBusEntry FGL)
+  traceSplit : rows = priorRows ++ entry :: laterRows
+  selectedRead :
+    ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
+      some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry)
+  initialAgreement :
+    ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
+      (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge bridge).initialMemory
+  stateAtPrefix :
+    state =
+      ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows
+
+/-- Forget the concrete full-witness source, retaining the existing residual
+    timeline API consumed by load proofs. -/
+@[reducible]
+def FullWitnessMemoryTimelineEvidence.toMemoryTimelineEvidence
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (evidence : FullWitnessMemoryTimelineEvidence state entry) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state entry :=
+  memoryTimelineEvidence_of_fullWitnessMemReplayBridge
+    evidence.bridge
+    evidence.initialState
+    evidence.priorRows
+    evidence.laterRows
+    evidence.traceSplit
+    evidence.selectedRead
+    evidence.initialAgreement
+    evidence.stateAtPrefix
+
+instance fullWitnessMemoryTimelineEvidenceCoe
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL} :
+    CoeOut
+      (FullWitnessMemoryTimelineEvidence state entry)
+      (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state entry) where
+  coe := FullWitnessMemoryTimelineEvidence.toMemoryTimelineEvidence
+
 /-- The projected read-replay rows of a concrete Mem table are embedded in
     the accepted chronological memory-bus row trace. Proving this embedding
     is the global AIR/Main/Mem integration obligation; selected-row coverage

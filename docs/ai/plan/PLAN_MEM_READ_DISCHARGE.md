@@ -553,9 +553,20 @@ no assumed soundness fields**.
       trace/range/segment values, but there is not yet a Lean object deriving
       the whole-table `FullWitnessMemReplayBridge` fields from an
       `EnsembleWitness`.
-      Current sub-gap: add or choose the extractor/global-boundary source for
-      `FullWitnessMemReplayBridge`, then route that source through the memory
-      evidence boundary.
+      Partial: `FullWitnessMemoryTimelineEvidence` is now the global
+      memory-timeline source expected by `OpEnvelope.memoryTimelineEvidence`.
+      It carries the concrete `FullWitnessMemReplayBridge` plus only the
+      residual timeline fields, and coerces to the existing
+      `MemoryTimelineEvidence` API consumed by load proofs. This means
+      `AcceptedMemoryReplayEvidence.prefixReadSound` is no longer assumed
+      directly by the global load boundary; it is derived from the full-witness
+      replay bridge. Verified with LSP diagnostics and `lake env lean` for
+      `Balance.lean`, `OpEnvelope.lean`, and the LDSD/Misc/Remaining dispatch
+      files, plus `lake build ZiskFv.Compliance`,
+      `trust/scripts/check-all.sh`, and `trust/scripts/check-all-semantic.sh`.
+      Current sub-gap: construct `FullWitnessMemReplayBridge` from concrete
+      extraction/Clean witness data instead of carrying it as part of the
+      boundary.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
@@ -576,11 +587,18 @@ bury it in a structure field.
       split, initial-memory agreement, and state-at-prefix alignment.
 - [x] Add the one visible hypothesis to `zisk_riscv_compliant_program_bus`
       next to `h_bridge`.
-      Implemented as `h_memory_timeline : env.memoryTimelineEvidence`, where
-      load arms require `Nonempty (MemoryTimelineEvidence state bus.e1)` and
-      non-load arms require `True`; verified with
-      `lake build ZiskFv.Compliance`, full `lake build`, and
-      `trust/scripts/check-all.sh`.
+      Implemented as `h_memory_timeline : env.memoryTimelineEvidence`.
+      Initially load arms required `Nonempty (MemoryTimelineEvidence state
+      bus.e1)`; the boundary has now been strengthened so load arms require
+      `Nonempty (FullWitnessMemoryTimelineEvidence state bus.e1)`, while
+      non-load arms still require `True`. The full-witness source derives the
+      accepted replay subobject from `FullWitnessMemReplayBridge` and coerces to
+      the existing `MemoryTimelineEvidence` load-proof API. Verified with
+      `lake env lean` on `Balance.lean`, `OpEnvelope.lean`, and the
+      LDSD/Misc/Remaining dispatch files, plus
+      `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`, and
+      `trust/scripts/check-all-semantic.sh`; the earlier bare-timeline
+      boundary was verified with full `lake build`.
 - [x] Remove `mem_read` from `LoadPromises`; in the load dispatch arms derive
       `LoadByteAgreement` = Phase B theorem + replay core + timeline
       hypothesis (`mem_load_correct_of_provider_row` consuming
@@ -592,8 +610,9 @@ bury it in a structure field.
       replay/timeline path. Load `OpEnvelope` constructors and the Aeneas
       extracted-shape bridge take memory-free `LoadStructuralPromises`;
       dispatch reconstructs canonical `LoadPromises` from the global
-      `h_memory_timeline : env.memoryTimelineEvidence` before calling the load
-      theorems. Verified with the load-stack build,
+      `h_memory_timeline : env.memoryTimelineEvidence`, using the coercion from
+      `FullWitnessMemoryTimelineEvidence` to `MemoryTimelineEvidence`, before
+      calling the load theorems. Verified with the load-stack build,
       `lake build ZiskFv.Compliance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
       `nix run .#test`, and the updated timeline consistency witness.
