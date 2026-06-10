@@ -1026,6 +1026,10 @@ no assumed soundness fields**.
       `build/extraction/Extraction/`, running the same `test -f` plus
       `lake env lean` command used by the gate, `nix flake check --no-build`,
       and `git diff --check`.
+      Follow-up trust-ledger alignment: `trust/trusted-base.md` now points the
+      Sail memory timeline boundary at `Extraction.MemGeneratedArtifact`,
+      `buildWitnessFacts`, `buildTimelineEvidence`, and the full `nix run
+      .#test` wrapper compilation step. Verified with `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

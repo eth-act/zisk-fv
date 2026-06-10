@@ -189,7 +189,14 @@ Generated/full-ensemble Mem facts target
 `FullWitnessMemAirSourceProverDataWitnessFacts`: Clean assertion/lookup
 witnesses plus named `witness.data` sidecar keys for raw split generated
 constraints, row range facts, segment range facts, and the stage-2 source
-columns for each mutable Mem table.
+columns for each mutable Mem table. The reproducible generated wrapper
+`Extraction.MemGeneratedArtifact` exposes `buildWitnessFacts`, which assembles
+that target from the three per-table callback families, and
+`buildTimelineEvidence`, which passes the assembled facts to
+`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. The top-level
+`nix run .#test` gate compiles
+`build/extraction/Extraction/MemGeneratedArtifact.lean` directly so this
+orphaned generated wrapper stays synchronized with the checked Lean API.
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` packages that
 target into the load-facing boundary. Lean packages the resulting sidecar
 callback into the witness-selected `FullWitnessMemAirSource` via

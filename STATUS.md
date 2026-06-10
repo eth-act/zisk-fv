@@ -30,7 +30,7 @@ Current proof surface:
   hints, ProverData keys, generated timeline constructor, and the per-table
   artifact contract.
 - `tools/pil-extract mem-generated-artifact` emits
-  `buildWitnessFacts` and `buildTimelineEvidence`.
+  `buildWitnessFacts` and `buildTimelineEvidence`; trust docs name the gate.
 
 Latest verification:
 - Focused generated-artifact wrapper test.
