@@ -192,9 +192,9 @@ constraints, row range facts, segment range facts, and the stage-2 source
 columns for each mutable Mem table. The reproducible generated wrapper
 `Extraction.MemGeneratedArtifact` exposes `buildWitnessFacts`, which assembles
 that target from the three per-table callback families, plus
-`buildWitnessFactsFromRawFacts`, which adapts raw ProverData fact callbacks to
-the same witness target. It also exposes `buildTimelineEvidence`, which passes
-the assembled facts to
+`buildRawFacts` and `buildWitnessFactsFromRawParts`, which assemble/adapt raw
+ProverData fact callbacks to the same witness target. It also exposes
+`buildTimelineEvidence`, which passes the assembled facts to
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. The top-level
 `nix run .#test` gate compiles
 `build/extraction/Extraction/MemGeneratedArtifact.lean` directly so this

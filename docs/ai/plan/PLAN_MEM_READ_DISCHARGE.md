@@ -1045,6 +1045,17 @@ no assumed soundness fields**.
       regenerated `/tmp` report/wrapper, `lake env lean` on both `/tmp` and
       populated `MemGeneratedArtifact.lean`, `trust/scripts/check-all.sh`, and
       `git diff --check`.
+      Follow-up raw-assembly slice: the generated wrapper now exposes raw
+      per-table aliases (`RawConstraintFacts`, `RawRowRangeFacts`,
+      `RawSegmentRangeFacts`, `RawSourceFacts`) plus `buildRawFacts`, which
+      assembles `FullWitnessMemAirSourceProverDataFacts` from the three raw
+      callback families. `buildWitnessFactsFromRawParts` then feeds those raw
+      families through the checked raw-to-witness adapter in one step. This
+      makes raw pilout/PIL proof generation symmetric with the existing
+      witness-family assembly path. Verified with focused wrapper/report tests,
+      full `tools/pil-extract` cargo tests, regenerated `/tmp` report/wrapper,
+      `lake env lean` on the `/tmp` and populated generated wrappers,
+      `trust/scripts/check-all.sh`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

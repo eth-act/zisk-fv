@@ -1351,6 +1351,45 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     writeln!(out, "    (witness : FullWitness program) : Type 1 :=").unwrap();
     writeln!(out, "  FullWitnessMemAirSourceProverDataFacts witness").unwrap();
     writeln!(out).unwrap();
+    writeln!(out, "abbrev RawConstraintFacts").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program)").unwrap();
+    writeln!(out, "    (table : Table FGL) : Prop :=").unwrap();
+    writeln!(out, "  MemTableGeneratedConstraintFacts").unwrap();
+    writeln!(out, "    table").unwrap();
+    writeln!(out, "    (MemOfProverData witness table)").unwrap();
+    writeln!(out, "    (SegmentOfProverData witness)").unwrap();
+    writeln!(out, "    (PermutationOfProverData witness)").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "abbrev RawRowRangeFacts").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program)").unwrap();
+    writeln!(out, "    (table : Table FGL) : Prop :=").unwrap();
+    writeln!(
+        out,
+        "  MemTableGeneratedRangeFacts table (MemOfProverData witness table)"
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "abbrev RawSegmentRangeFacts").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program) : Prop :=").unwrap();
+    writeln!(
+        out,
+        "  MemSegmentGeneratedRangeFacts (SegmentOfProverData witness)"
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "abbrev RawSourceFacts").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program)").unwrap();
+    writeln!(out, "    (table : Table FGL) : Type :=").unwrap();
+    writeln!(out, "  MemTableGeneratedRawSourceFacts").unwrap();
+    writeln!(out, "    table").unwrap();
+    writeln!(out, "    (MemOfProverData witness table)").unwrap();
+    writeln!(out, "    (SegmentOfProverData witness)").unwrap();
+    writeln!(out, "    (PermutationOfProverData witness)").unwrap();
+    writeln!(out).unwrap();
     writeln!(out, "@[reducible]").unwrap();
     writeln!(out, "def buildWitnessFacts").unwrap();
     writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
@@ -1390,6 +1429,44 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     writeln!(out, "    segmentRanges table h_table h_component⟩").unwrap();
     writeln!(out).unwrap();
     writeln!(out, "@[reducible]").unwrap();
+    writeln!(out, "def buildRawFacts").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program)").unwrap();
+    writeln!(out, "    (constraints :").unwrap();
+    writeln!(out, "      ∀ table : Table FGL,").unwrap();
+    writeln!(out, "        table ∈ witness.allTables →").unwrap();
+    writeln!(
+        out,
+        "          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →"
+    )
+    .unwrap();
+    writeln!(out, "            RawConstraintFacts witness table)").unwrap();
+    writeln!(out, "    (rowRanges :").unwrap();
+    writeln!(out, "      ∀ table : Table FGL,").unwrap();
+    writeln!(out, "        table ∈ witness.allTables →").unwrap();
+    writeln!(
+        out,
+        "          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →"
+    )
+    .unwrap();
+    writeln!(out, "            RawRowRangeFacts witness table)").unwrap();
+    writeln!(out, "    (segmentRanges :").unwrap();
+    writeln!(out, "      ∀ table : Table FGL,").unwrap();
+    writeln!(out, "        table ∈ witness.allTables →").unwrap();
+    writeln!(
+        out,
+        "          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →"
+    )
+    .unwrap();
+    writeln!(out, "            RawSegmentRangeFacts witness) :").unwrap();
+    writeln!(out, "    RawFacts witness := by").unwrap();
+    writeln!(out, "  intro table h_table h_component").unwrap();
+    writeln!(out, "  exact {{").unwrap();
+    writeln!(out, "    constraints := constraints table h_table h_component").unwrap();
+    writeln!(out, "    rowRanges := rowRanges table h_table h_component").unwrap();
+    writeln!(out, "    segmentRanges := segmentRanges table h_table h_component }}").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "@[reducible]").unwrap();
     writeln!(out, "def buildWitnessFactsFromRawFacts").unwrap();
     writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
     writeln!(out, "    {{witness : FullWitness program}}").unwrap();
@@ -1400,6 +1477,41 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
         "  fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts rawFacts"
     )
     .unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "@[reducible]").unwrap();
+    writeln!(out, "def buildWitnessFactsFromRawParts").unwrap();
+    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
+    writeln!(out, "    (witness : FullWitness program)").unwrap();
+    writeln!(out, "    (constraints :").unwrap();
+    writeln!(out, "      ∀ table : Table FGL,").unwrap();
+    writeln!(out, "        table ∈ witness.allTables →").unwrap();
+    writeln!(
+        out,
+        "          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →"
+    )
+    .unwrap();
+    writeln!(out, "            RawConstraintFacts witness table)").unwrap();
+    writeln!(out, "    (rowRanges :").unwrap();
+    writeln!(out, "      ∀ table : Table FGL,").unwrap();
+    writeln!(out, "        table ∈ witness.allTables →").unwrap();
+    writeln!(
+        out,
+        "          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →"
+    )
+    .unwrap();
+    writeln!(out, "            RawRowRangeFacts witness table)").unwrap();
+    writeln!(out, "    (segmentRanges :").unwrap();
+    writeln!(out, "      ∀ table : Table FGL,").unwrap();
+    writeln!(out, "        table ∈ witness.allTables →").unwrap();
+    writeln!(
+        out,
+        "          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →"
+    )
+    .unwrap();
+    writeln!(out, "            RawSegmentRangeFacts witness) :").unwrap();
+    writeln!(out, "    WitnessFacts witness :=").unwrap();
+    writeln!(out, "  buildWitnessFactsFromRawFacts").unwrap();
+    writeln!(out, "    (buildRawFacts witness constraints rowRanges segmentRanges)").unwrap();
     writeln!(out).unwrap();
     writeln!(out, "abbrev GeneratedTimelineEvidence").unwrap();
     writeln!(
@@ -1656,9 +1768,12 @@ fn render_mem_air_facts_report(
         out,
         "Generated modules that prove raw `segment_every_row`, \
          `permutation_every_row`, and range propositions directly may instead \
-         expose `FullWitnessMemAirSourceProverDataFacts witness` and adapt it \
-         with `fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts` or \
-         `Extraction.MemGeneratedArtifact.buildWitnessFactsFromRawFacts`."
+         expose `FullWitnessMemAirSourceProverDataFacts witness`, assemble it \
+         with `Extraction.MemGeneratedArtifact.buildRawFacts`, or feed the raw \
+         per-table families through \
+         `Extraction.MemGeneratedArtifact.buildWitnessFactsFromRawParts`. The \
+         checked Lean adapter is \
+         `fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`."
     )
     .unwrap();
     writeln!(out).unwrap();
@@ -3147,10 +3262,11 @@ mod tests {
         );
         assert!(
             out.contains("`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`")
+                && out.contains("`Extraction.MemGeneratedArtifact.buildRawFacts`")
                 && out.contains(
-                    "`Extraction.MemGeneratedArtifact.buildWitnessFactsFromRawFacts`"
+                    "`Extraction.MemGeneratedArtifact.buildWitnessFactsFromRawParts`"
                 ),
-            "report should point raw ProverData facts at the checked witness adapter:\n{}",
+            "report should point raw ProverData facts at checked raw assembly adapters:\n{}",
             out
         );
     }
@@ -3217,8 +3333,14 @@ mod tests {
                 && out.contains("abbrev RowRangeLookups")
                 && out.contains("abbrev SegmentRangeLookups")
                 && out.contains("abbrev RawFacts")
+                && out.contains("abbrev RawConstraintFacts")
+                && out.contains("abbrev RawRowRangeFacts")
+                && out.contains("abbrev RawSegmentRangeFacts")
+                && out.contains("abbrev RawSourceFacts")
                 && out.contains("def buildWitnessFacts")
+                && out.contains("def buildRawFacts")
                 && out.contains("def buildWitnessFactsFromRawFacts")
+                && out.contains("def buildWitnessFactsFromRawParts")
                 && out.contains("FullWitnessMemAirSourceProverDataWitnessFacts witness"),
             "generated module should expose the typed witness-facts contract:\n{}",
             out
@@ -3245,6 +3367,8 @@ mod tests {
         );
         assert!(
             out.contains("FullWitnessMemAirSourceProverDataFacts witness")
+                && out.contains("MemTableGeneratedRawSourceFacts")
+                && out.contains("buildRawFacts witness constraints rowRanges segmentRanges")
                 && out.contains("fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts rawFacts"),
             "generated module should expose the raw-facts adapter path:\n{}",
             out

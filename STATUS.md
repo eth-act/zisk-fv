@@ -14,12 +14,11 @@ emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
 table-global segment/permutation constants, challenges, ranges, and generated
 assertions are outside the component.
 
-Current slice: raw ProverData facts now have a checked route into the generated
-witness target. Lean adds
-`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`, and
-`pil-extract mem-generated-artifact` emits `RawFacts` plus
-`buildWitnessFactsFromRawFacts` beside `buildWitnessFacts` and
-`buildTimelineEvidence`.
+Current slice: raw ProverData facts now have checked assembly routes into the
+generated witness target. Lean provides
+`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts`; the generated
+wrapper emits `RawFacts`, raw per-table aliases, `buildRawFacts`,
+`buildWitnessFactsFromRawFacts`, and `buildWitnessFactsFromRawParts`.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -31,9 +30,8 @@ Current proof surface:
 - `tools/pil-extract mem-air-facts` reports generated constraints, range
   hints, ProverData keys, generated timeline constructor, witness contract, and
   the raw-facts adapter path.
-- `tools/pil-extract mem-generated-artifact` emits checked witness/raw
-  assembly helpers and the timeline constructor wrapper; trust docs name the
-  gate.
+- `tools/pil-extract mem-generated-artifact` emits checked witness/raw assembly
+  helpers and the timeline constructor wrapper; trust docs name the gate.
 
 Latest verification:
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`.
