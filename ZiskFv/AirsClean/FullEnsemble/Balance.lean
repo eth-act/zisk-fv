@@ -2092,6 +2092,25 @@ def memTableGeneratedRangeFacts_of_lookupFacts
     exact ZiskFv.AirsClean.Mem.dual_step_delta_in_range_of_lookup_aware_const_soundness
       (h_lookup.dualStepDelta idx h_sel_dual)
 
+/-- Build lookup-aware Mem row range witnesses from the raw generated range
+    propositions. This keeps the witness-aware source API constructible for
+    generated Lean modules that prove the range facts directly. -/
+def memTableGeneratedRangeLookupFacts_of_rangeFacts
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    (h_ranges : MemTableGeneratedRangeFacts table mem) :
+    MemTableGeneratedRangeLookupFacts table mem where
+  rowRanges := by
+    intro idx
+    exact ZiskFv.AirsClean.Mem.rowRangeLookupWitness_of_range_facts
+      (h_ranges.incrementChunks idx)
+      (h_ranges.addrColumns idx)
+      (h_ranges.stepColumns idx)
+  dualStepDelta := by
+    intro idx h_sel_dual
+    exact ZiskFv.AirsClean.Mem.dualStepDeltaRangeLookupWitness_of_range_fact
+      (h_ranges.dualStepDelta idx h_sel_dual)
+
 /-- Clean lookup source for the segment-level Mem distance-base range facts. -/
 structure MemSegmentGeneratedRangeLookupFacts
     (segment : ZiskFv.Airs.Mem.SegmentColumns FGL) : Type 1 where
@@ -2107,6 +2126,16 @@ def memSegmentGeneratedRangeFacts_of_lookupFacts
   distanceBaseChunks :=
     ZiskFv.AirsClean.Mem.distance_chunks_in_range_of_lookup_aware_const_soundness
       h_lookup.distanceBaseChunks
+
+/-- Build lookup-aware segment range witnesses from the raw generated segment
+    range propositions. -/
+def memSegmentGeneratedRangeLookupFacts_of_rangeFacts
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    (h_ranges : MemSegmentGeneratedRangeFacts segment) :
+    MemSegmentGeneratedRangeLookupFacts segment where
+  distanceBaseChunks :=
+    ZiskFv.AirsClean.Mem.distanceBaseRangeLookupWitness_of_range_fact
+      h_ranges.distanceBaseChunks
 
 /-- Extractor-facing generated Mem AIR facts for one concrete table segment.
 
@@ -2146,6 +2175,19 @@ structure MemTableGeneratedConstraintFacts
     ∀ idx : Fin table.table.length,
       ZiskFv.Airs.Mem.permutation_every_row segment permutation mem idx.val
 
+/-- Type-level package for raw generated Mem facts.
+
+    The individual raw fact families are `Prop`, so this wrapper lets witness
+    source callbacks carry them alongside source columns in `Type`. -/
+structure MemTableGeneratedRawSourceFacts
+    (table : Table FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL) : Type where
+  constraints : MemTableGeneratedConstraintFacts table mem segment permutation
+  rowRanges : MemTableGeneratedRangeFacts table mem
+  segmentRanges : MemSegmentGeneratedRangeFacts segment
+
 /-- Clean assertion source for the split generated Mem constraint groups. -/
 structure MemTableGeneratedConstraintAssertionFacts
     (table : Table FGL)
@@ -2178,6 +2220,29 @@ def memTableGeneratedConstraintFacts_of_assertionFacts
     intro idx
     exact ZiskFv.AirsClean.Mem.permutation_every_row_of_constraint_assertions
       (h_assertions.permutationAt idx)
+
+/-- Build Clean assertion witnesses from raw split generated Mem constraints.
+
+    The assertion circuits contain only constant assertions over the named
+    source columns, so this adapter does not add proof content; it just packages
+    raw generated facts in the witness-aware source shape. -/
+def memTableGeneratedConstraintAssertionFacts_of_constraintFacts
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    (h_constraints :
+      MemTableGeneratedConstraintFacts table mem segment permutation) :
+    MemTableGeneratedConstraintAssertionFacts table mem segment permutation where
+  segmentAt := by
+    intro idx
+    exact ZiskFv.AirsClean.Mem.segmentConstraintAssertionWitness_of_segment_every_row
+      (h_constraints.segmentAt idx)
+  permutationAt := by
+    intro idx
+    exact
+      ZiskFv.AirsClean.Mem.permutationConstraintAssertionWitness_of_permutation_every_row
+        (h_constraints.permutationAt idx)
 
 /-- Recombine the extractor's split generated-constraint groups into the
     `generated_every_row` package consumed by existing replay proofs. -/
@@ -2831,6 +2896,44 @@ def FullWitnessMemAirSourceFacts
           × MemTableGeneratedRangeLookupFacts
             table (memOfTable table gsum im0 im1)
           × MemSegmentGeneratedRangeLookupFacts (segmentWithFixedL1 segment)
+
+/-- Raw generated/full-ensemble Mem AIR source facts for every mutable Mem
+    table in one full witness.
+
+    This is the shape a generated Lean module may prove first when it derives
+    raw split constraints and raw range facts directly from pilout/PIL source.
+    `fullWitnessMemAirSourceFacts_of_rawFacts` packages it into the
+    witness-aware callback consumed by `exists_fullWitnessMemAirSource_of_facts`. -/
+def FullWitnessMemAirSourceRawFacts
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) : Type 1 :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        Σ segment : ZiskFv.Airs.Mem.SegmentColumns FGL,
+        Σ permutation : ZiskFv.Airs.Mem.PermutationColumns FGL,
+        Σ gsum : ℕ → FGL,
+        Σ im0 : ℕ → FGL,
+        Σ im1 : ℕ → FGL,
+          MemTableGeneratedRawSourceFacts
+            table (memOfTable table gsum im0 im1)
+            (segmentWithFixedL1 segment) permutation
+
+/-- Package raw generated/full-ensemble Mem facts into the witness-aware source
+    callback. -/
+def fullWitnessMemAirSourceFacts_of_rawFacts
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_raw : FullWitnessMemAirSourceRawFacts witness) :
+    FullWitnessMemAirSourceFacts witness := by
+  intro table h_table h_component
+  rcases h_raw table h_table h_component with
+    ⟨segment, permutation, gsum, im0, im1, h_rawFacts⟩
+  exact
+    ⟨ segment, permutation, gsum, im0, im1,
+      memTableGeneratedConstraintAssertionFacts_of_constraintFacts h_rawFacts.constraints,
+      memTableGeneratedRangeLookupFacts_of_rangeFacts h_rawFacts.rowRanges,
+      memSegmentGeneratedRangeLookupFacts_of_rangeFacts h_rawFacts.segmentRanges ⟩
 
 /-- Select the concrete mutable Mem table from a full witness and build its
     Mem AIR source from the generated/full-ensemble source facts. -/

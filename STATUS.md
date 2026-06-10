@@ -4,7 +4,7 @@ Current focus: Phase B/C bridge closure. `LoadPromises.mem_read` is gone, and
 load arms consume one global memory-timeline boundary.
 
 Blocking: make generated/full-ensemble output provide
-`FullWitnessMemAirSourceFacts` for the witness-selected Mem table.
+`FullWitnessMemAirSourceRawFacts` for the witness-selected Mem table.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -32,16 +32,22 @@ Current proof surface:
   callback: choose source columns and concrete assertion/range lookup witnesses
   for any witness Mem table; table membership and component identity come from
   the full witness.
+- `FullWitnessMemAirSourceRawFacts` is the generated-module target when raw
+  split constraints and range propositions are proved directly; Lean packages
+  it into `FullWitnessMemAirSourceFacts`.
 
 Latest verification:
-- Lean LSP diagnostics and `lean_verify` on
-  `exists_fullWitnessMemAirSource_of_facts`: no `sorryAx`
+- Lean LSP diagnostics on `Mem.Bridge` and `Balance`: clean
+- `lean_verify` on representative raw/witness adapters: no `sorryAx`
+- `lake build ZiskFv.AirsClean.Mem.Bridge`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
+- `cargo test --manifest-path tools/pil-extract/Cargo.toml`
+- regenerated `/tmp/mem-air-facts-report.md`
 - `trust/scripts/check-all.sh`
 
 Last full `nix run .#test`: commit `98202ebc`.
 
 Next step: make generated/full-ensemble output provide
-`FullWitnessMemAirSourceFacts` for the witness Mem table.
+`FullWitnessMemAirSourceRawFacts` for the witness Mem table.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

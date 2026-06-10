@@ -1257,11 +1257,13 @@ fn render_mem_air_facts_report(
     writeln!(
         out,
         "- Generated Lean code should call \
-         `memTableGeneratedAirSource_of_witnessFacts` after supplying Clean \
-         assertion witnesses for those split constraints and lookup witnesses \
-         for the explicit range-check facts. Use \
-         `memTableGeneratedAirSource_of_constraintFacts` only when proving the \
-         raw generated constraints and range propositions directly."
+         `fullWitnessMemAirSourceFacts_of_rawFacts` after supplying a \
+         `FullWitnessMemAirSourceRawFacts` callback for the full witness. \
+         Lean packages the raw split constraints and range propositions into \
+         the witness-aware `FullWitnessMemAirSourceFacts` consumed by the \
+         replay source selector. Use \
+         `memTableGeneratedAirSource_of_witnessFacts` only for a concrete \
+         table-level source with explicit Clean assertion/lookup witnesses."
     )
     .unwrap();
     writeln!(

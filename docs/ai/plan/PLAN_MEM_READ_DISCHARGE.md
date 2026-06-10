@@ -770,6 +770,22 @@ no assumed soundness fields**.
       Lean LSP diagnostics, `lake build
       ZiskFv.AirsClean.FullEnsemble.Balance`, `lean_verify` on the theorem,
       `trust/scripts/check-all.sh`, and `git diff --check`.
+      Partial: the witness-aware source API is now constructible from raw
+      generated facts. `Mem.Bridge` adds reverse constructors from raw
+      `segment_every_row`, `permutation_every_row`, and raw range propositions
+      to the const assertion/lookup witness wrappers. `Balance.lean` packages
+      those with `MemTableGeneratedRawSourceFacts`,
+      `FullWitnessMemAirSourceRawFacts`, and
+      `fullWitnessMemAirSourceFacts_of_rawFacts`, so a generated Lean module
+      can prove raw split constraints/ranges first and still feed the
+      full-witness source selector. The extractor report and extraction notes
+      now point generated code at `FullWitnessMemAirSourceRawFacts` plus that
+      adapter. Verified with clean LSP diagnostics, target builds for
+      `ZiskFv.AirsClean.Mem.Bridge` and
+      `ZiskFv.AirsClean.FullEnsemble.Balance`, `lean_verify` scans of the new
+      adapters, `cargo test --manifest-path tools/pil-extract/Cargo.toml`,
+      regenerated `/tmp/mem-air-facts-report.md`, `trust/scripts/check-all.sh`,
+      and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

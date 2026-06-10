@@ -305,6 +305,28 @@ theorem row_ranges_of_lookup_aware_const_soundness
         by simpa [ZiskFv.Airs.Mem.step_columns_in_range, rowAt, constVar]
             using h_previous_step ⟩ ⟩
 
+/-- Build the lookup-aware Mem row range witness from raw range facts.
+
+    The lookup circuit is constant over `rowAt v r`, so the environment and
+    offset are bookkeeping; the substantive content is exactly the range-table
+    membership encoded by the three raw range propositions. -/
+def rowRangeLookupWitness_of_range_facts
+    {v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL} {r : ℕ}
+    (h_increment : ZiskFv.Airs.Mem.increment_chunks_in_range v r)
+    (h_addr : ZiskFv.Airs.Mem.addr_columns_in_range v r)
+    (h_steps : ZiskFv.Airs.Mem.step_columns_in_range v r) :
+    RowRangeLookupWitness v r := by
+  refine ⟨0, ?_, ?_⟩
+  · exact ⟨fun _ => 0, fun _ _ => #[]⟩
+  · simpa [rowRangeLookups, ZiskFv.Airs.Mem.increment_chunks_in_range,
+      ZiskFv.Airs.Mem.addr_columns_in_range, ZiskFv.Airs.Mem.step_columns_in_range,
+      rowAt, constVar, ZiskFv.AirsClean.RangeTables.rangeTable22,
+      ZiskFv.AirsClean.RangeTables.rangeTable16,
+      ZiskFv.AirsClean.RangeTables.rangeTable29,
+      ZiskFv.AirsClean.RangeTables.rangeTable40,
+      ZiskFv.AirsClean.RangeTables.rangeStaticTable, circuit_norm] using
+      ⟨h_increment.1, h_increment.2, h_addr, h_steps.1, h_steps.2.1, h_steps.2.2⟩
+
 /-- Lookup-aware Clean witness for the selector-gated dual-step delta range
     check. It should only be requested for rows with `sel_dual = 1`. -/
 structure DualStepDeltaRangeLookupWitness
@@ -328,6 +350,18 @@ theorem dual_step_delta_in_range_of_lookup_aware_const_soundness
     ZiskFv.AirsClean.RangeTables.rangeStaticTable,
     rowAt, constVar, sub_eq_add_neg] using h_holds
 
+/-- Build the lookup-aware dual-step-delta witness from the raw range fact. -/
+def dualStepDeltaRangeLookupWitness_of_range_fact
+    {v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL} {r : ℕ}
+    (h_delta : ZiskFv.Airs.Mem.dual_step_delta_in_range v r) :
+    DualStepDeltaRangeLookupWitness v r := by
+  refine ⟨0, ?_, ?_⟩
+  · exact ⟨fun _ => 0, fun _ _ => #[]⟩
+  · simpa [dualStepDeltaRangeLookup, ZiskFv.Airs.Mem.dual_step_delta_in_range,
+      rowAt, constVar, ZiskFv.AirsClean.RangeTables.rangeTable24,
+      ZiskFv.AirsClean.RangeTables.rangeStaticTable, circuit_norm,
+      sub_eq_add_neg] using h_delta
+
 /-- Lookup-aware Clean witness for the two segment `distance_base` chunks. -/
 structure DistanceBaseRangeLookupWitness (lo hi : FGL) where
   offset : ℕ
@@ -348,6 +382,17 @@ theorem distance_chunks_in_range_of_lookup_aware_const_soundness
   exact
     ⟨ by simpa [ZiskFv.Airs.Mem.distance_chunks_in_range] using h_lo,
       by simpa [ZiskFv.Airs.Mem.distance_chunks_in_range] using h_hi ⟩
+
+/-- Build the lookup-aware segment distance-base witness from raw range facts. -/
+def distanceBaseRangeLookupWitness_of_range_fact
+    {lo hi : FGL}
+    (h_distance : ZiskFv.Airs.Mem.distance_chunks_in_range lo hi) :
+    DistanceBaseRangeLookupWitness lo hi := by
+  refine ⟨0, ?_, ?_⟩
+  · exact ⟨fun _ => 0, fun _ _ => #[]⟩
+  · simpa [distanceBaseRangeLookups, ZiskFv.Airs.Mem.distance_chunks_in_range,
+      ZiskFv.AirsClean.RangeTables.rangeTable16,
+      ZiskFv.AirsClean.RangeTables.rangeStaticTable, circuit_norm] using h_distance
 
 /-! ## Generated-constraint assertion witnesses -/
 
@@ -373,6 +418,20 @@ theorem segment_every_row_of_constraint_assertions
   simpa [segmentGeneratedConstraintAssertions, ZiskFv.Airs.Mem.segment_every_row,
     circuit_norm] using h_holds
 
+/-- Build the generated-constraint assertion witness from the raw
+    `segment_every_row` proposition. The circuit contains only constant
+    assertions over the named columns, so the environment is bookkeeping. -/
+def segmentConstraintAssertionWitness_of_segment_every_row
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {row : ℕ}
+    (h_segment : ZiskFv.Airs.Mem.segment_every_row segment mem row) :
+    SegmentConstraintAssertionWitness segment mem row := by
+  refine ⟨0, ?_, ?_⟩
+  · exact ⟨fun _ => 0, fun _ _ => #[]⟩
+  · simpa [segmentGeneratedConstraintAssertions, ZiskFv.Airs.Mem.segment_every_row,
+      circuit_norm] using h_segment
+
 /-- Clean assertion witness for generated Mem constraints `24..=33`. -/
 structure PermutationConstraintAssertionWitness
     (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
@@ -396,6 +455,20 @@ theorem permutation_every_row_of_constraint_assertions
   have h_holds := w.holds
   simpa [permutationGeneratedConstraintAssertions,
     ZiskFv.Airs.Mem.permutation_every_row, circuit_norm] using h_holds
+
+/-- Build the generated-constraint assertion witness from the raw
+    `permutation_every_row` proposition. -/
+def permutationConstraintAssertionWitness_of_permutation_every_row
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {row : ℕ}
+    (h_permutation : ZiskFv.Airs.Mem.permutation_every_row segment permutation mem row) :
+    PermutationConstraintAssertionWitness segment permutation mem row := by
+  refine ⟨0, ?_, ?_⟩
+  · exact ⟨fun _ => 0, fun _ _ => #[]⟩
+  · simpa [permutationGeneratedConstraintAssertions,
+      ZiskFv.Airs.Mem.permutation_every_row, circuit_norm] using h_permutation
 
 /-- **Bridge theorem.** Given a row of a `Valid_Mem` satisfying the
     9 Clean Component constraints and the boolean range assumptions,
