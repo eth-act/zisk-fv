@@ -1,20 +1,24 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: plan written (2026-06-09); execution not started.
-Blocking: none.
-Next step: Phase 0 — create `mem-read-discharge` worktree from origin/main,
-`lake exe cache get`, baseline-green check, then Phase A (port replay core +
-Mem AIR machinery from the `memory-trust-gap` branch).
+
+Current focus: reset `main` so Mem read discharge can be reviewed as a PR
+before landing. The implementation remains on branch/worktree
+`mem-read-discharge`.
+
+Blocking: none for reopening review. Do not delete `memory-trust-gap`; Cody
+wants to keep it while reviewing the new work.
 
 Context:
-- PR #63 landed: `LoadPromises.mem_read : LoadByteAgreement state e1` is now
-  the visible memory trust boundary (trusted-base.md class "Memory load byte
-  agreement"); global project-axiom closure is 0.
-- `.worktrees/memory-trust-gap` was assessed: durable replay core
-  (`MemTrace.lean`), Mem AIR segment/ordering machinery (`Airs/Mem.lean`),
-  extractor extension, and table-projection lemmas are worth porting; its
-  ~13k-line `AcceptedFullExecutionMemory*` wrapper stack in OpEnvelope.lean +
-  Compliance.lean is scrapped. Its two plan files
-  (`PLAN_MEMORY_TRUST_GAP{,_CLOSURE}.md`) are superseded by the new plan. The
-  branch stays untouched as a salvage reference until Phase D cleanup.
-- The prior AXIOM_WEAKENING stream (old contents of this file) completed with
-  PR #63 and is closed.
+- PR #64 was accidentally squash-merged as `64c7165a` on 2026-06-10, then
+  `main` received bookkeeping commits. A backup branch preserves that state:
+  `backup/main-before-reopen-pr64-20260610-100723`.
+- Root `AGENTS.md` carries the build/test cadence update: use targeted
+  inner-loop checks and broader gates after coherent groups of changes, before
+  commits, and before claiming completion.
+- The last full Mem read discharge verification before the accidental landing:
+  `nix run .#test`, both trust gates, closure print with 0 stdout lines for
+  `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`, and `git diff --check`.
+- The old `memory-trust-gap` worktree/branch is intentionally preserved pending
+  Cody's review.
+
+Next step: push the reset `main`, open a fresh Mem read discharge PR, and record
+the new PR URL in this status/plan trail.
