@@ -34,12 +34,12 @@ Current proof surface:
   the full witness.
 - `FullWitnessMemAirSourceRawFacts` is the generated-module target when raw
   split constraints and range propositions are proved directly; Lean packages
-  it into `FullWitnessMemAirSourceFacts`.
+  it into `FullWitnessMemAirSourceFacts` and can select a concrete
+  `FullWitnessMemAirSource` from it.
 
 Latest verification:
-- Lean LSP diagnostics on `Mem.Bridge` and `Balance`: clean
-- `lean_verify` on representative raw/witness adapters: no `sorryAx`
-- `lake build ZiskFv.AirsClean.Mem.Bridge`
+- Lean LSP diagnostics on `Balance`: clean
+- `lean_verify` on `exists_fullWitnessMemAirSource_of_rawFacts`: no `sorryAx`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
 - `cargo test --manifest-path tools/pil-extract/Cargo.toml`
 - regenerated `/tmp/mem-air-facts-report.md`

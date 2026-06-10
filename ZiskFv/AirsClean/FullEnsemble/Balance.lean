@@ -2875,6 +2875,35 @@ def fullWitnessMemAirSource_of_witnessFacts
       h_rowRanges
       h_segmentRanges
 
+/-- Build the full-witness Mem AIR source from raw generated facts for the
+    witness-selected mutable Mem table. -/
+def fullWitnessMemAirSource_of_rawFacts
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (gsum im0 im1 : ℕ → FGL)
+    (h_raw :
+      MemTableGeneratedRawSourceFacts
+        table (memOfTable table gsum im0 im1)
+        (segmentWithFixedL1 segment) permutation) :
+    FullWitnessMemAirSource witness :=
+  fullWitnessMemAirSource_of_witnessFacts
+    h_table
+    h_component
+    segment
+    permutation
+    gsum
+    im0
+    im1
+    (memTableGeneratedConstraintAssertionFacts_of_constraintFacts h_raw.constraints)
+    (memTableGeneratedRangeLookupFacts_of_rangeFacts h_raw.rowRanges)
+    (memSegmentGeneratedRangeLookupFacts_of_rangeFacts h_raw.segmentRanges)
+
 /-- Generated/full-ensemble Mem AIR source facts for every mutable Mem table in
     one full witness. The table membership and component identity are supplied
     by the full witness; this callback supplies only the source columns and the
@@ -2949,6 +2978,17 @@ theorem exists_fullWitnessMemAirSource_of_facts
   exact ⟨fullWitnessMemAirSource_of_witnessFacts
     h_table h_component segment permutation gsum im0 im1
     h_constraints h_rowRanges h_segmentRanges⟩
+
+/-- Select the concrete mutable Mem table from a full witness and build its
+    Mem AIR source directly from raw generated/full-ensemble source facts. -/
+theorem exists_fullWitnessMemAirSource_of_rawFacts
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_raw : FullWitnessMemAirSourceRawFacts witness) :
+    Nonempty (FullWitnessMemAirSource witness) :=
+  exists_fullWitnessMemAirSource_of_facts
+    witness
+    (fullWitnessMemAirSourceFacts_of_rawFacts h_raw)
 
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/

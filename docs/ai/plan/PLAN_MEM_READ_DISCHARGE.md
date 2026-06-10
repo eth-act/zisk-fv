@@ -786,6 +786,17 @@ no assumed soundness fields**.
       adapters, `cargo test --manifest-path tools/pil-extract/Cargo.toml`,
       regenerated `/tmp/mem-air-facts-report.md`, `trust/scripts/check-all.sh`,
       and `git diff --check`.
+      Partial: raw full-witness facts now have a direct Mem source selector.
+      `fullWitnessMemAirSource_of_rawFacts` builds a concrete
+      `FullWitnessMemAirSource` from raw facts for a witness-selected table,
+      and `exists_fullWitnessMemAirSource_of_rawFacts` selects the mutable Mem
+      table from a full witness plus `FullWitnessMemAirSourceRawFacts`. The
+      extractor report and notes now point generated Lean code at this direct
+      selector. Verified with clean LSP diagnostics, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, `lean_verify` on the selector,
+      `cargo test --manifest-path tools/pil-extract/Cargo.toml`, regenerated
+      `/tmp/mem-air-facts-report.md`, `trust/scripts/check-all.sh`, and
+      `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

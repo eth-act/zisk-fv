@@ -1257,12 +1257,11 @@ fn render_mem_air_facts_report(
     writeln!(
         out,
         "- Generated Lean code should call \
-         `fullWitnessMemAirSourceFacts_of_rawFacts` after supplying a \
+         `exists_fullWitnessMemAirSource_of_rawFacts` after supplying a \
          `FullWitnessMemAirSourceRawFacts` callback for the full witness. \
          Lean packages the raw split constraints and range propositions into \
-         the witness-aware `FullWitnessMemAirSourceFacts` consumed by the \
-         replay source selector. Use \
-         `memTableGeneratedAirSource_of_witnessFacts` only for a concrete \
+         the witness-aware source shape consumed by the replay source selector. \
+         Use `memTableGeneratedAirSource_of_witnessFacts` only for a concrete \
          table-level source with explicit Clean assertion/lookup witnesses."
     )
     .unwrap();
