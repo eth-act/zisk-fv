@@ -1239,15 +1239,23 @@ fn render_mem_air_facts_report(
     writeln!(out, "## Lean Package Mapping\n").unwrap();
     writeln!(
         out,
-        "- `MemTableGeneratedAirFacts.generatedAt` is sourced from \
-         `generated_every_row`, split in Lean as `segment_every_row` and \
-         `permutation_every_row`."
+        "- `MemTableGeneratedConstraintFacts.segmentAt` is sourced from \
+         `segment_every_row`; `.permutationAt` is sourced from \
+         `permutation_every_row`. Lean recombines them into \
+         `MemTableGeneratedAirFacts.generatedAt`."
     )
     .unwrap();
     writeln!(
         out,
         "- Expected Mem generated constraint groups: `segment_every_row` \
          constraints `0..=23`; `permutation_every_row` constraints `24..=33`."
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "- Generated Lean code should call \
+         `memTableGeneratedAirSource_of_constraintFacts` after proving those \
+         split constraints and the explicit range-check facts."
     )
     .unwrap();
     writeln!(

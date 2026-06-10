@@ -644,6 +644,21 @@ no assumed soundness fields**.
       Current sub-gap: make the extractor or a generated Lean module prove the
       three inputs to `memTableGeneratedAirSource_of_parts` for the
       witness-selected Mem table.
+      Partial: the generated-constraint input is now split to match the
+      extractor surface. `MemTableGeneratedConstraintFacts` names
+      `segment_every_row` for constraints `0..=23` and
+      `permutation_every_row` for constraints `24..=33`;
+      `generatedAt_of_memTableGeneratedConstraintFacts`,
+      `memTableGeneratedAirFacts_of_constraintFacts`, and
+      `memTableGeneratedAirSource_of_constraintFacts` recombine those split
+      proofs with the explicit row/segment range facts. The extractor report
+      and extraction notes now point generated Lean code at this split
+      constructor instead of the opaque `generatedAt` callback. Verified with
+      clean LSP diagnostics, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, `cargo test --manifest-path
+      tools/pil-extract/Cargo.toml`, a regenerated `/tmp/mem-air-facts-report.md`,
+      `trust/scripts/check-all.sh`, `lean_verify` scans of the new declarations,
+      and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

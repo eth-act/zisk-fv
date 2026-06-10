@@ -2069,6 +2069,56 @@ structure MemTableGeneratedAirFacts
   rowRanges : MemTableGeneratedRangeFacts table mem
   segmentRanges : MemSegmentGeneratedRangeFacts segment
 
+/-- Split extractor-facing generated Mem constraints for one concrete table.
+
+    `pil-extract mem-air-facts` reports this exact split: generated Mem
+    constraints `0..=23` are the `segment_every_row` surface, and constraints
+    `24..=33` are the `permutation_every_row` surface. A generated Lean module
+    can prove these two fields separately, then assemble
+    `MemTableGeneratedAirFacts` without reintroducing a replay-soundness
+    assumption. -/
+structure MemTableGeneratedConstraintFacts
+    (table : Table FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL) : Prop where
+  segmentAt :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.Airs.Mem.segment_every_row segment mem idx.val
+  permutationAt :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.Airs.Mem.permutation_every_row segment permutation mem idx.val
+
+/-- Recombine the extractor's split generated-constraint groups into the
+    `generated_every_row` package consumed by existing replay proofs. -/
+theorem generatedAt_of_memTableGeneratedConstraintFacts
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    (h_constraints :
+      MemTableGeneratedConstraintFacts table mem segment permutation) :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.Airs.Mem.generated_every_row segment permutation mem idx.val := by
+  intro idx
+  exact ⟨h_constraints.segmentAt idx, h_constraints.permutationAt idx⟩
+
+/-- Assemble `MemTableGeneratedAirFacts` from the extractor's split generated
+    constraint groups plus the explicit range-check surfaces. -/
+def memTableGeneratedAirFacts_of_constraintFacts
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    (h_constraints :
+      MemTableGeneratedConstraintFacts table mem segment permutation)
+    (h_rowRanges : MemTableGeneratedRangeFacts table mem)
+    (h_segmentRanges : MemSegmentGeneratedRangeFacts segment) :
+    MemTableGeneratedAirFacts table mem segment permutation where
+  generatedAt := generatedAt_of_memTableGeneratedConstraintFacts h_constraints
+  rowRanges := h_rowRanges
+  segmentRanges := h_segmentRanges
+
 /-- Build the indexed row bridge from the concrete table projection and the
     compact generated AIR fact package. -/
 theorem memTableGeneratedRowsBridge_of_memOfTable_airFacts
@@ -2191,6 +2241,29 @@ def memTableGeneratedAirSource_of_parts
     { generatedAt := h_generatedAt
       rowRanges := h_rowRanges
       segmentRanges := h_segmentRanges }
+
+/-- Build the typed Mem AIR source from the extractor's split generated
+    constraint groups. This mirrors the generated constraint grouping reported
+    by `pil-extract mem-air-facts`: segment constraints `0..=23`, permutation
+    constraints `24..=33`, and the explicit range-check facts. -/
+def memTableGeneratedAirSource_of_constraintFacts
+    (table : Table FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (gsum im0 im1 : ℕ → FGL)
+    (h_constraints :
+      MemTableGeneratedConstraintFacts
+        table (memOfTable table gsum im0 im1)
+        (segmentWithFixedL1 segment) permutation)
+    (h_rowRanges :
+      MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1))
+    (h_segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment)) :
+    MemTableGeneratedAirSource table :=
+  memTableGeneratedAirSource_of_parts
+    table segment permutation gsum im0 im1
+    (generatedAt_of_memTableGeneratedConstraintFacts h_constraints)
+    h_rowRanges
+    h_segmentRanges
 
 /-- Any active replay entry from a generated Mem table row is either at the
     same byte pointer as the selected primary row or byte-disjoint from it.

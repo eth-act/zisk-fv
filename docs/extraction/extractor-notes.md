@@ -224,14 +224,17 @@ pil-extract mem-air-facts --pilout build/zisk.pilout --air Mem \
     --output /tmp/mem-air-facts-report.md
 ```
 
-The report maps constraints `0..=23` to Lean's `segment_every_row` group and
-constraints `24..=33` to `permutation_every_row`. It also lists
-`gsum_debug_data` hints whose `name_piop = "Range Check"`; those are the
+The report maps constraints `0..=23` to
+`MemTableGeneratedConstraintFacts.segmentAt` / `segment_every_row` and
+constraints `24..=33` to `.permutationAt` / `permutation_every_row`. It also
+lists `gsum_debug_data` hints whose `name_piop = "Range Check"`; those are the
 extractor-facing source for `MemTableGeneratedRangeFacts` and
-`MemSegmentGeneratedRangeFacts`. Because Clean component emission deliberately
-omits stage-2 running-product columns and does not support previous-row witness
-cells, this mode records the source surface rather than pretending those facts
-follow from the existing Clean table soundness API.
+`MemSegmentGeneratedRangeFacts`. A generated Lean module should call
+`memTableGeneratedAirSource_of_constraintFacts` after proving those split
+constraint groups and range-check facts. Because Clean component emission
+deliberately omits stage-2 running-product columns and does not support
+previous-row witness cells, this mode records the source surface rather than
+pretending those facts follow from the existing Clean table soundness API.
 
 ## Limitations (deliberate; expand as phases demand)
 
