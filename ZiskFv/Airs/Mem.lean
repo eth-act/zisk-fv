@@ -869,6 +869,80 @@ theorem delta_addr_val_pos_of_addr_change_segment_every_row
     (cols := cols) (v := v) (row := row) h h_addr_change h_range]
   exact incrementNat_pos v row
 
+/-- At a non-boundary address-change row, the previous row's address is
+    strictly smaller than the current row's address.
+
+    This mirrors the `mem.pil:375` increment equation together with the
+    `mem.pil:384-385` increment range checks and the 29-bit address range from
+    `mem.pil:109`, ruling out Goldilocks wraparound. -/
+theorem previous_addr_lt_addr_of_addr_change_not_boundary_segment_every_row
+    {cols : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_addr_change : v.addr_changes row = 1)
+    (h_not_boundary : cols.segment_l1 row = 0)
+    (h_current_addr_range : addr_columns_in_range v row)
+    (h_previous_addr_range : addr_columns_in_range v (row - 1))
+    (h_range : increment_chunks_in_range v row) :
+    (v.addr (row - 1)).val < (v.addr row).val := by
+  have h_delta_eq :=
+    delta_addr_val_eq_incrementNat_of_addr_change_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_addr_change h_range
+  have h_delta_pos :=
+    delta_addr_val_pos_of_addr_change_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_addr_change h_range
+  have h_delta_bound := incrementNat_le_two_pow_38 (v := v) (row := row) h_range
+  have h_current_addr_lt : (v.addr row).val < 2 ^ 29 := h_current_addr_range
+  have h_previous_addr_lt : (v.addr (row - 1)).val < 2 ^ 29 := h_previous_addr_range
+  have h_prev :=
+    segment_previous_addr_eq_previous_of_not_boundary
+      (cols := cols) (v := v) (row := row) h_not_boundary
+  have hmod :
+      (delta_addr cols v row).val =
+        (18446744069414584321 - (segment_previous_addr cols v row).val
+          + (v.addr row).val) %
+          18446744069414584321 := by
+    simp [delta_addr, Fin.val_sub]
+  rw [h_prev] at hmod
+  by_contra hlt
+  have h_ge : (v.addr row).val ≤ (v.addr (row - 1)).val := by
+    omega
+  by_cases h_eq : (v.addr row).val = (v.addr (row - 1)).val
+  · have hcalc :
+        (18446744069414584321 - (v.addr (row - 1)).val
+          + (v.addr row).val) %
+          18446744069414584321 = 0 := by
+      have hsum :
+          18446744069414584321 - (v.addr (row - 1)).val
+            + (v.addr row).val =
+            18446744069414584321 := by
+        omega
+      rw [hsum]
+    rw [hmod, hcalc] at h_delta_pos
+    omega
+  · have h_addr_lt : (v.addr row).val < (v.addr (row - 1)).val := by
+      omega
+    have hcalc :
+        (18446744069414584321 - (v.addr (row - 1)).val
+          + (v.addr row).val) %
+          18446744069414584321 =
+          18446744069414584321 -
+            ((v.addr (row - 1)).val - (v.addr row).val) := by
+      have hsum :
+          18446744069414584321 - (v.addr (row - 1)).val
+            + (v.addr row).val =
+            18446744069414584321 -
+              ((v.addr (row - 1)).val - (v.addr row).val) := by
+        omega
+      rw [hsum]
+      exact Nat.mod_eq_of_lt (by omega)
+    rw [hmod, hcalc] at h_delta_eq
+    have h_large :
+        2 ^ 38 <
+          18446744069414584321 -
+            ((v.addr (row - 1)).val - (v.addr row).val) := by
+      omega
+    omega
+
 /-- PIL range-check fact for the dual mutable-Mem step delta:
     `range_check(step_dual - step - wr, 0, 2^24 - 1, sel_dual)`. -/
 def dual_step_delta_in_range (v : Valid_Mem FGL FGL) (row : ℕ) : Prop :=

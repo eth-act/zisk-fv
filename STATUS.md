@@ -18,27 +18,19 @@ Latest proof surface:
   order, write/read carry, read-preserving rows, replay append lemmas, row/table
   fold composition, zero preload, generated row specs, and the named remaining
   obligation `ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`.
-- Latest committed slice (`7db237da`) adds the `mem.pil:109` address-column
-  range fact, the no-wrap theorem for `addr * 8`, and Balance projections that
-  unequal Mem addresses give byte-disjoint replay entries.
-- Current uncommitted slice adds replay-core zero-preload fold lemmas and the
-  table-shaped address-change read lemma:
-  `readEventReplayAgreement_after_zeroMemoryOfRows_memTableGeneratedRowsBridge`.
+- Latest completed slice lifts the table-shaped zero-preload read lemma through
+  `replayMemoryAfterBusRows` under an explicit prior-prefix byte-disjointness
+  premise, reduces that premise to prior-prefix address separation, and proves
+  the adjacent non-boundary address-change order fact from the Mem AIR. It also
+  discharges split/list bookkeeping down to indexed all-prior address
+  inequality.
 
-Verification for latest slice: Lean LSP diagnostics are clean for
-`ZiskFv.Airs.Mem` and `ZiskFv.AirsClean.FullEnsemble.Balance`; target builds
-for both modules pass, and both the LSP build hook and regular `lake build`
-ran full successful Lake builds. Both trust gates and `nix run .#test` pass.
-Current slice verification: Lean LSP diagnostics are clean for
-`ZiskFv.ZiskCircuit.MemTrace` and
-`ZiskFv.AirsClean.FullEnsemble.Balance`; target builds for both pass, and the
-LSP build hook and regular `lake build` both ran full successful Lake builds.
-Both trust gates and `nix run .#test` pass.
+Verification: Lean LSP diagnostics are clean for `ZiskFv.Airs.Mem` and
+`ZiskFv.AirsClean.FullEnsemble.Balance`; target builds, full `lake build`,
+both trust gates, and `nix run .#test` pass.
 
-Next step: prove the prior-prefix disjointness fact needed to lift the
-zero-preload table lemma through `replayMemoryAfterBusRows` and close the
-zero-preloaded specialization of
-`ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`.
+Next step: lift the adjacent address-order fact to all prior rows in the
+concrete table prefix, including the segment-boundary continuation case.
 
 Context: Phase A is committed at `0c222595`. The old
 `.worktrees/memory-trust-gap` branch remains only as salvage reference until

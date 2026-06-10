@@ -306,11 +306,34 @@ no assumed soundness fields**.
       `Balance.lean` adds
       `readEventReplayAgreement_after_zeroMemoryOfRows_memTableGeneratedRowsBridge`,
       proving the table-shaped address-change selected-primary-read fact from
-      `MemTableGeneratedRowsBridge` and `MemTableGeneratedRangeFacts`. Verified
-      so far with clean Lean LSP diagnostics for `ZiskFv.ZiskCircuit.MemTrace`
+      `MemTableGeneratedRowsBridge` and `MemTableGeneratedRangeFacts`.
+      Committed as `2655cc4d`. Verified with clean Lean LSP diagnostics for `ZiskFv.ZiskCircuit.MemTrace`
       and `ZiskFv.AirsClean.FullEnsemble.Balance`, target builds for both, and
       successful full Lake builds through the LSP build hook and regular
       `lake build`; both trust gates and `nix run .#test` pass.
+      Latest completed slice lifts the table-shaped zero-preload fact through
+      an arbitrary prior replay prefix when every prior active entry is
+      byte-disjoint from the selected address-change read:
+      `readEventReplayAgreement_after_zeroMemoryOfRows_priorPrefix_disjoint_memTableGeneratedRowsBridge`.
+      It also reduces that byte-disjointness premise to
+      prior-prefix address separation with
+      `readEventReplayAgreement_after_zeroMemoryOfRows_priorPrefix_addr_ne_memTableGeneratedRowsBridge`.
+      `Airs/Mem.lean` proves
+      `previous_addr_lt_addr_of_addr_change_not_boundary_segment_every_row`
+      from the generated address-change increment equation plus address and
+      increment range checks, and `Balance.lean` projects it as
+      `previous_addr_lt_addr_of_addr_change_not_boundary_memTableGeneratedRowsBridge`.
+      The split/list bookkeeping is also discharged:
+      `priorRows_mem_index_lt_of_split` converts
+      `table.table = priorRows ++ providerRow :: laterRows` into indices
+      strictly before the split point, and
+      `readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_addr_ne_memTableGeneratedRowsBridge`
+      leaves only the indexed all-prior address inequality
+      `∀ otherIdx, otherIdx.val < idx.val → mem.addr otherIdx.val ≠ mem.addr idx.val`.
+      Verified with clean Lean LSP diagnostics for `ZiskFv.Airs.Mem` and
+      `ZiskFv.AirsClean.FullEnsemble.Balance`, target builds, full
+      `lake build`, `trust/scripts/check-all.sh`,
+      `trust/scripts/check-all-semantic.sh`, and `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -346,6 +369,9 @@ no assumed soundness fields**.
       Partial: `addr_columns_in_range` and `MemTableGeneratedRangeFacts.addrColumns`
       now cite `mem.pil:109`; the no-wrap proof is a numeric consequence of
       that 29-bit bound and the Goldilocks modulus.
+      Partial: the adjacent address-change order theorem cites `mem.pil:375`
+      for the generated increment equation, `mem.pil:384-385` for increment
+      range checks, and `mem.pil:109` for address no-wrap.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
