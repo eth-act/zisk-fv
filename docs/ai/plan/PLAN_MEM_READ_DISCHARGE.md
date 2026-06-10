@@ -977,6 +977,18 @@ no assumed soundness fields**.
       ZiskFv.Compliance`, `lean_verify` on the generated constructor/coercion,
       focused and full `tools/pil-extract` cargo tests, regenerated
       `/tmp/mem-air-facts-report.md`, and `trust/scripts/check-all.sh`.
+      Follow-up generated-artifact contract slice: `tools/pil-extract
+      mem-air-facts` now emits a `Generated Lean Artifact Contract` section.
+      It names `FullWitnessMemAirSourceProverDataWitnessFacts witness` as the
+      generated value that feeds
+      `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`, and
+      lists the three per-mutable-Mem-table outputs the callback must return:
+      `MemTableGeneratedConstraintAssertionFacts`,
+      `MemTableGeneratedRangeLookupFacts`, and
+      `MemSegmentGeneratedRangeLookupFacts`. Extraction notes point readers to
+      the same contract. Verified with the focused report test, full
+      `cargo test --manifest-path tools/pil-extract/Cargo.toml`, regenerated
+      `/tmp/mem-air-facts-report.md`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

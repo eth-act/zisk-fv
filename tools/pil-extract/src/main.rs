@@ -1295,6 +1295,42 @@ fn render_mem_air_facts_report(
     .unwrap();
     writeln!(out).unwrap();
 
+    writeln!(out, "## Generated Lean Artifact Contract\n").unwrap();
+    writeln!(
+        out,
+        "The generated artifact should expose a value of \
+         `FullWitnessMemAirSourceProverDataWitnessFacts witness` and feed it \
+         to `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`."
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "For each mutable Mem table, the callback must return:").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "| Obligation | Source |").unwrap();
+    writeln!(out, "|---|---|").unwrap();
+    writeln!(
+        out,
+        "| `MemTableGeneratedConstraintAssertionFacts` | Clean assertion witnesses \
+         for `segment_every_row` constraints `0..=23` and \
+         `permutation_every_row` constraints `24..=33` over the ProverData \
+         sidecar columns |"
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "| `MemTableGeneratedRangeLookupFacts` | Clean range-lookup witnesses for \
+         row-local range facts over the same ProverData-backed Mem view |"
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "| `MemSegmentGeneratedRangeLookupFacts` | Clean range-lookup witnesses \
+         for segment-global range facts over \
+         `segmentWithFixedL1 (memSegmentColumnsOfProverData witness.data)` |"
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+
     writeln!(out, "## Witness Columns\n").unwrap();
     writeln!(out, "| Stage | Column | Name |").unwrap();
     writeln!(out, "|---:|---:|---|").unwrap();
@@ -2771,6 +2807,45 @@ mod tests {
                     "`fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts`"
                 ),
             "report should point generated code at the ProverData witness target:\n{}",
+            out
+        );
+    }
+
+    #[test]
+    fn mem_air_facts_report_lists_generated_artifact_contract() {
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                name: Some("Zisk".into()),
+                airs: vec![Air {
+                    name: Some("Mem".into()),
+                    num_rows: Some(16),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Mem").unwrap();
+        let out = render_mem_air_facts_report(&pilout, &hit, None).unwrap();
+        assert!(
+            out.contains("## Generated Lean Artifact Contract"),
+            "report should include a generated artifact contract section:\n{}",
+            out
+        );
+        assert!(
+            out.contains("`MemTableGeneratedConstraintAssertionFacts`")
+                && out.contains("`MemTableGeneratedRangeLookupFacts`")
+                && out.contains("`MemSegmentGeneratedRangeLookupFacts`"),
+            "report should list all per-table witness fact obligations:\n{}",
+            out
+        );
+        assert!(
+            out.contains("`segment_every_row` constraints `0..=23`")
+                && out.contains("`permutation_every_row` constraints `24..=33`")
+                && out.contains(
+                    "`segmentWithFixedL1 (memSegmentColumnsOfProverData witness.data)`"
+                ),
+            "report should identify the exact generated constraint/range sources:\n{}",
             out
         );
     }

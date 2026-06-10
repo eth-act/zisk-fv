@@ -28,18 +28,17 @@ Current proof surface:
 - `FullWitnessMemoryTimelineEvidence` carries full witness +
   `FullWitnessMemAirSourceRawSidecars`; source/bridge/replay are accessors.
 - `tools/pil-extract mem-air-facts` reports generated constraints, range
-  hints, ProverData keys, and the generated timeline constructor.
+  hints, ProverData keys, generated timeline constructor, and the per-table
+  artifact contract.
 
 Latest verification:
-- Lean LSP diagnostics on `OpEnvelope.lean`: clean; `Balance.lean` LSP timed
-  out, so verified by targeted Lake build.
-- `lean_verify` on the generated constructor and coercion: no source warnings.
-- `lake build ZiskFv.AirsClean.FullEnsemble.Balance`.
-- `lake build ZiskFv.Compliance`.
-- Focused mem-air-facts report test and full
-  `cargo test --manifest-path tools/pil-extract/Cargo.toml` (69 tests).
-- Regenerated `/tmp/mem-air-facts-report.md`; it names the generated wrapper.
-- `trust/scripts/check-all.sh`.
+- Focused generated-artifact-contract report test.
+- Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (70 tests).
+- Regenerated `/tmp/mem-air-facts-report.md`; it lists the contract fields:
+  constraint assertions, row range lookups, and segment range lookups.
+- `git diff --check` clean.
+- Latest Lean/trust gate: `lake build ZiskFv.Compliance` and
+  `trust/scripts/check-all.sh` at commit `e788d386`.
 - Rustfmt check has broad pre-existing churn outside this slice.
 - Last full `nix run .#test`: commit `98202ebc`.
 

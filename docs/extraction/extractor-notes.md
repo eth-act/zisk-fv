@@ -236,13 +236,17 @@ extractor-facing source for `MemTableGeneratedRangeFacts` and
 `MemSegmentGeneratedRangeFacts`. It also emits a Lean range-fact coverage table:
 range-check hints cover `incrementChunks`, `dualStepDelta`, and
 `distanceBaseChunks`, while `addrColumns` and `stepColumns` require the
-`mem.pil` bit-width lines supplied through `--pil-source`. A generated Lean
-module should supply `FullWitnessMemAirSourceProverDataWitnessFacts` for the
-named `witness.data` sidecar keys and pass it to
+`mem.pil` bit-width lines supplied through `--pil-source`. The generated
+artifact contract section names the remaining callback exactly: a generated
+Lean module should supply `FullWitnessMemAirSourceProverDataWitnessFacts` for
+the named `witness.data` sidecar keys and pass it to
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`;
 `FullWitnessGeneratedTimelineEvidence` is the load-facing generated wrapper,
 while `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts` builds its
-inner timeline evidence.
+inner timeline evidence. Per mutable Mem table, that callback must return
+`MemTableGeneratedConstraintAssertionFacts`,
+`MemTableGeneratedRangeLookupFacts`, and
+`MemSegmentGeneratedRangeLookupFacts`.
 `fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` is the sidecar
 packager and the lower-level `FullWitnessMemAirSourceProverDataFacts` callback
 remains available for generated modules that prove raw Mem facts directly. A
