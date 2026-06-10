@@ -156,8 +156,13 @@ bury it in a structure field.
       `MemoryTimelineEvidence state entry`): existence of the accepted Mem
       row trace + initial Sail agreement + selected-prefix state equality for
       read cursors — exactly leaves (3)+(4), nothing provable inside it.
-- [ ] Add the one visible hypothesis to `zisk_riscv_compliant_program_bus`
+- [x] Add the one visible hypothesis to `zisk_riscv_compliant_program_bus`
       next to `h_bridge`.
+      Implemented as `h_memory_timeline : env.memoryTimelineEvidence`, where
+      load arms require `Nonempty (MemoryTimelineEvidence state bus.e1)` and
+      non-load arms require `True`; verified with
+      `lake build ZiskFv.Compliance`, full `lake build`, and
+      `trust/scripts/check-all.sh`.
 - [ ] Remove `mem_read` from `LoadPromises`; in the load dispatch arms derive
       `LoadByteAgreement` = Phase B theorem + replay core + timeline
       hypothesis (`mem_load_correct_of_provider_row` consuming

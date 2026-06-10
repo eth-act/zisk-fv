@@ -10,6 +10,7 @@ import ZiskFv.Compliance.Dispatch.Misc
 import ZiskFv.Compliance.Dispatch.Remaining
 import ZiskFv.Compliance.Defects
 import ZiskFv.Compliance.AeneasBridgeTrust
+import ZiskFv.ZiskCircuit.MemTrace
 
 /-!
 # Compliance.lean — unified channel-balance global theorem
@@ -50,6 +51,10 @@ boundary for Aeneas-backed row-lowering facts that are still carried as
 `OpEnvelope` fields while generated Aeneas Lean is not imported by the main
 proof.
 
+It also assumes `env.memoryTimelineEvidence`, the single visible residual
+memory boundary for load arms: the selected load entry agrees with the Sail
+memory timeline. Non-load arms impose no memory-timeline obligation.
+
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
 defect-aware while `trust/defects.md` contains open claim-weakening defects:
 the `h_known_bugs` binder is orthogonal to the validity witnesses already
@@ -65,11 +70,33 @@ open ZiskFv.Airs.Main (Valid_Main)
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
+/-- Single global residual memory-timeline boundary. Load arms require existence
+    of `MemoryTimelineEvidence state bus.e1`; non-load arms impose no obligation. -/
+@[reducible]
+def OpEnvelope.memoryTimelineEvidence
+    : OpEnvelope state m r_main → Prop
+  | .ld _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lbu _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lhu _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lwu _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
+  | _ => True
+
 /-- Unified per-arm conclusion: conjunction of the ten family-
     specific `exec_eq_<family>` Props. Exactly one family fires
     non-trivially for any given arm; the others are `True`. -/
 def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
   env.aeneasBridgeTrust
+    ∧ env.memoryTimelineEvidence
     ∧ env.exec_eq_branch
     ∧ env.exec_eq_nomem
     ∧ env.exec_eq_rtype_binary
@@ -89,10 +116,12 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
     (h_bridge : env.aeneasBridgeTrust)
+    (h_memory_timeline : env.memoryTimelineEvidence)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact h_bridge
+  · exact h_memory_timeline
   · exact zisk_riscv_compliant_program_bus_branch env
   · exact zisk_riscv_compliant_program_bus_nomem env
   · exact zisk_riscv_compliant_program_bus_rtype_binary env

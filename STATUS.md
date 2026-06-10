@@ -1,8 +1,8 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase C legacy-pin cleanup after the trace-agreement bridge.
-The lower Clean load witness path no longer stores/passes the raw
-`mem.addr = e.ptr` pin; the remaining hits are outer OpEnvelope/Aeneas
-compatibility inputs and legacy predicate definitions.
+Current focus: Phase C global boundary hook commit. The
+`OpEnvelope`-level memory timeline predicate is wired into `env.exec_eq`, and
+`zisk_riscv_compliant_program_bus` now has the visible
+`h_memory_timeline : env.memoryTimelineEvidence` hypothesis.
 Blocking: full `GeneratedMemRowOrderFacts.rowsNodup` is stronger than current
 PIL for read-read dual rows, because `mem.pil` allows `step_dual = step`.
 Verified: byte-address/MemModel prep slice and `MemoryTimelineEvidence`
@@ -10,9 +10,11 @@ residual-object slice each passed targeted build, full `lake build`, and
 `trust/scripts/check-all.sh`. The trace-agreement adapter slice has passed the
 targeted load build, full `lake build`, and `trust/scripts/check-all.sh`. The
 legacy-pin cleanup slice has passed targeted build, full `lake build`, and
+`trust/scripts/check-all.sh`. The global boundary hook has passed
+`lake build ZiskFv.Compliance`, full `lake build`, and
 `trust/scripts/check-all.sh`.
-Next step: decide the Phase C boundary-wiring route. Ask before changing
-canonical load theorem signatures or weakening the Phase B `rows.Nodup` target.
+Next step: commit the boundary-hook slice, then continue with the remaining
+Phase C `LoadPromises.mem_read` removal design/implementation.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract
