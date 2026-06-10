@@ -2222,8 +2222,8 @@ inductive OpEnvelope
     OpEnvelope state m r_main
 
 /-- Single global residual memory-timeline boundary. Load arms require existence
-    of a full-witness memory-timeline source for `state` and `bus.e1`;
-    non-load arms impose no obligation. -/
+    of a generated full-witness memory-timeline source for `state` and
+    `bus.e1`; non-load arms impose no obligation. -/
 @[reducible]
 def OpEnvelope.memoryTimelineEvidence
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -2231,19 +2231,26 @@ def OpEnvelope.memoryTimelineEvidence
     {r_main : ℕ} :
     OpEnvelope state m r_main → Prop
   | .ld _ _ _ bus .. =>
-      Nonempty (ZiskFv.AirsClean.FullEnsemble.FullWitnessMemoryTimelineEvidence state bus.e1)
+      Nonempty
+        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
   | .lbu _ _ _ bus .. =>
-      Nonempty (ZiskFv.AirsClean.FullEnsemble.FullWitnessMemoryTimelineEvidence state bus.e1)
+      Nonempty
+        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
   | .lhu _ _ _ bus .. =>
-      Nonempty (ZiskFv.AirsClean.FullEnsemble.FullWitnessMemoryTimelineEvidence state bus.e1)
+      Nonempty
+        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
   | .lwu _ _ _ bus .. =>
-      Nonempty (ZiskFv.AirsClean.FullEnsemble.FullWitnessMemoryTimelineEvidence state bus.e1)
+      Nonempty
+        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
   | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      Nonempty (ZiskFv.AirsClean.FullEnsemble.FullWitnessMemoryTimelineEvidence state bus.e1)
+      Nonempty
+        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
   | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      Nonempty (ZiskFv.AirsClean.FullEnsemble.FullWitnessMemoryTimelineEvidence state bus.e1)
+      Nonempty
+        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      Nonempty (ZiskFv.AirsClean.FullEnsemble.FullWitnessMemoryTimelineEvidence state bus.e1)
+      Nonempty
+        (ZiskFv.AirsClean.FullEnsemble.FullWitnessGeneratedTimelineEvidence state bus.e1)
   | _ => True
 
 end ZiskFv.Compliance

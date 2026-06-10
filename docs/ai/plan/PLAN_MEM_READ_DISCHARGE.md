@@ -962,6 +962,21 @@ no assumed soundness fields**.
       supplied alongside the residual timeline evidence, or broaden the
       Clean table/component model so those sidecar operations are part of the
       checked full-ensemble witness.
+      Generated-boundary slice: `FullWitnessGeneratedTimelineEvidence` now
+      makes that generated artifact explicit at the load-facing boundary. It
+      wraps `FullWitnessMemoryTimelineEvidence`, carries
+      `FullWitnessMemAirSourceProverDataWitnessFacts`, and records that the
+      stored sidecars are exactly the ProverData-packaged sidecars. Load
+      `OpEnvelope.memoryTimelineEvidence` arms now require
+      `Nonempty (FullWitnessGeneratedTimelineEvidence state bus.e1)`, while
+      coercions preserve the existing `MemoryTimelineEvidence` load-proof API.
+      The mem-air-facts report, extractor notes, and trust ledger now name this
+      generated wrapper as the load-facing boundary. Verified with clean Lean
+      LSP diagnostics for `OpEnvelope.lean`, targeted
+      `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build
+      ZiskFv.Compliance`, `lean_verify` on the generated constructor/coercion,
+      focused and full `tools/pil-extract` cargo tests, regenerated
+      `/tmp/mem-air-facts-report.md`, and `trust/scripts/check-all.sh`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
@@ -985,10 +1000,12 @@ bury it in a structure field.
       Implemented as `h_memory_timeline : env.memoryTimelineEvidence`.
       Initially load arms required `Nonempty (MemoryTimelineEvidence state
       bus.e1)`; the boundary has now been strengthened so load arms require
-      `Nonempty (FullWitnessMemoryTimelineEvidence state bus.e1)`, while
-      non-load arms still require `True`. The full-witness raw Mem facts derive
-      the accepted replay subobject from `FullWitnessMemReplayBridge` and coerce
-      to the existing `MemoryTimelineEvidence` load-proof API. Verified with
+      `Nonempty (FullWitnessGeneratedTimelineEvidence state bus.e1)`, while
+      non-load arms still require `True`. The generated wrapper carries
+      ProverData witness facts for the stored sidecars; the inner full-witness
+      raw Mem facts derive the accepted replay subobject from
+      `FullWitnessMemReplayBridge` and coerce to the existing
+      `MemoryTimelineEvidence` load-proof API. Verified with
       `lake env lean` on `Balance.lean`, `OpEnvelope.lean`, and the
       LDSD/Misc/Remaining dispatch files, plus
       `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`, and

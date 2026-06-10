@@ -8,10 +8,11 @@ source whose accepted replay is derived from generated Mem sidecars
 (`FullWitnessMemAirSourceRawSidecars`); the current generated target is
 `FullWitnessMemAirSourceProverDataWitnessFacts`, supplying Clean
 assertion/lookup witnesses for named `witness.data` sidecar keys, with
-`fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts` as the direct
-timeline entry point. The remaining hard work is making generated/full-ensemble
-output supply that target because the current Clean Mem component does not
-represent the stage-2/global Mem AIR source columns generically.
+`FullWitnessGeneratedTimelineEvidence` as the load-facing wrapper and
+`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` as its direct
+constructor. The remaining hard work is making generated/full-ensemble output
+supply that target because the current Clean Mem component does not represent
+the stage-2/global Mem AIR source columns generically.
 The stream salvages the replay core, Mem AIR segment machinery, and
 table-projection lemmas from the derailed `memory-trust-gap` branch while
 scrapping its ~13k-line wrapper stack.

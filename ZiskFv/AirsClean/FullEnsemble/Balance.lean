@@ -6746,6 +6746,101 @@ noncomputable instance fullWitnessMemoryTimelineEvidenceCoe
       (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state entry) where
   coe := FullWitnessMemoryTimelineEvidence.toMemoryTimelineEvidence
 
+/-- Generated-artifact wrapper for the global memory-timeline boundary.
+
+    The embedded `FullWitnessMemoryTimelineEvidence` is the object consumed by
+    load proofs. The extra fields make the generated ProverData sidecar source
+    explicit: the stored sidecars must be exactly those packaged from
+    `FullWitnessMemAirSourceProverDataWitnessFacts`. -/
+structure FullWitnessGeneratedTimelineEvidence
+    (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (entry : Interaction.MemoryBusEntry FGL) : Type 2 where
+  evidence : FullWitnessMemoryTimelineEvidence state entry
+  witnessFacts : FullWitnessMemAirSourceProverDataWitnessFacts evidence.witness
+  sidecars_eq :
+    evidence.sidecars =
+      fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts witnessFacts
+
+namespace FullWitnessGeneratedTimelineEvidence
+
+@[reducible]
+noncomputable def toFullWitnessMemoryTimelineEvidence
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (evidence : FullWitnessGeneratedTimelineEvidence state entry) :
+    FullWitnessMemoryTimelineEvidence state entry :=
+  evidence.evidence
+
+@[reducible]
+noncomputable def toMemoryTimelineEvidence
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (evidence : FullWitnessGeneratedTimelineEvidence state entry) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state entry :=
+  evidence.evidence.toMemoryTimelineEvidence
+
+end FullWitnessGeneratedTimelineEvidence
+
+noncomputable instance fullWitnessGeneratedTimelineEvidenceCoe
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL} :
+    CoeOut
+      (FullWitnessGeneratedTimelineEvidence state entry)
+      (FullWitnessMemoryTimelineEvidence state entry) where
+  coe := FullWitnessGeneratedTimelineEvidence.toFullWitnessMemoryTimelineEvidence
+
+noncomputable instance fullWitnessGeneratedTimelineEvidenceMemoryTimelineCoe
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL} :
+    CoeOut
+      (FullWitnessGeneratedTimelineEvidence state entry)
+      (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state entry) where
+  coe := FullWitnessGeneratedTimelineEvidence.toMemoryTimelineEvidence
+
+/-- Construct the generated-artifact memory-timeline boundary directly from
+    ProverData-backed Clean assertion/lookup witnesses plus the residual Sail
+    timeline facts. -/
+@[reducible]
+noncomputable def fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_witnessFacts : FullWitnessMemAirSourceProverDataWitnessFacts witness)
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
+    (h_traceSplit :
+      (fullWitnessMemAirSourceOfRawSidecars witness
+          (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts h_witnessFacts)).rows =
+        priorRows ++ entry :: laterRows)
+    (h_selectedRead :
+      ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
+        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))
+    (h_initialAgreement :
+      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
+        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          ((fullWitnessMemAirSourceOfRawSidecars witness
+              (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts
+                h_witnessFacts)).replayBridgeOfTraceSplit
+            h_traceSplit)).initialMemory)
+    (h_stateAtPrefix :
+      state =
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
+    FullWitnessGeneratedTimelineEvidence state entry where
+  evidence :=
+    fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts
+      witness
+      h_witnessFacts
+      initialState
+      priorRows
+      laterRows
+      h_traceSplit
+      h_selectedRead
+      h_initialAgreement
+      h_stateAtPrefix
+  witnessFacts := h_witnessFacts
+  sidecars_eq := rfl
+
 /-- The projected read-replay rows of a concrete Mem table are embedded in
     the accepted chronological memory-bus row trace. Proving this embedding
     is the global AIR/Main/Mem integration obligation; selected-row coverage

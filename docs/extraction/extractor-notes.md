@@ -239,7 +239,10 @@ range-check hints cover `incrementChunks`, `dualStepDelta`, and
 `mem.pil` bit-width lines supplied through `--pil-source`. A generated Lean
 module should supply `FullWitnessMemAirSourceProverDataWitnessFacts` for the
 named `witness.data` sidecar keys and pass it to
-`fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts`;
+`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`;
+`FullWitnessGeneratedTimelineEvidence` is the load-facing generated wrapper,
+while `fullWitnessMemoryTimelineEvidence_of_proverDataWitnessFacts` builds its
+inner timeline evidence.
 `fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts` is the sidecar
 packager and the lower-level `FullWitnessMemAirSourceProverDataFacts` callback
 remains available for generated modules that prove raw Mem facts directly. A

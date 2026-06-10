@@ -161,13 +161,17 @@ h_memory_timeline : env.memoryTimelineEvidence
 ```
 
 For load `OpEnvelope` arms, `env.memoryTimelineEvidence` requires
-`Nonempty (FullWitnessMemoryTimelineEvidence state bus.e1)`; non-load arms
-require no memory evidence. Dispatch coerces that full-witness source to
+`Nonempty (FullWitnessGeneratedTimelineEvidence state bus.e1)`; non-load arms
+require no memory evidence. Dispatch coerces that generated full-witness source to
 `MemoryTimelineEvidence state e1` and reconstructs canonical `LoadPromises`
 with `LoadPromises.memory_timeline` before calling the load theorems. The
 `OpEnvelope` load constructors themselves carry only `LoadStructuralPromises`,
 so they no longer accept a per-load byte oracle.
 
+`FullWitnessGeneratedTimelineEvidence` wraps `FullWitnessMemoryTimelineEvidence`
+and makes the generated ProverData sidecar source explicit: it carries
+`FullWitnessMemAirSourceProverDataWitnessFacts` and records that the stored
+sidecars are exactly the sidecars packaged from those witness facts. The inner
 `FullWitnessMemoryTimelineEvidence` contains the concrete full-ensemble witness,
 the `FullWitnessMemAirSourceRawSidecars` callback for the witness-selected
 mutable Mem table, and only the residual whole-execution memory-timeline facts.
@@ -182,10 +186,13 @@ prefix. The canonical load proofs derive `LoadByteAgreement` from the resulting
 timeline evidence and the memory replay relation.
 
 Generated/full-ensemble Mem facts target
-`FullWitnessMemAirSourceRawSidecars`: raw split generated constraints, row
-range facts, segment range facts, and the stage-2 source columns for each
-mutable Mem table. Lean packages that sidecar callback into the
-witness-selected `FullWitnessMemAirSource` via
+`FullWitnessMemAirSourceProverDataWitnessFacts`: Clean assertion/lookup
+witnesses plus named `witness.data` sidecar keys for raw split generated
+constraints, row range facts, segment range facts, and the stage-2 source
+columns for each mutable Mem table.
+`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` packages that
+target into the load-facing boundary. Lean packages the resulting sidecar
+callback into the witness-selected `FullWitnessMemAirSource` via
 `fullWitnessMemAirSourceOfRawSidecars`, and
 `fullWitnessMemoryTimelineEvidence_of_rawSidecars` combines it with only the
 residual Sail timeline fields above. `FullWitnessMemAirSourceRawFacts` and
@@ -193,7 +200,7 @@ residual Sail timeline fields above. `FullWitnessMemAirSourceRawFacts` and
 for lower-level generated modules that still produce the raw sigma callback.
 
 Retirement path: emit/prove the extractor/full-ensemble
-`FullWitnessMemAirSourceRawSidecars`, then prove the whole-execution induction
+`FullWitnessMemAirSourceProverDataWitnessFacts`, then prove the whole-execution induction
 connecting accepted Mem rows, initial Sail memory agreement, and selected Sail
 state without assuming `env.memoryTimelineEvidence`. The table/list-position
 part of the bridge is named as `MemTableGeneratedRowsBridge`, which connects
