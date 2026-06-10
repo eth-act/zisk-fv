@@ -2164,6 +2164,34 @@ theorem toFacts {table : Table FGL} (source : MemTableGeneratedAirSource table) 
 
 end MemTableGeneratedAirSource
 
+/-- Build the typed Mem AIR source from the three extractor-facing fact
+    families. This is the narrow constructor a future generated Lean module can
+    call after proving the pilout-generated row constraints and range facts for
+    the concrete table projection. -/
+def memTableGeneratedAirSource_of_parts
+    (table : Table FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
+    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
+    (gsum im0 im1 : ℕ → FGL)
+    (h_generatedAt :
+      ∀ idx : Fin table.table.length,
+        ZiskFv.Airs.Mem.generated_every_row
+          (segmentWithFixedL1 segment) permutation
+          (memOfTable table gsum im0 im1) idx.val)
+    (h_rowRanges :
+      MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1))
+    (h_segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment)) :
+    MemTableGeneratedAirSource table where
+  segment := segment
+  permutation := permutation
+  gsum := gsum
+  im0 := im0
+  im1 := im1
+  facts :=
+    { generatedAt := h_generatedAt
+      rowRanges := h_rowRanges
+      segmentRanges := h_segmentRanges }
+
 /-- Any active replay entry from a generated Mem table row is either at the
     same byte pointer as the selected primary row or byte-disjoint from it.
 

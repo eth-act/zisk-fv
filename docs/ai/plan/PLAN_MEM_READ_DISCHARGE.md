@@ -633,14 +633,17 @@ no assumed soundness fields**.
       `fullWitnessMemReplayBridge_of_memAirSource_traceSplit`, and
       `fullWitnessMemoryTimelineEvidence_of_memAirSource` constructors derive
       replay/timeline evidence from that source package instead of passing raw
-      `gsum`/`im` functions and segment/permutation columns around. Verified
-      with clean Lean LSP diagnostics for
+      `gsum`/`im` functions and segment/permutation columns around.
+      `memTableGeneratedAirSource_of_parts` is the generated-module entry
+      point: it constructs the source from the three exact obligations the
+      extractor/proof must provide (`generatedAt`, row ranges, segment ranges).
+      Verified with clean Lean LSP diagnostics for
       `ZiskFv/AirsClean/FullEnsemble/Balance.lean`, targeted `lake build
       ZiskFv.AirsClean.FullEnsemble.Balance`, and
       `trust/scripts/check-all.sh`.
-      Current sub-gap: populate `MemTableGeneratedAirSource.facts` for the
-      witness-selected Mem table from generated extractor output or concrete
-      Clean/pilout proofs.
+      Current sub-gap: make the extractor or a generated Lean module prove the
+      three inputs to `memTableGeneratedAirSource_of_parts` for the
+      witness-selected Mem table.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

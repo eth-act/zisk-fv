@@ -22,6 +22,9 @@ Current proof surface:
   source lines needed by `MemTableGeneratedAirFacts`.
 - `MemTableGeneratedAirSource` is now the typed Lean target for those source
   columns/facts; replay and timeline evidence constructors consume it.
+- `memTableGeneratedAirSource_of_parts` is the generated-module entry point:
+  it builds the source from generated constraints, row ranges, and segment
+  ranges.
 
 Latest verification:
 - Lean LSP diagnostics: `ZiskFv/AirsClean/FullEnsemble/Balance.lean`
@@ -40,8 +43,8 @@ Latest verification:
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: make the extractor or a generated Lean module populate
-`MemTableGeneratedAirSource.facts`; existing Clean table soundness does not
-expose stage-2 generated columns or range metadata.
+Next step: make the extractor or a generated Lean module prove the three inputs
+to `memTableGeneratedAirSource_of_parts`; existing Clean table soundness does
+not expose stage-2 generated columns or range metadata.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.
