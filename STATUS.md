@@ -11,8 +11,8 @@ Current proof surface:
   bridge, row/segment ranges, fixed-column facts, active-row equality, and
   nonempty evidence.
 - `FullWitnessMemoryTimelineEvidence` is the Compliance-facing load boundary.
-  It now carries the concrete full witness and `FullWitnessMemReplayBridge`;
-  `acceptedReplay` is a derived accessor, not a structure field.
+  It now carries the concrete full witness and `FullWitnessMemAirSource`;
+  `replayBridge` and `acceptedReplay` are derived accessors, not fields.
 - Public load boundaries no longer mention `fullRv64imEnsemble` or the legacy
   `mem.addr r_mem = bus.e1.ptr` pin.
 - `tools/pil-extract mem-air-facts` reports generated constraint groups,
@@ -30,16 +30,17 @@ Current proof surface:
   into the raw row/segment range facts.
 
 Latest verification:
-- Lean LSP diagnostics and `lean_verify` on
-  `memTableGeneratedAirSource_of_witnessFacts`: no `sorryAx`
+- Lean LSP diagnostics and `lean_verify` on new source-boundary accessors: no
+  `sorryAx`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
+- `lake build ZiskFv.Compliance`
 - `cargo test --manifest-path tools/pil-extract/Cargo.toml`
 - regenerated `/tmp/mem-air-facts-report.md`
 - `trust/scripts/check-all.sh`
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: wire generated/full-ensemble output to supply
-`MemTableGeneratedAirSource` for the witness-selected Mem table.
+Next step: make generated/full-ensemble output construct
+`FullWitnessMemAirSource` for the witness-selected Mem table.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

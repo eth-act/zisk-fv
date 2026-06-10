@@ -2739,6 +2739,46 @@ def fullWitnessMemReplayBridge_of_memAirSource_traceSplit
     (table_nonempty_of_activeMemReplayRowsOfTable_nonempty
       (activeMemReplayRowsOfTable_nonempty_of_split h_traceSplit))
 
+/-- Full-witness Mem AIR source for one mutable Mem table.
+
+    This is the generated/full-ensemble source object: it identifies the
+    witness-selected mutable Mem table and carries the `MemTableGeneratedAirSource`
+    that derives the replay bridge. -/
+structure FullWitnessMemAirSource
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) : Type 2 where
+  table : Table FGL
+  table_mem : table ∈ witness.allTables
+  component : table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  source : MemTableGeneratedAirSource table
+
+namespace FullWitnessMemAirSource
+
+@[reducible]
+def rows
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (source : FullWitnessMemAirSource witness) :
+    List (Interaction.MemoryBusEntry FGL) :=
+  activeMemReplayRowsOfTable source.table
+
+@[reducible]
+def replayBridgeOfTraceSplit
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {entry : Interaction.MemoryBusEntry FGL}
+    {priorRows laterRows : List (Interaction.MemoryBusEntry FGL)}
+    (source : FullWitnessMemAirSource witness)
+    (h_traceSplit : source.rows = priorRows ++ entry :: laterRows) :
+    FullWitnessMemReplayBridge witness source.rows :=
+  fullWitnessMemReplayBridge_of_memAirSource_traceSplit
+    source.table_mem
+    source.component
+    source.source
+    h_traceSplit
+
+end FullWitnessMemAirSource
+
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/
 theorem fullWitnessMemTableGeneratedRowsBridge_of_fullWitnessMemReplayBridge
@@ -5839,35 +5879,45 @@ def memoryTimelineEvidence_of_fullWitnessMemReplayBridge
 
     This keeps the circuit-side replay source explicit without mentioning the
     full Clean ensemble in the public compliance theorem signature. The
-    evidence object carries the `FullWitnessMemReplayBridge` that derives the
-    accepted replay object; the remaining fields are only the residual
-    whole-execution timeline facts. -/
+    evidence object carries the `FullWitnessMemAirSource` that derives the
+    replay bridge and accepted replay object; the remaining fields are only
+    the residual whole-execution timeline facts. -/
 structure FullWitnessMemoryTimelineEvidence
     (state : ZiskFv.ZiskCircuit.MemTrace.SailState)
     (entry : Interaction.MemoryBusEntry FGL) : Type 2 where
   length : ℕ
   program : Program length
   witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble
-  rows : List (Interaction.MemoryBusEntry FGL)
-  replayBridge : FullWitnessMemReplayBridge witness rows
+  memSource : FullWitnessMemAirSource witness
   initialState : ZiskFv.ZiskCircuit.MemTrace.SailState
   priorRows : List (Interaction.MemoryBusEntry FGL)
   laterRows : List (Interaction.MemoryBusEntry FGL)
-  traceSplit : rows = priorRows ++ entry :: laterRows
+  traceSplit : memSource.rows = priorRows ++ entry :: laterRows
   selectedRead :
     ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
       some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry)
   initialAgreement :
     ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
-      (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge replayBridge).initialMemory
+      (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+        (memSource.replayBridgeOfTraceSplit traceSplit)).initialMemory
   stateAtPrefix :
     state =
       ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows
 
 namespace FullWitnessMemoryTimelineEvidence
 
-/-- The accepted replay object determined by the carried full-witness replay
-    bridge. This is an accessor, not an independent structure field. -/
+/-- The replay bridge determined by the carried full-witness Mem AIR source.
+    This is an accessor, not an independent structure field. -/
+@[reducible]
+def replayBridge
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (evidence : FullWitnessMemoryTimelineEvidence state entry) :
+    FullWitnessMemReplayBridge evidence.witness evidence.memSource.rows :=
+  evidence.memSource.replayBridgeOfTraceSplit evidence.traceSplit
+
+/-- The accepted replay object determined by the carried full-witness Mem AIR
+    source. This is an accessor, not an independent structure field. -/
 @[reducible]
 def acceptedReplay
     {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
@@ -5920,12 +5970,20 @@ def fullWitnessMemoryTimelineEvidence_of_memTable_airFacts
       state =
         ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
     FullWitnessMemoryTimelineEvidence state entry :=
+  let source : MemTableGeneratedAirSource table :=
+    { segment := segment
+      permutation := permutation
+      gsum := gsum
+      im0 := im0
+      im1 := im1
+      facts := h_air }
+  let memSource : FullWitnessMemAirSource witness :=
+    { table := table
+      table_mem := h_table
+      component := h_component
+      source := source }
   let bridge :=
-    fullWitnessMemReplayBridge_of_memTable_fixedL1_traceSplit_airFacts
-      (witness := witness) (table := table) (segment := segment)
-      (permutation := permutation) (gsum := gsum) (im0 := im0) (im1 := im1)
-      (entry := entry) (priorRows := priorRows) (laterRows := laterRows)
-      h_table h_component h_air h_traceSplit
+    memSource.replayBridgeOfTraceSplit h_traceSplit
   let timeline :=
     memoryTimelineEvidence_of_fullWitnessMemReplayBridge
       bridge initialState priorRows laterRows h_traceSplit h_selectedRead
@@ -5933,8 +5991,7 @@ def fullWitnessMemoryTimelineEvidence_of_memTable_airFacts
   { length := length
     program := program
     witness := witness
-    rows := activeMemReplayRowsOfTable table
-    replayBridge := bridge
+    memSource := memSource
     initialState := initialState
     priorRows := priorRows
     laterRows := laterRows

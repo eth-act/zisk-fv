@@ -169,8 +169,9 @@ with `LoadPromises.memory_timeline` before calling the load theorems. The
 so they no longer accept a per-load byte oracle.
 
 `FullWitnessMemoryTimelineEvidence` contains the concrete full-ensemble witness,
-the projected accepted row list, a `FullWitnessMemReplayBridge`, and only the
-residual whole-execution memory-timeline facts. The bridge derives the
+a `FullWitnessMemAirSource` for the witness-selected mutable Mem table, and
+only the residual whole-execution memory-timeline facts. The Mem AIR source
+derives the `FullWitnessMemReplayBridge`, which derives the
 `AcceptedMemoryReplayEvidence` sub-object used by `MemoryTimelineEvidence`,
 including prefix-read soundness for the accepted Mem rows. The residual
 timeline facts state that those rows split around the selected read, the

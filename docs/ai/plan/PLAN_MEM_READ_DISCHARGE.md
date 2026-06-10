@@ -668,15 +668,14 @@ no assumed soundness fields**.
       `cargo test --manifest-path tools/pil-extract/Cargo.toml` and a
       regenerated `/tmp/mem-air-facts-report.md`.
       Partial: `FullWitnessMemoryTimelineEvidence` no longer stores an
-      independent `AcceptedMemoryReplayEvidence`. It now carries
-      `length`/`program`/`witness`/`rows` plus the concrete
-      `FullWitnessMemReplayBridge`; `acceptedReplay` is a reducible accessor
-      derived from that bridge, and coercion to `MemoryTimelineEvidence` goes
-      through `memoryTimelineEvidence_of_fullWitnessMemReplayBridge`. This
-      prevents the full-witness load boundary from smuggling circuit-side
-      `prefixReadSound` as a raw field while leaving the current sub-gap
-      unchanged: generated Lean still has to construct the constraint, row
-      range, and segment range fact packages for the witness-selected Mem
+      independent `AcceptedMemoryReplayEvidence`. It carries the concrete
+      full-witness Mem source, while `replayBridge` and `acceptedReplay` are
+      reducible accessors derived from that source; coercion to
+      `MemoryTimelineEvidence` still goes through
+      `memoryTimelineEvidence_of_fullWitnessMemReplayBridge`. This prevents the
+      full-witness load boundary from smuggling circuit-side `prefixReadSound`
+      as a raw field while leaving the current sub-gap explicit: generated Lean
+      still has to construct the Mem AIR source for the witness-selected Mem
       table. Verified with clean Lean LSP diagnostics, `lake build
       ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build ZiskFv.Compliance`,
       `trust/scripts/check-all.sh`, `rg` confirming no `acceptedReplay :`
@@ -738,6 +737,19 @@ no assumed soundness fields**.
       `cargo test --manifest-path tools/pil-extract/Cargo.toml`, regenerated
       `/tmp/mem-air-facts-report.md`, `trust/scripts/check-all.sh`, and
       `git diff --check`.
+      Partial: the full-witness timeline boundary now carries the source
+      package instead of a replay-bridge field. `FullWitnessMemAirSource` names
+      the witness-selected mutable Mem table together with its
+      `MemTableGeneratedAirSource`; `FullWitnessMemoryTimelineEvidence` stores
+      that source and derives `replayBridge` plus `acceptedReplay` as accessors
+      from the selected trace split. The next implementation target is no
+      longer "construct a replay bridge" but "construct a
+      `FullWitnessMemAirSource` from generated/full-ensemble output." Verified
+      with clean Lean LSP diagnostics for `Balance.lean`, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, `lake build ZiskFv.Compliance`,
+      `lean_verify` scans of the new source-boundary accessors/constructors,
+      `trust/scripts/check-all.sh`, `rg` confirming no `replayBridge :` field
+      remains on `FullWitnessMemoryTimelineEvidence`, and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
