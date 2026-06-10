@@ -1978,6 +1978,72 @@ theorem readEventReplayAgreement_after_previous_primary_write_memTableGeneratedR
     ZiskFv.AirsClean.Mem.rowAt, h_previous_write,
     ZiskFv.ZiskCircuit.MemTrace.replayStoreEvent_storeEventOfEntry] using h_replay
 
+/-- A bridged non-boundary same-address read is byte-for-byte justified by a
+    previous primary read that was already replay-sound, because the previous
+    read leaves replay memory unchanged and the generated value-carry
+    constraints identify the current read's bytes with the previous row. -/
+theorem readEventReplayAgreement_after_previous_primary_read_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_read : mem.wr idx.val = 0)
+    (h_previous_read : mem.wr (idx.val - 1) = 0)
+    (h_not_boundary : segment.segment_l1 idx.val = 0)
+    (h_previous_agreement :
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement initialMemory
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+          (memPrimaryReplayEntryOfRow
+            (ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1))))) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow initialMemory
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1))))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val))) := by
+  have h_addr :=
+    addr_eq_previous_of_same_addr_memTableGeneratedRowsBridge
+      h_bridge idx h_same_addr h_not_boundary
+  have h_values :=
+    values_eq_previous_of_read_same_addr_row_memTableGeneratedRowsBridge
+      h_bridge idx h_same_addr h_read h_not_boundary
+  let sourceEntry :=
+    memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1))
+  let targetEntry :=
+    memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem idx.val)
+  have h_ptr : targetEntry.ptr = sourceEntry.ptr := by
+    dsimp [targetEntry, sourceEntry]
+    simp [h_addr]
+  have h_value_0 : targetEntry.value_0 = sourceEntry.value_0 := by
+    dsimp [targetEntry, sourceEntry]
+    simpa [memPrimaryReplayEntryOfRow, ZiskFv.AirsClean.Mem.memBusMessage,
+      ZiskFv.AirsClean.Mem.rowAt] using h_values.1
+  have h_value_1 : targetEntry.value_1 = sourceEntry.value_1 := by
+    dsimp [targetEntry, sourceEntry]
+    simpa [memPrimaryReplayEntryOfRow, ZiskFv.AirsClean.Mem.memBusMessage,
+      ZiskFv.AirsClean.Mem.rowAt] using h_values.2
+  have h_carried :
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement initialMemory
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry targetEntry) :=
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_entry_same
+      (by simpa [sourceEntry] using h_previous_agreement)
+      h_ptr h_value_0 h_value_1
+  have h_source_as : sourceEntry.as = (2 : FGL) := by
+    simp [sourceEntry]
+  have h_source_read : sourceEntry.multiplicity = (-1 : FGL) := by
+    simp [sourceEntry, h_previous_read]
+  have h_source_replay :=
+    ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow_eq_self_of_read
+      initialMemory sourceEntry h_source_as h_source_read
+  rw [h_source_replay]
+  simpa [targetEntry]
+
 /-- Replaying a primary write from one Mem row justifies the pinned dual read
     emitted by the same row, because the dual message has the same pointer and
     value chunks and appears after the primary emission. -/
@@ -2007,6 +2073,47 @@ theorem readEventReplayAgreement_after_primary_write_dual_read_of_row
   simpa [writeEntry, readEntry, ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow,
     memPrimaryReplayEntryOfRow, ZiskFv.AirsClean.Mem.memBusMessage, h_write,
     ZiskFv.ZiskCircuit.MemTrace.replayStoreEvent_storeEventOfEntry] using h_replay
+
+/-- A replay-sound primary read justifies the pinned dual read emitted by the
+    same Mem row when the primary event is also a read. The primary read leaves
+    replay memory unchanged, and the dual message carries the same pointer and
+    value chunks. -/
+theorem readEventReplayAgreement_after_primary_read_dual_read_of_row
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (row : ZiskFv.AirsClean.Mem.MemRow FGL)
+    (h_read : row.wr = 0)
+    (h_primary_agreement :
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement initialMemory
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+          (memPrimaryReplayEntryOfRow row))) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow initialMemory
+        (memPrimaryReplayEntryOfRow row))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memDualReadReplayEntryOfRow row)) := by
+  let sourceEntry := memPrimaryReplayEntryOfRow row
+  let targetEntry := memDualReadReplayEntryOfRow row
+  have h_ptr : targetEntry.ptr = sourceEntry.ptr := by
+    simp [targetEntry, sourceEntry]
+  have h_value_0 : targetEntry.value_0 = sourceEntry.value_0 := by
+    simp [targetEntry, sourceEntry]
+  have h_value_1 : targetEntry.value_1 = sourceEntry.value_1 := by
+    simp [targetEntry, sourceEntry]
+  have h_carried :
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement initialMemory
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry targetEntry) :=
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_entry_same
+      (by simpa [sourceEntry] using h_primary_agreement)
+      h_ptr h_value_0 h_value_1
+  have h_source_as : sourceEntry.as = (2 : FGL) := by
+    simp [sourceEntry]
+  have h_source_read : sourceEntry.multiplicity = (-1 : FGL) := by
+    simp [sourceEntry, h_read]
+  have h_source_replay :=
+    ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow_eq_self_of_read
+      initialMemory sourceEntry h_source_as h_source_read
+  rw [h_source_replay]
+  simpa [targetEntry]
 
 /-- The indexed table bridge and range facts prove local chronological order
     for the active replay emissions projected from one concrete table row.

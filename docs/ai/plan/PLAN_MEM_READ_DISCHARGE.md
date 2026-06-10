@@ -196,6 +196,18 @@ no assumed soundness fields**.
       ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
       `nix run .#test`.
+      Partial: read-preserving replay and read-to-read carry are now factored
+      in the replay core as `replayMemoryAfterBusRow_eq_self_of_read` and
+      `readEventReplayAgreement_of_entry_same`. Balance projects those generic
+      facts to the bridged adjacent previous-primary-read -> current-read case
+      with `readEventReplayAgreement_after_previous_primary_read_memTableGeneratedRowsBridge`,
+      and to the same-row primary-read -> dual-read case with
+      `readEventReplayAgreement_after_primary_read_dual_read_of_row`. Verified
+      so far with clean Lean LSP diagnostics after an LSP build hook, `lake
+      build ZiskFv.ZiskCircuit.MemTrace`, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+      `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -217,8 +229,9 @@ no assumed soundness fields**.
       does not assert cross-row table order.
       Partial: the new local prefix-read predecessor lemmas cite only the
       generated read-same-address identity, segment same-address/value carry
-      constraints, and the definitional eight-byte replay write in
-      `MemTrace.lean`; they do not introduce a replay-soundness field.
+      constraints, the definitional eight-byte replay write, and the
+      read-row no-mutation branch in `MemTrace.lean`; they do not introduce a
+      replay-soundness field.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

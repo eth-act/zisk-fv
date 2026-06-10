@@ -326,6 +326,25 @@ theorem readEventReplayAgreement_of_writeMemoryOfEntry_same
     beq_iff_eq]
   set_option synthInstance.maxHeartbeats 400000 in grind
 
+/-- Read replay agreement transports across memory-bus entries with the same
+pointer and value chunks. -/
+theorem readEventReplayAgreement_of_entry_same
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {sourceEntry targetEntry : MemoryBusEntry FGL}
+    (h_read : ReadEventReplayAgreement mem (eventOfEntry sourceEntry))
+    (h_ptr : targetEntry.ptr = sourceEntry.ptr)
+    (h_value_0 : targetEntry.value_0 = sourceEntry.value_0)
+    (h_value_1 : targetEntry.value_1 = sourceEntry.value_1) :
+    ReadEventReplayAgreement mem (eventOfEntry targetEntry) := by
+  cases sourceEntry
+  cases targetEntry
+  simp only at h_ptr h_value_0 h_value_1
+  subst h_ptr
+  subst h_value_0
+  subst h_value_1
+  simpa [ReadEventReplayAgreement, eventOfEntry, MemEvent.byteAt,
+    ZiskFv.Channels.MemoryBusBytes.byteAt] using h_read
+
 /-- A memory read event leaves Sail/replay memory agreement unchanged. -/
 theorem eventReplayStep_read_entry_same_state
     (state : SailState) (e : MemoryBusEntry FGL) :
@@ -474,6 +493,20 @@ def replayMemoryAfterBusRow
       mem
   else
     mem
+
+/-- A selected read memory-bus row does not mutate replay memory. -/
+theorem replayMemoryAfterBusRow_eq_self_of_read
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (entry : MemoryBusEntry FGL)
+    (h_as : entry.as = (2 : FGL))
+    (h_read : entry.multiplicity = (-1 : FGL)) :
+    replayMemoryAfterBusRow mem entry = mem := by
+  have h_not_write : ¬entry.multiplicity = (1 : FGL) := by
+    intro h_write
+    have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
+      native_decide
+    exact h_one_ne_neg_one (h_write.symm.trans h_read)
+  simp [replayMemoryAfterBusRow, h_as, h_not_write]
 
 /-- Replay memory after a chronological prefix of raw memory-bus rows. -/
 @[reducible]

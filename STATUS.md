@@ -21,14 +21,20 @@ Latest proof surface:
   is factored through `readEventReplayAgreement_of_writeMemoryOfEntry_same`.
 - Same-row primary-write -> dual-read replay agreement is now factored as
   `readEventReplayAgreement_after_primary_write_dual_read_of_row`.
+- Read rows are now factored as replay-preserving via
+  `replayMemoryAfterBusRow_eq_self_of_read`, with equal pointer/value read
+  agreement transport in `readEventReplayAgreement_of_entry_same`.
+- Adjacent previous-primary-read -> current-read and same-row primary-read ->
+  dual-read replay agreement project those generic facts to bridged Mem rows.
 
 Verification for latest slice: Lean LSP diagnostics are clean after an LSP
-restart/build hook, and `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
-passes. Full `lake build`, `trust/scripts/check-all.sh`,
-`trust/scripts/check-all-semantic.sh`, and `nix run .#test` also pass.
+restart/build hook, `lake build ZiskFv.ZiskCircuit.MemTrace` passes, and
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance` passes. Full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+`nix run .#test` also pass.
 
-Next step: lift adjacent/per-address cases toward the table-level
-`MemoryBusRowsPrefixReadSound` proof.
+Next step: commit the read-carry slice, then lift adjacent/per-address cases
+toward the table-level `MemoryBusRowsPrefixReadSound` proof.
 
 Context: Phase A is committed at `0c222595`. The old
 `.worktrees/memory-trust-gap` branch remains only as salvage reference until
