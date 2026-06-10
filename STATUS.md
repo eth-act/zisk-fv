@@ -3,8 +3,8 @@ Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 Current focus: Phase B/C bridge closure. `LoadPromises.mem_read` is gone, and
 load arms consume the single global memory-timeline boundary.
 
-Blocking: turn the concrete Mem AIR facts source surface into a typed/generated
-Lean source for `MemTableGeneratedAirFacts` on the witness-selected Mem table.
+Blocking: populate `MemTableGeneratedAirSource.facts` for the witness-selected
+Mem table from generated extractor output or concrete Clean/pilout proofs.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -20,8 +20,13 @@ Current proof surface:
 - `tools/pil-extract mem-air-facts` now reports the Mem generated constraint
   groups, range-check hints, witness/fixed columns, and `mem.pil` range/bit
   source lines needed by `MemTableGeneratedAirFacts`.
+- `MemTableGeneratedAirSource` is now the typed Lean target for those source
+  columns/facts; replay and timeline evidence constructors consume it.
 
 Latest verification:
+- Lean LSP diagnostics: `ZiskFv/AirsClean/FullEnsemble/Balance.lean`
+- `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
+- `trust/scripts/check-all.sh`
 - `cargo test --manifest-path tools/pil-extract/Cargo.toml`
 - `cargo run --manifest-path tools/pil-extract/Cargo.toml --quiet -- \
   mem-air-facts --pilout build/zisk.pilout --air Mem \
@@ -35,8 +40,8 @@ Latest verification:
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: implement the Lean-facing generated/source object that constructs
-`MemTableGeneratedAirFacts`; existing Clean table soundness does not expose
-stage-2 generated columns or range metadata.
+Next step: make the extractor or a generated Lean module populate
+`MemTableGeneratedAirSource.facts`; existing Clean table soundness does not
+expose stage-2 generated columns or range metadata.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

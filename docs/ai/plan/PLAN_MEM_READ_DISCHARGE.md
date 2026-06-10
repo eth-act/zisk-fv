@@ -626,9 +626,21 @@ no assumed soundness fields**.
       mem-air-facts --pilout build/zisk.pilout --air Mem --pil-source \
       zisk/state-machines/mem/pil/mem.pil --output \
       /tmp/mem-air-facts-report.md`.
-      Current sub-gap: turn that extractor surface into a typed/generated Lean
-      source object that constructs `MemTableGeneratedAirFacts` for the
-      witness-selected Mem table.
+      Partial: `MemTableGeneratedAirSource` is now the typed Lean target for
+      that extractor surface. It packages the stage-2 source columns/functions
+      plus `MemTableGeneratedAirFacts`, and the new
+      `fullWitnessMemReplayBridge_of_memAirSource`,
+      `fullWitnessMemReplayBridge_of_memAirSource_traceSplit`, and
+      `fullWitnessMemoryTimelineEvidence_of_memAirSource` constructors derive
+      replay/timeline evidence from that source package instead of passing raw
+      `gsum`/`im` functions and segment/permutation columns around. Verified
+      with clean Lean LSP diagnostics for
+      `ZiskFv/AirsClean/FullEnsemble/Balance.lean`, targeted `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, and
+      `trust/scripts/check-all.sh`.
+      Current sub-gap: populate `MemTableGeneratedAirSource.facts` for the
+      witness-selected Mem table from generated extractor output or concrete
+      Clean/pilout proofs.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

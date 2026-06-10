@@ -2125,6 +2125,45 @@ theorem memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1
     have h_ne : idx.val ≠ 0 := Nat.ne_of_gt h_pos
     simp [h_ne]
 
+/-- Typed Lean target for the Mem AIR facts source reported by
+    `pil-extract mem-air-facts`.
+
+    The extractor/report surface identifies the stage-2 accumulator columns,
+    the generated segment/permutation formulas, the fixed `SEGMENT_L1` shape,
+    and the range-check metadata. This object packages those source columns and
+    the resulting `MemTableGeneratedAirFacts` for the concrete table projection.
+    It is deliberately a source package, not replay evidence: accepted replay
+    and timeline evidence are derived by the constructors below. -/
+structure MemTableGeneratedAirSource
+    (table : Table FGL) : Type 1 where
+  segment : ZiskFv.Airs.Mem.SegmentColumns FGL
+  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
+  gsum : ℕ → FGL
+  im0 : ℕ → FGL
+  im1 : ℕ → FGL
+  facts :
+    MemTableGeneratedAirFacts
+      table (memOfTable table gsum im0 im1)
+      (segmentWithFixedL1 segment) permutation
+
+namespace MemTableGeneratedAirSource
+
+@[reducible]
+def mem {table : Table FGL} (source : MemTableGeneratedAirSource table) :
+    ZiskFv.Airs.Mem.Valid_Mem FGL FGL :=
+  memOfTable table source.gsum source.im0 source.im1
+
+@[reducible]
+def fixedSegment {table : Table FGL} (source : MemTableGeneratedAirSource table) :
+    ZiskFv.Airs.Mem.SegmentColumns FGL :=
+  segmentWithFixedL1 source.segment
+
+theorem toFacts {table : Table FGL} (source : MemTableGeneratedAirSource table) :
+    MemTableGeneratedAirFacts table source.mem source.fixedSegment source.permutation :=
+  source.facts
+
+end MemTableGeneratedAirSource
+
 /-- Any active replay entry from a generated Mem table row is either at the
     same byte pointer as the selected primary row or byte-disjoint from it.
 
@@ -2349,6 +2388,28 @@ def fullWitnessMemReplayBridge_of_memTable_fixedL1_airFacts
     h_air.segmentRanges
     h_nonempty
 
+/-- Construct the full-witness replay bridge from the typed Mem AIR source
+    package. This is the Lean-facing target for generated/extractor output:
+    callers supply the concrete table membership/component facts plus one
+    `MemTableGeneratedAirSource`, not loose stage-2/source columns. -/
+def fullWitnessMemReplayBridge_of_memAirSource
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (source : MemTableGeneratedAirSource table)
+    (h_nonempty : 0 < table.table.length) :
+    FullWitnessMemReplayBridge witness (activeMemReplayRowsOfTable table) :=
+  fullWitnessMemReplayBridge_of_memTable_fixedL1_airFacts
+    (segment := source.segment) (permutation := source.permutation)
+    (gsum := source.gsum) (im0 := source.im0) (im1 := source.im1)
+    h_table
+    h_component
+    source.facts
+    h_nonempty
+
 /-- Variant of `fullWitnessMemReplayBridge_of_memTable_fixedL1` that derives
     concrete-table nonemptiness from the active replay projection. This is the
     shape used when a selected-load timeline split is already available. -/
@@ -2435,6 +2496,29 @@ def fullWitnessMemReplayBridge_of_memTable_fixedL1_traceSplit_airFacts
     h_component
     h_air
     (activeMemReplayRowsOfTable_nonempty_of_split h_traceSplit)
+
+/-- Trace-split variant of `fullWitnessMemReplayBridge_of_memAirSource`.
+    The source object supplies the generated AIR facts, and the selected-entry
+    split supplies table nonemptiness. -/
+def fullWitnessMemReplayBridge_of_memAirSource_traceSplit
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    {priorRows laterRows : List (Interaction.MemoryBusEntry FGL)}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (source : MemTableGeneratedAirSource table)
+    (h_traceSplit :
+      activeMemReplayRowsOfTable table = priorRows ++ entry :: laterRows) :
+    FullWitnessMemReplayBridge witness (activeMemReplayRowsOfTable table) :=
+  fullWitnessMemReplayBridge_of_memAirSource
+    h_table
+    h_component
+    source
+    (table_nonempty_of_activeMemReplayRowsOfTable_nonempty
+      (activeMemReplayRowsOfTable_nonempty_of_split h_traceSplit))
 
 /-- The compact full-witness replay bridge includes the older generated-row
     bridge obligation. -/
@@ -5617,6 +5701,53 @@ def fullWitnessMemoryTimelineEvidence_of_memTable_airFacts
     selectedRead := h_selectedRead
     initialAgreement := timeline.initialAgreement
     stateAtPrefix := h_stateAtPrefix }
+
+/-- Construct full-witness timeline evidence from the typed Mem AIR source
+    package. This is the constructor shape expected from a future generated
+    Mem facts source: extractor-facing Mem facts are one object, while the
+    remaining arguments are exactly the residual Sail timeline boundary. -/
+@[reducible]
+def fullWitnessMemoryTimelineEvidence_of_memAirSource
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL}
+    {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_table : table ∈ witness.allTables)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (source : MemTableGeneratedAirSource table)
+    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
+    (h_traceSplit :
+      activeMemReplayRowsOfTable table = priorRows ++ entry :: laterRows)
+    (h_selectedRead :
+      ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
+        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))
+    (h_initialAgreement :
+      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
+        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (fullWitnessMemReplayBridge_of_memAirSource_traceSplit
+            (witness := witness) (table := table)
+            (entry := entry) (priorRows := priorRows) (laterRows := laterRows)
+            h_table h_component source h_traceSplit)).initialMemory)
+    (h_stateAtPrefix :
+      state =
+        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
+    FullWitnessMemoryTimelineEvidence state entry :=
+  fullWitnessMemoryTimelineEvidence_of_memTable_airFacts
+    (segment := source.segment) (permutation := source.permutation)
+    (gsum := source.gsum) (im0 := source.im0) (im1 := source.im1)
+    h_table
+    h_component
+    source.facts
+    initialState
+    priorRows
+    laterRows
+    h_traceSplit
+    h_selectedRead
+    h_initialAgreement
+    h_stateAtPrefix
 
 /-- Forget the concrete full-witness source, retaining the existing residual
     timeline API consumed by load proofs. -/
