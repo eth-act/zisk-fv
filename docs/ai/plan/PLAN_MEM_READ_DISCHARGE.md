@@ -1081,8 +1081,11 @@ no assumed soundness fields**.
       the lookup-witness
       definitions for those range facts exist, but `componentWithDualMemBus`
       still emits only the row constraints plus MemBus provider rows, and the
-      segment range fields are sidecar-global rather than row inputs. Verified
-      so far with full
+      segment range fields are sidecar-global rather than row inputs.
+      Follow-up audit of Clean's `Table`/`EnsembleWitness` definitions confirms
+      the full witness carries rows, shared `ProverData`, component specs, and
+      interactions, but not the Mem assertion/range sidecar proofs themselves.
+      Verified so far with full
       `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests),
       local regeneration of `Circuit.lean`, `Mem.lean`,
       `MemGeneratedArtifact.lean`, and `MemGeneratedConstraintBridge.lean`,

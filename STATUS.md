@@ -11,7 +11,8 @@ timeline evidence and carries the concrete `witness.data` target
 Latest audit: structural gap, not a missing lemma. `componentWithDualMemBus`
 emits only row constraints plus MemBus provider rows; Mem range lookup witness
 definitions exist, but the active component does not emit them, and segment
-ranges are sidecar-global rather than row inputs.
+ranges are sidecar-global rather than row inputs. Clean `Table`/`EnsembleWitness`
+carry rows/data/spec/interactions, not these sidecar proofs.
 
 Current slice: generated Mem source facts now have source-level sidecar target.
 `MemGeneratedConstraintBridge.lean` maps extracted constraints and bit-width
@@ -43,8 +44,7 @@ Latest verification:
   same `LEAN_PATH` after adding raw→extracted adapters.
 - Post-`be7aed0e` broad checks: `trust/scripts/check-all.sh`,
   `nix flake check --no-build`, and `git diff --check`.
-- Last Lean compliance gate: `lake build ZiskFv.Compliance` at `465470dc`;
-  last full `nix run .#test`: `98202ebc`.
+- Last full `nix run .#test`: `98202ebc`.
 
 Next step: produce the raw/extracted Mem sidecar facts for mutable Mem tables;
 Clean component broadening remains a fallback.
