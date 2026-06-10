@@ -9,9 +9,10 @@ facts. `MemTableGeneratedRowsBridge`, `MemTableGeneratedRangeFacts`, and
 `MemTableGeneratedFixedColumnFacts` expose the row/list-position, range, and
 fixed-column facts; `FullWitnessMemTableGeneratedRowsBridge` is still the
 concrete full-ensemble bridge obligation.
-Current sub-gap: iterate the same-address one-step predecessor lemma over
-arbitrary prior prefixes. The address-change/first-read case is closed under
-the explicit fixed-column facts.
+Current sub-gap: discharge the explicit row-0 same-address boundary premise.
+Same-address predecessor iteration over positive indices is factored; row 0
+needs either first-segment evidence forcing `addr_changes = 1` or a
+continuation-aware initial memory.
 
 Latest proof surface:
 - Phase C boundary swap is done: the residual Sail timeline is visible once,
@@ -24,14 +25,18 @@ Latest proof surface:
   selected previous rows handle write/read plus replay-neutral dual reads;
   inactive previous rows carry without emitting active replay entries; and the
   combined one-step lemma abstracts that split.
+- Current uncommitted slice lifts zero-preload through same-pointer preload
+  witnesses, packages split-prefix predecessor carry, and reduces selected
+  primary-read prefix soundness to one row-0 same-address boundary input.
 
 Verification: Lean LSP diagnostics are clean for
-`ZiskFv.AirsClean.FullEnsemble.Balance`; target build, full lake build, both
-trust gates, and `nix run .#test` pass for the current slice.
+`ZiskFv.ZiskCircuit.MemTrace` and
+`ZiskFv.AirsClean.FullEnsemble.Balance`; both touched target builds pass.
+Full `lake build`, both trust gates, and `nix run .#test` pass for the current
+uncommitted slice.
 
-Next step: prove the same-address selected-read prefix case by iterating the
-one-step predecessor lemma backward through same-address rows until a selected
-write/read or the address-change zero-preload base case.
+Next step: prove or surface the row-0 segment-boundary input, then wire the
+reduced primary-read prefix theorem into the active table prefix-read theorem.
 
 Context: Phase A is committed at `0c222595`. The old
 `.worktrees/memory-trust-gap` branch remains only as salvage reference until

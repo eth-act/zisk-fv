@@ -2515,6 +2515,100 @@ theorem readEventReplayAgreement_after_previous_row_memTableGeneratedRowsBridge
         initialMemory h_bridge idx h_idx_pos h_same_addr h_read
         h_previous_sel_one h_not_boundary h_previous_read_agreement
 
+/-- Split-shaped same-address predecessor step for table prefixes.
+
+If the current provider row is immediately after `previousProviderRow` in the
+concrete table split, the one-step predecessor lemma composes with the replay
+append law to justify the current read against the whole split prefix
+`priorPrefix ++ [previousProviderRow]`. -/
+theorem readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_previous_row_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (idx : Fin table.table.length)
+    (priorPrefix : List (Array FGL))
+    (previousProviderRow providerRow : Array FGL)
+    (laterRows : List (Array FGL))
+    (h_split :
+      table.table = priorPrefix ++ previousProviderRow :: providerRow :: laterRows)
+    (h_idx_val : idx.val = priorPrefix.length + 1)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_read : mem.wr idx.val = 0)
+    (h_previous_read_agreement :
+      mem.wr (idx.val - 1) = 0 →
+        ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+          (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+            (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+              (activeMemReplayRowsOfTable table))
+            (priorPrefix.flatMap fun priorProviderRow =>
+              activeMemReplayEntriesOfRow
+                (eval (table.environment priorProviderRow)
+                  ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+            (memPrimaryReplayEntryOfRow
+              (ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1))))) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+        (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+          (activeMemReplayRowsOfTable table))
+        ((priorPrefix ++ [previousProviderRow]).flatMap fun priorProviderRow =>
+          activeMemReplayEntriesOfRow
+            (eval (table.environment priorProviderRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val))) := by
+  have h_idx_pos : 0 < idx.val := by omega
+  have h_not_boundary := h_fixed.segmentL1_nonfirst idx h_idx_pos
+  let previousIdx : Fin table.table.length := ⟨idx.val - 1, by omega⟩
+  have h_previous_get : table.table.get previousIdx = previousProviderRow := by
+    have h_previous_val : previousIdx.val = priorPrefix.length := by
+      simp [previousIdx]
+      omega
+    have h_previous_get?_prior :
+        table.table[priorPrefix.length]? = some previousProviderRow := by
+      have h_lookup :=
+        congrArg (fun rows : List (Array FGL) => rows[priorPrefix.length]?)
+          h_split
+      have h_lookup' :
+          table.table[priorPrefix.length]? =
+            (priorPrefix ++ previousProviderRow :: providerRow :: laterRows)[priorPrefix.length]? := by
+        simpa using h_lookup
+      rw [h_lookup']
+      simp
+    have h_previous_get? :
+        table.table[previousIdx.val]? = some previousProviderRow := by
+      rw [h_previous_val]
+      exact h_previous_get?_prior
+    have h_get_current :
+        table.table[previousIdx.val]? = some (table.table.get previousIdx) := by
+      exact List.getElem?_eq_getElem previousIdx.isLt
+    rw [h_get_current] at h_previous_get?
+    exact Option.some.inj h_previous_get?
+  have h_previous_rowAt :
+      eval (table.environment previousProviderRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+        ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1) := by
+    rw [← h_previous_get]
+    simpa [previousIdx] using h_bridge.rowAt_eq previousIdx
+  have h_step :=
+    readEventReplayAgreement_after_previous_row_memTableGeneratedRowsBridge
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+        (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+          (activeMemReplayRowsOfTable table))
+        (priorPrefix.flatMap fun priorProviderRow =>
+          activeMemReplayEntriesOfRow
+            (eval (table.environment priorProviderRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+      h_bridge idx h_idx_pos h_same_addr h_read h_not_boundary
+      h_previous_read_agreement
+  simpa [List.flatMap_append, h_previous_rowAt,
+    ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows_append] using h_step
+
 /-- Replaying a primary write from one Mem row justifies the pinned dual read
     emitted by the same row, because the dual message has the same pointer and
     value chunks and appears after the primary emission. -/
@@ -2717,6 +2811,86 @@ theorem readEventReplayAgreement_after_zeroMemoryOfRows_memTableGeneratedRowsBri
     ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_zeroMemoryOfRows_mem
       h_value_0 h_value_1 h_readEntry_mem h_same_or_disjoint
 
+/-- A read row whose address changes is justified by the whole-table
+zero-preload memory when any selected row at the same Mem address contributes a
+primary active replay entry.
+
+This same-pointer preload form is needed for inactive same-address predecessor
+rows: they may not themselves appear in `activeMemReplayRowsOfTable`, but the
+eventual selected row at the same pointer does. -/
+theorem readEventReplayAgreement_after_zeroMemoryOfRows_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (idx preloadIdx : Fin table.table.length)
+    (h_preload_sel : mem.sel preloadIdx.val = 1)
+    (h_addr_eq : mem.addr idx.val = mem.addr preloadIdx.val)
+    (h_addr_change : mem.addr_changes idx.val = 1)
+    (h_read : mem.wr idx.val = 0) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+        (activeMemReplayRowsOfTable table))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val))) := by
+  let readEntry :=
+    memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem idx.val)
+  let preloadEntry :=
+    memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem preloadIdx.val)
+  have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
+  have h_value_0_row :=
+    ZiskFv.AirsClean.Mem.read_addr_change_value_0_zero_of_spec
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val) h_spec
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_change)
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_read)
+  have h_value_1_row :=
+    ZiskFv.AirsClean.Mem.read_addr_change_value_1_zero_of_spec
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val) h_spec
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_change)
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_read)
+  have h_value_0 : readEntry.value_0 = 0 := by
+    simpa [readEntry, memPrimaryReplayEntryOfRow,
+      ZiskFv.AirsClean.Mem.memBusMessage] using h_value_0_row
+  have h_value_1 : readEntry.value_1 = 0 := by
+    simpa [readEntry, memPrimaryReplayEntryOfRow,
+      ZiskFv.AirsClean.Mem.memBusMessage] using h_value_1_row
+  have h_preload_mem : preloadEntry ∈ activeMemReplayRowsOfTable table := by
+    have h_row_mem : table.table.get preloadIdx ∈ table.table := by
+      exact List.mem_iff_get.mpr ⟨preloadIdx, rfl⟩
+    unfold activeMemReplayRowsOfTable
+    exact List.mem_flatMap.mpr
+      ⟨table.table.get preloadIdx, h_row_mem, by
+        rw [h_bridge.rowAt_eq preloadIdx]
+        simp [activeMemReplayEntriesOfRow, preloadEntry,
+          ZiskFv.AirsClean.Mem.rowAt, h_preload_sel]⟩
+  have h_ptr : preloadEntry.ptr = readEntry.ptr := by
+    simp [preloadEntry, readEntry, h_addr_eq.symm]
+  have h_same_or_disjoint :
+      ∀ entry, entry ∈ activeMemReplayRowsOfTable table →
+        entry.ptr = readEntry.ptr
+          ∨ ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint readEntry entry := by
+    intro entry h_entry
+    unfold activeMemReplayRowsOfTable at h_entry
+    rcases List.mem_flatMap.mp h_entry with
+      ⟨providerRow, h_provider_mem, h_entry_row⟩
+    rcases List.mem_iff_get.mp h_provider_mem with ⟨otherIdx, h_get⟩
+    have h_entry_rowAt :
+        entry ∈ activeMemReplayEntriesOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val) := by
+      rw [← h_get] at h_entry_row
+      rw [h_bridge.rowAt_eq otherIdx] at h_entry_row
+      exact h_entry_row
+    simpa [readEntry] using
+      activeMemReplayEntry_same_ptr_or_byteDisjoint_of_rowAt
+        h_ranges idx otherIdx h_entry_rowAt
+  simpa [readEntry, preloadEntry] using
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_zeroMemoryOfRows_same_ptr_mem
+      h_value_0 h_value_1 h_preload_mem h_ptr h_same_or_disjoint
+
 /-- The table-shaped zero-preload fact lifts through any prior active replay
     prefix whose rows are byte-disjoint from the selected address-change read.
 
@@ -2784,6 +2958,34 @@ theorem priorRows_mem_index_lt_of_split
   refine ⟨idx, ?_, ?_⟩
   · simpa [idx] using h_get_prior
   · exact priorIdx.isLt
+
+/-- In a split `xs = priorRows ++ providerRow :: laterRows`, the element at the
+split index is `providerRow`. The proof uses `getElem?` to avoid dependent
+rewrites through the `Fin` proof term. -/
+theorem providerRow_get_eq_of_split
+    {α : Type}
+    {xs priorRows laterRows : List α}
+    {providerRow : α}
+    (idx : Fin xs.length)
+    (h_split : xs = priorRows ++ providerRow :: laterRows)
+    (h_idx_val : idx.val = priorRows.length) :
+    xs.get idx = providerRow := by
+  have h_get_prior : xs[priorRows.length]? = some providerRow := by
+    have h_lookup :=
+      congrArg (fun rows : List α => rows[priorRows.length]?) h_split
+    have h_lookup' :
+        xs[priorRows.length]? =
+          (priorRows ++ providerRow :: laterRows)[priorRows.length]? := by
+      simpa using h_lookup
+    rw [h_lookup']
+    simp
+  have h_get_idx : xs[idx.val]? = some providerRow := by
+    rw [h_idx_val]
+    exact h_get_prior
+  have h_get_current : xs[idx.val]? = some (xs.get idx) := by
+    exact List.getElem?_eq_getElem idx.isLt
+  rw [h_get_current] at h_get_idx
+  exact Option.some.inj h_get_idx
 
 /-- The zero-preload prior-prefix lift only needs the concrete AIR ordering
     proof to rule out equal Mem addresses in the prior prefix.
@@ -3310,6 +3512,312 @@ theorem prior_addr_ne_of_addr_change_memTableGeneratedRowsBridge
     lt_of_le_of_lt h_other_le_previous h_previous_lt_current
   rw [h_addr_eq] at h_other_lt_current
   exact (lt_irrefl _ h_other_lt_current)
+
+/-- Address-change reads are justified against their concrete split prefix when
+some selected row at the same Mem address contributes the zero-preload pointer.
+
+This generalizes the selected-row address-change theorem to inactive predecessor
+rows used by the same-address carry induction. -/
+theorem readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_addr_change_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (idx preloadIdx : Fin table.table.length)
+    (priorRows : List (Array FGL))
+    (providerRow : Array FGL)
+    (laterRows : List (Array FGL))
+    (h_split : table.table = priorRows ++ providerRow :: laterRows)
+    (h_idx_val : idx.val = priorRows.length)
+    (h_preload_sel : mem.sel preloadIdx.val = 1)
+    (h_addr_eq : mem.addr idx.val = mem.addr preloadIdx.val)
+    (h_addr_change : mem.addr_changes idx.val = 1)
+    (h_read : mem.wr idx.val = 0) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+        (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+          (activeMemReplayRowsOfTable table))
+        (priorRows.flatMap fun priorProviderRow =>
+          activeMemReplayEntriesOfRow
+            (eval (table.environment priorProviderRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val))) := by
+  let readEntry :=
+    memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem idx.val)
+  have h_zero :
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+        (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+          (activeMemReplayRowsOfTable table))
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry readEntry) := by
+    simpa [readEntry] using
+      readEventReplayAgreement_after_zeroMemoryOfRows_same_addr_memTableGeneratedRowsBridge
+        h_bridge h_ranges idx preloadIdx h_preload_sel h_addr_eq h_addr_change h_read
+  apply
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint
+      h_zero
+  intro entry h_entry
+  rcases List.mem_flatMap.mp h_entry with
+    ⟨priorProviderRow, h_prior_mem, h_entry_row⟩
+  rcases priorRows_mem_index_lt_of_split
+      (xs := table.table) (priorRows := priorRows)
+      (laterRows := laterRows) (providerRow := providerRow)
+      h_split h_prior_mem with
+    ⟨otherIdx, h_get, h_other_lt_prior_length⟩
+  have h_other_lt_idx : otherIdx.val < idx.val := by omega
+  have h_addr_ne :=
+    prior_addr_ne_of_addr_change_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed idx h_addr_change otherIdx h_other_lt_idx
+  have h_entry_rowAt :
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val) := by
+    rw [← h_get] at h_entry_row
+    rw [h_bridge.rowAt_eq otherIdx] at h_entry_row
+    exact h_entry_row
+  have h_selected_range :
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val).addr.val < 2 ^ 29 := by
+    simpa [ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns idx
+  have h_other_range :
+      (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr.val < 2 ^ 29 := by
+    simpa [ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns otherIdx
+  have h_addr_ne_row :
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val).addr ≠
+        (ZiskFv.AirsClean.Mem.rowAt mem otherIdx.val).addr := by
+    intro h_addr_eq_row
+    exact h_addr_ne (by
+      simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_eq_row.symm)
+  rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_entry_rowAt with
+    h_entry_primary | h_entry_dual
+  · simpa [readEntry, h_entry_primary] using
+      memoryBusEntryByteDisjoint_primary_primary_of_addr_ne
+        h_selected_range h_other_range h_addr_ne_row
+  · simpa [readEntry, h_entry_dual] using
+      memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
+        h_selected_range h_other_range h_addr_ne_row
+
+/-- Iterate same-address predecessor carry for any read row up to a selected row
+at the same Mem address.
+
+The only remaining base outside the extracted local constraints is the
+row-0/segment-boundary same-address case. When `addr_changes = 1`, the finite
+zero-preload memory supplies the read bytes; when `addr_changes = 0` at a
+positive index, the predecessor lemma moves one row backward. -/
+theorem readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_to_selected_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (selectedIdx : Fin table.table.length)
+    (h_selected_sel : mem.sel selectedIdx.val = 1)
+    (h_boundary_same_addr :
+      ∀ providerRow laterRows,
+        table.table = providerRow :: laterRows →
+        mem.addr_changes 0 = 0 →
+        mem.wr 0 = 0 →
+        mem.addr 0 = mem.addr selectedIdx.val →
+          ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+            (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+              (activeMemReplayRowsOfTable table))
+            (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+              (memPrimaryReplayEntryOfRow
+                (ZiskFv.AirsClean.Mem.rowAt mem 0))))
+    (idx : Fin table.table.length)
+    (priorRows : List (Array FGL))
+    (providerRow : Array FGL)
+    (laterRows : List (Array FGL))
+    (h_split : table.table = priorRows ++ providerRow :: laterRows)
+    (h_idx_val : idx.val = priorRows.length)
+    (h_idx_le_selected : idx.val ≤ selectedIdx.val)
+    (h_addr_eq_selected : mem.addr idx.val = mem.addr selectedIdx.val)
+    (h_read : mem.wr idx.val = 0) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+        (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+          (activeMemReplayRowsOfTable table))
+        (priorRows.flatMap fun priorProviderRow =>
+          activeMemReplayEntriesOfRow
+            (eval (table.environment priorProviderRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val))) := by
+  let zeroMemory :=
+    ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+      (activeMemReplayRowsOfTable table)
+  let prefixRows (rows : List (Array FGL)) :=
+    rows.flatMap fun priorProviderRow =>
+      activeMemReplayEntriesOfRow
+        (eval (table.environment priorProviderRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
+  let P : ℕ → Prop := fun n =>
+    ∀ (idx : Fin table.table.length)
+      (priorRows : List (Array FGL))
+      (providerRow : Array FGL)
+      (laterRows : List (Array FGL)),
+      idx.val = n →
+      table.table = priorRows ++ providerRow :: laterRows →
+      idx.val = priorRows.length →
+      idx.val ≤ selectedIdx.val →
+      mem.addr idx.val = mem.addr selectedIdx.val →
+      mem.wr idx.val = 0 →
+        ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+          (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+            zeroMemory (prefixRows priorRows))
+          (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+            (memPrimaryReplayEntryOfRow
+              (ZiskFv.AirsClean.Mem.rowAt mem idx.val)))
+  have hP : ∀ n, P n := by
+    intro n
+    refine Nat.strong_induction_on n ?_
+    intro n ih idx priorRows providerRow laterRows h_idx_n h_split
+      h_idx_val h_idx_le_selected h_addr_eq_selected h_read
+    have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
+    rcases ZiskFv.AirsClean.Mem.addr_changes_boolean_of_spec
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val) h_spec with
+      h_addr_changes_zero_row | h_addr_changes_one_row
+    · have h_addr_changes_zero : mem.addr_changes idx.val = 0 := by
+        simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_changes_zero_row
+      by_cases h_idx_zero : idx.val = 0
+      · have h_prior_nil : priorRows = [] := by
+          have h_prior_length_zero : priorRows.length = 0 := by omega
+          exact List.length_eq_zero_iff.mp h_prior_length_zero
+        have h_split_zero : table.table = providerRow :: laterRows := by
+          simpa [h_prior_nil] using h_split
+        have h_zero :=
+          h_boundary_same_addr providerRow laterRows h_split_zero
+            (by simpa [h_idx_zero] using h_addr_changes_zero)
+            (by simpa [h_idx_zero] using h_read)
+            (by simpa [h_idx_zero] using h_addr_eq_selected)
+        simpa [zeroMemory, prefixRows, h_prior_nil, h_idx_zero] using h_zero
+      · have h_idx_pos : 0 < idx.val := Nat.pos_of_ne_zero h_idx_zero
+        have h_prior_ne : priorRows ≠ [] := by
+          intro h_nil
+          rw [h_nil] at h_idx_val
+          simp at h_idx_val
+          omega
+        let previousProviderRow := priorRows.getLast h_prior_ne
+        let priorPrefix := priorRows.dropLast
+        have h_prior_split :
+            priorRows = priorPrefix ++ [previousProviderRow] := by
+          exact (List.dropLast_concat_getLast h_prior_ne).symm
+        have h_split_previous :
+            table.table = priorPrefix ++ previousProviderRow :: providerRow :: laterRows := by
+          rw [h_prior_split] at h_split
+          simpa [priorPrefix, previousProviderRow, List.append_assoc] using h_split
+        have h_idx_val_previous : idx.val = priorPrefix.length + 1 := by
+          have h_len : priorRows.length = priorPrefix.length + 1 := by
+            rw [h_prior_split]
+            simp [priorPrefix, previousProviderRow]
+          omega
+        let previousIdx : Fin table.table.length := ⟨idx.val - 1, by omega⟩
+        have h_not_boundary := h_fixed.segmentL1_nonfirst idx h_idx_pos
+        have h_addr_previous :=
+          addr_eq_previous_of_same_addr_memTableGeneratedRowsBridge
+            h_bridge idx h_addr_changes_zero h_not_boundary
+        have h_previous_addr_eq_selected :
+            mem.addr previousIdx.val = mem.addr selectedIdx.val := by
+          simpa [previousIdx] using h_addr_previous.symm.trans h_addr_eq_selected
+        have h_previous_idx_val :
+            previousIdx.val = priorPrefix.length := by
+          simp [previousIdx]
+          omega
+        have h_previous_lt : previousIdx.val < idx.val := by
+          simp [previousIdx]
+          omega
+        have h_previous_lt_n : previousIdx.val < n := by
+          omega
+        have h_previous_le_selected : previousIdx.val ≤ selectedIdx.val := by
+          omega
+        have h_current :=
+          readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_previous_row_memTableGeneratedRowsBridge
+            h_bridge h_fixed idx priorPrefix previousProviderRow providerRow laterRows
+            h_split_previous h_idx_val_previous h_addr_changes_zero h_read
+            (fun h_previous_read => by
+              exact
+                ih previousIdx.val h_previous_lt_n previousIdx priorPrefix
+                  previousProviderRow (providerRow :: laterRows) rfl
+                  h_split_previous h_previous_idx_val h_previous_le_selected
+                  h_previous_addr_eq_selected h_previous_read)
+        simpa [zeroMemory, prefixRows, h_prior_split] using h_current
+    · have h_addr_changes_one : mem.addr_changes idx.val = 1 := by
+        simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_changes_one_row
+      simpa [zeroMemory, prefixRows] using
+        readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_addr_change_same_addr_memTableGeneratedRowsBridge
+          h_bridge h_ranges h_fixed idx selectedIdx priorRows providerRow laterRows
+          h_split h_idx_val h_selected_sel h_addr_eq_selected h_addr_changes_one h_read
+  exact
+    hP idx.val idx priorRows providerRow laterRows rfl h_split h_idx_val
+      h_idx_le_selected h_addr_eq_selected h_read
+
+/-- The concrete table's selected-primary-read prefix obligation follows from
+the Mem AIR predecessor induction plus one explicit row-0 same-address boundary
+input.
+
+This is the current reduced proof surface: all positive-index same-address
+reads iterate to either an address-change zero-preload base or this row-0
+segment-continuation case. -/
+theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_memTableGeneratedRowsBridge_boundary_same_addr
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (h_boundary_same_addr :
+      ∀ selectedIdx : Fin table.table.length,
+        ∀ providerRow laterRows,
+          mem.sel selectedIdx.val = 1 →
+          table.table = providerRow :: laterRows →
+          mem.addr_changes 0 = 0 →
+          mem.wr 0 = 0 →
+          mem.addr 0 = mem.addr selectedIdx.val →
+            ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+              (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+                (activeMemReplayRowsOfTable table))
+              (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+                (memPrimaryReplayEntryOfRow
+                  (ZiskFv.AirsClean.Mem.rowAt mem 0)))) :
+    ActiveMemReplayRowsOfTablePrimaryReadPrefixSound
+      (ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+        (activeMemReplayRowsOfTable table))
+      table := by
+  intro priorRows providerRow laterRows h_split h_sel_row h_wr_row
+  let idx : Fin table.table.length := ⟨priorRows.length, by
+    rw [h_split]
+    simp⟩
+  have h_idx_val : idx.val = priorRows.length := rfl
+  have h_provider_get : table.table.get idx = providerRow :=
+    providerRow_get_eq_of_split idx h_split h_idx_val
+  have h_rowAt :
+      eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
+        ZiskFv.AirsClean.Mem.rowAt mem idx.val := by
+    rw [← h_provider_get]
+    exact h_bridge.rowAt_eq idx
+  have h_sel : mem.sel idx.val = 1 := by
+    simpa [h_rowAt, ZiskFv.AirsClean.Mem.rowAt] using h_sel_row
+  have h_read : mem.wr idx.val = 0 := by
+    simpa [h_rowAt, ZiskFv.AirsClean.Mem.rowAt] using h_wr_row
+  have h_agreement :=
+    readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_to_selected_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed idx h_sel
+      (fun providerRow laterRows h_boundary_split h_addr_changes_zero h_boundary_read
+          h_boundary_addr_eq =>
+        h_boundary_same_addr idx providerRow laterRows h_sel h_boundary_split
+          h_addr_changes_zero h_boundary_read h_boundary_addr_eq)
+      idx priorRows providerRow laterRows h_split h_idx_val le_rfl rfl h_read
+  simpa [h_rowAt] using h_agreement
 
 /-- Address-change selected primary reads are justified against their concrete
     prior table prefix from the zero-preloaded Mem-table memory.

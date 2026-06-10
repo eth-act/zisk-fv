@@ -366,6 +366,20 @@ no assumed soundness fields**.
       `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
       `nix run .#test`.
+      Latest in-progress slice lifts that predecessor step through concrete
+      split prefixes. `MemTrace.lean` now proves same-pointer zero-preload
+      preservation, so an inactive predecessor row can use a later selected row
+      at the same pointer as the preload witness. `Balance.lean` packages the
+      split-prefix predecessor replay step and proves
+      `readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_to_selected_memTableGeneratedRowsBridge`,
+      a strong-induction theorem for same-address predecessors. The current
+      reduced table-level theorem,
+      `activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_memTableGeneratedRowsBridge_boundary_same_addr`,
+      leaves exactly the row-0 same-address boundary input. Clean Lean LSP
+      diagnostics pass for `ZiskFv.ZiskCircuit.MemTrace` and
+      `ZiskFv.AirsClean.FullEnsemble.Balance`, and both touched target builds
+      plus full `lake build`, both trust gates, and `nix run .#test` pass for
+      this uncommitted chunk.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -411,8 +425,11 @@ no assumed soundness fields**.
       Current sub-gap: the address-change selected-read prefix case is closed
       under those fixed-column facts. The remaining primary-read prefix work is
       the same-address selected-read case: iterate the one-step predecessor
-      lemma backward through same-address rows until a selected write/read or
-      the address-change zero-preload base case.
+      lemma backward through nonfirst same-address rows until a selected
+      write/read or the address-change zero-preload base case. The row-0
+      same-address case is now explicit: it needs either a first-segment fact
+      forcing `addr_changes = 1` from `mem.pil:377`, or a continuation-aware
+      initial memory carrying `previous_segment_*`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
