@@ -10,6 +10,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Channels.MemoryBusBytes
+import ZiskFv.ZiskCircuit.MemTrace
 
 /-!
 # Circuit.MemModel — memory-model bridge
@@ -51,10 +52,10 @@ We don't re-derive it here — `mem_load_correct` consumes it directly.
 
 ## Trusted-surface entries documented here
 
-* Load-side Sail-state agreement is supplied explicitly by canonical load
-  callers. `mem_load_correct_of_provider_row` packages those byte facts in the
-  shape consumed by the load proofs while still requiring the structural Mem row
-  match and read-mode pins.
+* Load-side Sail-state agreement is supplied by `MemTrace.MemoryTraceAgreement`
+  for the selected read event. `mem_load_correct_of_provider_row` projects that
+  agreement into the byte facts consumed by the load proofs while still
+  requiring the structural Mem row match and read-mode pins.
 
 * `MemoryBus.row_models_sail_state_store` (dual for stores).
 
@@ -82,6 +83,7 @@ namespace ZiskFv.ZiskCircuit.MemModel
 open Goldilocks
 open Interaction
 open ZiskFv.Channels.MemoryBusBytes (byteAt)
+open ZiskFv.ZiskCircuit.MemTrace
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
@@ -93,23 +95,16 @@ open ZiskFv.Airs.MemoryBus.MemBridge
 /-- Provider-explicit load correctness.
 
 This is the lookup-free core of `mem_load_correct`: once a concrete Mem
-provider row has already been obtained and proved to match the legacy
-memory entry in read mode, Sail-memory byte agreement is supplied explicitly by
-the load promise bundle. T4 Clean-balance adapters should target this theorem
+provider row has already been obtained and proved to match the selected memory
+entry in read mode, the remaining bridge to Sail memory is exactly
+`MemoryTraceAgreement`. T4 Clean-balance adapters should target this theorem
 instead of re-entering `lookup_consumer_matches_provider_load`. -/
 lemma mem_load_correct_of_provider_row
     (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (_h_match : mem_row_matches_entry mem r_mem e)
+    (_h_match : mem_row_byte_addr_matches_entry mem r_mem e)
     (_h_wr : mem.wr r_mem = 0)
-    (h_m0 : state.mem[e.ptr.toNat]? = .some (byteAt e 0))
-    (h_m1 : state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1))
-    (h_m2 : state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2))
-    (h_m3 : state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3))
-    (h_m4 : state.mem[e.ptr.toNat + 4]? = .some (byteAt e 4))
-    (h_m5 : state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5))
-    (h_m6 : state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6))
-    (h_m7 : state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7)) :
+    (h_agree : MemoryTraceAgreement state (eventOfEntry e)) :
     state.mem[e.ptr.toNat]? = .some (byteAt e 0)
     ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
     ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
@@ -118,7 +113,29 @@ lemma mem_load_correct_of_provider_row
     ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
     ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
     ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7) :=
-  ⟨h_m0, h_m1, h_m2, h_m3, h_m4, h_m5, h_m6, h_m7⟩
+  byte_facts_of_event_agreement state e h_agree
+
+/-- Dual-provider load correctness for the pinned `dual_mem = 1` Mem row.
+
+The dual Mem emission is always a read at the same byte address and value as
+the primary row, with `timestamp = step_dual` and selector `sel_dual`. Once a
+concrete dual provider row has been matched to the selected memory-bus entry,
+the connection to Sail memory is the same replay-agreement projection used by
+the primary load theorem. -/
+lemma mem_dual_load_correct_of_provider_row
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (_h_match : mem_dual_row_byte_addr_matches_entry mem r_mem e)
+    (h_agree : MemoryTraceAgreement state (eventOfEntry e)) :
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3)
+    ∧ state.mem[e.ptr.toNat + 4]? = .some (byteAt e 4)
+    ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
+    ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
+    ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7) :=
+  byte_facts_of_event_agreement state e h_agree
 
 /-! ## Convenience: bus_effect-shaped output
 
@@ -138,8 +155,9 @@ Per-width projections of `mem_load_correct` / `mem_store_correct` for
 ops. The 8-byte version is the template; each narrow variant exposes
 only the bytes the corresponding Sail spec writes/reads.
 
-* **Loads (`mem_load_correct_<n>`).** Pure projection of explicitly supplied
-  Sail-memory byte facts.
+* **Loads (`mem_load_correct_<n>`).** Pure projection: take the first
+  `n` conjuncts of the 8-byte conclusion. The 8-byte version consumes the
+  explicit trace agreement once; the higher-byte conjuncts are discarded.
 
 * **Stores (`mem_store_correct_<n>`).** Concludes byte facts about the
   `n`-insert chain (`state.mem.insert ... .insert (ptr+(n-1)) e.x_(n-1)`).
@@ -152,44 +170,44 @@ only the bytes the corresponding Sail spec writes/reads.
 lemma mem_load_correct_4byte_of_provider_row
     (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (_h_match : mem_row_matches_entry mem r_mem e)
+    (h_match : mem_row_byte_addr_matches_entry mem r_mem e)
     (_h_wr : mem.wr r_mem = 0)
-    (h_m0 : state.mem[e.ptr.toNat]? = .some (byteAt e 0))
-    (h_m1 : state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1))
-    (h_m2 : state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2))
-    (h_m3 : state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3)) :
+    (h_agree : MemoryTraceAgreement state (eventOfEntry e)) :
     state.mem[e.ptr.toNat]? = .some (byteAt e 0)
     ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
     ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
     ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3) := by
-  exact ⟨h_m0, h_m1, h_m2, h_m3⟩
+  have h := mem_load_correct_of_provider_row mem r_mem e state h_match _h_wr h_agree
+  exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
 
 /-- 2-byte projection of `mem_load_correct` for LH / LHU. -/
 lemma mem_load_correct_2byte_of_provider_row
     (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (_h_match : mem_row_matches_entry mem r_mem e)
+    (h_match : mem_row_byte_addr_matches_entry mem r_mem e)
     (_h_wr : mem.wr r_mem = 0)
-    (h_m0 : state.mem[e.ptr.toNat]? = .some (byteAt e 0))
-    (h_m1 : state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)) :
+    (h_agree : MemoryTraceAgreement state (eventOfEntry e)) :
     state.mem[e.ptr.toNat]? = .some (byteAt e 0)
     ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1) := by
-  exact ⟨h_m0, h_m1⟩
+  have h := mem_load_correct_of_provider_row mem r_mem e state h_match _h_wr h_agree
+  exact ⟨h.1, h.2.1⟩
 
 /-- 1-byte projection of `mem_load_correct` for LB / LBU. -/
 lemma mem_load_correct_1byte_of_provider_row
     (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (_h_match : mem_row_matches_entry mem r_mem e)
+    (h_match : mem_row_byte_addr_matches_entry mem r_mem e)
     (_h_wr : mem.wr r_mem = 0)
-    (h_m0 : state.mem[e.ptr.toNat]? = .some (byteAt e 0)) :
+    (h_agree : MemoryTraceAgreement state (eventOfEntry e)) :
     state.mem[e.ptr.toNat]? = .some (byteAt e 0) := by
-  exact h_m0
+  have h := mem_load_correct_of_provider_row mem r_mem e state h_match _h_wr h_agree
+  exact h.1
 
 /-! ## Axiom audit
 
-`mem_load_correct_of_provider_row` adds no project axiom: it repackages explicit
-Sail-memory byte-agreement hypotheses supplied by canonical load callers.
+`mem_load_correct_of_provider_row` is now an ordinary projection theorem from
+an explicit `MemoryTraceAgreement` premise. The agreement premise is threaded
+by the load trace context rather than asserted here for arbitrary Sail states.
 
 Earlier per-opcode memory axioms and the former global load bridge have been
 retired from the current global compliance closure; see `trust/trusted-base.md`

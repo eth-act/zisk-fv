@@ -1,12 +1,14 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase B Mem-table side. Order/cursor slice is verified:
-dual-row local chronological order is proved from `step_dual >= step`, and
-conditional local `Nodup` is proved under distinct primary/dual timestamps.
+Current focus: Phase C-compatible prep while Phase B order target is pending:
+byte-addressed primary/dual Mem-row match predicates and Clean adapters are
+added, and `mem_load_correct_of_provider_row` now consumes
+`MemoryTraceAgreement`.
 Blocking: full `GeneratedMemRowOrderFacts.rowsNodup` is stronger than current
 PIL for read-read dual rows, because `mem.pil` allows `step_dual = step`.
-Next step: decide whether full table `Nodup`/prefix-read target needs a
-weakened theorem or residual timeline statement, since PIL allows read-read
-dual rows with `step_dual = step`.
+Verified: targeted build, full `lake build`, and `trust/scripts/check-all.sh`
+pass for this boundary-prep slice.
+Next step: commit this slice, then decide whether full table `Nodup`/prefix-
+read target needs a weakened theorem or residual timeline statement.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract

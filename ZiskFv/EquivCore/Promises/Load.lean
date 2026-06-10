@@ -5,6 +5,7 @@ import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.Channels.MemoryBusBytes
+import ZiskFv.ZiskCircuit.MemTrace
 
 /-!
 # `LoadPromises` — structural bundle for zero-extended LOAD opcodes
@@ -35,6 +36,18 @@ def LoadByteAgreement
     ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
     ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
     ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7)
+
+/-- Byte-agreement projection from the memory branch's stronger replay
+agreement. -/
+theorem loadByteAgreement_of_mem_trace_agreement
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (e : Interaction.MemoryBusEntry FGL)
+    (h_agree :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTraceAgreement state
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry e)) :
+    LoadByteAgreement state e := by
+  simpa [LoadByteAgreement] using
+    ZiskFv.ZiskCircuit.MemTrace.byte_facts_of_event_agreement state e h_agree
 
 /-- 13-field structural bundle for LBU, LHU, LWU, LD. -/
 structure LoadPromises

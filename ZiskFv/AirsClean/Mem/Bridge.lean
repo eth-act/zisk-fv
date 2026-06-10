@@ -112,6 +112,63 @@ theorem eval_memBusDualMessageExpr
     ProvableType.eval_field, Expression.eval]
   repeat constructor <;> simp
 
+/-- Byte-addressed Clean Mem provider adapter.
+
+Clean balance relates Main memory pulls and Mem provider pushes by the
+PIL-shaped message payload. Their legacy multiplicities have opposite
+polarity, so full `matches_memory_entry` is too strong for provider-row
+soundness. The active Mem provider predicate uses the PIL byte pointer
+`ptr = addr * 8`; selector/write polarity stay explicit. -/
+theorem mem_row_byte_addr_matches_entry_of_payload_match_valid
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r_mem : ℕ)
+    (row : MemRow FGL) (e : Interaction.MemoryBusEntry FGL)
+    (h_row : row = rowAt mem r_mem)
+    (h_sel : mem.sel r_mem = 1)
+    (h_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_payload e
+        (MemBusMessage.toEntry (memBusMessage row) 1 2)) :
+    ZiskFv.Airs.MemoryBus.MemBridge.mem_row_byte_addr_matches_entry
+      mem r_mem e := by
+  obtain ⟨h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
+  rw [h_row] at h_ptr h_v0 h_v1 h_ts
+  refine ⟨h_sel, ?_, ?_, h_as, ?_, ?_⟩
+  · simpa [rowAt, memBusMessage, MemBusMessage.toEntry] using h_ptr
+  · simpa [rowAt, memBusMessage, MemBusMessage.toEntry] using h_ts.symm
+  · simpa [rowAt, memBusMessage, MemBusMessage.toEntry,
+      ZiskFv.Airs.MemoryBus.MemBridge.entry_packs_mem_row_value,
+      ZiskFv.Airs.MemoryBus.memory_entry_lo] using h_v0.symm
+  · simpa [rowAt, memBusMessage, MemBusMessage.toEntry,
+      ZiskFv.Airs.MemoryBus.MemBridge.entry_packs_mem_row_value,
+      ZiskFv.Airs.MemoryBus.memory_entry_hi] using h_v1.symm
+
+/-- Byte-addressed Clean Mem dual-provider adapter for the pinned
+`dual_mem = 1` emission. -/
+theorem mem_dual_row_byte_addr_matches_entry_of_payload_match_valid
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r_mem : ℕ)
+    (row : MemRow FGL) (e : Interaction.MemoryBusEntry FGL)
+    (h_row : row = rowAt mem r_mem)
+    (h_sel_dual : mem.sel_dual r_mem = 1)
+    (h_multiplicity : e.multiplicity = -1)
+    (h_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_payload e
+        (MemBusMessage.toEntry (memBusDualMessage row) (-1) 2)) :
+    ZiskFv.Airs.MemoryBus.MemBridge.mem_dual_row_byte_addr_matches_entry
+      mem r_mem e := by
+  obtain ⟨h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
+  rw [h_row] at h_ptr h_v0 h_v1 h_ts
+  refine ⟨h_sel_dual, ?_, ?_, h_as, h_multiplicity, ?_⟩
+  · simpa [rowAt, memBusDualMessage, MemBusMessage.toEntry] using h_ptr
+  · simpa [rowAt, memBusDualMessage, MemBusMessage.toEntry] using h_ts.symm
+  · exact
+      ⟨ by
+          simpa [rowAt, memBusDualMessage, MemBusMessage.toEntry,
+            ZiskFv.Airs.MemoryBus.MemBridge.entry_packs_mem_row_value,
+            ZiskFv.Airs.MemoryBus.memory_entry_lo] using h_v0.symm,
+        by
+          simpa [rowAt, memBusDualMessage, MemBusMessage.toEntry,
+            ZiskFv.Airs.MemoryBus.MemBridge.entry_packs_mem_row_value,
+            ZiskFv.Airs.MemoryBus.memory_entry_hi] using h_v1.symm ⟩
+
 /-- Payload-only Clean Mem provider adapter.
 
 Clean balance relates Main memory pulls and Mem provider pushes by the

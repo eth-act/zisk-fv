@@ -165,6 +165,9 @@ bury it in a structure field.
 - [ ] Port the `MemModel.lean` re-theoreming and the byte-address row-match
       fix (`ptr = addr * 8`); scan for legacy pins:
       `rg -n "mem_legacy_addr|mem\.addr .* = .*\.ptr" ZiskFv`.
+      Partial: byte-addressed primary/dual Mem-row match predicates and Clean
+      adapters are ported, and `mem_load_correct_of_provider_row` now consumes
+      `MemoryTraceAgreement`; legacy pins remain to scan/migrate.
 - [ ] Update the 7 load EquivCore/Wrapper files; stores untouched beyond
       shared types.
 - [ ] Update `trust/trusted-base.md`: retire "Memory load byte agreement",
