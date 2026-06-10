@@ -1924,6 +1924,88 @@ structure ExtractedConstraintFacts
     ∀ idx : Fin table.table.length,
       Mem.extraction.constraint_33_every_row (proverDataMemCircuit witness table) idx.val
 
+@[reducible]
+def rawConstraintFacts_of_extractedConstraintFacts
+    {length : ℕ} {program : Program length}
+    {witness : FullWitness program}
+    {table : Table FGL}
+    (h : ExtractedConstraintFacts witness table) :
+    RawConstraintFacts witness table where
+  segmentAt := by
+    intro idx
+    simpa only [ZiskFv.Airs.Mem.segment_every_row, mainValue, preprocessedValue,
+      exposedValue, proverDataMemCircuit, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.delta_addr] using
+      ⟨h.constraint_0 idx, h.constraint_1 idx, h.constraint_2 idx, h.constraint_3 idx,
+        h.constraint_4 idx, h.constraint_5 idx, h.constraint_6 idx, h.constraint_7 idx,
+        h.constraint_8 idx, h.constraint_9 idx, h.constraint_10 idx, h.constraint_11 idx,
+        h.constraint_12 idx, h.constraint_13 idx, h.constraint_14 idx, h.constraint_15 idx,
+        h.constraint_16 idx, h.constraint_17 idx, h.constraint_18 idx, h.constraint_19 idx,
+        h.constraint_20 idx, h.constraint_21 idx, h.constraint_22 idx, h.constraint_23 idx⟩
+  permutationAt := by
+    intro idx
+    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
+      challengeValue, exposedValue, proverDataMemCircuit] using
+      ⟨h.constraint_24 idx, h.constraint_25 idx, h.constraint_26 idx, h.constraint_27 idx,
+        h.constraint_28 idx, h.constraint_29 idx, h.constraint_30 idx, h.constraint_31 idx,
+        h.constraint_32 idx, h.constraint_33 idx⟩
+
+@[reducible]
+def buildRawFactsFromExtractedConstraintsAndRawRanges
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (constraints :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            ExtractedConstraintFacts witness table)
+    (rowRanges :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            RawRowRangeFacts witness table)
+    (segmentRanges :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            RawSegmentRangeFacts witness) :
+    RawFacts witness :=
+  buildRawFacts
+    witness
+    (fun table h_table h_component =>
+      rawConstraintFacts_of_extractedConstraintFacts (constraints table h_table h_component))
+    rowRanges
+    segmentRanges
+
+@[reducible]
+def buildWitnessFactsFromExtractedConstraintsAndRawRanges
+    {length : ℕ} {program : Program length}
+    (witness : FullWitness program)
+    (constraints :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            ExtractedConstraintFacts witness table)
+    (rowRanges :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            RawRowRangeFacts witness table)
+    (segmentRanges :
+      ∀ table : Table FGL,
+        table ∈ witness.allTables →
+          table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+            RawSegmentRangeFacts witness) :
+    WitnessFacts witness :=
+  buildWitnessFactsFromRawFacts
+    (buildRawFactsFromExtractedConstraintsAndRawRanges
+      witness
+      constraints
+      rowRanges
+      segmentRanges)
+
 end Extraction.MemGeneratedConstraintBridge
 "#
     .to_string()
@@ -3723,6 +3805,23 @@ mod tests {
                 && out.contains("SegmentOfProverData c.witness")
                 && out.contains("PermutationOfProverData c.witness"),
             "bridge should use the same ProverData-backed sources as the wrapper:\n{}",
+            out
+        );
+        assert!(
+            out.contains("def rawConstraintFacts_of_extractedConstraintFacts")
+                && out.contains("RawConstraintFacts witness table")
+                && out.contains("segmentAt := by")
+                && out.contains("permutationAt := by"),
+            "bridge should adapt extracted constraints to raw split Mem constraints:\n{}",
+            out
+        );
+        assert!(
+            out.contains("def buildRawFactsFromExtractedConstraintsAndRawRanges")
+                && out.contains("def buildWitnessFactsFromExtractedConstraintsAndRawRanges")
+                && out.contains("buildWitnessFactsFromRawFacts")
+                && out.contains("RawRowRangeFacts witness table")
+                && out.contains("RawSegmentRangeFacts witness"),
+            "bridge should build witness facts from extracted constraints plus raw ranges:\n{}",
             out
         );
     }

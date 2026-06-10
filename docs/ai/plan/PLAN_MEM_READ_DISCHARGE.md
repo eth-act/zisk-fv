@@ -1065,19 +1065,24 @@ no assumed soundness fields**.
       `Extraction.MemGeneratedConstraintBridge`, which instantiates that
       circuit interface over the ProverData-backed Mem table/source used by
       `Extraction.MemGeneratedArtifact` and names constraints `0..=33` as
-      `ExtractedConstraintFacts`. This does not yet prove
-      `FullWitnessMemAirSourceProverDataWitnessFacts`, but it makes the
-      extracted Mem constraint predicates checked and available as the next
-      raw-facts bridge source. Verified so far with full
+      `ExtractedConstraintFacts`. Follow-up adapter work in the same generated
+      bridge now proves the definitional mapping from those extracted
+      predicates to the wrapper's split `RawConstraintFacts` and exposes
+      witness-level builders from extracted constraints plus raw row/segment
+      range facts. This still does not prove
+      `FullWitnessMemAirSourceProverDataWitnessFacts`; the remaining generated
+      production work is raw range facts and the actual extracted-constraint
+      callback. Verified so far with full
       `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests),
       local regeneration of `Circuit.lean`, `Mem.lean`,
       `MemGeneratedArtifact.lean`, and `MemGeneratedConstraintBridge.lean`,
       and the exact generated-Mem gate sequence: compile `Circuit.lean`,
       `Mem.lean`, and `MemGeneratedArtifact.lean` to oleans, then compile the
       bridge with
-      `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`;
-      `lake build ZiskFv.Compliance`; `trust/scripts/check-all.sh`;
-      `nix flake check --no-build`; and `git diff --check`.
+      `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`.
+      The previous bridge commit also passed `lake build ZiskFv.Compliance`,
+      `trust/scripts/check-all.sh`, `nix flake check --no-build`, and
+      `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

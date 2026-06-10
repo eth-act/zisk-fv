@@ -295,9 +295,12 @@ the current load-facing constructor.
 The generated `MemGeneratedConstraintBridge.lean` companion instantiates the
 extracted `Extraction.Circuit` interface with the same ProverData-backed Mem
 source view and names `Extraction.Mem.constraint_0..33` as
-`ExtractedConstraintFacts` for that concrete view. This is still a proof
-surface, not a proof of the constraints; the next bridge step is to assemble
-those checked extracted predicates into the wrapper's raw ProverData facts.
+`ExtractedConstraintFacts` for that concrete view. It also checks the
+definitional adapter from those extracted predicates to the wrapper's split
+`RawConstraintFacts`, plus witness-level builders that combine extracted
+constraints with raw row/segment range facts. This is still a source surface,
+not a proof of the constraints or ranges; the remaining generated bridge step
+is to produce the extracted constraints and raw range facts for the witness.
 
 `nix run .#populate` also materializes the same report at
 `build/extraction/MemAirFacts.md`, the generated-only circuit shim at

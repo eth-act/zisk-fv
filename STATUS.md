@@ -6,19 +6,17 @@ load arms consume one global memory-timeline boundary.
 Blocking: generated/full-ensemble production of Mem sidecar facts. Load arms
 now require `FullWitnessGeneratedTimelineEvidence`, which wraps the full-witness
 timeline evidence and carries the concrete `witness.data` target
-(`FullWitnessMemAirSourceProverDataWitnessFacts`) for the witness-selected Mem
-table.
+(`FullWitnessMemAirSourceProverDataWitnessFacts`) for the witness-selected Mem table.
 
 Latest audit: structural gap, not a missing lemma. `componentWithDualMemBus`
 emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
 table-global segment/permutation constants, challenges, ranges, and generated
 assertions are outside the component.
 
-Current slice: generated Mem constraints now have a checked ProverData bridge
-surface. `Extraction.Circuit` is universe-polymorphic, `Extraction.Mem`
-compiles, and `MemGeneratedConstraintBridge.lean` instantiates the generated
-circuit interface over the ProverData-backed Mem table/source while naming
-`constraint_0..33` as `ExtractedConstraintFacts`.
+Current slice: generated Mem constraints now assemble into raw ProverData
+constraint facts. `MemGeneratedConstraintBridge.lean` maps extracted
+`constraint_0..33` to `RawConstraintFacts` and exposes witness-level builders
+from extracted constraints plus raw row/segment range facts.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -27,12 +25,13 @@ Current proof surface:
   proves the stored sidecars match the generated sidecar packager.
 - `FullWitnessMemoryTimelineEvidence` carries full witness +
   `FullWitnessMemAirSourceRawSidecars`; source/bridge/replay are accessors.
-- `tools/pil-extract mem-air-facts` reports generated constraints, range
-  hints, ProverData keys, generated timeline constructor, witness contract, and
-  the raw-facts adapter path.
+- `tools/pil-extract mem-air-facts` reports generated constraints, range hints,
+  ProverData keys, generated timeline constructor, and witness contract.
 - `tools/pil-extract mem-generated-artifact` emits checked witness/raw assembly
-  helpers and the timeline constructor wrapper; the gate also checks the
-  generated Mem constraint source and bridge module.
+  helpers and the timeline constructor wrapper.
+- `tools/pil-extract mem-generated-constraint-bridge` emits the checked
+  ProverData circuit instance, extracted constraint surface, raw-constraint
+  adapter, and witness builders from extracted constraints plus raw ranges.
 
 Latest verification:
 - Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (73 tests).
@@ -42,9 +41,10 @@ Latest verification:
   `Circuit.olean`, compile `Mem.lean` and `MemGeneratedArtifact.lean` to
   oleans, then compile `MemGeneratedConstraintBridge.lean` with
   `LEAN_PATH=$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)`.
-- `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`,
-  `nix flake check --no-build`, and `git diff --check`.
+- Last broad bridge gate: `lake build ZiskFv.Compliance`,
+  `trust/scripts/check-all.sh`, `nix flake check --no-build`, and
+  `git diff --check` at commit `465470dc`.
 - Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: generate/prove the raw or witness ProverData Mem facts. Broadening
-Clean table/component modeling is only the fallback.
+Next step: generate/prove raw row/segment range facts, then feed the checked
+witness builder. Broadening Clean table/component modeling is only the fallback.
