@@ -55,7 +55,7 @@ stay byte-identical.
 
 ### Step 1 — `ZiskFv/ZiskCircuit/MemTrace.lean`
 
-- [ ] Add a byte-local agreement predicate next to `ReplayMemoryAgreement`:
+- [x] Add a byte-local agreement predicate next to `ReplayMemoryAgreement`:
 
   ```lean
   /-- Sail/replay memory agreement restricted to the 8 bytes at `addr`. -/
@@ -67,7 +67,7 @@ stay byte-identical.
 
   Mark it `@[reducible]` if any doubt about hidden-promise visibility
   (per anti-laundering rule 5).
-- [ ] In `structure MemoryTimelineEvidence` (line ~1239): **delete** the
+- [x] In `structure MemoryTimelineEvidence` (line ~1239): **delete** the
   fields `initialState`, `initialAgreement`, `stateAtPrefix`; **add**:
 
   ```lean
@@ -77,17 +77,17 @@ stay byte-identical.
       entry.ptr.toNat
   ```
 
-- [ ] Add `memoryTraceAgreement_of_replayAgreementOnBytes` (byte-local
+- [x] Add `memoryTraceAgreement_of_replayAgreementOnBytes` (byte-local
   sibling of `memoryTraceAgreement_of_replayAgreement` at line ~184):
   combine `state.mem[ptr+i]? = replayMap[ptr+i]?` with
   `ReadEventReplayAgreement replayMap (eventOfEntry entry)`
   (which already says `replayMap[ptr+i]? = some (byteAt i)`) to conclude
   `MemoryTraceAgreement state (eventOfEntry entry)`.
-- [ ] Reprove `MemoryTimelineEvidence.memoryTraceAgreement` (line ~1289)
+- [x] Reprove `MemoryTimelineEvidence.memoryTraceAgreement` (line ~1289)
   via the new lemma; `prefixReadAgreement` (line ~1255) is unchanged.
   Delete `MemoryTimelineEvidence.prefixStateAgreement` (whole-map version);
   audit remaining users first: `rg -n "prefixStateAgreement|stateAtPrefix|initialAgreement" ZiskFv`.
-- [ ] Keep `ReplayMemoryAgreement` itself — it is still used by the replay
+- [x] Keep `ReplayMemoryAgreement` itself — it is still used by the replay
   core internals (`EventReplayStep`, execution-trace lemmas). Only the
   *boundary structure* changes.
 
@@ -97,14 +97,14 @@ Update every constructor that threads the residual fields; drop the
 `initialState` / `h_initialAgreement` / `h_stateAtPrefix` parameters and
 add the single byte-agreement parameter:
 
-- [ ] `memoryTimelineEvidence_of_fullWitnessMemReplayBridge` (~line 6494).
-- [ ] `structure FullWitnessMemoryTimelineEvidence` (~line 6546) and its
+- [x] `memoryTimelineEvidence_of_fullWitnessMemReplayBridge` (~line 6494).
+- [x] `structure FullWitnessMemoryTimelineEvidence` (~line 6546) and its
   projection lemmas in the namespace block (~6571–6603).
-- [ ] `fullWitnessMemoryTimelineEvidence_of_rawSidecars` (~6614) and
+- [x] `fullWitnessMemoryTimelineEvidence_of_rawSidecars` (~6614) and
   `fullWitnessMemoryTimelineEvidence_of_rawFacts` (~6663).
-- [ ] `FullWitnessGeneratedTimelineEvidence` and
+- [x] `FullWitnessGeneratedTimelineEvidence` and
   `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`.
-- [ ] Circuit-side objects (`FullWitnessMemReplayBridge`,
+- [x] Circuit-side objects (`FullWitnessMemReplayBridge`,
   `MemTableGeneratedRowsBridge`, sidecar structures, all
   `acceptedMemoryReplayEvidence_of_*`) are **unchanged** — do not touch.
 
@@ -113,12 +113,12 @@ add the single byte-agreement parameter:
 The generated `Extraction.MemGeneratedArtifact` wrapper mirrors the
 constructor signatures:
 
-- [ ] Update the emitted `buildTimelineEvidence` (~line 1590) and
+- [x] Update the emitted `buildTimelineEvidence` (~line 1590) and
   `buildTimelineEvidenceFromExtractedSidecarFacts` (~2511) signatures and
   the surrounding doc text (~2634) for the new residual parameters.
-- [ ] Update the renderer self-test assertions (~4140–4410) that
+- [x] Update the renderer self-test assertions (~4140–4410) that
   `out.contains(...)` the old strings.
-- [ ] `cargo test` for pil-extract inside the flake, then
+- [x] `cargo test` for pil-extract inside the flake, then
   `nix run .#populate` to regenerate `build/extraction/`; the
   `nix run .#test` gate compiles the regenerated wrapper after
   `lake build` — keep that ordering (it was fixed in `560dfa67`).
@@ -128,8 +128,8 @@ constructor signatures:
 `trust/consistency/load_byte_agreement_witness.lean` (runs as semantic gate
 check 5/5):
 
-- [ ] Rebuild the witness for the new structure shape.
-- [ ] **Extend it to a two-address scenario where addr order ≠ time order**,
+- [x] Rebuild the witness for the new structure shape.
+- [x] **Extend it to a two-address scenario where addr order ≠ time order**,
   so the old whole-state boundary would have been unsatisfiable:
   rows `[w0, r1]` with `w0` = write at `ptr 0`, `timestamp 5` and `r1` =
   read at `ptr 8`, `timestamp 1` (addr-sorted, time-reversed). Select
@@ -142,7 +142,7 @@ check 5/5):
 
 ### Step 5 — docs
 
-- [ ] `trust/trusted-base.md` "Sail Memory Timeline": restate the residual
+- [x] `trust/trusted-base.md` "Sail Memory Timeline": restate the residual
   fields (trace split, read tag, byte agreement at the selected entry
   after the accepted addr-sorted prefix); cite the (addr, step) sort
   (`zisk/state-machines/mem/pil/mem.pil` line 9) explicitly; restate the
@@ -150,8 +150,23 @@ check 5/5):
   induction showing, for each selected load, that Sail memory at the
   entry's bytes equals the last same-address accepted write in step order
   (preload base case included); describe the two-address witness scenario.
-- [ ] Update `PLAN_MEM_READ_DISCHARGE.md` Phase C checklist and `STATUS.md`.
-- [ ] Update the PR #65 body paragraph describing the residual fields.
+- [x] Update `PLAN_MEM_READ_DISCHARGE.md` Phase C checklist and `STATUS.md`.
+- [x] Update the PR #65 body paragraph describing the residual fields.
+
+Verification completed for the implemented fix:
+
+- `lake build` passed.
+- `trust/scripts/check-all.sh` passed all 17 checks.
+- `trust/scripts/check-all-semantic.sh` passed all 5 checks; the two-address
+  Sail memory timeline witness prints no `sorryAx`.
+- `lake exe trust-gate print-axiom-closure
+  ZiskFv.Compliance.zisk_riscv_compliant_program_bus` emitted no closure lines;
+  stderr only had the existing TrustGate `String.trim` deprecation warnings.
+- `nix run .#test` passed all 8 steps.
+- `git diff origin/main HEAD --stat -- trust/generated/` was empty.
+- `rg -n "stateAtPrefix|prefixStateAgreement" ZiskFv` had no hits.
+- `git ls-files AGENTS.md` was empty.
+- `git diff --check` passed.
 
 ## Finding 2 (must-remove): private `AGENTS.md` committed at repo root
 
@@ -159,7 +174,7 @@ The branch added `AGENTS.md` — a copy of Cody's **private**
 `~/ai-workflow/AGENTS.md` personal workflow conventions. Merging would
 publish it to `eth-act/zisk-fv`.
 
-- [ ] `git rm AGENTS.md` (delete outright; the original lives outside the
+- [x] `git rm AGENTS.md` (delete outright; the original lives outside the
   repo). Confirm nothing references it: `rg -n "AGENTS.md" --glob '!docs/ai'`.
 
 ## Verification (all required before declaring done)

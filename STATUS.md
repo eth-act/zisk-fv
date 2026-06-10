@@ -1,9 +1,10 @@
 Active plan: docs/ai/plan/PLAN_MEM_TIMELINE_BOUNDARY_FIX.md
 (parent plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md)
 
-Current focus: PR #65 review (2026-06-10) found the architecture correct but
-flagged one blocker and one must-remove. The fix plan above addresses both;
-implement it on this branch before merge.
+Current focus: PR #65 review-fix plan is implemented and verified. The
+timeline boundary is byte-local, residual Balance constructors and generated
+templates are updated, `AGENTS.md` is removed, the two-address consistency
+witness compiles, and the PR body describes the corrected boundary.
 
 Review findings:
 - Blocker: `MemoryTimelineEvidence.stateAtPrefix` is full-SailState equality
@@ -29,5 +30,11 @@ Context:
 - The old `memory-trust-gap` worktree/branch is intentionally preserved
   during review; do not delete it.
 
-Next step: execute PLAN_MEM_TIMELINE_BOUNDARY_FIX.md (Step 1: MemTrace.lean
-boundary structure), then full verification and push to the PR branch.
+Verification:
+- `lake build`, both trust gates, closure print, and `nix run .#test` passed.
+- `trust/generated/` has no diff vs `origin/main`.
+- `rg -n "stateAtPrefix|prefixStateAgreement" ZiskFv` has no hits.
+- `git ls-files AGENTS.md` is empty.
+- `git diff --check` passed.
+
+Next step: review PR #65 after the review-fix commit is pushed.

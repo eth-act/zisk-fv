@@ -108,6 +108,14 @@ def ReplayMemoryAgreement
     (mem : Std.ExtHashMap Nat (BitVec 8)) : Prop :=
   ∀ addr : Nat, state.mem[addr]? = mem[addr]?
 
+/-- Sail/replay memory agreement restricted to the 8 bytes at `addr`. -/
+@[reducible]
+def ReplayMemoryAgreementOnBytes
+    (state : SailState)
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (addr : Nat) : Prop :=
+  ∀ i : Nat, i < 8 → state.mem[addr + i]? = mem[addr + i]?
+
 /-- A Sail memory transition that matches one Mem trace event for every
     replay memory currently agreeing with the pre-state. Loads leave replay
     memory unchanged; stores update it with `replayStoreEvent`. -/
@@ -206,6 +214,37 @@ theorem memoryTraceAgreement_of_replayAgreement
   · rw [h_state (event.ptr.toNat + 6)]
     exact h_read.2.2.2.2.2.2.1
   · rw [h_state (event.ptr.toNat + 7)]
+    exact h_read.2.2.2.2.2.2.2
+
+/-- Combine byte-local Sail/replay state agreement at a cursor with read-row
+replay soundness for the selected event. -/
+theorem memoryTraceAgreement_of_replayAgreementOnBytes
+    (state : SailState)
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (event : MemEvent)
+    (h_state : ReplayMemoryAgreementOnBytes state mem event.ptr.toNat)
+    (h_read : ReadEventReplayAgreement mem event) :
+    MemoryTraceAgreement state event := by
+  unfold MemoryTraceAgreement
+  unfold ReadEventReplayAgreement at h_read
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · have h0 : state.mem[event.ptr.toNat]? = mem[event.ptr.toNat]? := by
+      simpa using h_state 0 (by decide)
+    rw [h0]
+    exact h_read.1
+  · rw [h_state 1 (by decide)]
+    exact h_read.2.1
+  · rw [h_state 2 (by decide)]
+    exact h_read.2.2.1
+  · rw [h_state 3 (by decide)]
+    exact h_read.2.2.2.1
+  · rw [h_state 4 (by decide)]
+    exact h_read.2.2.2.2.1
+  · rw [h_state 5 (by decide)]
+    exact h_read.2.2.2.2.2.1
+  · rw [h_state 6 (by decide)]
+    exact h_read.2.2.2.2.2.2.1
+  · rw [h_state 7 (by decide)]
     exact h_read.2.2.2.2.2.2.2
 
 /-- Whole-trace replay soundness. At each event, read rows must emit the
@@ -1233,22 +1272,21 @@ structure AcceptedMemoryReplayEvidence : Type where
 
 `acceptedReplay` is the named circuit-side replay obligation. The remaining
 fields carry the execution-timeline boundary: the selected read is located in
-the accepted row list, the initial Sail memory agrees with the replay memory,
-and the selected Sail state is the state obtained by replaying the accepted
-prefix before the selected read row. -/
+the accepted row list, and the selected Sail state agrees with the replayed
+accepted prefix at the selected read's eight byte lanes. -/
 structure MemoryTimelineEvidence
     (state : SailState)
     (entry : MemoryBusEntry FGL) : Type where
-  initialState : SailState
   acceptedReplay : AcceptedMemoryReplayEvidence
   priorRows : List (MemoryBusEntry FGL)
   laterRows : List (MemoryBusEntry FGL)
   traceSplit : acceptedReplay.rows = priorRows ++ entry :: laterRows
   selectedRead :
     memoryBusTraceEventOfRow entry = some (MemoryBusTraceEvent.read entry)
-  initialAgreement :
-    ReplayMemoryAgreement initialState acceptedReplay.initialMemory
-  stateAtPrefix : state = stateAfterMemoryBusRows initialState priorRows
+  stateBytesAtPrefix :
+    ReplayMemoryAgreementOnBytes state
+      (replayMemoryAfterBusRows acceptedReplay.initialMemory priorRows)
+      entry.ptr.toNat
 
 /-- Timeline evidence gives replay agreement for the selected read row at its
 accepted chronological prefix. -/
@@ -1267,23 +1305,6 @@ theorem MemoryTimelineEvidence.prefixReadAgreement
       evidence.priorRows entry evidence.laterRows
       evidence.traceSplit h_as h_mult
 
-/-- Timeline evidence gives Sail/replay memory agreement at the selected
-prefix cursor. -/
-theorem MemoryTimelineEvidence.prefixStateAgreement
-    {state : SailState}
-    {entry : MemoryBusEntry FGL}
-    (evidence : MemoryTimelineEvidence state entry) :
-    ReplayMemoryAgreement
-      state
-      (replayMemoryAfterBusRows evidence.acceptedReplay.initialMemory evidence.priorRows) := by
-  rcases evidence with
-    ⟨initialState, acceptedReplay, priorRows, laterRows, traceSplit,
-      selectedRead, initialAgreement, stateAtPrefix⟩
-  subst state
-  exact
-    replayAgreement_after_memoryBusRows
-      initialState priorRows acceptedReplay.initialMemory initialAgreement
-
 /-- The residual timeline evidence plus circuit-side prefix read soundness
 imply the selected load byte agreement shape used by local load correctness. -/
 theorem MemoryTimelineEvidence.memoryTraceAgreement
@@ -1291,11 +1312,11 @@ theorem MemoryTimelineEvidence.memoryTraceAgreement
     {entry : MemoryBusEntry FGL}
     (evidence : MemoryTimelineEvidence state entry) :
     MemoryTraceAgreement state (eventOfEntry entry) :=
-  memoryTraceAgreement_of_replayAgreement
+  memoryTraceAgreement_of_replayAgreementOnBytes
     state
     (replayMemoryAfterBusRows evidence.acceptedReplay.initialMemory evidence.priorRows)
     (eventOfEntry entry)
-    evidence.prefixStateAgreement
+    evidence.stateBytesAtPrefix
     evidence.prefixReadAgreement
 
 /-- Agreement for `eventOfEntry e` is exactly the byte facts expected by

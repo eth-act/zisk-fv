@@ -1599,11 +1599,6 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     writeln!(out, "    {{entry : Interaction.MemoryBusEntry FGL}}").unwrap();
     writeln!(
         out,
-        "    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)"
-    )
-    .unwrap();
-    writeln!(
-        out,
         "    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))"
     )
     .unwrap();
@@ -1630,40 +1625,44 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
         "        some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))"
     )
     .unwrap();
-    writeln!(out, "    (h_initialAgreement :").unwrap();
+    writeln!(out, "    (h_stateBytesAtPrefix :").unwrap();
     writeln!(
         out,
-        "      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState"
+        "      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreementOnBytes state"
     )
     .unwrap();
     writeln!(
         out,
-        "        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge"
+        "        (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows"
     )
     .unwrap();
     writeln!(
         out,
-        "          ((fullWitnessMemAirSourceOfRawSidecars witness"
+        "          (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge"
     )
     .unwrap();
     writeln!(
         out,
-        "              (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts facts))"
+        "            ((fullWitnessMemAirSourceOfRawSidecars witness"
     )
     .unwrap();
     writeln!(
         out,
-        "            |>.replayBridgeOfTraceSplit h_traceSplit)).initialMemory)"
+        "                (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts facts))"
     )
     .unwrap();
-    writeln!(out, "    (h_stateAtPrefix :").unwrap();
-    writeln!(out, "      state =").unwrap();
     writeln!(
         out,
-        "        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :"
+        "              |>.replayBridgeOfTraceSplit h_traceSplit)).initialMemory"
     )
     .unwrap();
-    writeln!(out, "    GeneratedTimelineEvidence state entry :=").unwrap();
+    writeln!(out, "          priorRows)").unwrap();
+    writeln!(out, "        entry.ptr.toNat) :").unwrap();
+    writeln!(
+        out,
+        "    GeneratedTimelineEvidence state entry :="
+    )
+    .unwrap();
     writeln!(
         out,
         "  fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts"
@@ -1671,13 +1670,11 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     .unwrap();
     writeln!(out, "    witness").unwrap();
     writeln!(out, "    facts").unwrap();
-    writeln!(out, "    initialState").unwrap();
     writeln!(out, "    priorRows").unwrap();
     writeln!(out, "    laterRows").unwrap();
     writeln!(out, "    h_traceSplit").unwrap();
     writeln!(out, "    h_selectedRead").unwrap();
-    writeln!(out, "    h_initialAgreement").unwrap();
-    writeln!(out, "    h_stateAtPrefix").unwrap();
+    writeln!(out, "    h_stateBytesAtPrefix").unwrap();
     writeln!(out).unwrap();
     writeln!(out, "end Extraction.MemGeneratedArtifact").unwrap();
     Ok(out)
@@ -2518,7 +2515,6 @@ noncomputable def buildTimelineEvidenceFromExtractedSidecarFacts
             ExtractedSidecarFacts witness table)
     {state : ZiskFv.ZiskCircuit.MemTrace.SailState}
     {entry : Interaction.MemoryBusEntry FGL}
-    (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
     (priorRows laterRows : List (Interaction.MemoryBusEntry FGL))
     (h_traceSplit :
       (fullWitnessMemAirSourceOfRawSidecars witness
@@ -2528,27 +2524,25 @@ noncomputable def buildTimelineEvidenceFromExtractedSidecarFacts
     (h_selectedRead :
       ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow entry =
         some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read entry))
-    (h_initialAgreement :
-      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreement initialState
-        (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
-          ((fullWitnessMemAirSourceOfRawSidecars witness
-              (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts
-                (buildWitnessFactsFromExtractedSidecarFacts witness facts)))
-            |>.replayBridgeOfTraceSplit h_traceSplit)).initialMemory)
-    (h_stateAtPrefix :
-      state =
-        ZiskFv.ZiskCircuit.MemTrace.stateAfterMemoryBusRows initialState priorRows) :
+    (h_stateBytesAtPrefix :
+      ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreementOnBytes state
+        (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+          (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+            ((fullWitnessMemAirSourceOfRawSidecars witness
+                (fullWitnessMemAirSourceRawSidecars_of_proverDataWitnessFacts
+                  (buildWitnessFactsFromExtractedSidecarFacts witness facts)))
+              |>.replayBridgeOfTraceSplit h_traceSplit)).initialMemory
+          priorRows)
+        entry.ptr.toNat) :
     GeneratedTimelineEvidence state entry :=
   buildTimelineEvidence
     witness
     (buildWitnessFactsFromExtractedSidecarFacts witness facts)
-    initialState
     priorRows
     laterRows
     h_traceSplit
     h_selectedRead
-    h_initialAgreement
-    h_stateAtPrefix
+    h_stateBytesAtPrefix
 
 end Extraction.MemGeneratedConstraintBridge
 "#
@@ -2641,7 +2635,7 @@ fn render_mem_air_facts_report(
          `exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete \
          replay source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` \
          feeds the compliance timeline boundary from sidecars plus the residual \
-         Sail timeline facts. \
+         byte-local Sail/replay agreement at the selected load. \
          Use `memTableGeneratedAirSource_of_witnessFacts` only for a concrete \
          table-level source with explicit Clean assertion/lookup witnesses."
     )
@@ -4311,8 +4305,17 @@ mod tests {
         assert!(
             out.contains("abbrev GeneratedTimelineEvidence")
                 && out.contains("FullWitnessGeneratedTimelineEvidence state entry")
-                && out.contains("fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts"),
+                && out.contains("fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts")
+                && out.contains("ReplayMemoryAgreementOnBytes state")
+                && out.contains("h_stateBytesAtPrefix"),
             "generated module should wrap the checked generated timeline constructor:\n{}",
+            out
+        );
+        assert!(
+            !out.contains("stateAtPrefix")
+                && !out.contains("h_initialAgreement")
+                && !out.contains("ReplayMemoryAgreement initialState"),
+            "generated module should not emit the old whole-state timeline boundary:\n{}",
             out
         );
         assert!(
@@ -4400,8 +4403,17 @@ mod tests {
         assert!(
             out.contains("def buildTimelineEvidenceFromExtractedSidecarFacts")
                 && out.contains("GeneratedTimelineEvidence state entry")
-                && out.contains("buildTimelineEvidence"),
+                && out.contains("buildTimelineEvidence")
+                && out.contains("ReplayMemoryAgreementOnBytes state")
+                && out.contains("h_stateBytesAtPrefix"),
             "bridge should expose the checked generated timeline constructor path:\n{}",
+            out
+        );
+        assert!(
+            !out.contains("stateAtPrefix")
+                && !out.contains("h_initialAgreement")
+                && !out.contains("ReplayMemoryAgreement initialState"),
+            "bridge should not emit the old whole-state timeline boundary:\n{}",
             out
         );
     }

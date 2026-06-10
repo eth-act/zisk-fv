@@ -56,12 +56,12 @@ bytes equal Sail memory. The **promise discharge** splits it into:
   update, segment carry, step ordering, dual rows). This is the
   `AcceptedMemoryReplayEvidence.prefixReadSound` field for the concrete
   accepted table.
-- **Residual (one narrow visible boundary):** Sail memory at the selected load
-  equals the replay of the prior accepted events from an initial memory that
-  agrees with the initial Sail state — i.e. leaves (3)+(4). Stated **once,
-  globally**, as a visible hypothesis on `zisk_riscv_compliant_program_bus` in
-  the established `h_bridge : env.aeneasBridgeTrust` idiom. No new axiom; the
-  global project-axiom closure stays at 0.
+- **Residual (one narrow visible boundary):** Sail memory at the selected
+  load's eight byte lanes equals the replay of the same-address accepted prefix
+  selected from the addr/step-sorted Mem table. Stated **once, globally**, as a
+  visible hypothesis on `zisk_riscv_compliant_program_bus` in the established
+  `h_bridge : env.aeneasBridgeTrust` idiom. No new axiom; the global
+  project-axiom closure stays at 0.
 
 This is a genuine shrink: the trusted content drops from "arbitrary bytes per
 load" to the named accepted-replay and Sail-memory timeline evidence. Full
@@ -550,9 +550,9 @@ no assumed soundness fields**.
       Partial: `memoryTimelineEvidence_of_fullWitnessMemReplayBridge` now feeds
       that accepted-replay constructor into `MemoryTimelineEvidence`: the
       accepted replay subobject is derived from the full-witness Mem replay
-      bridge, while the trace split, selected-read tag, initial Sail agreement,
-      and state-at-prefix alignment remain the deliberately residual timeline
-      inputs. Verified with clean LSP diagnostics for the new span,
+      bridge, while the trace split, selected-read tag, and selected-entry
+      eight-byte Sail/replay agreement remain the deliberately residual
+      timeline inputs. Verified with clean LSP diagnostics for the new span,
       `lake build ZiskFv.AirsClean.FullEnsemble.Balance`, and an axiom scan
       with no `sorryAx`; the trust gate `trust/scripts/check-all.sh` also
       passes after updating the trust-retirement note.
@@ -809,7 +809,7 @@ no assumed soundness fields**.
       directly. `fullWitnessMemAirSourceOfRawFacts` names the selected Mem AIR
       source obtained from `FullWitnessMemAirSourceRawFacts`, and
       `fullWitnessMemoryTimelineEvidence_of_rawFacts` combines that source
-      with only the residual Sail timeline fields. The trust ledger now names
+      with only the residual byte-local Sail timeline field. The trust ledger now names
       `FullWitnessMemAirSourceRawFacts` as the generated/full-ensemble target
       before the future whole-execution induction retirement step. Verified
       with clean LSP diagnostics, `lake build
@@ -1149,12 +1149,14 @@ bury it in a structure field.
 
 - [x] Define the single residual object (final name decided here:
       `MemoryTimelineEvidence state entry`): existence of the accepted Mem
-      row trace + initial Sail agreement + selected-prefix state equality for
-      read cursors — exactly leaves (3)+(4), nothing provable inside it.
+      row trace + selected-read tag + selected-entry byte-local Sail/replay
+      agreement for read cursors — exactly the residual Sail timeline boundary,
+      nothing provable inside it.
       Refined: the accepted replay part is now named separately as
       `AcceptedMemoryReplayEvidence`; until Phase B is closed it still carries
       `prefixReadSound`, while `MemoryTimelineEvidence` carries the selected
-      split, initial-memory agreement, and state-at-prefix alignment.
+      split, selected-read tag, and `ReplayMemoryAgreementOnBytes` at
+      `entry.ptr.toNat`.
 - [x] Add the one visible hypothesis to `zisk_riscv_compliant_program_bus`
       next to `h_bridge`.
       Implemented as `h_memory_timeline : env.memoryTimelineEvidence`.
@@ -1163,7 +1165,7 @@ bury it in a structure field.
       can construct that object through `FullWitnessGeneratedTimelineEvidence`,
       whose inner full-witness raw Mem facts derive the accepted replay
       subobject from `FullWitnessMemReplayBridge`, but the public compliance
-      theorem consumes only the residual timeline API. Verified with
+      theorem consumes only the byte-local residual timeline API. Verified with
       `lake env lean` on `Balance.lean`, `OpEnvelope.lean`, and the
       LDSD/Misc/Remaining dispatch files, plus
       `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`, and
@@ -1185,7 +1187,8 @@ bury it in a structure field.
       calling the load theorems. Verified with the load-stack build,
       `lake build ZiskFv.Compliance`, full `lake build`,
       `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
-      `nix run .#test`, and the updated timeline consistency witness.
+      `nix run .#test`, and the byte-local two-address timeline consistency
+      witness.
 - [x] Port the `MemModel.lean` re-theoreming and the byte-address row-match
       fix (`ptr = addr * 8`); scan for legacy pins:
       `rg -n "mem_legacy_addr|mem\.addr .* = .*\.ptr" ZiskFv`.
@@ -1214,6 +1217,9 @@ bury it in a structure field.
 - [x] Update `trust/trusted-base.md`: retire "Memory load byte agreement",
       add the narrower "Sail memory timeline" boundary section with its
       retirement path (whole-execution induction).
+      Review-fix follow-up: the section now cites `mem.pil`'s address/step
+      sort order and states the residual boundary as byte-local agreement at
+      the selected entry, not whole-state replay after an addr-sorted prefix.
 - [x] `trust/scripts/regenerate.sh` + regenerate caller-burden; confirm the
       wrapper caller-burden diff is net-negative and hypothesis counts hold or
       shrink.
@@ -1224,7 +1230,10 @@ bury it in a structure field.
       adapts to the new boundary; a false-probe must still fail to typecheck.
       The witness now constructs `AcceptedMemoryReplayEvidence` plus
       `MemoryTimelineEvidence` and derives `LoadByteAgreement` from them; the
-      semantic gate label names the Sail memory timeline witness.
+      semantic gate label names the Sail memory timeline witness. Review-fix
+      follow-up: the witness now uses a two-address addr-sorted/time-reversed
+      scenario that typechecks through the byte-local boundary and would not
+      satisfy the old whole-state prefix equality.
 
 ### Phase D — Cleanup
 

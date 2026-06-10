@@ -176,16 +176,22 @@ source explicit: it carries
 sidecars are exactly the sidecars packaged from those witness facts. The inner
 `FullWitnessMemoryTimelineEvidence` contains the concrete full-ensemble witness,
 the `FullWitnessMemAirSourceRawSidecars` callback for the witness-selected
-mutable Mem table, and only the residual whole-execution memory-timeline facts.
-A derived Mem AIR source accessor selects the `FullWitnessMemReplayBridge`,
-which derives the
-`AcceptedMemoryReplayEvidence` sub-object used by `MemoryTimelineEvidence`,
-including prefix-read soundness for the accepted Mem rows. The residual
-timeline facts state that those rows split around the selected read, the
-selected row is a read, the initial Sail memory agrees with the replay memory,
-and the selected Sail state is the state reached by replaying the accepted
-prefix. The canonical load proofs derive `LoadByteAgreement` from the resulting
-timeline evidence and the memory replay relation.
+mutable Mem table, and only the residual Sail-memory timeline fact. A derived
+Mem AIR source accessor selects the `FullWitnessMemReplayBridge`, which derives
+the `AcceptedMemoryReplayEvidence` sub-object used by
+`MemoryTimelineEvidence`, including prefix-read soundness for the accepted Mem
+rows.
+
+The accepted Mem table is sorted by address and step, not by execution time
+(`zisk/state-machines/mem/pil/mem.pil` line 9: "Memory is sorted by address and
+step"). The residual timeline boundary therefore does **not** claim whole Sail
+state equality after replaying the accepted Mem-table prefix. It states only:
+the accepted rows split around the selected read, the selected row is a read,
+and the selected Sail state agrees with
+`replayMemoryAfterBusRows acceptedReplay.initialMemory priorRows` on the
+selected entry's eight byte lanes (`ReplayMemoryAgreementOnBytes ... entry.ptr.toNat`).
+The canonical load proofs derive `LoadByteAgreement` from that byte-local
+timeline evidence plus the circuit-side prefix-read agreement.
 
 Generated/full-ensemble Mem facts target
 `FullWitnessMemAirSourceProverDataWitnessFacts`: Clean assertion/lookup
@@ -206,27 +212,32 @@ ProverData fact callbacks to the same witness target. It also exposes
 constraints to the ProverData-backed source view used by the wrapper, so this
 surface stays synchronized with the checked Lean API.
 `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` packages that
-target into a checked generated producer of the public timeline boundary. Lean packages the resulting sidecar
-callback into the witness-selected `FullWitnessMemAirSource` via
+target into a checked generated producer of the public timeline boundary. Lean
+packages the resulting sidecar callback into the witness-selected
+`FullWitnessMemAirSource` via
 `fullWitnessMemAirSourceOfRawSidecars`, and
 `fullWitnessMemoryTimelineEvidence_of_rawSidecars` combines it with only the
-residual Sail timeline fields above. `FullWitnessMemAirSourceRawFacts` and
+byte-local residual Sail timeline field above. `FullWitnessMemAirSourceRawFacts` and
 `fullWitnessMemoryTimelineEvidence_of_rawFacts` remain compatibility adapters
 for lower-level generated modules that still produce the raw sigma callback;
 `fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts` is the checked
 adapter for raw ProverData facts.
 
 Retirement path: emit/prove the extractor/full-ensemble
-`FullWitnessMemAirSourceProverDataWitnessFacts`, then prove the whole-execution induction
-connecting accepted Mem rows, initial Sail memory agreement, and selected Sail
-state without assuming `env.memoryTimelineEvidence`. The table/list-position
-part of the bridge is named as `MemTableGeneratedRowsBridge`, which connects
-Clean `table.table` positions to `rowAt mem idx` and the row-indexed
+`FullWitnessMemAirSourceProverDataWitnessFacts`, then prove the whole-execution
+induction showing that, for each selected load, Sail memory at the selected
+entry's eight bytes equals the last same-address accepted write in step order
+(including the preload/first-read base case). The table/list-position part of
+the bridge is named as `MemTableGeneratedRowsBridge`, which connects Clean
+`table.table` positions to `rowAt mem idx` and the row-indexed
 `generated_every_row` constraints. `FullWitnessMemReplayBridge` packages the
 concrete full-ensemble Mem table, generated-row/range/fixed-column facts,
 active-row equality, and nonempty segment evidence; its constructor derives the
 accepted replay subobject, so `AcceptedMemoryReplayEvidence.prefixReadSound` is
-no longer a bare global-boundary assumption.
+no longer a bare global-boundary assumption. The semantic trust gate includes a
+two-address witness with an addr-sorted/time-reversed prefix (write at byte
+address 0 with later timestamp, selected read at byte address 8 with earlier
+timestamp) so the old whole-state boundary shape cannot return silently.
 
 ## Platform Profile
 
