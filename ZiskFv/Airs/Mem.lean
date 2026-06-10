@@ -437,6 +437,74 @@ theorem segment_previous_value_1_eq_previous_segment_of_boundary
     segment_previous_value_1 cols v row = cols.previous_segment_value_1 := by
   simp [segment_previous_value_1, h_boundary]
 
+/-- At a segment-boundary row, a same-address witness identifies the current
+    address with the previous segment's carried-out address. -/
+theorem addr_eq_previous_segment_of_same_addr_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_same_addr : v.addr_changes row = 0)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.addr row = cols.previous_segment_addr := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_addr, _, _, _, _⟩
+  rw [h_same_addr] at h_addr
+  have h_prev :=
+    segment_previous_addr_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary
+  rw [h_prev] at h_addr
+  linear_combination h_addr
+
+/-- At a segment-boundary row, a same-address read carries the previous
+    segment's low value chunk. -/
+theorem value_0_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.value_0 row = cols.previous_segment_value_0 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_value_0, _, _, _⟩
+  rw [h_read_same_addr] at h_value_0
+  have h_prev :=
+    segment_previous_value_0_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary
+  rw [h_prev] at h_value_0
+  linear_combination h_value_0
+
+/-- At a segment-boundary row, a same-address read carries the previous
+    segment's high value chunk. -/
+theorem value_1_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.value_1 row = cols.previous_segment_value_1 := by
+  rcases h with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      h_value_1, _⟩
+  rw [h_read_same_addr] at h_value_1
+  have h_prev :=
+    segment_previous_value_1_eq_previous_segment_of_boundary
+      (cols := cols) (v := v) (row := row) h_boundary
+  rw [h_prev] at h_value_1
+  linear_combination h_value_1
+
+/-- At a segment-boundary row, a same-address read carries both value chunks
+    from the previous segment. -/
+theorem values_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row)
+    (h_read_same_addr : v.read_same_addr row = 1)
+    (h_boundary : cols.segment_l1 row = 1) :
+    v.value_0 row = cols.previous_segment_value_0
+      ∧ v.value_1 row = cols.previous_segment_value_1 :=
+  ⟨value_0_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_read_same_addr h_boundary,
+    value_1_eq_previous_segment_of_read_same_addr_boundary_segment_every_row
+      (cols := cols) (v := v) (row := row) h h_read_same_addr h_boundary⟩
+
 /-- The generated segment constraints record the current low value chunk as
     the segment's carried-out low value when the next row starts a segment. -/
 theorem segment_last_value_0_eq_of_next_boundary_segment_every_row

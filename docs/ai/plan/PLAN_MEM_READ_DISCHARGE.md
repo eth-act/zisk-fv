@@ -380,7 +380,7 @@ no assumed soundness fields**.
       `ZiskFv.AirsClean.FullEnsemble.Balance`, and both touched target builds
       plus full `lake build`, both trust gates, and `nix run .#test` pass for
       commit `6e52f0d7`.
-      Latest in-progress slice closes that explicit row-0 same-address
+      Latest completed slice closes that explicit row-0 same-address
       boundary for first Mem segments. `Airs/Mem.lean` proves
       `addr_changes_eq_one_of_first_segment_boundary_segment_every_row` from
       `mem.pil:377`
@@ -399,10 +399,31 @@ no assumed soundness fields**.
       axiom scans of the new first-segment theorems/constructor show no
       `sorryAx` (only the existing Clean component axiom class); the combined
       checkpoint `nix run .#test` passes, including full `lake build`, both
-      trust gates, flake repro, cargo tests, and extraction tests.
+      trust gates, flake repro, cargo tests, and extraction tests. Committed as
+      `15775597`.
       Existing full-witness code currently selects the Mem table but does not
       expose `segment.is_first_segment = 1`; generated-row, range,
       fixed-column, and segment-selector facts remain explicit bridge inputs.
+      Current continuation-memory slice starts the alternative closure path.
+      `Airs/Mem.lean` proves that at a segment-boundary row,
+      `addr_changes = 0` identifies `mem.addr` with
+      `segment.previous_segment_addr`, and a same-address read carries both
+      `previous_segment_value_*` chunks. `Balance.lean` defines
+      `memPreviousSegmentReplayEntry` plus
+      `previousSegmentInitialMemoryOfRows`, then proves
+      `readEventReplayAgreement_after_previousSegmentInitialMemory_row_zero_memTableGeneratedRowsBridge`
+      for the row-0 same-address continuation base. The same slice generalizes
+      the split-prefix predecessor step and the table predecessor induction over
+      an arbitrary initial memory, leaving the zero-memory theorem as a wrapper.
+      Remaining continuation integration is now the seeded-memory
+      address-change base: prove that the previous-segment seed is disjoint from
+      those zero-valued reads or is safely overwritten by the finite zero
+      preload. Verified with clean LSP diagnostics for `ZiskFv.Airs.Mem` and
+      `ZiskFv.AirsClean.FullEnsemble.Balance`, target builds for
+      `ZiskFv.Airs.Mem` and `ZiskFv.AirsClean.FullEnsemble.Balance`, and axiom
+      scans showing no `sorryAx` in the new continuation declarations; the
+      combined checkpoint `nix run .#test` passes, including full `lake build`,
+      both trust gates, flake repro, cargo tests, and extraction tests.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
