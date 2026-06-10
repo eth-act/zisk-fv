@@ -1,6 +1,7 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 
-Current focus: PR #64 has landed on `origin/main`; post-landing cleanup remains.
+Current focus: PR #64 has landed on `origin/main`; post-landing cleanup is
+deferred while Cody reviews the code.
 `LoadPromises.mem_read` is gone and load arms consume the public
 `MemoryTimelineEvidence` boundary.
 
@@ -27,6 +28,5 @@ Digression: root `AGENTS.md` carries the build/test cadence update: use
 targeted checks during inner-loop work, with broader gates after coherent
 groups of changes, before commits, and before claiming completion.
 
-Next step: ask for approval, then delete the old `memory-trust-gap`
-branch/worktree and remove its superseded plan/history notes. This is
-destructive, so do not perform it without explicit approval.
+Next step: wait for Cody's review before deleting the old `memory-trust-gap`
+branch/worktree or removing its superseded plan/history notes.

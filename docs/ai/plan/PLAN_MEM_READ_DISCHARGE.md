@@ -1240,6 +1240,7 @@ bury it in a structure field.
 - [ ] After landing: delete branch/worktree `memory-trust-gap` (ask first —
       destructive), remove its plan files from `docs/ai/PROJECTS.md` history
       notes.
+      Deferred at Cody's request while he reviews the landed code.
 
 ## Decision gates
 
