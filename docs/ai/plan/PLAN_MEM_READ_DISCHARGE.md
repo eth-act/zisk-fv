@@ -1005,6 +1005,15 @@ no assumed soundness fields**.
       (71 tests), local generation of `/tmp/MemGeneratedArtifact.lean`,
       `lake env lean /tmp/MemGeneratedArtifact.lean`,
       `nix flake check --no-build`, and `git diff --check`.
+      Follow-up gate slice: the top-level `nix run .#test` app now includes a
+      dedicated `Mem generated artifact wrapper` step that compiles
+      `build/extraction/Extraction/MemGeneratedArtifact.lean` with
+      `lake env lean`. This keeps the reproducible wrapper checked even though
+      the old extraction library remains intentionally outside the main Lake
+      dependency graph. Verified by regenerating the ignored wrapper under
+      `build/extraction/Extraction/`, running the same `test -f` plus
+      `lake env lean` command used by the gate, `nix flake check --no-build`,
+      and `git diff --check`.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

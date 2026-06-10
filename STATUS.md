@@ -14,8 +14,8 @@ emits only row constraints plus MemBus provider rows; stage-2 `gsum`/`im`,
 table-global segment/permutation constants, challenges, ranges, and generated
 assertions are outside the component.
 
-Current slice: generated artifact production is now reproducible. `pil-extract
-mem-generated-artifact` emits a typed Lean wrapper that defines
+Current slice: generated artifact production is reproducible and gated.
+`pil-extract mem-generated-artifact` emits a typed Lean wrapper that defines
 `WitnessFacts witness = FullWitnessMemAirSourceProverDataWitnessFacts witness`
 and feeds it to `fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`.
 
@@ -36,7 +36,8 @@ Latest verification:
 - Focused generated-artifact wrapper test.
 - Full `cargo test --manifest-path tools/pil-extract/Cargo.toml` (71 tests).
 - Generated `/tmp/MemGeneratedArtifact.lean`; `lake env lean` elaborates it.
-- `nix flake check --no-build` sees the new `extracted-lean` output.
+- New `nix run .#test` step compiles the populated wrapper; command verified.
+- `nix flake check --no-build` sees the updated `test` app.
 - `git diff --check` clean.
 - Latest Lean/trust gate: `lake build ZiskFv.Compliance` and
   `trust/scripts/check-all.sh` at commit `e788d386`.
@@ -46,5 +47,4 @@ Latest verification:
 Next step: generate/prove `FullWitnessMemAirSourceProverDataWitnessFacts` in
 the generated artifact. Broadening the Clean table/component model is only the
 fallback if that artifact must be checked inside the generic full ensemble.
-
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.
