@@ -613,8 +613,22 @@ no assumed soundness fields**.
       ZiskFv/AirsClean/FullEnsemble/Balance.lean`, targeted `lake build
       ZiskFv.AirsClean.FullEnsemble.Balance`, and no-`sorryAx` scans of the
       new constructors.
-      Current sub-gap: derive or expose `MemTableGeneratedAirFacts` for the
-      witness-selected Mem table from concrete extraction/Clean witness data.
+      Partial: `tools/pil-extract mem-air-facts` now exposes the concrete
+      extractor source surface for `MemTableGeneratedAirFacts`: Mem generated
+      constraints `0..=23` (`segment_every_row`) and `24..=33`
+      (`permutation_every_row`), `gsum_debug_data` range-check hints,
+      witness/fixed-column names, and the `mem.pil` range/bit-width source
+      lines that pilout does not encode. This confirms that existing Clean
+      table soundness cannot by itself construct the package, because it omits
+      stage-2 generated columns and range metadata. Verified with
+      `cargo test --manifest-path tools/pil-extract/Cargo.toml` and
+      `cargo run --manifest-path tools/pil-extract/Cargo.toml --quiet -- \
+      mem-air-facts --pilout build/zisk.pilout --air Mem --pil-source \
+      zisk/state-machines/mem/pil/mem.pil --output \
+      /tmp/mem-air-facts-report.md`.
+      Current sub-gap: turn that extractor surface into a typed/generated Lean
+      source object that constructs `MemTableGeneratedAirFacts` for the
+      witness-selected Mem table.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove

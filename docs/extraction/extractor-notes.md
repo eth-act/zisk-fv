@@ -9,12 +9,31 @@ live under [`../../trust/`](../../trust/README.md).
 ## Contract
 
 ```
-pil-extract --pilout <path> --air <needle>
+pil-extract air --pilout <path> --air <needle>
                  [--output <path>] [--list]
                  [--skip-unsupported] [--only <i>[,<j>…]]
-                 [--bus-emissions [--bus-id <N>]]
+
+pil-extract bus-emissions --pilout <path> (--air <needle> | --airs <a,b,...>)
+                 [--output <path>] [--bus-id <N>]
+
+pil-extract arith-table --rust-source <path> [--output <path>]
+
+pil-extract clean-component --pilout <path> --air <needle>
+                 [--row-output <path>] [--constraints-output <path>]
+                 [--bus-id <N>] [--channel op-bus|mem-align-bus]
+
+pil-extract mem-air-facts --pilout <path> [--air Mem]
+                 [--pil-source <path>] [--output <path>]
 ```
 
+- `air`: emit Lean constraint definitions for one AIR, or list AIRs.
+- `bus-emissions`: emit bus-emission specs from `gsum_debug_data` hints.
+- `arith-table`: emit the extracted arithmetic lookup table from upstream
+  Rust source.
+- `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
+  one AIR and one supported channel shape.
+- `mem-air-facts`: emit a Markdown source report for the Mem generated AIR
+  facts consumed by `MemTableGeneratedAirFacts`.
 - `--pilout`: path to a compiled `.pilout` (protobuf, schema vendored at
   `tools/pil-extract/proto/pilout.proto`).
 - `--air`: substring matched against each AIR's `name` (case-sensitive). Must
@@ -31,19 +50,14 @@ pil-extract --pilout <path> --air <needle>
   aborts on an unsupported operand inside a selected constraint, even with
   `--skip-unsupported` set — the point of `--only` is to assert that a
   specific constraint extracts cleanly.
-- `--bus-emissions`: switch the tool to **bus-emission mode** (Track O POC).
-  Instead of walking `air.constraints`, it walks `pilout.hints` filtered to
-  `gsum_debug_data` entries attached to the resolved AIR, parses each into a
-  structured tuple (`piop`, `bus_id`, `is_proves`, `multiplicity`, named
-  `slots`), and emits a `BusEmissionSpec` def per emission under the
-  `ZiskFv.Extraction.Buses` namespace. Slots are rendered through the same
-  expression pipeline used for constraints, so witness cells, fixed cells,
-  and constants all type cleanly over `F` (no `ExtF` mixing — operation-bus
-  tuples reference only stage-1 cells).
-- `--bus-id <N>`: bus-id filter for `--bus-emissions` mode. Defaults to
-  `5000 = OPERATION_BUS_ID` (`zisk/pil/opids.pil:2`). Set to `0` to
-  emit every `gsum_debug_data` hint for the AIR (useful for memory-bus
-  exploration).
+- `--bus-id <N>`: bus-id filter for `bus-emissions` mode and channel selection
+  for `clean-component`. Defaults to `5000 = OPERATION_BUS_ID`
+  (`zisk/pil/opids.pil:2`). Set to `0` in `bus-emissions` mode to emit every
+  `gsum_debug_data` hint for the AIR (useful for memory-bus exploration).
+- `--pil-source <path>`: optional `mem.pil` source path for
+  `mem-air-facts`. Pilout symbols do not encode original `bits(N)`
+  declarations, so the report attaches source lines from this file when
+  supplied.
 
 Output shape mirrors `openvm-fv/OpenvmFv/Extraction/*.lean`: one `constraint_N`
 definition per pilout constraint, typed over `Circuit F ExtF C` (from
@@ -103,7 +117,7 @@ artefacts in the pilout:
 The hint is the structurally-clean rendering target. Operation-bus emissions
 in ZisK's pilout reference only stage-1 witness cells (no challenges), so
 the existing constraint renderer types them cleanly over `F`. The
-`--bus-emissions` mode walks these hints and produces `BusEmissionSpec`
+`bus-emissions` mode walks these hints and produces `BusEmissionSpec`
 defs.
 
 ## Clean `Air.Flat.Component` emission (`clean-component`, C0g)
@@ -194,6 +208,30 @@ Unlike the `air` / `bus-emissions` outputs (which land in the gitignored
 `build/extraction/`), these are *committed* source files: the regeneration
 is run deliberately when the BinaryAdd AIR changes, and the diff is the
 audit surface.
+
+## Mem AIR facts source report (`mem-air-facts`)
+
+The `mem-air-facts` subcommand emits a Markdown audit report for the source
+surface behind the Lean `MemTableGeneratedAirFacts` package. It is not a Lean
+proof generator. Its purpose is to make the remaining Mem-table proof inputs
+concrete: which pilout constraints supply `generated_every_row`, which hints
+source range-check obligations, which witness/fixed columns are named, and
+which `mem.pil` lines provide bit-width provenance that pilout does not carry.
+
+```
+pil-extract mem-air-facts --pilout build/zisk.pilout --air Mem \
+    --pil-source zisk/state-machines/mem/pil/mem.pil \
+    --output /tmp/mem-air-facts-report.md
+```
+
+The report maps constraints `0..=23` to Lean's `segment_every_row` group and
+constraints `24..=33` to `permutation_every_row`. It also lists
+`gsum_debug_data` hints whose `name_piop = "Range Check"`; those are the
+extractor-facing source for `MemTableGeneratedRangeFacts` and
+`MemSegmentGeneratedRangeFacts`. Because Clean component emission deliberately
+omits stage-2 running-product columns and does not support previous-row witness
+cells, this mode records the source surface rather than pretending those facts
+follow from the existing Clean table soundness API.
 
 ## Limitations (deliberate; expand as phases demand)
 

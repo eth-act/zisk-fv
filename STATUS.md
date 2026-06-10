@@ -3,8 +3,8 @@ Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
 Current focus: Phase B/C bridge closure. `LoadPromises.mem_read` is gone, and
 load arms consume the single global memory-timeline boundary.
 
-Blocking: derive or expose `MemTableGeneratedAirFacts` for the witness-selected
-Mem table from concrete extraction/Clean witness data.
+Blocking: turn the concrete Mem AIR facts source surface into a typed/generated
+Lean source for `MemTableGeneratedAirFacts` on the witness-selected Mem table.
 
 Current proof surface:
 - `FullWitnessMemReplayBridge` packages the concrete Mem table, generated-row
@@ -17,8 +17,16 @@ Current proof surface:
   completeness axioms out of the global theorem closure.
 - Outer load surfaces no longer carry the legacy
   `mem.addr r_mem = bus.e1.ptr` pin.
+- `tools/pil-extract mem-air-facts` now reports the Mem generated constraint
+  groups, range-check hints, witness/fixed columns, and `mem.pil` range/bit
+  source lines needed by `MemTableGeneratedAirFacts`.
 
 Latest verification:
+- `cargo test --manifest-path tools/pil-extract/Cargo.toml`
+- `cargo run --manifest-path tools/pil-extract/Cargo.toml --quiet -- \
+  mem-air-facts --pilout build/zisk.pilout --air Mem \
+  --pil-source zisk/state-machines/mem/pil/mem.pil \
+  --output /tmp/mem-air-facts-report.md`
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
 - `lake build ZiskFv.Compliance`
 - `trust/scripts/check-all.sh`
@@ -27,8 +35,8 @@ Latest verification:
 
 Last full `nix run .#test`: commit `98202ebc`.
 
-Next step: connect `MemTableGeneratedAirFacts` to concrete extractor/Clean
-witness data; existing Lean has selected-load MemClean row bridges but no
-whole-table AIR-facts source from `EnsembleWitness` yet.
+Next step: implement the Lean-facing generated/source object that constructs
+`MemTableGeneratedAirFacts`; existing Clean table soundness does not expose
+stage-2 generated columns or range metadata.
 
 Context: Phase A is committed at `0c222595`; old memory-trust-gap is salvage only.

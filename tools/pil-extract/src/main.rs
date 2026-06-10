@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::fs;
 use std::path::PathBuf;
 
@@ -41,6 +42,9 @@ enum Cmd {
     /// `ProvableStruct` and the `main` do-block (assertZero constraints +
     /// the operation-bus `OpBusChannel.push`). Plan step C0g / D-EXT.
     CleanComponent(CleanComponentCmd),
+    /// Emit an audit report for the Mem AIR facts needed by
+    /// `MemTableGeneratedAirFacts`.
+    MemAirFacts(MemAirFactsCmd),
 }
 
 #[derive(Args, Debug)]
@@ -150,6 +154,27 @@ struct CleanComponentCmd {
     channel: String,
 }
 
+#[derive(Args, Debug)]
+struct MemAirFactsCmd {
+    /// Path to the .pilout file.
+    #[arg(long)]
+    pilout: PathBuf,
+
+    /// AIR name (substring match; exact-name preferred).
+    #[arg(long, default_value = "Mem")]
+    air: String,
+
+    /// Optional path to `state-machines/mem/pil/mem.pil`. Pilout symbols do
+    /// not carry `bits(N)` declarations, so this source file is the current
+    /// authority for bit-width/range provenance.
+    #[arg(long)]
+    pil_source: Option<PathBuf>,
+
+    /// Output path for the Markdown report. If omitted, prints to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
+}
+
 fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -172,7 +197,19 @@ fn main() -> Result<()> {
         Cmd::Air(args) => run_air(args),
         Cmd::BusEmissions(args) => run_bus_emissions(args),
         Cmd::CleanComponent(args) => run_clean_component(args),
+        Cmd::MemAirFacts(args) => run_mem_air_facts(args),
     }
+}
+
+/// Emit the extractor-facing source report for the Lean
+/// `MemTableGeneratedAirFacts` package.
+fn run_mem_air_facts(args: MemAirFactsCmd) -> Result<()> {
+    let bytes = fs::read(&args.pilout)
+        .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
+    let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
+    let hit = find_air(&pilout, &args.air)?;
+    let rendered = render_mem_air_facts_report(&pilout, &hit, args.pil_source.as_deref())?;
+    write_output(args.output.as_deref(), &rendered)
 }
 
 /// Emit the Clean `Air.Flat.Component` source for one AIR (plan step C0g).
@@ -1148,6 +1185,306 @@ fn render_bus_emissions_multi(
     Ok(out)
 }
 
+// ----------------------------------------------------------------------
+// Mem AIR fact source report
+// ----------------------------------------------------------------------
+
+/// Extractor-side report for the Lean `MemTableGeneratedAirFacts` package.
+///
+/// This intentionally emits an audit document, not Lean proof terms. The
+/// current pilout carries the generated constraint expressions, fixed-column
+/// values, witness-column names, and `gsum_debug_data` hints, but not the
+/// original `bits(N)` declaration metadata. When `--pil-source` is supplied we
+/// quote the relevant source lines so the remaining Lean source obligation is
+/// anchored to a concrete extractor surface instead of a replay-soundness
+/// placeholder.
+fn render_mem_air_facts_report(
+    pilout: &PilOut,
+    hit: &AirHit<'_>,
+    pil_source: Option<&std::path::Path>,
+) -> Result<String> {
+    let air_name = hit
+        .air
+        .name
+        .clone()
+        .ok_or_else(|| anyhow!("air has no name"))?;
+    let witness_cols = witness_column_names(pilout, hit);
+    let fixed_cols = fixed_column_names(pilout, hit);
+    let range_hints = mem_air_gsum_hints(pilout, hit, Some("Range Check"))?;
+    let other_hints = mem_air_gsum_hints(pilout, hit, None)?
+        .into_iter()
+        .filter(|(_, em)| em.name_piop != "Range Check")
+        .collect::<Vec<_>>();
+
+    let mut out = String::new();
+    writeln!(out, "# Mem AIR Facts Source Report\n").unwrap();
+    writeln!(
+        out,
+        "- AIR: `{}` (group `{}`, group id {}, air id {})",
+        md_escape(&air_name),
+        md_escape(&hit.airgroup_name),
+        hit.airgroup_idx,
+        hit.air_idx
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "- Pilout `num_rows` field: `{}`",
+        hit.air.num_rows.unwrap_or(0)
+    )
+    .unwrap();
+    writeln!(out, "- Constraints: `{}`", hit.air.constraints.len()).unwrap();
+    writeln!(out).unwrap();
+
+    writeln!(out, "## Lean Package Mapping\n").unwrap();
+    writeln!(
+        out,
+        "- `MemTableGeneratedAirFacts.generatedAt` is sourced from \
+         `generated_every_row`, split in Lean as `segment_every_row` and \
+         `permutation_every_row`."
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "- Expected Mem generated constraint groups: `segment_every_row` \
+         constraints `0..=23`; `permutation_every_row` constraints `24..=33`."
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "- `MemTableGeneratedAirFacts.rowRanges` and `.segmentRanges` require \
+         explicit range-check source facts; these are represented in pilout as \
+         `gsum_debug_data` hints with `name_piop = \"Range Check\"`."
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "- Pilout symbols do not encode `bits(N)` declarations; use \
+         `--pil-source` to attach the authoritative `mem.pil` source lines."
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+
+    writeln!(out, "## Witness Columns\n").unwrap();
+    writeln!(out, "| Stage | Column | Name |").unwrap();
+    writeln!(out, "|---:|---:|---|").unwrap();
+    let mut witness_entries: Vec<_> = witness_cols.iter().collect();
+    witness_entries.sort_by_key(|((stage, id), _)| (*stage, *id));
+    for ((stage, id), name) in witness_entries {
+        writeln!(out, "| {} | {} | `{}` |", stage, id, md_escape(name)).unwrap();
+    }
+    writeln!(out).unwrap();
+
+    writeln!(out, "## Fixed Columns\n").unwrap();
+    if fixed_cols.is_empty() {
+        writeln!(out, "_No fixed-column symbols were named in pilout._").unwrap();
+    } else {
+        writeln!(out, "| Column | Name | First Values |").unwrap();
+        writeln!(out, "|---:|---|---|").unwrap();
+        for (idx, name) in &fixed_cols {
+            let first_values = hit
+                .air
+                .fixed_cols
+                .get(*idx as usize)
+                .map(|col| {
+                    col.values
+                        .iter()
+                        .take(8)
+                        .map(|v| format_basefield(v))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_else(|| "<missing fixed col payload>".to_string());
+            writeln!(
+                out,
+                "| {} | `{}` | `{}` |",
+                idx,
+                md_escape(name),
+                md_escape(&first_values)
+            )
+            .unwrap();
+        }
+    }
+    writeln!(out).unwrap();
+
+    writeln!(out, "## Constraint Inventory\n").unwrap();
+    writeln!(out, "| Index | Domain | Lean Group | Debug Line |").unwrap();
+    writeln!(out, "|---:|---|---|---|").unwrap();
+    for (idx, c) in hit.air.constraints.iter().enumerate() {
+        let (domain, debug_line) = constraint_domain_and_debug(c);
+        let lean_group = match idx {
+            0..=23 => "`segment_every_row`",
+            24..=33 => "`permutation_every_row`",
+            _ => "_outside named Mem package_",
+        };
+        writeln!(
+            out,
+            "| {} | `{}` | {} | {} |",
+            idx,
+            domain,
+            lean_group,
+            debug_line
+                .as_deref()
+                .map(|s| format!("`{}`", md_escape(s)))
+                .unwrap_or_else(|| "".to_string())
+        )
+        .unwrap();
+    }
+    writeln!(out).unwrap();
+
+    writeln!(out, "## Range-Check Hints\n").unwrap();
+    write_mem_air_hint_table(&mut out, &range_hints);
+    writeln!(out).unwrap();
+
+    writeln!(out, "## Other `gsum_debug_data` Hints\n").unwrap();
+    write_mem_air_hint_table(&mut out, &other_hints);
+    writeln!(out).unwrap();
+
+    if let Some(path) = pil_source {
+        writeln!(out, "## `mem.pil` Source Lines\n").unwrap();
+        let source_lines = mem_pil_source_lines(path)?;
+        if source_lines.is_empty() {
+            writeln!(
+                out,
+                "_No relevant `bits`, `SEGMENT_L1`, or `range_check` lines found._"
+            )
+            .unwrap();
+        } else {
+            writeln!(out, "| Line | Source |").unwrap();
+            writeln!(out, "|---:|---|").unwrap();
+            for (line, text) in source_lines {
+                writeln!(out, "| {} | `{}` |", line, md_escape(&text)).unwrap();
+            }
+        }
+        writeln!(out).unwrap();
+    }
+
+    Ok(out)
+}
+
+fn fixed_column_names(pilout: &PilOut, hit: &AirHit<'_>) -> Vec<(u32, String)> {
+    let mut out = Vec::new();
+    for sym in &pilout.symbols {
+        let ty = SymbolType::try_from(sym.r#type).unwrap_or(SymbolType::WitnessCol);
+        if ty != SymbolType::FixedCol {
+            continue;
+        }
+        if sym.air_group_id != Some(hit.airgroup_idx as u32) {
+            continue;
+        }
+        if sym.air_id != Some(hit.air_idx as u32) {
+            continue;
+        }
+        if sym.dim == 0 {
+            out.push((sym.id, sym.name.clone()));
+        } else {
+            let total: u32 = sym.lengths.iter().product();
+            for k in 0..total {
+                out.push((sym.id + k, format!("{}[{}]", sym.name, k)));
+            }
+        }
+    }
+    out.sort_by_key(|(idx, _)| *idx);
+    out
+}
+
+fn constraint_domain_and_debug(c: &Constraint) -> (String, Option<String>) {
+    match c.constraint.as_ref() {
+        Some(ConstraintKind::EveryRow(er)) => ("every_row".to_string(), er.debug_line.clone()),
+        Some(ConstraintKind::FirstRow(fr)) => ("first_row".to_string(), fr.debug_line.clone()),
+        Some(ConstraintKind::LastRow(lr)) => ("last_row".to_string(), lr.debug_line.clone()),
+        Some(ConstraintKind::EveryFrame(ef)) => (
+            format!("every_frame({},{})", ef.offset_min, ef.offset_max),
+            ef.debug_line.clone(),
+        ),
+        None => ("<missing>".to_string(), None),
+    }
+}
+
+fn mem_air_gsum_hints(
+    pilout: &PilOut,
+    hit: &AirHit<'_>,
+    piop_filter: Option<&str>,
+) -> Result<Vec<(usize, BusEmission)>> {
+    let mut out = Vec::new();
+    for (idx, hint) in pilout.hints.iter().enumerate() {
+        if hint.name != "gsum_debug_data" {
+            continue;
+        }
+        if hint.air_group_id != Some(hit.airgroup_idx as u32) {
+            continue;
+        }
+        if hint.air_id != Some(hit.air_idx as u32) {
+            continue;
+        }
+        let em = parse_bus_emission(pilout, hit.air, hint).with_context(|| {
+            format!(
+                "hint #{} (AIR {})",
+                idx,
+                hit.air.name.clone().unwrap_or_default()
+            )
+        })?;
+        if piop_filter.is_none_or(|filter| em.name_piop == filter) {
+            out.push((idx, em));
+        }
+    }
+    Ok(out)
+}
+
+fn write_mem_air_hint_table(out: &mut String, hints: &[(usize, BusEmission)]) {
+    if hints.is_empty() {
+        writeln!(out, "_No matching hints._").unwrap();
+        return;
+    }
+    writeln!(
+        out,
+        "| Hint | PIOP | Side | Bus ID | Multiplicity | Slots |"
+    )
+    .unwrap();
+    writeln!(out, "|---:|---|---|---:|---|---|").unwrap();
+    for (idx, em) in hints {
+        let slots = em
+            .slots
+            .iter()
+            .map(|(name, value)| format!("`{} = {}`", md_escape(name), md_escape(value)))
+            .collect::<Vec<_>>()
+            .join("<br>");
+        writeln!(
+            out,
+            "| {} | `{}` | `{}` | {} | `{}` | {} |",
+            idx,
+            md_escape(&em.name_piop),
+            if em.type_piop { "proves" } else { "assumes" },
+            em.busid,
+            md_escape(&em.multiplicity),
+            slots
+        )
+        .unwrap();
+    }
+}
+
+fn mem_pil_source_lines(path: &std::path::Path) -> Result<Vec<(usize, String)>> {
+    let source = fs::read_to_string(path)
+        .with_context(|| format!("failed to read PIL source {}", path.display()))?;
+    let mut out = Vec::new();
+    for (idx, line) in source.lines().enumerate() {
+        let trimmed = line.trim();
+        if trimmed.contains("col fixed SEGMENT_L1")
+            || trimmed.contains("col witness bits(")
+            || trimmed.contains("range_check(")
+        {
+            out.push((idx + 1, trimmed.to_string()));
+        }
+    }
+    Ok(out)
+}
+
+fn md_escape(s: &str) -> String {
+    s.replace('\\', "\\\\")
+        .replace('|', "\\|")
+        .replace('`', "\\`")
+        .replace('\n', " ")
+}
 
 #[cfg(test)]
 mod tests {
