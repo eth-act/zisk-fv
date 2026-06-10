@@ -1818,6 +1818,25 @@ theorem tableRow_spec_of_memTableGeneratedRowsBridge
   rw [h_bridge.rowAt_eq idx]
   exact h_spec
 
+/-- The indexed table bridge supplies generated row specs for every concrete
+    table row, in the membership form consumed by table-level `flatMap`
+    inductions. -/
+theorem tableRow_specs_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount) :
+    ∀ providerRow, providerRow ∈ table.table →
+      ZiskFv.AirsClean.Mem.Spec
+        (eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) := by
+  intro providerRow h_mem
+  rcases List.mem_iff_get.mp h_mem with ⟨idx, h_get⟩
+  rw [← h_get]
+  exact tableRow_spec_of_memTableGeneratedRowsBridge h_bridge idx
+
 /-- A bridged generated Mem table position has a boolean current-row write
     flag at the Nat-value level. -/
 theorem wr_val_lt_two_of_memTableGeneratedRowsBridge
@@ -2509,6 +2528,26 @@ theorem activeMemReplayRowsOfTablePrefixReadSound_of_primary_reads
       initialMemory (activeMemReplayRowsOfTable table)
       (memoryBusRowsReadWriteSound_activeMemReplayRowsOfTable_of_primary_reads
         initialMemory table h_specs h_primary_read)
+
+/-- The indexed generated-row bridge discharges the row-spec input to the
+    active-table prefix theorem, leaving only the selected-primary-read prefix
+    obligation. -/
+theorem activeMemReplayRowsOfTablePrefixReadSound_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_primary_read :
+      ActiveMemReplayRowsOfTablePrimaryReadPrefixSound initialMemory table) :
+    ActiveMemReplayRowsOfTablePrefixReadSound initialMemory table := by
+  exact
+    activeMemReplayRowsOfTablePrefixReadSound_of_primary_reads
+      initialMemory table
+      (tableRow_specs_of_memTableGeneratedRowsBridge h_bridge)
+      h_primary_read
 
 /-- Transport table-local replay-row order facts across the concrete row-list
     equality used by the raw accepted Mem extraction path. -/

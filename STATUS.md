@@ -44,6 +44,11 @@ Latest proof surface:
   `ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`; once supplied,
   `activeMemReplayRowsOfTablePrefixReadSound_of_primary_reads` derives the
   active table prefix-read theorem.
+- `tableRow_specs_of_memTableGeneratedRowsBridge` converts the indexed
+  generated-row bridge into the membership-form row specs needed by the table
+  fold, and
+  `activeMemReplayRowsOfTablePrefixReadSound_of_memTableGeneratedRowsBridge`
+  leaves only the selected-primary-read prefix obligation.
 
 Verification for latest slice: Lean LSP diagnostics are clean for
 `ZiskFv.AirsClean.FullEnsemble.Balance`, and `lake build
@@ -51,8 +56,8 @@ ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
 `nix run .#test` pass.
 
-Next step: commit the named-obligation/prefix theorem slice, then discharge
-`ActiveMemReplayRowsOfTablePrimaryReadPrefixSound` from bridge/range facts.
+Next step: commit the generated-row-spec bridge slice, then discharge
+`ActiveMemReplayRowsOfTablePrimaryReadPrefixSound`.
 
 Context: Phase A is committed at `0c222595`. The old
 `.worktrees/memory-trust-gap` branch remains only as salvage reference until
