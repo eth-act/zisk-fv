@@ -1,14 +1,14 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: Phase C-compatible prep while Phase B order target is pending:
-byte-addressed primary/dual Mem-row match predicates and Clean adapters are
-added, and `mem_load_correct_of_provider_row` now consumes
-`MemoryTraceAgreement`.
+Current focus: Phase C residual boundary object while Phase B order target is
+pending. `MemoryTimelineEvidence state entry` is being added to package the
+accepted row trace, initial Sail/replay agreement, and selected prefix state.
 Blocking: full `GeneratedMemRowOrderFacts.rowsNodup` is stronger than current
 PIL for read-read dual rows, because `mem.pil` allows `step_dual = step`.
-Verified: targeted build, full `lake build`, and `trust/scripts/check-all.sh`
-pass for this boundary-prep slice.
-Next step: commit this slice, then decide whether full table `Nodup`/prefix-
-read target needs a weakened theorem or residual timeline statement.
+Verified: byte-address/MemModel prep slice and `MemoryTimelineEvidence`
+residual-object slice each passed targeted build, full `lake build`, and
+`trust/scripts/check-all.sh`.
+Next step: commit the residual-object slice, then wire the single visible
+timeline hypothesis into the compliance theorem/load callers.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract

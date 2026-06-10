@@ -152,10 +152,10 @@ bury it in a structure field.
 
 ### Phase C — Boundary swap and discharge (PR 3)
 
-- [ ] Define the single residual object (final name decided here; candidate
-      `MemoryTimelineEvidence state`): existence of the accepted Mem-event
-      trace + initial Sail agreement + selected-prefix state equality for read
-      cursors — exactly leaves (3)+(4), nothing provable inside it.
+- [x] Define the single residual object (final name decided here:
+      `MemoryTimelineEvidence state entry`): existence of the accepted Mem
+      row trace + initial Sail agreement + selected-prefix state equality for
+      read cursors — exactly leaves (3)+(4), nothing provable inside it.
 - [ ] Add the one visible hypothesis to `zisk_riscv_compliant_program_bus`
       next to `h_bridge`.
 - [ ] Remove `mem_read` from `LoadPromises`; in the load dispatch arms derive

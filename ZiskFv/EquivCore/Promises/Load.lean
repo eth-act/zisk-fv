@@ -49,6 +49,15 @@ theorem loadByteAgreement_of_mem_trace_agreement
   simpa [LoadByteAgreement] using
     ZiskFv.ZiskCircuit.MemTrace.byte_facts_of_event_agreement state e h_agree
 
+/-- Byte-agreement projection from the named residual timeline evidence. -/
+theorem loadByteAgreement_of_memory_timeline_evidence
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (e : Interaction.MemoryBusEntry FGL)
+    (evidence : ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state e) :
+    LoadByteAgreement state e :=
+  loadByteAgreement_of_mem_trace_agreement
+    state e evidence.memoryTraceAgreement
+
 /-- 13-field structural bundle for LBU, LHU, LWU, LD. -/
 structure LoadPromises
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

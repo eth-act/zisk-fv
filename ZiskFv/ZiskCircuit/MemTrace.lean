@@ -780,6 +780,76 @@ theorem replayAgreement_after_memoryBusRows
     replayAgreement_after_memoryBusTrace
       initial (memoryBusTraceEventsOfRows rows) mem h_initial
 
+/-- Residual Sail-memory timeline evidence for one selected load.
+
+The circuit-side proof supplies `prefixReadSound` for the accepted memory-bus
+rows. This object carries the remaining execution-timeline boundary: the
+initial Sail memory agrees with the replay memory, and the selected Sail state
+is the state obtained by replaying the accepted prefix before the selected read
+row. -/
+structure MemoryTimelineEvidence
+    (state : SailState)
+    (entry : MemoryBusEntry FGL) : Type where
+  initialState : SailState
+  rows : List (MemoryBusEntry FGL)
+  initialMemory : Std.ExtHashMap Nat (BitVec 8)
+  priorRows : List (MemoryBusEntry FGL)
+  laterRows : List (MemoryBusEntry FGL)
+  traceSplit : rows = priorRows ++ entry :: laterRows
+  selectedRead :
+    memoryBusTraceEventOfRow entry = some (MemoryBusTraceEvent.read entry)
+  prefixReadSound : MemoryBusRowsPrefixReadSound initialMemory rows
+  initialAgreement : ReplayMemoryAgreement initialState initialMemory
+  stateAtPrefix : state = stateAfterMemoryBusRows initialState priorRows
+
+/-- Timeline evidence gives replay agreement for the selected read row at its
+accepted chronological prefix. -/
+theorem MemoryTimelineEvidence.prefixReadAgreement
+    {state : SailState}
+    {entry : MemoryBusEntry FGL}
+    (evidence : MemoryTimelineEvidence state entry) :
+    ReadEventReplayAgreement
+      (replayMemoryAfterBusRows evidence.initialMemory evidence.priorRows)
+      (eventOfEntry entry) := by
+  obtain ⟨h_as, h_mult⟩ :=
+    read_tags_of_memoryBusTraceEventOfRow_read
+      entry evidence.selectedRead
+  exact
+    evidence.prefixReadSound
+      evidence.priorRows entry evidence.laterRows
+      evidence.traceSplit h_as h_mult
+
+/-- Timeline evidence gives Sail/replay memory agreement at the selected
+prefix cursor. -/
+theorem MemoryTimelineEvidence.prefixStateAgreement
+    {state : SailState}
+    {entry : MemoryBusEntry FGL}
+    (evidence : MemoryTimelineEvidence state entry) :
+    ReplayMemoryAgreement
+      state
+      (replayMemoryAfterBusRows evidence.initialMemory evidence.priorRows) := by
+  rcases evidence with
+    ⟨initialState, rows, initialMemory, priorRows, laterRows, traceSplit,
+      selectedRead, prefixReadSound, initialAgreement, stateAtPrefix⟩
+  subst state
+  exact
+    replayAgreement_after_memoryBusRows
+      initialState priorRows initialMemory initialAgreement
+
+/-- The residual timeline evidence plus circuit-side prefix read soundness
+imply the selected load byte agreement shape used by local load correctness. -/
+theorem MemoryTimelineEvidence.memoryTraceAgreement
+    {state : SailState}
+    {entry : MemoryBusEntry FGL}
+    (evidence : MemoryTimelineEvidence state entry) :
+    MemoryTraceAgreement state (eventOfEntry entry) :=
+  memoryTraceAgreement_of_replayAgreement
+    state
+    (replayMemoryAfterBusRows evidence.initialMemory evidence.priorRows)
+    (eventOfEntry entry)
+    evidence.prefixStateAgreement
+    evidence.prefixReadAgreement
+
 /-- Agreement for `eventOfEntry e` is exactly the byte facts expected by
 `bus_effect` load consumers. -/
 lemma byte_facts_of_event_agreement
