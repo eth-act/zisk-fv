@@ -301,6 +301,31 @@ lemma replayStoreEvent_storeEventOfEntry
     replayStoreEvent mem (storeEventOfEntry e) = writeMemoryOfEntry mem e := by
   simp [replayStoreEvent, replayStoreByte, storeEventOfEntry, writeMemoryOfEntry]
 
+/-- After replaying an eight-byte write entry, a read entry with the same byte
+pointer and value chunks agrees with replay memory byte-for-byte.
+
+This is the row-local write→read step used by the Mem AIR prefix-read proof
+after same-address/value carry has identified the current read with the
+previous write row. -/
+theorem readEventReplayAgreement_of_writeMemoryOfEntry_same
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    {writeEntry readEntry : MemoryBusEntry FGL}
+    (h_ptr : readEntry.ptr = writeEntry.ptr)
+    (h_value_0 : readEntry.value_0 = writeEntry.value_0)
+    (h_value_1 : readEntry.value_1 = writeEntry.value_1) :
+    ReadEventReplayAgreement (writeMemoryOfEntry mem writeEntry)
+      (eventOfEntry readEntry) := by
+  cases writeEntry
+  cases readEntry
+  simp only at h_ptr h_value_0 h_value_1
+  subst h_ptr
+  subst h_value_0
+  subst h_value_1
+  simp only [ReadEventReplayAgreement, writeMemoryOfEntry, MemEvent.byteAt,
+    ZiskFv.Channels.MemoryBusBytes.byteAt, Std.ExtHashMap.getElem?_insert,
+    beq_iff_eq]
+  set_option synthInstance.maxHeartbeats 400000 in grind
+
 /-- A memory read event leaves Sail/replay memory agreement unchanged. -/
 theorem eventReplayStep_read_entry_same_state
     (state : SailState) (e : MemoryBusEntry FGL) :

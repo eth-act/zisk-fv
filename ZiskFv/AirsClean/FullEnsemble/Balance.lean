@@ -1842,6 +1842,142 @@ theorem wr_val_lt_two_of_memTableGeneratedRowsBridge
     rw [h_wr_one_mem]
     norm_num
 
+/-- The indexed table bridge lifts the generated non-boundary same-address
+    address-carry constraint to a concrete Mem table position. -/
+theorem addr_eq_previous_of_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_not_boundary : segment.segment_l1 idx.val = 0) :
+    mem.addr idx.val = mem.addr (idx.val - 1) := by
+  exact
+    ZiskFv.Airs.Mem.addr_eq_previous_of_same_addr_segment_every_row
+      (cols := segment) (v := mem) (row := idx.val)
+      (h_bridge.generatedAt idx).1 h_same_addr h_not_boundary
+
+/-- On a bridged concrete Mem table row, the Clean row-spec identity
+    `read_same_addr = (1 - addr_changes) * (1 - wr)` turns a read at the same
+    address into the generated `read_same_addr = 1` witness. -/
+theorem read_same_addr_eq_one_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_read : mem.wr idx.val = 0) :
+    mem.read_same_addr idx.val = 1 := by
+  have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
+  have h_read_same_addr :=
+    ZiskFv.AirsClean.Mem.read_same_addr_eq_of_spec
+      (ZiskFv.AirsClean.Mem.rowAt mem idx.val) h_spec
+  simpa [ZiskFv.AirsClean.Mem.rowAt, h_same_addr, h_read] using h_read_same_addr
+
+/-- The indexed table bridge lifts the generated non-boundary same-address read
+    value-carry constraints to a concrete Mem table position. -/
+theorem values_eq_previous_of_read_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length)
+    (h_read_same_addr : mem.read_same_addr idx.val = 1)
+    (h_not_boundary : segment.segment_l1 idx.val = 0) :
+    mem.value_0 idx.val = mem.value_0 (idx.val - 1)
+      ∧ mem.value_1 idx.val = mem.value_1 (idx.val - 1) := by
+  exact
+    ZiskFv.Airs.Mem.values_eq_previous_of_read_same_addr_segment_every_row
+      (cols := segment) (v := mem) (row := idx.val)
+      (h_bridge.generatedAt idx).1 h_read_same_addr h_not_boundary
+
+/-- Same-address reads at non-boundary bridged Mem table rows carry both value
+    chunks from the previous row. This is the table-level form needed by the
+    per-address prefix-read proof. -/
+theorem values_eq_previous_of_read_same_addr_row_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_read : mem.wr idx.val = 0)
+    (h_not_boundary : segment.segment_l1 idx.val = 0) :
+    mem.value_0 idx.val = mem.value_0 (idx.val - 1)
+      ∧ mem.value_1 idx.val = mem.value_1 (idx.val - 1) := by
+  exact values_eq_previous_of_read_same_addr_memTableGeneratedRowsBridge
+    h_bridge idx
+    (read_same_addr_eq_one_of_memTableGeneratedRowsBridge
+      h_bridge idx h_same_addr h_read)
+    h_not_boundary
+
+/-- A bridged non-boundary same-address read is byte-for-byte justified by
+    replaying the previous primary row when that previous row is a write.
+
+    This is the adjacent write→read replay step behind the per-address
+    `MemoryBusRowsPrefixReadSound` induction. -/
+theorem readEventReplayAgreement_after_previous_primary_write_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (idx : Fin table.table.length)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_read : mem.wr idx.val = 0)
+    (h_previous_write : mem.wr (idx.val - 1) = 1)
+    (h_not_boundary : segment.segment_l1 idx.val = 0) :
+    ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+      (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow initialMemory
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1))))
+      (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry
+        (memPrimaryReplayEntryOfRow
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val))) := by
+  have h_addr :=
+    addr_eq_previous_of_same_addr_memTableGeneratedRowsBridge
+      h_bridge idx h_same_addr h_not_boundary
+  have h_values :=
+    values_eq_previous_of_read_same_addr_row_memTableGeneratedRowsBridge
+      h_bridge idx h_same_addr h_read h_not_boundary
+  let writeEntry :=
+    memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1))
+  let readEntry :=
+    memPrimaryReplayEntryOfRow (ZiskFv.AirsClean.Mem.rowAt mem idx.val)
+  have h_ptr : readEntry.ptr = writeEntry.ptr := by
+    dsimp [readEntry, writeEntry]
+    simp [h_addr]
+  have h_value_0 : readEntry.value_0 = writeEntry.value_0 := by
+    dsimp [readEntry, writeEntry]
+    simpa [memPrimaryReplayEntryOfRow, ZiskFv.AirsClean.Mem.memBusMessage,
+      ZiskFv.AirsClean.Mem.rowAt] using h_values.1
+  have h_value_1 : readEntry.value_1 = writeEntry.value_1 := by
+    dsimp [readEntry, writeEntry]
+    simpa [memPrimaryReplayEntryOfRow, ZiskFv.AirsClean.Mem.memBusMessage,
+      ZiskFv.AirsClean.Mem.rowAt] using h_values.2
+  have h_replay :
+      ZiskFv.ZiskCircuit.MemTrace.ReadEventReplayAgreement
+        (ZiskFv.ZiskCircuit.MemTrace.writeMemoryOfEntry initialMemory writeEntry)
+        (ZiskFv.ZiskCircuit.MemTrace.eventOfEntry readEntry) :=
+    ZiskFv.ZiskCircuit.MemTrace.readEventReplayAgreement_of_writeMemoryOfEntry_same
+      initialMemory h_ptr h_value_0 h_value_1
+  simpa [writeEntry, readEntry, ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRow,
+    memPrimaryReplayEntryOfRow, ZiskFv.AirsClean.Mem.memBusMessage,
+    ZiskFv.AirsClean.Mem.rowAt, h_previous_write,
+    ZiskFv.ZiskCircuit.MemTrace.replayStoreEvent_storeEventOfEntry] using h_replay
+
 /-- The indexed table bridge and range facts prove local chronological order
     for the active replay emissions projected from one concrete table row.
 

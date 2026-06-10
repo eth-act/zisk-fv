@@ -180,6 +180,20 @@ no assumed soundness fields**.
       equalities such as
       `h_mem_row : eval memEnv memRowVar = rowAt mem r_mem`, not this whole-table
       bridge.
+      Partial: the adjacent same-address read carry path is now projected to
+      concrete bridged table rows. `read_same_addr_eq_one_of_memTableGeneratedRowsBridge`
+      derives the generated `read_same_addr = 1` witness from the Clean row
+      identity (`mem.pil:376`) when `addr_changes = 0` and `wr = 0`;
+      `values_eq_previous_of_read_same_addr_row_memTableGeneratedRowsBridge`
+      lifts the segment value-carry constraints to table rows; and
+      `readEventReplayAgreement_after_previous_primary_write_memTableGeneratedRowsBridge`
+      combines those with the replay-core theorem
+      `readEventReplayAgreement_of_writeMemoryOfEntry_same` to prove the local
+      previous-primary-write -> current-read byte agreement step. Verified
+      with LSP diagnostics, LSP restart/build, `lake build
+      ZiskFv.AirsClean.FullEnsemble.Balance`, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
+      `nix run .#test`.
 - [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
@@ -199,6 +213,10 @@ no assumed soundness fields**.
       `mem.pil:122`, `mem.pil:384-385`, and the selector-gated
       `mem.pil:397`; the new local active-row chronology theorem cites that it
       does not assert cross-row table order.
+      Partial: the new local prefix-read predecessor lemmas cite only the
+      generated read-same-address identity, segment same-address/value carry
+      constraints, and the definitional eight-byte replay write in
+      `MemTrace.lean`; they do not introduce a replay-soundness field.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
