@@ -58,17 +58,20 @@ private theorem witnessInitialAgreement :
   intro _addr
   rfl
 
+private def accepted_replay_witness : AcceptedMemoryReplayEvidence :=
+  { rows := [witnessEntry]
+    initialMemory := witnessMem
+    prefixReadSound := witnessPrefixReadSound }
+
 private def memory_timeline_witness :
     MemoryTimelineEvidence witnessState witnessEntry :=
   { initialState := witnessState
-    rows := [witnessEntry]
-    initialMemory := witnessMem
+    acceptedReplay := accepted_replay_witness
     priorRows := []
     laterRows := []
     traceSplit := rfl
     selectedRead := by
       simp [memoryBusTraceEventOfRow, witnessEntry]
-    prefixReadSound := witnessPrefixReadSound
     initialAgreement := witnessInitialAgreement
     stateAtPrefix := rfl }
 

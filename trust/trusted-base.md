@@ -168,16 +168,21 @@ global hypothesis before calling the load theorems. The `OpEnvelope` load
 constructors themselves carry only `LoadStructuralPromises`, so they no longer
 accept a per-load byte oracle.
 
-`MemoryTimelineEvidence` states the residual whole-execution memory-timeline
-boundary: the accepted Mem rows split around the selected read, the selected row
-is a read, prefix-read soundness holds for the accepted Mem rows, the initial
-Sail memory agrees with the replay memory, and the selected Sail state is the
-state reached by replaying the accepted prefix. The canonical load proofs derive
-`LoadByteAgreement` from this timeline evidence and the memory replay relation.
+`MemoryTimelineEvidence` contains a named `AcceptedMemoryReplayEvidence`
+sub-object plus the residual whole-execution memory-timeline facts. The accepted
+replay sub-object states prefix-read soundness for the accepted Mem rows; the
+timeline facts state that those rows split around the selected read, the
+selected row is a read, the initial Sail memory agrees with the replay memory,
+and the selected Sail state is the state reached by replaying the accepted
+prefix. The canonical load proofs derive `LoadByteAgreement` from this evidence
+and the memory replay relation.
 
-Retirement path: prove the whole-execution induction connecting accepted Mem
-rows, prefix replay, initial Sail memory agreement, and selected Sail state
-without assuming `env.memoryTimelineEvidence`.
+Retirement path: first prove `AcceptedMemoryReplayEvidence.prefixReadSound`
+from the concrete Mem table, which requires connecting Clean `table.table`
+positions to the row-indexed `Valid_Mem`/`GeneratedMemRows` constraints. Then
+prove the whole-execution induction connecting accepted Mem rows, prefix replay,
+initial Sail memory agreement, and selected Sail state without assuming
+`env.memoryTimelineEvidence`.
 
 ## Platform Profile
 

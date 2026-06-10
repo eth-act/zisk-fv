@@ -1626,10 +1626,13 @@ def activeMemReplayRowsOfTable
 
 /-- Row-order facts for the concrete mutable-Mem replay projection. This is
     the table-local target that accepted full-execution integration should
-    prove from Mem sorting, segment carry, and timestamp range facts. -/
+    prove from Mem sorting, segment carry, and timestamp range facts.
+
+    The target intentionally does not require `Nodup`: the Mem PIL allows
+    equal-timestamp read/read dual rows, and identical duplicate reads are
+    harmless for replay because reads do not mutate memory. -/
 structure MemReplayRowsOfTableOrderFacts
     (table : Table FGL) : Prop where
-  rowsNodup : (memReplayRowsOfTable table).Nodup
   chronologicalRows :
     ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
       (memReplayRowsOfTable table)
@@ -1646,10 +1649,9 @@ def MemReplayRowsOfTablePrefixReadSound
 
 /-- Row-order facts for the active mutable-Mem replay projection. This is the
     sound chronological target: inactive selector-gated emissions are not
-    replay events. -/
+    replay events.  As above, duplicate read entries are permitted. -/
 structure ActiveMemReplayRowsOfTableOrderFacts
     (table : Table FGL) : Prop where
-  rowsNodup : (activeMemReplayRowsOfTable table).Nodup
   chronologicalRows :
     ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
       (activeMemReplayRowsOfTable table)
@@ -1671,8 +1673,7 @@ theorem generatedMemRowOrderFacts_of_memReplayRowsOfTable
     ZiskFv.AirsClean.Mem.GeneratedMemRowOrderFacts rows := by
   rw [h_rows]
   exact
-    { rowsNodup := h_order.rowsNodup
-      chronologicalRows := h_order.chronologicalRows }
+    { chronologicalRows := h_order.chronologicalRows }
 
 /-- Transport table-local prefix-read soundness across the concrete row-list
     equality used by the raw accepted Mem extraction path. -/
@@ -1697,8 +1698,7 @@ theorem generatedMemRowOrderFacts_of_activeMemReplayRowsOfTable
     ZiskFv.AirsClean.Mem.GeneratedMemRowOrderFacts rows := by
   rw [h_rows]
   exact
-    { rowsNodup := h_order.rowsNodup
-      chronologicalRows := h_order.chronologicalRows }
+    { chronologicalRows := h_order.chronologicalRows }
 
 /-- Transport table-local active prefix-read soundness across the concrete
     row-list equality used by the raw accepted Mem extraction path. -/

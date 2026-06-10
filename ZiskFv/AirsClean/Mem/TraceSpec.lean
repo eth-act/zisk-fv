@@ -36,10 +36,14 @@ def GeneratedMemRows
     ZiskFv.Airs.Mem.generated_every_row segment permutation mem row
 
 /-- Row-order facts extracted from accepted Mem sorting, segment-boundary, and
-multiplicity constraints before replay soundness is constructed. -/
+multiplicity constraints before replay soundness is constructed.
+
+The Mem PIL permits read/read dual rows with equal timestamps; since the raw
+memory-bus row shape has no lane tag, those two projected read entries may be
+identical. The replay API therefore requires chronological list order, not
+`rows.Nodup`. -/
 structure GeneratedMemRowOrderFacts
     (rows : List (Interaction.MemoryBusEntry FGL)) : Prop where
-  rowsNodup : rows.Nodup
   chronologicalRows : MemoryBusRowsChronological rows
 
 /-- Replay facts that connect the accepted chronological Mem rows to Sail
@@ -93,12 +97,5 @@ theorem chronologicalRows_of_generated_order_facts
     (facts : GeneratedMemRowOrderFacts rows) :
     MemoryBusRowsChronological rows :=
   facts.chronologicalRows
-
-/-- Row-order facts expose row uniqueness without repacking. -/
-theorem rowsNodup_of_generated_order_facts
-    {rows : List (Interaction.MemoryBusEntry FGL)}
-    (facts : GeneratedMemRowOrderFacts rows) :
-    rows.Nodup :=
-  facts.rowsNodup
 
 end ZiskFv.AirsClean.Mem

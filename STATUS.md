@@ -1,9 +1,13 @@
 Active plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md
-Current focus: post-Phase C completion checkpoint. `LoadPromises` no longer has
+Current focus: Phase B Mem-table replay closure. `LoadPromises` no longer has
 `mem_read`; it carries `memory_timeline`, and load proofs derive byte
 agreement from `MemoryTimelineEvidence`.
-Blocking: full `GeneratedMemRowOrderFacts.rowsNodup` is stronger than current
-PIL for read-read dual rows, because `mem.pil` allows `step_dual = step`.
+Blocking: `MemoryTimelineEvidence` now names its replay sub-obligation as
+`AcceptedMemoryReplayEvidence`, which still carries `prefixReadSound`; to
+finish the original plan, that must be proved from Mem table constraints or
+explicitly kept in the residual timeline boundary. The earlier `rowsNodup`
+target was over-strong: `mem.pil` allows read/read dual rows with
+`step_dual = step`, and duplicate reads are harmless for prefix replay.
 Verified: byte-address/MemModel prep slice and `MemoryTimelineEvidence`
 residual-object slice each passed targeted build, full `lake build`, and
 `trust/scripts/check-all.sh`. The trace-agreement adapter slice has passed the
@@ -18,10 +22,12 @@ passed `lake build ZiskFv.Compliance`, full `lake build`, and
 `trust/scripts/check-all.sh`. The canonical field-removal slice has passed the
 load-stack build, `lake build ZiskFv.Compliance`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, `nix run .#test`, and the timeline
-consistency witness.
-Next step: resolve the remaining Phase B `rowsNodup`/order route: either the
-Mem PIL must rule out equal-step read-read dual rows, or the plan must keep that
-piece in the explicit residual timeline boundary.
+consistency witness. The accepted-replay/nodup correction slice has passed
+targeted MemTrace/TraceSpec/Balance/load-stack builds, full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+`nix run .#test`, and the timeline consistency witness.
+Next step: prove or explicitly boundary-class the table-to-`Valid_Mem` bridge
+needed to construct `AcceptedMemoryReplayEvidence.prefixReadSound`.
 
 Context:
 - Phase A is committed at `0c222595` with full `lake build`, pil-extract

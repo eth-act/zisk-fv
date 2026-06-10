@@ -16,7 +16,7 @@ Direct content diff vs current `origin/main`: 80 files, +21,860 / −1,024.
 | `ZiskFv/ZiskCircuit/MemTrace.lean` | +1,085 | Byte-addressed replay core: `MemEvent`, `replayStoreEvent`, `replayEvents`, `TraceReplaySound`, prefix-cursor projection (`readEventReplayAgreement_of_trace_sound`), `MemoryBusRowsPrefixReadSound`, `byte_facts_of_event_agreement`. Real induction proofs, `OpEnvelope`-free. |
 | `ZiskFv/Airs/Mem.lean` additions | +970 | Mem AIR machinery: `SegmentColumns`, `previous_row_step`, `delta_step`/`delta_addr`, `segment_every_row` — the generated constraints 0–23 bundled for ordering/continuity proofs. |
 | `tools/pil-extract` Mem changes | ~126 lines | Narrow extractor extension exposing the Mem segment/global constraints the above consumes. |
-| `ZiskFv/AirsClean/Mem/TraceSpec.lean` (targets only) | part of +650 | `GeneratedMemRows`, `GeneratedMemRowOrderFacts` (nodup + chronological), `GeneratedMemReplayFacts` (initialMemory + prefixReadSound + initialAgreement) — correct statements of the proof obligations. |
+| `ZiskFv/AirsClean/Mem/TraceSpec.lean` (targets only) | part of +650 | `GeneratedMemRows`, `GeneratedMemRowOrderFacts` (chronological order), `GeneratedMemReplayFacts` (initialMemory + prefixReadSound + initialAgreement) — correct statements of the proof obligations. |
 | `FullEnsemble/Balance.lean` projections | part of +2,133 | `mem*ReplayEntriesOfRow`, active-selector gating, dual-row projection, `exists_mem_table_of_fullRv64im_witness` — table-side projection lemmas from the full-ensemble witness. |
 | `MemModel.lean` re-theoremed | +120 | `mem_load_correct_of_provider_row` consuming `MemoryTraceAgreement` instead of 8 raw byte facts; byte-address row matching (`ptr = addr * 8` fix, dropping the legacy `mem.addr = e.ptr` pin). |
 
@@ -50,11 +50,12 @@ At plan start, `mem_read` was a per-load byte oracle: the constructor of any loa
 `OpEnvelope` arm asserts, with no provenance, that the circuit's load entry
 bytes equal Sail memory. The **promise discharge** splits it into:
 
-- **Proved (circuit side):** every read event in the accepted Mem trace
+- **To prove (circuit side):** every read event in the accepted Mem trace
   returns the last value written at that address — derived from the extracted
   Mem AIR continuity/ordering constraints (same-address value carry, write
-  update, segment carry, step ordering, dual rows). This is
-  `MemoryBusRowsPrefixReadSound` for the concrete accepted table.
+  update, segment carry, step ordering, dual rows). This is the
+  `AcceptedMemoryReplayEvidence.prefixReadSound` field for the concrete
+  accepted table.
 - **Residual (one narrow visible boundary):** Sail memory at the selected load
   equals the replay of the prior accepted events from an initial memory that
   agrees with the initial Sail state — i.e. leaves (3)+(4). Stated **once,
@@ -63,9 +64,9 @@ bytes equal Sail memory. The **promise discharge** splits it into:
   global project-axiom closure stays at 0.
 
 This is a genuine shrink: the trusted content drops from "arbitrary bytes per
-load" to "the Mem trace is the execution's memory timeline", with all circuit
-semantics proved. Full closure of the residual boundary is a future
-whole-execution-induction milestone, explicitly out of scope here.
+load" to the named accepted-replay and Sail-memory timeline evidence. Full
+closure of the residual boundary is a future whole-execution-induction
+milestone, explicitly out of scope here.
 
 ## Architecture rules (guardrails against re-derailing)
 
@@ -123,9 +124,10 @@ whole-execution-induction milestone, explicitly out of scope here.
 ### Phase B — Prove the Mem-table side (PR 2, the hard provable part)
 
 Target theorem: for the concrete Mem table selected by the full-ensemble
-witness, the projected replay-row list satisfies `GeneratedMemRowOrderFacts`
-and read events satisfy `MemoryBusRowsPrefixReadSound` — **derived from
-`Valid_Mem` constraints, with no assumed soundness fields**.
+witness, the projected replay-row list satisfies chronological
+`GeneratedMemRowOrderFacts` and read events satisfy
+`MemoryBusRowsPrefixReadSound` — **derived from `Valid_Mem` constraints, with
+no assumed soundness fields**.
 
 - [x] Same-address value carry from continuity constraints (constraints 0–23
       bundle).
@@ -133,12 +135,27 @@ and read events satisfy `MemoryBusRowsPrefixReadSound` — **derived from
 - [x] Segment boundary carry-in/out.
 - [x] Dual-row (`dual_mem = 1`) event emission ordering, primary-then-dual.
 - [x] Selector gating: inactive rows emit no events.
-- [ ] Nodup/order facts for cursor uniqueness.
-      Partial: row-local chronological order is proved from the dual-step
-      range check, and row-local `Nodup` is proved under distinct primary/dual
-      timestamps. Full table `Nodup` remains open because `mem.pil` allows
-      read-read dual rows with `step_dual = step`.
-- [ ] **Gate A check:** if a needed constraint is not in the extracted Lean,
+- [x] Resolve the proposed `Nodup` cursor-uniqueness requirement.
+      Gate A found this was not an extraction gap: `mem.pil:392-397` explicitly
+      allows read/read dual rows with `step_dual = step`, and the raw
+      `MemoryBusEntry` replay row has no lane tag, so duplicate selected reads
+      are valid. Replay soundness is prefix/list-position based and reads do
+      not mutate memory, so `GeneratedMemRowOrderFacts` and the table-local
+      order facts now require chronological order only. Verified with targeted
+      MemTrace/TraceSpec/Balance/load-stack builds, full `lake build`,
+      `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+      `nix run .#test`, and the timeline consistency witness.
+- [ ] Prove full chronological row-order facts for the concrete projected Mem
+      table from the Mem sorting/segment constraints.
+- [ ] Prove `MemoryBusRowsPrefixReadSound` for the concrete projected Mem table
+      from same-address carry, write update, segment carry, and chronological
+      order.
+      Current gap: Clean `Table.Constraints` is per-row over `table.table`, and
+      the table list is not yet connected to a row-indexed `Valid_Mem` plus
+      `GeneratedMemRows` range. The named `AcceptedMemoryReplayEvidence`
+      sub-object makes this remaining bridge explicit instead of hiding it as
+      an anonymous timeline field.
+- [x] **Gate A check:** if a needed constraint is not in the extracted Lean,
       extend `tools/pil-extract` narrowly for exactly that constraint — never
       add an assumed field instead.
 - [ ] **Constructibility check:** every strengthened `Valid_Mem`-adjacent
@@ -157,6 +174,10 @@ bury it in a structure field.
       `MemoryTimelineEvidence state entry`): existence of the accepted Mem
       row trace + initial Sail agreement + selected-prefix state equality for
       read cursors — exactly leaves (3)+(4), nothing provable inside it.
+      Refined: the accepted replay part is now named separately as
+      `AcceptedMemoryReplayEvidence`; until Phase B is closed it still carries
+      `prefixReadSound`, while `MemoryTimelineEvidence` carries the selected
+      split, initial-memory agreement, and state-at-prefix alignment.
 - [x] Add the one visible hypothesis to `zisk_riscv_compliant_program_bus`
       next to `h_bridge`.
       Implemented as `h_memory_timeline : env.memoryTimelineEvidence`, where
@@ -207,9 +228,9 @@ bury it in a structure field.
       confirmed hypothesis-count and caller-burden ledgers still match.
 - [x] `trust/consistency/` probe updates: the old byte-oracle witness file
       adapts to the new boundary; a false-probe must still fail to typecheck.
-      The witness now constructs `MemoryTimelineEvidence` and derives
-      `LoadByteAgreement` from it; the semantic gate label names the Sail memory
-      timeline witness.
+      The witness now constructs `AcceptedMemoryReplayEvidence` plus
+      `MemoryTimelineEvidence` and derives `LoadByteAgreement` from them; the
+      semantic gate label names the Sail memory timeline witness.
 
 ### Phase D — Cleanup
 
