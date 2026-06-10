@@ -86,28 +86,23 @@ writeShellApplication {
       cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet
     '
 
-    # 2. The generated extraction files are intentionally outside the main
-    # Lake library, but the Mem constraint source and generated-artifact
-    # wrapper must stay synchronized with the current FV APIs.
-    run "2/8 Mem generated artifact wrapper" mem_generated_artifact_wrapper
-
-    # 3. Production-wrapper equivalence tests. These compare every
+    # 2. Production-wrapper equivalence tests. These compare every
     # `aeneas_extract` wrapper against `Riscv2ZiskContext::convert` for the
     # covered single-row opcode surface, preventing extraction shims from
     # drifting into a parallel Rust lowering path.
-    run "3/8 zisk-core aeneas_extract tests" bash -c '
+    run "2/8 zisk-core aeneas_extract tests" bash -c '
       cd zisk/core
       cargo test --lib --features aeneas_extract extraction_starts_match_production_convert_for_single_row_opcodes --quiet
     '
 
-    # 4. Pinned Aeneas extraction harness. This stays outside the main Lean
+    # 3. Pinned Aeneas extraction harness. This stays outside the main Lean
     # build and checks the production-backed extraction boundary. Generated
     # files are written under build/ and are not checked in.
-    run "4/8 Aeneas production extraction harness" bash -c '
+    run "3/8 Aeneas production extraction harness" bash -c '
       AENEAS_FLAKE="${aeneas}" scripts/aeneas-production-extract.sh
     '
 
-    # 5. Lake build — the FV check. Every theorem typechecks. This is
+    # 4. Lake build — the FV check. Every theorem typechecks. This is
     # the load-bearing claim: if `lake build` is green, every per-opcode
     # equivalence theorem (Sail spec = ZisK circuit + bus model) holds.
     #
@@ -121,7 +116,13 @@ writeShellApplication {
     # when sd.lean's elaboration peaked at 42 GiB, before PR #4's
     # layered dsimp+rw refactor cut it to ~8 GiB PSS. Override with
     # LEAN_NUM_THREADS=N at call site for a different cap.
-    run "5/8 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
+    run "4/8 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
+
+    # 5. The generated extraction files are intentionally outside the main
+    # Lake library, but the Mem constraint source and generated-artifact
+    # wrapper must stay synchronized with the current FV APIs. This runs after
+    # `lake build` so clean CI runners have the imported `ZiskFv` oleans.
+    run "5/8 Mem generated artifact wrapper" mem_generated_artifact_wrapper
 
     # 6. Trust gate (locality + baseline + forbidden tier1 params +
     # floors + zero-sorry + uniformity lint). See trust/README.md.

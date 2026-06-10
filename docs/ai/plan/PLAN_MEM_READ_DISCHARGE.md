@@ -1126,13 +1126,15 @@ no assumed soundness fields**.
       generated-row/range/fixed-column facts rather than carrying any raw
       replay-soundness field. Broadening the Clean component/table model is a
       future retirement route, not part of this plan's final gate.
-      Phase D verification now passes after correcting the Nix test wrapper to
-      make the generated-Mem wrapper step ShellCheck-clean. The final broad
-      gate set includes `nix run .#test` (cargo tests, generated Mem wrapper,
-      zisk-core extraction tests, Aeneas harness, full `lake build`, both trust
-      gates, and flake repro), standalone `trust/scripts/check-all.sh`,
-      standalone `trust/scripts/check-all-semantic.sh`, `git diff --check`, and
-      an explicit closure print for
+      Phase D verification now passes after correcting the generated-Mem
+      wrapper gate order. The wrapper check now runs after `lake build`, so
+      clean CI runners have the imported `ZiskFv` oleans before checking
+      `Extraction.MemGeneratedArtifact`. The final broad gate set includes
+      `nix run .#test` (cargo tests, zisk-core extraction tests, Aeneas
+      harness, full `lake build`, generated Mem wrapper, both trust gates, and
+      flake repro), standalone `trust/scripts/check-all.sh`, standalone
+      `trust/scripts/check-all-semantic.sh`, `git diff --check`, and an
+      explicit closure print for
       `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` with 0 stdout lines
       and only TrustGate deprecation warnings on stderr.
 
@@ -1232,7 +1234,9 @@ bury it in a structure field.
       syntactic and semantic trust gates passing, closure print stdout empty
       for `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`, and
       `git diff --check` clean. The final Nix gate required a narrow
-      `nix/test.nix` ShellCheck cleanup around the generated-Mem wrapper step.
+      `nix/test.nix` ordering fix: the generated-Mem wrapper now runs after the
+      full `lake build`, because clean CI runners do not yet have imported
+      project oleans when the wrapper is checked earlier.
 - [x] Open PRs (1–3 may collapse into 2 if A stays small; never into 1).
       Opened as PR #64, accidentally squash-merged, then `main` was reset so
       Cody can review before landing. Reopened for review as PR #65:
