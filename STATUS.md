@@ -34,7 +34,7 @@ Latest verification:
 - `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
 - `lake build ZiskFv.Compliance`
 - `trust/scripts/check-all.sh`
-- `cargo test --manifest-path tools/pil-extract/Cargo.toml` (67 tests)
+- `cargo test --manifest-path tools/pil-extract/Cargo.toml` (68 tests)
 - Regenerated `/tmp/mem-air-facts-report.md`; `git diff --check`
 - Lean LSP + `lean_verify` clean for direct sidecar timeline constructor
 - Nix eval for `.#packages.x86_64-linux.extracted-lean` and `.#apps.x86_64-linux.populate`

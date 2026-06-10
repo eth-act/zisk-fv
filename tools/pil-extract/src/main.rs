@@ -1260,10 +1260,12 @@ fn render_mem_air_facts_report(
         out,
         "- Generated Lean code should build `MemTableGeneratedRawSourceSidecar` \
          values for mutable Mem tables and expose them through a \
-         `FullWitnessMemAirSourceRawSidecars` callback. Lean converts that \
-         sidecar callback with `fullWitnessMemAirSourceRawFacts_of_sidecars`; \
-         `exists_fullWitnessMemAirSource_of_rawSidecars` then selects the \
-         concrete replay source. \
+         `FullWitnessMemAirSourceRawSidecars` callback. Lean stores that \
+         sidecar callback on `FullWitnessMemoryTimelineEvidence`; \
+         `exists_fullWitnessMemAirSource_of_rawSidecars` selects the concrete \
+         replay source, and `fullWitnessMemoryTimelineEvidence_of_rawSidecars` \
+         feeds the compliance timeline boundary from sidecars plus the residual \
+         Sail timeline facts. \
          Use `memTableGeneratedAirSource_of_witnessFacts` only for a concrete \
          table-level source with explicit Clean assertion/lookup witnesses."
     )
@@ -2646,6 +2648,41 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(challenge_names(&pilout), vec![(2, 1, "std_gamma".to_string())]);
+    }
+
+    #[test]
+    fn mem_air_facts_report_names_sidecars_as_stored_boundary() {
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                name: Some("Zisk".into()),
+                airs: vec![Air {
+                    name: Some("Mem".into()),
+                    num_rows: Some(16),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Mem").unwrap();
+        let out = render_mem_air_facts_report(&pilout, &hit, None).unwrap();
+        assert!(
+            out.contains(
+                "Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`"
+            ),
+            "report should name sidecars as the stored boundary:\n{}",
+            out
+        );
+        assert!(
+            out.contains("`fullWitnessMemoryTimelineEvidence_of_rawSidecars`"),
+            "report should name the sidecar timeline constructor:\n{}",
+            out
+        );
+        assert!(
+            !out.contains("Lean converts that sidecar callback"),
+            "report should not describe sidecars as raw-facts adapter plumbing:\n{}",
+            out
+        );
     }
 
     #[test]

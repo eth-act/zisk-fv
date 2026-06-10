@@ -890,6 +890,13 @@ no assumed soundness fields**.
       `.#packages.x86_64-linux.extracted-lean` and `.#apps.x86_64-linux.populate`,
       local `pil-extract mem-air-facts` regeneration, and
       `nix flake check --no-build`.
+      Follow-up report consistency slice: the generated `mem-air-facts` report
+      now says `FullWitnessMemoryTimelineEvidence` stores the sidecar callback,
+      not that sidecars are only converted through raw facts. A new unit test
+      `mem_air_facts_report_names_sidecars_as_stored_boundary` locks that
+      wording to the sidecar boundary. Verified with
+      `cargo test --manifest-path tools/pil-extract/Cargo.toml` (68 tests) and
+      local `pil-extract mem-air-facts` regeneration.
 
 Known technical risk (R1): the Mem AIR orders rows by (addr, step), not
 execution order. Read soundness only needs same-address predecessors, so prove
