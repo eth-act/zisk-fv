@@ -111,8 +111,8 @@ confirm the idiom and that no consumer breaks, then sweep the rest.
       ZiskFv.Compliance.zisk_riscv_compliant_program_bus` (must remain
       empty of project axioms). Paste closure print + ledger diff into
       the PR body, plus the Phase 0 False-probe source as evidence.
-- [ ] Ask Cody, then open the PR (stacks on / waits for PR #65, since the
-      branch is based on `mem-read-discharge`).
+- [x] Ask Cody, then open the PR. PR #65 merged before opening, so PR #66
+      targets `main` directly.
 
 ## Hard invariants
 
@@ -159,3 +159,6 @@ honest-row completeness would have provided, at a fraction of the cost.
   `lake exe trust-gate print-axiom-closure
   ZiskFv.Compliance.zisk_riscv_compliant_program_bus` printed no project axiom
   names (only existing TrustGate deprecation warnings).
+- 2026-06-11: PR #65 merged, merged current `origin/main` into this branch,
+  reran focused post-merge gates, and opened PR #66:
+  https://github.com/eth-act/zisk-fv/pull/66

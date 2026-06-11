@@ -1,11 +1,11 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md
 
 Current focus: Phase 0 demotion work is implemented, generated, gate-clean,
-and being prepared as a PR against current `origin/main`. PR #65
-(`mem-read-discharge`) is now merged, so this branch no longer needs to stack
-on it.
+and opened as PR #66 against current `main`:
+https://github.com/eth-act/zisk-fv/pull/66
 
-Blocking: none. Stop before optional Phase 2 constructibility witnesses.
+Blocking: none. Phase 0 is complete; stop before optional Phase 2
+constructibility witnesses.
 
 Context:
 - Phase 0 from the v1 plan remains valid: baseline gates passed and
@@ -34,7 +34,11 @@ Context:
   `trust/scripts/check-all-semantic.sh`, `nix run .#test`, and final closure
   print passed. The closure print emitted no project axiom names (only
   existing TrustGate deprecation warnings).
+- PR #65 (`mem-read-discharge`) is merged. After merging current `origin/main`
+  into this branch, focused LSP diagnostics, `lake build
+  ZiskFv.AirsClean.FullEnsemble`, full `lake build`,
+  `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and the
+  final closure print all passed.
 
-Next step: finish resolving the `origin/main` merge, rerun focused gates,
-open the PR, and record the PR URL. Do not start optional Phase 2
+Next step: wait for review/CI on PR #66. Do not start optional Phase 2
 constructibility witnesses without explicit go-ahead.
