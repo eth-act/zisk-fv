@@ -40,4 +40,4 @@ Final hygiene: submodule tracked build artifacts were restored; only ignored
 build dirs remain in `zisk/`. `git diff --check` and the generated-ledger drift
 check passed.
 
-Next step: commit the final script/trail updates, push, and open the PR.
+Next step: push `rv64im-completeness-v2` and open the PR.
