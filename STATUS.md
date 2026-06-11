@@ -6,7 +6,7 @@ inputs were populated with `nix run .#populate`; `lake exe cache get`
 completed after the initial expected fresh-worktree path-dependency failure;
 `zisk` was fast-forwarded from `03e886f6` to `4148c25e`.
 
-Blocking: none.
+Blocking: waiting for PR #68 review and explicit merge approval.
 
 Phase 1-2 progress: payload, root imports, Aeneas script extension, no-sorry
 gate, and `nix/test.nix` Aeneas wiring are committed as `3d889970` and
