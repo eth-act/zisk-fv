@@ -119,16 +119,17 @@ still state the mediation plainly.
       Focused checks passed: no-sorry, locality, no diff to
       `trust/allowed-axiom-files.txt`, `trust/scripts/regenerate.sh`, and no
       generated-ledger diff. Source axiom and global-closure totals remain 0.
+      Committed as `da5be91d` (`Wire RV64IM completeness gates`).
 
 ## Phase 3 — Docs and framing
 
-- [ ] Update `trust/README.md` (or the most fitting trust doc) with a
+- [x] Update `trust/README.md` (or the most fitting trust doc) with a
       short section: what `rv64im_completeness` claims, the interface
       mediation, where the premises are checked, and the explicit
       disclaimer vs the demoted Clean completeness non-claims.
-- [ ] Update `CLAUDE.md` Status paragraph (one or two sentences) and
+- [x] Update `CLAUDE.md` Status paragraph (one or two sentences) and
       `README.md` if it states the claim surface.
-- [ ] Cross-link from the `ZISK-DEFECT-FENCE-INCOMPLETE` defect entry to
+- [x] Cross-link from the `ZISK-DEFECT-FENCE-INCOMPLETE` defect entry to
       the new theorem (the theorem certifies FENCE is the ONLY
       acceptance restriction in RV64IM).
 
