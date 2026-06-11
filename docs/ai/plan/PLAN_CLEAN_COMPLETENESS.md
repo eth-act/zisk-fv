@@ -12,7 +12,7 @@ worktree with this file. The honest-row recipe from v1 is recoverable from
 git history if completeness is ever wanted later.
 
 Post-Phase-0 census (verified 2026-06-11): the falsifiable axioms are NOT
-the whole problem. `rg "completeness :=" ZiskFv` finds 16 fields:
+the whole problem. `rg "completeness :=" ZiskFv` finds 17 fields:
 
 - **A — false axioms (6):** BinaryAdd/Circuit.lean:56,
   MemAlignByte/Circuit.lean:79, MemAlignReadByte/Circuit.lean:72,
@@ -21,9 +21,9 @@ the whole problem. `rg "completeness :=" ZiskFv` finds 16 fields:
 - **A′ — false by inheritance (1):** Main/Circuit.lean:206
   (`circuitWithRomMemAndOpBus`) — a `by`-proof that INVOKES the axiom
   from A, so its statement is equally false.
-- **B — circular proofs (8):** Binary/Circuit.lean:42 and :193,
+- **B — circular proofs (9):** Binary/Circuit.lean:42 and :193,
   BinaryExtension/StaticCircuit.lean:116 and :159, Mem/Circuit.lean:49
-  and :85, MemAlign/Circuit.lean:58, Main/Circuit.lean:52. These set
+  and :85 and :117, MemAlign/Circuit.lean:58, Main/Circuit.lean:52. These set
   `ProverAssumptions := Spec row` where `Spec` restates the constraint
   equations, then prove completeness by `simpa using h_assumptions` —
   true but contentless (the PR #56 launder shape, never reverted for
@@ -41,7 +41,7 @@ trivial) and treated accordingly.
 
 Make every Clean completeness field an honest statement. Concretely:
 
-1. Demote all 15 A/A′/B fields to explicit non-claims:
+1. Demote all 16 A/A′/B fields to explicit non-claims:
    `ProverAssumptions := fun _ _ _ => False`, with the field proved by
    ex falso. `ProverSpec` stays `fun _ _ _ => True`. Soundness-side
    `Assumptions`/`Spec`/`soundness` are NOT touched.
@@ -81,9 +81,9 @@ confirm the idiom and that no consumer breaks, then sweep the rest.
 
 - [x] Replace v1 plan file in the worktree with this one; update
       STATUS.md; commit.
-- [ ] Re-run census grep; reconcile against the table above.
+- [x] Re-run census grep; reconcile against the table above.
 - [ ] Pilot: BinaryAdd field demoted; targeted build green.
-- [ ] Demote the remaining 14 fields (A, A′, B). Category C untouched.
+- [ ] Demote the remaining 15 fields (A, A′, B). Category C untouched.
 - [ ] Delete `ZiskFv/AirsClean/Completeness.lean`; drop its import sites.
 - [ ] Trust sweep, all in the same PR:
       - `trust/tolerated-completeness-axioms.txt`: remove all six entries;
@@ -139,3 +139,6 @@ honest-row completeness would have provided, at a fraction of the cost.
 
 - 2026-06-11: replaced the committed v1 honest-row plan with this v2
   demotion plan and updated the worktree status trail.
+- 2026-06-11: re-ran `rg "completeness :=" ZiskFv`; reconciled the census
+  to 17 fields total. The extra hit is `Mem/Circuit.lean:117`, another
+  restated-`Spec` circular proof, so 16 fields are in the demotion set.
