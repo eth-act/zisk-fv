@@ -173,6 +173,52 @@ def romMessage (row : MainRowWithRom FGL) :
     jmp_offset2 := row.core.jmp_offset2
     flags := romFlags row }
 
+theorem eval_romFlagsExpr (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    eval env (romFlagsExpr row) = romFlags (eval env row) := by
+  simp only [romFlagsExpr, romFlags, ProvableStruct.eval_eq_eval,
+    ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field, circuit_norm]
+
+theorem eval_romMessageExpr (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+  eval env (romMessageExpr row) = romMessage (eval env row) := by
+  rw [ZiskRomMessage.mk.injEq]
+  simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, circuit_norm]
+
+theorem eval_aSourceSumExpr (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    env (row.rom.a_src_mem + row.rom.a_src_reg) =
+      (eval env row).rom.a_src_mem + (eval env row).rom.a_src_reg := by
+  simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, circuit_norm]
+
+theorem eval_bSourceSumExpr (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    env (row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg) =
+      (eval env row).rom.b_src_mem + (eval env row).rom.b_src_ind
+        + (eval env row).rom.b_src_reg := by
+  simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, circuit_norm]
+
+theorem eval_cSourceSumExpr (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    env (row.rom.store_mem + row.rom.store_ind + row.rom.store_reg) =
+      (eval env row).rom.store_mem + (eval env row).rom.store_ind
+        + (eval env row).rom.store_reg := by
+  simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, circuit_norm]
+
 /-- Main constraints + ROM-flag booleanity + instruction ROM lookup.
 
 The 14 boolean assertions are split between `MainRow.core` and

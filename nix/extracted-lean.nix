@@ -1,9 +1,11 @@
 { stdenv, lib, pil-extract, zisk-pilout, zisk-src }:
 
 # Run `pil-extract` over `zisk-pilout` (and `zisk-src` for the
-# arith-table data) to produce per-AIR Lean files plus the operation-bus
-# `Buses.lean`, the memory-bus `MemoryBuses.lean`, and the 74-row
-# `ArithTable.lean` lookup data. All output lands in $out/.
+# arith-table data / original PIL source) to produce the generated extraction
+# circuit shim, per-AIR Lean files, the operation-bus `Buses.lean`, the
+# memory-bus `MemoryBuses.lean`, the 74-row `ArithTable.lean` lookup data, the
+# Mem AIR sidecar source report, the typed Mem generated-artifact wrapper, and
+# the generated Mem constraint bridge. All output lands in $out/.
 
 stdenv.mkDerivation {
   pname = "zisk-fv-extracted-lean";
@@ -13,6 +15,13 @@ stdenv.mkDerivation {
   buildPhase = ''
     runHook preBuild
     mkdir -p $out
+
+    # Generated-only circuit interface consumed by the old per-AIR extraction
+    # files. It is namespaced under `Extraction` so it does not collide with
+    # Clean's root `Circuit` monad when generated modules are compiled together
+    # with the maintained FV library.
+    ${pil-extract}/bin/pil-extract circuit-shim \
+      --output $out/Circuit.lean
 
     # Full-AIR extractions (with --skip-unsupported for the
     # FixedCol/Challenge operands the V1 extractor doesn't render).
@@ -64,13 +73,35 @@ stdenv.mkDerivation {
       --rust-source ${zisk-src}/state-machines/arith/src/arith_table_data.rs \
       --output $out/ArithTable.lean
 
+    # Mem generated AIR facts and sidecar source map. This is not a Lake
+    # dependency; it is the reproducible source manifest for the generated
+    # `FullWitnessMemAirSourceRawSidecars` proof/artifact path.
+    ${pil-extract}/bin/pil-extract mem-air-facts \
+      --pilout ${zisk-pilout} \
+      --air Mem \
+      --pil-source ${zisk-src}/state-machines/mem/pil/mem.pil \
+      --output $out/MemAirFacts.md
+
+    # Typed Lean wrapper for the generated Mem artifact. The wrapper is not
+    # a proof of the sidecar facts; it pins the generated module's public
+    # entry point to the current load-facing timeline constructor.
+    ${pil-extract}/bin/pil-extract mem-generated-artifact \
+      --pilout ${zisk-pilout} \
+      --air Mem \
+      --output $out/MemGeneratedArtifact.lean
+
+    # Bridge tying `Extraction.Mem.constraint_0..33` to the
+    # ProverData-backed Mem source surface used by the generated artifact.
+    ${pil-extract}/bin/pil-extract mem-generated-constraint-bridge \
+      --output $out/MemGeneratedConstraintBridge.lean
+
     runHook postBuild
   '';
 
   dontInstall = true;
 
   meta = with lib; {
-    description = "Per-AIR Lean files extracted from zisk-pilout";
+    description = "Per-AIR Lean files plus Mem sidecar artifacts extracted from zisk-pilout";
     license = with licenses; [ asl20 mit ];
   };
 }

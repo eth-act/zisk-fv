@@ -26,7 +26,7 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
-open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+open ZiskFv.AirsClean.ZiskInstructionRom (Program romStaticTable)
 
 def circuit : GeneralFormalCircuit FGL MainRow unit :=
   { mainWithOpBusElaborated with
@@ -146,6 +146,27 @@ theorem romBoolSpec_of_mainWithRomAndMemBus_constraints
         , h_holds.1 (row.rom.a_src_reg * (1 - row.rom.a_src_reg)) (by simp)
         , h_holds.1 (row.rom.b_src_reg * (1 - row.rom.b_src_reg)) (by simp)
         , h_holds.1 (row.rom.store_reg * (1 - row.rom.store_reg)) (by simp) ⟩
+
+/-- Project the ROM lookup carried by `mainWithRomAndMemBus` constraints to
+    exact program-ROM membership for the evaluated row message. -/
+theorem romSpec_of_mainWithRomAndMemBus_constraints
+    (length : ℕ) (program : Program length)
+    (row : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
+    (h_holds :
+      Operations.ConstraintsHold env
+        ((mainWithRomAndMemBus length program row).operations offset)) :
+    (romStaticTable length program).Spec (eval env (romMessageExpr row)) := by
+  simp only [mainWithRomAndMemBus, mainWithRom, main, circuit_norm] at h_holds
+  let table := Table.fromStatic (romStaticTable length program)
+  let lookup : Lookup FGL := { table := table.toRaw, entry := toElements (romMessageExpr row) }
+  have h_contains : lookup.Contains env := by
+    simpa [lookup, table] using h_holds.2
+  have h_sound : lookup.Soundness env :=
+    lookup.table.imply_soundness _ _ h_contains
+  have h_table_sound :
+      table.Soundness (env.data.getTable table) (eval env (romMessageExpr row)) := by
+    exact (Lookup.soundess_def table env (romMessageExpr row)).mp h_sound
+  simpa [table, Table.fromStatic, StaticTable.toTable] using h_table_sound
 
 /-- Main as a Clean `GeneralFormalCircuit` exposing the ROM lookup and
     the 3 memory-bus consumer emissions. Completeness is the declared
@@ -296,6 +317,18 @@ theorem is_external_op_boolean_of_mainWithRomMemAndOpBus_constraints
   exact h_holds.1 (row.core.is_external_op * (1 - row.core.is_external_op))
     (Or.inr (Or.inl rfl))
 
+/-- Project the ROM lookup carried by unified Main row constraints to exact
+    program-ROM membership for the evaluated row message. -/
+theorem romSpec_of_mainWithRomMemAndOpBus_constraints
+    (length : ℕ) (program : Program length)
+    (row : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
+    (h_holds :
+      Operations.ConstraintsHold env
+        ((mainWithRomMemAndOpBus length program row).operations offset)) :
+    (romStaticTable length program).Spec (eval env (romMessageExpr row)) := by
+  exact romSpec_of_mainWithRomAndMemBus_constraints length program row offset env (by
+    simpa only [mainWithRomMemAndOpBus] using h_holds)
+
 theorem is_external_op_boolean_of_componentWithRomMemAndOpBus_constraints
     (length : ℕ) (program : Program length)
     (env : Environment FGL)
@@ -357,6 +390,30 @@ theorem romBoolSpec_of_componentWithRomAndMemBus_constraints
     (componentWithRomAndMemBus length program).rowOffset env (by
       simpa only [componentWithRomAndMemBus, circuitWithRomAndMemBus,
         Component.rowOperations] using h_row)
+
+/-- Project the ROM lookup carried by the unified Main component's row
+    constraints to exact program-ROM membership for the evaluated row message. -/
+theorem romSpec_of_componentWithRomMemAndOpBus_constraints
+    (length : ℕ) (program : Program length)
+    (env : Environment FGL)
+    (h_holds :
+      (componentWithRomMemAndOpBus length program).operations.ConstraintsHold env) :
+    (romStaticTable length program).Spec
+      (eval env
+        (romMessageExpr
+          (componentWithRomMemAndOpBus length program).rowInputVar)) := by
+  have h_row :
+      (componentWithRomMemAndOpBus length program).rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff
+      (component := componentWithRomMemAndOpBus length program) env).mp h_holds
+  exact
+    romSpec_of_mainWithRomMemAndOpBus_constraints
+      length program
+      (componentWithRomMemAndOpBus length program).rowInputVar
+      (componentWithRomMemAndOpBus length program).rowOffset env
+      (by
+        simpa only [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
+          Component.rowOperations] using h_row)
 
 theorem componentWithRomAndMemBus_interactionsWith_memBus
     (length : ℕ) (program : Program length) :
