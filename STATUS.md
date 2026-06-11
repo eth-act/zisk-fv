@@ -1,44 +1,26 @@
-Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md
+Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md — COMPLETE
 
-Current focus: Phase 0 demotion work is implemented, generated, gate-clean,
-and opened as PR #66 against current `main`:
-https://github.com/eth-act/zisk-fv/pull/66
+Current focus: PR #66 (Clean completeness demotion) reviewed and merged as
+`2c862063` on 2026-06-11. The source trust ledger now has 0 axioms; the
+global compliance closure remains empty of project axioms; the
+ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS defect is retired.
 
-Blocking: none. Phase 0 is complete; stop before optional Phase 2
-constructibility witnesses.
+Review verification (independent, at PR head): full `lake build`
+(8670 jobs), `trust/scripts/check-all.sh` 17/17,
+`trust/scripts/check-all-semantic.sh` 5/5, empty closure print,
+pil-extract `cargo test` 73/73, hypothesis-count / caller-burden /
+equiv-axiom-deps baselines byte-identical, 16 fields demoted + 1 honest
+trivial field kept, no soundness-side edits, `check-floor.sh` MIN_AXIOMS
+0 change sound (Floor 3 cross-witness covers the sabotage case).
 
-Context:
-- Phase 0 from the v1 plan remains valid: baseline gates passed and
-  throwaway probes derived `False` from BinaryAdd and MemAlignByte
-  completeness axioms.
-- Cody rescoped the stream on 2026-06-11: do NOT prove honest-row
-  completeness. Demote all false/circular Clean completeness fields to
-  explicit `ProverAssumptions := False` non-claims, delete the axiom file, and
-  sweep trust/docs.
-- Census reconciliation: `rg "completeness :=" ZiskFv` finds 17 fields, not
-  16. The extra hit is `ZiskFv/AirsClean/Mem/Circuit.lean:117`, the same
-  restated-`Spec` circular proof as Mem's other two wrappers. Demote 16 total
-  fields; keep only the push-only BinaryExtension `Circuit.lean:35` field.
-- Source sweep: BinaryAdd plus the remaining 15 A/A′/B fields are demoted to
-  `ProverAssumptions := False`; Category C BinaryExtension `Circuit.lean`
-  remains untouched. `ZiskFv/AirsClean/Completeness.lean` is deleted and source
-  imports are gone. LSP diagnostics on edited files and
-  `lake build ZiskFv.AirsClean.FullEnsemble` passed. The plan's
-  `ZiskFv.AirsClean` target does not exist in this tree.
-- Trust sweep note: this branch's checked-in source-axiom baseline contained
-  only the six Clean completeness axioms, so deletion takes the source trust
-  ledger to 0 entries. `trust/scripts/check-floor.sh` was updated to allow a
-  zero-entry baseline while retaining the tree-wide cross-witness guard.
-- Verification before merging `origin/main`: full `lake build`,
-  `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
-  `trust/scripts/check-all-semantic.sh`, `nix run .#test`, and final closure
-  print passed. The closure print emitted no project axiom names (only
-  existing TrustGate deprecation warnings).
-- PR #65 (`mem-read-discharge`) is merged. After merging current `origin/main`
-  into this branch, focused LSP diagnostics, `lake build
-  ZiskFv.AirsClean.FullEnsemble`, full `lake build`,
-  `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and the
-  final closure print all passed.
+Blocking: none.
 
-Next step: wait for review/CI on PR #66. Do not start optional Phase 2
-constructibility witnesses without explicit go-ahead.
+Open follow-ups (need Cody's decision):
+- Optional Phase 2: constructibility witnesses under `trust/consistency/`
+  (plan section retained in PLAN_CLEAN_COMPLETENESS.md).
+- Worktree/branch cleanup: `.worktrees/clean-completeness`,
+  `.worktrees/mem-read-discharge` (PR #65 merged),
+  `.worktrees/memory-trust-gap` (salvage reference),
+  `backup/main-before-reopen-pr64-*` branch.
+
+Next step: idle until Cody picks a follow-up.
