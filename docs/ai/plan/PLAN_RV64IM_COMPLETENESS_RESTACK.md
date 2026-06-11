@@ -132,18 +132,29 @@ still state the mediation plainly.
 - [x] Cross-link from the `ZISK-DEFECT-FENCE-INCOMPLETE` defect entry to
       the new theorem (the theorem certifies FENCE is the ONLY
       acceptance restriction in RV64IM).
+      Committed as `7914198c` (`Document RV64IM completeness framing`).
 
 ## Phase 4 — Verification and PR
 
-- [ ] `nix develop --command lake build` (full).
-- [ ] `trust/scripts/check-all.sh` and
+- [x] `nix develop --command lake build` (full). Passed (8674 jobs).
+- [x] `trust/scripts/check-all.sh` and
       `trust/scripts/check-all-semantic.sh`.
-- [ ] `AENEAS_CHECK_RV_COMPLETENESS=1 nix run .#aeneas-production-extract`.
-- [ ] From `zisk/`: the four cargo tests listed in PR #60's body
+      V1 passed 17/17 after adding the new raw materialization helper to the
+      production-boundary gate's explicit raw-helper allowlist; V2 passed 5/5.
+- [x] `AENEAS_CHECK_RV_COMPLETENESS=1 nix run .#aeneas-production-extract`.
+      Passed after updating the script's JALR target-mask extraction to handle
+      main's current local `let mask := ...` shape in the Sail-side JALR
+      semantics. Result: production-backed extraction succeeded with 69 starts
+      and 202 declarations; generated Lean workspace built 1759 jobs.
+- [x] From `zisk/`: the four cargo tests listed in PR #60's body
       (`decode_core_covers_current_rv64im_opcode_surface`,
       `decode_core_keeps_known_restrictions_visible`, and the two
       `aeneas_extract`-feature raw-extraction gate tests).
-- [ ] `nix run .#test` (now includes the Phase 2 wiring).
+      All four passed.
+- [x] `nix run .#test` (now includes the Phase 2 wiring).
+      Passed all 8 stages: cargo tests, feature-gated `zisk-core` test,
+      Aeneas production extraction, full Lean build, generated wrapper check,
+      V1 trust gate, V2 semantic gate, and flake repro.
 - [ ] Open the PR against main (permission already granted for this
       repo). Body must: use canonical glossary terms; state the
       acceptance-vs-Clean-completeness distinction; state the interface

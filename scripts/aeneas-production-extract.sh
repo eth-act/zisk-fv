@@ -2550,10 +2550,16 @@ EOF
           print
           exit
         }
+        /let mask[[:space:]]*:=/ {
+          sub(/^.*let mask[[:space:]]*:= */, "")
+          gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+          print
+          exit
+        }
       ' "$ROOT/ZiskFv/SailSpec/jalr.lean"
     )"
     if [[ -z "$jalr_target_mask_hex" ]]; then
-      echo "Could not extract PureSpec.jalrTargetMask from ZiskFv/SailSpec/jalr.lean" >&2
+      echo "Could not extract PureSpec JALR target mask from ZiskFv/SailSpec/jalr.lean" >&2
       exit 1
     fi
 
@@ -2587,9 +2593,8 @@ def rowCarriesJalrSoundnessTarget
 
 /-- Extracted production-row facts needed to route a lowered JALR row toward
 the checked-in JALR soundness interface. This intentionally names the
-soundness input, not the historical regression: the target mask comes from
-\`PureSpec.jalrTargetMask\`, read from the checked-in Sail-side JALR semantics
-when this generated check is emitted. -/
+soundness input, not the historical regression: the target mask is read from
+the checked-in Sail-side JALR semantics when this generated check is emitted. -/
 def rawTranspileJalrSoundnessInput
     (result : Result aeneas_extract.Rv64imTranspileExtract) : Bool :=
   match result with
