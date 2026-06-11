@@ -1,9 +1,9 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md
 
 Current focus: Phase 0 demotion work is implemented, generated, gate-clean,
-and ready for the plan's "ask Cody, then open PR" step. Branch
-`clean-completeness` was created from open PR #65 branch `mem-read-discharge`
-at `2a88f6c7`; PR #65 is not merged as of 2026-06-11.
+and being prepared as a PR against current `origin/main`. PR #65
+(`mem-read-discharge`) is now merged, so this branch no longer needs to stack
+on it.
 
 Blocking: none. Stop before optional Phase 2 constructibility witnesses.
 
@@ -25,19 +25,16 @@ Context:
   imports are gone. LSP diagnostics on edited files and
   `lake build ZiskFv.AirsClean.FullEnsemble` passed. The plan's
   `ZiskFv.AirsClean` target does not exist in this tree.
-- First in-worktree command was `lake exe cache get`; it exposed missing path
-  deps, then `nix run .#populate` populated `build/` and cache hydration
-  succeeded.
-- `trust/defects.md` currently records the inconsistency; v2 will resolve it
-  by demotion rather than honest-row proofs.
 - Trust sweep note: this branch's checked-in source-axiom baseline contained
   only the six Clean completeness axioms, so deletion takes the source trust
   ledger to 0 entries. `trust/scripts/check-floor.sh` was updated to allow a
   zero-entry baseline while retaining the tree-wide cross-witness guard.
-- Verification: full `lake build`, `trust/scripts/regenerate.sh`,
-  `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
-  `nix run .#test`, and final closure print passed. The closure print emitted
-  no project axiom names (only existing TrustGate deprecation warnings).
+- Verification before merging `origin/main`: full `lake build`,
+  `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+  `trust/scripts/check-all-semantic.sh`, `nix run .#test`, and final closure
+  print passed. The closure print emitted no project axiom names (only
+  existing TrustGate deprecation warnings).
 
-Next step: ask Cody whether to open the PR. Do not start optional Phase 2
+Next step: finish resolving the `origin/main` merge, rerun focused gates,
+open the PR, and record the PR URL. Do not start optional Phase 2
 constructibility witnesses without explicit go-ahead.
