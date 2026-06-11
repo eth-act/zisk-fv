@@ -1,6 +1,5 @@
 import ZiskFv.AirsClean.MemAlignByte.Constraints
 import ZiskFv.AirsClean.MemAlignByte.Soundness
-import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -14,17 +13,14 @@ Packages ZisK's MemAlignByte AIR as a Clean `Air.Flat.Component`:
   emits the 9 `assertZero` algebraic constraints and the memory-bus
   proves-side `push`.
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` for
-  soundness; `completeness` is the declared axiom
-  `memAlignByte_circuit_completeness`.
+  soundness; completeness is intentionally a visible non-claim.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
-Axioms in this component: `memAlignByte_circuit_completeness`
-(completeness-direction, non-security-critical). The `soundness` field is
-genuinely proved.
+No completeness claim is made; the `soundness` field is genuinely proved.
 -/
 
 namespace ZiskFv.AirsClean.MemAlignByte
@@ -50,7 +46,11 @@ def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit :=
   { memAlignByteElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun _ _ _ => True
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -76,7 +76,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit :=
         -- is `True`.
         intro _
         trivial
-    completeness := memAlignByte_circuit_completeness }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 /-- MemAlignByte as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩

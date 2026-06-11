@@ -1,6 +1,5 @@
 import ZiskFv.AirsClean.ArithDiv.Constraints
 import ZiskFv.AirsClean.ArithDiv.Soundness
-import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -19,16 +18,15 @@ Packages the Arith AIR's **DIV carry-chain sub-circuit** as a Clean
   D-2 / finding F-4: a Component carries no soundness-assumptions — the
   11-clause carry-chain `Spec` follows from the 11 definitional
   `assertZero`s alone, with no range reasoning and no flag-value pins).
-  `soundness` discharges the DIV carry-chain relation and `completeness` is
-  the declared axiom `arithDiv_circuit_completeness`.
+  `soundness` discharges the DIV carry-chain relation; completeness is
+  intentionally a visible non-claim.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an
 ensemble non-vacuously (the `AssumptionsConsistency` obligation becomes
-trivial). Axioms in this component: `arithDiv_circuit_completeness`
-(completeness-direction, non-security-critical). The `soundness` field is
+trivial). No completeness claim is made. The `soundness` field is
 genuinely proved from the 11 `assertZero` constraints by
 `linear_combination` (no range reasoning, hence no `range_bus_sound`).
 -/
@@ -51,7 +49,11 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
   { arithDivElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun _ _ _ => True
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       -- `circuit_proof_start`'s `provable_struct_simp` step is far too
@@ -90,7 +92,7 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
         · linear_combination h38
       · -- no channel interaction → empty `Operations.Requirements`.
         simp only [circuit_norm, main]
-    completeness := arithDiv_circuit_completeness }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 /-- ArithDiv as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩

@@ -83,8 +83,8 @@ confirm the idiom and that no consumer breaks, then sweep the rest.
       STATUS.md; commit.
 - [x] Re-run census grep; reconcile against the table above.
 - [x] Pilot: BinaryAdd field demoted; targeted build green.
-- [ ] Demote the remaining 15 fields (A, A′, B). Category C untouched.
-- [ ] Delete `ZiskFv/AirsClean/Completeness.lean`; drop its import sites.
+- [x] Demote the remaining 15 fields (A, A′, B). Category C untouched.
+- [x] Delete `ZiskFv/AirsClean/Completeness.lean`; drop its import sites.
 - [ ] Trust sweep, all in the same PR:
       - `trust/tolerated-completeness-axioms.txt`: remove all six entries;
         rewrite header to "no tolerated entries currently" (keep the file).
@@ -145,3 +145,7 @@ honest-row completeness would have provided, at a fraction of the cost.
 - 2026-06-11: BinaryAdd pilot demoted. `lake build ZiskFv.AirsClean` is not
   a real target in this tree; used `lake build ZiskFv.AirsClean.BinaryAdd.Circuit`
   and `lake build ZiskFv.AirsClean.FullEnsemble`, both green.
+- 2026-06-11: swept the remaining 15 A/A′/B fields to
+  `ProverAssumptions := False`, deleted `ZiskFv/AirsClean/Completeness.lean`,
+  and verified the source sweep with LSP diagnostics plus
+  `lake build ZiskFv.AirsClean.FullEnsemble`.

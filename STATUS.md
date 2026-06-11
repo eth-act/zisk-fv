@@ -1,8 +1,7 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md
 
-Current focus: BinaryAdd pilot demotion is green; next step is sweeping the
-remaining 15 false/circular completeness fields, then deleting
-`ZiskFv/AirsClean/Completeness.lean`. Branch `clean-completeness` was created
+Current focus: Source demotion sweep is green; next step is the trust/docs
+sweep and generated trust artifacts. Branch `clean-completeness` was created
 from open PR #65 branch `mem-read-discharge` at `2a88f6c7`; PR #65 is not
 merged as of 2026-06-11.
 
@@ -20,8 +19,10 @@ Context:
   16. The extra hit is `ZiskFv/AirsClean/Mem/Circuit.lean:117`, the same
   restated-`Spec` circular proof as Mem's other two wrappers. Demote 16 total
   fields; keep only the push-only BinaryExtension `Circuit.lean:35` field.
-- BinaryAdd pilot: demoted to `ProverAssumptions := False`; LSP diagnostics
-  clean. `lake build ZiskFv.AirsClean.BinaryAdd.Circuit` and
+- Source sweep: BinaryAdd plus the remaining 15 A/A′/B fields are demoted to
+  `ProverAssumptions := False`; Category C BinaryExtension `Circuit.lean`
+  remains untouched. `ZiskFv/AirsClean/Completeness.lean` is deleted and source
+  imports are gone. LSP diagnostics on edited files and
   `lake build ZiskFv.AirsClean.FullEnsemble` passed. The plan's
   `ZiskFv.AirsClean` target does not exist in this tree.
 - First in-worktree command was `lake exe cache get`; it exposed missing path
@@ -30,4 +31,5 @@ Context:
 - `trust/defects.md` currently records the inconsistency; v2 will resolve it
   by demotion rather than honest-row proofs.
 
-Next step: demote the remaining 15 fields and remove the axiom imports/file.
+Next step: update trust allowlists/scripts/docs, regenerate trust artifacts,
+then run the full gate sequence.

@@ -1,6 +1,5 @@
 import ZiskFv.AirsClean.ArithMul.Constraints
 import ZiskFv.AirsClean.ArithMul.Soundness
-import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -18,18 +17,17 @@ Packages ZisK's Arith AIR (MUL-mode carry-chain view) as a Clean
   a Component carries no soundness-assumptions — the ArithMul `soundness`
   proof needs none; the 11-clause carry-chain `Spec` follows from the 11
   definitional `assertZero` constraints alone, by `linear_combination`).
-  `soundness` discharges the ArithMul carry-chain relation and `completeness`
-  is the declared axiom `arithMul_circuit_completeness`.
+  `soundness` discharges the ArithMul carry-chain relation; completeness is
+  intentionally a visible non-claim.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
-Axioms in this component: `arithMul_circuit_completeness`
-(completeness-direction, non-security-critical). Every soundness `Spec` clause
-is a syntactic re-expression of the corresponding `assertZero` constraint,
-closed by `linear_combination`, with no range reasoning.
+No completeness claim is made. Every soundness `Spec` clause is a syntactic
+re-expression of the corresponding `assertZero` constraint, closed by
+`linear_combination`, with no range reasoning.
 -/
 
 namespace ZiskFv.AirsClean.ArithMul
@@ -51,7 +49,11 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
   { arithMulElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun _ _ _ => True
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -75,7 +77,7 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
       · -- the op-bus push's requirement: `OpBusChannel.Guarantees` is `True`.
         intro _
         trivial
-    completeness := arithMul_circuit_completeness }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 /-- ArithMul as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩

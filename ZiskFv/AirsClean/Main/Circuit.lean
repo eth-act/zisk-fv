@@ -1,7 +1,6 @@
 import ZiskFv.AirsClean.Main.Constraints
 import ZiskFv.AirsClean.Main.Soundness
 import ZiskFv.AirsClean.Main.Bridge
-import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -17,7 +16,8 @@ PIL-faithful operation-bus emission with multiplicity `-is_external_op`.
 
 ## Trust note
 
-No axioms.
+No axioms. Completeness is intentionally a visible non-claim; the file's
+trusted content is the soundness direction.
 -/
 
 namespace ZiskFv.AirsClean.Main
@@ -32,7 +32,11 @@ def circuit : GeneralFormalCircuit FGL MainRow unit :=
   { mainWithOpBusElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun row _ _ => Spec row
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -49,9 +53,7 @@ def circuit : GeneralFormalCircuit FGL MainRow unit :=
               , by simpa [sub_eq_add_neg] using h8 ⟩
       · intro _
         trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel]
-      simpa [sub_eq_add_neg] using h_assumptions }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 
@@ -169,19 +171,22 @@ theorem romSpec_of_mainWithRomAndMemBus_constraints
   simpa [table, Table.fromStatic, StaticTable.toTable] using h_table_sound
 
 /-- Main as a Clean `GeneralFormalCircuit` exposing the ROM lookup and
-    the 3 memory-bus consumer emissions. Completeness is the declared
-    completeness-direction axiom `mainWithRomAndMemBus_circuit_completeness`. -/
+    the 3 memory-bus consumer emissions. Completeness is intentionally a
+    visible non-claim. -/
 def circuitWithRomAndMemBus
     (length : ℕ) (program : Program length) :
     GeneralFormalCircuit FGL MainRowWithRom unit :=
   { mainWithRomAndMemBusElaborated length program with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row.core
-    ProverAssumptions := fun _ _ _ => True
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := mainWithRomAndMemBus_soundness length program
-    completeness :=
-      ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness length program }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 /-- Main as a Clean `Air.Flat.Component` exposing the ROM lookup and
     the 3 memory-bus consumer interactions. Used by the full Clean
@@ -221,19 +226,14 @@ def circuitWithRomMemAndOpBus
   { mainWithRomMemAndOpBusElaborated length program with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row.core
-    ProverAssumptions := fun _ _ _ => True
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := mainWithRomMemAndOpBus_soundness length program
-    completeness := by
-      intro offset env input_var h_env input h_input h_assumptions
-      have h_mem_env :
-          env.UsesLocalWitnessesCompleteness offset
-            ((mainWithRomAndMemBus length program input_var).operations offset) := by
-        simp [mainWithRomMemAndOpBus, circuit_norm] at h_env ⊢
-      have h_mem :=
-        ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness
-          length program offset env input_var h_mem_env input h_input h_assumptions
-      simpa [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel] using h_mem }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 /-- Unified Main component used by the T7 full ensemble. -/
 def componentWithRomMemAndOpBus

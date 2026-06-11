@@ -15,8 +15,8 @@ continuity remains in `CrossRow.lean`.
 
 ## Trust note
 
-No axioms. Completeness is conditional on the same row `Spec`, following
-the existing soundness-only pattern used by `AirsClean/Mem/Circuit.lean`.
+No axioms. Completeness is intentionally a visible non-claim, following the
+soundness-only project boundary.
 -/
 
 namespace ZiskFv.AirsClean.MemAlign
@@ -30,7 +30,11 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
   { memAlignWithMemBusElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun row _ _ => Spec row
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -55,9 +59,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
               , by simpa only [sub_eq_add_neg] using h15 ⟩
       · intro _
         trivial
-    completeness := by
-      circuit_proof_start [MemBusChannel]
-      simpa only [Spec, sub_eq_add_neg] using h_assumptions }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 
