@@ -1,40 +1,44 @@
-Active plan: docs/ai/plan/PLAN_MEM_TIMELINE_BOUNDARY_FIX.md
-(parent plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md)
+Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md
 
-Current focus: PR #65 review-fix plan is implemented and verified. The
-timeline boundary is byte-local, residual Balance constructors and generated
-templates are updated, `AGENTS.md` is removed, the two-address consistency
-witness compiles, and the PR body describes the corrected boundary.
+Current focus: Phase 0 demotion work is implemented, generated, gate-clean,
+and opened as PR #66 against current `main`:
+https://github.com/eth-act/zisk-fv/pull/66
 
-Review findings:
-- Blocker: `MemoryTimelineEvidence.stateAtPrefix` is full-SailState equality
-  over the Mem table's (addr, step)-sorted row order (mem.pil:9), and
-  `ReplayMemoryAgreement` is two-sided ∀-addr map equality — the residual
-  boundary is unconstructible for real executions (vacuous load arms). Fix:
-  byte-localize the Sail-side fields to the selected entry's 8 bytes; the
-  circuit-side prefix-read machinery is unaffected.
-- Must-remove: `AGENTS.md` at repo root is a copy of Cody's private
-  ai-workflow conventions file; drop it from the branch.
-- Non-blockers noted in review: single +15.7k PR (Gate C), plan-file
-  expansion, witness `native_decide` closure (acceptable).
-
-Verified during review (this worktree): check-all.sh 17/17,
-check-all-semantic.sh all pass, trust/generated/ byte-identical to main,
-no sorry/axiom constructs in new files, OpEnvelope.lean +61 lines.
-
-PR: https://github.com/eth-act/zisk-fv/pull/65
+Blocking: none. Phase 0 is complete; stop before optional Phase 2
+constructibility witnesses.
 
 Context:
-- PR #64 was accidentally squash-merged, then `main` was reset to reopen
-  review. Backup branch: `backup/main-before-reopen-pr64-20260610-100723`.
-- The old `memory-trust-gap` worktree/branch is intentionally preserved
-  during review; do not delete it.
+- Phase 0 from the v1 plan remains valid: baseline gates passed and
+  throwaway probes derived `False` from BinaryAdd and MemAlignByte
+  completeness axioms.
+- Cody rescoped the stream on 2026-06-11: do NOT prove honest-row
+  completeness. Demote all false/circular Clean completeness fields to
+  explicit `ProverAssumptions := False` non-claims, delete the axiom file, and
+  sweep trust/docs.
+- Census reconciliation: `rg "completeness :=" ZiskFv` finds 17 fields, not
+  16. The extra hit is `ZiskFv/AirsClean/Mem/Circuit.lean:117`, the same
+  restated-`Spec` circular proof as Mem's other two wrappers. Demote 16 total
+  fields; keep only the push-only BinaryExtension `Circuit.lean:35` field.
+- Source sweep: BinaryAdd plus the remaining 15 A/A′/B fields are demoted to
+  `ProverAssumptions := False`; Category C BinaryExtension `Circuit.lean`
+  remains untouched. `ZiskFv/AirsClean/Completeness.lean` is deleted and source
+  imports are gone. LSP diagnostics on edited files and
+  `lake build ZiskFv.AirsClean.FullEnsemble` passed. The plan's
+  `ZiskFv.AirsClean` target does not exist in this tree.
+- Trust sweep note: this branch's checked-in source-axiom baseline contained
+  only the six Clean completeness axioms, so deletion takes the source trust
+  ledger to 0 entries. `trust/scripts/check-floor.sh` was updated to allow a
+  zero-entry baseline while retaining the tree-wide cross-witness guard.
+- Verification before merging `origin/main`: full `lake build`,
+  `trust/scripts/regenerate.sh`, `trust/scripts/check-all.sh`,
+  `trust/scripts/check-all-semantic.sh`, `nix run .#test`, and final closure
+  print passed. The closure print emitted no project axiom names (only
+  existing TrustGate deprecation warnings).
+- PR #65 (`mem-read-discharge`) is merged. After merging current `origin/main`
+  into this branch, focused LSP diagnostics, `lake build
+  ZiskFv.AirsClean.FullEnsemble`, full `lake build`,
+  `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and the
+  final closure print all passed.
 
-Verification:
-- `lake build`, both trust gates, closure print, and `nix run .#test` passed.
-- `trust/generated/` has no diff vs `origin/main`.
-- `rg -n "stateAtPrefix|prefixStateAgreement" ZiskFv` has no hits.
-- `git ls-files AGENTS.md` is empty.
-- `git diff --check` passed.
-
-Next step: review PR #65 after the review-fix commit is pushed.
+Next step: wait for review/CI on PR #66. Do not start optional Phase 2
+constructibility witnesses without explicit go-ahead.

@@ -16,9 +16,8 @@ lookup/permutation promise.
 
 ## Trust note
 
-No axioms. The mandatory Clean completeness side is conditional on the same
-row `Spec`, so this component does not claim honest-prover constructibility
-beyond the already-stated per-row relation.
+No axioms. Completeness is intentionally a visible non-claim, so this component
+does not claim honest-prover constructibility beyond the soundness theorem.
 -/
 
 namespace ZiskFv.AirsClean.Mem
@@ -32,7 +31,11 @@ def circuit : GeneralFormalCircuit FGL MemRow unit :=
   { memElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun row _ _ => Spec row
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -46,9 +49,7 @@ def circuit : GeneralFormalCircuit FGL MemRow unit :=
             , by simpa only [sub_eq_add_neg] using h6
             , by simpa only [sub_eq_add_neg] using h7
             , by simpa only [sub_eq_add_neg] using h8 ⟩
-    completeness := by
-      circuit_proof_start
-      simpa only [Spec, sub_eq_add_neg] using h_assumptions }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 /-- Mem as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
@@ -58,14 +59,18 @@ def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 `circuitWithMemBus` wraps `memWithMemBusElaborated` (Mem's per-row
 constraints + the memory-bus provider emission) as a Clean
 `GeneralFormalCircuit`. The Spec is unchanged from `Mem.circuit` —
-the channel emission adds no per-row soundness obligation; the
-soundness/completeness proofs use exactly the same body. -/
+the channel emission adds no per-row soundness obligation; the soundness
+proof mirrors the base component. -/
 
 def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
   { memWithMemBusElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun row _ _ => Spec row
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -82,9 +87,7 @@ def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
               , by simpa only [sub_eq_add_neg] using h8 ⟩
       · intro _
         trivial
-    completeness := by
-      circuit_proof_start [MemBusChannel]
-      simpa only [Spec, sub_eq_add_neg] using h_assumptions }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 /-- Mem as a Clean `Air.Flat.Component` exposing the memory-bus
     provider emission. Used by Clean memory-bus component assembly. -/
@@ -98,7 +101,11 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
   { memWithDualMemBusElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun row _ _ => Spec row
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -114,9 +121,7 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
               , by simpa only [sub_eq_add_neg] using h7
               , by simpa only [sub_eq_add_neg] using h8 ⟩
       · exact ⟨by intro _; trivial, by intro _; trivial⟩
-    completeness := by
-      circuit_proof_start [MemBusChannel]
-      simpa only [Spec, sub_eq_add_neg] using h_assumptions }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 /-- Mem as a Clean `Air.Flat.Component` exposing both primary and dual
     memory-bus provider emissions. -/

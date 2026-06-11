@@ -340,9 +340,8 @@ def mainWithSignedCarryRanges (row : Var ArithDivRow FGL) : Circuit FGL Unit := 
 
 /-- The elaborated circuit for ArithDiv's `main` — 11 `assertZero`
     constraints, no fresh witnesses (`localLength = 0`, `unit` output)
-    and no channel interactions. Lives here (next to `main`) rather than
-    in `Circuit.lean` so the conditional completeness proof can name it
-    without an import cycle. -/
+    and no channel interactions. Lives here (next to `main`) so the
+    `Circuit.lean` wrapper can reuse it without an import cycle. -/
 @[reducible] def arithDivElaborated : ElaboratedCircuit FGL ArithDivRow unit where
   name := "ArithDiv"
   main := main

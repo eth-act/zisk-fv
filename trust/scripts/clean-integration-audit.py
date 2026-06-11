@@ -25,14 +25,7 @@ EQUIVALENCE = ROOT / "ZiskFv/Equivalence"
 EQUIVCORE = ROOT / "ZiskFv/EquivCore"
 WRAPPERS = ROOT / "ZiskFv/Compliance/Wrappers"
 
-COMPLETENESS: set[str] = {
-    "ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness",
-    "ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness",
-    "ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness",
-    "ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness",
-    "ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness",
-    "ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness",
-}
+COMPLETENESS_RE = re.compile(r"^ZiskFv\.AirsClean\..*circuit_completeness$")
 
 COMPONENTS = [
     ("BinaryAdd.component", "ZiskFv.AirsClean.BinaryAdd.component"),
@@ -53,15 +46,7 @@ COMPONENTS = [
     ("MemAlign.component", "ZiskFv.AirsClean.MemAlign.component"),
 ]
 
-COMPONENT_COMPLETENESS: dict[str, str] = {
-    "BinaryAdd.component": "ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness",
-    "MemAlignByte.component": "ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness",
-    "MemAlignReadByte.component": "ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness",
-    "ArithMul.component": "ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness",
-    "ArithDiv.component": "ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness",
-    "Main.componentWithRomAndMemBus": "ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness",
-    "Main.componentWithRomMemAndOpBus": "ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness",
-}
+COMPONENT_COMPLETENESS: dict[str, str] = {}
 
 SOURCE_ALIASES = {
     "Main.componentWithRomAndMemBus": ["componentWithRomAndMemBus"],
@@ -295,14 +280,14 @@ def main() -> None:
         provider, defect, reasons = classify_theorem(theorem, theorems[theorem], dep_list)
         provider_counts[provider] += 1
         defect_counts[defect] += 1
-        leaked = [d for d in dep_list if d in COMPLETENESS]
+        leaked = [d for d in dep_list if COMPLETENESS_RE.match(d)]
         if leaked:
             completion_leaks.append((theorem, leaked))
         if provider == "unknown":
             unknowns.append(theorem)
         theorem_rows.append((theorem_to_opcode(theorem), theorem, provider, defect, leaked, reasons[0]))
 
-    global_leaks = [a for a in global_axioms if a in COMPLETENESS]
+    global_leaks = [a for a in global_axioms if COMPLETENESS_RE.match(a)]
 
     print("# Clean Integration Audit")
     print()

@@ -95,8 +95,11 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
         opBusMessageExpr, aLo, aHi, OpBusChannel]
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row ∧ StaticBinaryExtensionTableSpecFacts row
-    ProverAssumptions := fun row _ _ =>
-      Spec row ∧ StaticBinaryExtensionTableSpecFacts row
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -113,18 +116,7 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
           by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h7 ⟩
       · intro _
         trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel]
-      rcases h_assumptions with
-        ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
-      exact ⟨ by simpa [sub_eq_add_neg] using h0
-            , by simpa [sub_eq_add_neg] using h1
-            , by simpa [sub_eq_add_neg] using h2
-            , by simpa [sub_eq_add_neg] using h3
-            , by simpa [sub_eq_add_neg] using h4
-            , by simpa [sub_eq_add_neg] using h5
-            , by simpa [sub_eq_add_neg] using h6
-            , by simpa [sub_eq_add_neg] using h7 ⟩ }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
   { binaryExtensionWithStaticTableAndShiftRangeElaborated with
@@ -137,8 +129,11 @@ def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit 
     Assumptions := fun _ _ => True
     Spec := fun row _ _ =>
       Spec row ∧ StaticBinaryExtensionTableSpecFacts row ∧ ShiftB0RangeSpecFact row
-    ProverAssumptions := fun row _ _ =>
-      Spec row ∧ StaticBinaryExtensionTableSpecFacts row ∧ ShiftB0RangeSpecFact row
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -156,19 +151,7 @@ def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit 
           by simpa [ShiftB0RangeSpecFact] using h_b0 ⟩
       · intro _
         trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel]
-      rcases h_assumptions with ⟨h_static, h_b0⟩
-      rcases h_static with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
-      exact ⟨ by simpa [sub_eq_add_neg] using h0
-            , by simpa [sub_eq_add_neg] using h1
-            , by simpa [sub_eq_add_neg] using h2
-            , by simpa [sub_eq_add_neg] using h3
-            , by simpa [sub_eq_add_neg] using h4
-            , by simpa [sub_eq_add_neg] using h5
-            , by simpa [sub_eq_add_neg] using h6
-            , by simpa [sub_eq_add_neg] using h7
-            , by simpa [ShiftB0RangeSpecFact] using h_b0 ⟩ }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 def staticLookupComponent : Air.Flat.Component FGL := ⟨ staticLookupCircuit ⟩
 

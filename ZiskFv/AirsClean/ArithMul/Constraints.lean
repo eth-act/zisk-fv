@@ -280,9 +280,8 @@ def mainWithSignedCarryRanges (row : Var ArithMulRow FGL) : Circuit FGL Unit := 
 
 /-- The elaborated circuit for ArithMul's `main` — 11 `assertZero`
     carry-chain constraints + the op-bus push, no fresh witnesses
-    (`localLength = 0`, `unit` output). Lives here (next to `main`)
-    rather than in `Circuit.lean` so the conditional completeness proof
-    can name it without an import cycle. -/
+    (`localLength = 0`, `unit` output). Lives here (next to `main`) so
+    the `Circuit.lean` wrapper can reuse it without an import cycle. -/
 @[reducible] def arithMulElaborated : ElaboratedCircuit FGL ArithMulRow unit where
   name := "ArithMul"
   main := main

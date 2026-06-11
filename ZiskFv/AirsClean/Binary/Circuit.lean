@@ -24,7 +24,11 @@ def circuit : GeneralFormalCircuit FGL BinaryRow unit :=
   { binaryElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun row _ _ => Spec row
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -39,9 +43,7 @@ def circuit : GeneralFormalCircuit FGL BinaryRow unit :=
               , by simpa [sub_eq_add_neg] using h6 ⟩
       · intro _
         trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel]
-      simpa [sub_eq_add_neg] using h_assumptions }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 
@@ -158,7 +160,11 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit :=
         OpBusChannel]
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row ∧ StaticBinaryTableSpecFacts row
-    ProverAssumptions := fun row _ _ => Spec row ∧ StaticBinaryTableSpecFacts row
+    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
+    -- only). `ProverAssumptions := False` makes this field a visible
+    -- non-claim. See trust/defects.md
+    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
+    ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -190,26 +196,7 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit :=
                       lookupFlags7Row, sub_eq_add_neg] at h14 ⊢; exact h14 ⟩ ⟩
       · intro _
         trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel]
-      rcases h_assumptions with ⟨hSpec, hStatic⟩
-      rcases hSpec with ⟨h0, h1, h2, h3, h4, h5, h6⟩
-      rcases hStatic with ⟨h7, h8, h9, h10, h11, h12, h13, h14⟩
-      exact ⟨ by simpa [sub_eq_add_neg] using h0
-            , by simpa [sub_eq_add_neg] using h1
-            , by simpa [sub_eq_add_neg] using h2
-            , by simpa [sub_eq_add_neg] using h3
-            , by simpa [sub_eq_add_neg] using h4
-            , by simpa [sub_eq_add_neg] using h5
-            , by simpa [sub_eq_add_neg] using h6
-            , by simp [lookupMessage0Row, lookupFlags012Row, sub_eq_add_neg] at h7 ⊢; exact h7
-            , by simp [lookupMessage1Row, lookupFlags012Row, sub_eq_add_neg] at h8 ⊢; exact h8
-            , by simp [lookupMessage2Row, lookupFlags012Row, sub_eq_add_neg] at h9 ⊢; exact h9
-            , by simp [lookupMessage3Row, lookupFlags3456Row, sub_eq_add_neg] at h10 ⊢; exact h10
-            , by simp [lookupMessage4Row, lookupFlags3456Row, sub_eq_add_neg] at h11 ⊢; exact h11
-            , by simp [lookupMessage5Row, lookupFlags3456Row, sub_eq_add_neg] at h12 ⊢; exact h12
-            , by simp [lookupMessage6Row, lookupFlags3456Row, sub_eq_add_neg] at h13 ⊢; exact h13
-            , by simp [lookupMessage7Row, lookupFlags7Row, sub_eq_add_neg] at h14 ⊢; exact h14 ⟩ }
+    completeness := fun _ _ _ _ _ _ h => h.elim }
 
 def staticLookupComponent : Air.Flat.Component FGL := ⟨ staticLookupCircuit ⟩
 
