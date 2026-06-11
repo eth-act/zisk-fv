@@ -1,40 +1,25 @@
-Active plan: docs/ai/plan/PLAN_MEM_TIMELINE_BOUNDARY_FIX.md
-(parent plan: docs/ai/plan/PLAN_MEM_READ_DISCHARGE.md)
+Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md
 
-Current focus: PR #65 review-fix plan is implemented and verified. The
-timeline boundary is byte-local, residual Balance constructors and generated
-templates are updated, `AGENTS.md` is removed, the two-address consistency
-witness compiles, and the PR body describes the corrected boundary.
+Current focus: Phase 0 is complete in this worktree. Branch
+`clean-completeness` was created from open PR #65 branch `mem-read-discharge`
+at `2a88f6c7`; PR #65 is not merged as of 2026-06-11.
 
-Review findings:
-- Blocker: `MemoryTimelineEvidence.stateAtPrefix` is full-SailState equality
-  over the Mem table's (addr, step)-sorted row order (mem.pil:9), and
-  `ReplayMemoryAgreement` is two-sided ∀-addr map equality — the residual
-  boundary is unconstructible for real executions (vacuous load arms). Fix:
-  byte-localize the Sail-side fields to the selected entry's 8 bytes; the
-  circuit-side prefix-read machinery is unaffected.
-- Must-remove: `AGENTS.md` at repo root is a copy of Cody's private
-  ai-workflow conventions file; drop it from the branch.
-- Non-blockers noted in review: single +15.7k PR (Gate C), plan-file
-  expansion, witness `native_decide` closure (acceptable).
+Blocking: none for Phase 1. The plan's default is to keep the Phase 0
+False-probes as PR-body evidence unless Cody asks for a rejected semantic-gate
+probe.
 
-Verified during review (this worktree): check-all.sh 17/17,
-check-all-semantic.sh all pass, trust/generated/ byte-identical to main,
-no sorry/axiom constructs in new files, OpEnvelope.lean +61 lines.
+Phase 0 results:
+- First in-worktree command was `lake exe cache get`; it exposed missing path
+  deps, then `nix run .#populate` populated `build/` and cache hydration
+  succeeded.
+- Baseline gates before tracked edits: `lake build`,
+  `trust/scripts/check-all.sh`, and `trust/scripts/check-all-semantic.sh`
+  passed. `check-all.sh` needed `git submodule update --init zisk`.
+- Throwaway `lean_run_code` probes derived `False` from
+  `binaryAdd_circuit_completeness` (`a_0 = 1`, rest zero) and
+  `memAlignByte_circuit_completeness` (`sel_high_4b = 2`, rest zero).
+- `trust/defects.md` records the confirmed source-ledger inconsistency.
 
-PR: https://github.com/eth-act/zisk-fv/pull/65
-
-Context:
-- PR #64 was accidentally squash-merged, then `main` was reset to reopen
-  review. Backup branch: `backup/main-before-reopen-pr64-20260610-100723`.
-- The old `memory-trust-gap` worktree/branch is intentionally preserved
-  during review; do not delete it.
-
-Verification:
-- `lake build`, both trust gates, closure print, and `nix run .#test` passed.
-- `trust/generated/` has no diff vs `origin/main`.
-- `rg -n "stateAtPrefix|prefixStateAgreement" ZiskFv` has no hits.
-- `git ls-files AGENTS.md` is empty.
-- `git diff --check` passed.
-
-Next step: review PR #65 after the review-fix commit is pushed.
+Next step: Phase 1 BinaryAdd pilot: define an honest row builder,
+constructibility witness, real completeness proof, and remove the BinaryAdd
+completeness axiom from the tolerated ledger.
