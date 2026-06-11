@@ -91,23 +91,24 @@ still state the mediation plainly.
       second parallel description of the same gap.
 - [x] `lake build ZiskFv` green; commit checkpoint.
       `bash -n scripts/aeneas-production-extract.sh` and `lake build ZiskFv`
-      (8674 jobs) passed before staging the checkpoint.
+      (8674 jobs) passed before staging the checkpoint. Committed as
+      `3d889970` (`Restack RV64IM completeness payload`).
 
 ## Phase 2 — Gate integration (the genuinely new work)
 
-- [ ] Add `ZiskFv/Completeness` to the directory list in
+- [x] Add `ZiskFv/Completeness` to the directory list in
       `trust/scripts/check-no-sorry.sh` (and its echo line). Verified:
       the payload files contain no sorry/axiom/opaque/partial/unsafe/
       extern constructs today; the gate keeps it that way.
-- [ ] Wire `AENEAS_CHECK_RV_COMPLETENESS=1` into the standing test gate:
+- [x] Wire `AENEAS_CHECK_RV_COMPLETENESS=1` into the standing test gate:
       `nix/test.nix:102` already runs `scripts/aeneas-production-extract.sh`;
       set the flag there so `nix run .#test` checks the theorem's
       interface premises on every run. Without this, the merged theorem
       is conditional on premises nothing re-verifies.
-- [ ] Confirm the locality gate passes with no additions to
+- [x] Confirm the locality gate passes with no additions to
       `trust/allowed-axiom-files.txt` (payload needs none; adding any
       file to that list is out of scope for this plan — stop and ask).
-- [ ] Regenerate ledgers: `trust/scripts/regenerate.sh` (V1, then V2
+- [x] Regenerate ledgers: `trust/scripts/regenerate.sh` (V1, then V2
       after `lake build`). Expected outcome — state it in the PR body:
       `trust/generated/baseline-axioms.txt` stays at 0 axioms;
       `baseline-hypothesis-count.txt` and `baseline-caller-burden.txt`
@@ -115,6 +116,9 @@ still state the mediation plainly.
       `baseline-zisk-riscv-compliant.txt` stays the 0-name closure.
       ANY drift in those files means this plan was violated — stop and
       report, do not refresh-and-proceed.
+      Focused checks passed: no-sorry, locality, no diff to
+      `trust/allowed-axiom-files.txt`, `trust/scripts/regenerate.sh`, and no
+      generated-ledger diff. Source axiom and global-closure totals remain 0.
 
 ## Phase 3 — Docs and framing
 
