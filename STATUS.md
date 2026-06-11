@@ -1,25 +1,25 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md
 
-Current focus: Phase 0 is complete in this worktree. Branch
-`clean-completeness` was created from open PR #65 branch `mem-read-discharge`
-at `2a88f6c7`; PR #65 is not merged as of 2026-06-11.
+Current focus: v2 demotion plan adopted; next step is the completeness-field
+census, then BinaryAdd pilot demotion. Branch `clean-completeness` was
+created from open PR #65 branch `mem-read-discharge` at `2a88f6c7`; PR #65 is
+not merged as of 2026-06-11.
 
-Blocking: none for Phase 1. The plan's default is to keep the Phase 0
-False-probes as PR-body evidence unless Cody asks for a rejected semantic-gate
-probe.
+Blocking: none. Stop before optional Phase 2 constructibility witnesses.
 
-Phase 0 results:
+Context:
+- Phase 0 from the v1 plan remains valid: baseline gates passed and
+  throwaway probes derived `False` from BinaryAdd and MemAlignByte
+  completeness axioms.
+- Cody rescoped the stream on 2026-06-11: do NOT prove honest-row
+  completeness. Demote all false/circular Clean completeness fields to
+  explicit `ProverAssumptions := False` non-claims, delete the axiom file, and
+  sweep trust/docs.
 - First in-worktree command was `lake exe cache get`; it exposed missing path
   deps, then `nix run .#populate` populated `build/` and cache hydration
   succeeded.
-- Baseline gates before tracked edits: `lake build`,
-  `trust/scripts/check-all.sh`, and `trust/scripts/check-all-semantic.sh`
-  passed. `check-all.sh` needed `git submodule update --init zisk`.
-- Throwaway `lean_run_code` probes derived `False` from
-  `binaryAdd_circuit_completeness` (`a_0 = 1`, rest zero) and
-  `memAlignByte_circuit_completeness` (`sel_high_4b = 2`, rest zero).
-- `trust/defects.md` records the confirmed source-ledger inconsistency.
+- `trust/defects.md` currently records the inconsistency; v2 will resolve it
+  by demotion rather than honest-row proofs.
 
-Next step: Phase 1 BinaryAdd pilot: define an honest row builder,
-constructibility witness, real completeness proof, and remove the BinaryAdd
-completeness axiom from the tolerated ledger.
+Next step: run `rg "completeness :=" ZiskFv`, reconcile the 16-field v2
+census, then demote BinaryAdd and build `ZiskFv.AirsClean`.
