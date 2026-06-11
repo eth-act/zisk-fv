@@ -85,7 +85,7 @@ confirm the idiom and that no consumer breaks, then sweep the rest.
 - [x] Pilot: BinaryAdd field demoted; targeted build green.
 - [x] Demote the remaining 15 fields (A, A′, B). Category C untouched.
 - [x] Delete `ZiskFv/AirsClean/Completeness.lean`; drop its import sites.
-- [ ] Trust sweep, all in the same PR:
+- [x] Trust sweep, all in the same PR:
       - `trust/tolerated-completeness-axioms.txt`: remove all six entries;
         rewrite header to "no tolerated entries currently" (keep the file).
       - `trust/allowed-axiom-files.txt`: remove the Completeness.lean
@@ -101,11 +101,11 @@ confirm the idiom and that no consumer breaks, then sweep the rest.
         record resolution by demotion (follow the ledger's own format);
         the retirement condition changes from honest-row proofs to this
         demotion.
-- [ ] Doc sweep: CLAUDE.md status paragraph mention of completeness
+- [x] Doc sweep: CLAUDE.md status paragraph mention of completeness
       axioms, `ZiskFv/AirsClean/FullEnsemble.lean` doc comment,
       `trust/README.md` if it names the axioms, component file module
       docs that say "completeness is the declared axiom".
-- [ ] Gates: full `lake build`, `trust/scripts/check-all.sh`,
+- [x] Gates: full `lake build`, `trust/scripts/check-all.sh`,
       `trust/scripts/check-all-semantic.sh`, `nix run .#test`,
       `lake exe trust-gate print-axiom-closure
       ZiskFv.Compliance.zisk_riscv_compliant_program_bus` (must remain
@@ -149,3 +149,13 @@ honest-row completeness would have provided, at a fraction of the cost.
   `ProverAssumptions := False`, deleted `ZiskFv/AirsClean/Completeness.lean`,
   and verified the source sweep with LSP diagnostics plus
   `lake build ZiskFv.AirsClean.FullEnsemble`.
+- 2026-06-11: completed trust/docs sweep. In this worktree the checked-in
+  source axiom baseline already contained only the six Clean completeness
+  axioms, so regeneration moved `trust/generated/baseline-axioms.txt` to
+  0 entries. `trust/scripts/check-floor.sh` now permits a zero-entry baseline
+  while retaining the tree-wide cross-witness guard.
+- 2026-06-11: full `lake build`, `trust/scripts/check-all.sh`,
+  `trust/scripts/check-all-semantic.sh`, and `nix run .#test` passed. Final
+  `lake exe trust-gate print-axiom-closure
+  ZiskFv.Compliance.zisk_riscv_compliant_program_bus` printed no project axiom
+  names (only existing TrustGate deprecation warnings).

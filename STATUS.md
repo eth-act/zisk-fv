@@ -1,9 +1,9 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md
 
-Current focus: Source demotion sweep is green; next step is the trust/docs
-sweep and generated trust artifacts. Branch `clean-completeness` was created
-from open PR #65 branch `mem-read-discharge` at `2a88f6c7`; PR #65 is not
-merged as of 2026-06-11.
+Current focus: Phase 0 demotion work is implemented, generated, gate-clean,
+and ready for the plan's "ask Cody, then open PR" step. Branch
+`clean-completeness` was created from open PR #65 branch `mem-read-discharge`
+at `2a88f6c7`; PR #65 is not merged as of 2026-06-11.
 
 Blocking: none. Stop before optional Phase 2 constructibility witnesses.
 
@@ -30,6 +30,13 @@ Context:
   succeeded.
 - `trust/defects.md` currently records the inconsistency; v2 will resolve it
   by demotion rather than honest-row proofs.
+- Trust sweep note: this branch's checked-in source-axiom baseline contained
+  only the six Clean completeness axioms, so deletion takes the source trust
+  ledger to 0 entries. `trust/scripts/check-floor.sh` was updated to allow a
+  zero-entry baseline while retaining the tree-wide cross-witness guard.
+- Verification: full `lake build`, `trust/scripts/regenerate.sh`,
+  `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+  `nix run .#test`, and final closure print passed. The closure print emitted
+  no project axiom names (only existing TrustGate deprecation warnings).
 
-Next step: update trust allowlists/scripts/docs, regenerate trust artifacts,
-then run the full gate sequence.
+Next step: commit the trust/docs sweep, then ask Cody whether to open the PR.

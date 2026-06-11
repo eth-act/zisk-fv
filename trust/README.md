@@ -31,7 +31,7 @@ when they are not trust policy or trust evidence.
 
 | Ledger                            | Count      | File                                                                                         |
 | ---                               | ---:        | ---                                                                                          |
-| Source Lean trust declarations    | 6          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
+| Source Lean trust declarations    | 0          | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
 | Global compliance theorem closure | 0          | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 | Per-canonical-theorem closures    | 63 entries | [`generated/baseline-equiv-axiom-deps.txt`](generated/baseline-equiv-axiom-deps.txt)         |
 
@@ -55,8 +55,9 @@ Policy/configuration files remain in `trust/` root: `allowed-axiom-files.txt`,
 `op-envelope-route-constructors.txt`, and `.shrinkage-floor`.
 
 The Clean integration gate enforces the soundness boundary: Clean completeness
-declarations may exist in the source trust ledger, but they must stay out of
-the global soundness closure; canonical active dispatch targets, public-looking
+axioms should not exist as source trust, and any future
+`ZiskFv.AirsClean.*circuit_completeness` axiom must stay out of the global
+soundness closure; canonical active dispatch targets, public-looking
 `Equivalence.equiv_*` helper theorem surfaces, and route-named `OpEnvelope`
 variants are also checked.
 The intended public theorem API is `zisk_riscv_compliant_program_bus` plus the

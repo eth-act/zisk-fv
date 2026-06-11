@@ -13,10 +13,3 @@
 # Small Sail-side simp helpers (locally proven; mirrors openvm-fv's
 # RV32D/Auxiliaries.lean pattern).
 ZiskFv/SailSpec/Auxiliaries.lean
-
-# Clean-Component completeness axioms. NON-SECURITY-CRITICAL,
-# completeness-direction: a falsehood in any of these cannot make a wrong
-# execution verify. zisk-fv is a soundness-only verification; Clean's
-# `GeneralFormalCircuit` makes `completeness` a mandatory field, so it is
-# filled by declared axioms.
-ZiskFv/AirsClean/Completeness.lean

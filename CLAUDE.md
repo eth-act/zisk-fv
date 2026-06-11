@@ -24,9 +24,9 @@ DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
 **Status:** `zisk_riscv_compliant_program_bus` is proved
 (`ZiskFv/Compliance.lean`); its trust closure
-is the **9-name global compliance closure** enumerated in
-`trust/baseline-zisk-riscv-compliant.txt`; the source trust ledger
-records **12 axioms** in `trust/baseline-axioms.txt`, documented
+is the **0-name global compliance closure** enumerated in
+`trust/generated/baseline-zisk-riscv-compliant.txt`; the source trust ledger
+records **0 axioms** in `trust/generated/baseline-axioms.txt`, documented
 per-class in `trust/trusted-base.md`. All 63 RV64IM opcodes are covered as
 `ZiskFv.Compliance.equiv_<OP>` wrappers under
 `ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 63-arm
@@ -165,8 +165,8 @@ Eight checks; if you break any, CI fails:
    `h_entry_lo_eq`, `h_high_bytes_signext`, `h_high_bytes_zeroext`,
    `h_e1_e2_bytes`). Pattern list: `trust/forbidden-param-shapes.txt`.
    Enforced uniformly across all 63 opcodes (no exemptions).
-4. **Floors.** The baseline must contain at least one tracked trust
-declaration, the shrinkage floor must not be exceeded, and ≥63 canonical `equiv_<OP>`
+4. **Floors.** The baseline's tracked trust-declaration count must match the
+   tree-wide cross-check, the shrinkage floor must not be exceeded, and ≥63 canonical `equiv_<OP>`
    theorems, plus a cross-witness check that the parser hasn't been
    sabotaged.
 5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,ZiskCircuit,Equivalence,Tactics,Sail}`.

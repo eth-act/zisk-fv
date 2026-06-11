@@ -59,8 +59,8 @@ def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 `circuitWithMemBus` wraps `memWithMemBusElaborated` (Mem's per-row
 constraints + the memory-bus provider emission) as a Clean
 `GeneralFormalCircuit`. The Spec is unchanged from `Mem.circuit` —
-the channel emission adds no per-row soundness obligation; the
-soundness/completeness proofs use exactly the same body. -/
+the channel emission adds no per-row soundness obligation; the soundness
+proof mirrors the base component. -/
 
 def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
   { memWithMemBusElaborated with
