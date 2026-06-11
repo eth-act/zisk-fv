@@ -39,4 +39,5 @@ Context:
   `nix run .#test`, and final closure print passed. The closure print emitted
   no project axiom names (only existing TrustGate deprecation warnings).
 
-Next step: commit the trust/docs sweep, then ask Cody whether to open the PR.
+Next step: ask Cody whether to open the PR. Do not start optional Phase 2
+constructibility witnesses without explicit go-ahead.
