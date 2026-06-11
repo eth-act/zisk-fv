@@ -82,7 +82,7 @@ confirm the idiom and that no consumer breaks, then sweep the rest.
 - [x] Replace v1 plan file in the worktree with this one; update
       STATUS.md; commit.
 - [x] Re-run census grep; reconcile against the table above.
-- [ ] Pilot: BinaryAdd field demoted; targeted build green.
+- [x] Pilot: BinaryAdd field demoted; targeted build green.
 - [ ] Demote the remaining 15 fields (A, A′, B). Category C untouched.
 - [ ] Delete `ZiskFv/AirsClean/Completeness.lean`; drop its import sites.
 - [ ] Trust sweep, all in the same PR:
@@ -142,3 +142,6 @@ honest-row completeness would have provided, at a fraction of the cost.
 - 2026-06-11: re-ran `rg "completeness :=" ZiskFv`; reconciled the census
   to 17 fields total. The extra hit is `Mem/Circuit.lean:117`, another
   restated-`Spec` circular proof, so 16 fields are in the demotion set.
+- 2026-06-11: BinaryAdd pilot demoted. `lake build ZiskFv.AirsClean` is not
+  a real target in this tree; used `lake build ZiskFv.AirsClean.BinaryAdd.Circuit`
+  and `lake build ZiskFv.AirsClean.FullEnsemble`, both green.
