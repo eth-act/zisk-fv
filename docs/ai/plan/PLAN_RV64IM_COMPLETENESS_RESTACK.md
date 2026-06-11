@@ -155,11 +155,12 @@ still state the mediation plainly.
       Passed all 8 stages: cargo tests, feature-gated `zisk-core` test,
       Aeneas production extraction, full Lean build, generated wrapper check,
       V1 trust gate, V2 semantic gate, and flake repro.
-- [ ] Open the PR against main (permission already granted for this
+- [x] Open the PR against main (permission already granted for this
       repo). Body must: use canonical glossary terms; state the
       acceptance-vs-Clean-completeness distinction; state the interface
       mediation; state that all anti-laundering baselines are
       byte-identical; list the verification commands run.
+      Opened as https://github.com/eth-act/zisk-fv/pull/67.
 - [ ] After merge: close PR #60 with a comment pointing at the new PR
       (keep branch `rv64im-completeness` as the historical record).
 

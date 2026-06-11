@@ -1,6 +1,6 @@
 Active plan: docs/ai/plan/PLAN_RV64IM_COMPLETENESS_RESTACK.md
 
-Current focus: Phase 4 verification for `rv64im-completeness-v2`.
+Current focus: PR review for `rv64im-completeness-v2`.
 The worktree was created from fetched `origin/main` at `6aa01c3e`; generated
 inputs were populated with `nix run .#populate`; `lake exe cache get`
 completed after the initial expected fresh-worktree path-dependency failure;
@@ -40,4 +40,7 @@ Final hygiene: submodule tracked build artifacts were restored; only ignored
 build dirs remain in `zisk/`. `git diff --check` and the generated-ledger drift
 check passed.
 
-Next step: push `rv64im-completeness-v2` and open the PR.
+PR: https://github.com/eth-act/zisk-fv/pull/67
+
+Next step: monitor PR #67; after merge, close PR #60 with a comment pointing
+at #67.
