@@ -1,6 +1,6 @@
 Active plan: docs/ai/plan/PLAN_RV64IM_COMPLETENESS_RESTACK.md
 
-Current focus: PR review for `rv64im-completeness-v2`.
+Current focus: replacement review PR #68 for `rv64im-completeness-v2`.
 The worktree was created from fetched `origin/main` at `6aa01c3e`; generated
 inputs were populated with `nix run .#populate`; `lake exe cache get`
 completed after the initial expected fresh-worktree path-dependency failure;
@@ -40,7 +40,11 @@ Final hygiene: submodule tracked build artifacts were restored; only ignored
 build dirs remain in `zisk/`. `git diff --check` and the generated-ledger drift
 check passed.
 
-PR: https://github.com/eth-act/zisk-fv/pull/67
+PR #67 was accidentally merged as `9b44c42b`; Cody reset `main` back to
+`6aa01c3e`. Replacement review PR #68 is open at
+https://github.com/eth-act/zisk-fv/pull/68.
 
-Next step: monitor PR #67; after merge, close PR #60 with a comment pointing
-at #67.
+Superseded PR #60 is closed with comments pointing to active PR #68 and
+preserving branch `rv64im-completeness` as the historical record.
+
+Next step: monitor PR #68 for review. Do not merge without explicit approval.

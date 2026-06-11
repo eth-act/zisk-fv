@@ -2,13 +2,13 @@
 
 ## RV64IM Completeness Restack
 
-Plan: `docs/ai/plan/PLAN_RV64IM_COMPLETENESS_RESTACK.md`. Restack PR #60's
-Sail-first RV64IM acceptance/coverage completeness payload onto current main as
-fresh branch `rv64im-completeness-v2`, without rebasing the old 50-commit
-branch or reviving Clean prover completeness claims. The public endpoint remains
+Plan: `docs/ai/plan/PLAN_RV64IM_COMPLETENESS_RESTACK.md`. PR #68 is the active
+review PR for the Sail-first RV64IM acceptance/coverage completeness restack,
+after accidental merge #67 was removed by resetting `main` back to `6aa01c3e`.
+The public endpoint is
 `ZiskFv.Completeness.Rv64im.rv64im_completeness`, with the FENCE decode gap
 explicitly tied to `ZISK-DEFECT-FENCE-INCOMPLETE` and ZisK-side premises checked
-through the Aeneas extraction gate.
+through the Aeneas extraction gate; do not merge #68 without explicit approval.
 
 ## Clean Completeness Demotion
 

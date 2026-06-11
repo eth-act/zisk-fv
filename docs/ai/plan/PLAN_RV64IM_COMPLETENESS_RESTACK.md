@@ -82,9 +82,12 @@ still state the mediation plainly.
 - [x] Keep MAIN's `trust/tolerated-completeness-axioms.txt` unchanged
       (the mechanism already exists; the branch's copy carries stale
       pre-#66 comment text).
-- [ ] Do NOT port: the branch's duplicated Op Envelope work, its
+- [x] Do NOT port: the branch's duplicated Op Envelope work, its
       `docs/fv` deletions, its STATUS.md/PROJECTS.md, or its trust-script
       edits (main's scripts are newer).
+      Verified by the branch-vs-main diff: no `docs/fv` deletions or duplicated
+      Op Envelope payload were included, and trust-script changes were limited
+      to the scoped no-sorry and Aeneas boundary gate updates in this plan.
 - [x] Align the known-decode-gap predicate in the payload with main's
       `Defects.FenceKnownGoodShape` / `ZISK-DEFECT-FENCE-INCOMPLETE`
       entry — one shared definition or an explicit cross-reference, not a
@@ -160,9 +163,14 @@ still state the mediation plainly.
       acceptance-vs-Clean-completeness distinction; state the interface
       mediation; state that all anti-laundering baselines are
       byte-identical; list the verification commands run.
-      Opened as https://github.com/eth-act/zisk-fv/pull/67.
-- [ ] After merge: close PR #60 with a comment pointing at the new PR
-      (keep branch `rv64im-completeness` as the historical record).
+      Opened as https://github.com/eth-act/zisk-fv/pull/67, which was
+      accidentally merged and then removed when Cody reset `main` back to
+      `6aa01c3e`. Replacement review PR:
+      https://github.com/eth-act/zisk-fv/pull/68.
+- [ ] After reviewed merge: ensure PR #60 is closed with a comment pointing at
+      the landed replacement PR (keep branch `rv64im-completeness` as the
+      historical record). PR #60 is currently closed; its comments need to point
+      reviewers at active replacement PR #68 until the reviewed merge happens.
 
 ## Out of scope — do not do
 
