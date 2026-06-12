@@ -21,7 +21,7 @@ for each instruction. `lake build` typechecking is the formal check.
 ## Trust Boundary
 
 All trust-boundary documentation and all machine-checked trust ledgers live in
-[`trust/`](trust/README.md). The current source trust ledger contains 6
+[`trust/`](trust/README.md). The current source trust ledger contains 0
 Lean axiom declarations. The global compliance theorem's transitive project
 axiom closure contains 0 project declarations, recorded in
 [`trust/generated/baseline-zisk-riscv-compliant.txt`](trust/generated/baseline-zisk-riscv-compliant.txt).
@@ -29,6 +29,21 @@ axiom closure contains 0 project declarations, recorded in
 The narrative trust ledger is
 [`trust/trusted-base.md`](trust/trusted-base.md). The generated flat index is
 [`trust/generated/axiom-index.md`](trust/generated/axiom-index.md).
+
+The checked-in RV64IM acceptance-completeness endpoint is:
+
+```lean
+ZiskFv.Completeness.Rv64im.rv64im_completeness
+```
+
+It is a decoder/lowering/materialization coverage theorem: under ZisK-side
+interface premises checked by the Aeneas extraction harness, every
+Sail-executable RV64IM raw word outside the recorded FENCE decode gap is
+accepted by the production ZisK path and supplies the row-local soundness
+inputs consumed by the opcode theorems. This is not Clean prover completeness;
+the demoted `GeneralFormalCircuit.Completeness` non-claims with
+`ProverAssumptions := False` remain untouched.
+
 ## Build And Verify
 
 After a fresh clone, populate the generated inputs:
@@ -90,7 +105,9 @@ as the flake-pinned source, the extraction-only run reported 2.267235 seconds
 for Lean translation of 159 declarations.
 The current extraction batch covers the production-backed U/control-flow,
 Binary/BinaryExtension, load/store, branch, MUL, and DIV/REM row-shape helper
-families.
+families. The full `nix run .#test` gate additionally runs this harness with
+`AENEAS_CHECK_RV_COMPLETENESS=1`, checking the ZisK-side premises for
+`ZiskFv.Completeness.Rv64im.rv64im_completeness`.
 
 The proof-side migration target is
 `ZiskFv.Compliance.MainRowProvenance`: it ties selected Main/ROM rows to

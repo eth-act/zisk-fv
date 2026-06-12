@@ -1,26 +1,50 @@
-Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS.md — COMPLETE
+Active plan: docs/ai/plan/PLAN_RV64IM_COMPLETENESS_RESTACK.md
 
-Current focus: PR #66 (Clean completeness demotion) reviewed and merged as
-`2c862063` on 2026-06-11. The source trust ledger now has 0 axioms; the
-global compliance closure remains empty of project axioms; the
-ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS defect is retired.
+Current focus: replacement review PR #68 for `rv64im-completeness-v2`.
+The worktree was created from fetched `origin/main` at `6aa01c3e`; generated
+inputs were populated with `nix run .#populate`; `lake exe cache get`
+completed after the initial expected fresh-worktree path-dependency failure;
+`zisk` was fast-forwarded from `03e886f6` to `4148c25e`.
 
-Review verification (independent, at PR head): full `lake build`
-(8670 jobs), `trust/scripts/check-all.sh` 17/17,
-`trust/scripts/check-all-semantic.sh` 5/5, empty closure print,
-pil-extract `cargo test` 73/73, hypothesis-count / caller-burden /
-equiv-axiom-deps baselines byte-identical, 16 fields demoted + 1 honest
-trivial field kept, no soundness-side edits, `check-floor.sh` MIN_AXIOMS
-0 change sound (Floor 3 cross-witness covers the sabotage case).
+Blocking: waiting for PR #68 review and explicit merge approval.
 
-Blocking: none.
+Phase 1-2 progress: payload, root imports, Aeneas script extension, no-sorry
+gate, and `nix/test.nix` Aeneas wiring are committed as `3d889970` and
+`da5be91d`. Focused checks passed; generated trust ledgers stayed
+byte-identical with 0 source axioms and 0 global-closure entries.
 
-Open follow-ups (need Cody's decision):
-- Optional Phase 2: constructibility witnesses under `trust/consistency/`
-  (plan section retained in PLAN_CLEAN_COMPLETENESS.md).
-- Worktree/branch cleanup: `.worktrees/clean-completeness`,
-  `.worktrees/mem-read-discharge` (PR #65 merged),
-  `.worktrees/memory-trust-gap` (salvage reference),
-  `backup/main-before-reopen-pr64-*` branch.
+Phase 3 progress: `README.md`, `trust/README.md`, `CLAUDE.md`, and
+`trust/defects.md` now frame `rv64im_completeness` as RV64IM
+acceptance/coverage completeness, document Aeneas interface mediation, and
+explicitly preserve the demoted Clean completeness non-claims. Phase 3
+checkpoint committed as `7914198c` (`Document RV64IM completeness framing`).
 
-Next step: idle until Cody picks a follow-up.
+Phase 4 progress: `nix develop --command lake build` passed (8674 jobs);
+`trust/scripts/check-all.sh` passed 17/17; `trust/scripts/check-all-semantic.sh`
+passed 5/5. A narrow V1 production-boundary gate update was needed so the
+new raw materialization helper is recognized and required to delegate through
+the accepted-raw helper.
+
+Explicit Aeneas RV64IM completeness extraction passed after the JALR
+target-mask extractor was updated for main's current Sail-side JALR shape:
+69 starts, 202 declarations, and 1759 generated Lean jobs built.
+
+Cargo verification: all four required `zisk/` tests passed (two `riscv`
+decoder tests and two `zisk-core --features aeneas_extract` raw-extraction
+gate tests).
+
+Aggregate verification: `nix run .#test` passed all 8 stages, including the
+wired Aeneas production extraction and V1/V2 trust gates.
+
+Final hygiene: submodule tracked build artifacts were restored; only ignored
+build dirs remain in `zisk/`. `git diff --check` and the generated-ledger drift
+check passed.
+
+PR #67 was accidentally merged as `9b44c42b`; Cody reset `main` back to
+`6aa01c3e`. Replacement review PR #68 is open at
+https://github.com/eth-act/zisk-fv/pull/68.
+
+Superseded PR #60 is closed with comments pointing to active PR #68 and
+preserving branch `rv64im-completeness` as the historical record.
+
+Next step: monitor PR #68 for review. Do not merge without explicit approval.

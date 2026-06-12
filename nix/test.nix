@@ -99,7 +99,7 @@ writeShellApplication {
     # build and checks the production-backed extraction boundary. Generated
     # files are written under build/ and are not checked in.
     run "3/8 Aeneas production extraction harness" bash -c '
-      AENEAS_FLAKE="${aeneas}" scripts/aeneas-production-extract.sh
+      AENEAS_FLAKE="${aeneas}" AENEAS_CHECK_RV_COMPLETENESS=1 scripts/aeneas-production-extract.sh
     '
 
     # 4. Lake build — the FV check. Every theorem typechecks. This is

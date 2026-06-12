@@ -89,6 +89,7 @@ non_start_extract_fns = sorted(
         "extract_rv64im_opcode_supported",
         "extract_transpile_rv64im_raw",
         "extract_transpile_rv64im_accepted_raw",
+        "extract_transpile_rv64im_materializes_raw",
     }
 )
 if non_start_extract_fns:
@@ -234,6 +235,8 @@ for required in (
     "ctx.lower_rv64im_single_row_input(&input, opcode, false)",
     "pub fn extract_transpile_rv64im_accepted_raw(raw: u32) -> bool",
     "lowering_opcode(decoded.opcode).is_some()",
+    "pub fn extract_transpile_rv64im_materializes_raw(raw: u32) -> bool",
+    "extract_transpile_rv64im_accepted_raw(raw)",
 ):
     if required not in aeneas_text:
         fail(f"generalized raw RV64IM extraction path is missing `{required}`")

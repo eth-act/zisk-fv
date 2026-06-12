@@ -10,9 +10,13 @@ Project goal:
 > extraction are trusted, prove soundness: every state transition accepted by
 > the modeled ZisK RV64IM circuits is a valid RISC-V state transition.
 
-Completeness is a planned future upgrade. Known bugs must explicitly weaken
-the theorem statement until fixed. Other assumptions must be classified as
-removable, fundamental-to-scope, or completeness-only.
+Clean prover completeness remains a planned future upgrade. The separate
+RV64IM acceptance/coverage theorem is documented below: it is a decoder-layer
+claim about Sail-valid raw instructions reaching the production ZisK
+decode/lower/materialize interface, not a claim that honest Clean witness
+generators satisfy `ConstraintsHold.Completeness`. Known bugs must explicitly
+weaken the theorem statement until fixed. Other assumptions must be classified
+as removable, fundamental-to-scope, or completeness-only.
 
 ## Reading Path
 
@@ -64,6 +68,30 @@ The intended public theorem API is `zisk_riscv_compliant_program_bus` plus the
 63 canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems. Wrapper and
 EquivCore routes are implementation details; the wrapper caller-burden gate
 still tracks wrapper lemma binders as an internal audit surface.
+
+## RV64IM Acceptance Completeness
+
+The checked-in endpoint
+`ZiskFv.Completeness.Rv64im.rv64im_completeness` states acceptance/coverage
+completeness for the RV64IM decoder layer: every Sail-executable RV64IM raw
+word, except the recorded `ZISK-DEFECT-FENCE-INCOMPLETE` decode gap, is covered
+by the pinned production ZisK decode/lower/materialize path and yields the
+row-local soundness input expected by the canonical opcode theorems.
+
+This theorem is interface-mediated. Its five ZisK-side premises
+(`SupportedDecodeAvoidKnownDecodeBugs`, `LoweringComplete`,
+`RowMaterializationComplete`, `OpcodeCoverageComplete`, and
+`SupportedDecodeSoundnessInputComplete`) are checked in the regenerated Aeneas
+extraction workspace, not by importing generated Aeneas Lean into the main Lake
+tree. The standing `nix run .#test` gate runs
+`scripts/aeneas-production-extract.sh` with `AENEAS_CHECK_RV_COMPLETENESS=1` so
+those premises are rechecked.
+
+This does not revive Clean prover completeness. The Clean
+`GeneralFormalCircuit.Completeness` fields demoted after the false/circular
+axiom audit remain explicit non-claims with `ProverAssumptions := False`; the
+global soundness theorem and the `rv64im_completeness` acceptance theorem do
+not consume those non-claims.
 
 ## PR Policy
 
