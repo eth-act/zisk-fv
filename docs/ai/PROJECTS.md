@@ -1,5 +1,13 @@
 # Projects
 
+## Clean Completeness Proofs
+
+Plan: `docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md`. Wave 1 is active in
+`.worktrees/completeness-wave1` on branch `clean-completeness-wave1`, upgrading
+MemAlign and BinaryAdd from explicit Clean completeness non-claims to honest
+builder-existential constructibility proofs with gate-wired witnesses. Scope is
+review handoff only: open/push the PR when ready, but do not merge it.
+
 ## RV64IM Completeness Restack
 
 Plan: `docs/ai/plan/PLAN_RV64IM_COMPLETENESS_RESTACK.md`. PR #68 is the active

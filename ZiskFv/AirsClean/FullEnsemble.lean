@@ -105,12 +105,10 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
           ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
           ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated])
     |>.addTable ZiskFv.AirsClean.MemAlign.component
-        (by simp [circuit_norm, ZiskFv.AirsClean.MemAlign.component,
-          ZiskFv.AirsClean.MemAlign.circuit,
-          ZiskFv.AirsClean.MemAlign.memAlignWithMemBusElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.MemAlign.component,
-          ZiskFv.AirsClean.MemAlign.circuit,
-          ZiskFv.AirsClean.MemAlign.memAlignWithMemBusElaborated])
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by simp [circuit_norm])
     |>.addTable ZiskFv.AirsClean.MemAlignByte.component
         (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
           ZiskFv.AirsClean.MemAlignByte.circuit,
@@ -136,37 +134,7 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
           rcases h with
             h | h | h | h | h | h | h | h | h | h | h <;>
             (rw [h]
-             simp [circuit_norm, Air.Flat.Component.Assumptions,
-               ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus,
-               ZiskFv.AirsClean.Main.circuitWithRomMemAndOpBus,
-               ZiskFv.AirsClean.Main.mainWithRomMemAndOpBusElaborated,
-               ZiskFv.AirsClean.BinaryAdd.component,
-               ZiskFv.AirsClean.BinaryAdd.circuit,
-               ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated,
-               ZiskFv.AirsClean.Binary.staticLookupComponent,
-               ZiskFv.AirsClean.Binary.staticLookupCircuit,
-               ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated,
-               ZiskFv.AirsClean.BinaryExtension.staticLookupComponent,
-               ZiskFv.AirsClean.BinaryExtension.staticLookupCircuit,
-               ZiskFv.AirsClean.BinaryExtension.binaryExtensionWithStaticTableElaborated,
-               ZiskFv.AirsClean.ArithMul.component,
-               ZiskFv.AirsClean.ArithMul.circuit,
-               ZiskFv.AirsClean.ArithMul.arithMulElaborated,
-               ZiskFv.AirsClean.ArithDiv.component,
-               ZiskFv.AirsClean.ArithDiv.circuit,
-               ZiskFv.AirsClean.ArithDiv.arithDivElaborated,
-               ZiskFv.AirsClean.Mem.componentWithDualMemBus,
-               ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
-               ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated,
-               ZiskFv.AirsClean.MemAlign.component,
-               ZiskFv.AirsClean.MemAlign.circuit,
-               ZiskFv.AirsClean.MemAlign.memAlignWithMemBusElaborated,
-               ZiskFv.AirsClean.MemAlignByte.component,
-               ZiskFv.AirsClean.MemAlignByte.circuit,
-               ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated,
-               ZiskFv.AirsClean.MemAlignReadByte.component,
-               ZiskFv.AirsClean.MemAlignReadByte.circuit,
-               ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated]))
+             trivial))
         (by intro _ _; trivial)
 
 end ZiskFv.AirsClean.FullEnsemble
