@@ -25,7 +25,10 @@ proof; `lake env lean ZiskFv/AirsClean/ArithDiv/Circuit.lean` and focused
 `lake build ZiskFv.AirsClean.ArithDiv.Circuit` pass. ArithMul/ArithDiv
 witness files now typecheck and print standard closure; Arith audit
 docstrings state the unsigned constructibility scope and signed/W non-claims;
-`FullEnsemble` and `FullEnsemble/Balance` focused builds pass.
+`FullEnsemble` and `FullEnsemble/Balance` focused builds pass. The full
+verification block also passed: full `lake build`, V1/V2 trust gates, empty
+generated/baseline diff, empty project-axiom closure print, and `nix run .#test`
+after clearing reproducible caches from an initial disk-full failure.
 
-Next step: run the Wave 4 verification block, then commit/push/open the review
-PR without merging.
+Next step: commit this verification checkpoint, push `clean-completeness-wave4`,
+and open the queued external-review PR without merging.

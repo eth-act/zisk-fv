@@ -455,7 +455,7 @@ the honest integer carries; note this in the docstring).
 - [x] Witnesses (e.g. `6 * 7` and `100 / 7`); docstrings §5 (unsigned scope
       + the field-solved-carry note); ensemble sites §6 (ArithDiv has TWO
       Balance.lean sites).
-- [ ] Verification block; open PR per protocol.
+- [x] Verification block; open PR per protocol.
 
 MANDATORY mechanics for both: the `circuit_proof_start_core` route (the
 plain tactic is too slow on 43-column rows — documented from the soundness
@@ -493,6 +493,12 @@ component records. The witness files, `FullEnsemble.lean`, and
 `FullEnsemble/Balance.lean` typecheck; focused `lake build
 ZiskFv.AirsClean.FullEnsemble` and `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
 both pass.
+W4: Verification block passed: focused Arith/ensemble builds, full `lake
+build`, V1/V2 trust gates, source/trust scans, empty generated/baseline diff,
+empty project-axiom closure print, and `nix run .#test` all passed. The first
+Nix test attempt exhausted local disk and left a generated extraction object
+corrupt; after clearing reproducible caches and rerunning, all 8 Nix test
+steps passed.
 
 ## Wave 5 — Main, 3 circuits + stream finalization (1 agent, 1 PR)
 
