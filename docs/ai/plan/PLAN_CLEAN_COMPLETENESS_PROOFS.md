@@ -509,8 +509,8 @@ origin/main..HEAD` clean.
 
 ### Checklist
 
-- [ ] Worktree + cache + baseline; STATUS.md; log `W5: started`.
-- [ ] Plain `circuit` (9 assertZeros + OpBus emit). The internal-op
+- [x] Worktree + cache + baseline; STATUS.md; log `W5: started`.
+- [x] Plain `circuit` (9 assertZeros + OpBus emit). The internal-op
       conditionals force exactly three honest shapes:
       ```lean
       inductive MainExecKind (F)
@@ -522,7 +522,7 @@ origin/main..HEAD` clean.
       plus `MainFreeCols` (a/b operands, pc, m32, ind_width, jmp offsets,
       store_pc, im_high_degree_2, segment_l1). Discharge by `cases k` +
       helpers.
-- [ ] `circuitWithRomAndMemBus length program` — builder from the program
+- [x] `circuitWithRomAndMemBus length program` — builder from the program
       ENTRY so the ROM lookup closes by construction:
       `RomFlagBits` (15 Bools, bit order of `romFlags`, main.pil:483-486);
       `packFlags : RomFlagBits → FGL` (verbatim `romFlags` polynomial);
@@ -544,7 +544,7 @@ origin/main..HEAD` clean.
       `Lookup.completeness_def` + `eval_romMessageExpr` manually, split
       `h_input` only for the assertZero goals. `MainRowWithRom` is a nested
       `{core, rom}` struct — nested `injection` as in Wave 4.
-- [ ] `circuitWithRomMemAndOpBus`: ~15-line `simpa [mainWithRomMemAndOpBus,
+- [x] `circuitWithRomMemAndOpBus`: ~15-line `simpa [mainWithRomMemAndOpBus,
       circuit_norm, OpBusChannel, MemBusChannel]` wrapper around the
       standalone theorem (mirror `mainWithRomMemAndOpBus_soundness`). Same
       ProverAssumptions for both.
@@ -559,6 +559,19 @@ origin/main..HEAD` clean.
       disjuncts, table-op gaps). Do NOT touch `ZiskFv/Completeness/**`
       (the RV64IM stream's surface).
 - [ ] Verification block; open PR per protocol.
+
+W5: started `clean-completeness-wave5` in `.worktrees/completeness-wave5`
+from `origin/clean-completeness-wave1`, matching Waves 2-4 while PRs
+#69-#72 remain open. Setup baseline passed: generated inputs populated,
+`lake exe cache get` passed after clearing local reproducible caches from an
+initial disk-full failure, `zisk` checked out pinned `4148c25e`, `lake build
+repl` passed, full `lake build` passed, and `trust/scripts/check-all.sh`
+passed all 17 checks. Finalization sweep remains deferred until Waves 2-4
+merge.
+W5: Main `circuit`, `circuitWithRomAndMemBus`, and
+`circuitWithRomMemAndOpBus` now have builder-existential completeness proofs.
+`lake env lean ZiskFv/AirsClean/Main/Circuit.lean` and focused `lake build
+ZiskFv.AirsClean.Main.Circuit` pass.
 
 ## Hard invariants (every wave — violations fail review)
 
