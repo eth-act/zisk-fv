@@ -17,8 +17,9 @@ Progress: Wave 4 scope is unsigned-only ArithMul/ArithDiv completeness:
 equations, with signed/m32 modes left as documented follow-up disjuncts.
 `ZiskFv/Airs/Arith/CarryChainCompleteness.lean` now builds and provides
 `chunk16`, Nat/FGL decompositions, `fgl_65536_ne_zero`, and `cc0..cc6`
-field-solved carry lemmas.
+field-solved carry lemmas. ArithMul `circuit` now has a real unsigned
+builder-existential completeness proof; focused
+`lake build ZiskFv.AirsClean.ArithMul.Circuit` passes.
 
-Next step: implement the unsigned ArithMul honest-row builder and
-builder-existential `ProverAssumptions`, then prove `circuit.completeness`
-with the `circuit_proof_start_core` route.
+Next step: implement the unsigned ArithDiv honest-row builder and
+builder-existential `ProverAssumptions`, using ArithMul as the template.

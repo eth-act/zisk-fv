@@ -437,7 +437,7 @@ the honest integer carries; note this in the docstring).
       If `field_simp` blows up: state pre-cleared forms
       (`cc_k * B^(k+1) = Σ_{j≤k} e_j*B^j` via `div_mul_cancel₀`) and
       `linear_combination` against those. Keep `65536` powers FACTORED.
-- [ ] ArithMul `circuit` (11 assertZeros + OpBus push):
+- [x] ArithMul `circuit` (11 assertZeros + OpBus push):
       `ArithMulFreeCols` = the 11 unconstrained columns (`sext div_by_zero
       div_overflow main_div main_mul signed range_ab range_cd op bus_res1
       multiplicity`); builder `arithMulRowOf (a b : ℕ) (free)` — a/b chunks
@@ -476,6 +476,10 @@ decomposition, Goldilocks cast decompositions, `65536 ≠ 0`, and generic
 field-solved carry witnesses `cc0` through `cc6`; both `lake env lean
 ZiskFv/Airs/Arith/CarryChainCompleteness.lean` and `lake build
 ZiskFv.Airs.Arith.CarryChainCompleteness` pass.
+W4: ArithMul `circuit` now has an unsigned honest-row builder,
+builder-existential `ProverAssumptions`, and a real completeness proof using
+`circuit_proof_start_core` plus the shared `cc0..cc6`/`chain_last` helpers.
+`lake build ZiskFv.AirsClean.ArithMul.Circuit` passes.
 
 ## Wave 5 — Main, 3 circuits + stream finalization (1 agent, 1 PR)
 
