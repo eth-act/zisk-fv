@@ -25,6 +25,10 @@ build and witness typecheck pass. Mem now has `memRowOf`,
 `memRowOf_constraintsHold`, all three completeness fields proved, and
 `trust/consistency/completeness_witness_mem.lean` covering all three
 ProverAssumptions; focused component build and witness typecheck pass.
+Docstrings are updated; stale non-claim scan is clean for the three Wave 2
+files. `lake build ZiskFv.AirsClean.FullEnsemble` and
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance` passed without ensemble
+call-site edits.
 
-Next step: run ensemble build/perf checks, update any required ensemble call
-sites, then run the Wave 2 verification block.
+Next step: run the remaining Wave 2 verification block, then open the review
+PR per protocol.

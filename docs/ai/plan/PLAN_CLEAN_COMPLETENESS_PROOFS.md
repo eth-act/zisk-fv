@@ -258,7 +258,7 @@ column in order.
 - [x] MemAlignByte builder + completeness + witness.
 - [x] Mem shared builder + one shared constraints lemma + all 3 completeness
       fields + witness.
-- [ ] Docstrings per recipe §5; ensemble call sites per §6.
+- [x] Docstrings per recipe §5; ensemble call sites per §6.
 - [ ] Verification block; open PR per protocol.
 
 ### MemAlignReadByte (`circuit`, smallest — do first)
@@ -593,3 +593,7 @@ and STOP.
 - W2: 2026-06-12: Mem shared builder, constraints lemma, all three
   completeness fields, and witness added; focused
   `lake build ZiskFv.AirsClean.Mem.Circuit` and witness typecheck passed.
+- W2: 2026-06-12: Wave 2 docstrings updated; stale non-claim scan is clean;
+  `lake build ZiskFv.AirsClean.FullEnsemble` and
+  `lake build ZiskFv.AirsClean.FullEnsemble.Balance` passed with no ensemble
+  call-site edits needed.
