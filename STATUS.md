@@ -1,7 +1,8 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md
 
-Current focus: Wave 5 verification block on branch `clean-completeness-wave5`
-in `.worktrees/completeness-wave5`, based on `origin/clean-completeness-wave1`.
+Current focus: waiting on the Wave 5 merge gate on branch
+`clean-completeness-wave5` in `.worktrees/completeness-wave5`, based on
+`origin/clean-completeness-wave1`.
 
 Blocking: Main proof work is complete. The Wave 5 finalization sweep and PR
 are explicitly deferred until Waves 2-4 merge; PRs #69-#72 are still open and
