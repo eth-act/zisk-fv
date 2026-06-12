@@ -22,7 +22,7 @@ larger completeness fields and now build focused. Full `lake build`,
 the semantic gate found both Wave 1 witness files. `nix run .#test` passed
 all 8 steps. Trust generated/baseline diff is empty; trust-surface diff is
 limited to the witness files and semantic script; canonical closure print
-shows no project axioms.
+shows no project axioms. BinaryAdd/gate proof chunk committed as `60c645c6`.
 
-Next step: commit the Wave 1 proof chunk, then prepare the review PR without
-merging it.
+Next step: push `clean-completeness-wave1`, open the review PR, and do not
+merge it.

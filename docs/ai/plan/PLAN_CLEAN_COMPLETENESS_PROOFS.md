@@ -473,3 +473,5 @@ into each PR body.
 - 2026-06-12: trust generated/baseline diff is empty; `trust/` diff is limited
   to witness files plus `check-all-semantic.sh`; canonical closure print shows
   no project axioms.
+- 2026-06-12: BinaryAdd proof/gate chunk committed as `60c645c6`; next step is
+  push and review PR without merging.
