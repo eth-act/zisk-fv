@@ -23,6 +23,7 @@ the semantic gate found both Wave 1 witness files. `nix run .#test` passed
 all 8 steps. Trust generated/baseline diff is empty; trust-surface diff is
 limited to the witness files and semantic script; canonical closure print
 shows no project axioms. BinaryAdd/gate proof chunk committed as `60c645c6`.
+Review PR opened: https://github.com/eth-act/zisk-fv/pull/69. Do not merge
+until external review completes.
 
-Next step: push `clean-completeness-wave1`, open the review PR, and do not
-merge it.
+Next step: wait for external review feedback on PR #69.

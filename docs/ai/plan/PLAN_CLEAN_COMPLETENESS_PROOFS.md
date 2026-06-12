@@ -171,8 +171,8 @@ the script counts checks differently.)
 - [x] MemAlign builder + completeness + witness.
 - [x] BinaryAdd builder + completeness + witness.
 - [x] Globbing witness check in `check-all-semantic.sh`.
-- [ ] Gates (see Verification); ask Cody; open PR.
-- [ ] Record in the PR body any idiom adjustments waves 2–5 must copy.
+- [x] Gates (see Verification); ask Cody; open PR.
+- [x] Record in the PR body any idiom adjustments waves 2–5 must copy.
 
 ### Helpers
 
@@ -475,3 +475,5 @@ into each PR body.
   no project axioms.
 - 2026-06-12: BinaryAdd proof/gate chunk committed as `60c645c6`; next step is
   push and review PR without merging.
+- 2026-06-12: opened review PR https://github.com/eth-act/zisk-fv/pull/69;
+  do not merge until external review completes.
