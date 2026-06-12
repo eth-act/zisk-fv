@@ -590,6 +590,11 @@ W5: Opened proof-only review PR #73 per Cody directive, with a non-empty body
 and first line `Queued for Claude review — do not merge.` Finalization sweep
 remains deferred until Waves 2-4 merge. Also filled non-empty descriptions on
 the other open Clean completeness PRs.
+W5: Addressed pre-merge review ask by marking
+`MainRomExecKind.Coherent` as `@[reducible]` so the named match-on-kind
+predicate remains transparent under the hidden-promise rule. Focused Main
+file check, Main witness check, focused Main build, and `git diff --check`
+passed after the change.
 
 ## Hard invariants (every wave — violations fail review)
 

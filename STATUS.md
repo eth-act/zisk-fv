@@ -21,10 +21,13 @@ builder-existential completeness proofs for plain `circuit`,
 ZiskFv/AirsClean/Main/Circuit.lean` and focused `lake build
 ZiskFv.AirsClean.Main.Circuit` pass. The Main witness file covers all three
 plain and ROM-backed execution shapes; its typecheck passes and prints only the
-standard closure.
+standard closure. Pre-merge review feedback has been addressed by marking the
+named `MainRomExecKind.Coherent` predicate `@[reducible]`.
 
 Next step: wait for the merge-dependent finalization sweep to become eligible.
-The full build, `trust/scripts/check-all.sh`,
+The focused post-review checks (`lake env lean` for Main and the Main witness,
+plus `lake build ZiskFv.AirsClean.Main.Circuit`) pass. The full build,
+`trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, `nix run .#test`, trust diff checks,
 closure print, `git diff --check`, and final scans have passed; the semantic
 gates discover `completeness_witness_main`. PR #73 has a non-empty review body,

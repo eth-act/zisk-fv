@@ -241,6 +241,7 @@ namespace MainRomExecKind
 
 /-- Semantic coherence between the ROM flag bits, the selected program row, and
     the local Main execution shape. -/
+@[reducible]
 def Coherent (msg : ZiskFv.Channels.ZiskRomBus.ZiskRomMessage FGL)
     (bits : RomFlagBits) : MainRomExecKind → Prop
   | external flag _ _ =>
