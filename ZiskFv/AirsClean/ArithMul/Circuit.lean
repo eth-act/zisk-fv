@@ -19,16 +19,18 @@ Packages ZisK's Arith AIR (MUL-mode carry-chain view) as a Clean
   proof needs none; the 11-clause carry-chain `Spec` follows from the 11
   definitional `assertZero` constraints alone, by `linear_combination`).
   `soundness` discharges the ArithMul carry-chain relation; completeness is
-  intentionally a visible non-claim.
+  proved for unsigned rows built from two 64-bit operands.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
-No completeness claim is made. Every soundness `Spec` clause is a syntactic
-re-expression of the corresponding `assertZero` constraint, closed by
-`linear_combination`, with no range reasoning.
+Completeness is a constructibility claim for rows equal to `arithMulRowOf a b free`
+with `a < 65536^4` and `b < 65536^4`: the builder sets the unsigned flags, computes
+the product chunks, and chooses the unique field carries solving the 65536-base
+chain equations. It does not claim that arbitrary input rows are honest ArithMul
+executions, and signed/W-mode rows remain a follow-up disjunct.
 -/
 
 namespace ZiskFv.AirsClean.ArithMul
@@ -160,7 +162,8 @@ def arithMulRowOf (a b : ℕ) (free : ArithMulFreeCols) : ArithMulRow FGL :=
 set_option maxHeartbeats 4000000 in
 /-- ArithMul as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
     the 11-clause carry-chain `Spec` follows from the 11 definitional
-    `assertZero` constraints alone (plan D-2 / F-4).
+    `assertZero` constraints alone (plan D-2 / F-4), and completeness constructs
+    unsigned rows from two 64-bit operands.
 
     The `soundness` field is **adapted from** `ArithMul.soundness`
     (`Soundness.lean`) — same per-clause `linear_combination` discharge,

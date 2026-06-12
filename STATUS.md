@@ -22,7 +22,10 @@ builder-existential completeness proof; focused
 `lake build ZiskFv.AirsClean.ArithMul.Circuit` passes. ArithDiv `circuit`
 now has a real unsigned nonzero-divisor builder-existential completeness
 proof; `lake env lean ZiskFv/AirsClean/ArithDiv/Circuit.lean` and focused
-`lake build ZiskFv.AirsClean.ArithDiv.Circuit` pass.
+`lake build ZiskFv.AirsClean.ArithDiv.Circuit` pass. ArithMul/ArithDiv
+witness files now typecheck and print standard closure; Arith audit
+docstrings state the unsigned constructibility scope and signed/W non-claims;
+`FullEnsemble` and `FullEnsemble/Balance` focused builds pass.
 
-Next step: add ArithMul/ArithDiv witnesses, update audit docstrings, handle
-ensemble call sites, then run the Wave 4 verification block.
+Next step: run the Wave 4 verification block, then commit/push/open the review
+PR without merging.

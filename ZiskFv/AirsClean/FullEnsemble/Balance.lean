@@ -209,10 +209,8 @@ theorem arithDiv_table_interactionsWith_opBus_nil
   have h_not :
       OpBusChannel.toRaw ∉
         ZiskFv.AirsClean.ArithDiv.component.circuit.channels := by
-    simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component,
-      ZiskFv.AirsClean.ArithDiv.circuit,
-      ZiskFv.AirsClean.ArithDiv.arithDivElaborated,
-      OpBusChannel]
+    change OpBusChannel.toRaw ∉ ([] : List (RawChannel FGL))
+    simp
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -283,10 +281,11 @@ theorem arithMul_table_interactionsWith_memBus_nil
   have h_not :
       MemBusChannel.toRaw ∉
         ZiskFv.AirsClean.ArithMul.component.circuit.channels := by
-    simp [circuit_norm, ZiskFv.AirsClean.ArithMul.component,
-      ZiskFv.AirsClean.ArithMul.circuit,
-      ZiskFv.AirsClean.ArithMul.arithMulElaborated,
-      OpBusChannel, MemBusChannel]
+    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [OpBusChannel, MemBusChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -300,10 +299,8 @@ theorem arithDiv_table_interactionsWith_memBus_nil
   have h_not :
       MemBusChannel.toRaw ∉
         ZiskFv.AirsClean.ArithDiv.component.circuit.channels := by
-    simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component,
-      ZiskFv.AirsClean.ArithDiv.circuit,
-      ZiskFv.AirsClean.ArithDiv.arithDivElaborated,
-      MemBusChannel]
+    change MemBusChannel.toRaw ∉ ([] : List (RawChannel FGL))
+    simp
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not

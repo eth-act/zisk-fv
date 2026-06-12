@@ -452,7 +452,7 @@ the honest integer carries; note this in the docstring).
       of `c % b`; side-conditions `c < 65536^4 ∧ b < 65536^4 ∧ b ≠ 0`
       (`b ≠ 0` is documentation honesty); `h_packed` from `Nat.div_add_mod`.
       Mul first, Div as template copy.
-- [ ] Witnesses (e.g. `6 * 7` and `100 / 7`); docstrings §5 (unsigned scope
+- [x] Witnesses (e.g. `6 * 7` and `100 / 7`); docstrings §5 (unsigned scope
       + the field-solved-carry note); ensemble sites §6 (ArithDiv has TWO
       Balance.lean sites).
 - [ ] Verification block; open PR per protocol.
@@ -485,6 +485,14 @@ divisors, builder-existential `ProverAssumptions`, and a real completeness
 proof from `Nat.div_add_mod` plus the shared carry-chain helpers.
 `lake env lean ZiskFv/AirsClean/ArithDiv/Circuit.lean` and
 `lake build ZiskFv.AirsClean.ArithDiv.Circuit` pass.
+W4: Added anti-vacuity witnesses `completeness_witness_arithmul.lean` and
+`completeness_witness_arithdiv.lean`, updated ArithMul/ArithDiv audit
+docstrings to state the unsigned constructibility scope and non-claims, and
+converted the Arith Balance no-channel proofs away from unfolding the completed
+component records. The witness files, `FullEnsemble.lean`, and
+`FullEnsemble/Balance.lean` typecheck; focused `lake build
+ZiskFv.AirsClean.FullEnsemble` and `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
+both pass.
 
 ## Wave 5 — Main, 3 circuits + stream finalization (1 agent, 1 PR)
 

@@ -20,16 +20,20 @@ Packages the Arith AIR's **DIV carry-chain sub-circuit** as a Clean
   11-clause carry-chain `Spec` follows from the 11 definitional
   `assertZero`s alone, with no range reasoning and no flag-value pins).
   `soundness` discharges the DIV carry-chain relation; completeness is
-  intentionally a visible non-claim.
+  proved for unsigned rows built from a 64-bit dividend and nonzero 64-bit
+  divisor.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an
 ensemble non-vacuously (the `AssumptionsConsistency` obligation becomes
-trivial). No completeness claim is made. The `soundness` field is
-genuinely proved from the 11 `assertZero` constraints by
-`linear_combination` (no range reasoning, hence no `range_bus_sound`).
+trivial). Completeness is a constructibility claim for rows equal to
+`arithDivRowOf c b free` with `c < 65536^4`, `b < 65536^4`, and `b ≠ 0`: the
+builder sets the unsigned DIV flags, computes quotient/remainder chunks from
+`c / b` and `c % b`, and chooses the unique field carries solving the 65536-base
+chain equations. It does not claim that arbitrary input rows are honest ArithDiv
+executions, and signed/W-mode rows remain a follow-up disjunct.
 -/
 
 namespace ZiskFv.AirsClean.ArithDiv
@@ -179,7 +183,8 @@ set_option maxHeartbeats 4000000 in
 /-- ArithDiv (the Arith AIR's DIV carry-chain sub-circuit) as a Clean
     `GeneralFormalCircuit`. `Assumptions := True` — the 11-clause
     carry-chain `Spec` follows from the 11 definitional `assertZero`
-    constraints alone (plan D-2 / F-4).
+    constraints alone (plan D-2 / F-4), and completeness constructs unsigned
+    rows from a 64-bit dividend and nonzero 64-bit divisor.
 
     The `soundness` field is **adapted from**
     `ArithDiv.soundness_of_constraints` (`Soundness.lean`) — the same
