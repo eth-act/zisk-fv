@@ -11,8 +11,9 @@ now works and populated generated inputs; `lake exe cache get`, `lake build
 repl`, full baseline `lake build`, and `trust/scripts/check-all.sh` passed.
 The `zisk` submodule is initialized at pinned `4148c25e`.
 
-Progress: Wave 1 plan copy is in this worktree and initial STATUS/project
-trail bookkeeping is being committed before Lean edits.
+Progress: initial STATUS/project trail bookkeeping committed as `fb021f11`.
+`ZiskFv.AirsClean.CompletenessHelpers` now provides `boolF` and
+`boolF_booleanity`; focused helper build passed.
 
-Next step: add `ZiskFv/AirsClean/CompletenessHelpers.lean`, then implement the
-MemAlign builder/completeness/witness before moving to BinaryAdd.
+Next step: implement the MemAlign builder/completeness proof and witness,
+then run the focused MemAlign circuit/witness checks.

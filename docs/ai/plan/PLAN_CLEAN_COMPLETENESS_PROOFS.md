@@ -166,7 +166,7 @@ the script counts checks differently.)
 ### Checklist
 
 - [x] Worktree + cache + green baseline; commit plan copy + STATUS.md.
-- [ ] `ZiskFv/AirsClean/CompletenessHelpers.lean`: `boolF`,
+- [x] `ZiskFv/AirsClean/CompletenessHelpers.lean`: `boolF`,
       `boolF_booleanity`, shared plumbing lemmas discovered during the pilot.
 - [ ] MemAlign builder + completeness + witness.
 - [ ] BinaryAdd builder + completeness + witness.
@@ -459,3 +459,5 @@ into each PR body.
 - 2026-06-12: Wave 1 worktree `clean-completeness-wave1` created from
   `origin/main` at `e3b87fc0`; generated inputs populated via Nix; `repl`,
   full `lake build`, and `trust/scripts/check-all.sh` are green at baseline.
+- 2026-06-12: added `ZiskFv.AirsClean.CompletenessHelpers` with `boolF` and
+  `boolF_booleanity`; `lake build ZiskFv.AirsClean.CompletenessHelpers` passed.
