@@ -1,9 +1,9 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md
 
 Current focus: Wave 2 byte/mem mux family on branch
-`clean-completeness-wave2` in `.worktrees/completeness-wave2`: prove genuine
-Clean completeness for MemAlignReadByte, MemAlignByte, and the three Mem
-circuits, with builder-existential ProverAssumptions and witnesses.
+`clean-completeness-wave2` in `.worktrees/completeness-wave2`: final
+verification is green; open the stacked review PR against
+`clean-completeness-wave1`.
 
 Blocking: none. PR #69/Wave 1 is not merged to `origin/main`; this worktree is
 stacked on `origin/clean-completeness-wave1` at `5c10ecc6` so the base includes
@@ -28,7 +28,11 @@ ProverAssumptions; focused component build and witness typecheck pass.
 Docstrings are updated; stale non-claim scan is clean for the three Wave 2
 files. `lake build ZiskFv.AirsClean.FullEnsemble` and
 `lake build ZiskFv.AirsClean.FullEnsemble.Balance` passed without ensemble
-call-site edits.
+call-site edits. Final gates passed: full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+`nix run .#test`, empty trust generated/baseline diff against
+`origin/clean-completeness-wave1`, `git diff --check`, clean status after
+restoring generated `zisk/lib-float` artifacts, and closure print with no
+project axiom lines.
 
-Next step: run the remaining Wave 2 verification block, then open the review
-PR per protocol.
+Next step: open the review PR per protocol; do not merge.

@@ -597,3 +597,9 @@ and STOP.
   `lake build ZiskFv.AirsClean.FullEnsemble` and
   `lake build ZiskFv.AirsClean.FullEnsemble.Balance` passed with no ensemble
   call-site edits needed.
+- W2: 2026-06-12: final Wave 2 verification passed: full `lake build`,
+  `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+  `nix run .#test`, empty trust generated/baseline diff against
+  `origin/clean-completeness-wave1`, `git diff --check`, clean status after
+  restoring generated `zisk/lib-float` artifacts, and closure print with no
+  project axiom lines. PR remains to be opened.
