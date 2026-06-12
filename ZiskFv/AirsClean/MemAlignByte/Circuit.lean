@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.MemAlignByte.Constraints
 import ZiskFv.AirsClean.MemAlignByte.Soundness
+import ZiskFv.AirsClean.CompletenessHelpers
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -13,14 +14,19 @@ Packages ZisK's MemAlignByte AIR as a Clean `Air.Flat.Component`:
   emits the 9 `assertZero` algebraic constraints and the memory-bus
   proves-side `push`.
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` for
-  soundness; completeness is intentionally a visible non-claim.
+  soundness; completeness is proved for honest rows built from Boolean byte
+  selectors, a Boolean write flag, and 8-bit read/write byte values.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
-No completeness claim is made; the `soundness` field is genuinely proved.
+Completeness is a constructibility claim for rows equal to
+`memAlignByteRowOf ...` with `byteVal < 2^8` and `writtenByteVal < 2^8`: the
+builder computes the read/write composed values, write-lane muxes, and bus
+byte used by this constraint slice. It does not claim that arbitrary input
+rows are honest MemAlignByte executions.
 -/
 
 namespace ZiskFv.AirsClean.MemAlignByte
@@ -28,6 +34,63 @@ namespace ZiskFv.AirsClean.MemAlignByte
 open Goldilocks
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open Air.Flat
+
+/-- Read/write byte reconstruction used by the MemAlignByte honest-row builder. -/
+def memAlignByteComposedValueOf (sel_high_2b sel_high_b : Bool)
+    (byte_value value_8b value_16b : FGL) : FGL :=
+  byte_value * byte_value_factor (boolF sel_high_2b) (boolF sel_high_b)
+    + value_8b * value_8b_factor (boolF sel_high_2b) (boolF sel_high_b)
+    + value_16b * value_16b_factor (boolF sel_high_2b)
+
+/-- Honest low write lane for MemAlignByte. -/
+def memAlignByteMemWriteValues0Of (sel_high_4b : Bool)
+    (direct_value written_composed_value : FGL) : FGL :=
+  boolF sel_high_4b * (direct_value - written_composed_value) + written_composed_value
+
+/-- Honest high write lane for MemAlignByte. -/
+def memAlignByteMemWriteValues1Of (sel_high_4b : Bool)
+    (direct_value written_composed_value : FGL) : FGL :=
+  boolF sel_high_4b * (written_composed_value - direct_value) + direct_value
+
+/-- Honest memory-bus byte mux for MemAlignByte. -/
+def memAlignByteBusByteOf (isWrite : Bool) (byte_value written_byte_value : FGL) : FGL :=
+  boolF isWrite * (written_byte_value - byte_value) + byte_value
+
+lemma memAlignByteBusByteOf_eq (isWrite : Bool) (byte_value written_byte_value : FGL) :
+    memAlignByteBusByteOf isWrite byte_value written_byte_value =
+      if isWrite then written_byte_value else byte_value := by
+  cases isWrite <;> simp [memAlignByteBusByteOf, boolF]
+
+/-- Honest row for MemAlignByte: selectors and write flag are Boolean, byte
+    operands are range-bounded naturals, and dependent mux/reconstruction
+    columns are computed. -/
+def memAlignByteRowOf (sel_high_4b sel_high_2b sel_high_b isWrite : Bool)
+    (byteVal writtenByteVal : ℕ)
+    (direct_value value_16b value_8b addr_w step : FGL) : MemAlignByteRow FGL :=
+  let byte_value : FGL := (byteVal : FGL)
+  let written_byte_value : FGL := (writtenByteVal : FGL)
+  let composed_value :=
+    memAlignByteComposedValueOf sel_high_2b sel_high_b byte_value value_8b value_16b
+  let written_composed_value :=
+    memAlignByteComposedValueOf sel_high_2b sel_high_b written_byte_value value_8b value_16b
+  { sel_high_4b := boolF sel_high_4b
+    sel_high_2b := boolF sel_high_2b
+    sel_high_b := boolF sel_high_b
+    direct_value := direct_value
+    composed_value := composed_value
+    written_composed_value := written_composed_value
+    written_byte_value := written_byte_value
+    value_16b := value_16b
+    value_8b := value_8b
+    byte_value := byte_value
+    addr_w := addr_w
+    step := step
+    is_write := boolF isWrite
+    mem_write_values_0 := memAlignByteMemWriteValues0Of sel_high_4b direct_value
+      written_composed_value
+    mem_write_values_1 := memAlignByteMemWriteValues1Of sel_high_4b direct_value
+      written_composed_value
+    bus_byte := memAlignByteBusByteOf isWrite byte_value written_byte_value }
 
 set_option maxHeartbeats 1000000 in
 /-- MemAlignByte as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
@@ -46,11 +109,14 @@ def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit :=
   { memAlignByteElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
-    -- only). `ProverAssumptions := False` makes this field a visible
-    -- non-claim. See trust/defects.md
-    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
-    ProverAssumptions := fun _ _ _ => False
+    -- Completeness covers rows built by `memAlignByteRowOf`; fields not
+    -- constrained by this slice remain free operands.
+    ProverAssumptions := fun row _ _ =>
+      ∃ sel_high_4b sel_high_2b sel_high_b isWrite byteVal writtenByteVal
+        direct_value value_16b value_8b addr_w step,
+        byteVal < 2 ^ 8 ∧ writtenByteVal < 2 ^ 8 ∧
+          row = memAlignByteRowOf sel_high_4b sel_high_2b sel_high_b isWrite
+            byteVal writtenByteVal direct_value value_16b value_8b addr_w step
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -76,7 +142,35 @@ def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit :=
         -- is `True`.
         intro _
         trivial
-    completeness := fun _ _ _ _ _ _ h => h.elim }
+    completeness := by
+      circuit_proof_start [MemBusChannel, Lookup.completeness_def]
+      obtain ⟨sel_high_4b, sel_high_2b, sel_high_b, isWrite, byteVal, writtenByteVal,
+        direct_value, value_16b, value_8b, addr_w, step, h_byte, h_written, hrow⟩ :=
+        h_assumptions
+      injection hrow with h_sel_high_4b h_sel_high_2b h_sel_high_b h_direct_value
+        h_composed_value h_written_composed_value h_written_byte_value h_value_16b
+        h_value_8b h_byte_value h_addr_w h_step h_is_write h_mem_write_values_0
+        h_mem_write_values_1 h_bus_byte
+      subst_vars
+      simp [memAlignByteComposedValueOf, memAlignByteMemWriteValues0Of,
+        memAlignByteMemWriteValues1Of, byte_value_factor, value_8b_factor,
+        value_16b_factor] at h_input ⊢
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
+        rw [memAlignByteBusByteOf_eq]
+        cases isWrite
+        · exact fgl_natCast_val_lt_of_lt (by decide) h_byte
+        · exact fgl_natCast_val_lt_of_lt (by decide) h_written
+      · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
+        exact fgl_natCast_val_lt_of_lt (by decide) h_byte
+      · simp only [RangeTables.rangeTable1, RangeTables.rangeStaticTable]
+        cases isWrite <;> simp [boolF]
+      · ring
+      · ring
+      · ring
+      · ring
+      · simp [memAlignByteBusByteOf]
+        ring }
 
 /-- MemAlignByte as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩

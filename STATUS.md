@@ -18,6 +18,10 @@ Progress: Wave 2 worktree is ready and start scan `rg "completeness :="
 ZiskFv` matches the plan. MemAlignReadByte now has
 `memAlignReadByteRowOf`, a builder-existential completeness proof, and
 `trust/consistency/completeness_witness_memalignreadbyte.lean`; focused
-component build and witness typecheck pass.
+component build and witness typecheck pass. MemAlignByte now has
+`memAlignByteRowOf`, a builder-existential completeness proof, and
+`trust/consistency/completeness_witness_memalignbyte.lean`; focused component
+build and witness typecheck pass.
 
-Next step: implement MemAlignByte builder, completeness proof, and witness.
+Next step: implement the shared Mem builder/constraints lemma, the three Mem
+completeness fields, and the Mem witness.
