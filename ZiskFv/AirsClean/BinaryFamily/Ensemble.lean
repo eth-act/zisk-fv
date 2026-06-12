@@ -40,19 +40,19 @@ def binaryFamilyOpBusEnsemble : FormalEnsemble FGL unit :=
           ZiskFv.AirsClean.BinaryAdd.circuit,
           ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated])
     |>.addTable ZiskFv.AirsClean.Binary.component
-        (by simp [circuit_norm, ZiskFv.AirsClean.Binary.component,
-          ZiskFv.AirsClean.Binary.circuit,
-          ZiskFv.AirsClean.Binary.binaryElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.Binary.component,
-          ZiskFv.AirsClean.Binary.circuit,
-          ZiskFv.AirsClean.Binary.binaryElaborated])
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
     |>.addTable ZiskFv.AirsClean.BinaryExtension.component
-        (by simp [circuit_norm, ZiskFv.AirsClean.BinaryExtension.component,
-          ZiskFv.AirsClean.BinaryExtension.circuit,
-          ZiskFv.AirsClean.BinaryExtension.binaryExtensionElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.BinaryExtension.component,
-          ZiskFv.AirsClean.BinaryExtension.circuit,
-          ZiskFv.AirsClean.BinaryExtension.binaryExtensionElaborated])
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
     |>.addFinishedChannel OpBusChannel.toRaw
     |>.toFormal (fun _ => True) (fun _ => True)
         (by
@@ -62,19 +62,7 @@ def binaryFamilyOpBusEnsemble : FormalEnsemble FGL unit :=
           simp only [circuit_norm, Ensemble.allTables] at h
           rcases h with h | h | h | h | h <;>
             (rw [h]
-             simp [circuit_norm, Air.Flat.Component.Assumptions,
-               ZiskFv.AirsClean.Main.component,
-               ZiskFv.AirsClean.Main.circuit,
-               ZiskFv.AirsClean.Main.mainWithOpBusElaborated,
-               ZiskFv.AirsClean.BinaryAdd.component,
-               ZiskFv.AirsClean.BinaryAdd.circuit,
-               ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated,
-               ZiskFv.AirsClean.Binary.component,
-               ZiskFv.AirsClean.Binary.circuit,
-               ZiskFv.AirsClean.Binary.binaryElaborated,
-               ZiskFv.AirsClean.BinaryExtension.component,
-               ZiskFv.AirsClean.BinaryExtension.circuit,
-               ZiskFv.AirsClean.BinaryExtension.binaryExtensionElaborated]))
+             trivial))
         (by intro _ _; trivial)
 
 /-- Lookup-aware Binary-family op-bus ensemble. This is the C7 route for
@@ -100,21 +88,19 @@ def binaryFamilyStaticBinaryTableOpBusEnsemble : FormalEnsemble FGL unit :=
           ZiskFv.AirsClean.BinaryAdd.circuit,
           ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated])
     |>.addTable ZiskFv.AirsClean.Binary.staticLookupComponent
-        (by simp [circuit_norm, ZiskFv.AirsClean.Binary.staticLookupComponent,
-          ZiskFv.AirsClean.Binary.staticLookupCircuit,
-          ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.Binary.staticLookupComponent,
-          ZiskFv.AirsClean.Binary.staticLookupCircuit,
-          ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated])
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
     |>.addTable ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
-        (by simp [circuit_norm,
-          ZiskFv.AirsClean.BinaryExtension.staticLookupComponent,
-          ZiskFv.AirsClean.BinaryExtension.staticLookupCircuit,
-          ZiskFv.AirsClean.BinaryExtension.binaryExtensionWithStaticTableElaborated])
-        (by simp [circuit_norm,
-          ZiskFv.AirsClean.BinaryExtension.staticLookupComponent,
-          ZiskFv.AirsClean.BinaryExtension.staticLookupCircuit,
-          ZiskFv.AirsClean.BinaryExtension.binaryExtensionWithStaticTableElaborated])
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
     |>.addFinishedChannel OpBusChannel.toRaw
     |>.toFormal (fun _ => True) (fun _ => True)
         (by
@@ -124,19 +110,7 @@ def binaryFamilyStaticBinaryTableOpBusEnsemble : FormalEnsemble FGL unit :=
           simp only [circuit_norm, Ensemble.allTables] at h
           rcases h with h | h | h | h | h <;>
             (rw [h]
-             simp [circuit_norm, Air.Flat.Component.Assumptions,
-               ZiskFv.AirsClean.Main.component,
-               ZiskFv.AirsClean.Main.circuit,
-               ZiskFv.AirsClean.Main.mainWithOpBusElaborated,
-               ZiskFv.AirsClean.BinaryAdd.component,
-               ZiskFv.AirsClean.BinaryAdd.circuit,
-               ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated,
-               ZiskFv.AirsClean.Binary.staticLookupComponent,
-               ZiskFv.AirsClean.Binary.staticLookupCircuit,
-               ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated,
-               ZiskFv.AirsClean.BinaryExtension.staticLookupComponent,
-               ZiskFv.AirsClean.BinaryExtension.staticLookupCircuit,
-               ZiskFv.AirsClean.BinaryExtension.binaryExtensionWithStaticTableElaborated]))
+             trivial))
         (by intro _ _; trivial)
 
 end ZiskFv.AirsClean.BinaryFamily

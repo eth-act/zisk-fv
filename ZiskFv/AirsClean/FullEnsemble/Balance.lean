@@ -246,10 +246,11 @@ theorem staticBinary_table_interactionsWith_memBus_nil
   have h_not :
       MemBusChannel.toRaw ∉
         ZiskFv.AirsClean.Binary.staticLookupComponent.circuit.channels := by
-    simp [circuit_norm, ZiskFv.AirsClean.Binary.staticLookupComponent,
-      ZiskFv.AirsClean.Binary.staticLookupCircuit,
-      ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated,
-      OpBusChannel, MemBusChannel]
+    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [OpBusChannel, MemBusChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -265,11 +266,11 @@ theorem staticBinaryExtension_table_interactionsWith_memBus_nil
   have h_not :
       MemBusChannel.toRaw ∉
         ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.circuit.channels := by
-    simp [circuit_norm,
-      ZiskFv.AirsClean.BinaryExtension.staticLookupComponent,
-      ZiskFv.AirsClean.BinaryExtension.staticLookupCircuit,
-      ZiskFv.AirsClean.BinaryExtension.binaryExtensionWithStaticTableElaborated,
-      OpBusChannel, MemBusChannel]
+    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [OpBusChannel, MemBusChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not

@@ -362,24 +362,53 @@ is not.
 
 ### Checklist
 
-- [ ] Worktree + cache + baseline; STATUS.md; log `W3: started`.
-- [ ] Survey: list the 8 message exprs + shared slots for Binary and
+- [x] Worktree + cache + baseline; STATUS.md; log `W3: started`.
+- [x] Survey: list the 8 message exprs + shared slots for Binary and
       BinaryExtension; write the derived side-condition list into the PR
       body (this is the review surface for honesty).
-- [ ] Binary plain `circuit` (7 assertZeros, no lookups): Bool mode flags
+- [x] Binary plain `circuit` (7 assertZeros, no lookups): Bool mode flags
       (`mode32 result_is_a use_first_byte c_is_signed`, `carry_7 : Bool`);
       `b_op_or_sext` and `mode32_and_c_is_signed` COMPUTED; free byte/carry
       columns. Plain-recipe discharge.
-- [ ] Binary `staticLookupCircuit`: index-route builder extending the plain
+- [x] Binary `staticLookupCircuit`: index-route builder extending the plain
       one + witness.
-- [ ] BinaryExtension `staticLookupCircuit` (0 assertZeros, 8 lookups):
+- [x] BinaryExtension `staticLookupCircuit` (0 assertZeros, 8 lookups):
       index-route builder + witness.
-- [ ] BinaryExtension `shiftStaticLookupCircuit`: same builder + whatever
+- [x] BinaryExtension `shiftStaticLookupCircuit`: same builder + whatever
       `ShiftB0RangeSpecFact` demands — read its definition first; expect a
       range/shape fact on `b_0`, supplied as an operand side-condition or by
       computing `b_0` from a bounded operand.
-- [ ] Docstrings §5 (state the index-route scope); ensemble call sites §6.
-- [ ] Verification block; open PR per protocol.
+- [x] Docstrings §5 (state the index-route scope); ensemble call sites §6.
+- [x] Verification block; open PR per protocol.
+
+W3: Binary plain `circuit` and Binary `staticLookupCircuit` completeness now
+compile under `lake env lean ZiskFv/AirsClean/Binary/Circuit.lean`; static
+lookups use explicit BinaryTable indices plus field-consistency side
+conditions.
+W3: Added `trust/consistency/completeness_witness_binary.lean`; it typechecks
+and prints no `sorryAx`.
+W3: BinaryExtension `staticLookupCircuit` and `shiftStaticLookupCircuit`
+completeness now compile under `lake env lean
+ZiskFv/AirsClean/BinaryExtension/StaticCircuit.lean`.
+W3: Added `trust/consistency/completeness_witness_binaryextension.lean`; it
+typechecks and prints no `sorryAx`.
+W3: Focused component builds plus `lake build ZiskFv.AirsClean.FullEnsemble`
+and `lake build ZiskFv.AirsClean.FullEnsemble.Balance` pass after converting
+Wave 3 ensemble call sites away from broad component-record `simp`.
+W3: Full `lake build` initially exposed the same broad-simp issue in
+`BinaryFamily/Ensemble.lean`; converted those Binary/BinaryExtension
+addTable and assumptions proofs too. Full `lake build` now passes.
+W3: Full gates pass: `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, and `nix run .#test`. The semantic
+gate reports standard closure for the new Binary and BinaryExtension witness
+theorems and no `sorryAx`.
+W3: PR-readiness checks pass: trust diff vs `origin/clean-completeness-wave1`
+only adds `trust/consistency/completeness_witness_binary.lean` and
+`trust/consistency/completeness_witness_binaryextension.lean`; no diffs under
+`trust/generated`, `trust/baseline-axioms.txt`, or `trust/scripts`; no
+Wave 3 ex-falso completeness remnants; suspicious-token scan only finds
+pre-existing doc-comment references to an operation-bus permutation axiom;
+`git diff --check` passes.
 
 ## Wave 4 — Arith pair, unsigned scope (1 agent, 1 PR)
 
