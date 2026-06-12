@@ -169,8 +169,8 @@ the script counts checks differently.)
 - [x] `ZiskFv/AirsClean/CompletenessHelpers.lean`: `boolF`,
       `boolF_booleanity`, shared plumbing lemmas discovered during the pilot.
 - [x] MemAlign builder + completeness + witness.
-- [ ] BinaryAdd builder + completeness + witness.
-- [ ] Globbing witness check in `check-all-semantic.sh`.
+- [x] BinaryAdd builder + completeness + witness.
+- [x] Globbing witness check in `check-all-semantic.sh`.
 - [ ] Gates (see Verification); ask Cody; open PR.
 - [ ] Record in the PR body any idiom adjustments waves 2–5 must copy.
 
@@ -463,3 +463,13 @@ into each PR body.
   `boolF_booleanity`; `lake build ZiskFv.AirsClean.CompletenessHelpers` passed.
 - 2026-06-12: MemAlign builder, completeness proof, and witness added; focused
   `lake build ZiskFv.AirsClean.MemAlign.Circuit` and witness typecheck passed.
+- 2026-06-12: BinaryAdd builder, completeness proof, and witness added; focused
+  `lake build ZiskFv.AirsClean.BinaryAdd.Circuit` and witness typecheck passed.
+- 2026-06-12: Full `lake build`, `trust/scripts/check-all.sh`, and
+  `trust/scripts/check-all-semantic.sh` passed; semantic gate glob picked up
+  BinaryAdd and MemAlign completeness witnesses.
+- 2026-06-12: `nix run .#test` passed all 8 steps, including embedded V1/V2
+  trust gates and flake reproduction.
+- 2026-06-12: trust generated/baseline diff is empty; `trust/` diff is limited
+  to witness files plus `check-all-semantic.sh`; canonical closure print shows
+  no project axioms.

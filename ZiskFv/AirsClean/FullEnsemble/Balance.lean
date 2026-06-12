@@ -174,10 +174,11 @@ theorem memAlign_table_interactionsWith_opBus_nil
   have h_not :
       OpBusChannel.toRaw ∉
         ZiskFv.AirsClean.MemAlign.component.circuit.channels := by
-    simp [circuit_norm, ZiskFv.AirsClean.MemAlign.component,
-      ZiskFv.AirsClean.MemAlign.circuit,
-      ZiskFv.AirsClean.MemAlign.memAlignWithMemBusElaborated,
-      OpBusChannel, MemBusChannel]
+    change OpBusChannel.toRaw ∉ [MemBusChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [OpBusChannel, MemBusChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -226,10 +227,11 @@ theorem binaryAdd_table_interactionsWith_memBus_nil
   have h_not :
       MemBusChannel.toRaw ∉
         ZiskFv.AirsClean.BinaryAdd.component.circuit.channels := by
-    simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
-      ZiskFv.AirsClean.BinaryAdd.circuit,
-      ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated,
-      OpBusChannel, MemBusChannel]
+    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [OpBusChannel, MemBusChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not

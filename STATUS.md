@@ -12,10 +12,17 @@ repl`, full baseline `lake build`, and `trust/scripts/check-all.sh` passed.
 The `zisk` submodule is initialized at pinned `4148c25e`.
 
 Progress: initial STATUS/project trail bookkeeping committed as `fb021f11`.
-`ZiskFv.AirsClean.CompletenessHelpers` now provides `boolF` helpers; focused
-helper build passed. MemAlign has `memAlignRowOf`, a real builder-existential
-completeness proof, and `trust/consistency/completeness_witness_memalign.lean`;
-the focused circuit build and witness typecheck both pass.
+Helpers and MemAlign are committed. BinaryAdd now has `binaryAddRowOf`, a real
+builder-existential completeness proof, and
+`trust/consistency/completeness_witness_binaryadd.lean`; focused BinaryAdd
+circuit build and witness typecheck both pass. `FullEnsemble` and
+`FullEnsemble/Balance` needed local proof-performance tightenings after the
+larger completeness fields and now build focused. Full `lake build`,
+`trust/scripts/check-all.sh`, and `trust/scripts/check-all-semantic.sh` pass;
+the semantic gate found both Wave 1 witness files. `nix run .#test` passed
+all 8 steps. Trust generated/baseline diff is empty; trust-surface diff is
+limited to the witness files and semantic script; canonical closure print
+shows no project axioms.
 
-Next step: implement the BinaryAdd builder/completeness proof and witness,
-then run focused BinaryAdd checks.
+Next step: commit the Wave 1 proof chunk, then prepare the review PR without
+merging it.

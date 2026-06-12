@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.BinaryAdd.Constraints
 import ZiskFv.AirsClean.BinaryAdd.Soundness
+import ZiskFv.AirsClean.CompletenessHelpers
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -27,6 +28,83 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 
+/-- Low 32-bit limb used by the BinaryAdd honest-row builder. -/
+def binaryAddLo32 (x : ℕ) : ℕ := x % 2 ^ 32
+
+/-- High 32-bit limb used by the BinaryAdd honest-row builder. -/
+def binaryAddHi32 (x : ℕ) : ℕ := x / 2 ^ 32 % 2 ^ 32
+
+/-- The `k`th 16-bit chunk of a natural number. -/
+def binaryAddChunk16 (x k : ℕ) : ℕ := x / (2 ^ 16) ^ k % 2 ^ 16
+
+/-- Honest row for BinaryAdd: 32-bit operand limbs, 16-bit result chunks, and
+    the two carry bits are computed from the natural operands. -/
+def binaryAddRowOf (a b : ℕ) : BinaryAddRow FGL :=
+  let s := (a + b) % 2 ^ 64
+  let carry0 : ℕ := (binaryAddLo32 a + binaryAddLo32 b) / 2 ^ 32
+  let carry1 : ℕ := (binaryAddHi32 a + binaryAddHi32 b + carry0) / 2 ^ 32
+  { a_0 := (binaryAddLo32 a : FGL)
+    a_1 := (binaryAddHi32 a : FGL)
+    b_0 := (binaryAddLo32 b : FGL)
+    b_1 := (binaryAddHi32 b : FGL)
+    c_chunks_0 := (binaryAddChunk16 s 0 : FGL)
+    c_chunks_1 := (binaryAddChunk16 s 1 : FGL)
+    c_chunks_2 := (binaryAddChunk16 s 2 : FGL)
+    c_chunks_3 := (binaryAddChunk16 s 3 : FGL)
+    cout_0 := (carry0 : FGL)
+    cout_1 := (carry1 : FGL) }
+
+lemma binaryAdd_carry0_lt_two (a b : ℕ) :
+    (binaryAddLo32 a + binaryAddLo32 b) / 2 ^ 32 < 2 := by
+  unfold binaryAddLo32
+  omega
+
+lemma binaryAdd_carry1_lt_two (a b : ℕ) (_ha : a < 2 ^ 64) (_hb : b < 2 ^ 64) :
+    (binaryAddHi32 a + binaryAddHi32 b +
+        (binaryAddLo32 a + binaryAddLo32 b) / 2 ^ 32) / 2 ^ 32 < 2 := by
+  unfold binaryAddLo32 binaryAddHi32
+  omega
+
+lemma binaryAdd_low_half_eq (a b : ℕ) :
+    binaryAddLo32 a + binaryAddLo32 b =
+      (binaryAddLo32 a + binaryAddLo32 b) / 2 ^ 32 * 2 ^ 32 +
+        binaryAddChunk16 ((a + b) % 2 ^ 64) 1 * 2 ^ 16 +
+        binaryAddChunk16 ((a + b) % 2 ^ 64) 0 := by
+  unfold binaryAddLo32 binaryAddChunk16
+  omega
+
+lemma binaryAdd_high_half_eq (a b : ℕ) (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
+    binaryAddHi32 a + binaryAddHi32 b +
+        (binaryAddLo32 a + binaryAddLo32 b) / 2 ^ 32 =
+      (binaryAddHi32 a + binaryAddHi32 b +
+          (binaryAddLo32 a + binaryAddLo32 b) / 2 ^ 32) / 2 ^ 32 * 2 ^ 32 +
+        binaryAddChunk16 ((a + b) % 2 ^ 64) 3 * 2 ^ 16 +
+        binaryAddChunk16 ((a + b) % 2 ^ 64) 2 := by
+  unfold binaryAddLo32 binaryAddHi32 binaryAddChunk16
+  have ha_hi : a / 2 ^ 32 < 2 ^ 32 := by omega
+  have hb_hi : b / 2 ^ 32 < 2 ^ 32 := by omega
+  have ha_mod : a / 2 ^ 32 % 2 ^ 32 = a / 2 ^ 32 := Nat.mod_eq_of_lt ha_hi
+  have hb_mod : b / 2 ^ 32 % 2 ^ 32 = b / 2 ^ 32 := Nat.mod_eq_of_lt hb_hi
+  rw [ha_mod, hb_mod]
+  let lo := (a % 2 ^ 32 + b % 2 ^ 32) % 2 ^ 32
+  let hi := (a / 2 ^ 32 + b / 2 ^ 32 + (a % 2 ^ 32 + b % 2 ^ 32) / 2 ^ 32) % 2 ^ 32
+  let carry := (a / 2 ^ 32 + b / 2 ^ 32 + (a % 2 ^ 32 + b % 2 ^ 32) / 2 ^ 32) / 2 ^ 32
+  have hsplit : (a + b) % 2 ^ 64 = lo + hi * 2 ^ 32 := by
+    dsimp [lo, hi]
+    omega
+  have hhi : (a + b) % 2 ^ 64 / 2 ^ 32 = hi := by omega
+  have hhi48 : (a + b) % 2 ^ 64 / 2 ^ 48 = hi / 2 ^ 16 := by omega
+  have hcarry :
+      a / 2 ^ 32 + b / 2 ^ 32 + (a % 2 ^ 32 + b % 2 ^ 32) / 2 ^ 32 =
+        carry * 2 ^ 32 + hi := by
+    dsimp [carry, hi]
+    omega
+  norm_num [show ((2 ^ 16 : ℕ) ^ 2) = 2 ^ 32 by norm_num,
+    show ((2 ^ 16 : ℕ) ^ 3) = 2 ^ 48 by norm_num]
+  norm_num at hhi hhi48
+  rw [hhi, hhi48]
+  omega
+
 /-- BinaryAdd as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
     the 8 column range bounds the soundness proof needs are supplied by
     Clean static lookups, not by a caller assumption. -/
@@ -34,11 +112,9 @@ def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
   { binaryAddElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
-    -- only). `ProverAssumptions := False` makes this field a visible
-    -- non-claim. See trust/defects.md
-    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
-    ProverAssumptions := fun _ _ _ => False
+    -- Completeness covers honest BinaryAdd rows built from two 64-bit operands.
+    ProverAssumptions := fun row _ _ =>
+      ∃ a b, a < 2 ^ 64 ∧ b < 2 ^ 64 ∧ row = binaryAddRowOf a b
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -53,7 +129,85 @@ def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
       · -- the op-bus push's requirement: `OpBusChannel.Guarantees` is `True`
         intro _
         trivial
-    completeness := fun _ _ _ _ _ _ h => h.elim }
+    completeness := by
+      circuit_proof_start [OpBusChannel, Lookup.completeness_def]
+      obtain ⟨a, b, ha, hb, hrow⟩ := h_assumptions
+      injection hrow with h_a_0 h_a_1 h_b_0 h_b_1 h_c_chunks_0 h_c_chunks_1
+        h_c_chunks_2 h_c_chunks_3 h_cout_0 h_cout_1
+      subst_vars
+      simp [binaryAddLo32, binaryAddHi32, binaryAddChunk16] at h_input ⊢
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · simp only [RangeTables.rangeTable32, RangeTables.rangeStaticTable]
+        exact fgl_natCast_val_lt_of_lt (by decide) (by omega)
+      · simp only [RangeTables.rangeTable32, RangeTables.rangeStaticTable]
+        exact fgl_natCast_val_lt_of_lt (by decide) (by omega)
+      · simp only [RangeTables.rangeTable32, RangeTables.rangeStaticTable]
+        exact fgl_natCast_val_lt_of_lt (by decide) (by omega)
+      · simp only [RangeTables.rangeTable32, RangeTables.rangeStaticTable]
+        exact fgl_natCast_val_lt_of_lt (by decide) (by omega)
+      · simp only [RangeTables.rangeTable16, RangeTables.rangeStaticTable]
+        exact fgl_natCast_val_lt_of_lt (by decide) (by omega)
+      · simp only [RangeTables.rangeTable16, RangeTables.rangeStaticTable]
+        exact fgl_natCast_val_lt_of_lt (by decide) (by omega)
+      · simp only [RangeTables.rangeTable16, RangeTables.rangeStaticTable]
+        exact fgl_natCast_val_lt_of_lt (by decide) (by omega)
+      · simp only [RangeTables.rangeTable16, RangeTables.rangeStaticTable]
+        exact fgl_natCast_val_lt_of_lt (by decide) (by omega)
+      · have hcarry := binaryAdd_carry0_lt_two a b
+        have hcases :
+            (a % 4294967296 + b % 4294967296) / 4294967296 = 0 ∨
+              (a % 4294967296 + b % 4294967296) / 4294967296 = 1 := by
+          unfold binaryAddLo32 at hcarry
+          omega
+        rcases hcases with hzero | hone
+        · left
+          simp [hzero]
+        · right
+          simp [hone]
+      · have hnat := binaryAdd_low_half_eq a b
+        unfold binaryAddLo32 binaryAddChunk16 at hnat
+        norm_num at hnat
+        have hcast :
+            ((a % 4294967296 + b % 4294967296 : ℕ) : FGL) =
+              (((a % 4294967296 + b % 4294967296) / 4294967296 * 4294967296 +
+                ((a + b) % 18446744073709551616 / 65536 % 65536) * 65536 +
+                ((a + b) % 65536) : ℕ) : FGL) :=
+          congrArg (fun n : ℕ => (n : FGL)) hnat
+        norm_num at hcast ⊢
+        linear_combination hcast
+      · have hcarry := binaryAdd_carry1_lt_two a b ha hb
+        have hcases :
+            (a / 4294967296 % 4294967296 + b / 4294967296 % 4294967296 +
+                  (a % 4294967296 + b % 4294967296) / 4294967296) /
+                4294967296 =
+              0 ∨
+            (a / 4294967296 % 4294967296 + b / 4294967296 % 4294967296 +
+                  (a % 4294967296 + b % 4294967296) / 4294967296) /
+                4294967296 =
+              1 := by
+          unfold binaryAddLo32 binaryAddHi32 at hcarry
+          omega
+        rcases hcases with hzero | hone
+        · left
+          simp [hzero]
+        · right
+          simp [hone]
+      · have hnat := binaryAdd_high_half_eq a b ha hb
+        unfold binaryAddLo32 binaryAddHi32 binaryAddChunk16 at hnat
+        norm_num at hnat
+        have hcast :
+            ((a / 4294967296 % 4294967296 + b / 4294967296 % 4294967296 +
+                (a % 4294967296 + b % 4294967296) / 4294967296 : ℕ) : FGL) =
+              (((a / 4294967296 % 4294967296 + b / 4294967296 % 4294967296 +
+                    (a % 4294967296 + b % 4294967296) / 4294967296) /
+                    4294967296 * 4294967296 +
+                  ((a + b) % 18446744073709551616 / 281474976710656 % 65536) *
+                    65536 +
+                  ((a + b) % 18446744073709551616 / 4294967296 % 65536) : ℕ) :
+                FGL) :=
+          congrArg (fun n : ℕ => (n : FGL)) hnat
+        norm_num at hcast ⊢
+        linear_combination hcast }
 
 /-- BinaryAdd as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩

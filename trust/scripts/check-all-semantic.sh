@@ -29,12 +29,22 @@ reject_false_probe() {
   fi
 }
 
-run "1/5 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
-run "2/5 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
-run "3/5 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
-run "4/5 consistency false probe rejected" reject_false_probe
-run "5/5 Sail memory timeline witness" \
+run_witnesses() {
+  local ok=0
+  for f in trust/consistency/completeness_witness_*.lean; do
+    [ -e "$f" ] || continue
+    lake env lean "$f" || ok=1
+  done
+  return $ok
+}
+
+run "1/6 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
+run "2/6 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
+run "3/6 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
+run "4/6 consistency false probe rejected" reject_false_probe
+run "5/6 Sail memory timeline witness" \
   lake env lean trust/consistency/load_byte_agreement_witness.lean
+run "6/6 Clean completeness witnesses" run_witnesses
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate (V2 semantic): ALL CHECKS PASSED."

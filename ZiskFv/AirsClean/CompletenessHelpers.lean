@@ -32,4 +32,10 @@ lemma boolF_booleanity (b : Bool) : boolF b * (1 - boolF b) = 0 := by
 lemma boolF_booleanity_add (b : Bool) : boolF b * (1 + -boolF b) = 0 := by
   simpa [sub_eq_add_neg] using boolF_booleanity b
 
+/-- A small natural below a Goldilocks-bounded range remains small after casting to `FGL`. -/
+lemma fgl_natCast_val_lt_of_lt {n bound : ℕ} (h_bound : bound ≤ GL_prime)
+    (h_n : n < bound) : ((n : FGL).val < bound) := by
+  rw [Fin.val_natCast]
+  omega
+
 end ZiskFv.AirsClean
