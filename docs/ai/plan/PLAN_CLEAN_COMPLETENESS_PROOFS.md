@@ -168,7 +168,7 @@ the script counts checks differently.)
 - [x] Worktree + cache + green baseline; commit plan copy + STATUS.md.
 - [x] `ZiskFv/AirsClean/CompletenessHelpers.lean`: `boolF`,
       `boolF_booleanity`, shared plumbing lemmas discovered during the pilot.
-- [ ] MemAlign builder + completeness + witness.
+- [x] MemAlign builder + completeness + witness.
 - [ ] BinaryAdd builder + completeness + witness.
 - [ ] Globbing witness check in `check-all-semantic.sh`.
 - [ ] Gates (see Verification); ask Cody; open PR.
@@ -461,3 +461,5 @@ into each PR body.
   full `lake build`, and `trust/scripts/check-all.sh` are green at baseline.
 - 2026-06-12: added `ZiskFv.AirsClean.CompletenessHelpers` with `boolF` and
   `boolF_booleanity`; `lake build ZiskFv.AirsClean.CompletenessHelpers` passed.
+- 2026-06-12: MemAlign builder, completeness proof, and witness added; focused
+  `lake build ZiskFv.AirsClean.MemAlign.Circuit` and witness typecheck passed.

@@ -12,8 +12,10 @@ repl`, full baseline `lake build`, and `trust/scripts/check-all.sh` passed.
 The `zisk` submodule is initialized at pinned `4148c25e`.
 
 Progress: initial STATUS/project trail bookkeeping committed as `fb021f11`.
-`ZiskFv.AirsClean.CompletenessHelpers` now provides `boolF` and
-`boolF_booleanity`; focused helper build passed.
+`ZiskFv.AirsClean.CompletenessHelpers` now provides `boolF` helpers; focused
+helper build passed. MemAlign has `memAlignRowOf`, a real builder-existential
+completeness proof, and `trust/consistency/completeness_witness_memalign.lean`;
+the focused circuit build and witness typecheck both pass.
 
-Next step: implement the MemAlign builder/completeness proof and witness,
-then run the focused MemAlign circuit/witness checks.
+Next step: implement the BinaryAdd builder/completeness proof and witness,
+then run focused BinaryAdd checks.
