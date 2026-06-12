@@ -1,38 +1,24 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md
 
-Current focus: Wave 1 pilot for genuine Clean completeness proofs on branch
-`clean-completeness-wave1` in `.worktrees/completeness-wave1`: shared helpers,
-MemAlign, BinaryAdd, and witness-gate wiring.
+Current focus: Wave 2 byte/mem mux family on branch
+`clean-completeness-wave2` in `.worktrees/completeness-wave2`: prove genuine
+Clean completeness for MemAlignReadByte, MemAlignByte, and the three Mem
+circuits, with builder-existential ProverAssumptions and witnesses.
 
-Blocking: none. Do not merge the PR; hand off for external review only.
+Blocking: none. PR #69/Wave 1 is not merged to `origin/main`; this worktree is
+stacked on `origin/clean-completeness-wave1` at `5c10ecc6` so the base includes
+Wave 1 helpers and the hardened witness gate. Do not merge PRs.
 
-Setup: worktree created from `origin/main` at `e3b87fc0`; `nix run .#populate`
-now works and populated generated inputs; `lake exe cache get`, `lake build
-repl`, full baseline `lake build`, and `trust/scripts/check-all.sh` passed.
-The `zisk` submodule is initialized at pinned `4148c25e`.
+Setup: `nix run .#populate` populated generated inputs after `lake exe cache
+get` found missing path deps; retry of `lake exe cache get` succeeded. The
+`zisk` submodule is initialized at pinned `4148c25e`. `lake build repl`, full
+baseline `lake build`, and `trust/scripts/check-all.sh` passed.
 
-Progress: initial STATUS/project trail bookkeeping committed as `fb021f11`.
-Helpers and MemAlign are committed. BinaryAdd now has `binaryAddRowOf`, a real
-builder-existential completeness proof, and
-`trust/consistency/completeness_witness_binaryadd.lean`; focused BinaryAdd
-circuit build and witness typecheck both pass. `FullEnsemble` and
-`FullEnsemble/Balance` needed local proof-performance tightenings after the
-larger completeness fields and now build focused. Full `lake build`,
-`trust/scripts/check-all.sh`, and `trust/scripts/check-all-semantic.sh` pass;
-the semantic gate found both Wave 1 witness files. `nix run .#test` passed
-all 8 steps. Trust generated/baseline diff is empty; trust-surface diff is
-limited to the witness files and semantic script; canonical closure print
-shows no project axioms. BinaryAdd/gate proof chunk committed as `60c645c6`.
-Review PR opened: https://github.com/eth-act/zisk-fv/pull/69. Do not merge
-until external review completes. Review feedback fix pushed as `91679f42`: the
-semantic witness gate now fails on Lean `sorry` warnings, the pre-existing Sail
-memory witness uses the same wrapper, and BinaryAdd/MemAlign docstrings state
-their proved constructibility scopes.
+Progress: Wave 2 worktree is ready for proof edits. Start scan
+`rg "completeness :=" ZiskFv` matches the plan: Wave 2 owns
+MemAlignReadByte, MemAlignByte, and Mem's three circuits; Wave 1
+MemAlign/BinaryAdd are already genuine, and BinaryExtension plain is already
+complete.
 
-Verification after feedback: temporary `completeness_witness_sorry_probe.lean`
-made `trust/scripts/check-all-semantic.sh` fail as expected on the Lean `sorry`
-warning; after deleting the probe, these passed: focused BinaryAdd/MemAlign
-circuit build, semantic gate, V1 gate, shell syntax check, and
-`git diff --check`.
-
-Next step: wait for external review feedback on PR #69.
+Next step: read the Wave 1 reference implementations and the Wave 2
+Constraints/Spec/Circuit files, then implement MemAlignReadByte first.

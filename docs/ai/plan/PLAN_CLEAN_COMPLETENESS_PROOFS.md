@@ -253,7 +253,7 @@ column in order.
 
 ### Checklist
 
-- [ ] Worktree + cache + green baseline; STATUS.md; log line `W2: started`.
+- [x] Worktree + cache + green baseline; STATUS.md; log line `W2: started`.
 - [ ] MemAlignReadByte builder + completeness + witness.
 - [ ] MemAlignByte builder + completeness + witness.
 - [ ] Mem shared builder + one shared constraints lemma + all 3 completeness
@@ -579,3 +579,8 @@ and STOP.
   promoted to reference implementation, Wave 3 index-route made primary,
   ensemble call-site duty (§6) added, PR protocol switched to
   queue-for-Claude-review with no human pre-ack.
+- W2: 2026-06-12: started Wave 2 worktree `clean-completeness-wave2` from
+  `origin/clean-completeness-wave1` at `5c10ecc6` because `origin/main` does
+  not yet contain Wave 1; populated generated inputs, initialized pinned
+  `zisk` submodule, and passed `lake exe cache get`, `lake build repl`, full
+  `lake build`, and `trust/scripts/check-all.sh`.
