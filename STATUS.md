@@ -1,8 +1,8 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md
 
 Current focus: Wave 2 byte/mem mux family on branch
-`clean-completeness-wave2` in `.worktrees/completeness-wave2`: final
-verification is green; open the stacked review PR against
+`clean-completeness-wave2` in `.worktrees/completeness-wave2`: review PR
+https://github.com/eth-act/zisk-fv/pull/70 is open against
 `clean-completeness-wave1`.
 
 Blocking: none. PR #69/Wave 1 is not merged to `origin/main`; this worktree is
@@ -35,4 +35,5 @@ call-site edits. Final gates passed: full `lake build`,
 restoring generated `zisk/lib-float` artifacts, and closure print with no
 project axiom lines.
 
-Next step: open the review PR per protocol; do not merge.
+Next step: wait for external Claude review; do not merge and do not start the
+next wave from this worktree.

@@ -259,7 +259,7 @@ column in order.
 - [x] Mem shared builder + one shared constraints lemma + all 3 completeness
       fields + witness.
 - [x] Docstrings per recipe §5; ensemble call sites per §6.
-- [ ] Verification block; open PR per protocol.
+- [x] Verification block; open PR per protocol.
 
 ### MemAlignReadByte (`circuit`, smallest — do first)
 
@@ -602,4 +602,7 @@ and STOP.
   `nix run .#test`, empty trust generated/baseline diff against
   `origin/clean-completeness-wave1`, `git diff --check`, clean status after
   restoring generated `zisk/lib-float` artifacts, and closure print with no
-  project axiom lines. PR remains to be opened.
+  project axiom lines.
+- W2: 2026-06-12: opened review PR
+  https://github.com/eth-act/zisk-fv/pull/70 against
+  `clean-completeness-wave1`; queued for Claude review, do not merge.
