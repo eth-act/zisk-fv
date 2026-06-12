@@ -424,8 +424,8 @@ the honest integer carries; note this in the docstring).
 
 ### Checklist
 
-- [ ] Worktree + cache + baseline; STATUS.md; log `W4: started`.
-- [ ] Shared `ZiskFv/Airs/Arith/CarryChainCompleteness.lean` — build it
+- [x] Worktree + cache + baseline; STATUS.md; log `W4: started`.
+- [x] Shared `ZiskFv/Airs/Arith/CarryChainCompleteness.lean` — build it
       green BEFORE touching components:
       `chunk16 (x k : ℕ) := x / 65536 ^ k % 65536`; `chunk16_lt`;
       `nat_decomp4/8` (by `omega`); `fgl_decomp4/8` (`push_cast`);
@@ -437,7 +437,7 @@ the honest integer carries; note this in the docstring).
       If `field_simp` blows up: state pre-cleared forms
       (`cc_k * B^(k+1) = Σ_{j≤k} e_j*B^j` via `div_mul_cancel₀`) and
       `linear_combination` against those. Keep `65536` powers FACTORED.
-- [ ] ArithMul `circuit` (11 assertZeros + OpBus push):
+- [x] ArithMul `circuit` (11 assertZeros + OpBus push):
       `ArithMulFreeCols` = the 11 unconstrained columns (`sext div_by_zero
       div_overflow main_div main_mul signed range_ab range_cd op bus_res1
       multiplicity`); builder `arithMulRowOf (a b : ℕ) (free)` — a/b chunks
@@ -447,15 +447,15 @@ the honest integer carries; note this in the docstring).
       Discharge: C6/7/8 `norm_num`; C31–C37 `linear_combination (chain_eq_k …)`;
       C38 via `chain_last` with `h_packed : ↑a * ↑b = c_packed + d_packed *
       B^4` from `fgl_decomp4 a/b` + `fgl_decomp8 (a*b)` + `Nat.cast_mul`.
-- [ ] ArithDiv `circuit` (11 assertZeros, NO push — easier): operands
+- [x] ArithDiv `circuit` (11 assertZeros, NO push — easier): operands
       `(c b : ℕ)` = dividend, divisor; a := chunks of `c / b`, d := chunks
       of `c % b`; side-conditions `c < 65536^4 ∧ b < 65536^4 ∧ b ≠ 0`
       (`b ≠ 0` is documentation honesty); `h_packed` from `Nat.div_add_mod`.
       Mul first, Div as template copy.
-- [ ] Witnesses (e.g. `6 * 7` and `100 / 7`); docstrings §5 (unsigned scope
+- [x] Witnesses (e.g. `6 * 7` and `100 / 7`); docstrings §5 (unsigned scope
       + the field-solved-carry note); ensemble sites §6 (ArithDiv has TWO
       Balance.lean sites).
-- [ ] Verification block; open PR per protocol.
+- [x] Verification block; open PR per protocol.
 
 MANDATORY mechanics for both: the `circuit_proof_start_core` route (the
 plain tactic is too slow on 43-column rows — documented from the soundness
@@ -463,6 +463,47 @@ work), `set_option maxHeartbeats 4000000`, and NESTED `injection`:
 `ArithMulRow`/`ArithDivRow` are `{chunks, flags, carries/aux}` sub-structs,
 so the first `injection` yields sub-struct equations — `injection` each of
 those again to reach per-column equations.
+
+W4: started `clean-completeness-wave4` in `.worktrees/completeness-wave4` from
+`origin/clean-completeness-wave1` at `5c10ecc6`, matching the parallel Wave
+2/3 PR bases while PRs #69/#70/#71 remain open.
+W4: Setup baseline passed: `git submodule update --init zisk` checked out
+`4148c25e`, `nix run .#populate` populated generated inputs, `lake exe cache
+get` succeeded, `lake build repl` passed, full `lake build` passed, and
+`trust/scripts/check-all.sh` passed all 17 checks.
+W4: Added `ZiskFv/Airs/Arith/CarryChainCompleteness.lean` with 16-bit chunk
+decomposition, Goldilocks cast decompositions, `65536 ≠ 0`, and generic
+field-solved carry witnesses `cc0` through `cc6`; both `lake env lean
+ZiskFv/Airs/Arith/CarryChainCompleteness.lean` and `lake build
+ZiskFv.Airs.Arith.CarryChainCompleteness` pass.
+W4: ArithMul `circuit` now has an unsigned honest-row builder,
+builder-existential `ProverAssumptions`, and a real completeness proof using
+`circuit_proof_start_core` plus the shared `cc0..cc6`/`chain_last` helpers.
+`lake build ZiskFv.AirsClean.ArithMul.Circuit` passes.
+W4: ArithDiv `circuit` now has an unsigned honest-row builder for nonzero
+divisors, builder-existential `ProverAssumptions`, and a real completeness
+proof from `Nat.div_add_mod` plus the shared carry-chain helpers.
+`lake env lean ZiskFv/AirsClean/ArithDiv/Circuit.lean` and
+`lake build ZiskFv.AirsClean.ArithDiv.Circuit` pass.
+W4: Added anti-vacuity witnesses `completeness_witness_arithmul.lean` and
+`completeness_witness_arithdiv.lean`, updated ArithMul/ArithDiv audit
+docstrings to state the unsigned constructibility scope and non-claims, and
+converted the Arith Balance no-channel proofs away from unfolding the completed
+component records. The witness files, `FullEnsemble.lean`, and
+`FullEnsemble/Balance.lean` typecheck; focused `lake build
+ZiskFv.AirsClean.FullEnsemble` and `lake build ZiskFv.AirsClean.FullEnsemble.Balance`
+both pass.
+W4: Verification block passed: focused Arith/ensemble builds, full `lake
+build`, V1/V2 trust gates, source/trust scans, empty generated/baseline diff,
+empty project-axiom closure print, and `nix run .#test` all passed. The first
+Nix test attempt exhausted local disk and left a generated extraction object
+corrupt; after clearing reproducible caches and rerunning, all 8 Nix test
+steps passed.
+W4: Sequential merge prep after PRs #69/#70/#71 landed: retargeted PR #72 to
+`main`, rebased `clean-completeness-wave4` onto updated `origin/main`, resolved
+bookkeeping-only conflicts in `STATUS.md` and this plan, and confirmed the
+branch diff contains only Wave 4 files with `git diff --check
+origin/main..HEAD` clean.
 
 ## Wave 5 — Main, 3 circuits + stream finalization (1 agent, 1 PR)
 

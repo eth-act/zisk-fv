@@ -31,8 +31,8 @@ theorems may be claimed to be rooted on this ensemble.
 ## Trust note
 
 No axioms.  This file only composes existing components into a
-`FormalEnsemble`; the demoted component completeness fields are visible
-non-claims, not source trust.
+`FormalEnsemble`; component completeness fields are local constructibility
+claims, not sources of cross-row honesty.
 -/
 
 namespace ZiskFv.AirsClean.FullEnsemble

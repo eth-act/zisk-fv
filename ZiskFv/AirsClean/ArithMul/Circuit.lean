@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.ArithMul.Constraints
 import ZiskFv.AirsClean.ArithMul.Soundness
+import ZiskFv.Airs.Arith.CarryChainCompleteness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -18,16 +19,18 @@ Packages ZisK's Arith AIR (MUL-mode carry-chain view) as a Clean
   proof needs none; the 11-clause carry-chain `Spec` follows from the 11
   definitional `assertZero` constraints alone, by `linear_combination`).
   `soundness` discharges the ArithMul carry-chain relation; completeness is
-  intentionally a visible non-claim.
+  proved for unsigned rows built from two 64-bit operands.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
-No completeness claim is made. Every soundness `Spec` clause is a syntactic
-re-expression of the corresponding `assertZero` constraint, closed by
-`linear_combination`, with no range reasoning.
+Completeness is a constructibility claim for rows equal to `arithMulRowOf a b free`
+with `a < 65536^4` and `b < 65536^4`: the builder sets the unsigned flags, computes
+the product chunks, and chooses the unique field carries solving the 65536-base
+chain equations. It does not claim that arbitrary input rows are honest ArithMul
+executions, and signed/W-mode rows remain a follow-up disjunct.
 -/
 
 namespace ZiskFv.AirsClean.ArithMul
@@ -35,11 +38,132 @@ namespace ZiskFv.AirsClean.ArithMul
 open Goldilocks
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open Air.Flat
+open ZiskFv.Airs.ArithCarryChainCompleteness
 
-set_option maxHeartbeats 1000000 in
+/-- Columns not constrained by the unsigned carry-chain completeness slice. -/
+structure ArithMulFreeCols where
+  sext : FGL
+  div_by_zero : FGL
+  div_overflow : FGL
+  main_div : FGL
+  main_mul : FGL
+  signed : FGL
+  range_ab : FGL
+  range_cd : FGL
+  op : FGL
+  bus_res1 : FGL
+  multiplicity : FGL
+
+def arithMulE0 (a b : ℕ) : FGL :=
+  (chunk16 a 0 : FGL) * (chunk16 b 0 : FGL) - (chunk16 (a * b) 0 : FGL)
+
+def arithMulE1 (a b : ℕ) : FGL :=
+  (chunk16 a 1 : FGL) * (chunk16 b 0 : FGL) +
+    (chunk16 a 0 : FGL) * (chunk16 b 1 : FGL) - (chunk16 (a * b) 1 : FGL)
+
+def arithMulE2 (a b : ℕ) : FGL :=
+  (chunk16 a 2 : FGL) * (chunk16 b 0 : FGL) +
+    (chunk16 a 1 : FGL) * (chunk16 b 1 : FGL) +
+    (chunk16 a 0 : FGL) * (chunk16 b 2 : FGL) - (chunk16 (a * b) 2 : FGL)
+
+def arithMulE3 (a b : ℕ) : FGL :=
+  (chunk16 a 3 : FGL) * (chunk16 b 0 : FGL) +
+    (chunk16 a 2 : FGL) * (chunk16 b 1 : FGL) +
+    (chunk16 a 1 : FGL) * (chunk16 b 2 : FGL) +
+    (chunk16 a 0 : FGL) * (chunk16 b 3 : FGL) - (chunk16 (a * b) 3 : FGL)
+
+def arithMulE4 (a b : ℕ) : FGL :=
+  (chunk16 a 3 : FGL) * (chunk16 b 1 : FGL) +
+    (chunk16 a 2 : FGL) * (chunk16 b 2 : FGL) +
+    (chunk16 a 1 : FGL) * (chunk16 b 3 : FGL) - (chunk16 (a * b) 4 : FGL)
+
+def arithMulE5 (a b : ℕ) : FGL :=
+  (chunk16 a 3 : FGL) * (chunk16 b 2 : FGL) +
+    (chunk16 a 2 : FGL) * (chunk16 b 3 : FGL) - (chunk16 (a * b) 5 : FGL)
+
+def arithMulE6 (a b : ℕ) : FGL :=
+  (chunk16 a 3 : FGL) * (chunk16 b 3 : FGL) - (chunk16 (a * b) 6 : FGL)
+
+def arithMulE7 (a b : ℕ) : FGL :=
+  -(chunk16 (a * b) 7 : FGL)
+
+lemma arithMulProduct_lt (a b : ℕ) (ha : a < 65536 ^ 4) (hb : b < 65536 ^ 4) :
+    a * b < 65536 ^ 8 := by
+  nlinarith [Nat.mul_lt_mul'' ha hb]
+
+lemma arithMulChainSum_zero (a b : ℕ) (ha : a < 65536 ^ 4) (hb : b < 65536 ^ 4) :
+    arithMulE0 a b + arithMulE1 a b * (65536 : FGL) +
+      arithMulE2 a b * (65536 : FGL) ^ 2 + arithMulE3 a b * (65536 : FGL) ^ 3 +
+      arithMulE4 a b * (65536 : FGL) ^ 4 + arithMulE5 a b * (65536 : FGL) ^ 5 +
+      arithMulE6 a b * (65536 : FGL) ^ 6 + arithMulE7 a b * (65536 : FGL) ^ 7 =
+        0 := by
+  have hab := arithMulProduct_lt a b ha hb
+  have ha_decomp := fgl_decomp4 a ha
+  have hb_decomp := fgl_decomp4 b hb
+  have hp_decomp := fgl_decomp8 (a * b) hab
+  have hmul : (a : FGL) * (b : FGL) = ((a * b : ℕ) : FGL) := by norm_num
+  rw [ha_decomp, hb_decomp, hp_decomp] at hmul
+  unfold arithMulE0 arithMulE1 arithMulE2 arithMulE3 arithMulE4 arithMulE5 arithMulE6 arithMulE7
+  linear_combination hmul
+
+/-- Honest unsigned ArithMul row built from two 64-bit natural operands. -/
+def arithMulRowOf (a b : ℕ) (free : ArithMulFreeCols) : ArithMulRow FGL :=
+  { chunks :=
+      { a_0 := (chunk16 a 0 : FGL)
+        a_1 := (chunk16 a 1 : FGL)
+        a_2 := (chunk16 a 2 : FGL)
+        a_3 := (chunk16 a 3 : FGL)
+        b_0 := (chunk16 b 0 : FGL)
+        b_1 := (chunk16 b 1 : FGL)
+        b_2 := (chunk16 b 2 : FGL)
+        b_3 := (chunk16 b 3 : FGL)
+        c_0 := (chunk16 (a * b) 0 : FGL)
+        c_1 := (chunk16 (a * b) 1 : FGL)
+        c_2 := (chunk16 (a * b) 2 : FGL)
+        c_3 := (chunk16 (a * b) 3 : FGL)
+        d_0 := (chunk16 (a * b) 4 : FGL)
+        d_1 := (chunk16 (a * b) 5 : FGL)
+        d_2 := (chunk16 (a * b) 6 : FGL)
+        d_3 := (chunk16 (a * b) 7 : FGL) }
+    flags :=
+      { na := 0
+        nb := 0
+        nr := 0
+        np := 0
+        sext := free.sext
+        m32 := 0
+        div := 0
+        div_by_zero := free.div_by_zero
+        div_overflow := free.div_overflow
+        main_div := free.main_div
+        main_mul := free.main_mul
+        signed := free.signed
+        range_ab := free.range_ab
+        range_cd := free.range_cd
+        op := free.op
+        bus_res1 := free.bus_res1
+        multiplicity := free.multiplicity }
+    carries :=
+      { carry_0 := cc0 65536 (arithMulE0 a b)
+        carry_1 := cc1 65536 (arithMulE0 a b) (arithMulE1 a b)
+        carry_2 := cc2 65536 (arithMulE0 a b) (arithMulE1 a b) (arithMulE2 a b)
+        carry_3 := cc3 65536 (arithMulE0 a b) (arithMulE1 a b) (arithMulE2 a b)
+          (arithMulE3 a b)
+        carry_4 := cc4 65536 (arithMulE0 a b) (arithMulE1 a b) (arithMulE2 a b)
+          (arithMulE3 a b) (arithMulE4 a b)
+        carry_5 := cc5 65536 (arithMulE0 a b) (arithMulE1 a b) (arithMulE2 a b)
+          (arithMulE3 a b) (arithMulE4 a b) (arithMulE5 a b)
+        carry_6 := cc6 65536 (arithMulE0 a b) (arithMulE1 a b) (arithMulE2 a b)
+          (arithMulE3 a b) (arithMulE4 a b) (arithMulE5 a b) (arithMulE6 a b)
+        fab := 1
+        na_fb := 0
+        nb_fa := 0 } }
+
+set_option maxHeartbeats 4000000 in
 /-- ArithMul as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
     the 11-clause carry-chain `Spec` follows from the 11 definitional
-    `assertZero` constraints alone (plan D-2 / F-4).
+    `assertZero` constraints alone (plan D-2 / F-4), and completeness constructs
+    unsigned rows from two 64-bit operands.
 
     The `soundness` field is **adapted from** `ArithMul.soundness`
     (`Soundness.lean`) — same per-clause `linear_combination` discharge,
@@ -49,11 +173,9 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
   { arithMulElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
-    -- only). `ProverAssumptions := False` makes this field a visible
-    -- non-claim. See trust/defects.md
-    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
-    ProverAssumptions := fun _ _ _ => False
+    -- Completeness covers unsigned rows built from two 64-bit operands.
+    ProverAssumptions := fun row _ _ =>
+      ∃ a b free, a < 65536 ^ 4 ∧ b < 65536 ^ 4 ∧ row = arithMulRowOf a b free
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -77,7 +199,60 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
       · -- the op-bus push's requirement: `OpBusChannel.Guarantees` is `True`.
         intro _
         trivial
-    completeness := fun _ _ _ _ _ _ h => h.elim }
+    completeness := by
+      circuit_proof_start_core
+      simp only [main, circuit_norm, primaryOpBusMessageExpr, OpBusChannel]
+      obtain ⟨a, b, free, ha, hb, hrow⟩ := h_assumptions
+      rw [hrow] at h_input
+      simp only [circuit_norm] at h_input
+      injection h_input with h_chunks h_flags h_carries
+      injection h_chunks with h_a_0 h_a_1 h_a_2 h_a_3 h_b_0 h_b_1 h_b_2 h_b_3
+        h_c_0 h_c_1 h_c_2 h_c_3 h_d_0 h_d_1 h_d_2 h_d_3
+      injection h_flags with h_na h_nb h_nr h_np h_sext h_m32 h_div h_div_by_zero
+        h_div_overflow h_main_div h_main_mul h_signed h_range_ab h_range_cd h_op h_bus_res1
+        h_multiplicity
+      injection h_carries with h_carry_0 h_carry_1 h_carry_2 h_carry_3 h_carry_4
+        h_carry_5 h_carry_6 h_fab h_na_fb h_nb_fa
+      subst_vars
+      simp only [h_a_0, h_a_1, h_a_2, h_a_3, h_b_0, h_b_1, h_b_2, h_b_3,
+        h_c_0, h_c_1, h_c_2, h_c_3, h_d_0, h_d_1, h_d_2, h_d_3, h_na, h_nb,
+        h_nr, h_np, h_m32, h_div, h_carry_0, h_carry_1, h_carry_2, h_carry_3,
+        h_carry_4, h_carry_5, h_carry_6, h_fab, h_na_fb, h_nb_fa]
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · ring
+      · ring
+      · ring
+      · simpa [arithMulE0, sub_eq_add_neg] using
+          (chain_eq_0 (B := (65536 : FGL)) (e0 := arithMulE0 a b) fgl_65536_ne_zero)
+      · simpa [arithMulE1, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_1 (B := (65536 : FGL)) (e0 := arithMulE0 a b)
+            (e1 := arithMulE1 a b) fgl_65536_ne_zero)
+      · simpa [arithMulE2, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_2 (B := (65536 : FGL)) (e0 := arithMulE0 a b)
+            (e1 := arithMulE1 a b) (e2 := arithMulE2 a b) fgl_65536_ne_zero)
+      · simpa [arithMulE3, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_3 (B := (65536 : FGL)) (e0 := arithMulE0 a b)
+            (e1 := arithMulE1 a b) (e2 := arithMulE2 a b) (e3 := arithMulE3 a b)
+            fgl_65536_ne_zero)
+      · simpa [arithMulE4, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_4 (B := (65536 : FGL)) (e0 := arithMulE0 a b)
+            (e1 := arithMulE1 a b) (e2 := arithMulE2 a b) (e3 := arithMulE3 a b)
+            (e4 := arithMulE4 a b) fgl_65536_ne_zero)
+      · simpa [arithMulE5, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_5 (B := (65536 : FGL)) (e0 := arithMulE0 a b)
+            (e1 := arithMulE1 a b) (e2 := arithMulE2 a b) (e3 := arithMulE3 a b)
+            (e4 := arithMulE4 a b) (e5 := arithMulE5 a b) fgl_65536_ne_zero)
+      · simpa [arithMulE6, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_6 (B := (65536 : FGL)) (e0 := arithMulE0 a b)
+            (e1 := arithMulE1 a b) (e2 := arithMulE2 a b) (e3 := arithMulE3 a b)
+            (e4 := arithMulE4 a b) (e5 := arithMulE5 a b) (e6 := arithMulE6 a b)
+            fgl_65536_ne_zero)
+      · simpa [arithMulE7, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_last (B := (65536 : FGL)) (e0 := arithMulE0 a b)
+            (e1 := arithMulE1 a b) (e2 := arithMulE2 a b) (e3 := arithMulE3 a b)
+            (e4 := arithMulE4 a b) (e5 := arithMulE5 a b) (e6 := arithMulE6 a b)
+            (e7 := arithMulE7 a b) fgl_65536_ne_zero
+            (arithMulChainSum_zero a b ha hb)) }
 
 /-- ArithMul as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩

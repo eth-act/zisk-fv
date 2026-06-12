@@ -1,32 +1,34 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md
 
-Current focus: Wave 3 table-lookup family on branch
-`clean-completeness-wave3` in `.worktrees/completeness-wave3`: implemented,
-fully gated, and ready to queue for external PR review.
+Current focus: Wave 4 Arith pair, unsigned scope, on branch
+`clean-completeness-wave4` in `.worktrees/completeness-wave4`, rebased onto
+updated `origin/main` for sequential merge of PR #72.
 
-Blocking: none. PR #69/Wave 1 is not merged to `origin/main`, so this
-worktree is based on `origin/clean-completeness-wave1` at `5c10ecc6`. Do not
-merge PRs.
+Blocking: none. PRs #69, #70, and #71 are squash-merged. Wave 4 is ready to
+push with lease and squash-merge as PR #72.
 
-Setup: first `lake exe cache get` found missing path deps; `nix run
-.#populate` populated generated inputs and retry of `lake exe cache get`
-succeeded. `lake build repl` passed. The `zisk` submodule is initialized at
-pinned `4148c25e`. Baseline full `lake build` and
-`trust/scripts/check-all.sh` passed.
+Setup: `git submodule update --init zisk` checked out pinned `4148c25e`;
+`nix run .#populate`, `lake exe cache get`, `lake build repl`, full
+`lake build`, and `trust/scripts/check-all.sh` passed.
 
-Progress: replaced the four Wave 3 ex-falso completeness fields in
-`Binary/Circuit.lean` and `BinaryExtension/StaticCircuit.lean`. Added genuine
-index-route builders for Binary static lookups and BinaryExtension static /
-shift-static lookups, plus witness files in `trust/consistency/`. Updated the
-stale Binary/BinaryExtension docstrings and narrowed Wave 3 ensemble proof
-obligations, including the BinaryFamily ensemble call sites exposed by the
-full build.
+Progress: Wave 4 scope is unsigned-only ArithMul/ArithDiv completeness:
+`na=nb=np=nr=m32=0`; MUL has `div=0`, DIV has `div=1`; `fab=1` and
+`na_fb=nb_fa=0`. Carries will be field-solved from the 65536-base chain
+equations, with signed/m32 modes left as documented follow-up disjuncts.
+`ZiskFv/Airs/Arith/CarryChainCompleteness.lean` now builds and provides
+`chunk16`, Nat/FGL decompositions, `fgl_65536_ne_zero`, and `cc0..cc6`
+field-solved carry lemmas. ArithMul `circuit` now has a real unsigned
+builder-existential completeness proof; focused
+`lake build ZiskFv.AirsClean.ArithMul.Circuit` passes. ArithDiv `circuit`
+now has a real unsigned nonzero-divisor builder-existential completeness
+proof; `lake env lean ZiskFv/AirsClean/ArithDiv/Circuit.lean` and focused
+`lake build ZiskFv.AirsClean.ArithDiv.Circuit` pass. ArithMul/ArithDiv
+witness files now typecheck and print standard closure; Arith audit
+docstrings state the unsigned constructibility scope and signed/W non-claims;
+`FullEnsemble` and `FullEnsemble/Balance` focused builds pass. The full
+verification block also passed: full `lake build`, V1/V2 trust gates, empty
+generated/baseline diff, empty project-axiom closure print, and `nix run .#test`
+after clearing reproducible caches from an initial disk-full failure.
 
-Verification: `lake build`, `trust/scripts/check-all.sh`,
-`trust/scripts/check-all-semantic.sh`, and `nix run .#test` pass. Trust diff
-vs `origin/clean-completeness-wave1` only adds the two Wave 3 witness files;
-no trust generated/baseline/script diffs. Ex-falso and suspicious-token scans
-are clean for Wave 3 code; `git diff --check` passes.
-
-Next step: push the final docs commit and open the Wave 3 PR with first body
-line `Queued for Claude review — do not merge.` Do not merge PRs.
+Next step: push `clean-completeness-wave4`, squash-merge PR #72, then retarget
+and rebase Wave 5 for PR #73.
