@@ -578,6 +578,13 @@ program witnesses for all three `MainRomExecKind` shapes across both
 ROM/memory circuits. `lake env lean
 trust/consistency/completeness_witness_main.lean` passes and prints only the
 standard closure.
+W5: Verification passed: focused Main build, FullEnsemble and Balance builds,
+full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, `nix run .#test`, empty trust
+generated/baseline diff, branch-local trust diff limited to
+`trust/consistency/completeness_witness_main.lean`, closure print with no
+project axiom names, `git diff --check`, and final source scans. Finalization
+sweep and PR opening remain deferred because Waves 2-4 are still open.
 
 ## Hard invariants (every wave — violations fail review)
 
