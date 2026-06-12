@@ -1,34 +1,34 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md
 
-Current focus: Wave 4 Arith pair, unsigned scope, on branch
-`clean-completeness-wave4` in `.worktrees/completeness-wave4`, rebased onto
-updated `origin/main` for sequential merge of PR #72.
+Current focus: Wave 5 proof-only PR #73 on branch
+`clean-completeness-wave5` from `.worktrees/completeness-wave5`, rebased onto
+updated `origin/main` after PRs #69-#72 were squash-merged.
 
-Blocking: none. PRs #69, #70, and #71 are squash-merged. Wave 4 is ready to
-push with lease and squash-merge as PR #72.
+Blocking: none for proof-wave merge. The Wave 5 finalization sweep is now the
+remaining cleanup and is not included in proof-only PR #73.
 
-Setup: `git submodule update --init zisk` checked out pinned `4148c25e`;
-`nix run .#populate`, `lake exe cache get`, `lake build repl`, full
-`lake build`, and `trust/scripts/check-all.sh` passed.
+Setup: `nix run .#populate` populated generated inputs after the first cache
+attempt reported missing path deps. `lake exe cache get` initially hit local
+disk-full while decompressing mathlib; after clearing reproducible caches and
+old generated worktree builds, retry passed. `git submodule update --init zisk`
+checked out pinned `4148c25e`; `lake build repl`, full baseline `lake build`,
+and `trust/scripts/check-all.sh` passed.
 
-Progress: Wave 4 scope is unsigned-only ArithMul/ArithDiv completeness:
-`na=nb=np=nr=m32=0`; MUL has `div=0`, DIV has `div=1`; `fab=1` and
-`na_fb=nb_fa=0`. Carries will be field-solved from the 65536-base chain
-equations, with signed/m32 modes left as documented follow-up disjuncts.
-`ZiskFv/Airs/Arith/CarryChainCompleteness.lean` now builds and provides
-`chunk16`, Nat/FGL decompositions, `fgl_65536_ne_zero`, and `cc0..cc6`
-field-solved carry lemmas. ArithMul `circuit` now has a real unsigned
-builder-existential completeness proof; focused
-`lake build ZiskFv.AirsClean.ArithMul.Circuit` passes. ArithDiv `circuit`
-now has a real unsigned nonzero-divisor builder-existential completeness
-proof; `lake env lean ZiskFv/AirsClean/ArithDiv/Circuit.lean` and focused
-`lake build ZiskFv.AirsClean.ArithDiv.Circuit` pass. ArithMul/ArithDiv
-witness files now typecheck and print standard closure; Arith audit
-docstrings state the unsigned constructibility scope and signed/W non-claims;
-`FullEnsemble` and `FullEnsemble/Balance` focused builds pass. The full
-verification block also passed: full `lake build`, V1/V2 trust gates, empty
-generated/baseline diff, empty project-axiom closure print, and `nix run .#test`
-after clearing reproducible caches from an initial disk-full failure.
+Progress: `ZiskFv/AirsClean/Main/Circuit.lean` now has honest builders and
+builder-existential completeness proofs for plain `circuit`,
+`circuitWithRomAndMemBus`, and `circuitWithRomMemAndOpBus`. `lake env lean
+ZiskFv/AirsClean/Main/Circuit.lean` and focused `lake build
+ZiskFv.AirsClean.Main.Circuit` pass. The Main witness file covers all three
+plain and ROM-backed execution shapes; its typecheck passes and prints only the
+standard closure. Pre-merge review feedback has been addressed by marking the
+named `MainRomExecKind.Coherent` predicate `@[reducible]`.
 
-Next step: push `clean-completeness-wave4`, squash-merge PR #72, then retarget
-and rebase Wave 5 for PR #73.
+Next step: push the rebased branch and squash-merge PR #73 if not already
+merged, then handle the separate finalization cleanup. The focused post-review
+checks (`lake env lean` for Main and the Main witness, plus `lake build
+ZiskFv.AirsClean.Main.Circuit`) pass. The full build,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+`nix run .#test`, trust diff checks, closure print, `git diff --check`, and
+final scans have passed; the semantic gates discover
+`completeness_witness_main`. PR #73 has a non-empty review body, and PRs
+#69-#72 now have non-empty descriptions.

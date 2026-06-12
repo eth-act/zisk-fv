@@ -509,8 +509,8 @@ origin/main..HEAD` clean.
 
 ### Checklist
 
-- [ ] Worktree + cache + baseline; STATUS.md; log `W5: started`.
-- [ ] Plain `circuit` (9 assertZeros + OpBus emit). The internal-op
+- [x] Worktree + cache + baseline; STATUS.md; log `W5: started`.
+- [x] Plain `circuit` (9 assertZeros + OpBus emit). The internal-op
       conditionals force exactly three honest shapes:
       ```lean
       inductive MainExecKind (F)
@@ -522,7 +522,7 @@ origin/main..HEAD` clean.
       plus `MainFreeCols` (a/b operands, pc, m32, ind_width, jmp offsets,
       store_pc, im_high_degree_2, segment_l1). Discharge by `cases k` +
       helpers.
-- [ ] `circuitWithRomAndMemBus length program` — builder from the program
+- [x] `circuitWithRomAndMemBus length program` — builder from the program
       ENTRY so the ROM lookup closes by construction:
       `RomFlagBits` (15 Bools, bit order of `romFlags`, main.pil:483-486);
       `packFlags : RomFlagBits → FGL` (verbatim `romFlags` polynomial);
@@ -544,11 +544,11 @@ origin/main..HEAD` clean.
       `Lookup.completeness_def` + `eval_romMessageExpr` manually, split
       `h_input` only for the assertZero goals. `MainRowWithRom` is a nested
       `{core, rom}` struct — nested `injection` as in Wave 4.
-- [ ] `circuitWithRomMemAndOpBus`: ~15-line `simpa [mainWithRomMemAndOpBus,
+- [x] `circuitWithRomMemAndOpBus`: ~15-line `simpa [mainWithRomMemAndOpBus,
       circuit_norm, OpBusChannel, MemBusChannel]` wrapper around the
       standalone theorem (mirror `mainWithRomMemAndOpBus_soundness`). Same
       ProverAssumptions for both.
-- [ ] Witness: concrete 1-instruction `Program` + one honest row per
+- [x] Witness: concrete 1-instruction `Program` + one honest row per
       `MainExecKind`; concrete `RomFlagBits` proving the coherence
       side-conditions are satisfiable.
 - [ ] Finalization sweep (only after Waves 2–4 have merged): CLAUDE.md
@@ -558,7 +558,49 @@ origin/main..HEAD` clean.
       PROJECTS.md/STATUS.md closeout; list follow-ups (signed Arith
       disjuncts, table-op gaps). Do NOT touch `ZiskFv/Completeness/**`
       (the RV64IM stream's surface).
-- [ ] Verification block; open PR per protocol.
+- [x] Verification block; proof-only PR opened as #73 per Cody directive.
+
+W5: started `clean-completeness-wave5` in `.worktrees/completeness-wave5`
+from `origin/clean-completeness-wave1`, matching Waves 2-4 while PRs
+#69-#72 remain open. Setup baseline passed: generated inputs populated,
+`lake exe cache get` passed after clearing local reproducible caches from an
+initial disk-full failure, `zisk` checked out pinned `4148c25e`, `lake build
+repl` passed, full `lake build` passed, and `trust/scripts/check-all.sh`
+passed all 17 checks. Finalization sweep remains deferred until Waves 2-4
+merge.
+W5: Main `circuit`, `circuitWithRomAndMemBus`, and
+`circuitWithRomMemAndOpBus` now have builder-existential completeness proofs.
+`lake env lean ZiskFv/AirsClean/Main/Circuit.lean` and focused `lake build
+ZiskFv.AirsClean.Main.Circuit` pass.
+W5: Added `trust/consistency/completeness_witness_main.lean` with plain Main
+rows for all three `MainExecKind` shapes and ROM-backed one-instruction
+program witnesses for all three `MainRomExecKind` shapes across both
+ROM/memory circuits. `lake env lean
+trust/consistency/completeness_witness_main.lean` passes and prints only the
+standard closure.
+W5: Verification passed: focused Main build, FullEnsemble and Balance builds,
+full `lake build`, `trust/scripts/check-all.sh`,
+`trust/scripts/check-all-semantic.sh`, `nix run .#test`, empty trust
+generated/baseline diff, branch-local trust diff limited to
+`trust/consistency/completeness_witness_main.lean`, closure print with no
+project axiom names, `git diff --check`, and final source scans. At that
+checkpoint, finalization sweep and PR opening were deferred because Waves 2-4
+were still open.
+W5: Opened proof-only review PR #73 per Cody directive, with a non-empty body
+and first line `Queued for Claude review — do not merge.` Finalization sweep
+remains deferred until Waves 2-4 merge. Also filled non-empty descriptions on
+the other open Clean completeness PRs.
+W5: Addressed pre-merge review ask by marking
+`MainRomExecKind.Coherent` as `@[reducible]` so the named match-on-kind
+predicate remains transparent under the hidden-promise rule. Focused Main
+file check, Main witness check, focused Main build, and `git diff --check`
+passed after the change.
+W5: Sequential merge prep after PRs #69/#70/#71/#72 landed: retargeted PR #73
+to `main`, rebased `clean-completeness-wave5` onto updated `origin/main`,
+resolved bookkeeping-only conflicts in `STATUS.md` and this plan, and confirmed
+the branch diff is limited to Wave 5 files with `git diff --check
+origin/main..HEAD` clean. The finalization sweep is now eligible but remains
+outside proof-only PR #73.
 
 ## Hard invariants (every wave — violations fail review)
 
