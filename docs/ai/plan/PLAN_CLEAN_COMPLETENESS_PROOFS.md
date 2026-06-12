@@ -595,6 +595,12 @@ W5: Addressed pre-merge review ask by marking
 predicate remains transparent under the hidden-promise rule. Focused Main
 file check, Main witness check, focused Main build, and `git diff --check`
 passed after the change.
+W5: Sequential merge prep after PRs #69/#70/#71/#72 landed: retargeted PR #73
+to `main`, rebased `clean-completeness-wave5` onto updated `origin/main`,
+resolved bookkeeping-only conflicts in `STATUS.md` and this plan, and confirmed
+the branch diff is limited to Wave 5 files with `git diff --check
+origin/main..HEAD` clean. The finalization sweep is now eligible but remains
+outside proof-only PR #73.
 
 ## Hard invariants (every wave — violations fail review)
 

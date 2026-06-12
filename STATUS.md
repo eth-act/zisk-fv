@@ -1,12 +1,11 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md
 
-Current focus: Wave 5 proof-only PR #73 is open on branch
-`clean-completeness-wave5` from `.worktrees/completeness-wave5`, based on
-`origin/clean-completeness-wave1`.
+Current focus: Wave 5 proof-only PR #73 on branch
+`clean-completeness-wave5` from `.worktrees/completeness-wave5`, rebased onto
+updated `origin/main` after PRs #69-#72 were squash-merged.
 
-Blocking: Main proof work is complete. The Wave 5 finalization sweep is
-explicitly deferred until Waves 2-4 merge; PRs #69-#73 are open and must not
-be merged by this agent.
+Blocking: none for proof-wave merge. The Wave 5 finalization sweep is now the
+remaining cleanup and is not included in proof-only PR #73.
 
 Setup: `nix run .#populate` populated generated inputs after the first cache
 attempt reported missing path deps. `lake exe cache get` initially hit local
@@ -24,11 +23,12 @@ plain and ROM-backed execution shapes; its typecheck passes and prints only the
 standard closure. Pre-merge review feedback has been addressed by marking the
 named `MainRomExecKind.Coherent` predicate `@[reducible]`.
 
-Next step: wait for the merge-dependent finalization sweep to become eligible.
-The focused post-review checks (`lake env lean` for Main and the Main witness,
-plus `lake build ZiskFv.AirsClean.Main.Circuit`) pass. The full build,
-`trust/scripts/check-all.sh`,
-`trust/scripts/check-all-semantic.sh`, `nix run .#test`, trust diff checks,
-closure print, `git diff --check`, and final scans have passed; the semantic
-gates discover `completeness_witness_main`. PR #73 has a non-empty review body,
-and PRs #69-#72 now have non-empty descriptions.
+Next step: push the rebased branch and squash-merge PR #73 if not already
+merged, then handle the separate finalization cleanup. The focused post-review
+checks (`lake env lean` for Main and the Main witness, plus `lake build
+ZiskFv.AirsClean.Main.Circuit`) pass. The full build,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+`nix run .#test`, trust diff checks, closure print, `git diff --check`, and
+final scans have passed; the semantic gates discover
+`completeness_witness_main`. PR #73 has a non-empty review body, and PRs
+#69-#72 now have non-empty descriptions.
