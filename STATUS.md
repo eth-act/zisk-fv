@@ -14,11 +14,10 @@ get` found missing path deps; retry of `lake exe cache get` succeeded. The
 `zisk` submodule is initialized at pinned `4148c25e`. `lake build repl`, full
 baseline `lake build`, and `trust/scripts/check-all.sh` passed.
 
-Progress: Wave 2 worktree is ready for proof edits. Start scan
-`rg "completeness :=" ZiskFv` matches the plan: Wave 2 owns
-MemAlignReadByte, MemAlignByte, and Mem's three circuits; Wave 1
-MemAlign/BinaryAdd are already genuine, and BinaryExtension plain is already
-complete.
+Progress: Wave 2 worktree is ready and start scan `rg "completeness :="
+ZiskFv` matches the plan. MemAlignReadByte now has
+`memAlignReadByteRowOf`, a builder-existential completeness proof, and
+`trust/consistency/completeness_witness_memalignreadbyte.lean`; focused
+component build and witness typecheck pass.
 
-Next step: read the Wave 1 reference implementations and the Wave 2
-Constraints/Spec/Circuit files, then implement MemAlignReadByte first.
+Next step: implement MemAlignByte builder, completeness proof, and witness.

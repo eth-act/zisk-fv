@@ -254,7 +254,7 @@ column in order.
 ### Checklist
 
 - [x] Worktree + cache + green baseline; STATUS.md; log line `W2: started`.
-- [ ] MemAlignReadByte builder + completeness + witness.
+- [x] MemAlignReadByte builder + completeness + witness.
 - [ ] MemAlignByte builder + completeness + witness.
 - [ ] Mem shared builder + one shared constraints lemma + all 3 completeness
       fields + witness.
@@ -584,3 +584,6 @@ and STOP.
   not yet contain Wave 1; populated generated inputs, initialized pinned
   `zisk` submodule, and passed `lake exe cache get`, `lake build repl`, full
   `lake build`, and `trust/scripts/check-all.sh`.
+- W2: 2026-06-12: MemAlignReadByte builder, completeness proof, and witness
+  added; focused `lake build ZiskFv.AirsClean.MemAlignReadByte.Circuit` and
+  witness typecheck passed.
