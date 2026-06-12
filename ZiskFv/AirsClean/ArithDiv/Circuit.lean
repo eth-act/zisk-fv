@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.ArithDiv.Constraints
 import ZiskFv.AirsClean.ArithDiv.Soundness
+import ZiskFv.Airs.Arith.CarryChainCompleteness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -34,8 +35,147 @@ genuinely proved from the 11 `assertZero` constraints by
 namespace ZiskFv.AirsClean.ArithDiv
 
 open Goldilocks
+open ZiskFv.Airs.ArithCarryChainCompleteness
 
-set_option maxHeartbeats 1000000 in
+/-- Columns not constrained by the unsigned DIV carry-chain completeness slice. -/
+structure ArithDivFreeCols where
+  sext : FGL
+  div_by_zero : FGL
+  div_overflow : FGL
+  main_div : FGL
+  main_mul : FGL
+  signed : FGL
+  range_ab : FGL
+  range_cd : FGL
+  op : FGL
+  bus_res1 : FGL
+  multiplicity : FGL
+
+def arithDivE0 (c b : ℕ) : FGL :=
+  (chunk16 (c / b) 0 : FGL) * (chunk16 b 0 : FGL) + (chunk16 (c % b) 0 : FGL) -
+    (chunk16 c 0 : FGL)
+
+def arithDivE1 (c b : ℕ) : FGL :=
+  (chunk16 (c / b) 1 : FGL) * (chunk16 b 0 : FGL) +
+    (chunk16 (c / b) 0 : FGL) * (chunk16 b 1 : FGL) + (chunk16 (c % b) 1 : FGL) -
+    (chunk16 c 1 : FGL)
+
+def arithDivE2 (c b : ℕ) : FGL :=
+  (chunk16 (c / b) 2 : FGL) * (chunk16 b 0 : FGL) +
+    (chunk16 (c / b) 1 : FGL) * (chunk16 b 1 : FGL) +
+    (chunk16 (c / b) 0 : FGL) * (chunk16 b 2 : FGL) + (chunk16 (c % b) 2 : FGL) -
+    (chunk16 c 2 : FGL)
+
+def arithDivE3 (c b : ℕ) : FGL :=
+  (chunk16 (c / b) 3 : FGL) * (chunk16 b 0 : FGL) +
+    (chunk16 (c / b) 2 : FGL) * (chunk16 b 1 : FGL) +
+    (chunk16 (c / b) 1 : FGL) * (chunk16 b 2 : FGL) +
+    (chunk16 (c / b) 0 : FGL) * (chunk16 b 3 : FGL) + (chunk16 (c % b) 3 : FGL) -
+    (chunk16 c 3 : FGL)
+
+def arithDivE4 (c b : ℕ) : FGL :=
+  (chunk16 (c / b) 3 : FGL) * (chunk16 b 1 : FGL) +
+    (chunk16 (c / b) 2 : FGL) * (chunk16 b 2 : FGL) +
+    (chunk16 (c / b) 1 : FGL) * (chunk16 b 3 : FGL)
+
+def arithDivE5 (c b : ℕ) : FGL :=
+  (chunk16 (c / b) 3 : FGL) * (chunk16 b 2 : FGL) +
+    (chunk16 (c / b) 2 : FGL) * (chunk16 b 3 : FGL)
+
+def arithDivE6 (c b : ℕ) : FGL :=
+  (chunk16 (c / b) 3 : FGL) * (chunk16 b 3 : FGL)
+
+def arithDivE7 (_c _b : ℕ) : FGL :=
+  0
+
+lemma arithDivQuotient_lt (c b : ℕ) (hc : c < 65536 ^ 4) :
+    c / b < 65536 ^ 4 := by
+  have hle : c / b ≤ c := Nat.div_le_self c b
+  omega
+
+lemma arithDivRemainder_lt (c b : ℕ) (hb : b < 65536 ^ 4) (hb_ne : b ≠ 0) :
+    c % b < 65536 ^ 4 := by
+  have hb_pos : 0 < b := Nat.pos_of_ne_zero hb_ne
+  have hmod := Nat.mod_lt c hb_pos
+  omega
+
+lemma arithDivChainSum_zero (c b : ℕ) (hc : c < 65536 ^ 4) (hb : b < 65536 ^ 4)
+    (hb_ne : b ≠ 0) :
+    arithDivE0 c b + arithDivE1 c b * (65536 : FGL) +
+      arithDivE2 c b * (65536 : FGL) ^ 2 + arithDivE3 c b * (65536 : FGL) ^ 3 +
+      arithDivE4 c b * (65536 : FGL) ^ 4 + arithDivE5 c b * (65536 : FGL) ^ 5 +
+      arithDivE6 c b * (65536 : FGL) ^ 6 + arithDivE7 c b * (65536 : FGL) ^ 7 =
+        0 := by
+  have hq := arithDivQuotient_lt c b hc
+  have hr := arithDivRemainder_lt c b hb hb_ne
+  have hq_decomp := fgl_decomp4 (c / b) hq
+  have hb_decomp := fgl_decomp4 b hb
+  have hr_decomp := fgl_decomp4 (c % b) hr
+  have hc_decomp := fgl_decomp4 c hc
+  have hdiv :
+      ((c / b : ℕ) : FGL) * (b : FGL) + ((c % b : ℕ) : FGL) = (c : FGL) := by
+    have hcast := congrArg (fun n : ℕ => (n : FGL)) (Nat.div_add_mod c b)
+    simp only [Nat.cast_add, Nat.cast_mul] at hcast
+    simpa [mul_comm, mul_left_comm, mul_assoc] using hcast
+  rw [hq_decomp, hb_decomp, hr_decomp, hc_decomp] at hdiv
+  unfold arithDivE0 arithDivE1 arithDivE2 arithDivE3 arithDivE4 arithDivE5 arithDivE6
+    arithDivE7
+  linear_combination hdiv
+
+/-- Honest unsigned ArithDiv row built from a dividend and nonzero divisor. -/
+def arithDivRowOf (c b : ℕ) (free : ArithDivFreeCols) : ArithDivRow FGL :=
+  { chunks :=
+      { a_0 := (chunk16 (c / b) 0 : FGL)
+        a_1 := (chunk16 (c / b) 1 : FGL)
+        a_2 := (chunk16 (c / b) 2 : FGL)
+        a_3 := (chunk16 (c / b) 3 : FGL)
+        b_0 := (chunk16 b 0 : FGL)
+        b_1 := (chunk16 b 1 : FGL)
+        b_2 := (chunk16 b 2 : FGL)
+        b_3 := (chunk16 b 3 : FGL)
+        c_0 := (chunk16 c 0 : FGL)
+        c_1 := (chunk16 c 1 : FGL)
+        c_2 := (chunk16 c 2 : FGL)
+        c_3 := (chunk16 c 3 : FGL)
+        d_0 := (chunk16 (c % b) 0 : FGL)
+        d_1 := (chunk16 (c % b) 1 : FGL)
+        d_2 := (chunk16 (c % b) 2 : FGL)
+        d_3 := (chunk16 (c % b) 3 : FGL) }
+    flags :=
+      { na := 0
+        nb := 0
+        nr := 0
+        np := 0
+        sext := free.sext
+        m32 := 0
+        div := 1
+        div_by_zero := free.div_by_zero
+        div_overflow := free.div_overflow
+        main_div := free.main_div
+        main_mul := free.main_mul
+        signed := free.signed
+        range_ab := free.range_ab
+        range_cd := free.range_cd
+        op := free.op
+        bus_res1 := free.bus_res1
+        multiplicity := free.multiplicity }
+    aux :=
+      { carry_0 := cc0 65536 (arithDivE0 c b)
+        carry_1 := cc1 65536 (arithDivE0 c b) (arithDivE1 c b)
+        carry_2 := cc2 65536 (arithDivE0 c b) (arithDivE1 c b) (arithDivE2 c b)
+        carry_3 := cc3 65536 (arithDivE0 c b) (arithDivE1 c b) (arithDivE2 c b)
+          (arithDivE3 c b)
+        carry_4 := cc4 65536 (arithDivE0 c b) (arithDivE1 c b) (arithDivE2 c b)
+          (arithDivE3 c b) (arithDivE4 c b)
+        carry_5 := cc5 65536 (arithDivE0 c b) (arithDivE1 c b) (arithDivE2 c b)
+          (arithDivE3 c b) (arithDivE4 c b) (arithDivE5 c b)
+        carry_6 := cc6 65536 (arithDivE0 c b) (arithDivE1 c b) (arithDivE2 c b)
+          (arithDivE3 c b) (arithDivE4 c b) (arithDivE5 c b) (arithDivE6 c b)
+        fab := 1
+        na_fb := 0
+        nb_fa := 0 } }
+
+set_option maxHeartbeats 4000000 in
 /-- ArithDiv (the Arith AIR's DIV carry-chain sub-circuit) as a Clean
     `GeneralFormalCircuit`. `Assumptions := True` — the 11-clause
     carry-chain `Spec` follows from the 11 definitional `assertZero`
@@ -49,11 +189,10 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
   { arithDivElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
-    -- only). `ProverAssumptions := False` makes this field a visible
-    -- non-claim. See trust/defects.md
-    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
-    ProverAssumptions := fun _ _ _ => False
+    -- Completeness covers unsigned rows built from a dividend and nonzero divisor.
+    ProverAssumptions := fun row _ _ =>
+      ∃ c b free, c < 65536 ^ 4 ∧ b < 65536 ^ 4 ∧ b ≠ 0 ∧
+        row = arithDivRowOf c b free
     ProverSpec := fun _ _ _ => True
     soundness := by
       -- `circuit_proof_start`'s `provable_struct_simp` step is far too
@@ -92,7 +231,60 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
         · linear_combination h38
       · -- no channel interaction → empty `Operations.Requirements`.
         simp only [circuit_norm, main]
-    completeness := fun _ _ _ _ _ _ h => h.elim }
+    completeness := by
+      circuit_proof_start_core
+      simp only [main, circuit_norm]
+      obtain ⟨c, b, free, hc, hb, hb_ne, hrow⟩ := h_assumptions
+      rw [hrow] at h_input
+      simp only [circuit_norm] at h_input
+      injection h_input with h_chunks h_flags h_aux
+      injection h_chunks with h_a_0 h_a_1 h_a_2 h_a_3 h_b_0 h_b_1 h_b_2 h_b_3
+        h_c_0 h_c_1 h_c_2 h_c_3 h_d_0 h_d_1 h_d_2 h_d_3
+      injection h_flags with h_na h_nb h_nr h_np h_sext h_m32 h_div h_div_by_zero
+        h_div_overflow h_main_div h_main_mul h_signed h_range_ab h_range_cd h_op h_bus_res1
+        h_multiplicity
+      injection h_aux with h_fab h_na_fb h_nb_fa h_carry_0 h_carry_1 h_carry_2
+        h_carry_3 h_carry_4 h_carry_5 h_carry_6
+      subst_vars
+      simp only [h_a_0, h_a_1, h_a_2, h_a_3, h_b_0, h_b_1, h_b_2, h_b_3,
+        h_c_0, h_c_1, h_c_2, h_c_3, h_d_0, h_d_1, h_d_2, h_d_3, h_na, h_nb,
+        h_nr, h_np, h_m32, h_div, h_carry_0, h_carry_1, h_carry_2, h_carry_3,
+        h_carry_4, h_carry_5, h_carry_6, h_fab, h_na_fb, h_nb_fa]
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · ring
+      · ring
+      · ring
+      · simpa [arithDivE0, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_0 (B := (65536 : FGL)) (e0 := arithDivE0 c b) fgl_65536_ne_zero)
+      · simpa [arithDivE1, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_1 (B := (65536 : FGL)) (e0 := arithDivE0 c b)
+            (e1 := arithDivE1 c b) fgl_65536_ne_zero)
+      · simpa [arithDivE2, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_2 (B := (65536 : FGL)) (e0 := arithDivE0 c b)
+            (e1 := arithDivE1 c b) (e2 := arithDivE2 c b) fgl_65536_ne_zero)
+      · simpa [arithDivE3, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_3 (B := (65536 : FGL)) (e0 := arithDivE0 c b)
+            (e1 := arithDivE1 c b) (e2 := arithDivE2 c b) (e3 := arithDivE3 c b)
+            fgl_65536_ne_zero)
+      · simpa [arithDivE4, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_4 (B := (65536 : FGL)) (e0 := arithDivE0 c b)
+            (e1 := arithDivE1 c b) (e2 := arithDivE2 c b) (e3 := arithDivE3 c b)
+            (e4 := arithDivE4 c b) fgl_65536_ne_zero)
+      · simpa [arithDivE5, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_5 (B := (65536 : FGL)) (e0 := arithDivE0 c b)
+            (e1 := arithDivE1 c b) (e2 := arithDivE2 c b) (e3 := arithDivE3 c b)
+            (e4 := arithDivE4 c b) (e5 := arithDivE5 c b) fgl_65536_ne_zero)
+      · simpa [arithDivE6, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_eq_6 (B := (65536 : FGL)) (e0 := arithDivE0 c b)
+            (e1 := arithDivE1 c b) (e2 := arithDivE2 c b) (e3 := arithDivE3 c b)
+            (e4 := arithDivE4 c b) (e5 := arithDivE5 c b) (e6 := arithDivE6 c b)
+            fgl_65536_ne_zero)
+      · simpa [arithDivE7, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+          (chain_last (B := (65536 : FGL)) (e0 := arithDivE0 c b)
+            (e1 := arithDivE1 c b) (e2 := arithDivE2 c b) (e3 := arithDivE3 c b)
+            (e4 := arithDivE4 c b) (e5 := arithDivE5 c b) (e6 := arithDivE6 c b)
+            (e7 := arithDivE7 c b) fgl_65536_ne_zero
+            (arithDivChainSum_zero c b hc hb hb_ne)) }
 
 /-- ArithDiv as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩

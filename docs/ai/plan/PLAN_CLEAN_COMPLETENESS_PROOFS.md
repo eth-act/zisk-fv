@@ -447,7 +447,7 @@ the honest integer carries; note this in the docstring).
       Discharge: C6/7/8 `norm_num`; C31–C37 `linear_combination (chain_eq_k …)`;
       C38 via `chain_last` with `h_packed : ↑a * ↑b = c_packed + d_packed *
       B^4` from `fgl_decomp4 a/b` + `fgl_decomp8 (a*b)` + `Nat.cast_mul`.
-- [ ] ArithDiv `circuit` (11 assertZeros, NO push — easier): operands
+- [x] ArithDiv `circuit` (11 assertZeros, NO push — easier): operands
       `(c b : ℕ)` = dividend, divisor; a := chunks of `c / b`, d := chunks
       of `c % b`; side-conditions `c < 65536^4 ∧ b < 65536^4 ∧ b ≠ 0`
       (`b ≠ 0` is documentation honesty); `h_packed` from `Nat.div_add_mod`.
@@ -480,6 +480,11 @@ W4: ArithMul `circuit` now has an unsigned honest-row builder,
 builder-existential `ProverAssumptions`, and a real completeness proof using
 `circuit_proof_start_core` plus the shared `cc0..cc6`/`chain_last` helpers.
 `lake build ZiskFv.AirsClean.ArithMul.Circuit` passes.
+W4: ArithDiv `circuit` now has an unsigned honest-row builder for nonzero
+divisors, builder-existential `ProverAssumptions`, and a real completeness
+proof from `Nat.div_add_mod` plus the shared carry-chain helpers.
+`lake env lean ZiskFv/AirsClean/ArithDiv/Circuit.lean` and
+`lake build ZiskFv.AirsClean.ArithDiv.Circuit` pass.
 
 ## Wave 5 — Main, 3 circuits + stream finalization (1 agent, 1 PR)
 

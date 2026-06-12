@@ -19,7 +19,10 @@ equations, with signed/m32 modes left as documented follow-up disjuncts.
 `chunk16`, Nat/FGL decompositions, `fgl_65536_ne_zero`, and `cc0..cc6`
 field-solved carry lemmas. ArithMul `circuit` now has a real unsigned
 builder-existential completeness proof; focused
-`lake build ZiskFv.AirsClean.ArithMul.Circuit` passes.
+`lake build ZiskFv.AirsClean.ArithMul.Circuit` passes. ArithDiv `circuit`
+now has a real unsigned nonzero-divisor builder-existential completeness
+proof; `lake env lean ZiskFv/AirsClean/ArithDiv/Circuit.lean` and focused
+`lake build ZiskFv.AirsClean.ArithDiv.Circuit` pass.
 
-Next step: implement the unsigned ArithDiv honest-row builder and
-builder-existential `ProverAssumptions`, using ArithMul as the template.
+Next step: add ArithMul/ArithDiv witnesses, update audit docstrings, handle
+ensemble call sites, then run the Wave 4 verification block.
