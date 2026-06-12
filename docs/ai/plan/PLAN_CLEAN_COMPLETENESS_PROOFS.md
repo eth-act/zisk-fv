@@ -477,3 +477,9 @@ into each PR body.
   push and review PR without merging.
 - 2026-06-12: opened review PR https://github.com/eth-act/zisk-fv/pull/69;
   do not merge until external review completes.
+- 2026-06-12: review feedback in progress: harden semantic witness checks to
+  fail on Lean `sorry` warnings and refresh stale BinaryAdd/MemAlign docstrings.
+- 2026-06-12: addressed review feedback; temporary sorry witness made the
+  semantic gate fail as expected, then focused BinaryAdd/MemAlign build,
+  `trust/scripts/check-all-semantic.sh`, `trust/scripts/check-all.sh`,
+  `bash -n trust/scripts/check-all-semantic.sh`, and `git diff --check` passed.

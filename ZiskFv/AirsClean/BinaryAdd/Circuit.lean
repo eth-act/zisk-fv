@@ -12,14 +12,18 @@ Packages ZisK's BinaryAdd AIR as a Clean `Air.Flat.Component`:
 * `binaryAddElaborated` — the `ElaboratedCircuit` over `main` — lives in
   `Constraints.lean`.
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` for
-  soundness; completeness is intentionally a visible non-claim.
+  soundness; completeness is proved for honest rows built from two 64-bit
+  operands.
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
 
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
-No completeness claim is made; the `soundness` field is genuinely proved.
+Completeness is a constructibility claim for rows equal to `binaryAddRowOf a b`
+with `a < 2^64` and `b < 2^64`: the builder computes the 32-bit limbs,
+16-bit result chunks, and carry bits used by this constraint slice. It does
+not claim that arbitrary input rows are honest BinaryAdd executions.
 -/
 
 namespace ZiskFv.AirsClean.BinaryAdd

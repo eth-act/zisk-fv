@@ -29,11 +29,27 @@ reject_false_probe() {
   fi
 }
 
+run_lean_no_sorry() {
+  local output status
+  output="$(lake env lean "$@" 2>&1)"
+  status=$?
+  if [ -n "$output" ]; then
+    printf '%s\n' "$output"
+  fi
+  if [ "$status" -ne 0 ]; then
+    return "$status"
+  fi
+  if grep -q 'uses `sorry`' <<<"$output"; then
+    echo "Lean file unexpectedly contains sorry: $*"
+    return 1
+  fi
+}
+
 run_witnesses() {
   local ok=0
   for f in trust/consistency/completeness_witness_*.lean; do
     [ -e "$f" ] || continue
-    lake env lean "$f" || ok=1
+    run_lean_no_sorry "$f" || ok=1
   done
   return $ok
 }
@@ -43,7 +59,7 @@ run "2/6 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
 run "3/6 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
 run "4/6 consistency false probe rejected" reject_false_probe
 run "5/6 Sail memory timeline witness" \
-  lake env lean trust/consistency/load_byte_agreement_witness.lean
+  run_lean_no_sorry trust/consistency/load_byte_agreement_witness.lean
 run "6/6 Clean completeness witnesses" run_witnesses
 
 if [ $overall -eq 0 ]; then

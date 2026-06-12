@@ -16,8 +16,10 @@ continuity remains in `CrossRow.lean`.
 
 ## Trust note
 
-No axioms. Completeness is intentionally a visible non-claim, following the
-soundness-only project boundary.
+No axioms. Completeness is a constructibility claim for rows equal to
+`memAlignRowOf ...`: a concrete phase, Boolean flags/selectors, registers, and
+address fields with `value_0`, `value_1`, `preL1`, and `pc` computed by the
+builder. Cross-row continuity remains outside this row-local proof.
 -/
 
 namespace ZiskFv.AirsClean.MemAlign

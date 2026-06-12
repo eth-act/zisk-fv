@@ -24,6 +24,16 @@ all 8 steps. Trust generated/baseline diff is empty; trust-surface diff is
 limited to the witness files and semantic script; canonical closure print
 shows no project axioms. BinaryAdd/gate proof chunk committed as `60c645c6`.
 Review PR opened: https://github.com/eth-act/zisk-fv/pull/69. Do not merge
-until external review completes.
+until external review completes. Review feedback addressed locally: the
+semantic witness gate now fails on Lean `sorry` warnings, the pre-existing Sail
+memory witness uses the same wrapper, and BinaryAdd/MemAlign docstrings state
+their proved constructibility scopes.
 
-Next step: wait for external review feedback on PR #69.
+Verification after feedback: temporary `completeness_witness_sorry_probe.lean`
+made `trust/scripts/check-all-semantic.sh` fail as expected on the Lean `sorry`
+warning; after deleting the probe, these passed: focused BinaryAdd/MemAlign
+circuit build, semantic gate, V1 gate, shell syntax check, and
+`git diff --check`.
+
+Next step: commit and push the review-fix chunk to PR #69, then wait for
+external review.
