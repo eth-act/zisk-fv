@@ -366,11 +366,11 @@ is not.
 - [ ] Survey: list the 8 message exprs + shared slots for Binary and
       BinaryExtension; write the derived side-condition list into the PR
       body (this is the review surface for honesty).
-- [ ] Binary plain `circuit` (7 assertZeros, no lookups): Bool mode flags
+- [x] Binary plain `circuit` (7 assertZeros, no lookups): Bool mode flags
       (`mode32 result_is_a use_first_byte c_is_signed`, `carry_7 : Bool`);
       `b_op_or_sext` and `mode32_and_c_is_signed` COMPUTED; free byte/carry
       columns. Plain-recipe discharge.
-- [ ] Binary `staticLookupCircuit`: index-route builder extending the plain
+- [x] Binary `staticLookupCircuit`: index-route builder extending the plain
       one + witness.
 - [ ] BinaryExtension `staticLookupCircuit` (0 assertZeros, 8 lookups):
       index-route builder + witness.
@@ -380,6 +380,13 @@ is not.
       computing `b_0` from a bounded operand.
 - [ ] Docstrings §5 (state the index-route scope); ensemble call sites §6.
 - [ ] Verification block; open PR per protocol.
+
+W3: Binary plain `circuit` and Binary `staticLookupCircuit` completeness now
+compile under `lake env lean ZiskFv/AirsClean/Binary/Circuit.lean`; static
+lookups use explicit BinaryTable indices plus field-consistency side
+conditions.
+W3: Added `trust/consistency/completeness_witness_binary.lean`; it typechecks
+and prints no `sorryAx`.
 
 ## Wave 4 — Arith pair, unsigned scope (1 agent, 1 PR)
 
