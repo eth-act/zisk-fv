@@ -1,53 +1,68 @@
 # Plan: Clean Completeness Proofs
 
-Status: READY FOR EXECUTION. Base: `origin/main` at `e3b87fc0` or later.
-This file is the handoff document — it is written to be executed by agents
-without further design work. Read it fully before editing anything.
+Status: Wave 1 COMPLETE (PR #69). Waves 2–5 READY FOR EXECUTION.
+This file is the handoff document — execute it without further design work.
+Wave 1's merged code is the REFERENCE IMPLEMENTATION for everything below;
+when this plan and that code disagree, copy the code.
 
-## How to run this stream
+## How to run a wave
 
 - One worktree per wave: `git worktree add .worktrees/completeness-<wave>
-  origin/main` (create MANUALLY — never agent worktree isolation).
-- FIRST command in every new worktree: `lake exe cache get`. If it complains
-  about missing path deps, run `nix run .#populate`, then retry. Then a full
-  `lake build` + `trust/scripts/check-all.sh` BEFORE any edit (green baseline).
-- Copy this plan into the worktree's `docs/ai/plan/` and commit it there
-  (docs/ai is local-excluded in the parent checkout). Keep the worktree's
-  `STATUS.md` and this file's checklists current at every progress report.
-  Tick checkboxes and append short log lines only — do NOT expand this plan.
-- Commit and push freely on the wave branch. ASK CODY before opening each PR.
-- Wave 1 goes first and fixes the idiom. Waves 2–5 run in parallel after
-  Wave 1's PR merges (they copy its idiom; Waves 2,3,5 also use its helpers).
-- Sub-agent prompts must include the CLAUDE.md anti-laundering principle
-  verbatim and require reading `trust/README.md#anti-laundering-terms`.
-  Vocabulary note: this stream is **completeness / constructibility** work,
-  NOT promise discharge — use those words in PR titles/bodies/commits.
+  origin/main` (MANUALLY — never agent worktree isolation). Base must contain
+  the Wave 1 merge (CompletenessHelpers + hardened witness gate).
+- FIRST command in the new worktree: `lake exe cache get`. If it complains
+  about missing path deps: `nix run .#populate`, retry. Then full
+  `lake build` + `trust/scripts/check-all.sh` green BEFORE any edit.
+- This plan file is tracked in the repo. Edit ONLY your wave's checklist
+  boxes and append log lines prefixed `W<n>:`. Never touch another wave's
+  section. On rebase conflicts in this file or STATUS.md, keep both sides.
+- Commit and push freely on the wave branch.
+
+### PR protocol (UPDATED 2026-06-12 — no human pre-ack needed)
+
+When your wave's checklist is done and ALL verification commands pass, OPEN
+THE PR YOURSELF — do not wait for permission. Requirements:
+
+- Title: `Clean completeness Wave <n>: <components>`.
+- First body line: `Queued for Claude review — do not merge.`
+- Body sections, in order: Summary; Scope notes (any documented partial
+  coverage — Wave 3 table ops, Wave 4 unsigned modes); Verification (paste
+  the gate tails, the empty trust-diff confirmation, the closure-print
+  result, and the witness file list); Notes for later waves (anything the
+  next agents must copy or avoid).
+- Review is performed by Claude (Cody's reviewing agent), not by you.
+  Expect the review to: re-run both gates and the build, diff-check the
+  baselines, grep for soundness-side edits, hand-check your builder against
+  the constraint expressions, and negative-test your witness. Write the PR
+  so all of that passes on the first try.
+- After opening the PR, STOP. Do not merge, do not self-approve, do not
+  start another wave's components.
+
+### Sub-agent rule
+
+Any sub-agent prompt must include the CLAUDE.md anti-laundering principle
+verbatim and require reading `trust/README.md#anti-laundering-terms` first.
+Vocabulary: this stream is **completeness / constructibility** work, NOT
+promise discharge — use those words in PR titles/bodies/commits.
 
 ## Context
 
 PR #66 (`2c862063`) demoted all dishonest Clean completeness fields to
-explicit non-claims: `ProverAssumptions := fun _ _ _ => False` with ex-falso
-bodies. History: the six original axioms were FALSE as stated (trivial
-ProverAssumptions over input-only rows — see
+explicit non-claims (`ProverAssumptions := fun _ _ _ => False`, ex-falso
+bodies). History: the six original axioms were FALSE as stated (see
 `ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS` in `trust/defects.md`), and
-the earlier PR #56 "proofs" were circular (`ProverAssumptions := Spec row`
-where Spec restates the constraints — reverted by PR #62 as a launder).
+PR #56's "proofs" were circular (`ProverAssumptions := Spec row` restating
+the constraints — reverted by PR #62 as a launder).
 
 This stream upgrades all 16 demoted fields to GENUINE completeness proofs:
-for each component, an honest-row builder, a builder-existential
+per component, an honest-row builder, a builder-existential
 `ProverAssumptions`, a real proof, and a gate-wired anti-vacuity witness.
-The payoff is proved satisfiability of each constraint slice by honest rows
-(constructibility), which also protects the soundness theorems from
-overstrong-validator vacuity. Purely additive: no axioms, no ledger changes,
-no canonical-theorem changes.
-
-The 16 fields (post-#66 tree; re-run `rg "completeness :=" ZiskFv` and
-reconcile before starting — line numbers drift):
+Purely additive: no axioms, no ledger changes, no canonical-theorem changes.
+Wave 1 (PR #69) delivered MemAlign + BinaryAdd + helpers + the hardened
+witness gate. Remaining fields:
 
 | Component file (`ZiskFv/AirsClean/`) | Circuits to complete | Wave |
 |---|---|---|
-| BinaryAdd/Circuit.lean | `circuit` | 1 |
-| MemAlign/Circuit.lean | `circuit` | 1 |
 | MemAlignReadByte/Circuit.lean | `circuit` | 2 |
 | MemAlignByte/Circuit.lean | `circuit` | 2 |
 | Mem/Circuit.lean | `circuit`, `circuitWithMemBus`, `circuitWithDualMemBus` | 2 |
@@ -57,400 +72,475 @@ reconcile before starting — line numbers drift):
 | ArithDiv/Circuit.lean | `circuit` | 4 |
 | Main/Circuit.lean | `circuit`, `circuitWithRomAndMemBus`, `circuitWithRomMemAndOpBus` | 5 |
 
-`BinaryExtension/Circuit.lean` (plain circuit, push-only) is ALREADY genuinely
-complete with `ProverAssumptions := True` — leave it untouched.
+`BinaryExtension/Circuit.lean` (plain, push-only) is already genuinely
+complete — leave it untouched. Re-run `rg "completeness :=" ZiskFv` at the
+start of your wave and reconcile against this table.
 
-## Technical groundwork (verified 2026-06-12 — trust this, don't re-derive)
+## Reference implementations (READ THE CODE FIRST)
 
-What `GeneralFormalCircuit.Completeness` demands, per operation in `main`:
+Wave 1 proved the idiom end to end. Before writing anything, read:
 
-- `assertZero e` → goal `env e = 0` (a Goldilocks field equation).
-- `lookup (Table.fromStatic t) entry` → goal = `t.Spec (eval env entry)`,
-  reached via `Lookup.completeness_def`
-  (`build/clean-lean/Clean/Circuit/Lookup.lean:107`; StaticTable's
-  `Completeness := Spec` at `Lookup.lean:137-153`). For
-  `rangeTable32/16/8` the Spec is `val < 2^32 / 2^16 / 2^8`
-  (`ZiskFv/AirsClean/RangeTables.lean:58-74`). For the ROM table the Spec is
-  `∃ i, msg = program i` (`ZiskFv/AirsClean/ZiskInstructionRom.lean:56-67`).
-- `OpBusChannel.push` / `MemBusChannel.emit` → goal `Guarantees env`, which
-  is `True` for both buses (`ZiskFv/Channels/OperationBus.lean:145`,
-  `ZiskFv/Channels/MemoryBus.lean:105`). `circuit_proof_start [<Channel>]`
-  discharges these automatically.
-- `env.UsesLocalWitnessesCompleteness` is a HYPOTHESIS and is vacuously true
-  for every component here (`localLength = 0`, no witness ops/subcircuits).
-- Binder order after the statement unfolds: `offset env input_var h_env
-  input h_input h_assumptions ⊢ ConstraintsHold.Completeness … ∧ ProverSpec …`.
-  With `ProverSpec := True` the second conjunct is `trivial`.
-- `circuit_proof_start` handles completeness goals (recognizes
-  `GeneralFormalCircuit.Completeness`,
-  `build/clean-lean/Clean/Utils/Tactics/CircuitProofStart.lean:65-69`).
-  For WIDE rows (43-column ArithMul/ArithDiv) its `provable_struct_simp` is
-  too slow — use `circuit_proof_start_core` + `subst` + targeted
-  `simp only [circuit_norm, main]`, exactly as the existing
-  `ArithDiv.circuit.soundness` does (`ZiskFv/AirsClean/ArithDiv/Circuit.lean`).
-- Nothing downstream consumes `completeness` or `ProverAssumptions`
-  (`FormalEnsemble` has no completeness field) — these edits cannot break
-  soundness consumers; `lake build` confirms per wave.
+| What you need | Copy from |
+|---|---|
+| Helpers (`boolF`, `boolF_booleanity`, `boolF_booleanity_add`, `fgl_natCast_val_lt_of_lt`) | `ZiskFv/AirsClean/CompletenessHelpers.lean` |
+| Nat-operand builder + chunk/carry lemmas + range-lookup discharge | `ZiskFv/AirsClean/BinaryAdd/Circuit.lean` (builder `binaryAddRowOf`, lemmas `binaryAdd_*`, the `completeness :=` block) |
+| Bool/enum-operand builder + computed mux columns + case-split proof | `ZiskFv/AirsClean/MemAlign/Circuit.lean` (`MemAlignPhase`, `memAlignRowOf`, the `completeness :=` block) |
+| Witness file shape | `trust/consistency/completeness_witness_binaryadd.lean` and `_memalign.lean` |
+| Scoped docstring wording (states what IS proved and what is NOT claimed) | The module docstrings of both Wave 1 files (post-`91679f42`) |
+| Principled ensemble proof patterns (channel-name discrimination, `change` to the channel-list goal) | `ZiskFv/AirsClean/FullEnsemble.lean` MemAlign `.addTable` args; `FullEnsemble/Balance.lean::memAlign_table_interactionsWith_opBus_nil` and `binaryAdd_table_interactionsWith_memBus_nil` |
 
-## The idiom (fixed — every component follows this exactly)
+## The proven recipe (follow mechanically)
+
+### 1. Builder
 
 ```lean
-/-- Honest row for <Air>: <one-line semantics>. Dependent columns are
-    COMPUTED from operands; columns outside this constraint slice are free. -/
-def <air>RowOf (<semantic operands>) (free : <Air>FreeCols FGL) : <Air>Row FGL :=
-  { <col> := <computed or copied> , … }
-
--- in the circuit definition:
-    ProverAssumptions := fun row _ _ =>
-      ∃ <operands> free, <semantic side-conditions> ∧ row = <air>RowOf <operands> free
-    ProverSpec := fun _ _ _ => True
-    completeness := by
-      circuit_proof_start [<Channel names>]      -- or _core route for wide rows
-      obtain ⟨<operands>, free, h_side, rfl⟩ := h_assumptions
-      -- h_input : eval env input_var = <air>RowOf …; split per-column:
-      --   simp only [circuit_norm] at h_input; dsimp only [<air>RowOf] at h_input
-      --   then `<Air>Row.mk.injEq` / `injection` to get per-column equations,
-      --   rewrite them into the constraint goals.
-      refine ⟨?_, …⟩  -- one goal per assertZero/lookup, then discharge
+def <air>RowOf (<semantic operands>) : <Air>Row FGL := { <every column> := … }
 ```
 
-Rules:
+- Dependent columns (carries, mux outputs, composed values, result chunks)
+  are COMPUTED by the builder. Never operands.
+- Boolean-constrained columns take `Bool` operands via `boolF`. Columns with
+  a one-hot-or-idle constraint take a small enum (see `MemAlignPhase`).
+- Columns not occurring in any constraint of the slice are free `FGL`
+  operands (bundle as a `<Air>FreeCols` structure when there are many).
+- Mux/composed columns must mirror the `Constraints.lean` expressions
+  VERBATIM (with operands substituted) — then those constraints discharge by
+  `ring`/`simp`, no case analysis on the muxed branches.
 
-1. Dependent columns (carries, mux outputs, composed values, c-chunks) are
-   computed BY the builder. Never operands.
-2. Side-conditions are SEMANTIC operand facts only: numeric ranges
-   (`a < 2^64`), `Bool`-typed flags, program-entry coherence. A
-   side-condition that restates a constraint polynomial = the PR #56 launder
-   = reject the work.
-3. Free columns (not occurring in any constraint of the slice) are bundled in
-   a `<Air>FreeCols` structure so honesty is maximal (any honest value
-   allowed).
-4. Replace the PR #66 doc comment ("Completeness is intentionally NOT
-   claimed…") with one stating what IS now proved, including scope caveats.
-5. New top-level defs get the hidden-promise review: builders and FreeCols
-   are constructive data (fine as plain defs); do NOT introduce named Prop
-   abbreviations for ProverAssumptions — keep the existential inline and
-   visible.
-6. Every component ships, in the same PR, a witness file
-   `trust/consistency/completeness_witness_<air>.lean`: concrete operands,
-   `example`/`theorem` applying the proved completeness statement or at
-   minimum proving `ProverAssumptions (<air>RowOf <concrete>) …` is
-   inhabited and the row satisfies the constraint equations. Follow the
-   structure of `trust/consistency/load_byte_agreement_witness.lean`
-   (private defs + one public theorem). Prefer `decide`/`norm_num` over
-   `native_decide` where feasible.
+### 2. ProverAssumptions
 
-## Gate wiring (Wave 1 does this ONCE)
-
-Add to `trust/scripts/check-all-semantic.sh`, after the existing check 5/5,
-a single globbing check so later waves add witness files without ever
-editing the script (no merge conflicts):
-
-```bash
-run_witnesses() {
-  local ok=0
-  for f in trust/consistency/completeness_witness_*.lean; do
-    [ -e "$f" ] || continue
-    lake env lean "$f" || ok=1
-  done
-  return $ok
-}
-run "6/6 Clean completeness witnesses" run_witnesses
+```lean
+ProverAssumptions := fun row _ _ =>
+  ∃ <operands>, <semantic side-conditions> ∧ row = <air>RowOf <operands>
 ```
 
-(Match the script's existing `run` helper conventions; renumber the label if
-the script counts checks differently.)
+Side-conditions are SEMANTIC operand facts only: numeric ranges
+(`a < 2^64`), Bool implications, table-entry coherence (Waves 3/5). A
+side-condition that restates a constraint polynomial is the banned PR #56
+shape and fails review. Keep the existential inline — no named Prop wrappers.
 
-## Wave 1 — pilot: helpers + MemAlign + BinaryAdd (1 agent, 1 PR)
+### 3. Completeness proof — the working skeleton
+
+Narrow rows (≤ ~30 cols), as in BinaryAdd:
+
+```lean
+completeness := by
+  circuit_proof_start [<Channels>, Lookup.completeness_def]  -- channels only if the circuit pushes
+  obtain ⟨<operands>, hrow⟩ := h_assumptions
+  injection hrow with h_<col1> h_<col2> …    -- one name per column, in order
+  subst_vars
+  -- then refine ⟨?_, …⟩ with one goal per lookup/assertZero and discharge
+```
+
+Wide rows (43-col Arith) or when `circuit_proof_start` is slow, as in
+MemAlign:
+
+```lean
+set_option maxRecDepth 2000 in
+set_option maxHeartbeats 4000000 in
+def circuit : … := { … with
+  completeness := by
+    circuit_proof_start_core
+    simp only [<main defs>, circuit_norm, <message exprs>, <Channel>]
+    obtain ⟨<operands>, hrow⟩ := h_assumptions
+    rw [hrow] at h_input
+    simp only [circuit_norm] at h_input
+    injection h_input with h_<col1> …       -- nested rows: injection AGAIN per sub-struct
+    <case splits> <;> simp [h_…, <builder defs>] <;> ring_nf <;> simp }
+```
+
+Per-goal discharge:
+
+- **Range lookup** (`rangeTable32/16/8`):
+  `simp only [RangeTables.rangeTable<N>, RangeTables.rangeStaticTable]`,
+  then `exact fgl_natCast_val_lt_of_lt (by decide) (by omega)`.
+- **Static-table lookup** (BinaryTable / BinaryExtensionTable / ROM): the
+  goal is `∃ i, <tuple> = rowOfIndex i.val` (resp. `= program i`). Build the
+  row FROM table indices so this closes with `exact ⟨i_k, rfl⟩` (Wave 3/5
+  recipes below).
+- **Booleanity**: `boolF_booleanity` / `boolF_booleanity_add` (the goal may
+  arrive in `a + -b` normal form — the `_add` variant or
+  `simpa only [sub_eq_add_neg]` handles it).
+- **Carry/chunk equations**: prove the Nat identity by `omega` in a
+  standalone lemma, cast via `congrArg (fun n : ℕ => (n : FGL))` +
+  `push_cast`/`norm_num`, close with `linear_combination`. Keep power
+  literals in ONE form per proof (CLAUDE.md trap #2).
+- **Channel pushes**: no goal, or `trivial` — `circuit_proof_start
+  [<Channel>]` absorbs them.
+
+### 4. Witness file (verbatim shape from Wave 1)
+
+`trust/consistency/completeness_witness_<air>.lean` (single lowercase word
+after the prefix — the gate globs `completeness_witness_*.lean`):
+
+```lean
+import ZiskFv.AirsClean.<Air>.Circuit
+namespace ZiskFv.TrustConsistency
+open Goldilocks ZiskFv.AirsClean.<Air>
+
+private def <air>WitnessRow : <Air>Row FGL := <air>RowOf <concrete operands>
+
+private theorem <air>WitnessProverAssumptions
+    (data : ProverData FGL) (hint : ProverHint FGL) :
+    circuit.ProverAssumptions <air>WitnessRow data hint := by
+  refine ⟨<concrete operands>, <side-condition proofs by norm_num/decide>, ?_⟩
+  rfl
+
+theorem completeness_witness_<air> :
+    ∃ row : <Air>Row FGL, ∀ data hint, circuit.ProverAssumptions row data hint :=
+  ⟨<air>WitnessRow, <air>WitnessProverAssumptions⟩
+
+#print axioms completeness_witness_<air>
+end ZiskFv.TrustConsistency
+```
+
+The semantic gate (check 6/6) discovers it automatically and FAILS on
+`sorry` — `sorry` in a witness is caught mechanically, don't try. DO NOT
+edit `trust/scripts/check-all-semantic.sh`; it is final as of `91679f42`.
+
+### 5. Docstring (audit surface — reviewers read this first)
+
+Replace the PR #66 "intentionally NOT claimed" comment with the Wave 1
+post-fix wording style: state the proved scope ("Completeness is a
+constructibility claim for rows equal to `<air>RowOf …` with <conditions>")
+AND the explicit non-claims ("It does not claim that arbitrary input rows
+are honest <Air> executions"; cross-row/out-of-slice caveats where relevant).
+
+### 6. Ensemble call sites (perf trap — handle in the SAME PR)
+
+`FullEnsemble.lean` and `FullEnsemble/Balance.lean` contain
+`simp [circuit_norm, ZiskFv.AirsClean.<X>.component, …<elaborated>]` proofs
+that unfold your component record. Once your completeness field is a large
+term, those `simp`s can slow down or time out. Rule: after your component
+edit, run `lake build ZiskFv.AirsClean.FullEnsemble` and `lake build
+ZiskFv.AirsClean.FullEnsemble.Balance`. If slow or failing, convert YOUR
+component's call sites to the Wave 1 patterns (statements unchanged, proof
+bodies only):
+
+- channel-subset arg: `(by change ([] : List (RawChannel FGL)) ⊆ _; simp)`
+  or `(by simp [circuit_norm])`.
+- `interactionsWith … = []` lemmas in Balance.lean:
+  `change <Other>Channel.toRaw ∉ [<Mine>Channel.toRaw]`, then the
+  name-discrimination block from
+  `Balance.lean::memAlign_table_interactionsWith_opBus_nil`.
+- Assumptions-consistency arg: `trivial` (all components have
+  `Assumptions := True`).
+
+Call sites by wave (grep `simp \[circuit_norm, ZiskFv` to get current
+lines): Wave 2 — MemAlignByte, MemAlignReadByte, Mem.componentWithDualMemBus
+(2 sites each in FullEnsemble.lean + 1 each in Balance.lean). Wave 3 —
+Binary.staticLookupComponent, BinaryExtension.staticLookupComponent. Wave 4
+— ArithMul.component, ArithDiv.component (ArithDiv has 2 Balance sites).
+Wave 5 — Main sites were already converted in Wave 1; verify with the grep.
+
+## Wave 1 — COMPLETE (PR #69)
+
+- [x] Worktree + cache + green baseline; commit plan copy + STATUS.md.
+- [x] `ZiskFv/AirsClean/CompletenessHelpers.lean`.
+- [x] MemAlign builder + completeness + witness.
+- [x] BinaryAdd builder + completeness + witness.
+- [x] Globbing witness check in `check-all-semantic.sh` (+ post-review
+      hardening: fails on `sorry`; also wraps check 5/5).
+- [x] Gates; PR opened and review-fixed (`91679f42`).
+
+Outcome notes for later waves: `lake build ZiskFv.AirsClean` is NOT a
+target — use `lake build ZiskFv.AirsClean.<Component>.Circuit`. Broad
+`simp` over component records in ensemble proofs is the main perf hazard
+(section 6). The `injection`-based `h_input` split is reliable; name every
+column in order.
+
+## Wave 2 — byte/mem mux family (1 agent, 1 PR)
 
 ### Checklist
 
-- [x] Worktree + cache + green baseline; commit plan copy + STATUS.md.
-- [x] `ZiskFv/AirsClean/CompletenessHelpers.lean`: `boolF`,
-      `boolF_booleanity`, shared plumbing lemmas discovered during the pilot.
-- [x] MemAlign builder + completeness + witness.
-- [x] BinaryAdd builder + completeness + witness.
-- [x] Globbing witness check in `check-all-semantic.sh`.
-- [x] Gates (see Verification); ask Cody; open PR.
-- [x] Record in the PR body any idiom adjustments waves 2–5 must copy.
+- [ ] Worktree + cache + green baseline; STATUS.md; log line `W2: started`.
+- [ ] MemAlignReadByte builder + completeness + witness.
+- [ ] MemAlignByte builder + completeness + witness.
+- [ ] Mem shared builder + one shared constraints lemma + all 3 completeness
+      fields + witness.
+- [ ] Docstrings per recipe §5; ensemble call sites per §6.
+- [ ] Verification block; open PR per protocol.
 
-### Helpers
+### MemAlignReadByte (`circuit`, smallest — do first)
 
-```lean
-def boolF (b : Bool) : FGL := if b then 1 else 0
-@[simp] lemma boolF_booleanity (b : Bool) : boolF b * (1 - boolF b) = 0 := by
-  cases b <;> simp [boolF]
-```
+Row columns: `sel_high_4b sel_high_2b sel_high_b direct_value composed_value
+value_16b value_8b byte_value addr_w step`. Constraints (mirror
+`Constraints.lean` exactly — counts in this plan are approximate): selector
+booleanities + the composed-value reconstruction + a `rangeTable8` lookup on
+`byte_value`.
 
-### MemAlign (`MemAlign/Circuit.lean::circuit`, 16 assertZeros + MemBus emit, no lookups)
+Builder: `(s4 s2 s1 : Bool)` selectors; `(byteVal : ℕ)` with side-condition
+`byteVal < 2^8`; `value_16b value_8b direct_value addr_w step : FGL` free;
+`composed_value` COMPUTED as the `Constraints.lean` reconstruction
+expression with `boolF`-substituted selectors (this component's Spec.lean
+byte-factor polynomials show the shape — but transcribe from
+Constraints.lean, which is what the proof must match). Discharge: booleanity
+helper; reconstruction by `ring` after substitution (selector case analysis
+NOT needed — the value is defined as the expression); range lookup via
+`fgl_natCast_val_lt_of_lt`.
 
-Lowest-risk validation of the existential/`h_input` idiom. Constraints:
-12 booleanities + `preL1 * pc = 0` + `sel_prove * (sel_up + sel_down) = 0`
-+ two 8-way multiplexer value reconstructions (`Spec.lean:50-88`,
-`Constraints.lean:54-78`).
+### MemAlignByte (`circuit`)
 
-Builder vocabulary:
+Superset with the write path. Row adds: `is_write written_composed_value
+written_byte_value mem_write_values_0 mem_write_values_1 bus_byte`.
+Builder adds: `(isWrite : Bool)`, `(writtenByteVal : ℕ)` with `< 2^8`
+side-condition, `written_composed_value` computed like the read
+reconstruction over the written byte, `mem_write_values_0/1` computed as the
+`sel_high_4b` muxes, `bus_byte` computed as the `is_write` mux
+(`boolF isWrite * (written_byte - byte) + byte`). All from
+`Constraints.lean` verbatim. Discharge identical in kind to ReadByte; the
+extra `rangeTable8` lookups close from the `< 2^8` side-conditions.
 
-```lean
-inductive MemAlignPhase | prove | upToDown | downToUp | idle
--- maps to (sel_prove, sel_up_to_down, sel_down_to_up) ∈ {(1,0,0),(0,1,0),(0,0,1),(0,0,0)}
--- NOTE sel_prove has NO booleanity constraint; the phase enum keeps it honest.
+### Mem (3 circuits, ONE builder, ONE lemma)
 
-def memAlignRowOf (phase : MemAlignPhase) (isBoot wr reset : Bool)
-    (sel_0 … sel_7 : Bool) (reg_0 … reg_7 : FGL)
-    (addr offset width step delta_addr pcVal : FGL) : MemAlignRow FGL
--- pc := if isBoot then 0 else pcVal; preL1 := boolF isBoot
--- value_0 / value_1 := the mux expressions from Constraints.lean VERBATIM,
---   with boolF/phase values substituted  ← this is the key trick
-```
+Row columns: `addr step sel addr_changes step_dual sel_dual value_0 value_1
+wr previous_step increment_0 increment_1 read_same_addr`. The 9 constraints:
+booleanities (sel_dual, sel, addr_changes, wr) + the two implication
+products (`(1-sel)*sel_dual`, `wr*(1-sel)`), the `read_same_addr`
+definitional identity, and the two `(addr_changes*(1-wr))*value_i = 0`
+zeroing constraints.
 
-Discharge: booleanities by `boolF_booleanity`; `preL1*pc` by `cases isBoot`;
-disjointness by `cases phase <;> norm_num [boolF]`; the two mux constraints
-by `ring`/`sub_self` after substitution — NO selector case analysis, because
-`value_0/1` are defined as the mux expressions. Watch the `a + -b` vs `a - b`
-normal-form mismatch: `simpa only [sub_eq_add_neg]` (same fix as this file's
-soundness proof). Channel: `circuit_proof_start [MemBusChannel]`.
-
-### BinaryAdd (`BinaryAdd/Circuit.lean::circuit`, 4 assertZeros + 8 range lookups + OpBus push)
-
-Validates the range-lookup discharge. Constraints (`Constraints.lean:60-66`):
-2 carry booleanities + the two carry-equations over 32-bit limbs / 16-bit
-chunks. Builder:
+Builder:
 
 ```lean
-def binaryAddRowOf (a b : ℕ) : BinaryAddRow FGL :=
-  -- a_0 := ↑(a % 2^32), a_1 := ↑(a / 2^32 % 2^32)  (same for b)
-  -- s := (a + b) % 2^64; c_chunks_k := ↑(s / 2^16^k % 2^16) for k = 0..3
-  -- cout_0 := ↑((a % 2^32 + b % 2^32) / 2^32)         -- 0 or 1
-  -- cout_1 := ↑((a / 2^32 % 2^32 + b / 2^32 % 2^32 + carry0) / 2^32)
+def memRowOf (sel selDual wr addrChanges : Bool)
+    (addr step stepDual previousStep increment_0 increment_1 v0 v1 : FGL) : MemRow FGL
+-- sel/sel_dual/wr/addr_changes := boolF …
+-- read_same_addr := (1 - boolF addrChanges) * (1 - boolF wr)   (computed)
+-- value_0 := if addrChanges && !wr then 0 else v0   (same for value_1)
 
-ProverAssumptions := fun row _ _ => ∃ a b, a < 2^64 ∧ b < 2^64 ∧ row = binaryAddRowOf a b
+ProverAssumptions := fun row _ _ => ∃ sel selDual wr addrChanges …,
+  (selDual = true → sel = true) ∧ (wr = true → sel = true)
+  ∧ row = memRowOf …
 ```
 
-Discharge: booleanities — the quotient is 0/1 (`Nat.div_lt_iff` / `omega`),
-then `cases`-style or `mul_self` arithmetic. The two carry equations: cast
-the Nat identities `a%2^32 + b%2^32 = cout_0*2^32 + (low 32 bits of s)` (by
-`omega` on the chunk definitions) into FGL via `push_cast`, then
-`linear_combination`/`ring`. Lookups: `chunk < 2^32` / `< 2^16` facts are
-`Nat.mod_lt`/`omega`; pipe through `Lookup.completeness_def` →
-`rangeTable32.Spec` = `val < 2^32` (cast-of-small-Nat val lemma; check
-`Fundamentals/Goldilocks.lean` for an existing `val_natCast`-style lemma
-before writing one). CLAUDE.md trap #2 applies: write `4294967296` factored
-consistently when `linear_combination` is involved.
+Prove ONE lemma `memRowOf_constraintsHold` covering the 9 equations by
+`cases` on the four Bools (the implications kill the impossible cases) +
+`simp [boolF]`; the three completeness fields (`circuit`,
+`circuitWithMemBus` with `[MemBusChannel]`, `circuitWithDualMemBus` with
+`[MemBusChannel]`) each consume it. The bus variants add only trivially-true
+Guarantees goals.
 
-## Wave 2 — byte/mem mux family (1 agent, 1 PR, after Wave 1)
+Risk: low. If the `if … then 0 else` form fights `circuit_norm`
+normalization in `h_input`, switch the value columns to
+`(1 - boolF addrChanges * (1 - boolF wr)) * v0`-style computed products —
+either is honest; pick whichever makes the zeroing constraints close by
+`ring`/`cases`.
 
-- [ ] **MemAlignReadByte** (S): operands `(byteVal : ℕ < 2^8, value_8b
-      value_16b : FGL, 3 sel Bools, addr_w step direct_value : FGL)`;
-      `composed_value` computed via the byte-factor expressions from its
-      Spec.lean; 3 booleanities + 1 `rangeTable8` lookup + composed-value
-      equation by `ring` after substitution.
-- [ ] **MemAlignByte** (M): superset with write path — also compute
-      `written_composed_value`, `mem_write_values_0/1` (the `sel_high_4b`
-      muxes), `bus_byte` (the `is_write` mux); 9 assertZeros + 3
-      `rangeTable8` lookups. Same recipe; more columns.
-- [ ] **Mem** (M): ONE builder serves all 3 circuits (the WithMemBus /
-      WithDualMemBus variants only add trivially-true emits). Operands:
-      `(sel sel_dual wr addr_changes : Bool)` with side-conditions
-      `sel_dual → sel` and `wr → sel` (as Bool implications), values
-      `(addr step value_0 value_1 previous_step increment_0 increment_1
-      step_dual : FGL)`; builder zeroes `value_0/1` when
-      `addr_changes ∧ ¬wr` and computes
-      `read_same_addr := boolF (!addr_changes && !wr)`. All 9 constraints
-      by `cases` on the four Bools + `boolF` simp; write the three
-      completeness fields by proving ONE shared lemma and reusing it.
-- [ ] Witness file per component; gates; ask Cody; PR.
+## Wave 3 — table-lookup family (1 agent, 1 PR)
 
-## Wave 3 — table-lookup family (1 agent, 1 PR, after Wave 1)
+New content vs Wave 1: static-table membership obligations. Both tables are
+`StaticTable`s with `Spec t := ∃ i : Fin tableSize, t = rowOfIndex i.val`
+and DEFINITIONAL `contains_iff` (`BinaryTable.lean:382-388`,
+`BinaryExtensionTable.lean:223-229`). **Primary recipe — the index route:
+take table indices as operands.** The honest prover's lookups ARE table
+rows, so `i_0 … i_7 : Fin tableSize` operands are fully honest, and every
+lookup goal closes with `exact ⟨i_k, rfl⟩` — zero table semantics needed.
 
-The new content here is table-membership completeness: builders must COMPUTE
-result bytes from the tables' defining semantics so the lookup obligations
-(`t.Spec tuple`, via `contains_iff`) close. FIRST read the table definitions
-(`ZiskFv/AirsClean/` BinaryTable / BinaryExtensionTable files) and the
-existing lookup-witness lemmas referenced in
-`ZiskFv/ZiskCircuit/SextLoadBridge.lean` — reuse before writing new.
+The work is making the 8 looked-up tuples consistent with SHARED row
+columns. Method, mechanically:
 
-- [ ] **Binary plain `circuit`** (7 assertZeros): operands = 4 mode Bools +
-      free byte/carry columns; `b_op_or_sext` and `mode32_and_c_is_signed`
-      computed. Easy.
-- [ ] **Binary `staticLookupCircuit`** (+8 BinaryTable lookups): builder
-      takes per-byte op inputs `(op : <table op enum/code>, a_i b_i bytes,
-      carry-in)` and computes `c_i` bytes + carry-out from the table's
-      defining function. If universal membership proofs are heavy, SCOPE the
-      existential to a documented subset of ops (e.g. ADD-family rows) —
-      same honesty rule as Wave 4's unsigned scope: documented partial
-      coverage is fine, silent narrowing is not. Record chosen scope in the
-      PR body and this file's log.
-- [ ] **BinaryExtension `staticLookupCircuit` + `shiftStaticLookupCircuit`**
-      (0 assertZeros; 8 BinaryExtensionTable lookups; shift variant adds the
-      `ShiftB0RangeSpecFact` obligation): builder computes the 16 result
-      bytes for a chosen documented op scope (the SLL/SRL/SRA/SE families
-      the table defines); `binary_extension_sext_*` lemmas are candidates
-      for reuse.
-- [ ] Witnesses; gates; ask Cody; PR.
+1. Read the 8 `lookupMessage<k>` expressions in the component's
+   Constraints/Circuit files. Each is a tuple of row-column expressions.
+2. For each row column appearing in exactly one message: builder sets it to
+   the corresponding projection of `rowOfIndex i_k`.
+3. For each slot SHARED between messages (mode/flag packings, chained
+   carries — e.g. message k's carry-out is message k+1's carry-in):
+   side-condition equating the two entries' projections, e.g.
+   `(rowOfIndex i_0.val).<slot> = (rowOfIndex i_1.val).<slot>`. These are
+   semantic table-entry facts — allowed. Derive the EXACT side-condition
+   list from the message expressions; do not guess.
+4. The witness file instantiates concrete indices (compute a real op row's
+   indices once, with explicit numerals and `decide`/`norm_num`) — this also
+   proves the side-conditions are satisfiable.
 
-## Wave 4 — Arith pair, unsigned scope (1 agent, 1 PR, after Wave 1)
+Fallback (only if the index route stalls): builders over a documented op
+subset computing result bytes via the table's defining function
+(`rowOfIndex` composed with index arithmetic). Record any scope cut in the
+PR body and the log — documented partial coverage is fine, silent narrowing
+is not.
 
-Scope DECIDED BY CODY: unsigned modes only (`na=nb=np=nr=m32=0`; MUL:
-`div=0`; DIV: `div=1`). Signed/m32 modes are follow-up disjuncts
-(`∨ row = …SignedRowOf …`) — record as follow-up at closeout, and say so in
-the builder docstrings. Key verified facts: the AirsClean Arith components
-constrain ONLY the 11 equations (3 sign pins + 8 carry-chain) — no range
-checks on carries/chunks, no flag booleanities, no ArithTable lookup (those
-live elsewhere). So carries are pinned only by the chain equations, and since
-`(65536 : FGL)` is a unit each equation has a UNIQUE field solution for its
-new carry — define carries as those solutions; they provably coincide with
-the honest integer carries.
+### Checklist
 
-- [ ] New shared `ZiskFv/Airs/Arith/CarryChainCompleteness.lean`
-      (pure math, build it green before touching components):
-      - `def chunk16 (x k : ℕ) : ℕ := x / 65536 ^ k % 65536`;
-        `chunk16_lt : chunk16 x k < 65536`.
-      - `nat_decomp4` / `nat_decomp8`: `x < 65536^4 (resp ^8)` →
-        x = Σ chunk16 x k * 65536^k (by `omega`).
-      - `fgl_decomp4` / `fgl_decomp8`: the FGL casts (`push_cast`).
-      - `lemma fgl_65536_ne_zero : (65536 : FGL) ≠ 0 := by decide`.
-      - Field-solved carries, generic over `[Field F] (B : F) (hB : B ≠ 0)`:
-        `cc0 e0 := e0 / B`, …, `cc6 e0…e6 := (e0 + e1*B + … + e6*B^6) / B^7`;
-        `chain_eq_0 : e0 - cc0*B = 0`; `chain_eq_k : e_k + cc_{k-1} - cc_k*B = 0`
-        (k=1..6); `chain_last (h : Σ e_k*B^k = 0) : e7 + cc6 = 0`.
-        If `field_simp` blows up, state pre-cleared forms
-        (`cc_k * B^(k+1) = Σ_{j≤k} e_j*B^j` via `div_mul_cancel₀`) and
-        `linear_combination` against those. Keep `65536` powers FACTORED
-        (CLAUDE.md trap #2).
-- [ ] **ArithMul** (`circuit`, 11 assertZeros + OpBus push):
-      ```lean
-      structure ArithMulFreeCols (F) where  -- the 11 columns in no constraint:
-        sext div_by_zero div_overflow main_div main_mul signed
-        range_ab range_cd op bus_res1 multiplicity : F
-      def arithMulRowOf (a b : ℕ) (free : ArithMulFreeCols FGL) : ArithMulRow FGL
-      -- a_k/b_k := chunk16 casts; c_k := ↑(chunk16 (a*b) k); d_k := ↑(chunk16 (a*b) (k+4))
-      -- flags na nb np nr m32 div := 0; fab := 1; na_fb := nb_fa := 0
-      -- carry_k := cc_k applied to this row's chain numerators e_k
-      ProverAssumptions := fun row _ _ =>
-        ∃ a b free, a < 65536^4 ∧ b < 65536^4 ∧ row = arithMulRowOf a b free
-      ```
-      Discharge: C6/C7/C8 by `norm_num` after substitution; C31–C37 by
-      `linear_combination (chain_eq_k …)`; C38 via `chain_last` with
-      `h_packed : ↑a * ↑b = c_packed + d_packed * B^4` from `fgl_decomp4 a/b`
-      + `fgl_decomp8 (a*b)` + `Nat.cast_mul`. MANDATORY: the
-      `circuit_proof_start_core` route (43-column row; pattern in this
-      file's own soundness proof), `set_option maxHeartbeats 4000000` if
-      needed.
-- [ ] **ArithDiv** (`circuit`, 11 assertZeros, NO push — strictly easier):
-      same skeleton; operands `(c b : ℕ)` = dividend, divisor; roles
-      a := chunks of `c / b` (quotient), d := chunks of `c % b` (remainder);
-      include `b ≠ 0` side-condition (documentation honesty — ZisK flags
-      div-by-zero rows separately); `h_packed` from `Nat.div_add_mod`.
-      Same agent, Mul first as the template.
-- [ ] Witnesses (concrete a,b — e.g. 6×7 and 100/7); gates; ask Cody; PR.
+- [ ] Worktree + cache + baseline; STATUS.md; log `W3: started`.
+- [ ] Survey: list the 8 message exprs + shared slots for Binary and
+      BinaryExtension; write the derived side-condition list into the PR
+      body (this is the review surface for honesty).
+- [ ] Binary plain `circuit` (7 assertZeros, no lookups): Bool mode flags
+      (`mode32 result_is_a use_first_byte c_is_signed`, `carry_7 : Bool`);
+      `b_op_or_sext` and `mode32_and_c_is_signed` COMPUTED; free byte/carry
+      columns. Plain-recipe discharge.
+- [ ] Binary `staticLookupCircuit`: index-route builder extending the plain
+      one + witness.
+- [ ] BinaryExtension `staticLookupCircuit` (0 assertZeros, 8 lookups):
+      index-route builder + witness.
+- [ ] BinaryExtension `shiftStaticLookupCircuit`: same builder + whatever
+      `ShiftB0RangeSpecFact` demands — read its definition first; expect a
+      range/shape fact on `b_0`, supplied as an operand side-condition or by
+      computing `b_0` from a bounded operand.
+- [ ] Docstrings §5 (state the index-route scope); ensemble call sites §6.
+- [ ] Verification block; open PR per protocol.
 
-## Wave 5 — Main, 3 circuits + finalization (1 agent, 1 PR, after Wave 1)
+## Wave 4 — Arith pair, unsigned scope (1 agent, 1 PR)
 
-- [ ] **Plain `circuit`** (9 assertZeros + OpBus emit): the internal-op
-      conditionals force exactly three honest shapes —
+Scope FIXED BY CODY: unsigned modes only (`na=nb=np=nr=m32=0`; MUL `div=0`,
+DIV `div=1`; `fab=1`, `na_fb=nb_fa=0`). Signed/m32 modes are follow-up
+disjuncts — say so in the docstrings and the PR body. Verified facts: these
+component slices emit ONLY the 11 equations (3 sign pins + 8 carry-chain) —
+no range checks on carries/chunks, no flag booleanities, no ArithTable
+lookup. Carries are pinned only by the chain equations; since
+`(65536 : FGL)` is a unit, each equation has a UNIQUE field solution for its
+new carry — define carries as those solutions (they provably coincide with
+the honest integer carries; note this in the docstring).
+
+### Checklist
+
+- [ ] Worktree + cache + baseline; STATUS.md; log `W4: started`.
+- [ ] Shared `ZiskFv/Airs/Arith/CarryChainCompleteness.lean` — build it
+      green BEFORE touching components:
+      `chunk16 (x k : ℕ) := x / 65536 ^ k % 65536`; `chunk16_lt`;
+      `nat_decomp4/8` (by `omega`); `fgl_decomp4/8` (`push_cast`);
+      `fgl_65536_ne_zero : (65536 : FGL) ≠ 0 := by decide`;
+      field-solved carries generic over `[Field F] (B : F) (hB : B ≠ 0)`:
+      `cc0 e0 := e0 / B` … `cc6 … := (e0 + e1*B + … + e6*B^6) / B^7`;
+      `chain_eq_0 : e0 - cc0*B = 0`; `chain_eq_k (k=1..6)`;
+      `chain_last (h : Σ e_k*B^k = 0) : e7 + cc6 = 0`.
+      If `field_simp` blows up: state pre-cleared forms
+      (`cc_k * B^(k+1) = Σ_{j≤k} e_j*B^j` via `div_mul_cancel₀`) and
+      `linear_combination` against those. Keep `65536` powers FACTORED.
+- [ ] ArithMul `circuit` (11 assertZeros + OpBus push):
+      `ArithMulFreeCols` = the 11 unconstrained columns (`sext div_by_zero
+      div_overflow main_div main_mul signed range_ab range_cd op bus_res1
+      multiplicity`); builder `arithMulRowOf (a b : ℕ) (free)` — a/b chunks
+      via `chunk16`, c/d := chunks of `a*b` (the GENUINE product chunks),
+      zero flags, `fab := 1`, carries := `cc_k` of this row's chain
+      numerators. ProverAssumptions: `a < 65536^4 ∧ b < 65536^4 ∧ row = …`.
+      Discharge: C6/7/8 `norm_num`; C31–C37 `linear_combination (chain_eq_k …)`;
+      C38 via `chain_last` with `h_packed : ↑a * ↑b = c_packed + d_packed *
+      B^4` from `fgl_decomp4 a/b` + `fgl_decomp8 (a*b)` + `Nat.cast_mul`.
+- [ ] ArithDiv `circuit` (11 assertZeros, NO push — easier): operands
+      `(c b : ℕ)` = dividend, divisor; a := chunks of `c / b`, d := chunks
+      of `c % b`; side-conditions `c < 65536^4 ∧ b < 65536^4 ∧ b ≠ 0`
+      (`b ≠ 0` is documentation honesty); `h_packed` from `Nat.div_add_mod`.
+      Mul first, Div as template copy.
+- [ ] Witnesses (e.g. `6 * 7` and `100 / 7`); docstrings §5 (unsigned scope
+      + the field-solved-carry note); ensemble sites §6 (ArithDiv has TWO
+      Balance.lean sites).
+- [ ] Verification block; open PR per protocol.
+
+MANDATORY mechanics for both: the `circuit_proof_start_core` route (the
+plain tactic is too slow on 43-column rows — documented from the soundness
+work), `set_option maxHeartbeats 4000000`, and NESTED `injection`:
+`ArithMulRow`/`ArithDivRow` are `{chunks, flags, carries/aux}` sub-structs,
+so the first `injection` yields sub-struct equations — `injection` each of
+those again to reach per-column equations.
+
+## Wave 5 — Main, 3 circuits + stream finalization (1 agent, 1 PR)
+
+### Checklist
+
+- [ ] Worktree + cache + baseline; STATUS.md; log `W5: started`.
+- [ ] Plain `circuit` (9 assertZeros + OpBus emit). The internal-op
+      conditionals force exactly three honest shapes:
       ```lean
       inductive MainExecKind (F)
         | external (op : F) (flag : Bool) (c_0 c_1 set_pc : F)
-            -- builder sets set_pc column := if flag then 0 else set_pc
-        | internalFlag                  -- op := 0, c := 0, flag := 1, set_pc := 0
-        | internalCopyB (set_pc : F)    -- op := 1, c_i := b_i, flag := 0
+            -- builder: set_pc column := if flag then 0 else set_pc
+        | internalFlag                 -- op := 0, c := 0, flag := 1, set_pc := 0
+        | internalCopyB (set_pc : F)   -- op := 1, c_i := b_i, flag := 0
       ```
       plus `MainFreeCols` (a/b operands, pc, m32, ind_width, jmp offsets,
-      store_pc, im_high_degree_2, segment_l1). All 9 goals by `cases k` +
-      `boolF_booleanity` / `norm_num` / `ring`.
-- [ ] **`circuitWithRomAndMemBus length program`** (adds 14 ROM-flag
-      booleanities + the static ROM lookup + 3 MemBus emits). Builder takes
-      the program ENTRY so the lookup closes by construction:
-      ```lean
-      structure RomFlagBits where  -- 15 Bools, bit order of romFlags (main.pil:483-486)
-        a_src_imm a_src_mem is_precompiled b_src_imm b_src_mem is_external_op
-        store_pc store_mem store_ind set_pc m32 b_src_ind a_src_reg b_src_reg
-        store_reg : Bool
-      def packFlags (bits : RomFlagBits) : FGL  -- verbatim romFlags polynomial shape
-      def mainRomRowOf (msg : ZiskRomMessage FGL) (bits : RomFlagBits)
-          (k : MainRomExecKind FGL) (free : MainRomFreeCols FGL) : MainRowWithRom FGL
-      -- pc/op/ind_width/jmp_offsets/imm fields copied from msg;
-      -- flag columns := boolF of bits; flag/c columns from k as in plain Main
-      ProverAssumptions := fun row _ _ => ∃ i bits k free,
-        (program i).flags = packFlags bits        -- entry decodes to these bits
-        ∧ <kind coherence: external ↔ bits.is_external_op; internal kinds fix msg.op = 0/1>
-        ∧ <flag=1 cases force bits.set_pc = false>
-        ∧ row = mainRomRowOf (program i) bits k free
-      ```
-      ROM lookup obligation unfolds to `∃ i, eval … = program i` — close with
-      witness `i` using the EXISTING `eval_romMessageExpr` /
-      `eval_romFlagsExpr` (`Main/Constraints.lean:176,184`); mirror the
-      unfold path of `romSpec_of_mainWithRomAndMemBus_constraints`
-      (`Main/Circuit.lean` ~line 154). The 10 data slots are rfl-equal by
-      construction; the flags slot closes by the `packFlags` hypothesis.
+      store_pc, im_high_degree_2, segment_l1). Discharge by `cases k` +
+      helpers.
+- [ ] `circuitWithRomAndMemBus length program` — builder from the program
+      ENTRY so the ROM lookup closes by construction:
+      `RomFlagBits` (15 Bools, bit order of `romFlags`, main.pil:483-486);
+      `packFlags : RomFlagBits → FGL` (verbatim `romFlags` polynomial);
+      `mainRomRowOf (msg : ZiskRomMessage FGL) (bits) (k : MainRomExecKind)
+      (free)` copying pc/op/ind_width/jmp_offsets/imm fields from `msg`.
+      ProverAssumptions: `∃ i bits k free, (program i).flags = packFlags bits
+      ∧ <kind coherence: external ↔ bits.is_external_op; internal kinds fix
+      msg.op = 0/1> ∧ <flag=1 forces bits.set_pc = false> ∧ row = mainRomRowOf
+      (program i) bits k free`. The lookup goal is
+      `∃ j, eval … = program j` — close with `⟨i, …⟩` via the EXISTING
+      `eval_romMessageExpr` / `eval_romFlagsExpr`
+      (`Main/Constraints.lean:176,184`); mirror the unfold path of
+      `romSpec_of_mainWithRomAndMemBus_constraints` (`Main/Circuit.lean`
+      ~154). Ten data slots are `rfl` by construction; the flags slot closes
+      by the `packFlags` hypothesis. Prove this as a STANDALONE
+      `theorem mainWithRomAndMemBus_completeness` (not inline).
       Fallback if `circuit_proof_start` decomposes the lookup entry too
       eagerly: `_core` route, keep `h_input` whole, apply
       `Lookup.completeness_def` + `eval_romMessageExpr` manually, split
-      `h_input` only for the assertZero goals. Prove this as a STANDALONE
-      `theorem mainWithRomAndMemBus_completeness …` (not inline).
-- [ ] **`circuitWithRomMemAndOpBus`**: ~15-line `simpa [mainWithRomMemAndOpBus,
+      `h_input` only for the assertZero goals. `MainRowWithRom` is a nested
+      `{core, rom}` struct — nested `injection` as in Wave 4.
+- [ ] `circuitWithRomMemAndOpBus`: ~15-line `simpa [mainWithRomMemAndOpBus,
       circuit_norm, OpBusChannel, MemBusChannel]` wrapper around the
-      standalone theorem — mirror `mainWithRomMemAndOpBus_soundness`
-      (`Main/Circuit.lean` ~line 205). Same ProverAssumptions for both.
-- [ ] Witness: a concrete 1-instruction `Program` + one honest row per kind.
-- [ ] Finalization sweep (this wave, after all others merge): CLAUDE.md
-      status paragraph (Clean completeness fields now proved; state the
-      Arith/table scopes), append an upgrade note to
-      `ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS` in `trust/defects.md`,
-      PROJECTS.md/STATUS.md closeout, record follow-up items (signed Arith
-      disjuncts, any table-op scope gaps). Do not edit the RV64IM
-      completeness modules (`ZiskFv/Completeness/**`) — different stream.
-- [ ] Gates; ask Cody; PR.
+      standalone theorem (mirror `mainWithRomMemAndOpBus_soundness`). Same
+      ProverAssumptions for both.
+- [ ] Witness: concrete 1-instruction `Program` + one honest row per
+      `MainExecKind`; concrete `RomFlagBits` proving the coherence
+      side-conditions are satisfiable.
+- [ ] Finalization sweep (only after Waves 2–4 have merged): CLAUDE.md
+      status paragraph (completeness fields now proved; state the Wave 3/4
+      scopes); append an upgrade note to
+      `ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS` in `trust/defects.md`;
+      PROJECTS.md/STATUS.md closeout; list follow-ups (signed Arith
+      disjuncts, table-op gaps). Do NOT touch `ZiskFv/Completeness/**`
+      (the RV64IM stream's surface).
+- [ ] Verification block; open PR per protocol.
 
-## Hard invariants (every wave — violations mean the PR is rejected)
+## Hard invariants (every wave — violations fail review)
 
 - ZERO new `axiom` / `sorry` / `opaque` / `partial def` / `unsafe def`.
-  `trust/allowed-axiom-files.txt`, `trust/tolerated-completeness-axioms.txt`,
-  and ALL of `trust/generated/*` + `trust/baseline-*` must be byte-identical
-  to base (`git diff origin/main -- trust/` shows only
-  `check-all-semantic.sh` (Wave 1) and `trust/consistency/` additions).
-- Soundness fields, `Spec` definitions, `main` do-blocks, and elaborated
-  circuits UNTOUCHED. Builders/witnesses are new defs only.
-- ProverAssumptions: inline existential over builder + semantic
-  side-conditions. No constraint-equation side-conditions; no named Prop
-  wrappers.
-- Each component's witness file lands in the SAME PR as its proof.
-- Edit surface: `ZiskFv/AirsClean/**` (new defs + the 16 field bodies +
-  doc comments), `ZiskFv/Airs/Arith/CarryChainCompleteness.lean`,
-  `trust/consistency/completeness_witness_*.lean`,
-  `trust/scripts/check-all-semantic.sh` (Wave 1 only), docs. Nothing else.
-- Never commit files from `~/ai-workflow`. No wall-time estimates anywhere.
+  `git diff origin/main -- trust/` shows ONLY
+  `trust/consistency/completeness_witness_*.lean` additions (the gate
+  script is final; baselines and `trust/generated/*` byte-identical).
+- Soundness fields, `Spec` definitions, `main` do-blocks, elaborated
+  circuits, and all theorem STATEMENTS untouched. Ensemble proof-body
+  conversions (§6) are the only permitted edits outside your component's
+  new defs + the 16 field bodies + docstrings.
+- ProverAssumptions: inline builder existential, semantic side-conditions
+  only.
+- Witness file lands in the SAME PR as its proofs.
+- Edit surface: `ZiskFv/AirsClean/**`,
+  `ZiskFv/Airs/Arith/CarryChainCompleteness.lean` (Wave 4),
+  `trust/consistency/completeness_witness_*.lean`, FullEnsemble proof
+  bodies per §6, docs. Nothing else.
+- Never commit files from `~/ai-workflow`. No wall-time estimates. Plan
+  edits limited to your own wave's boxes + `W<n>:` log lines.
 
-## Verification (every wave, in order)
+## Verification (run in this order before opening the PR)
 
 ```bash
 lake build ZiskFv.AirsClean.<Component>.Circuit   # inner loop, per component
-lake build                                        # full, before commit of a chunk
-trust/scripts/check-all.sh                        # V1, seconds
-trust/scripts/check-all-semantic.sh               # V2 + witness glob check
-nix run .#test                                    # before PR
+lake build ZiskFv.AirsClean.FullEnsemble          # ensemble perf check (§6)
+lake build                                        # full
+trust/scripts/check-all.sh
+trust/scripts/check-all-semantic.sh               # must show your witness in 6/6
+nix run .#test
 git diff origin/main -- trust/generated trust/baseline-axioms.txt \
-  trust/baseline-hypothesis-count.txt trust/baseline-caller-burden.txt  # must be empty
+  trust/baseline-hypothesis-count.txt trust/baseline-caller-burden.txt  # EMPTY
 lake exe trust-gate print-axiom-closure ZiskFv.Compliance.zisk_riscv_compliant_program_bus
-# must print no project axioms
+# no project axioms
 ```
 
-Paste the gate tail, the empty-diff confirmation, and the witness file list
-into each PR body.
+Paste the gate tails, the empty-diff confirmation, the closure result, and
+the witness file list into the PR body, then open the PR per the protocol
+and STOP.
 
-## Acceptance criteria (stream closeout)
+## Acceptance criteria (stream closeout, Wave 5)
 
 1. All 16 demoted fields are genuine proofs with builder-existential
    ProverAssumptions; the already-honest BinaryExtension plain field
-   untouched; every scope restriction (Arith unsigned, table-op subsets)
-   stated in docstrings and listed as follow-ups in this file.
+   untouched; every scope restriction stated in docstrings and listed as
+   follow-ups here.
 2. ≥10 `trust/consistency/completeness_witness_*.lean` files typecheck
-   inside the semantic gate's glob check.
+   inside the semantic gate's 6/6 check.
 3. Ledgers and anti-laundering baselines byte-identical to base; closure
    print unchanged; `nix run .#test` green on every PR.
-4. PR bodies use completeness/constructibility vocabulary (not promise
-   discharge) and include the verification evidence.
+4. PR bodies use completeness/constructibility vocabulary and carry the
+   verification evidence.
 
 ## Log
 
@@ -485,3 +575,7 @@ into each PR body.
   `bash -n trust/scripts/check-all-semantic.sh`, and `git diff --check` passed.
 - 2026-06-12: review feedback fix pushed to PR #69 as `91679f42`; next step is
   external review, do not merge.
+- 2026-06-12: plan strengthened for Waves 2–5 (Cody-directed): Wave 1 recipe
+  promoted to reference implementation, Wave 3 index-route made primary,
+  ensemble call-site duty (§6) added, PR protocol switched to
+  queue-for-Claude-review with no human pre-ack.
