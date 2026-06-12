@@ -483,3 +483,5 @@ into each PR body.
   semantic gate fail as expected, then focused BinaryAdd/MemAlign build,
   `trust/scripts/check-all-semantic.sh`, `trust/scripts/check-all.sh`,
   `bash -n trust/scripts/check-all-semantic.sh`, and `git diff --check` passed.
+- 2026-06-12: review feedback fix pushed to PR #69 as `91679f42`; next step is
+  external review, do not merge.
