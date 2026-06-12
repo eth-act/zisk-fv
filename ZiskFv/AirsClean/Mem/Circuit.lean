@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.Mem.Constraints
 import ZiskFv.AirsClean.Mem.Soundness
+import ZiskFv.AirsClean.CompletenessHelpers
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -16,8 +17,11 @@ lookup/permutation promise.
 
 ## Trust note
 
-No axioms. Completeness is intentionally a visible non-claim, so this component
-does not claim honest-prover constructibility beyond the soundness theorem.
+No axioms. Completeness is a constructibility claim for rows equal to
+`memRowOf ...`: primary/dual selectors, write flag, and address-change flag
+are Boolean, the selector implications are explicit semantic side-conditions,
+and `read_same_addr` plus read-on-address-change value zeroing are computed by
+the builder. Cross-row memory consistency remains outside this row-local proof.
 -/
 
 namespace ZiskFv.AirsClean.Mem
@@ -26,16 +30,57 @@ open Goldilocks
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open Air.Flat
 
+/-- Honest `read_same_addr` column for Mem. -/
+def memReadSameAddrOf (addrChanges wr : Bool) : FGL :=
+  (1 - boolF addrChanges) * (1 - boolF wr)
+
+/-- Honest Mem value chunk: address-changing reads are zeroed, all other rows
+    keep the caller-supplied chunk. -/
+def memValueOf (addrChanges wr : Bool) (value : FGL) : FGL :=
+  if addrChanges && !wr then 0 else value
+
+/-- Honest row for Mem's row-local constraints. Selector columns are Boolean,
+    `read_same_addr` is computed, and address-changing reads zero the value
+    chunks constrained by this slice. -/
+def memRowOf (sel selDual wr addrChanges : Bool)
+    (addr step stepDual previousStep increment_0 increment_1 value_0 value_1 : FGL) :
+    MemRow FGL :=
+  { addr := addr
+    step := step
+    sel := boolF sel
+    addr_changes := boolF addrChanges
+    step_dual := stepDual
+    sel_dual := boolF selDual
+    value_0 := memValueOf addrChanges wr value_0
+    value_1 := memValueOf addrChanges wr value_1
+    wr := boolF wr
+    previous_step := previousStep
+    increment_0 := increment_0
+    increment_1 := increment_1
+    read_same_addr := memReadSameAddrOf addrChanges wr }
+
+lemma memRowOf_constraintsHold (sel selDual wr addrChanges : Bool)
+    (addr step stepDual previousStep increment_0 increment_1 value_0 value_1 : FGL)
+    (h_selDual : selDual = true → sel = true)
+    (h_wr : wr = true → sel = true) :
+    Spec (memRowOf sel selDual wr addrChanges
+      addr step stepDual previousStep increment_0 increment_1 value_0 value_1) := by
+  cases sel <;> cases selDual <;> cases wr <;> cases addrChanges <;>
+    simp [Spec, memRowOf, memReadSameAddrOf, memValueOf, boolF] at h_selDual h_wr ⊢
+
 /-- Mem as a Clean `GeneralFormalCircuit`. -/
 def circuit : GeneralFormalCircuit FGL MemRow unit :=
   { memElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
-    -- only). `ProverAssumptions := False` makes this field a visible
-    -- non-claim. See trust/defects.md
-    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
-    ProverAssumptions := fun _ _ _ => False
+    -- Completeness covers rows built by `memRowOf`; the two selector
+    -- implications are semantic side-conditions, not hidden constraints.
+    ProverAssumptions := fun row _ _ =>
+      ∃ sel selDual wr addrChanges addr step stepDual previousStep
+        increment_0 increment_1 value_0 value_1,
+        (selDual = true → sel = true) ∧ (wr = true → sel = true) ∧
+          row = memRowOf sel selDual wr addrChanges
+            addr step stepDual previousStep increment_0 increment_1 value_0 value_1
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -49,7 +94,19 @@ def circuit : GeneralFormalCircuit FGL MemRow unit :=
             , by simpa only [sub_eq_add_neg] using h6
             , by simpa only [sub_eq_add_neg] using h7
             , by simpa only [sub_eq_add_neg] using h8 ⟩
-    completeness := fun _ _ _ _ _ _ h => h.elim }
+    completeness := by
+      circuit_proof_start
+      obtain ⟨sel, selDual, wr, addrChanges, addr, step, stepDual, previousStep,
+        increment_0, increment_1, value_0, value_1, h_selDual, h_wr, hrow⟩ :=
+        h_assumptions
+      injection hrow with h_addr h_step h_sel h_addr_changes h_step_dual h_sel_dual
+        h_value_0 h_value_1 h_wr_col h_previous_step h_increment_0 h_increment_1
+        h_read_same_addr
+      subst_vars
+      simpa only [Spec, memRowOf, memReadSameAddrOf, memValueOf, sub_eq_add_neg] using
+        memRowOf_constraintsHold sel selDual wr addrChanges
+          addr step stepDual previousStep increment_0 increment_1 value_0 value_1
+          h_selDual h_wr }
 
 /-- Mem as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
@@ -66,11 +123,14 @@ def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
   { memWithMemBusElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
-    -- only). `ProverAssumptions := False` makes this field a visible
-    -- non-claim. See trust/defects.md
-    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
-    ProverAssumptions := fun _ _ _ => False
+    -- Completeness covers the same honest rows as `circuit`; the memory-bus
+    -- emission adds only a trivially-true channel guarantee.
+    ProverAssumptions := fun row _ _ =>
+      ∃ sel selDual wr addrChanges addr step stepDual previousStep
+        increment_0 increment_1 value_0 value_1,
+        (selDual = true → sel = true) ∧ (wr = true → sel = true) ∧
+          row = memRowOf sel selDual wr addrChanges
+            addr step stepDual previousStep increment_0 increment_1 value_0 value_1
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -87,7 +147,19 @@ def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
               , by simpa only [sub_eq_add_neg] using h8 ⟩
       · intro _
         trivial
-    completeness := fun _ _ _ _ _ _ h => h.elim }
+    completeness := by
+      circuit_proof_start [MemBusChannel]
+      obtain ⟨sel, selDual, wr, addrChanges, addr, step, stepDual, previousStep,
+        increment_0, increment_1, value_0, value_1, h_selDual, h_wr, hrow⟩ :=
+        h_assumptions
+      injection hrow with h_addr h_step h_sel h_addr_changes h_step_dual h_sel_dual
+        h_value_0 h_value_1 h_wr_col h_previous_step h_increment_0 h_increment_1
+        h_read_same_addr
+      subst_vars
+      simpa only [Spec, memRowOf, memReadSameAddrOf, memValueOf, sub_eq_add_neg] using
+        memRowOf_constraintsHold sel selDual wr addrChanges
+          addr step stepDual previousStep increment_0 increment_1 value_0 value_1
+          h_selDual h_wr }
 
 /-- Mem as a Clean `Air.Flat.Component` exposing the memory-bus
     provider emission. Used by Clean memory-bus component assembly. -/
@@ -101,11 +173,14 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
   { memWithDualMemBusElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    -- Completeness is intentionally NOT claimed (zisk-fv is soundness-
-    -- only). `ProverAssumptions := False` makes this field a visible
-    -- non-claim. See trust/defects.md
-    -- ZISK-DEFECT-CLEAN-COMPLETENESS-TRIVIAL-AXIOMS.
-    ProverAssumptions := fun _ _ _ => False
+    -- Completeness covers the same honest rows as `circuit`; the two memory-bus
+    -- emissions add only trivially-true channel guarantees.
+    ProverAssumptions := fun row _ _ =>
+      ∃ sel selDual wr addrChanges addr step stepDual previousStep
+        increment_0 increment_1 value_0 value_1,
+        (selDual = true → sel = true) ∧ (wr = true → sel = true) ∧
+          row = memRowOf sel selDual wr addrChanges
+            addr step stepDual previousStep increment_0 increment_1 value_0 value_1
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -121,7 +196,19 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
               , by simpa only [sub_eq_add_neg] using h7
               , by simpa only [sub_eq_add_neg] using h8 ⟩
       · exact ⟨by intro _; trivial, by intro _; trivial⟩
-    completeness := fun _ _ _ _ _ _ h => h.elim }
+    completeness := by
+      circuit_proof_start [MemBusChannel]
+      obtain ⟨sel, selDual, wr, addrChanges, addr, step, stepDual, previousStep,
+        increment_0, increment_1, value_0, value_1, h_selDual, h_wr, hrow⟩ :=
+        h_assumptions
+      injection hrow with h_addr h_step h_sel h_addr_changes h_step_dual h_sel_dual
+        h_value_0 h_value_1 h_wr_col h_previous_step h_increment_0 h_increment_1
+        h_read_same_addr
+      subst_vars
+      simpa only [Spec, memRowOf, memReadSameAddrOf, memValueOf, sub_eq_add_neg] using
+        memRowOf_constraintsHold sel selDual wr addrChanges
+          addr step stepDual previousStep increment_0 increment_1 value_0 value_1
+          h_selDual h_wr }
 
 /-- Mem as a Clean `Air.Flat.Component` exposing both primary and dual
     memory-bus provider emissions. -/

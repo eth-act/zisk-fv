@@ -1,38 +1,39 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md
 
-Current focus: Wave 1 pilot for genuine Clean completeness proofs on branch
-`clean-completeness-wave1` in `.worktrees/completeness-wave1`: shared helpers,
-MemAlign, BinaryAdd, and witness-gate wiring.
+Current focus: Wave 2 byte/mem mux family on branch
+`clean-completeness-wave2` in `.worktrees/completeness-wave2`: review PR
+https://github.com/eth-act/zisk-fv/pull/70 is open against
+`clean-completeness-wave1`.
 
-Blocking: none. Do not merge the PR; hand off for external review only.
+Blocking: none. PR #69/Wave 1 is not merged to `origin/main`; this worktree is
+stacked on `origin/clean-completeness-wave1` at `5c10ecc6` so the base includes
+Wave 1 helpers and the hardened witness gate. Do not merge PRs.
 
-Setup: worktree created from `origin/main` at `e3b87fc0`; `nix run .#populate`
-now works and populated generated inputs; `lake exe cache get`, `lake build
-repl`, full baseline `lake build`, and `trust/scripts/check-all.sh` passed.
-The `zisk` submodule is initialized at pinned `4148c25e`.
+Setup: `nix run .#populate` populated generated inputs after `lake exe cache
+get` found missing path deps; retry of `lake exe cache get` succeeded. The
+`zisk` submodule is initialized at pinned `4148c25e`. `lake build repl`, full
+baseline `lake build`, and `trust/scripts/check-all.sh` passed.
 
-Progress: initial STATUS/project trail bookkeeping committed as `fb021f11`.
-Helpers and MemAlign are committed. BinaryAdd now has `binaryAddRowOf`, a real
-builder-existential completeness proof, and
-`trust/consistency/completeness_witness_binaryadd.lean`; focused BinaryAdd
-circuit build and witness typecheck both pass. `FullEnsemble` and
-`FullEnsemble/Balance` needed local proof-performance tightenings after the
-larger completeness fields and now build focused. Full `lake build`,
-`trust/scripts/check-all.sh`, and `trust/scripts/check-all-semantic.sh` pass;
-the semantic gate found both Wave 1 witness files. `nix run .#test` passed
-all 8 steps. Trust generated/baseline diff is empty; trust-surface diff is
-limited to the witness files and semantic script; canonical closure print
-shows no project axioms. BinaryAdd/gate proof chunk committed as `60c645c6`.
-Review PR opened: https://github.com/eth-act/zisk-fv/pull/69. Do not merge
-until external review completes. Review feedback fix pushed as `91679f42`: the
-semantic witness gate now fails on Lean `sorry` warnings, the pre-existing Sail
-memory witness uses the same wrapper, and BinaryAdd/MemAlign docstrings state
-their proved constructibility scopes.
+Progress: Wave 2 worktree is ready and start scan `rg "completeness :="
+ZiskFv` matches the plan. MemAlignReadByte now has
+`memAlignReadByteRowOf`, a builder-existential completeness proof, and
+`trust/consistency/completeness_witness_memalignreadbyte.lean`; focused
+component build and witness typecheck pass. MemAlignByte now has
+`memAlignByteRowOf`, a builder-existential completeness proof, and
+`trust/consistency/completeness_witness_memalignbyte.lean`; focused component
+build and witness typecheck pass. Mem now has `memRowOf`,
+`memRowOf_constraintsHold`, all three completeness fields proved, and
+`trust/consistency/completeness_witness_mem.lean` covering all three
+ProverAssumptions; focused component build and witness typecheck pass.
+Docstrings are updated; stale non-claim scan is clean for the three Wave 2
+files. `lake build ZiskFv.AirsClean.FullEnsemble` and
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance` passed without ensemble
+call-site edits. Final gates passed: full `lake build`,
+`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+`nix run .#test`, empty trust generated/baseline diff against
+`origin/clean-completeness-wave1`, `git diff --check`, clean status after
+restoring generated `zisk/lib-float` artifacts, and closure print with no
+project axiom lines.
 
-Verification after feedback: temporary `completeness_witness_sorry_probe.lean`
-made `trust/scripts/check-all-semantic.sh` fail as expected on the Lean `sorry`
-warning; after deleting the probe, these passed: focused BinaryAdd/MemAlign
-circuit build, semantic gate, V1 gate, shell syntax check, and
-`git diff --check`.
-
-Next step: wait for external review feedback on PR #69.
+Next step: wait for external Claude review; do not merge and do not start the
+next wave from this worktree.

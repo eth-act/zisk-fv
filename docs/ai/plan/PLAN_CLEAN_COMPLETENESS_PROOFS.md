@@ -253,13 +253,13 @@ column in order.
 
 ### Checklist
 
-- [ ] Worktree + cache + green baseline; STATUS.md; log line `W2: started`.
-- [ ] MemAlignReadByte builder + completeness + witness.
-- [ ] MemAlignByte builder + completeness + witness.
-- [ ] Mem shared builder + one shared constraints lemma + all 3 completeness
+- [x] Worktree + cache + green baseline; STATUS.md; log line `W2: started`.
+- [x] MemAlignReadByte builder + completeness + witness.
+- [x] MemAlignByte builder + completeness + witness.
+- [x] Mem shared builder + one shared constraints lemma + all 3 completeness
       fields + witness.
-- [ ] Docstrings per recipe §5; ensemble call sites per §6.
-- [ ] Verification block; open PR per protocol.
+- [x] Docstrings per recipe §5; ensemble call sites per §6.
+- [x] Verification block; open PR per protocol.
 
 ### MemAlignReadByte (`circuit`, smallest — do first)
 
@@ -579,3 +579,30 @@ and STOP.
   promoted to reference implementation, Wave 3 index-route made primary,
   ensemble call-site duty (§6) added, PR protocol switched to
   queue-for-Claude-review with no human pre-ack.
+- W2: 2026-06-12: started Wave 2 worktree `clean-completeness-wave2` from
+  `origin/clean-completeness-wave1` at `5c10ecc6` because `origin/main` does
+  not yet contain Wave 1; populated generated inputs, initialized pinned
+  `zisk` submodule, and passed `lake exe cache get`, `lake build repl`, full
+  `lake build`, and `trust/scripts/check-all.sh`.
+- W2: 2026-06-12: MemAlignReadByte builder, completeness proof, and witness
+  added; focused `lake build ZiskFv.AirsClean.MemAlignReadByte.Circuit` and
+  witness typecheck passed.
+- W2: 2026-06-12: MemAlignByte builder, completeness proof, and witness added;
+  focused `lake build ZiskFv.AirsClean.MemAlignByte.Circuit` and witness
+  typecheck passed.
+- W2: 2026-06-12: Mem shared builder, constraints lemma, all three
+  completeness fields, and witness added; focused
+  `lake build ZiskFv.AirsClean.Mem.Circuit` and witness typecheck passed.
+- W2: 2026-06-12: Wave 2 docstrings updated; stale non-claim scan is clean;
+  `lake build ZiskFv.AirsClean.FullEnsemble` and
+  `lake build ZiskFv.AirsClean.FullEnsemble.Balance` passed with no ensemble
+  call-site edits needed.
+- W2: 2026-06-12: final Wave 2 verification passed: full `lake build`,
+  `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
+  `nix run .#test`, empty trust generated/baseline diff against
+  `origin/clean-completeness-wave1`, `git diff --check`, clean status after
+  restoring generated `zisk/lib-float` artifacts, and closure print with no
+  project axiom lines.
+- W2: 2026-06-12: opened review PR
+  https://github.com/eth-act/zisk-fv/pull/70 against
+  `clean-completeness-wave1`; queued for Claude review, do not merge.
