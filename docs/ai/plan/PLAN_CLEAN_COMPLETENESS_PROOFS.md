@@ -424,8 +424,8 @@ the honest integer carries; note this in the docstring).
 
 ### Checklist
 
-- [ ] Worktree + cache + baseline; STATUS.md; log `W4: started`.
-- [ ] Shared `ZiskFv/Airs/Arith/CarryChainCompleteness.lean` — build it
+- [x] Worktree + cache + baseline; STATUS.md; log `W4: started`.
+- [x] Shared `ZiskFv/Airs/Arith/CarryChainCompleteness.lean` — build it
       green BEFORE touching components:
       `chunk16 (x k : ℕ) := x / 65536 ^ k % 65536`; `chunk16_lt`;
       `nat_decomp4/8` (by `omega`); `fgl_decomp4/8` (`push_cast`);
@@ -463,6 +463,19 @@ work), `set_option maxHeartbeats 4000000`, and NESTED `injection`:
 `ArithMulRow`/`ArithDivRow` are `{chunks, flags, carries/aux}` sub-structs,
 so the first `injection` yields sub-struct equations — `injection` each of
 those again to reach per-column equations.
+
+W4: started `clean-completeness-wave4` in `.worktrees/completeness-wave4` from
+`origin/clean-completeness-wave1` at `5c10ecc6`, matching the parallel Wave
+2/3 PR bases while PRs #69/#70/#71 remain open.
+W4: Setup baseline passed: `git submodule update --init zisk` checked out
+`4148c25e`, `nix run .#populate` populated generated inputs, `lake exe cache
+get` succeeded, `lake build repl` passed, full `lake build` passed, and
+`trust/scripts/check-all.sh` passed all 17 checks.
+W4: Added `ZiskFv/Airs/Arith/CarryChainCompleteness.lean` with 16-bit chunk
+decomposition, Goldilocks cast decompositions, `65536 ≠ 0`, and generic
+field-solved carry witnesses `cc0` through `cc6`; both `lake env lean
+ZiskFv/Airs/Arith/CarryChainCompleteness.lean` and `lake build
+ZiskFv.Airs.Arith.CarryChainCompleteness` pass.
 
 ## Wave 5 — Main, 3 circuits + stream finalization (1 agent, 1 PR)
 
