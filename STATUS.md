@@ -29,7 +29,9 @@ witness typechecks under `lake env lean
 trust/consistency/completeness_witness_binaryextension.lean`.
 Focused component builds pass. Ensemble proof-body updates for Wave 3 call
 sites are in place; `lake build ZiskFv.AirsClean.FullEnsemble` and
-`lake build ZiskFv.AirsClean.FullEnsemble.Balance` pass.
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance` pass. Binary-family
+ensemble call sites also needed the same narrow-proof treatment; full
+`lake build` now passes.
 
 Next step: run full gates, update the PR-ready verification log, and open
 the Wave 3 PR.

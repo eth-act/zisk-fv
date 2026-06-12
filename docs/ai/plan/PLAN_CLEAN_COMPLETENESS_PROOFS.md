@@ -395,6 +395,9 @@ typechecks and prints no `sorryAx`.
 W3: Focused component builds plus `lake build ZiskFv.AirsClean.FullEnsemble`
 and `lake build ZiskFv.AirsClean.FullEnsemble.Balance` pass after converting
 Wave 3 ensemble call sites away from broad component-record `simp`.
+W3: Full `lake build` initially exposed the same broad-simp issue in
+`BinaryFamily/Ensemble.lean`; converted those Binary/BinaryExtension
+addTable and assumptions proofs too. Full `lake build` now passes.
 
 ## Wave 4 — Arith pair, unsigned scope (1 agent, 1 PR)
 
