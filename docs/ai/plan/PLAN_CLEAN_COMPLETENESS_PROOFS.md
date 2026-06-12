@@ -558,7 +558,7 @@ origin/main..HEAD` clean.
       PROJECTS.md/STATUS.md closeout; list follow-ups (signed Arith
       disjuncts, table-op gaps). Do NOT touch `ZiskFv/Completeness/**`
       (the RV64IM stream's surface).
-- [ ] Verification block; open PR per protocol.
+- [x] Verification block; proof-only PR opened as #73 per Cody directive.
 
 W5: started `clean-completeness-wave5` in `.worktrees/completeness-wave5`
 from `origin/clean-completeness-wave1`, matching Waves 2-4 while PRs
@@ -583,8 +583,13 @@ full `lake build`, `trust/scripts/check-all.sh`,
 `trust/scripts/check-all-semantic.sh`, `nix run .#test`, empty trust
 generated/baseline diff, branch-local trust diff limited to
 `trust/consistency/completeness_witness_main.lean`, closure print with no
-project axiom names, `git diff --check`, and final source scans. Finalization
-sweep and PR opening remain deferred because Waves 2-4 are still open.
+project axiom names, `git diff --check`, and final source scans. At that
+checkpoint, finalization sweep and PR opening were deferred because Waves 2-4
+were still open.
+W5: Opened proof-only review PR #73 per Cody directive, with a non-empty body
+and first line `Queued for Claude review — do not merge.` Finalization sweep
+remains deferred until Waves 2-4 merge. Also filled non-empty descriptions on
+the other open Clean completeness PRs.
 
 ## Hard invariants (every wave — violations fail review)
 
