@@ -18,7 +18,9 @@ Progress: `ZiskFv/AirsClean/Main/Circuit.lean` now has honest builders and
 builder-existential completeness proofs for plain `circuit`,
 `circuitWithRomAndMemBus`, and `circuitWithRomMemAndOpBus`. `lake env lean
 ZiskFv/AirsClean/Main/Circuit.lean` and focused `lake build
-ZiskFv.AirsClean.Main.Circuit` pass.
+ZiskFv.AirsClean.Main.Circuit` pass. The Main witness file covers all three
+plain and ROM-backed execution shapes; its typecheck passes and prints only the
+standard closure.
 
-Next step: add the Main anti-vacuity witness covering a concrete one-row
-program and the three `MainRomExecKind` shapes, then run witness/focused gates.
+Next step: run the Wave 5 verification block, leaving the merge-dependent
+finalization sweep unchecked until Waves 2-4 merge.

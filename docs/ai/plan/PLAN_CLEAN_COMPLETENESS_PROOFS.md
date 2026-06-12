@@ -548,7 +548,7 @@ origin/main..HEAD` clean.
       circuit_norm, OpBusChannel, MemBusChannel]` wrapper around the
       standalone theorem (mirror `mainWithRomMemAndOpBus_soundness`). Same
       ProverAssumptions for both.
-- [ ] Witness: concrete 1-instruction `Program` + one honest row per
+- [x] Witness: concrete 1-instruction `Program` + one honest row per
       `MainExecKind`; concrete `RomFlagBits` proving the coherence
       side-conditions are satisfiable.
 - [ ] Finalization sweep (only after Waves 2–4 have merged): CLAUDE.md
@@ -572,6 +572,12 @@ W5: Main `circuit`, `circuitWithRomAndMemBus`, and
 `circuitWithRomMemAndOpBus` now have builder-existential completeness proofs.
 `lake env lean ZiskFv/AirsClean/Main/Circuit.lean` and focused `lake build
 ZiskFv.AirsClean.Main.Circuit` pass.
+W5: Added `trust/consistency/completeness_witness_main.lean` with plain Main
+rows for all three `MainExecKind` shapes and ROM-backed one-instruction
+program witnesses for all three `MainRomExecKind` shapes across both
+ROM/memory circuits. `lake env lean
+trust/consistency/completeness_witness_main.lean` passes and prints only the
+standard closure.
 
 ## Hard invariants (every wave — violations fail review)
 
