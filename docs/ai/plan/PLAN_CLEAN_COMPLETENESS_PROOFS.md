@@ -256,7 +256,7 @@ column in order.
 - [x] Worktree + cache + green baseline; STATUS.md; log line `W2: started`.
 - [x] MemAlignReadByte builder + completeness + witness.
 - [x] MemAlignByte builder + completeness + witness.
-- [ ] Mem shared builder + one shared constraints lemma + all 3 completeness
+- [x] Mem shared builder + one shared constraints lemma + all 3 completeness
       fields + witness.
 - [ ] Docstrings per recipe §5; ensemble call sites per §6.
 - [ ] Verification block; open PR per protocol.
@@ -590,3 +590,6 @@ and STOP.
 - W2: 2026-06-12: MemAlignByte builder, completeness proof, and witness added;
   focused `lake build ZiskFv.AirsClean.MemAlignByte.Circuit` and witness
   typecheck passed.
+- W2: 2026-06-12: Mem shared builder, constraints lemma, all three
+  completeness fields, and witness added; focused
+  `lake build ZiskFv.AirsClean.Mem.Circuit` and witness typecheck passed.

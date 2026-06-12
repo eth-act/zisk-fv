@@ -21,7 +21,10 @@ ZiskFv` matches the plan. MemAlignReadByte now has
 component build and witness typecheck pass. MemAlignByte now has
 `memAlignByteRowOf`, a builder-existential completeness proof, and
 `trust/consistency/completeness_witness_memalignbyte.lean`; focused component
-build and witness typecheck pass.
+build and witness typecheck pass. Mem now has `memRowOf`,
+`memRowOf_constraintsHold`, all three completeness fields proved, and
+`trust/consistency/completeness_witness_mem.lean` covering all three
+ProverAssumptions; focused component build and witness typecheck pass.
 
-Next step: implement the shared Mem builder/constraints lemma, the three Mem
-completeness fields, and the Mem witness.
+Next step: run ensemble build/perf checks, update any required ensemble call
+sites, then run the Wave 2 verification block.
