@@ -22,6 +22,11 @@ already genuine and remains out of scope. Binary plain `circuit` and
 `staticLookupCircuit` completeness now compile under `lake env lean
 ZiskFv/AirsClean/Binary/Circuit.lean`; the Binary witness typechecks under
 `lake env lean trust/consistency/completeness_witness_binary.lean`.
+BinaryExtension `staticLookupCircuit` and `shiftStaticLookupCircuit`
+completeness now compile under `lake env lean
+ZiskFv/AirsClean/BinaryExtension/StaticCircuit.lean`; the BinaryExtension
+witness typechecks under `lake env lean
+trust/consistency/completeness_witness_binaryextension.lean`.
 
-Next step: commit the Binary chunk, then implement BinaryExtension
-static/shift lookup completeness.
+Next step: commit the BinaryExtension chunk, then run focused builds and
+ensemble checks.

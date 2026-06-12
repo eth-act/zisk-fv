@@ -372,9 +372,9 @@ is not.
       columns. Plain-recipe discharge.
 - [x] Binary `staticLookupCircuit`: index-route builder extending the plain
       one + witness.
-- [ ] BinaryExtension `staticLookupCircuit` (0 assertZeros, 8 lookups):
+- [x] BinaryExtension `staticLookupCircuit` (0 assertZeros, 8 lookups):
       index-route builder + witness.
-- [ ] BinaryExtension `shiftStaticLookupCircuit`: same builder + whatever
+- [x] BinaryExtension `shiftStaticLookupCircuit`: same builder + whatever
       `ShiftB0RangeSpecFact` demands — read its definition first; expect a
       range/shape fact on `b_0`, supplied as an operand side-condition or by
       computing `b_0` from a bounded operand.
@@ -387,6 +387,11 @@ lookups use explicit BinaryTable indices plus field-consistency side
 conditions.
 W3: Added `trust/consistency/completeness_witness_binary.lean`; it typechecks
 and prints no `sorryAx`.
+W3: BinaryExtension `staticLookupCircuit` and `shiftStaticLookupCircuit`
+completeness now compile under `lake env lean
+ZiskFv/AirsClean/BinaryExtension/StaticCircuit.lean`.
+W3: Added `trust/consistency/completeness_witness_binaryextension.lean`; it
+typechecks and prints no `sorryAx`.
 
 ## Wave 4 — Arith pair, unsigned scope (1 agent, 1 PR)
 
