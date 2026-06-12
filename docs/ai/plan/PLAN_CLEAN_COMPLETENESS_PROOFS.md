@@ -378,7 +378,7 @@ is not.
       `ShiftB0RangeSpecFact` demands — read its definition first; expect a
       range/shape fact on `b_0`, supplied as an operand side-condition or by
       computing `b_0` from a bounded operand.
-- [ ] Docstrings §5 (state the index-route scope); ensemble call sites §6.
+- [x] Docstrings §5 (state the index-route scope); ensemble call sites §6.
 - [ ] Verification block; open PR per protocol.
 
 W3: Binary plain `circuit` and Binary `staticLookupCircuit` completeness now
@@ -392,6 +392,9 @@ completeness now compile under `lake env lean
 ZiskFv/AirsClean/BinaryExtension/StaticCircuit.lean`.
 W3: Added `trust/consistency/completeness_witness_binaryextension.lean`; it
 typechecks and prints no `sorryAx`.
+W3: Focused component builds plus `lake build ZiskFv.AirsClean.FullEnsemble`
+and `lake build ZiskFv.AirsClean.FullEnsemble.Balance` pass after converting
+Wave 3 ensemble call sites away from broad component-record `simp`.
 
 ## Wave 4 — Arith pair, unsigned scope (1 agent, 1 PR)
 

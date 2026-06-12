@@ -68,21 +68,19 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
           ZiskFv.AirsClean.BinaryAdd.circuit,
           ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated])
     |>.addTable ZiskFv.AirsClean.Binary.staticLookupComponent
-        (by simp [circuit_norm, ZiskFv.AirsClean.Binary.staticLookupComponent,
-          ZiskFv.AirsClean.Binary.staticLookupCircuit,
-          ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.Binary.staticLookupComponent,
-          ZiskFv.AirsClean.Binary.staticLookupCircuit,
-          ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated])
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
     |>.addTable ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
-        (by simp [circuit_norm,
-          ZiskFv.AirsClean.BinaryExtension.staticLookupComponent,
-          ZiskFv.AirsClean.BinaryExtension.staticLookupCircuit,
-          ZiskFv.AirsClean.BinaryExtension.binaryExtensionWithStaticTableElaborated])
-        (by simp [circuit_norm,
-          ZiskFv.AirsClean.BinaryExtension.staticLookupComponent,
-          ZiskFv.AirsClean.BinaryExtension.staticLookupCircuit,
-          ZiskFv.AirsClean.BinaryExtension.binaryExtensionWithStaticTableElaborated])
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
     |>.addTable ZiskFv.AirsClean.ArithMul.component
         (by simp [circuit_norm, ZiskFv.AirsClean.ArithMul.component,
           ZiskFv.AirsClean.ArithMul.circuit,
