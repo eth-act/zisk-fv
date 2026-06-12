@@ -1,12 +1,12 @@
 # Projects
 
+## Endgame
+
+Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — the campaign from the current envelope-conditional global theorem to a trace-level public statement, in six phases (P1 foundations & bucket-audit verdict; P2 validation tooling; P3 memory argument; P4 construction theorem; P5 trace-level export; P6 OpEnvelope retirement), anchored to issues #61/#74–#78. Plans are written per-phase at ~5 PRs each, only when the phase is staffed. P1 is ready for execution: `docs/ai/plan/PLAN_ENDGAME_P1.md` (finalization sweep + kernel-only axiom closure + ADD instantiation + envelope burden audit + lean4lean scouting).
+
 ## Clean Completeness Proofs
 
-Plan: `docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md`. Wave 1 is active in
-`.worktrees/completeness-wave1` on branch `clean-completeness-wave1`, upgrading
-MemAlign and BinaryAdd from explicit Clean completeness non-claims to honest
-builder-existential constructibility proofs with gate-wired witnesses. Scope is
-review handoff only: open/push the PR when ready, but do not merge it.
+Plan: `docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md`. COMPLETE — all five wave PRs (#69–#73) merged 2026-06-12: 17/17 Clean completeness fields are genuine honest-row constructibility proofs with gate-checked witnesses (documented scopes: Arith unsigned-only, Binary/BinaryExtension via table-index route, row-local). The deferred finalization sweep is P1-PR1 of the Endgame campaign.
 
 ## RV64IM Completeness Restack
 
