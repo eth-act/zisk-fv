@@ -1,11 +1,11 @@
 Active plan: docs/ai/plan/PLAN_CLEAN_COMPLETENESS_PROOFS.md
 
 Current focus: Wave 4 Arith pair, unsigned scope, on branch
-`clean-completeness-wave4` in `.worktrees/completeness-wave4`.
+`clean-completeness-wave4` in `.worktrees/completeness-wave4`, rebased onto
+updated `origin/main` for sequential merge of PR #72.
 
-Blocking: none. This worktree is based on `origin/clean-completeness-wave1`
-at `5c10ecc6`, matching the parallel Wave 2/3 PR style. PRs #69, #70, and
-#71 are still open; do not merge PRs.
+Blocking: none. PRs #69, #70, and #71 are squash-merged. Wave 4 is ready to
+push with lease and squash-merge as PR #72.
 
 Setup: `git submodule update --init zisk` checked out pinned `4148c25e`;
 `nix run .#populate`, `lake exe cache get`, `lake build repl`, full
@@ -30,5 +30,5 @@ verification block also passed: full `lake build`, V1/V2 trust gates, empty
 generated/baseline diff, empty project-axiom closure print, and `nix run .#test`
 after clearing reproducible caches from an initial disk-full failure.
 
-Next step: commit this verification checkpoint, push `clean-completeness-wave4`,
-and open the queued external-review PR without merging.
+Next step: push `clean-completeness-wave4`, squash-merge PR #72, then retarget
+and rebase Wave 5 for PR #73.

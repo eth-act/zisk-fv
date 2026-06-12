@@ -499,6 +499,11 @@ empty project-axiom closure print, and `nix run .#test` all passed. The first
 Nix test attempt exhausted local disk and left a generated extraction object
 corrupt; after clearing reproducible caches and rerunning, all 8 Nix test
 steps passed.
+W4: Sequential merge prep after PRs #69/#70/#71 landed: retargeted PR #72 to
+`main`, rebased `clean-completeness-wave4` onto updated `origin/main`, resolved
+bookkeeping-only conflicts in `STATUS.md` and this plan, and confirmed the
+branch diff contains only Wave 4 files with `git diff --check
+origin/main..HEAD` clean.
 
 ## Wave 5 — Main, 3 circuits + stream finalization (1 agent, 1 PR)
 
