@@ -10,9 +10,9 @@ for ZisK's algebraic constraints.
   shadowing creates a dummy instance that defeats `ring` and breaks
   `linear_combination` in subtle ways.
 - **`GoldilocksPrimality.lean`** — Pratt-style primality certificate
-  for *p*, proved via `native_decide`. **The slowest single proof in
-  the build (~6 min cold).** Mathlib's Azure cache covers everything
-  else, but this proof is project-local.
+  for *p*, proved by normalizing the concrete certificate with `norm_num`.
+  Mathlib's Azure cache covers everything else, but this proof is
+  project-local.
 - **`GoldilocksBridge.lean`** — ties the Mathlib `Field` / `ZMod`
   formalisation to the `Fin p` representation used elsewhere in the
   tree.

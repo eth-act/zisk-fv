@@ -78,7 +78,7 @@ lemma bv_toNat_lt_of_msb_false (v : BitVec 64) (h : v.msb = false) :
     `np = 0`), which makes the field-level identity consistent despite the
     hardware overflow. -/
 lemma int_tdiv_overflow_case :
-    Int.tdiv (-(2 : ℤ)^63) (-(1 : ℤ)) = (2 : ℤ)^63 := by native_decide
+    Int.tdiv (-(2 : ℤ)^63) (-(1 : ℤ)) = (2 : ℤ)^63 := by rfl
 
 lemma int_tdiv_intmin_neg1_eq :
     Int.tdiv (-(2 : ℤ)^63) (-(1 : ℤ)) = (2 : ℤ)^63 := int_tdiv_overflow_case

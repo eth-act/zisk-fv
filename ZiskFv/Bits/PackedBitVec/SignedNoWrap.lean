@@ -269,18 +269,18 @@ lemma int_tdiv_overflow_full :
     W-variant (DIVW / REMW) boundary case, mirroring the full 64-bit
     `int_tdiv_overflow_full`. -/
 lemma int_tdiv_overflow_w :
-    Int.tdiv (-(2 : ℤ)^31) (-(1 : ℤ)) = (2 : ℤ)^31 := by native_decide
+    Int.tdiv (-(2 : ℤ)^31) (-(1 : ℤ)) = (2 : ℤ)^31 := by rfl
 
 /-- **`Int.tmod` at INT_MIN / -1.** Lean's `Int.tmod` gives `0` at the
     overflow boundary (since the exact quotient is mathematically clean,
     even if hardware overflows). Used by REM/REMW callers to discharge
     the `r2 = -1 ∧ r1 = INT_MIN` branch. -/
 lemma int_tmod_overflow_full :
-    Int.tmod (-(2 : ℤ)^63) (-(1 : ℤ)) = 0 := by native_decide
+    Int.tmod (-(2 : ℤ)^63) (-(1 : ℤ)) = 0 := by rfl
 
 /-- **32-bit `Int.tmod` at INT_MIN / -1.** The W-variant analogue. -/
 lemma int_tmod_overflow_w :
-    Int.tmod (-(2 : ℤ)^31) (-(1 : ℤ)) = 0 := by native_decide
+    Int.tmod (-(2 : ℤ)^31) (-(1 : ℤ)) = 0 := by rfl
 
 /-! ## Part 4 — 32-bit BitVec.toInt sign cases (W-variants)
 

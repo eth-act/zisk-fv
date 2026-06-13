@@ -1,4 +1,5 @@
 import Mathlib
+import Mathlib.Tactic.NormNum.Prime
 
 /-!
 # Pratt primality certificates
@@ -13,9 +14,9 @@ recursive Pratt certificates for each `qᵢ`, the verifier checks
 
 and certifies that `p` is prime.
 
-This is used to prove `Nat.Prime 18446744069414584321` (Goldilocks) quickly,
-replacing a `native_decide` that trial-divides up to `sqrt p ≈ 2^32` and
-takes ~6 minutes cold.
+This is used to prove `Nat.Prime 18446744069414584321` (Goldilocks) by
+normalizing a concrete certificate, avoiding a large direct primality
+decision on `p`.
 -/
 
 namespace ZiskFv
@@ -64,8 +65,8 @@ lemma powMod_eq (a : ℕ) : ∀ n p : ℕ, powMod a n p = a ^ n % p
 
 Two constructors:
 
-* `small p` — defers to mathlib's `Nat.decidablePrime` (for small primes such
-  as 2, 3, 5, 17, 257, 65537 this is essentially instant under `native_decide`).
+* `small p` — defers to mathlib's `Nat.decidablePrime`; in the concrete
+  Goldilocks certificate these are the small primes 2, 3, 5, 17, 257, 65537.
 * `step p a factors` — the recursive Lucas certificate:
   `factors = [(q₁, e₁, c₁), …, (qₖ, eₖ, cₖ)]`, with each `cᵢ : Pratt` a
   sub-certificate whose top-level prime equals `qᵢ`. -/
