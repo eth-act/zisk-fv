@@ -20,10 +20,9 @@ notation "FGL" => Fin GL_prime
 
 `p - 1 = 2^32 · 3 · 5 · 17 · 257 · 65537`, and `7` is a primitive root mod `p`.
 
-Each prime factor is ≤ 65537 and handled by a `.small` sub-certificate that
-defers to `Nat.decidablePrime` (fast under `native_decide`). Replaces a
-`native_decide` on `Nat.Prime p` that trial-divides up to `sqrt p ≈ 2^32`
-and took ~6 minutes cold. -/
+Each prime factor is ≤ 65537 and handled by a `.small` sub-certificate; the
+proof below unfolds the concrete verifier and discharges the arithmetic with
+`norm_num`. -/
 def goldilocks_pratt : ZiskFv.Pratt :=
   .step 18446744069414584321 7
     [ (2,     32, .small 2)
@@ -35,7 +34,8 @@ def goldilocks_pratt : ZiskFv.Pratt :=
     ]
 
 lemma prime_GoldilocksPrime : Nat.Prime GL_prime :=
-  ZiskFv.Pratt.verify_correct goldilocks_pratt (by native_decide)
+  ZiskFv.Pratt.verify_correct goldilocks_pratt (by
+    norm_num [goldilocks_pratt, ZiskFv.Pratt.verify, ZiskFv.Pratt.prime, ZiskFv.powMod])
 
 instance Fact_GLPrime : Fact (Nat.Prime GL_prime) := ⟨prime_GoldilocksPrime⟩
 instance : NeZero GL_prime := by constructor; decide
