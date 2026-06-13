@@ -54,17 +54,19 @@ run_witnesses() {
   return $ok
 }
 
-run "1/8 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
-run "2/8 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
-run "3/8 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
-run "4/8 consistency false probe rejected" reject_false_probe
-run "5/8 Sail memory timeline witness" \
+run "1/9 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
+run "2/9 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
+run "3/9 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
+run "4/9 consistency false probe rejected" reject_false_probe
+run "5/9 Sail memory timeline witness" \
   run_lean_no_sorry trust/consistency/load_byte_agreement_witness.lean
-run "6/8 memory timeline construction witness" \
+run "6/9 memory timeline construction witness" \
   run_lean_no_sorry trust/consistency/memory_timeline_construction_witness.lean
-run "7/8 global ADD theorem instantiation" \
+run "7/9 global ADD theorem instantiation" \
   run_lean_no_sorry trust/consistency/global_theorem_instantiation_add.lean
-run "8/8 Clean completeness witnesses" run_witnesses
+run "8/9 global LD theorem instantiation" \
+  run_lean_no_sorry trust/consistency/global_theorem_instantiation_ld.lean
+run "9/9 Clean completeness witnesses" run_witnesses
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate (V2 semantic): ALL CHECKS PASSED."
