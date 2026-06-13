@@ -630,7 +630,7 @@ theorem spec_op_val_ne_W_add_sub {t : BinaryTableMessage FGL}
 
 theorem signByte_eq_zero_iff_lt_128 {a : ℕ} (ha : a < 256) :
     signByte a = 0 ↔ a < 128 := by
-  interval_cases a <;> native_decide
+  interval_cases a <;> decide
 
 theorem signByte_eq_one_iff_ge_128 {a : ℕ} (ha : a < 256) :
     signByte a = 1 ↔ 128 ≤ a := by

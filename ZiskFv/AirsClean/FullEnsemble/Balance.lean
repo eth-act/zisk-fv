@@ -4697,7 +4697,7 @@ theorem memoryBusRowsReadWriteSound_activeMemReplayEntriesOfRow_of_spec
         (memPrimaryReplayEntryOfRow row).multiplicity = (1 : FGL) := by
       simp [h_wr_one]
     have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
-      native_decide
+      decide
     exact h_one_ne_neg_one (h_mult_one.symm.trans h_mult)
   rcases ZiskFv.AirsClean.Mem.sel_dual_boolean_of_spec row h_spec with
     h_sel_dual_zero | h_sel_dual_one
@@ -6948,7 +6948,7 @@ theorem memoryBusTraceEventOfRow_memPrimaryReplayEntryOfRow_write_of_wr_one
         some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.write
           (memPrimaryReplayEntryOfRow row)) := by
   have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
-    native_decide
+    decide
   simp [ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow,
     memPrimaryReplayEntryOfRow, h_wr, h_one_ne_neg_one]
 

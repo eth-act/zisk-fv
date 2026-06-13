@@ -831,7 +831,7 @@ theorem replayMemoryAfterBusRow_eq_self_of_read
   have h_not_write : ¬entry.multiplicity = (1 : FGL) := by
     intro h_write
     have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
-      native_decide
+      decide
     exact h_one_ne_neg_one (h_write.symm.trans h_read)
   simp [replayMemoryAfterBusRow, h_as, h_not_write]
 
@@ -915,7 +915,7 @@ theorem replayMemoryAfterBusRows_eq_replayEvents
             have h_not_write : ¬row.multiplicity = (1 : FGL) := by
               intro h_write
               have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
-                native_decide
+                decide
               exact h_one_ne_neg_one (h_write.symm.trans h_read)
             simp [replayMemoryAfterBusRow, h_as, h_not_write]
           simpa [replayMemoryAfterBusRows, memoryBusTraceEventsOfRows,
@@ -926,7 +926,7 @@ theorem replayMemoryAfterBusRows_eq_replayEvents
               memoryBusTraceEventOfRow row =
                 some (MemoryBusTraceEvent.write row) := by
               have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
-                native_decide
+                decide
               simp [memoryBusTraceEventOfRow, h_as, h_write,
                 h_one_ne_neg_one]
             have h_row_replay :
@@ -1153,7 +1153,7 @@ theorem traceReplaySound_of_memoryBusRowsReadWriteSound
               memoryBusTraceEventOfRow row =
                 some (MemoryBusTraceEvent.write row) := by
                 have h_one_ne_neg_one : ¬((1 : FGL) = (-1 : FGL)) := by
-                  native_decide
+                  decide
                 simp [memoryBusTraceEventOfRow, h_as, h_write,
                   h_one_ne_neg_one]
             have h_rows_tail :

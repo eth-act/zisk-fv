@@ -737,7 +737,7 @@ theorem ltAbsNpByteChain_falsePositive_eqAbs256 :
      c7 = 1)
     ∧ ¬ (((0xffffffffffffff00 ^^^ 0xffffffffffffffff) + 1)
           % 18446744073709551616 < 0x100) := by
-  native_decide
+  decide
 
 lemma gt_chain_a_byte_lt_256
     {a b c cin flags pos : FGL}
