@@ -98,8 +98,6 @@ theorem zisk_riscv_compliant_program_bus
     (h_memory_construction : env.memoryTimelineConstructionEvidence)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
-  let h_memory_timeline :=
-    env.memoryTimelineEvidence_of_constructionEvidence h_memory_construction
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact h_bridge
   · exact h_memory_construction
@@ -109,9 +107,9 @@ theorem zisk_riscv_compliant_program_bus
   · exact zisk_riscv_compliant_program_bus_itype_binary env
   · exact zisk_riscv_compliant_program_bus_shift env
   · exact zisk_riscv_compliant_program_bus_add_rtypew env
-  · exact zisk_riscv_compliant_program_bus_ldsd env h_memory_timeline
+  · exact zisk_riscv_compliant_program_bus_ldsd env h_memory_construction
   · exact zisk_riscv_compliant_program_bus_divu_except_known_defects env h_known_bugs
-  · exact zisk_riscv_compliant_program_bus_misc env h_memory_timeline
-  · exact zisk_riscv_compliant_program_bus_remaining env h_memory_timeline h_known_bugs
+  · exact zisk_riscv_compliant_program_bus_misc env h_memory_construction
+  · exact zisk_riscv_compliant_program_bus_remaining env h_memory_construction h_known_bugs
 
 end ZiskFv.Compliance
