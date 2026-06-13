@@ -328,7 +328,7 @@ def supportedFencePredSuccFieldsOk : Bool :=
 
 theorem supportedFencePredSuccFieldsOk_eq_true :
     supportedFencePredSuccFieldsOk = true := by
-  native_decide
+  decide
 
 theorem supportedFencePredSuccShape_fields_ok
     {raw : RawInstruction} (h : SupportedFencePredSuccShape raw) :
@@ -340,7 +340,7 @@ theorem supportedFencePredSuccShape_fields_ok
   have h_succ_lt : succ < 16 := by
     simpa using List.mem_range.mp h_succ
   interval_cases pred <;> interval_cases succ <;>
-    native_decide
+    decide
 
 /-- Shape families whose current grids are exhaustive for their supported
 encoding surface:

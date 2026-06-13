@@ -47,7 +47,7 @@ private theorem false_from_row_models_sail_state_load : False := by
   let state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource := default
   have h := row_models_sail_state_load probeMem 0 probeEntry state probe_match probe_wr
   have hmem : state.mem[probeEntry.ptr.toNat]? = none := by
-    native_decide
+    decide
   cases hmem.symm.trans h.1
 
 #print axioms false_from_row_models_sail_state_load
