@@ -11,6 +11,7 @@ import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.Mem
+import ZiskFv.ZiskCircuit.MemTimeline.Ordering
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
