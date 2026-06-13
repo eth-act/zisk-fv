@@ -5,6 +5,7 @@ Subcommands:
   regenerate-deps              Print per-theorem axiom-dep baseline to stdout.
   check-deps PATH              Compare regenerated baseline against PATH.
   check-no-output-eq-v2 PATH   Type-walk; fail on forbidden Names from PATH.
+  print-global-binders         Print global theorem binder baseline rows.
   all                          Run check-deps + check-no-output-eq-v2 against
                                trust/generated/baseline-equiv-axiom-deps.txt and
                                trust/forbidden-types.txt.
@@ -79,6 +80,11 @@ def diffStrings (regenerated committed : String) : IO UInt32 := do
       if !rl.isEmpty then IO.eprintln s!"+{rl}"
       shown := shown + 1
   return 1
+
+/-- Collapse pretty-printer whitespace so generated baselines keep one row per
+binder even when the type is too wide for the default formatter. -/
+def normalizeWhitespace (s : String) : String :=
+  String.intercalate " " (s.splitToList (·.isWhitespace) |>.filter (!·.isEmpty))
 
 /-- Execute the type-walk against `forbidden`; returns 0 on clean run. -/
 def runTypeWalk (env : Environment) (forbidden : NameSet) : IO UInt32 := do
@@ -216,6 +222,17 @@ def cmdCheckClosureVsBaseline (env : Environment) (path : String)
   IO.eprintln "  and review (CODEOWNER required for ledger changes)."
   return 1
 
+/-- Subcommand: render the global theorem's elaborated binder list. This is a
+baseline-only audit surface; it does not apply policy or forbidden-name checks. -/
+def cmdPrintGlobalBinders (env : Environment) (theoremName : Name) : IO UInt32 := do
+  if (env.find? theoremName).isNone then
+    IO.eprintln s!"trust-gate: unknown const {theoremName}"
+    return 1
+  let rows ← runMeta env (TypeWalk.renderTheoremBinders theoremName)
+  for r in rows do
+    IO.println s!"{r.binderIdx} :: {r.binderName} :: {normalizeWhitespace r.binderType}"
+  return 0
+
 /-- Subcommand: enumerate every auditable `ZiskFv.*` const, subtract
 the reachable set, print the unreachable ones grouped by module. -/
 def cmdFindUnused (env : Environment) (path : String) : IO UInt32 := do
@@ -280,6 +297,7 @@ def usage : IO Unit := do
   IO.println "  print-reachable PATH           print every ZiskFv.* const reachable from entry-points in PATH"
   IO.println "  find-unused PATH               enumerate ZiskFv.* consts not reachable from PATH entry points"
   IO.println "  check-closure-vs-baseline PATH check zisk_riscv_compliant_program_bus axiom closure == generated/baseline-axioms.txt"
+  IO.println "  print-global-binders           print zisk_riscv_compliant_program_bus binder baseline rows"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
@@ -306,6 +324,9 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   | ["print-tree-edges", name] => cmdPrintTreeEdges env name
   | ["check-closure-vs-baseline", path] =>
     cmdCheckClosureVsBaseline env path
+      `ZiskFv.Compliance.zisk_riscv_compliant_program_bus
+  | ["print-global-binders"] =>
+    cmdPrintGlobalBinders env
       `ZiskFv.Compliance.zisk_riscv_compliant_program_bus
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/generated/baseline-equiv-axiom-deps.txt"

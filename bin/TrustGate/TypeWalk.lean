@@ -80,6 +80,15 @@ structure Violation where
   hits       : Array Name
   deriving Inhabited
 
+/-- Rendered information for one theorem binder. This is an audit surface only:
+it records the elaborated binder name and type without applying any policy. -/
+structure BinderInfo where
+  thm        : Name
+  binderIdx  : Nat
+  binderName : Name
+  binderType : String
+  deriving Inhabited
+
 /-- For each parameter binder of `name`, scan its (reducible-closure)
 const set for forbidden Names. -/
 def checkTheorem (forbidden : NameSet) (name : Name)
@@ -103,5 +112,24 @@ def checkTheorem (forbidden : NameSet) (name : Name)
         viols := viols.push
           { thm := name, binderIdx := i, binderType := fmt.pretty, hits := hits }
     return viols
+
+/-- Render the parameter binders of `name` in elaborated order. -/
+def renderTheoremBinders (name : Name) : Meta.MetaM (Array BinderInfo) := do
+  let some ci := (← getEnv).find? name
+    | throwError s!"unknown const: {name}"
+  let typ := ci.type
+  Meta.forallTelescope typ fun args _ => do
+    let mut rows : Array BinderInfo := #[]
+    for h : i in [0:args.size] do
+      let arg := args[i]
+      let localDecl ← arg.fvarId!.getDecl
+      let bt ← Meta.inferType arg
+      let fmt ← Meta.ppExpr bt
+      rows := rows.push
+        { thm := name
+          binderIdx := i
+          binderName := localDecl.userName
+          binderType := fmt.pretty }
+    return rows
 
 end TrustGate.TypeWalk

@@ -1,0 +1,7 @@
+0 :: state :: PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+1 :: m :: ZiskFv.Airs.Main.Valid_Main (Fin 18446744069414584321) (Fin 18446744069414584321)
+2 :: r_main :: Nat
+3 :: env :: ZiskFv.Compliance.OpEnvelope state m r_main
+4 :: h_bridge :: env.aeneasBridgeTrust
+5 :: h_memory_timeline :: env.memoryTimelineEvidence
+6 :: h_known_bugs :: ZiskFv.Compliance.Defects.NoKnownDefect env
