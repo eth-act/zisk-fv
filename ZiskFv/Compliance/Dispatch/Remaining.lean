@@ -183,7 +183,7 @@ def OpEnvelope.exec_eq_remaining
 
 theorem zisk_riscv_compliant_program_bus_remaining
     (env : OpEnvelope state m r_main)
-    (h_memory_timeline : env.memoryTimelineEvidence)
+    (h_memory_construction : env.memoryTimelineConstructionEvidence)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_remaining := by
   cases env with
@@ -194,8 +194,9 @@ theorem zisk_riscv_compliant_program_bus_remaining
     change execute_instruction (instruction.LOAD (
         lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
-    rcases h_memory_timeline with ⟨timeline⟩
+    simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
+    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+      ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
@@ -214,8 +215,9 @@ theorem zisk_riscv_compliant_program_bus_remaining
     change execute_instruction (instruction.LOAD (
         lhu_input.imm, regidx.Regidx lhu_input.r1, regidx.Regidx lhu_input.rd, true, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
-    rcases h_memory_timeline with ⟨timeline⟩
+    simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
+    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+      ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
@@ -234,8 +236,9 @@ theorem zisk_riscv_compliant_program_bus_remaining
     change execute_instruction (instruction.LOAD (
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
-    rcases h_memory_timeline with ⟨timeline⟩
+    simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
+    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+      ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
@@ -596,7 +599,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
     closures. -/
 theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     (env : OpEnvelope state m r_main)
-    (h_memory_timeline : env.memoryTimelineEvidence)
+    (h_memory_construction : env.memoryTimelineConstructionEvidence)
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_remaining := by
   cases env with
@@ -607,8 +610,9 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     change execute_instruction (instruction.LOAD (
         lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
-    rcases h_memory_timeline with ⟨timeline⟩
+    simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
+    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+      ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
@@ -624,8 +628,9 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     change execute_instruction (instruction.LOAD (
         lhu_input.imm, regidx.Regidx lhu_input.r1, regidx.Regidx lhu_input.rd, true, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
-    rcases h_memory_timeline with ⟨timeline⟩
+    simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
+    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+      ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
@@ -641,8 +646,9 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     change execute_instruction (instruction.LOAD (
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
-    rcases h_memory_timeline with ⟨timeline⟩
+    simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
+    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+      ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline

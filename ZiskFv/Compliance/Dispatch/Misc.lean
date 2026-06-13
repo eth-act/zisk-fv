@@ -67,7 +67,7 @@ def OpEnvelope.exec_eq_misc
 set_option maxHeartbeats 800000
 theorem zisk_riscv_compliant_program_bus_misc
     (env : OpEnvelope state m r_main)
-    (h_memory_timeline : env.memoryTimelineEvidence) :
+    (h_memory_construction : env.memoryTimelineConstructionEvidence) :
     env.exec_eq_misc := by
   cases env with
   | lb_via_static_match lb_input regs mem v r_binary offset env h_static h_match
@@ -81,8 +81,9 @@ theorem zisk_riscv_compliant_program_bus_misc
             lb_input.imm, regidx.Regidx lb_input.r1, regidx.Regidx lb_input.rd, false, 1
           ))) state
           = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
-    rcases h_memory_timeline with ⟨timeline⟩
+    simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
+    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+      ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
@@ -106,8 +107,9 @@ theorem zisk_riscv_compliant_program_bus_misc
             lh_input.imm, regidx.Regidx lh_input.r1, regidx.Regidx lh_input.rd, false, 2
           ))) state
           = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
-    rcases h_memory_timeline with ⟨timeline⟩
+    simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
+    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+      ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
@@ -131,8 +133,9 @@ theorem zisk_riscv_compliant_program_bus_misc
             lw_input.imm, regidx.Regidx lw_input.r1, regidx.Regidx lw_input.rd, false, 4
           ))) state
           = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    simp only [OpEnvelope.memoryTimelineEvidence] at h_memory_timeline
-    rcases h_memory_timeline with ⟨timeline⟩
+    simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
+    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+      ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
         promises timeline
