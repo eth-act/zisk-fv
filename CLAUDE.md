@@ -35,6 +35,12 @@ per-class in `trust/trusted-base.md`. All 63 RV64IM opcodes are covered as
 acceptance/coverage theorem for Sail-executable RV64IM raw words outside the
 recorded FENCE decode gap. It is interface-mediated through the Aeneas
 extraction gate and does not revive Clean prover completeness non-claims.
+The Clean completeness side is no longer a set of vacuous non-claims: all
+17 fields now have honest-row constructibility proofs with gate-checked
+witnesses. The documented scope is row-local constructibility only, with
+Arith limited to unsigned slices and Binary/BinaryExtension using the
+table-index route. These proofs do not claim cross-row trace completeness or
+fill the signed-Arith/table-op follow-up scopes.
 
 Per-opcode the proof is a 3-layer tower: `ZiskFv/EquivCore/<Op>.lean`
 (the real Sail↔circuit proof, plus shared `EquivCore/{Bridge,Promises,
