@@ -3,6 +3,7 @@ import ZiskFv.Compliance.AeneasBridgeTrust
 import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.EquivCore.Promises.BranchHelpers
 import ZiskFv.EquivCore.Promises.Fence
+import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.EquivCore.Promises.Jump
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.UType
@@ -51,6 +52,9 @@ inductive ArmTag where
   | xor
   | slt
   | sltu
+  | andi
+  | ori
+  | xori
   | fence
   | auipc_x0
   | jal_x0
@@ -1461,6 +1465,567 @@ def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
 
 end SltuRowBinding
 
+/-- ANDI-specific projection of the named `ProgramBinding` premise. -/
+structure AndiRowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.AndiInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  provenance : MainRowProvenance main r_main
+  h_op : provenance.extractedRow.op = ExtractedConst.opAnd
+  h_external : provenance.extractedRow.isExternalOp = true
+  h_m32 : provenance.extractedRow.m32 = false
+  h_store_pc : provenance.extractedRow.storePc = false
+  h_a_lo_t : main.a_0 r_main =
+    ZiskFv.Trusted.lane_lo
+      ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+        (regidx_to_fin r1))
+  h_a_hi_t : main.a_1 r_main =
+    ZiskFv.Trusted.lane_hi
+      ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+        (regidx_to_fin r1))
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) state = EStateM.Result.ok input.r1_val state
+  h_input_imm : input.imm = imm
+  h_input_rd : input.rd = regidx_to_fin rd
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_andi_pure input).nextPC
+  h_rd_idx :
+    input.rd =
+      Transpiler.wrap_to_regidx
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage provenance.mainRow) 1 1).ptr
+  h_imm_subset :
+    ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+      main r_main input.imm
+
+namespace AndiRowBinding
+
+@[reducible]
+def bus {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : AndiRowBinding main r_main state) : BusRows where
+  exec_row := b.execRow
+  e0 :=
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Main.aMemMessage b.provenance.mainRow) (-1) 1
+  e1 :=
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Main.bMemMessage b.provenance.mainRow) (-1) 1
+  e2 :=
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Main.cMemMessage b.provenance.mainRow) 1 1
+
+theorem m32Zero
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : AndiRowBinding main r_main state) :
+    main.m32 r_main = 0 := by
+  simpa [boolF, b.h_m32] using b.provenance.m32_eq
+
+theorem rowStorePcZero
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : AndiRowBinding main r_main state) :
+    b.provenance.mainRow.core.store_pc = 0 := by
+  have h_main :
+      main.store_pc r_main = 0 :=
+    MainRowProvenance.storePcZero_of_extracted_shape b.provenance b.h_store_pc
+  have h_row :
+      b.provenance.mainRow.core.store_pc =
+        (ZiskFv.AirsClean.Main.rowAt main r_main).store_pc :=
+    congrArg (fun row => row.store_pc) b.provenance.row_eq
+  exact h_row.trans (by simpa [ZiskFv.AirsClean.Main.rowAt] using h_main)
+
+theorem laneRd
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : AndiRowBinding main r_main state) :
+    ZiskFv.Airs.MemoryBus.register_write_lanes_match main r_main (b.bus).e2 := by
+  have h :=
+    ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+      b.provenance.mainRow b.rowStorePcZero
+  rw [b.provenance.row_eq] at h
+  simpa [bus, ZiskFv.AirsClean.Main.validOfRow, ZiskFv.AirsClean.Main.rowAt] using h
+
+theorem byteMatchesAndi
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : AndiRowBinding main r_main state)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_row_spec : ZiskFv.AirsClean.Binary.Spec row)
+    (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main main r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      row ZiskFv.Airs.Tables.BinaryTable.OP_AND := by
+  have h_main_op_and :
+      main.op r_main = ZiskFv.Trusted.OP_AND :=
+    (MainRowProvenance.andPins_of_extracted_shape
+      b.provenance b.h_op b.h_external).main_op
+  have h_emit :
+      row.chain.b_op + 16 * row.mode.mode32 =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_AND : FGL) := by
+    have h_match_op := h_match
+    simp only [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main] at h_match_op
+    have h_op_match :
+        main.op r_main = row.chain.b_op + 16 * row.mode.mode32 := h_match_op.2.1
+    rw [← h_op_match]
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_AND, ZiskFv.Trusted.OP_AND] using
+      h_main_op_and
+  obtain ⟨_, h_b_op, h_b_op_or_sext⟩ :=
+    ZiskFv.AirsClean.Binary.static_table_logic_mode_pins_of_emit
+      row h_row_spec h_static ZiskFv.Airs.Tables.BinaryTable.OP_AND
+      (.inl rfl) h_emit
+  exact
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
+      row (ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts row h_static)
+      ZiskFv.Airs.Tables.BinaryTable.OP_AND h_b_op h_b_op_or_sext
+
+theorem inputR1Row
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : AndiRowBinding main r_main state)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches : ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      row ZiskFv.Airs.Tables.BinaryTable.OP_AND)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main main r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    b.input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 row := by
+  simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+    ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+      main row r_main (regidx_to_fin b.r1) b.input.r1_val
+      h_matches b.m32Zero b.h_a_lo_t b.h_a_hi_t h_match b.h_input_r1
+
+theorem inputImmRow
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : AndiRowBinding main r_main state)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches : ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      row ZiskFv.Airs.Tables.BinaryTable.OP_AND)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main main r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    BitVec.signExtend 64 b.input.imm = ZiskFv.EquivCore.Add.binaryRowB64 row := by
+  simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
+      main row r_main b.input.imm h_matches b.m32Zero h_match b.h_imm_subset
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : AndiRowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.ITypePromises
+      state b.input.r1_val b.input.imm b.input.rd b.input.PC
+      (PureSpec.execute_ITYPE_andi_pure b.input).nextPC
+      b.r1 b.rd b.imm (b.bus).exec_row (b.bus).e0 (b.bus).e1 (b.bus).e2 where
+  input_r1_eq := b.h_input_r1
+  input_imm_eq := b.h_input_imm
+  input_rd_eq := b.h_input_rd
+  input_pc_eq := b.h_input_pc
+  exec_len := b.h_exec_len
+  e0_mult := b.h_e0_mult
+  e1_mult := b.h_e1_mult
+  nextPC_matches := b.h_nextPC_matches
+  m0_mult := by rfl
+  m0_as := by rfl
+  m1_mult := by rfl
+  m1_as := by rfl
+  m2_mult := by rfl
+  m2_as := by rfl
+  rd_idx := b.h_rd_idx
+
+end AndiRowBinding
+
+/-- ORI-specific projection of the named `ProgramBinding` premise. -/
+structure OriRowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.OriInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  provenance : MainRowProvenance main r_main
+  h_op : provenance.extractedRow.op = ExtractedConst.opOr
+  h_external : provenance.extractedRow.isExternalOp = true
+  h_m32 : provenance.extractedRow.m32 = false
+  h_store_pc : provenance.extractedRow.storePc = false
+  h_a_lo_t : main.a_0 r_main =
+    ZiskFv.Trusted.lane_lo
+      ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+        (regidx_to_fin r1))
+  h_a_hi_t : main.a_1 r_main =
+    ZiskFv.Trusted.lane_hi
+      ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+        (regidx_to_fin r1))
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) state = EStateM.Result.ok input.r1_val state
+  h_input_imm : input.imm = imm
+  h_input_rd : input.rd = regidx_to_fin rd
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_ori_pure input).nextPC
+  h_rd_idx :
+    input.rd =
+      Transpiler.wrap_to_regidx
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage provenance.mainRow) 1 1).ptr
+  h_imm_subset :
+    ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+      main r_main input.imm
+
+namespace OriRowBinding
+
+@[reducible]
+def bus {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : OriRowBinding main r_main state) : BusRows where
+  exec_row := b.execRow
+  e0 :=
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Main.aMemMessage b.provenance.mainRow) (-1) 1
+  e1 :=
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Main.bMemMessage b.provenance.mainRow) (-1) 1
+  e2 :=
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Main.cMemMessage b.provenance.mainRow) 1 1
+
+theorem m32Zero
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : OriRowBinding main r_main state) :
+    main.m32 r_main = 0 := by
+  simpa [boolF, b.h_m32] using b.provenance.m32_eq
+
+theorem rowStorePcZero
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : OriRowBinding main r_main state) :
+    b.provenance.mainRow.core.store_pc = 0 := by
+  have h_main :
+      main.store_pc r_main = 0 :=
+    MainRowProvenance.storePcZero_of_extracted_shape b.provenance b.h_store_pc
+  have h_row :
+      b.provenance.mainRow.core.store_pc =
+        (ZiskFv.AirsClean.Main.rowAt main r_main).store_pc :=
+    congrArg (fun row => row.store_pc) b.provenance.row_eq
+  exact h_row.trans (by simpa [ZiskFv.AirsClean.Main.rowAt] using h_main)
+
+theorem laneRd
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : OriRowBinding main r_main state) :
+    ZiskFv.Airs.MemoryBus.register_write_lanes_match main r_main (b.bus).e2 := by
+  have h :=
+    ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+      b.provenance.mainRow b.rowStorePcZero
+  rw [b.provenance.row_eq] at h
+  simpa [bus, ZiskFv.AirsClean.Main.validOfRow, ZiskFv.AirsClean.Main.rowAt] using h
+
+theorem byteMatchesOri
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : OriRowBinding main r_main state)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_row_spec : ZiskFv.AirsClean.Binary.Spec row)
+    (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main main r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      row ZiskFv.Airs.Tables.BinaryTable.OP_OR := by
+  have h_main_op_or :
+      main.op r_main = ZiskFv.Trusted.OP_OR :=
+    (MainRowProvenance.orPins_of_extracted_shape
+      b.provenance b.h_op b.h_external).main_op
+  have h_emit :
+      row.chain.b_op + 16 * row.mode.mode32 =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_OR : FGL) := by
+    have h_match_op := h_match
+    simp only [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main] at h_match_op
+    have h_op_match :
+        main.op r_main = row.chain.b_op + 16 * row.mode.mode32 := h_match_op.2.1
+    rw [← h_op_match]
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_OR, ZiskFv.Trusted.OP_OR] using
+      h_main_op_or
+  obtain ⟨_, h_b_op, h_b_op_or_sext⟩ :=
+    ZiskFv.AirsClean.Binary.static_table_logic_mode_pins_of_emit
+      row h_row_spec h_static ZiskFv.Airs.Tables.BinaryTable.OP_OR
+      (.inr (.inl rfl)) h_emit
+  exact
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
+      row (ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts row h_static)
+      ZiskFv.Airs.Tables.BinaryTable.OP_OR h_b_op h_b_op_or_sext
+
+theorem inputR1Row
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : OriRowBinding main r_main state)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches : ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      row ZiskFv.Airs.Tables.BinaryTable.OP_OR)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main main r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    b.input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 row := by
+  simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+    ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+      main row r_main (regidx_to_fin b.r1) b.input.r1_val
+      h_matches b.m32Zero b.h_a_lo_t b.h_a_hi_t h_match b.h_input_r1
+
+theorem inputImmRow
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : OriRowBinding main r_main state)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches : ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      row ZiskFv.Airs.Tables.BinaryTable.OP_OR)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main main r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    BitVec.signExtend 64 b.input.imm = ZiskFv.EquivCore.Add.binaryRowB64 row := by
+  simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
+      main row r_main b.input.imm h_matches b.m32Zero h_match b.h_imm_subset
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : OriRowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.ITypePromises
+      state b.input.r1_val b.input.imm b.input.rd b.input.PC
+      (PureSpec.execute_ITYPE_ori_pure b.input).nextPC
+      b.r1 b.rd b.imm (b.bus).exec_row (b.bus).e0 (b.bus).e1 (b.bus).e2 where
+  input_r1_eq := b.h_input_r1
+  input_imm_eq := b.h_input_imm
+  input_rd_eq := b.h_input_rd
+  input_pc_eq := b.h_input_pc
+  exec_len := b.h_exec_len
+  e0_mult := b.h_e0_mult
+  e1_mult := b.h_e1_mult
+  nextPC_matches := b.h_nextPC_matches
+  m0_mult := by rfl
+  m0_as := by rfl
+  m1_mult := by rfl
+  m1_as := by rfl
+  m2_mult := by rfl
+  m2_as := by rfl
+  rd_idx := b.h_rd_idx
+
+end OriRowBinding
+
+/-- XORI-specific projection of the named `ProgramBinding` premise. -/
+structure XoriRowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.XoriInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  provenance : MainRowProvenance main r_main
+  h_op : provenance.extractedRow.op = ExtractedConst.opXor
+  h_external : provenance.extractedRow.isExternalOp = true
+  h_m32 : provenance.extractedRow.m32 = false
+  h_store_pc : provenance.extractedRow.storePc = false
+  h_a_lo_t : main.a_0 r_main =
+    ZiskFv.Trusted.lane_lo
+      ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+        (regidx_to_fin r1))
+  h_a_hi_t : main.a_1 r_main =
+    ZiskFv.Trusted.lane_hi
+      ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+        (regidx_to_fin r1))
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) state = EStateM.Result.ok input.r1_val state
+  h_input_imm : input.imm = imm
+  h_input_rd : input.rd = regidx_to_fin rd
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_xori_pure input).nextPC
+  h_rd_idx :
+    input.rd =
+      Transpiler.wrap_to_regidx
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage provenance.mainRow) 1 1).ptr
+  h_imm_subset :
+    ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+      main r_main input.imm
+
+namespace XoriRowBinding
+
+@[reducible]
+def bus {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : XoriRowBinding main r_main state) : BusRows where
+  exec_row := b.execRow
+  e0 :=
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Main.aMemMessage b.provenance.mainRow) (-1) 1
+  e1 :=
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Main.bMemMessage b.provenance.mainRow) (-1) 1
+  e2 :=
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Main.cMemMessage b.provenance.mainRow) 1 1
+
+theorem m32Zero
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : XoriRowBinding main r_main state) :
+    main.m32 r_main = 0 := by
+  simpa [boolF, b.h_m32] using b.provenance.m32_eq
+
+theorem rowStorePcZero
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : XoriRowBinding main r_main state) :
+    b.provenance.mainRow.core.store_pc = 0 := by
+  have h_main :
+      main.store_pc r_main = 0 :=
+    MainRowProvenance.storePcZero_of_extracted_shape b.provenance b.h_store_pc
+  have h_row :
+      b.provenance.mainRow.core.store_pc =
+        (ZiskFv.AirsClean.Main.rowAt main r_main).store_pc :=
+    congrArg (fun row => row.store_pc) b.provenance.row_eq
+  exact h_row.trans (by simpa [ZiskFv.AirsClean.Main.rowAt] using h_main)
+
+theorem laneRd
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : XoriRowBinding main r_main state) :
+    ZiskFv.Airs.MemoryBus.register_write_lanes_match main r_main (b.bus).e2 := by
+  have h :=
+    ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+      b.provenance.mainRow b.rowStorePcZero
+  rw [b.provenance.row_eq] at h
+  simpa [bus, ZiskFv.AirsClean.Main.validOfRow, ZiskFv.AirsClean.Main.rowAt] using h
+
+theorem byteMatchesXori
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : XoriRowBinding main r_main state)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_row_spec : ZiskFv.AirsClean.Binary.Spec row)
+    (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main main r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      row ZiskFv.Airs.Tables.BinaryTable.OP_XOR := by
+  have h_main_op_xor :
+      main.op r_main = ZiskFv.Trusted.OP_XOR :=
+    (MainRowProvenance.xorPins_of_extracted_shape
+      b.provenance b.h_op b.h_external).main_op
+  have h_emit :
+      row.chain.b_op + 16 * row.mode.mode32 =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_XOR : FGL) := by
+    have h_match_op := h_match
+    simp only [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main] at h_match_op
+    have h_op_match :
+        main.op r_main = row.chain.b_op + 16 * row.mode.mode32 := h_match_op.2.1
+    rw [← h_op_match]
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_XOR, ZiskFv.Trusted.OP_XOR] using
+      h_main_op_xor
+  obtain ⟨_, h_b_op, h_b_op_or_sext⟩ :=
+    ZiskFv.AirsClean.Binary.static_table_logic_mode_pins_of_emit
+      row h_row_spec h_static ZiskFv.Airs.Tables.BinaryTable.OP_XOR
+      (.inr (.inr rfl)) h_emit
+  exact
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
+      row (ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts row h_static)
+      ZiskFv.Airs.Tables.BinaryTable.OP_XOR h_b_op h_b_op_or_sext
+
+theorem inputR1Row
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : XoriRowBinding main r_main state)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches : ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      row ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main main r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    b.input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 row := by
+  simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+    ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+      main row r_main (regidx_to_fin b.r1) b.input.r1_val
+      h_matches b.m32Zero b.h_a_lo_t b.h_a_hi_t h_match b.h_input_r1
+
+theorem inputImmRow
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : XoriRowBinding main r_main state)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches : ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      row ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main main r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    BitVec.signExtend 64 b.input.imm = ZiskFv.EquivCore.Add.binaryRowB64 row := by
+  simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
+      main row r_main b.input.imm h_matches b.m32Zero h_match b.h_imm_subset
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : XoriRowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.ITypePromises
+      state b.input.r1_val b.input.imm b.input.rd b.input.PC
+      (PureSpec.execute_ITYPE_xori_pure b.input).nextPC
+      b.r1 b.rd b.imm (b.bus).exec_row (b.bus).e0 (b.bus).e1 (b.bus).e2 where
+  input_r1_eq := b.h_input_r1
+  input_imm_eq := b.h_input_imm
+  input_rd_eq := b.h_input_rd
+  input_pc_eq := b.h_input_pc
+  exec_len := b.h_exec_len
+  e0_mult := b.h_e0_mult
+  e1_mult := b.h_e1_mult
+  nextPC_matches := b.h_nextPC_matches
+  m0_mult := by rfl
+  m0_as := by rfl
+  m1_mult := by rfl
+  m1_as := by rfl
+  m2_mult := by rfl
+  m2_as := by rfl
+  rd_idx := b.h_rd_idx
+
+end XoriRowBinding
+
 /-- FENCE-specific projection of the named `ProgramBinding` premise. -/
 structure FenceRowBinding
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
@@ -1674,6 +2239,24 @@ structure ProgramBinding (trace : AcceptedTrace) where
   sltu :
     ∀ i : Fin trace.length, armTag i = ArmTag.sltu →
       SltuRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  andi :
+    ∀ i : Fin trace.length, armTag i = ArmTag.andi →
+      AndiRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  ori :
+    ∀ i : Fin trace.length, armTag i = ArmTag.ori →
+      OriRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  xori :
+    ∀ i : Fin trace.length, armTag i = ArmTag.xori →
+      XoriRowBinding
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
         i.val
         (stateAt i)
@@ -2393,6 +2976,309 @@ theorem construction_sltu_aeneasBridgeTrust
       providerTable providerRow h_component h_table_spec h_provider_row
       h_match_static h_input_r1_row h_input_r2_row b.laneRd b.promises
 
+def construction_andi
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.andi)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.andi i h_tag
+  let providerInput :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (providerTable.environment providerRow) := by
+    simpa [h_component] using h_table_spec providerRow h_provider_row
+  have h_row_spec : ZiskFv.AirsClean.Binary.Spec providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.1
+  have h_static :
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.2
+  have h_matches := b.byteMatchesAndi providerInput h_row_spec h_static h_match_static
+  have h_input_r1_row := b.inputR1Row providerInput h_matches h_match_static
+  have h_input_imm_row := b.inputImmRow providerInput h_matches h_match_static
+  OpEnvelope.andiOfExtractedShape
+    b.input b.r1 b.rd b.imm
+    (ZiskFv.AirsClean.Binary.validOfRow providerInput)
+    b.bus b.provenance b.h_op b.h_external
+    providerTable providerRow h_component h_table_spec h_provider_row
+    h_match_static h_input_r1_row h_input_imm_row b.h_imm_subset b.laneRd b.promises
+
+theorem construction_andi_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.andi)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    :
+    (construction_andi trace binding i h_tag providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static).aeneasBridgeTrust := by
+  let b := binding.andi i h_tag
+  let providerInput :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (providerTable.environment providerRow) := by
+    simpa [h_component] using h_table_spec providerRow h_provider_row
+  have h_row_spec : ZiskFv.AirsClean.Binary.Spec providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.1
+  have h_static :
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.2
+  have h_matches := b.byteMatchesAndi providerInput h_row_spec h_static h_match_static
+  have h_input_r1_row := b.inputR1Row providerInput h_matches h_match_static
+  have h_input_imm_row := b.inputImmRow providerInput h_matches h_match_static
+  exact
+    OpEnvelope.aeneasBridgeTrust_andiOfExtractedShape
+      b.input b.r1 b.rd b.imm
+      (ZiskFv.AirsClean.Binary.validOfRow providerInput)
+      b.bus b.provenance b.h_op b.h_external
+      providerTable providerRow h_component h_table_spec h_provider_row
+      h_match_static h_input_r1_row h_input_imm_row b.h_imm_subset b.laneRd b.promises
+
+def construction_ori
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.ori)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.ori i h_tag
+  let providerInput :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (providerTable.environment providerRow) := by
+    simpa [h_component] using h_table_spec providerRow h_provider_row
+  have h_row_spec : ZiskFv.AirsClean.Binary.Spec providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.1
+  have h_static :
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.2
+  have h_matches := b.byteMatchesOri providerInput h_row_spec h_static h_match_static
+  have h_input_r1_row := b.inputR1Row providerInput h_matches h_match_static
+  have h_input_imm_row := b.inputImmRow providerInput h_matches h_match_static
+  OpEnvelope.oriOfExtractedShape
+    b.input b.r1 b.rd b.imm
+    (ZiskFv.AirsClean.Binary.validOfRow providerInput)
+    b.bus b.provenance b.h_op b.h_external
+    providerTable providerRow h_component h_table_spec h_provider_row
+    h_match_static h_input_r1_row h_input_imm_row b.h_imm_subset b.laneRd b.promises
+
+theorem construction_ori_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.ori)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    :
+    (construction_ori trace binding i h_tag providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static).aeneasBridgeTrust := by
+  let b := binding.ori i h_tag
+  let providerInput :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (providerTable.environment providerRow) := by
+    simpa [h_component] using h_table_spec providerRow h_provider_row
+  have h_row_spec : ZiskFv.AirsClean.Binary.Spec providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.1
+  have h_static :
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.2
+  have h_matches := b.byteMatchesOri providerInput h_row_spec h_static h_match_static
+  have h_input_r1_row := b.inputR1Row providerInput h_matches h_match_static
+  have h_input_imm_row := b.inputImmRow providerInput h_matches h_match_static
+  exact
+    OpEnvelope.aeneasBridgeTrust_oriOfExtractedShape
+      b.input b.r1 b.rd b.imm
+      (ZiskFv.AirsClean.Binary.validOfRow providerInput)
+      b.bus b.provenance b.h_op b.h_external
+      providerTable providerRow h_component h_table_spec h_provider_row
+      h_match_static h_input_r1_row h_input_imm_row b.h_imm_subset b.laneRd b.promises
+
+def construction_xori
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.xori)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.xori i h_tag
+  let providerInput :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (providerTable.environment providerRow) := by
+    simpa [h_component] using h_table_spec providerRow h_provider_row
+  have h_row_spec : ZiskFv.AirsClean.Binary.Spec providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.1
+  have h_static :
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.2
+  have h_matches := b.byteMatchesXori providerInput h_row_spec h_static h_match_static
+  have h_input_r1_row := b.inputR1Row providerInput h_matches h_match_static
+  have h_input_imm_row := b.inputImmRow providerInput h_matches h_match_static
+  OpEnvelope.xoriOfExtractedShape
+    b.input b.r1 b.rd b.imm
+    (ZiskFv.AirsClean.Binary.validOfRow providerInput)
+    b.bus b.provenance b.h_op b.h_external
+    providerTable providerRow h_component h_table_spec h_provider_row
+    h_match_static h_input_r1_row h_input_imm_row b.h_imm_subset b.laneRd b.promises
+
+theorem construction_xori_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.xori)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    :
+    (construction_xori trace binding i h_tag providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static).aeneasBridgeTrust := by
+  let b := binding.xori i h_tag
+  let providerInput :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (providerTable.environment providerRow) := by
+    simpa [h_component] using h_table_spec providerRow h_provider_row
+  have h_row_spec : ZiskFv.AirsClean.Binary.Spec providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.1
+  have h_static :
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput := by
+    have h := h_component_spec
+    rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h
+    exact h.2
+  have h_matches := b.byteMatchesXori providerInput h_row_spec h_static h_match_static
+  have h_input_r1_row := b.inputR1Row providerInput h_matches h_match_static
+  have h_input_imm_row := b.inputImmRow providerInput h_matches h_match_static
+  exact
+    OpEnvelope.aeneasBridgeTrust_xoriOfExtractedShape
+      b.input b.r1 b.rd b.imm
+      (ZiskFv.AirsClean.Binary.validOfRow providerInput)
+      b.bus b.provenance b.h_op b.h_external
+      providerTable providerRow h_component h_table_spec h_provider_row
+      h_match_static h_input_r1_row h_input_imm_row b.h_imm_subset b.laneRd b.promises
+
 theorem exists_staticBinary_provider_row_matches_logic_from_binding
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
@@ -2702,6 +3588,84 @@ theorem exists_construction_sltu_from_balance
       h_component h_table_spec h_providerRow h_match_static
   exact ⟨env,
     construction_sltu_aeneasBridgeTrust trace binding i h_tag providerTable
+      providerRow h_component h_table_spec h_providerRow h_match_static⟩
+
+theorem exists_construction_andi_from_balance
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.andi) :
+    ∃ env :
+      OpEnvelope
+        (binding.stateAt i)
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val,
+      env.aeneasBridgeTrust := by
+  let b := binding.andi i h_tag
+  have h_pins :=
+    MainRowProvenance.andPins_of_extracted_shape
+      b.provenance b.h_op b.h_external
+  obtain ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_table_spec, h_match_static⟩ :=
+    exists_staticBinary_provider_row_matches_logic_from_binding
+      trace binding i h_pins.main_active (.inl h_pins.main_op)
+  let env :=
+    construction_andi trace binding i h_tag providerTable providerRow
+      h_component h_table_spec h_providerRow h_match_static
+  exact ⟨env,
+    construction_andi_aeneasBridgeTrust trace binding i h_tag providerTable
+      providerRow h_component h_table_spec h_providerRow h_match_static⟩
+
+theorem exists_construction_ori_from_balance
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.ori) :
+    ∃ env :
+      OpEnvelope
+        (binding.stateAt i)
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val,
+      env.aeneasBridgeTrust := by
+  let b := binding.ori i h_tag
+  have h_pins :=
+    MainRowProvenance.orPins_of_extracted_shape
+      b.provenance b.h_op b.h_external
+  obtain ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_table_spec, h_match_static⟩ :=
+    exists_staticBinary_provider_row_matches_logic_from_binding
+      trace binding i h_pins.main_active (.inr (.inl h_pins.main_op))
+  let env :=
+    construction_ori trace binding i h_tag providerTable providerRow
+      h_component h_table_spec h_providerRow h_match_static
+  exact ⟨env,
+    construction_ori_aeneasBridgeTrust trace binding i h_tag providerTable
+      providerRow h_component h_table_spec h_providerRow h_match_static⟩
+
+theorem exists_construction_xori_from_balance
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.xori) :
+    ∃ env :
+      OpEnvelope
+        (binding.stateAt i)
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val,
+      env.aeneasBridgeTrust := by
+  let b := binding.xori i h_tag
+  have h_pins :=
+    MainRowProvenance.xorPins_of_extracted_shape
+      b.provenance b.h_op b.h_external
+  obtain ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_table_spec, h_match_static⟩ :=
+    exists_staticBinary_provider_row_matches_logic_from_binding
+      trace binding i h_pins.main_active (.inr (.inr h_pins.main_op))
+  let env :=
+    construction_xori trace binding i h_tag providerTable providerRow
+      h_component h_table_spec h_providerRow h_match_static
+  exact ⟨env,
+    construction_xori_aeneasBridgeTrust trace binding i h_tag providerTable
       providerRow h_component h_table_spec h_providerRow h_match_static⟩
 
 /-- Construct the FENCE envelope arm from an accepted trace plus the named
