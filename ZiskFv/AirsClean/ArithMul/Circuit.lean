@@ -254,13 +254,71 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
             (e7 := arithMulE7 a b) fgl_65536_ne_zero
             (arithMulChainSum_zero a b ha hb)) }
 
+set_option maxHeartbeats 4000000 in
+/-- Lookup-aware ArithMul component circuit. Its soundness exposes the full
+    carry-chain plus ArithTable membership contract; completeness is intentionally
+    vacuous until an honest lookup-aware row constructor is added. -/
+@[reducible]
+def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
+  { arithMulWithArithTableElaborated with
+    exposedChannels row _ :=
+      expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
+    channelsLawful := by
+      simp only [circuit_norm, mainWithArithTable, main, primaryOpBusMessageExpr,
+        OpBusChannel]
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ => FullSpec row
+    ProverAssumptions := fun _ _ _ => False
+    ProverSpec := fun _ _ _ => True
+    soundness := by
+      circuit_proof_start
+      refine ⟨?_, ?_⟩
+      · obtain ⟨h_c6, h_c7, h_c8, h_c31, h_c32, h_c33, h_c34,
+                h_c35, h_c36, h_c37, h_c38, h_lookup⟩ := h_holds
+        refine ⟨?_, ?_⟩
+        · refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+          · linear_combination h_c6
+          · linear_combination h_c7
+          · linear_combination h_c8
+          · linear_combination h_c31
+          · linear_combination h_c32
+          · linear_combination h_c33
+          · linear_combination h_c34
+          · linear_combination h_c35
+          · linear_combination h_c36
+          · linear_combination h_c37
+          · linear_combination h_c38
+        · obtain ⟨_, h_flags, _⟩ := h_input
+          obtain ⟨h_na, h_nb, h_nr, h_np, h_sext, h_m32, h_div, h_div_by_zero,
+            h_div_overflow, h_main_div, h_main_mul, h_signed, h_range_ab, h_range_cd,
+            h_op, _h_bus_res1, _h_multiplicity⟩ := h_flags
+          simpa [ArithTableSpec, arithTableRow, Lookup.Soundness, Table.fromStatic,
+            StaticTable.toTable, Table.toRaw, h_op, h_m32, h_div, h_na, h_nb, h_np,
+            h_nr, h_sext, h_div_by_zero, h_div_overflow, h_main_mul, h_main_div,
+            h_signed, h_range_ab, h_range_cd] using h_lookup
+      · intro _
+        trivial
+    completeness := by
+      circuit_proof_start_core
+      exact False.elim h_assumptions }
+
 /-- ArithMul as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+/-- Lookup-aware ArithMul component exposing `FullSpec`. -/
+@[reducible]
+def componentWithArithTable : Air.Flat.Component FGL := ⟨ circuitWithArithTable ⟩
 
 /-- Project the generic Clean component `Spec` to the concrete ArithMul row
     `Spec`. -/
 theorem component_spec (env : Environment FGL) :
     component.Spec env = Spec (component.rowInput env) := by
+  rfl
+
+/-- Project the lookup-aware generic Clean component `Spec` to `FullSpec`. -/
+theorem componentWithArithTable_spec (env : Environment FGL) :
+    componentWithArithTable.Spec env =
+      FullSpec (componentWithArithTable.rowInput env) := by
   rfl
 
 set_option maxHeartbeats 1000000 in
@@ -274,6 +332,22 @@ theorem component_interactionsWith_opBus :
       [((OpBusChannel.pushed (primaryOpBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
     component.exposedChannels
   simp only [component, circuit, arithMulElaborated, Component.exposedChannels,
+    expose, List.mem_singleton, List.map_cons, List.map_nil,
+    primaryOpBusMessageExpr]
+
+set_option maxHeartbeats 1000000 in
+/-- The lookup-aware ArithMul component exposes the same primary operation-bus
+    provider interaction as the carry-chain-only component. -/
+theorem componentWithArithTable_interactionsWith_opBus :
+    componentWithArithTable.operations.interactionsWith OpBusChannel.toRaw =
+      [((OpBusChannel.pushed
+        (primaryOpBusMessageExpr componentWithArithTable.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨OpBusChannel.toRaw,
+      [((OpBusChannel.pushed
+        (primaryOpBusMessageExpr componentWithArithTable.rowInputVar)).toRaw)]⟩ ∈
+    componentWithArithTable.exposedChannels
+  simp only [componentWithArithTable, circuitWithArithTable, Component.exposedChannels,
     expose, List.mem_singleton, List.map_cons, List.map_nil,
     primaryOpBusMessageExpr]
 
