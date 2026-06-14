@@ -264,6 +264,32 @@ theorem spec_op_val_ne_bitwise {t : BinaryExtensionTableMessage FGL}
           OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
 
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- BinaryExtensionTable rows cover shift and sign-extension opcodes only;
+    they cannot be the Binary-table comparison opcodes `6` or `7`
+    (`LTU`, `LT`). -/
+theorem spec_op_val_ne_compare {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    t.op.val ≠ 6 ∧ t.op.val ≠ 7 := by
+  rcases h with ⟨i, rfl⟩
+  change (opOfIndex i.val : FGL).val ≠ 6
+    ∧ (opOfIndex i.val : FGL).val ≠ 7
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  unfold opOfIndex
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block
+  all_goals
+    constructor
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- The static decoder always produces the byte/range side of the legacy
     BinaryExtensionTable semantic predicate. This is the first reusable
     membership-to-semantics projection; the per-op output equations are

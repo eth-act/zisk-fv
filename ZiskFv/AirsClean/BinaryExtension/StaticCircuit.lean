@@ -636,6 +636,12 @@ theorem static_table_op_val_ne_bitwise_of_spec_facts
     row.flags.op.val ≠ 14 ∧ row.flags.op.val ≠ 15 ∧ row.flags.op.val ≠ 16 := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_bitwise h_specs.1
 
+theorem static_table_op_val_ne_compare_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 6 ∧ row.flags.op.val ≠ 7 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_compare h_specs.1
+
 /-- A row accepted by the lookup-aware BinaryExtension component cannot carry
     Binary-table bitwise opcodes (`AND`/`OR`/`XOR`, values 14/15/16). -/
 theorem staticLookupComponent_op_val_ne_bitwise_of_spec
@@ -646,6 +652,17 @@ theorem staticLookupComponent_op_val_ne_bitwise_of_spec
       ∧ (staticLookupComponent.rowInput env).flags.op.val ≠ 16 := by
   rw [staticLookupComponent_spec] at h_spec
   exact static_table_op_val_ne_bitwise_of_spec_facts
+    (staticLookupComponent.rowInput env) h_spec.2
+
+/-- A row accepted by the lookup-aware BinaryExtension component cannot carry
+    Binary-table comparison opcodes (`LTU`/`LT`, values 6/7). -/
+theorem staticLookupComponent_op_val_ne_compare_of_spec
+    (env : Environment FGL)
+    (h_spec : staticLookupComponent.Spec env) :
+    (staticLookupComponent.rowInput env).flags.op.val ≠ 6
+      ∧ (staticLookupComponent.rowInput env).flags.op.val ≠ 7 := by
+  rw [staticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_compare_of_spec_facts
     (staticLookupComponent.rowInput env) h_spec.2
 
 theorem flags_eval_op
