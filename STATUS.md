@@ -10,22 +10,19 @@ and leave only the named bucket-(b) residuals (`aeneasBridgeTrust`,
 `ProgramBinding`/boot, `NoKnownDefect`). Balance is assumed via
 `trace.balanced`, never proven.
 
-Current focus: P4 PR2/PR2a in this worktree (`.worktrees/endgame-p4-pr2` on
-branch `endgame-p4-pr2`), continuing as a stack instead of waiting for PR1
-review. `binaryOfTable` / `binaryExtensionOfTable` and table-existence lemmas
-are implemented in rebased commit `ecea9e95`, pushed to
-`origin/endgame-p4-pr2`;
-provider-free Branch construction breadth is implemented in `98e3ca92`, pushed,
-and focused-build green. Provider-free `fence`/`auipc_x0`/`jal_x0` construction
-breadth is implemented in `4e16a47e`, pushed, and focused-build green.
+Current focus: P4 PR2/PR2a in `.worktrees/endgame-p4-pr2` on branch
+`endgame-p4-pr2`, continuing as a stack instead of waiting for PR1 review.
+Extractor, provider-free Branch, and provider-free `fence`/`auipc_x0`/`jal_x0`
+construction breadth are pushed through `4e16a47e`.
 The ArithMul provider path is pushed through `8805c7ec`: `0f3c859b` added the
 lookup-aware wrapper exposing `FullSpec`, `64ec2e75` swapped
 `fullRv64imEnsemble` to that provider plus added a balance projection from
 generic component `Spec` to ArithMul `FullSpec`, and `8805c7ec` added the
 ArithTable opcode-range projection plus the first honest ArithMul provider
-branch exclusion (`xor`). The current slice adds the full-ensemble XOR provider
-selector: it rules out ArithMul/BinaryExtension/BinaryAdd and returns the
-lookup-aware Binary provider row plus table `Spec`.
+branch exclusion (`xor`). Commit `22d648d` added the full-ensemble XOR provider
+selector. The current local slice adds `XorRowBinding`, derives Main register
+memory-bus rows and `RTypePromises`, and packages provider-parameterized
+`construction_xor`.
 
 Blocking: none for stack-building. PR1 #94 is still open, but Cody explicitly
 directed building the remaining P4 PRs as a stack. REPL is already configured
@@ -41,8 +38,10 @@ preserved by autostash. Focused verification for the XOR selector passed:
 `lake build ZiskFv.AirsClean.FullEnsemble.Balance`,
 `lake build ZiskFv.Compliance.AcceptedTrace`, added-line forbidden-token scan,
 declaration-level forbidden-token scan, added-line width check, and
-`git diff --check`.
+`git diff --check`. Focused verification for the local XOR bus/promise slice
+passed: `lake build ZiskFv.Compliance.AcceptedTrace`, no forbidden tokens in the
+touched Lean file, added-line width check, and `git diff --check`.
 
-Next step after this selector slice lands: derive the register memory-bus rows
-and `RTypePromises` needed for `construction_xor`. Do not fake discharges from
-the old carry-chain-only ArithMul `Spec`.
+Next step after this slice lands: feed `construction_xor` from the balance
+selector and derive the Binary provider input-row facts. Do not fake discharges
+from the old carry-chain-only ArithMul `Spec`.
