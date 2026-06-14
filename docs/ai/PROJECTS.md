@@ -2,7 +2,7 @@
 
 ## Endgame
 
-Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — the campaign from the current envelope-conditional global theorem to a trace-level public statement, in six phases anchored to issues #61/#74-#78. P1 is complete on main via #89 (`cf2a4aa6`), and P3 is complete on main via #90/#91 (`4456a9e5`) as an auditable reshape rather than a memory-trust reduction. Active stream: `docs/ai/plan/PLAN_ENDGAME_P4.md`, the first trust-reducing phase: build `AcceptedTrace -> OpEnvelope`, discharge derivable bucket-(a) evidence from accepted trace data, and leave only the named bucket-(b) residuals (`aeneasBridgeTrust`, `ProgramBinding`/boot, `NoKnownDefect`). Current focus is P4 PR1 in `.worktrees/endgame-p4-pr1`: `AcceptedTrace`, `ProgramBinding`, `mainOfTable`, one BEQ construction template, and the construction-binder audit gate.
+Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — the campaign from the current envelope-conditional global theorem to a trace-level public statement, in six phases anchored to issues #61/#74-#78. P1 is complete on main via #89 (`cf2a4aa6`), and P3 is complete on main via #90/#91 (`4456a9e5`) as an auditable reshape rather than a memory-trust reduction. Active stream: `docs/ai/plan/PLAN_ENDGAME_P4.md`, the first trust-reducing phase: build `AcceptedTrace -> OpEnvelope`, discharge derivable bucket-(a) evidence from accepted trace data, and leave only the named bucket-(b) residuals (`aeneasBridgeTrust`, `ProgramBinding`/boot, `NoKnownDefect`). Current focus is stacked P4 PR2/PR2a work in `.worktrees/endgame-p4-pr2` on top of PR1 commit `c07100fc`; Binary/BinaryExtension extractors are focused-build green, and the next layer is provider-match adapters.
 
 ## Clean Completeness Proofs
 

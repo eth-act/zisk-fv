@@ -1,4 +1,6 @@
 import ZiskFv.AirsClean.FullEnsemble
+import ZiskFv.AirsClean.Binary.Bridge
+import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.Mem.TraceSpec
 
@@ -100,6 +102,49 @@ theorem exists_main_table_of_fullRv64im_witness
       SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
   have h_in_map :
       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program ∈
+        witness.allTables.map (·.component) := by
+    rw [witness.allTables_map_component]
+    exact h_component_mem
+  rcases List.mem_map.mp h_in_map with ⟨table, h_table, h_component⟩
+  exact ⟨table, h_table, h_component⟩
+
+/-- Every concrete witness for the full RV64IM ensemble contains the
+    lookup-aware Binary provider table. This is only table selection; opcode
+    construction still resolves provider matches from channel balance. -/
+theorem exists_binary_table_of_fullRv64im_witness
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
+    ∃ table ∈ witness.allTables,
+      table.component = ZiskFv.AirsClean.Binary.staticLookupComponent := by
+  have h_component_mem :
+      ZiskFv.AirsClean.Binary.staticLookupComponent ∈
+        (fullRv64imEnsemble length program).ensemble.allTables := by
+    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+  have h_in_map :
+      ZiskFv.AirsClean.Binary.staticLookupComponent ∈
+        witness.allTables.map (·.component) := by
+    rw [witness.allTables_map_component]
+    exact h_component_mem
+  rcases List.mem_map.mp h_in_map with ⟨table, h_table, h_component⟩
+  exact ⟨table, h_table, h_component⟩
+
+/-- Every concrete witness for the full RV64IM ensemble contains the
+    lookup-aware BinaryExtension provider table. This is only table selection;
+    opcode construction still resolves provider matches from channel balance. -/
+theorem exists_binaryExtension_table_of_fullRv64im_witness
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
+    ∃ table ∈ witness.allTables,
+      table.component =
+        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent := by
+  have h_component_mem :
+      ZiskFv.AirsClean.BinaryExtension.staticLookupComponent ∈
+        (fullRv64imEnsemble length program).ensemble.allTables := by
+    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+  have h_in_map :
+      ZiskFv.AirsClean.BinaryExtension.staticLookupComponent ∈
         witness.allTables.map (·.component) := by
     rw [witness.allTables_map_component]
     exact h_component_mem
@@ -1987,6 +2032,326 @@ theorem opBus_row_Main_mainOfTable
   rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
   rw [rowAt_mainOfTable program table idx]
   simp [mainTableRowAtOrZero_get program table idx]
+
+/-- Zero fallback for out-of-range projections from a concrete Binary table.
+    In-range rows are the only rows consumed by the table bridge below. -/
+@[reducible]
+def zeroBinaryRow : ZiskFv.AirsClean.Binary.BinaryRow FGL where
+  aBytes := {
+    free_in_a_0 := 0
+    free_in_a_1 := 0
+    free_in_a_2 := 0
+    free_in_a_3 := 0
+    free_in_a_4 := 0
+    free_in_a_5 := 0
+    free_in_a_6 := 0
+    free_in_a_7 := 0 }
+  bBytes := {
+    free_in_b_0 := 0
+    free_in_b_1 := 0
+    free_in_b_2 := 0
+    free_in_b_3 := 0
+    free_in_b_4 := 0
+    free_in_b_5 := 0
+    free_in_b_6 := 0
+    free_in_b_7 := 0 }
+  cBytes := {
+    free_in_c_0 := 0
+    free_in_c_1 := 0
+    free_in_c_2 := 0
+    free_in_c_3 := 0
+    free_in_c_4 := 0
+    free_in_c_5 := 0
+    free_in_c_6 := 0
+    free_in_c_7 := 0 }
+  chain := {
+    carry_0 := 0
+    carry_1 := 0
+    carry_2 := 0
+    carry_3 := 0
+    carry_4 := 0
+    carry_5 := 0
+    carry_6 := 0
+    carry_7 := 0
+    b_op := 0
+    b_op_or_sext := 0 }
+  mode := {
+    mode32 := 0
+    result_is_a := 0
+    use_first_byte := 0
+    c_is_signed := 0
+    mode32_and_c_is_signed := 0 }
+
+/-- Project row `row` of a concrete Clean Binary table to the Binary row input.
+    Out-of-range rows use `zeroBinaryRow` only to make the named-column view total. -/
+@[reducible]
+def binaryTableRowAtOrZero
+    (table : Table FGL)
+    (row : ℕ) : ZiskFv.AirsClean.Binary.BinaryRow FGL :=
+  if h_row : row < table.table.length then
+    eval (table.environment (table.table.get ⟨row, h_row⟩))
+      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar
+  else
+    zeroBinaryRow
+
+/-- Named-column Binary view obtained from the concrete Clean Binary table. -/
+@[reducible]
+def binaryOfTable
+    (table : Table FGL) :
+    ZiskFv.Airs.Binary.Valid_Binary FGL FGL where
+  b_op := fun row => (binaryTableRowAtOrZero table row).chain.b_op
+  free_in_a_0 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_0
+  free_in_a_1 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_1
+  free_in_a_2 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_2
+  free_in_a_3 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_3
+  free_in_a_4 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_4
+  free_in_a_5 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_5
+  free_in_a_6 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_6
+  free_in_a_7 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_7
+  free_in_b_0 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_0
+  free_in_b_1 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_1
+  free_in_b_2 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_2
+  free_in_b_3 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_3
+  free_in_b_4 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_4
+  free_in_b_5 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_5
+  free_in_b_6 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_6
+  free_in_b_7 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_7
+  free_in_c_0 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_0
+  free_in_c_1 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_1
+  free_in_c_2 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_2
+  free_in_c_3 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_3
+  free_in_c_4 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_4
+  free_in_c_5 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_5
+  free_in_c_6 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_6
+  free_in_c_7 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_7
+  carry_0 := fun row => (binaryTableRowAtOrZero table row).chain.carry_0
+  carry_1 := fun row => (binaryTableRowAtOrZero table row).chain.carry_1
+  carry_2 := fun row => (binaryTableRowAtOrZero table row).chain.carry_2
+  carry_3 := fun row => (binaryTableRowAtOrZero table row).chain.carry_3
+  carry_4 := fun row => (binaryTableRowAtOrZero table row).chain.carry_4
+  carry_5 := fun row => (binaryTableRowAtOrZero table row).chain.carry_5
+  carry_6 := fun row => (binaryTableRowAtOrZero table row).chain.carry_6
+  carry_7 := fun row => (binaryTableRowAtOrZero table row).chain.carry_7
+  mode32 := fun row => (binaryTableRowAtOrZero table row).mode.mode32
+  result_is_a := fun row => (binaryTableRowAtOrZero table row).mode.result_is_a
+  use_first_byte := fun row => (binaryTableRowAtOrZero table row).mode.use_first_byte
+  c_is_signed := fun row => (binaryTableRowAtOrZero table row).mode.c_is_signed
+  b_op_or_sext := fun row => (binaryTableRowAtOrZero table row).chain.b_op_or_sext
+  mode32_and_c_is_signed :=
+    fun row => (binaryTableRowAtOrZero table row).mode.mode32_and_c_is_signed
+  gsum := fun _ => 0
+  im_0 := fun _ => 0
+  im_1 := fun _ => 0
+  im_2 := fun _ => 0
+  im_3 := fun _ => 0
+
+/-- In-range concrete Binary table projection agrees with `List.get`. -/
+theorem binaryTableRowAtOrZero_get
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    binaryTableRowAtOrZero table idx.val =
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar := by
+  unfold binaryTableRowAtOrZero
+  rw [dif_pos idx.isLt]
+
+/-- The named-column projection of a concrete Binary table has the expected
+    `rowAt` view at every in-range index. -/
+theorem rowAt_binaryOfTable
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Binary.rowAt (binaryOfTable table) idx.val =
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar := by
+  simp [ZiskFv.AirsClean.Binary.rowAt, binaryTableRowAtOrZero_get table idx]
+  let row :=
+    eval (table.environment (table.table.get idx))
+      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar
+  change
+    { aBytes := row.aBytes
+      bBytes := row.bBytes
+      cBytes := row.cBytes
+      chain := row.chain
+      mode := row.mode } = row
+  cases row
+  rfl
+
+/-- The legacy `opBus_row_Binary` view of `binaryOfTable` is the Clean Binary
+    operation-bus message evaluated on the same concrete row. -/
+theorem opBus_row_Binary_binaryOfTable
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.Airs.OperationBus.opBus_row_Binary (binaryOfTable table) idx.val =
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (eval (table.environment (table.table.get idx))
+            ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1 := by
+  rw [← ZiskFv.AirsClean.Binary.opBusMessage_toEntry_rowAt_eq_opBus_row]
+  rw [rowAt_binaryOfTable table idx]
+
+/-- Zero fallback for out-of-range projections from a concrete BinaryExtension
+    table. In-range rows are the only rows consumed by the table bridge below. -/
+@[reducible]
+def zeroBinaryExtensionRow : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL where
+  aCols := {
+    free_in_a_0 := 0
+    free_in_a_1 := 0
+    free_in_a_2 := 0
+    free_in_a_3 := 0
+    free_in_a_4 := 0
+    free_in_a_5 := 0
+    free_in_a_6 := 0
+    free_in_a_7 := 0 }
+  cColsLo := {
+    free_in_c_0 := 0
+    free_in_c_1 := 0
+    free_in_c_2 := 0
+    free_in_c_3 := 0
+    free_in_c_4 := 0
+    free_in_c_5 := 0
+    free_in_c_6 := 0
+    free_in_c_7 := 0 }
+  cColsHi := {
+    free_in_c_8 := 0
+    free_in_c_9 := 0
+    free_in_c_10 := 0
+    free_in_c_11 := 0
+    free_in_c_12 := 0
+    free_in_c_13 := 0
+    free_in_c_14 := 0
+    free_in_c_15 := 0 }
+  flags := {
+    op := 0
+    free_in_b := 0
+    op_is_shift := 0
+    b_0 := 0
+    b_1 := 0 }
+
+/-- Project row `row` of a concrete Clean BinaryExtension table to the
+    BinaryExtension row input. Out-of-range rows use `zeroBinaryExtensionRow`
+    only to make the named-column view total. -/
+@[reducible]
+def binaryExtensionTableRowAtOrZero
+    (table : Table FGL)
+    (row : ℕ) : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL :=
+  if h_row : row < table.table.length then
+    eval (table.environment (table.table.get ⟨row, h_row⟩))
+      ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar
+  else
+    zeroBinaryExtensionRow
+
+/-- Named-column BinaryExtension view obtained from the concrete Clean
+    BinaryExtension table. -/
+@[reducible]
+def binaryExtensionOfTable
+    (table : Table FGL) :
+    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL where
+  op := fun row => (binaryExtensionTableRowAtOrZero table row).flags.op
+  free_in_a_0 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_0
+  free_in_a_1 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_1
+  free_in_a_2 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_2
+  free_in_a_3 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_3
+  free_in_a_4 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_4
+  free_in_a_5 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_5
+  free_in_a_6 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_6
+  free_in_a_7 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_7
+  free_in_b := fun row => (binaryExtensionTableRowAtOrZero table row).flags.free_in_b
+  free_in_c_0 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_0
+  free_in_c_1 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_1
+  free_in_c_2 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_2
+  free_in_c_3 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_3
+  free_in_c_4 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_4
+  free_in_c_5 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_5
+  free_in_c_6 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_6
+  free_in_c_7 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_7
+  free_in_c_8 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_8
+  free_in_c_9 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_9
+  free_in_c_10 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_10
+  free_in_c_11 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_11
+  free_in_c_12 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_12
+  free_in_c_13 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_13
+  free_in_c_14 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_14
+  free_in_c_15 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_15
+  op_is_shift := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).flags.op_is_shift
+  b_0 := fun row => (binaryExtensionTableRowAtOrZero table row).flags.b_0
+  b_1 := fun row => (binaryExtensionTableRowAtOrZero table row).flags.b_1
+  gsum := fun _ => 0
+  im_0 := fun _ => 0
+  im_1 := fun _ => 0
+  im_2 := fun _ => 0
+  im_3 := fun _ => 0
+  im_high_degree_0 := fun _ => 0
+
+/-- In-range concrete BinaryExtension table projection agrees with `List.get`. -/
+theorem binaryExtensionTableRowAtOrZero_get
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    binaryExtensionTableRowAtOrZero table idx.val =
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar := by
+  unfold binaryExtensionTableRowAtOrZero
+  rw [dif_pos idx.isLt]
+
+/-- The named-column projection of a concrete BinaryExtension table has the
+    expected `rowAt` view at every in-range index. -/
+theorem rowAt_binaryExtensionOfTable
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.BinaryExtension.rowAt
+      (binaryExtensionOfTable table) idx.val =
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar := by
+  simp [ZiskFv.AirsClean.BinaryExtension.rowAt,
+    binaryExtensionTableRowAtOrZero_get table idx]
+  let row :=
+    eval (table.environment (table.table.get idx))
+      ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar
+  change
+    { aCols := row.aCols
+      cColsLo := row.cColsLo
+      cColsHi := row.cColsHi
+      flags := row.flags } = row
+  cases row
+  rfl
+
+/-- The legacy `opBus_row_BinaryExtension` view of `binaryExtensionOfTable` is
+    the Clean BinaryExtension operation-bus message evaluated on the same row. -/
+theorem opBus_row_BinaryExtension_binaryExtensionOfTable
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension
+        (binaryExtensionOfTable table) idx.val =
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (eval (table.environment (table.table.get idx))
+            ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar)) 1 := by
+  rw [← ZiskFv.AirsClean.BinaryExtension.opBusMessage_toEntry_rowAt_eq_opBus_row]
+  rw [rowAt_binaryExtensionOfTable table idx]
 
 /-- Zero fallback for out-of-range projections from a concrete Mem table.
     In-range rows are the only rows consumed by the table bridge below. -/
