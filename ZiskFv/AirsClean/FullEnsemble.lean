@@ -74,7 +74,7 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
         (by
           intro channel h
           simp [circuit_norm] at h)
-    |>.addTable ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+    |>.addTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
           simp)

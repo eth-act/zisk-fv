@@ -682,6 +682,40 @@ theorem staticLookupComponent_op_val_ne_W_add_sub_of_spec
   exact static_table_op_val_ne_W_add_sub_of_spec_facts
     (staticLookupComponent.rowInput env) h_spec.2
 
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry Binary-table bitwise opcodes (`AND`/`OR`/`XOR`, values 14/15/16). -/
+theorem shiftStaticLookupComponent_op_val_ne_bitwise_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 14
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 15
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 16 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_bitwise_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry Binary-table comparison opcodes (`LTU`/`LT`, values 6/7). -/
+theorem shiftStaticLookupComponent_op_val_ne_compare_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 6
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 7 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_compare_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry Main W-mode ADD/SUB opcodes (`ADDW`/`SUBW`, values 0x1A/0x1B). -/
+theorem shiftStaticLookupComponent_op_val_ne_W_add_sub_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 0x1A
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 0x1B := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_W_add_sub_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
 theorem flags_eval_op
     (env : Environment FGL) (flags : BinaryExtensionFlags (Expression FGL)) :
     (eval env flags).op = Expression.eval env flags.op := by
