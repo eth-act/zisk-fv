@@ -30,7 +30,7 @@ run "10/18 no new ArithTable opcode axioms" "$dir/check-arith-table-op-axioms.sh
 run "11/18 Clean integration regressions" "$dir/check-clean-integration.sh"
 run "12/18 CODEOWNERS trust-boundary coverage" "$dir/check-codeowners.sh"
 run "13/18 retired row-shape compatibility shims" "$dir/check-retired-row-shape-shims.sh"
-run "14/18 no checked-in Aeneas extraction artifacts" "$dir/check-no-checked-in-aeneas-artifacts.sh"
+run "14/18 tracked Aeneas extraction artifact policy" "$dir/check-no-checked-in-aeneas-artifacts.sh"
 run "15/18 Aeneas generated bridge manifest" "$dir/check-aeneas-generated-bridge-manifest.sh"
 run "16/18 Aeneas production-boundary delegation" "$dir/check-aeneas-production-boundary.py"
 run "17/18 generated axiom allowlist" "$dir/check-generated-axiom-allowlist.sh"

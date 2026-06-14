@@ -75,6 +75,23 @@ jobs:
             echo "runner=size-xl-x64" >> "$GITHUB_OUTPUT"
           fi
 
+  aeneas-extraction-diff:
+    name: Aeneas extraction diff
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Regenerate and diff ProductionM2.lean
+        run: nix run .#aeneas-production-extract-check-tracked
+
   lake-build:
     name: lake build (full FV check)
     needs: pick-runner

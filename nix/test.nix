@@ -96,8 +96,9 @@ writeShellApplication {
     '
 
     # 3. Pinned Aeneas extraction harness. This stays outside the main Lean
-    # build and checks the production-backed extraction boundary. Generated
-    # files are written under build/ and are not checked in.
+    # build and checks the production-backed extraction boundary. The canonical
+    # ProductionM2 extraction is tracked under trust/aeneas/ and diff-checked by
+    # CI; temporary generated harness files remain under build/.
     run "3/8 Aeneas production extraction harness" bash -c '
       AENEAS_FLAKE="${aeneas}" AENEAS_CHECK_RV_COMPLETENESS=1 scripts/aeneas-production-extract.sh
     '

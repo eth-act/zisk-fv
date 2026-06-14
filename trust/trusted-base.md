@@ -136,13 +136,16 @@ and main Lake contains `MainRowProvenance.subPins_of_extracted_shape`,
 `OpEnvelope.addiwOfExtractedShape`, and the matching
 `OpEnvelope.aeneasBridgeTrust_*OfExtractedShape` theorems.
 
-Generated-bridge manifest: generated Aeneas Lean remains reproducible build
-output under `build/aeneas-production-extraction`. The maintained trust-gate
-artifact is [`aeneas-generated-bridge-manifest.txt`](aeneas-generated-bridge-manifest.txt),
-checked by `trust/scripts/check-aeneas-generated-bridge-manifest.sh` and by
-`trust/scripts/check-all.sh`. It keeps the generated row-shape predicates and
-Lean examples aligned with the generator template, and checks generated output
-when present, without committing generated Lean.
+Generated extraction and bridge manifest: the canonical production-backed
+Aeneas extraction is tracked at
+[`aeneas/ProductionM2.lean`](aeneas/ProductionM2.lean), and CI regenerates it
+from the pinned inputs and fails on any non-zero diff. The maintained trust-gate
+artifact [`aeneas-generated-bridge-manifest.txt`](aeneas-generated-bridge-manifest.txt)
+is checked by `trust/scripts/check-aeneas-generated-bridge-manifest.sh` and by
+`trust/scripts/check-all.sh`; it keeps the generated row-shape predicates and
+Lean examples aligned with the generator template. Temporary generated LLBC and
+harness modules such as `GeneratedChecks.lean` remain reproducible output under
+`build/aeneas-production-extraction`.
 
 Remaining path: export provider-row values, selected memory rows, and
 full-ensemble same-message facts into the main proof boundary. Those artifacts
