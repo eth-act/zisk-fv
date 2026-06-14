@@ -628,6 +628,71 @@ theorem spec_op_val_ne_W_add_sub {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_op_val_ne_W_add_sub i
 
+/-- No static BinaryTable row carries op values 17..22. Combined with
+    `mode32 = 1`, those would emit BinaryExtension shift bus opcodes 33..38. -/
+theorem rowOfIndex_op_val_ne_shift_offset_ops (i : Fin tableSize) :
+    (rowOfIndex i.val).op.val ≠ 17
+      ∧ (rowOfIndex i.val).op.val ≠ 18
+      ∧ (rowOfIndex i.val).op.val ≠ 19
+      ∧ (rowOfIndex i.val).op.val ≠ 20
+      ∧ (rowOfIndex i.val).op.val ≠ 21
+      ∧ (rowOfIndex i.val).op.val ≠ 22 := by
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  unfold rowOfIndex opOfIndex
+  rw [Fin.val_natCast]
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR,
+      OP_LTU, OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE,
+      OP_SEXT_00, OP_SEXT_FF, OP_MINU, OP_MIN, OP_MAXU, OP_MAX,
+      OP_LT_ABS_NP, OP_LT_ABS_PN]
+
+theorem spec_op_val_ne_shift_offset_ops {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    t.op.val ≠ 17
+      ∧ t.op.val ≠ 18
+      ∧ t.op.val ≠ 19
+      ∧ t.op.val ≠ 20
+      ∧ t.op.val ≠ 21
+      ∧ t.op.val ≠ 22 := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_op_val_ne_shift_offset_ops i
+
+/-- No static BinaryTable row carries BinaryExtension shift bus opcodes 33..38. -/
+theorem rowOfIndex_op_val_ne_shift_ops (i : Fin tableSize) :
+    (rowOfIndex i.val).op.val ≠ 33
+      ∧ (rowOfIndex i.val).op.val ≠ 34
+      ∧ (rowOfIndex i.val).op.val ≠ 35
+      ∧ (rowOfIndex i.val).op.val ≠ 36
+      ∧ (rowOfIndex i.val).op.val ≠ 37
+      ∧ (rowOfIndex i.val).op.val ≠ 38 := by
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  unfold rowOfIndex opOfIndex
+  rw [Fin.val_natCast]
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR,
+      OP_LTU, OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE,
+      OP_SEXT_00, OP_SEXT_FF, OP_MINU, OP_MIN, OP_MAXU, OP_MAX,
+      OP_LT_ABS_NP, OP_LT_ABS_PN]
+
+theorem spec_op_val_ne_shift_ops {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    t.op.val ≠ 33
+      ∧ t.op.val ≠ 34
+      ∧ t.op.val ≠ 35
+      ∧ t.op.val ≠ 36
+      ∧ t.op.val ≠ 37
+      ∧ t.op.val ≠ 38 := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_op_val_ne_shift_ops i
+
 theorem signByte_eq_zero_iff_lt_128 {a : ℕ} (ha : a < 256) :
     signByte a = 0 ↔ a < 128 := by
   interval_cases a <;> decide

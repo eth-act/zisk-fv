@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.Binary.Circuit
+import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Channels.OperationBus
@@ -541,6 +542,98 @@ theorem static_table_logic_mode_pins_of_emit
       exact hv
     have h_bop_zero : row.chain.b_op.val = 0 := by omega
     exact False.elim (h_bop_ne_zero h_bop_zero)
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- A static Binary provider row cannot emit a BinaryExtension shift opcode.
+
+    Binary emits `b_op + 16 * mode32`; shift bus opcodes are 33..38.  If
+    `mode32 = 0`, the table row would need `b_op = 33..38`; if `mode32 = 1`,
+    it would need `b_op = 17..22`.  Both are ruled out by the static
+    BinaryTable membership of the first lookup row. -/
+theorem static_table_op_val_ne_binaryExtension_shift_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (op_val : ℕ)
+    (h_op_shift :
+      op_val = OP_SLL
+        ∨ op_val = OP_SRL
+        ∨ op_val = OP_SRA
+        ∨ op_val = OP_SLL_W
+        ∨ op_val = OP_SRL_W
+        ∨ op_val = OP_SRA_W)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_val : FGL)) :
+    False := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, _, _⟩
+  rcases h_static with ⟨h0, _, _, _, _, _, _, _⟩
+  have h_bop_lt : row.chain.b_op.val < 514 := by
+    have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h0
+    simpa [lookupMessage0Row] using h
+  have h_ne_offset_raw :=
+    ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_shift_offset_ops h0
+  have h_ne_shift_raw :=
+    ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_shift_ops h0
+  have h_ne_offset :
+      row.chain.b_op.val ≠ 17
+        ∧ row.chain.b_op.val ≠ 18
+        ∧ row.chain.b_op.val ≠ 19
+        ∧ row.chain.b_op.val ≠ 20
+        ∧ row.chain.b_op.val ≠ 21
+        ∧ row.chain.b_op.val ≠ 22 := by
+    simpa [lookupMessage0Row] using h_ne_offset_raw
+  have h_ne_shift :
+      row.chain.b_op.val ≠ 33
+        ∧ row.chain.b_op.val ≠ 34
+        ∧ row.chain.b_op.val ≠ 35
+        ∧ row.chain.b_op.val ≠ 36
+        ∧ row.chain.b_op.val ≠ 37
+        ∧ row.chain.b_op.val ≠ 38 := by
+    simpa [lookupMessage0Row] using h_ne_shift_raw
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  have h_contra
+      {op : ℕ} (h_ge : 16 ≤ op) (h_lt : op < GL_prime)
+      (h_ne_direct : row.chain.b_op.val ≠ op)
+      (h_ne_offset' : row.chain.b_op.val ≠ op - 16)
+      (h_emit' : row.chain.b_op + 16 * row.mode.mode32 = (op : FGL)) :
+      False := by
+    rcases h_mode with h_zero | h_one
+    · have h_bop : row.chain.b_op = (op : FGL) := by
+        simpa [h_zero] using h_emit'
+      have h_val := congrArg Fin.val h_bop
+      rw [Fin.val_natCast, Nat.mod_eq_of_lt h_lt] at h_val
+      exact h_ne_direct h_val
+    · have hval : row.chain.b_op.val + 16 = op := by
+        have hv := congrArg Fin.val h_emit'
+        rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast] at hv
+        have hsmall : row.chain.b_op.val + 16 < GL_prime := by omega
+        simp [Nat.mod_eq_of_lt hsmall,
+          Nat.mod_eq_of_lt (by omega : 16 < GL_prime),
+          Nat.mod_eq_of_lt h_lt] at hv
+        exact hv
+      have hoffset : row.chain.b_op.val = op - 16 := by omega
+      exact h_ne_offset' hoffset
+  rcases h_op_shift with h_sll | h_srl | h_sra | h_sllw | h_srlw | h_sraw
+  · subst op_val
+    exact h_contra (by omega) (by omega) h_ne_shift.1 h_ne_offset.1
+      (by simpa [OP_SLL] using h_emit)
+  · subst op_val
+    exact h_contra (by omega) (by omega) h_ne_shift.2.1 h_ne_offset.2.1
+      (by simpa [OP_SRL] using h_emit)
+  · subst op_val
+    exact h_contra (by omega) (by omega) h_ne_shift.2.2.1 h_ne_offset.2.2.1
+      (by simpa [OP_SRA] using h_emit)
+  · subst op_val
+    exact h_contra (by omega) (by omega) h_ne_shift.2.2.2.1
+      h_ne_offset.2.2.2.1 (by simpa [OP_SLL_W] using h_emit)
+  · subst op_val
+    exact h_contra (by omega) (by omega) h_ne_shift.2.2.2.2.1
+      h_ne_offset.2.2.2.2.1 (by simpa [OP_SRL_W] using h_emit)
+  · subst op_val
+    exact h_contra (by omega) (by omega) h_ne_shift.2.2.2.2.2
+      h_ne_offset.2.2.2.2.2 (by simpa [OP_SRA_W] using h_emit)
 
 /-- Shared C7 witness surface for Binary's static-table lookup path.
     This is intentionally family-level and row-indexed; it is the shape a
