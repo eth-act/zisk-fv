@@ -61,6 +61,20 @@ writeShellApplication {
       echo
     }
 
+    run_unless_skipped() {
+      local skip_var=$1
+      local name=$2
+      shift 2
+      local skip_value="''${!skip_var:-0}"
+      if [[ "$skip_value" != 0 && "$skip_value" != false && "$skip_value" != FALSE ]]; then
+        echo "::: $name :::"
+        echo "skipped because $skip_var=$skip_value"
+        echo
+        return 0
+      fi
+      run "$name" "$@"
+    }
+
     # shellcheck disable=SC2329
     mem_generated_artifact_wrapper() {
       test -f build/extraction/Extraction/Circuit.lean
@@ -98,7 +112,7 @@ writeShellApplication {
     # 3. Pinned Aeneas extraction harness. This stays outside the main Lean
     # build and checks the production-backed extraction boundary. Generated
     # files are written under build/ and are not checked in.
-    run "3/8 Aeneas production extraction harness" bash -c '
+    run_unless_skipped ZISK_FV_TEST_SKIP_AENEAS "3/8 Aeneas production extraction harness" bash -c '
       AENEAS_FLAKE="${aeneas}" AENEAS_CHECK_RV_COMPLETENESS=1 scripts/aeneas-production-extract.sh
     '
 

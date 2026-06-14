@@ -1,5 +1,14 @@
 # Projects
 
+## CI Runtime
+
+Plan: `docs/ai/plan/PLAN_CI_RUNTIME.md`. Investigating the `proofs` workflow
+regression from run 27457939944: the run spent 2h22m56s inside `nix run .#test`,
+with Aeneas production extraction at ~1h34m, `lake build` at ~41m, and V2 trust
+gate at ~5m. Current target is a scoped CI split/cache that keeps local
+`nix run .#test` full by default while allowing CI to run the independent Aeneas
+check in parallel with the main Lake/trust path.
+
 ## Endgame
 
 Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — the campaign from the current envelope-conditional global theorem to a trace-level public statement, in six phases (P1 foundations & bucket-audit verdict; P2 validation tooling; P3 memory argument; P4 construction theorem; P5 trace-level export; P6 OpEnvelope retirement), anchored to issues #61/#74–#78. Plans are written per-phase at ~5 PRs each, only when the phase is staffed. P1 is ready for execution: `docs/ai/plan/PLAN_ENDGAME_P1.md` (finalization sweep + kernel-only axiom closure + ADD instantiation + envelope burden audit + lean4lean scouting).
