@@ -20,7 +20,7 @@ the migrated components that currently exist:
 
 * Main's unified ROM + memory-bus + operation-bus consumer component;
 * BinaryAdd plus lookup-aware Binary and BinaryExtension providers;
-* ArithMul and ArithDiv row components;
+* lookup-aware ArithMul and ArithDiv row components;
 * Mem, MemAlign, MemAlignByte, and MemAlignReadByte memory providers.
 
 This is still not the final T7 theorem.  The Main row is now coherent across
@@ -81,13 +81,13 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
         (by
           intro channel h
           simp [circuit_norm] at h)
-    |>.addTable ZiskFv.AirsClean.ArithMul.component
-        (by simp [circuit_norm, ZiskFv.AirsClean.ArithMul.component,
-          ZiskFv.AirsClean.ArithMul.circuit,
-          ZiskFv.AirsClean.ArithMul.arithMulElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.ArithMul.component,
-          ZiskFv.AirsClean.ArithMul.circuit,
-          ZiskFv.AirsClean.ArithMul.arithMulElaborated])
+    |>.addTable ZiskFv.AirsClean.ArithMul.componentWithArithTable
+        (by simp [ZiskFv.AirsClean.ArithMul.componentWithArithTable,
+          ZiskFv.AirsClean.ArithMul.circuitWithArithTable,
+          ZiskFv.AirsClean.ArithMul.arithMulWithArithTableElaborated])
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
     |>.addTable ZiskFv.AirsClean.ArithDiv.component
         (by simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component,
           ZiskFv.AirsClean.ArithDiv.circuit,

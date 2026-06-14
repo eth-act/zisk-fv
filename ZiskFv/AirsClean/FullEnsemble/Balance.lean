@@ -26,6 +26,11 @@ open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 
+/-- The lookup-aware ArithMul provider component used by the full ensemble. -/
+@[reducible]
+def arithMulProviderComponent : Component FGL :=
+  ZiskFv.AirsClean.ArithMul.componentWithArithTable
+
 /-- Concrete component classification for the row-coherent full Clean
     ensemble. Components appear newest-first after the empty verifier table,
     matching Clean's `SoundEnsemble.addTable` list discipline. -/
@@ -39,7 +44,7 @@ theorem component_mem_fullRv64im_cases
       ∨ component = ZiskFv.AirsClean.MemAlign.component
       ∨ component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
       ∨ component = ZiskFv.AirsClean.ArithDiv.component
-      ∨ component = ZiskFv.AirsClean.ArithMul.component
+      ∨ component = arithMulProviderComponent
       ∨ component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
       ∨ component = ZiskFv.AirsClean.Binary.staticLookupComponent
       ∨ component = ZiskFv.AirsClean.BinaryAdd.component
@@ -343,12 +348,13 @@ theorem staticBinaryExtension_table_interactionsWith_memBus_nil
 /-- A table whose component is ArithMul has no memory-bus interactions. -/
 theorem arithMul_table_interactionsWith_memBus_nil
     {table : Table FGL}
-    (h_component : table.component = ZiskFv.AirsClean.ArithMul.component) :
+    (h_component : table.component = arithMulProviderComponent) :
     table.interactionsWith MemBusChannel.toRaw = [] := by
   have h_not :
       MemBusChannel.toRaw ∉
-        ZiskFv.AirsClean.ArithMul.component.circuit.channels := by
-    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw]
+        arithMulProviderComponent.circuit.channels := by
+    rw [arithMulProviderComponent,
+      ZiskFv.AirsClean.ArithMul.componentWithArithTable_channels]
     simp only [List.mem_singleton]
     intro h
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
@@ -478,7 +484,7 @@ theorem exists_matching_op_component_of_active_main_interaction
         ∧ providerInteraction.mult ≠ 0
         ∧ ∃ table ∈ witness.allTables,
           providerInteraction ∈ table.interactionsWith OpBusChannel.toRaw
-            ∧ (table.component = ZiskFv.AirsClean.ArithMul.component
+            ∧ (table.component = arithMulProviderComponent
               ∨ table.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
               ∨ table.component = ZiskFv.AirsClean.Binary.staticLookupComponent
               ∨ table.component = ZiskFv.AirsClean.BinaryAdd.component
@@ -560,7 +566,7 @@ theorem exists_matching_provider_op_component_of_active_main_interaction
         ∧ providerInteraction.mult ≠ 0
         ∧ ∃ table ∈ witness.allTables,
           providerInteraction ∈ table.interactionsWith OpBusChannel.toRaw
-            ∧ (table.component = ZiskFv.AirsClean.ArithMul.component
+            ∧ (table.component = arithMulProviderComponent
               ∨ table.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
               ∨ table.component = ZiskFv.AirsClean.Binary.staticLookupComponent
               ∨ table.component = ZiskFv.AirsClean.BinaryAdd.component) := by
@@ -884,19 +890,32 @@ theorem exists_staticBinaryExtension_row_eval_of_interaction_mem
     full ensemble. -/
 theorem exists_arithMul_row_eval_of_interaction_mem
     {table : Table FGL}
-    (h_component : table.component = ZiskFv.AirsClean.ArithMul.component)
+    (h_component : table.component = arithMulProviderComponent)
     {interaction : Interaction FGL}
     (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
     ∃ row ∈ table.table,
       interaction =
         ((OpBusChannel.pushed
           (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
-            ZiskFv.AirsClean.ArithMul.component.rowInputVar)).toRaw).eval
+            arithMulProviderComponent.rowInputVar)).toRaw).eval
           (table.environment row) := by
   apply exists_opBus_row_eval_of_singleton_interactionsWith
   · simpa [h_component] using
-      ZiskFv.AirsClean.ArithMul.component_interactionsWith_opBus
+      ZiskFv.AirsClean.ArithMul.componentWithArithTable_interactionsWith_opBus
   · exact h_mem
+
+/-- Project the lookup-aware ArithMul provider branch's generic component
+    `Spec` to the concrete `FullSpec`. -/
+theorem arithMul_fullSpec_of_component_spec
+    {table : Table FGL} {row : Array FGL}
+    (h_component : table.component = arithMulProviderComponent)
+    (h_spec : table.component.Spec (table.environment row)) :
+    ZiskFv.AirsClean.ArithMul.FullSpec
+      (arithMulProviderComponent.rowInput
+        (table.environment row)) := by
+  rw [h_component] at h_spec
+  simpa [arithMulProviderComponent,
+    ZiskFv.AirsClean.ArithMul.componentWithArithTable_spec] using h_spec
 
 /-! ## Full-ensemble operation-bus row bridges -/
 
@@ -939,11 +958,11 @@ theorem exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
                 ∧
                 ((∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
-                      ∧ providerTable.component = ZiskFv.AirsClean.ArithMul.component
+                      ∧ providerTable.component = arithMulProviderComponent
                       ∧ providerInteraction =
                         ((OpBusChannel.pushed
                           (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
-                            ZiskFv.AirsClean.ArithMul.component.rowInputVar)).toRaw).eval
+                            arithMulProviderComponent.rowInputVar)).toRaw).eval
                           (providerTable.environment providerRow))
                   ∨ (∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
@@ -1060,7 +1079,7 @@ theorem exists_op_provider_row_matches_entry_spec_of_active_main_table_interacti
                 ∧
                 ((∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
-                      ∧ providerTable.component = ZiskFv.AirsClean.ArithMul.component
+                      ∧ providerTable.component = arithMulProviderComponent
                       ∧ ZiskFv.Airs.OperationBus.matches_entry
                         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
                           (eval (mainTable.environment mainRow)
@@ -1070,7 +1089,7 @@ theorem exists_op_provider_row_matches_entry_spec_of_active_main_table_interacti
                         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
                           (eval (providerTable.environment providerRow)
                             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
-                              ZiskFv.AirsClean.ArithMul.component.rowInputVar)) 1))
+                              arithMulProviderComponent.rowInputVar)) 1))
                   ∨ (∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
                       ∧ providerTable.component =
@@ -1194,13 +1213,13 @@ theorem exists_op_provider_row_matches_legacy_main_spec_of_active_main_table_int
             ∧
             ((∃ providerRow ∈ providerTable.table,
                 providerTable.component.Spec (providerTable.environment providerRow)
-                  ∧ providerTable.component = ZiskFv.AirsClean.ArithMul.component
+                  ∧ providerTable.component = arithMulProviderComponent
                   ∧ ZiskFv.Airs.OperationBus.matches_entry
                     (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
                     (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
                       (eval (providerTable.environment providerRow)
                         (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
-                          ZiskFv.AirsClean.ArithMul.component.rowInputVar)) 1))
+                          arithMulProviderComponent.rowInputVar)) 1))
               ∨ (∃ providerRow ∈ providerTable.table,
                 providerTable.component.Spec (providerTable.environment providerRow)
                   ∧ providerTable.component =

@@ -20,7 +20,10 @@ and focused-build green. Provider-free `fence`/`auipc_x0`/`jal_x0` construction
 breadth is implemented in `4e16a47e`, pushed, and focused-build green.
 The lookup-aware ArithMul component wrapper is now implemented in
 `ZiskFv/AirsClean/ArithMul/Circuit.lean`; it exposes `FullSpec` without yet
-swapping the full ensemble to that component.
+swapping the full ensemble to that component. The next local slice swaps
+`fullRv64imEnsemble` to the lookup-aware ArithMul provider and adds a balance
+projection from generic component `Spec` to ArithMul `FullSpec`; focused builds
+are green.
 
 Blocking: none for stack-building. PR1 #94 is still open, but Cody explicitly
 directed building the remaining P4 PRs as a stack. REPL is already configured
@@ -31,7 +34,6 @@ Pulled new `origin/main` (`236449c9`) and rebased/pushed PR1 (`da0dfc2c`) and
 PR2 (`4e16a47e`) on 2026-06-14. Latest upstream change only touched
 `flake.nix`; broad gates were not rerun.
 
-Next step: wire the lookup-aware ArithMul component into the full ensemble or an
-adapter theorem, then use its `ArithTableSpec` to exclude ArithMul honestly
-before attempting Binary/BinaryExtension provider-match discharge. Do not fake
-that discharge from the old carry-chain-only ArithMul `Spec`.
+Next step: use the new ArithMul `FullSpec`/`ArithTableSpec` provider branch to
+exclude ArithMul honestly for Binary/BinaryExtension provider-match discharge.
+Do not fake that discharge from the old carry-chain-only ArithMul `Spec`.

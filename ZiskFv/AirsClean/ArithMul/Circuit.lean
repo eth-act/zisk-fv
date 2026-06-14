@@ -258,7 +258,6 @@ set_option maxHeartbeats 4000000 in
 /-- Lookup-aware ArithMul component circuit. Its soundness exposes the full
     carry-chain plus ArithTable membership contract; completeness is intentionally
     vacuous until an honest lookup-aware row constructor is added. -/
-@[reducible]
 def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
   { arithMulWithArithTableElaborated with
     exposedChannels row _ :=
@@ -306,8 +305,17 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 
 /-- Lookup-aware ArithMul component exposing `FullSpec`. -/
-@[reducible]
 def componentWithArithTable : Air.Flat.Component FGL := ⟨ circuitWithArithTable ⟩
+
+/-- The lookup-aware ArithMul circuit participates only in the operation bus. -/
+theorem circuitWithArithTable_channels :
+    circuitWithArithTable.channels = [OpBusChannel.toRaw] := by
+  rfl
+
+/-- The lookup-aware ArithMul component participates only in the operation bus. -/
+theorem componentWithArithTable_channels :
+    componentWithArithTable.circuit.channels = [OpBusChannel.toRaw] := by
+  simpa [componentWithArithTable] using circuitWithArithTable_channels
 
 /-- Project the generic Clean component `Spec` to the concrete ArithMul row
     `Spec`. -/
