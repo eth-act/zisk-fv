@@ -184,7 +184,7 @@ Eight checks; if you break any, CI fails:
    `equiv_<OP>` theorem.
 7. **Hypothesis-count anti-laundering metric.**
    `trust/scripts/check-hypothesis-count.sh` reads
-   `trust/baseline-hypothesis-count.txt` (one line per canonical
+   `trust/generated/baseline-hypothesis-count.txt` (one line per canonical
    `equiv_<OP>` with `total=<N> hypothesis=<M>`). Per-theorem counts
    must match the baseline exactly. **Reductions** are allowed —
    refresh the baseline alongside the refactor. **Growth** fails
@@ -294,7 +294,7 @@ rearranging the trust:
 
 The single operational metric is: **every plan PR must reduce or
 hold both `total` and `hypothesis` columns of
-`trust/baseline-hypothesis-count.txt`, and every PR's caller-burden
+`trust/generated/baseline-hypothesis-count.txt`, and every PR's caller-burden
 diff must visibly REMOVE more lines than it adds**. A PR that is
 "net zero" on these metrics did not discharge anything; it just
 moved the trust around. Such a PR should be either rescoped or
