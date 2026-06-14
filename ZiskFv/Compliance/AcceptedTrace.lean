@@ -1,6 +1,9 @@
 import ZiskFv.AirsClean.FullEnsemble.Balance
 import ZiskFv.Compliance.AeneasBridgeTrust
 import ZiskFv.EquivCore.Promises.BranchHelpers
+import ZiskFv.EquivCore.Promises.Fence
+import ZiskFv.EquivCore.Promises.Jump
+import ZiskFv.EquivCore.Promises.UType
 
 /-!
 # Accepted trace construction spine
@@ -39,6 +42,9 @@ inductive ArmTag where
   | bge
   | bltu
   | bgeu
+  | fence
+  | auipc_x0
+  | jal_x0
   | other
 deriving DecidableEq, Repr
 
@@ -435,6 +441,139 @@ def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
 
 end BgeuRowBinding
 
+/-- FENCE-specific projection of the named `ProgramBinding` premise. -/
+structure FenceRowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.FenceInput
+  fm : BitVec 4
+  pred : BitVec 4
+  succBits : BitVec 4
+  rs : regidx
+  rd : regidx
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  provenance : MainRowProvenance main r_main
+  h_op : provenance.extractedRow.op = ExtractedConst.opFlag
+  h_internal : provenance.extractedRow.isExternalOp = false
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_input_priv : state.regs.get? Register.cur_privilege = .some Privilege.Machine
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_FENCE_pure input).nextPC
+
+namespace FenceRowBinding
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : FenceRowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.FencePromises
+      state b.input.PC
+      (PureSpec.execute_FENCE_pure b.input).nextPC
+      b.execRow where
+  input_pc_eq := b.h_input_pc
+  input_priv_eq := b.h_input_priv
+  exec_len := b.h_exec_len
+  e0_mult := b.h_e0_mult
+  e1_mult := b.h_e1_mult
+  nextPC_matches := b.h_nextPC_matches
+
+end FenceRowBinding
+
+/-- AUIPC `rd = x0` projection of the named `ProgramBinding` premise. -/
+structure AuipcX0RowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.AuipcInput
+  imm : BitVec 20
+  rd : regidx
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_input_imm : input.imm = imm
+  h_input_rd : input.rd = regidx_to_fin rd
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_input_rd_zero : input.rd = 0
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_AUIPC_pure input).nextPC
+
+namespace AuipcX0RowBinding
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : AuipcX0RowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.UTypeNoMemPromises
+      state b.input.imm b.input.rd b.input.PC
+      (PureSpec.execute_AUIPC_pure b.input).nextPC
+      b.imm b.rd b.execRow where
+  input_imm_eq := b.h_input_imm
+  input_rd_eq := b.h_input_rd
+  input_pc_eq := b.h_input_pc
+  input_rd_zero := b.h_input_rd_zero
+  exec_len := b.h_exec_len
+  e0_mult := b.h_e0_mult
+  e1_mult := b.h_e1_mult
+  nextPC_matches := b.h_nextPC_matches
+
+end AuipcX0RowBinding
+
+/-- JAL `rd = x0` projection of the named `ProgramBinding` premise. -/
+structure JalX0RowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.JalInput
+  imm : BitVec 21
+  rd : regidx
+  misaVal : RegisterType Register.misa
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  nextPCVal : BitVec 64
+  h_input_rd : input.rd = regidx_to_fin rd
+  h_input_rd_zero : input.rd = 0
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_input_misa : state.regs.get? Register.misa = .some misaVal
+  h_misa_c : Sail.BitVec.extractLsb misaVal 2 2 = 0#1
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = nextPCVal
+  h_success : (PureSpec.execute_JAL_pure input).success = true
+  h_nextPC_option : (PureSpec.execute_JAL_pure input).nextPC = .some nextPCVal
+  h_input_imm : input.imm = imm
+  h_not_throws : (PureSpec.execute_JAL_pure input).throws = false
+
+namespace JalX0RowBinding
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : JalX0RowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.JumpNoMemPromises
+      state b.input.PC b.input.rd b.misaVal
+      (PureSpec.execute_JAL_pure b.input).success
+      (PureSpec.execute_JAL_pure b.input).nextPC
+      b.rd b.execRow b.nextPCVal where
+  input_rd_eq := b.h_input_rd
+  input_rd_zero := b.h_input_rd_zero
+  input_pc_eq := b.h_input_pc
+  input_misa_eq := b.h_input_misa
+  misa_c_zero := b.h_misa_c
+  exec_len := b.h_exec_len
+  e0_mult := b.h_e0_mult
+  e1_mult := b.h_e1_mult
+  nextPC_matches := b.h_nextPC_matches
+  success := b.h_success
+  nextPC_option := b.h_nextPC_option
+
+end JalX0RowBinding
+
 /-- The single named program-binding premise for P4 construction.
 
 It supplies the Sail state sequence, the selected Main table, and per-row
@@ -484,6 +623,24 @@ structure ProgramBinding (trace : AcceptedTrace) where
   bgeu :
     ∀ i : Fin trace.length, armTag i = ArmTag.bgeu →
       BgeuRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  fence :
+    ∀ i : Fin trace.length, armTag i = ArmTag.fence →
+      FenceRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  auipc_x0 :
+    ∀ i : Fin trace.length, armTag i = ArmTag.auipc_x0 →
+      AuipcX0RowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  jal_x0 :
+    ∀ i : Fin trace.length, armTag i = ArmTag.jal_x0 →
+      JalX0RowBinding
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
         i.val
         (stateAt i)
@@ -673,5 +830,79 @@ theorem construction_bgeu_aeneasBridgeTrust
     OpEnvelope.aeneasBridgeTrust_bgeuOfExtractedShape
       b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
       b.h_store_pc b.h_jmp_offset1 b.promises
+
+/-- Construct the FENCE envelope arm from an accepted trace plus the named
+    program-binding projection for a FENCE row. -/
+def construction_fence
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.fence) :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.fence i h_tag
+  OpEnvelope.fenceOfExtractedShape
+    b.input b.fm b.pred b.succBits b.rs b.rd b.execRow
+    b.provenance b.h_op b.h_internal b.promises
+
+theorem construction_fence_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.fence) :
+    (construction_fence trace binding i h_tag).aeneasBridgeTrust := by
+  let b := binding.fence i h_tag
+  exact
+    OpEnvelope.aeneasBridgeTrust_fenceOfExtractedShape
+      b.input b.fm b.pred b.succBits b.rs b.rd b.execRow
+      b.provenance b.h_op b.h_internal b.promises
+
+/-- Construct the AUIPC `rd = x0` no-memory envelope arm from the named
+    program-binding projection. -/
+def construction_auipc_x0
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.auipc_x0) :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.auipc_x0 i h_tag
+  OpEnvelope.auipc_x0 b.input b.imm b.rd b.execRow b.promises
+
+theorem construction_auipc_x0_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.auipc_x0) :
+    (construction_auipc_x0 trace binding i h_tag).aeneasBridgeTrust := by
+  simp [construction_auipc_x0, OpEnvelope.aeneasBridgeTrust]
+
+/-- Construct the JAL `rd = x0` no-memory envelope arm from the named
+    program-binding projection. -/
+def construction_jal_x0
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.jal_x0) :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.jal_x0 i h_tag
+  OpEnvelope.jal_x0
+    b.input b.imm b.rd b.misaVal b.execRow b.nextPCVal
+    b.promises b.h_input_imm b.h_not_throws
+
+theorem construction_jal_x0_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.jal_x0) :
+    (construction_jal_x0 trace binding i h_tag).aeneasBridgeTrust := by
+  simp [construction_jal_x0, OpEnvelope.aeneasBridgeTrust]
 
 end ZiskFv.Compliance

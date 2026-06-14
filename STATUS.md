@@ -14,7 +14,9 @@ Current focus: P4 PR2/PR2a in this worktree (`.worktrees/endgame-p4-pr2` on
 branch `endgame-p4-pr2`), continuing as a stack instead of waiting for PR1
 review. `binaryOfTable` / `binaryExtensionOfTable` and table-existence lemmas
 are implemented in rebased commit `0a13842b`, pushed to `origin/endgame-p4-pr2`;
-focused build passed.
+provider-free Branch construction breadth is implemented in `1cde2faa`, pushed,
+and focused-build green. Provider-free `fence`/`auipc_x0`/`jal_x0` construction
+breadth is implemented locally and focused-build green.
 
 Blocking: none for stack-building. PR1 #94 is still open, but Cody explicitly
 directed building the remaining P4 PRs as a stack. REPL is already configured
@@ -24,8 +26,7 @@ for Lean v4.28.0. PR1 final verification was green: `lake build`,
 Pulled new `origin/main` (`d18daa86`) and rebased/pushed PR1 (`fde96cc9`) and
 PR2 (`0a13842b`) on 2026-06-14; local Branch-family WIP survived autostash.
 
-Next step: continue PR2 with the next non-memory construction slice after the
-provider-free Branch breadth commit. Provider-match adapters hit a critical
-finding: full-ensemble ArithMul is still in the op-provider disjunction and its
-current component `Spec` does not obviously rule out Binary opcodes, so do not
-fake that discharge.
+Next step: stage, commit, and push the NoMem/simple construction breadth.
+Provider-match adapters hit a critical finding: full-ensemble ArithMul is still
+in the op-provider disjunction and its current component `Spec` does not
+obviously rule out Binary opcodes, so do not fake that discharge.
