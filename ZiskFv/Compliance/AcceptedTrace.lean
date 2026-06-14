@@ -34,6 +34,11 @@ structure AcceptedTrace where
     `beq`; later P4 PRs extend the construction dispatcher over all tags. -/
 inductive ArmTag where
   | beq
+  | bne
+  | blt
+  | bge
+  | bltu
+  | bgeu
   | other
 deriving DecidableEq, Repr
 
@@ -115,6 +120,321 @@ def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
 
 end BeqRowBinding
 
+/-- BNE-specific projection of the named `ProgramBinding` premise. -/
+structure BneRowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.BneInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misaVal : RegisterType Register.misa
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  provenance : MainRowProvenance main r_main
+  h_op : provenance.extractedRow.op = ExtractedConst.opEq
+  h_external : provenance.extractedRow.isExternalOp = true
+  h_m32 : provenance.extractedRow.m32 = false
+  h_set_pc : provenance.extractedRow.setPc = false
+  h_store_pc : provenance.extractedRow.storePc = false
+  h_jmp_offset1 : provenance.extractedRow.jmpOffset1 = 4
+  h_input_imm : input.imm = imm
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) state = EStateM.Result.ok input.r1_val state
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) state = EStateM.Result.ok input.r2_val state
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_input_misa : state.regs.get? Register.misa = .some misaVal
+  h_misa_c : Sail.BitVec.extractLsb misaVal 2 2 = 0#1
+  h_target_aligned : (input.PC + BitVec.signExtend 64 input.imm).toNat % 4 = 0
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_BNE_pure input).nextPC
+
+namespace BneRowBinding
+
+@[reducible]
+def ops {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BneRowBinding main r_main state) : BranchInstrOperands where
+  imm := b.imm
+  r1 := b.r1
+  r2 := b.r2
+  misa_val := b.misaVal
+  exec_row := b.execRow
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BneRowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.BranchPromises
+      state b.input.imm b.input.r1_val b.input.r2_val b.input.PC
+      (b.ops).misa_val
+      (PureSpec.execute_BNE_pure b.input).nextPC
+      (PureSpec.execute_BNE_pure b.input).throws
+      (PureSpec.execute_BNE_pure b.input).success
+      (b.ops).imm (b.ops).r1 (b.ops).r2 (b.ops).exec_row :=
+  ZiskFv.EquivCore.Promises.BranchPromises.of_aligned_BNE
+    b.input b.h_input_imm b.h_input_r1 b.h_input_r2 b.h_input_pc
+    b.h_input_misa b.h_misa_c b.h_target_aligned b.h_exec_len
+    b.h_e0_mult b.h_e1_mult b.h_nextPC_matches
+
+end BneRowBinding
+
+/-- BLT-specific projection of the named `ProgramBinding` premise. -/
+structure BltRowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.BltInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misaVal : RegisterType Register.misa
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  provenance : MainRowProvenance main r_main
+  h_op : provenance.extractedRow.op = ExtractedConst.opLt
+  h_external : provenance.extractedRow.isExternalOp = true
+  h_m32 : provenance.extractedRow.m32 = false
+  h_set_pc : provenance.extractedRow.setPc = false
+  h_store_pc : provenance.extractedRow.storePc = false
+  h_jmp_offset2 : provenance.extractedRow.jmpOffset2 = 4
+  h_input_imm : input.imm = imm
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) state = EStateM.Result.ok input.r1_val state
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) state = EStateM.Result.ok input.r2_val state
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_input_misa : state.regs.get? Register.misa = .some misaVal
+  h_misa_c : Sail.BitVec.extractLsb misaVal 2 2 = 0#1
+  h_target_aligned : (input.PC + BitVec.signExtend 64 input.imm).toNat % 4 = 0
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_BLT_pure input).nextPC
+
+namespace BltRowBinding
+
+@[reducible]
+def ops {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BltRowBinding main r_main state) : BranchInstrOperands where
+  imm := b.imm
+  r1 := b.r1
+  r2 := b.r2
+  misa_val := b.misaVal
+  exec_row := b.execRow
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BltRowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.BranchPromises
+      state b.input.imm b.input.r1_val b.input.r2_val b.input.PC
+      (b.ops).misa_val
+      (PureSpec.execute_BLT_pure b.input).nextPC
+      (PureSpec.execute_BLT_pure b.input).throws
+      (PureSpec.execute_BLT_pure b.input).success
+      (b.ops).imm (b.ops).r1 (b.ops).r2 (b.ops).exec_row :=
+  ZiskFv.EquivCore.Promises.BranchPromises.of_aligned_BLT
+    b.input b.h_input_imm b.h_input_r1 b.h_input_r2 b.h_input_pc
+    b.h_input_misa b.h_misa_c b.h_target_aligned b.h_exec_len
+    b.h_e0_mult b.h_e1_mult b.h_nextPC_matches
+
+end BltRowBinding
+
+/-- BGE-specific projection of the named `ProgramBinding` premise. -/
+structure BgeRowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.BgeInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misaVal : RegisterType Register.misa
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  provenance : MainRowProvenance main r_main
+  h_op : provenance.extractedRow.op = ExtractedConst.opLt
+  h_external : provenance.extractedRow.isExternalOp = true
+  h_m32 : provenance.extractedRow.m32 = false
+  h_set_pc : provenance.extractedRow.setPc = false
+  h_store_pc : provenance.extractedRow.storePc = false
+  h_jmp_offset1 : provenance.extractedRow.jmpOffset1 = 4
+  h_input_imm : input.imm = imm
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) state = EStateM.Result.ok input.r1_val state
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) state = EStateM.Result.ok input.r2_val state
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_input_misa : state.regs.get? Register.misa = .some misaVal
+  h_misa_c : Sail.BitVec.extractLsb misaVal 2 2 = 0#1
+  h_target_aligned : (input.PC + BitVec.signExtend 64 input.imm).toNat % 4 = 0
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_BGE_pure input).nextPC
+
+namespace BgeRowBinding
+
+@[reducible]
+def ops {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BgeRowBinding main r_main state) : BranchInstrOperands where
+  imm := b.imm
+  r1 := b.r1
+  r2 := b.r2
+  misa_val := b.misaVal
+  exec_row := b.execRow
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BgeRowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.BranchPromises
+      state b.input.imm b.input.r1_val b.input.r2_val b.input.PC
+      (b.ops).misa_val
+      (PureSpec.execute_BGE_pure b.input).nextPC
+      (PureSpec.execute_BGE_pure b.input).throws
+      (PureSpec.execute_BGE_pure b.input).success
+      (b.ops).imm (b.ops).r1 (b.ops).r2 (b.ops).exec_row :=
+  ZiskFv.EquivCore.Promises.BranchPromises.of_aligned_BGE
+    b.input b.h_input_imm b.h_input_r1 b.h_input_r2 b.h_input_pc
+    b.h_input_misa b.h_misa_c b.h_target_aligned b.h_exec_len
+    b.h_e0_mult b.h_e1_mult b.h_nextPC_matches
+
+end BgeRowBinding
+
+/-- BLTU-specific projection of the named `ProgramBinding` premise. -/
+structure BltuRowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.BltuInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misaVal : RegisterType Register.misa
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  provenance : MainRowProvenance main r_main
+  h_op : provenance.extractedRow.op = ExtractedConst.opLtu
+  h_external : provenance.extractedRow.isExternalOp = true
+  h_m32 : provenance.extractedRow.m32 = false
+  h_set_pc : provenance.extractedRow.setPc = false
+  h_store_pc : provenance.extractedRow.storePc = false
+  h_jmp_offset2 : provenance.extractedRow.jmpOffset2 = 4
+  h_input_imm : input.imm = imm
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) state = EStateM.Result.ok input.r1_val state
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) state = EStateM.Result.ok input.r2_val state
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_input_misa : state.regs.get? Register.misa = .some misaVal
+  h_misa_c : Sail.BitVec.extractLsb misaVal 2 2 = 0#1
+  h_target_aligned : (input.PC + BitVec.signExtend 64 input.imm).toNat % 4 = 0
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_BLTU_pure input).nextPC
+
+namespace BltuRowBinding
+
+@[reducible]
+def ops {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BltuRowBinding main r_main state) : BranchInstrOperands where
+  imm := b.imm
+  r1 := b.r1
+  r2 := b.r2
+  misa_val := b.misaVal
+  exec_row := b.execRow
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BltuRowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.BranchPromises
+      state b.input.imm b.input.r1_val b.input.r2_val b.input.PC
+      (b.ops).misa_val
+      (PureSpec.execute_BLTU_pure b.input).nextPC
+      (PureSpec.execute_BLTU_pure b.input).throws
+      (PureSpec.execute_BLTU_pure b.input).success
+      (b.ops).imm (b.ops).r1 (b.ops).r2 (b.ops).exec_row :=
+  ZiskFv.EquivCore.Promises.BranchPromises.of_aligned_BLTU
+    b.input b.h_input_imm b.h_input_r1 b.h_input_r2 b.h_input_pc
+    b.h_input_misa b.h_misa_c b.h_target_aligned b.h_exec_len
+    b.h_e0_mult b.h_e1_mult b.h_nextPC_matches
+
+end BltuRowBinding
+
+/-- BGEU-specific projection of the named `ProgramBinding` premise. -/
+structure BgeuRowBinding
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) where
+  input : PureSpec.BgeuInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misaVal : RegisterType Register.misa
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  provenance : MainRowProvenance main r_main
+  h_op : provenance.extractedRow.op = ExtractedConst.opLtu
+  h_external : provenance.extractedRow.isExternalOp = true
+  h_m32 : provenance.extractedRow.m32 = false
+  h_set_pc : provenance.extractedRow.setPc = false
+  h_store_pc : provenance.extractedRow.storePc = false
+  h_jmp_offset1 : provenance.extractedRow.jmpOffset1 = 4
+  h_input_imm : input.imm = imm
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) state = EStateM.Result.ok input.r1_val state
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) state = EStateM.Result.ok input.r2_val state
+  h_input_pc : state.regs.get? Register.PC = .some input.PC
+  h_input_misa : state.regs.get? Register.misa = .some misaVal
+  h_misa_c : Sail.BitVec.extractLsb misaVal 2 2 = 0#1
+  h_target_aligned : (input.PC + BitVec.signExtend 64 input.imm).toNat % 4 = 0
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_BGEU_pure input).nextPC
+
+namespace BgeuRowBinding
+
+@[reducible]
+def ops {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BgeuRowBinding main r_main state) : BranchInstrOperands where
+  imm := b.imm
+  r1 := b.r1
+  r2 := b.r2
+  misa_val := b.misaVal
+  exec_row := b.execRow
+
+@[reducible]
+def promises {main : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : Nat}
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (b : BgeuRowBinding main r_main state) :
+    ZiskFv.EquivCore.Promises.BranchPromises
+      state b.input.imm b.input.r1_val b.input.r2_val b.input.PC
+      (b.ops).misa_val
+      (PureSpec.execute_BGEU_pure b.input).nextPC
+      (PureSpec.execute_BGEU_pure b.input).throws
+      (PureSpec.execute_BGEU_pure b.input).success
+      (b.ops).imm (b.ops).r1 (b.ops).r2 (b.ops).exec_row :=
+  ZiskFv.EquivCore.Promises.BranchPromises.of_aligned_BGEU
+    b.input b.h_input_imm b.h_input_r1 b.h_input_r2 b.h_input_pc
+    b.h_input_misa b.h_misa_c b.h_target_aligned b.h_exec_len
+    b.h_e0_mult b.h_e1_mult b.h_nextPC_matches
+
+end BgeuRowBinding
+
 /-- The single named program-binding premise for P4 construction.
 
 It supplies the Sail state sequence, the selected Main table, and per-row
@@ -134,6 +454,36 @@ structure ProgramBinding (trace : AcceptedTrace) where
   beq :
     ∀ i : Fin trace.length, armTag i = ArmTag.beq →
       BeqRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  bne :
+    ∀ i : Fin trace.length, armTag i = ArmTag.bne →
+      BneRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  blt :
+    ∀ i : Fin trace.length, armTag i = ArmTag.blt →
+      BltRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  bge :
+    ∀ i : Fin trace.length, armTag i = ArmTag.bge →
+      BgeRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  bltu :
+    ∀ i : Fin trace.length, armTag i = ArmTag.bltu →
+      BltuRowBinding
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
+        i.val
+        (stateAt i)
+  bgeu :
+    ∀ i : Fin trace.length, armTag i = ArmTag.bgeu →
+      BgeuRowBinding
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program mainTable)
         i.val
         (stateAt i)
@@ -183,5 +533,145 @@ theorem construction_beq_aeneasBridgeTrust
       b.h_store_pc
       b.h_jmp_offset2
       b.promises
+
+/-- Construct the BNE envelope arm from an accepted trace plus the named
+    program-binding projection for a BNE row. -/
+def construction_bne
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.bne) :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.bne i h_tag
+  OpEnvelope.bneOfExtractedShape
+    b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+    b.h_store_pc b.h_jmp_offset1 b.promises
+
+theorem construction_bne_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.bne) :
+    (construction_bne trace binding i h_tag).aeneasBridgeTrust := by
+  let b := binding.bne i h_tag
+  exact
+    OpEnvelope.aeneasBridgeTrust_bneOfExtractedShape
+      b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+      b.h_store_pc b.h_jmp_offset1 b.promises
+
+/-- Construct the BLT envelope arm from an accepted trace plus the named
+    program-binding projection for a BLT row. -/
+def construction_blt
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.blt) :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.blt i h_tag
+  OpEnvelope.bltOfExtractedShape
+    b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+    b.h_store_pc b.h_jmp_offset2 b.promises
+
+theorem construction_blt_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.blt) :
+    (construction_blt trace binding i h_tag).aeneasBridgeTrust := by
+  let b := binding.blt i h_tag
+  exact
+    OpEnvelope.aeneasBridgeTrust_bltOfExtractedShape
+      b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+      b.h_store_pc b.h_jmp_offset2 b.promises
+
+/-- Construct the BGE envelope arm from an accepted trace plus the named
+    program-binding projection for a BGE row. -/
+def construction_bge
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.bge) :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.bge i h_tag
+  OpEnvelope.bgeOfExtractedShape
+    b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+    b.h_store_pc b.h_jmp_offset1 b.promises
+
+theorem construction_bge_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.bge) :
+    (construction_bge trace binding i h_tag).aeneasBridgeTrust := by
+  let b := binding.bge i h_tag
+  exact
+    OpEnvelope.aeneasBridgeTrust_bgeOfExtractedShape
+      b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+      b.h_store_pc b.h_jmp_offset1 b.promises
+
+/-- Construct the BLTU envelope arm from an accepted trace plus the named
+    program-binding projection for a BLTU row. -/
+def construction_bltu
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.bltu) :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.bltu i h_tag
+  OpEnvelope.bltuOfExtractedShape
+    b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+    b.h_store_pc b.h_jmp_offset2 b.promises
+
+theorem construction_bltu_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.bltu) :
+    (construction_bltu trace binding i h_tag).aeneasBridgeTrust := by
+  let b := binding.bltu i h_tag
+  exact
+    OpEnvelope.aeneasBridgeTrust_bltuOfExtractedShape
+      b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+      b.h_store_pc b.h_jmp_offset2 b.promises
+
+/-- Construct the BGEU envelope arm from an accepted trace plus the named
+    program-binding projection for a BGEU row. -/
+def construction_bgeu
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.bgeu) :
+    OpEnvelope
+      (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      i.val :=
+  let b := binding.bgeu i h_tag
+  OpEnvelope.bgeuOfExtractedShape
+    b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+    b.h_store_pc b.h_jmp_offset1 b.promises
+
+theorem construction_bgeu_aeneasBridgeTrust
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.bgeu) :
+    (construction_bgeu trace binding i h_tag).aeneasBridgeTrust := by
+  let b := binding.bgeu i h_tag
+  exact
+    OpEnvelope.aeneasBridgeTrust_bgeuOfExtractedShape
+      b.input b.ops b.provenance b.h_op b.h_external b.h_m32 b.h_set_pc
+      b.h_store_pc b.h_jmp_offset1 b.promises
 
 end ZiskFv.Compliance
