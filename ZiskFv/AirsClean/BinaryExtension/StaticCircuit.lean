@@ -642,6 +642,12 @@ theorem static_table_op_val_ne_compare_of_spec_facts
     row.flags.op.val ≠ 6 ∧ row.flags.op.val ≠ 7 := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_compare h_specs.1
 
+theorem static_table_op_val_ne_add_sub_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 10 ∧ row.flags.op.val ≠ 11 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_add_sub h_specs.1
+
 theorem static_table_op_val_ne_W_add_sub_of_spec_facts
     (row : BinaryExtensionRow FGL)
     (h_specs : StaticBinaryExtensionTableSpecFacts row) :
@@ -669,6 +675,17 @@ theorem staticLookupComponent_op_val_ne_compare_of_spec
       ∧ (staticLookupComponent.rowInput env).flags.op.val ≠ 7 := by
   rw [staticLookupComponent_spec] at h_spec
   exact static_table_op_val_ne_compare_of_spec_facts
+    (staticLookupComponent.rowInput env) h_spec.2
+
+/-- A row accepted by the lookup-aware BinaryExtension component cannot carry
+    Binary-table ADD/SUB opcodes (`ADD`/`SUB`, values 10/11). -/
+theorem staticLookupComponent_op_val_ne_add_sub_of_spec
+    (env : Environment FGL)
+    (h_spec : staticLookupComponent.Spec env) :
+    (staticLookupComponent.rowInput env).flags.op.val ≠ 10
+      ∧ (staticLookupComponent.rowInput env).flags.op.val ≠ 11 := by
+  rw [staticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_add_sub_of_spec_facts
     (staticLookupComponent.rowInput env) h_spec.2
 
 /-- A row accepted by the lookup-aware BinaryExtension component cannot carry
@@ -703,6 +720,17 @@ theorem shiftStaticLookupComponent_op_val_ne_compare_of_spec
       ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 7 := by
   rw [shiftStaticLookupComponent_spec] at h_spec
   exact static_table_op_val_ne_compare_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry Binary-table ADD/SUB opcodes (`ADD`/`SUB`, values 10/11). -/
+theorem shiftStaticLookupComponent_op_val_ne_add_sub_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 10
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 11 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_add_sub_of_spec_facts
     (shiftStaticLookupComponent.rowInput env) h_spec.2.1
 
 /-- A row accepted by the shift-aware lookup BinaryExtension component cannot
