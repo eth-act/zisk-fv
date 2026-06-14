@@ -6,20 +6,22 @@ then names the residual obligations P4 must remove.
 
 ## Current Public Boundary
 
-The global theorem still takes
-`h_memory_timeline : env.memoryTimelineEvidence`
-([ZiskFv/Compliance.lean:94](../ZiskFv/Compliance.lean#L94),
-[ZiskFv/Compliance.lean:97](../ZiskFv/Compliance.lean#L97)) and threads it to
-the load and memory-touching dispatchers
-([ZiskFv/Compliance.lean:109](../ZiskFv/Compliance.lean#L109),
-[ZiskFv/Compliance.lean:111](../ZiskFv/Compliance.lean#L111),
-[ZiskFv/Compliance.lean:112](../ZiskFv/Compliance.lean#L112)).
-`OpEnvelope.memoryTimelineEvidence` is the current opaque load-family promise:
-each load arm requires `Nonempty (MemoryTimelineEvidence state bus.e1)`, while
-non-load arms are `True`
-([ZiskFv/Compliance/OpEnvelope.lean:2234](../ZiskFv/Compliance/OpEnvelope.lean#L2234),
-[ZiskFv/Compliance/OpEnvelope.lean:2239](../ZiskFv/Compliance/OpEnvelope.lean#L2239),
-[ZiskFv/Compliance/OpEnvelope.lean:2260](../ZiskFv/Compliance/OpEnvelope.lean#L2260)).
+The global theorem now takes
+`h_memory_construction : env.memoryTimelineConstructionEvidence`
+([ZiskFv/Compliance.lean:98](../ZiskFv/Compliance.lean#L98)) and threads it to
+the load and memory-touching dispatchers. This is a reshape to a named
+P4-bound residual, not a trust reduction.
+
+`OpEnvelope.memoryTimelineConstructionEvidence` is the visible load-family
+promise: each load arm requires `LoadMemoryTimelineConstructionEvidence state
+bus.e1`, while non-load arms are `True`
+([ZiskFv/Compliance/OpEnvelope.lean:2310](../ZiskFv/Compliance/OpEnvelope.lean#L2310),
+[ZiskFv/Compliance/OpEnvelope.lean:2315](../ZiskFv/Compliance/OpEnvelope.lean#L2315),
+[ZiskFv/Compliance/OpEnvelope.lean:2330](../ZiskFv/Compliance/OpEnvelope.lean#L2330)).
+The older `OpEnvelope.memoryTimelineEvidence` API remains only as internal
+adapter glue for existing load dispatchers
+([ZiskFv/Compliance/OpEnvelope.lean:2235](../ZiskFv/Compliance/OpEnvelope.lean#L2235),
+[ZiskFv/Compliance/OpEnvelope.lean:2333](../ZiskFv/Compliance/OpEnvelope.lean#L2333)).
 
 `MemoryTimelineEvidence` decomposes the load promise into an accepted replay
 object, a selected row split, a read-tag fact, and byte agreement between the
@@ -41,6 +43,17 @@ load Sail state and the replayed accepted prefix
 | `initialAgreement` | Named P4/boot residual. | P4 / program binding. | `GeneratedMemReplayFacts` carries `initialAgreement` ([ZiskFv/AirsClean/Mem/TraceSpec.lean:58](../ZiskFv/AirsClean/Mem/TraceSpec.lean#L58)); it is consumed to derive `stateBytesAtPrefix` ([ZiskFv/ZiskCircuit/MemTimeline/Construction.lean:49](../ZiskFv/ZiskCircuit/MemTimeline/Construction.lean#L49), [ZiskFv/ZiskCircuit/MemTimeline/Construction.lean:50](../ZiskFv/ZiskCircuit/MemTimeline/Construction.lean#L50)). It ties Sail `initialState.mem` to circuit `initialMemory`, so it belongs to the trace/program-binding construction rather than `Valid_Mem`. |
 | `MemoryPrefixStateAlignment` | Named P4-bound residual. | P4. | The alignment identifies the selected load Sail state with replaying the accepted memory-bus prefix from the initial state ([ZiskFv/ZiskCircuit/MemTimeline/Construction.lean:21](../ZiskFv/ZiskCircuit/MemTimeline/Construction.lean#L21), [ZiskFv/ZiskCircuit/MemTimeline/Construction.lean:28](../ZiskFv/ZiskCircuit/MemTimeline/Construction.lean#L28), [ZiskFv/ZiskCircuit/MemTimeline/Construction.lean:31](../ZiskFv/ZiskCircuit/MemTimeline/Construction.lean#L31)). The nonempty constructors still take this split-indexed alignment as an input ([ZiskFv/ZiskCircuit/MemTimeline/Construction.lean:121](../ZiskFv/ZiskCircuit/MemTimeline/Construction.lean#L121), [ZiskFv/ZiskCircuit/MemTimeline/Construction.lean:125](../ZiskFv/ZiskCircuit/MemTimeline/Construction.lean#L125), [ZiskFv/ZiskCircuit/MemTimeline/Construction.lean:162](../ZiskFv/ZiskCircuit/MemTimeline/Construction.lean#L162)). |
 | store RMW preserved bytes (`sb`/`sh`/`sw` `h_m*`) | Bucket-(c), outside P3's load-only scope. | P4. | The envelope audit identifies the preserved-byte facts and explains that they should move into the memory replay construction or a store-event extension of the memory timeline ([trust/envelope-burden-audit.md:99](envelope-burden-audit.md#L99), [trust/envelope-burden-audit.md:120](envelope-burden-audit.md#L120), [trust/envelope-burden-audit.md:125](envelope-burden-audit.md#L125)). |
+
+## Consistency Witnesses
+
+`trust/consistency/global_theorem_instantiation_ld.lean` is an empty-prefix
+satisfiability witness: the selected LD memory read is the first accepted memory
+row, so the construction evidence uses `priorRows = []`.
+`trust/consistency/memory_prefix_alignment_witness.lean` covers the non-empty
+case by proving `MemoryPrefixStateAlignment initialState
+(stateAfterMemoryBusRows initialState [storeRow]) [storeRow]` for one concrete
+store row. Neither witness removes a P4 residual; they only demonstrate the
+reshaped premise is satisfiable in both prefix shapes.
 
 ## P4 Assets That Are Not Yet a Discharge
 

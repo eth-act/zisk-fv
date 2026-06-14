@@ -208,7 +208,8 @@ private def addZeroEnv : ZiskFv.Compliance.OpEnvelope witnessState witnessMain 0
 private theorem addZeroBridge : addZeroEnv.aeneasBridgeTrust := by
   exact ⟨inputR1Row, inputR2Row⟩
 
-private theorem addZeroMemoryTimeline : addZeroEnv.memoryTimelineEvidence := by
+private theorem addZeroMemoryConstruction :
+    addZeroEnv.memoryTimelineConstructionEvidence := by
   trivial
 
 private theorem addZeroNoKnownDefect :
@@ -223,7 +224,7 @@ private theorem addZeroNoKnownDefect :
 theorem global_theorem_instantiation_add :
     addZeroEnv.exec_eq :=
   ZiskFv.Compliance.zisk_riscv_compliant_program_bus
-    addZeroEnv addZeroBridge addZeroMemoryTimeline addZeroNoKnownDefect
+    addZeroEnv addZeroBridge addZeroMemoryConstruction addZeroNoKnownDefect
 
 #print axioms global_theorem_instantiation_add
 

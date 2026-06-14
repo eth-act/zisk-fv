@@ -6,6 +6,7 @@ import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.MemTrace
+import ZiskFv.ZiskCircuit.MemTimeline.Construction
 import ZiskFv.Compliance.Wrappers.Lui
 import ZiskFv.Compliance.Wrappers.Auipc
 import ZiskFv.Compliance.Wrappers.Jal
@@ -2258,5 +2259,126 @@ def OpEnvelope.memoryTimelineEvidence
       Nonempty
         (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | _ => True
+
+/-- Construction-shaped residual needed to build timeline evidence for one load
+    read entry.
+
+    This names the remaining P4 boundary explicitly: a generated replay trace
+    contains the selected read row, and the load Sail state is the state obtained
+    by replaying the selected chronological prefix from the trace's initial
+    state. It deliberately does not mention `MemoryTimelineEvidence`, so callers
+    cannot satisfy it by repackaging the old residual boundary. -/
+@[reducible]
+def LoadMemoryTimelineConstructionEvidence
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+  ∃ (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (_facts : ZiskFv.AirsClean.Mem.GeneratedMemReplayFacts initialState rows)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL)),
+      rows = priorRows ++ entry :: laterRows
+        ∧ ZiskFv.ZiskCircuit.MemTimeline.MemoryPrefixStateAlignment
+            initialState state priorRows
+
+/-- The construction-shaped load residual produces the legacy timeline evidence
+    needed by existing load equivalence cores. -/
+theorem loadMemoryTimelineEvidence_of_constructionEvidence
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {mstatus : RegisterType Register.mstatus}
+    {pmaRegion : PMA_Region}
+    {misa : RegisterType Register.misa}
+    {mseccfg : RegisterType Register.mseccfg}
+    {opcode_assumptions : Prop}
+    {pure_nextPC : BitVec 64}
+    {exec_row : List (Interaction.ExecutionBusEntry FGL)}
+    {e0 e1 e2 : Interaction.MemoryBusEntry FGL}
+    (promises :
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises state mstatus pmaRegion
+        misa mseccfg opcode_assumptions pure_nextPC exec_row e0 e1 e2)
+    (h_construction : LoadMemoryTimelineConstructionEvidence state e1) :
+    Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state e1) := by
+  rcases h_construction with
+    ⟨initialState, rows, facts, priorRows, laterRows, h_traceSplit, h_alignment⟩
+  exact
+    ⟨ZiskFv.ZiskCircuit.MemTimeline.memoryTimelineEvidence_of_load_structural_promises
+      facts promises priorRows laterRows h_traceSplit h_alignment⟩
+
+/-- Single global construction boundary for memory-timeline evidence. Load arms
+    require construction data for `state` and `bus.e1`; non-load arms impose no
+    obligation. -/
+@[reducible]
+def OpEnvelope.memoryTimelineConstructionEvidence
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {m : Valid_Main FGL FGL}
+    {r_main : ℕ} :
+    OpEnvelope state m r_main → Prop
+  | .ld _ _ _ bus .. =>
+      LoadMemoryTimelineConstructionEvidence state bus.e1
+  | .lbu _ _ _ bus .. =>
+      LoadMemoryTimelineConstructionEvidence state bus.e1
+  | .lhu _ _ _ bus .. =>
+      LoadMemoryTimelineConstructionEvidence state bus.e1
+  | .lwu _ _ _ bus .. =>
+      LoadMemoryTimelineConstructionEvidence state bus.e1
+  | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      LoadMemoryTimelineConstructionEvidence state bus.e1
+  | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      LoadMemoryTimelineConstructionEvidence state bus.e1
+  | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
+      LoadMemoryTimelineConstructionEvidence state bus.e1
+  | _ => True
+
+/-- The construction boundary is the only public residual; this adapter is
+    internal glue for dispatchers that still consume the older timeline API. -/
+theorem OpEnvelope.memoryTimelineEvidence_of_constructionEvidence
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {m : Valid_Main FGL FGL}
+    {r_main : ℕ}
+    (env : OpEnvelope state m r_main)
+    (h_construction : env.memoryTimelineConstructionEvidence) :
+    env.memoryTimelineEvidence := by
+  cases env with
+  | ld ld_input regs mem bus pins promises r_mem h_mainEval h_providerEval
+      h_msg h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
+      h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+      exact loadMemoryTimelineEvidence_of_constructionEvidence
+        promises h_construction
+  | lbu lbu_input regs mem bus align pins h_width promises r_mem
+      h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+      h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+      h_addr2_idx h_mem_sel h_mem_wr =>
+      exact loadMemoryTimelineEvidence_of_constructionEvidence
+        promises h_construction
+  | lhu lhu_input regs mem bus align pins h_width promises r_mem
+      h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+      h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+      h_addr2_idx h_mem_sel h_mem_wr =>
+      exact loadMemoryTimelineEvidence_of_constructionEvidence
+        promises h_construction
+  | lwu lwu_input regs mem bus align pins h_width promises r_mem
+      h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
+      h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
+      h_addr2_idx h_mem_sel h_mem_wr =>
+      exact loadMemoryTimelineEvidence_of_constructionEvidence
+        promises h_construction
+  | lb_via_static_match lb_input regs mem v r_binary offset env h_static h_match
+      bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
+      h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+      exact loadMemoryTimelineEvidence_of_constructionEvidence
+        promises h_construction
+  | lh_via_static_match lh_input regs mem v r_binary offset env h_static h_match
+      bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
+      h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+      exact loadMemoryTimelineEvidence_of_constructionEvidence
+        promises h_construction
+  | lw_via_static_match lw_input regs mem v r_binary offset env h_static h_match
+      bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
+      h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
+      h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
+      exact loadMemoryTimelineEvidence_of_constructionEvidence
+        promises h_construction
+  | _ => trivial
 
 end ZiskFv.Compliance
