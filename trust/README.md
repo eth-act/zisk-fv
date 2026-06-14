@@ -86,7 +86,9 @@ This theorem is interface-mediated. Its five ZisK-side premises
 extraction workspace, not by importing generated Aeneas Lean into the main Lake
 tree. The standing `nix run .#test` gate runs
 `scripts/aeneas-production-extract.sh` with `AENEAS_CHECK_RV_COMPLETENESS=1` so
-those premises are rechecked.
+those premises are rechecked. The direct Aeneas extraction artifact is tracked
+at [`aeneas/ProductionM2.lean`](aeneas/ProductionM2.lean), and CI separately
+regenerates it from the pinned inputs and fails on any non-zero diff.
 
 This does not revive Clean prover completeness. The Clean
 `GeneralFormalCircuit.Completeness` fields demoted after the false/circular
@@ -124,11 +126,11 @@ trust/scripts/regenerate.sh
 
 `lake build` is the formal-verification check. `check-all.sh` runs the fast
 syntactic gate, including CODEOWNERS, retired row-shape shim drift, and
-checked-in Aeneas-artifact checks that keep the live trust allowlist and
-production-backed extraction boundary owner-protected, prevent the old
-compatibility module paths from returning, and keep generated Lean/LLBC under
-`build/` rather than in the tracked tree. It also checks that each Aeneas
-extraction start is a thin wrapper over the shared production
+checked-in Aeneas-artifact checks that keep the live trust allowlist,
+production-backed extraction boundary, and canonical tracked extraction
+owner-protected, prevent the old compatibility module paths from returning, and
+forbid temporary generated LLBC/harness files outside `build/`. It also checks
+that each Aeneas extraction start is a thin wrapper over the shared production
 `lower_rv64im_single_row` helper and that `Riscv2ZiskContext::convert` delegates
 the same mnemonic to the same helper variant.
 `check-all-semantic.sh` runs the olean-consuming semantic gate after a build.

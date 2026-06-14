@@ -134,6 +134,37 @@
           };
         };
 
+        apps.aeneas-production-extract-check-tracked = {
+          type = "app";
+          program = "${pkgs.writeShellApplication {
+            name = "aeneas-production-extract-check-tracked";
+            runtimeInputs = with pkgs; [
+              cargo
+              clang
+              diffutils
+              elan
+              git
+              gnumake
+              jq
+              libclang.lib
+              nix
+              rustc
+              pkgsCross.riscv64-embedded.stdenv.cc
+            ];
+            text = ''
+              cd "$(git rev-parse --show-toplevel)" || exit 1
+              export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+              AENEAS_FLAKE="${aeneas}" \
+                AENEAS_CHECK_LEAN=0 \
+                AENEAS_CHECK_TRACKED=1 \
+                scripts/aeneas-production-extract.sh
+            '';
+          }}/bin/aeneas-production-extract-check-tracked";
+          meta = {
+            description = "Regenerate the pinned Aeneas ProductionM2 extraction and fail if it differs from the tracked copy.";
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             elan         # Lean toolchain manager

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Check the maintained Aeneas generated-bridge manifest.
 
-The generated Lean remains reproducible build output under build/. This gate
-keeps the checked-in generator template aligned with the bridge facts that main
-Lake relies on, and checks the generated module too when it is present.
+Generated bridge-check modules remain reproducible build output under build/.
+This gate keeps the checked-in generator template aligned with the bridge facts
+that main Lake relies on, and checks the generated module too when it is
+present.
 """
 
 from __future__ import annotations

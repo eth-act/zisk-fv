@@ -8,6 +8,9 @@ AENEAS_CHECK_FENCE_COMPLETENESS="${AENEAS_CHECK_FENCE_COMPLETENESS:-0}"
 AENEAS_CHECK_RV64IM_COMPLETENESS="${AENEAS_CHECK_RV64IM_COMPLETENESS:-0}"
 AENEAS_CHECK_RV_COMPLETENESS="${AENEAS_CHECK_RV_COMPLETENESS:-0}"
 AENEAS_CHECK_RV_WIDE_SHAPES="${AENEAS_CHECK_RV_WIDE_SHAPES:-0}"
+AENEAS_CHECK_TRACKED="${AENEAS_CHECK_TRACKED:-0}"
+AENEAS_UPDATE_TRACKED="${AENEAS_UPDATE_TRACKED:-0}"
+AENEAS_TRACKED_PRODUCTION_M2="${AENEAS_TRACKED_PRODUCTION_M2:-$ROOT/trust/aeneas/ProductionM2.lean}"
 
 if [[ -z "${AENEAS_FLAKE:-}" ]]; then
   aeneas_owner="$(jq -r '.nodes.aeneas.locked.owner' "$ROOT/flake.lock")"
@@ -249,6 +252,31 @@ fi
 if grep -En '(^axiom|^opaque|sorry|unknown definitions|HashMap|alloc\.string|alloc\.fmt|Str\.|core\.fmt)' "$generated"; then
   echo "Production extraction generated an unexpected trust marker" >&2
   exit 1
+fi
+
+if [[ "$AENEAS_UPDATE_TRACKED" != 0 ]]; then
+  mkdir -p "$(dirname "$AENEAS_TRACKED_PRODUCTION_M2")"
+  cp "$generated" "$AENEAS_TRACKED_PRODUCTION_M2"
+  echo "Updated tracked Aeneas extraction: $AENEAS_TRACKED_PRODUCTION_M2"
+fi
+
+if [[ "$AENEAS_CHECK_TRACKED" != 0 ]]; then
+  if [[ ! -f "$AENEAS_TRACKED_PRODUCTION_M2" ]]; then
+    echo "Tracked Aeneas extraction is missing: $AENEAS_TRACKED_PRODUCTION_M2" >&2
+    echo "Regenerate it with AENEAS_UPDATE_TRACKED=1 nix run .#aeneas-production-extract" >&2
+    exit 1
+  fi
+  if ! cmp -s "$AENEAS_TRACKED_PRODUCTION_M2" "$generated"; then
+    echo "Tracked Aeneas extraction is stale: $AENEAS_TRACKED_PRODUCTION_M2" >&2
+    echo "Diff between tracked and regenerated ProductionM2.lean:" >&2
+    diff -u \
+      --label "$AENEAS_TRACKED_PRODUCTION_M2 (tracked)" \
+      --label "$generated (regenerated)" \
+      "$AENEAS_TRACKED_PRODUCTION_M2" "$generated" >&2 || true
+    echo "Regenerate it with AENEAS_UPDATE_TRACKED=1 nix run .#aeneas-production-extract" >&2
+    exit 1
+  fi
+  echo "Tracked Aeneas extraction matches regenerated ProductionM2.lean."
 fi
 
 if [[ "$AENEAS_CHECK_LEAN" != 0 ]]; then
