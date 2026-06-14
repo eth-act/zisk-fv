@@ -84,6 +84,28 @@ theorem exists_mem_table_of_fullRv64im_witness
   rcases List.mem_map.mp h_in_map with ⟨table, h_table, h_component⟩
   exact ⟨table, h_table, h_component⟩
 
+/-- Every concrete witness for the full RV64IM ensemble contains the unified
+    Main table. This is only table selection; row-level decode/provenance is
+    supplied separately by `ProgramBinding`. -/
+theorem exists_main_table_of_fullRv64im_witness
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
+    ∃ table ∈ witness.allTables,
+      table.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program := by
+  have h_component_mem :
+      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program ∈
+        (fullRv64imEnsemble length program).ensemble.allTables := by
+    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+  have h_in_map :
+      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program ∈
+        witness.allTables.map (·.component) := by
+    rw [witness.allTables_map_component]
+    exact h_component_mem
+  rcases List.mem_map.mp h_in_map with ⟨table, h_table, h_component⟩
+  exact ⟨table, h_table, h_component⟩
+
 /-- The full ensemble verifier table is the empty verifier component, so it
     cannot contribute operation-bus interactions. -/
 theorem verifierTable_interactionsWith_opBus_nil
@@ -1833,6 +1855,138 @@ theorem activeMemReplayRowsOfTable_nonempty_of_split
     0 < (activeMemReplayRowsOfTable table).length := by
   rw [h_split]
   simp
+
+/-- Zero row for totalizing concrete Main table projections. -/
+def zeroMainRowWithRom : ZiskFv.AirsClean.Main.MainRowWithRom FGL where
+  core := {
+    a_0 := 0
+    a_1 := 0
+    b_0 := 0
+    b_1 := 0
+    c_0 := 0
+    c_1 := 0
+    flag := 0
+    pc := 0
+    is_external_op := 0
+    op := 0
+    m32 := 0
+    ind_width := 0
+    set_pc := 0
+    jmp_offset1 := 0
+    jmp_offset2 := 0
+    store_pc := 0
+    im_high_degree_2 := 0
+    segment_l1 := 0 }
+  rom := {
+    a_offset_imm0 := 0
+    a_imm1 := 0
+    b_offset_imm0 := 0
+    b_imm1 := 0
+    store_offset := 0
+    a_src_imm := 0
+    a_src_mem := 0
+    is_precompiled := 0
+    b_src_imm := 0
+    b_src_mem := 0
+    store_mem := 0
+    store_ind := 0
+    b_src_ind := 0
+    a_src_reg := 0
+    b_src_reg := 0
+    store_reg := 0
+    addr0 := 0
+    addr1 := 0
+    addr2 := 0
+    main_step := 0 }
+
+/-- Project row `row` of a concrete Clean Main table to its unified Main+ROM
+    row input. Out-of-range rows use `zeroMainRowWithRom` only to keep the
+    named-column view total. -/
+@[reducible]
+def mainTableRowAtOrZero
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (row : ℕ) : ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
+  if h_row : row < table.table.length then
+    eval (table.environment (table.table.get ⟨row, h_row⟩))
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar
+  else
+    zeroMainRowWithRom
+
+/-- Named-column Main view obtained from the concrete Clean unified Main table. -/
+@[reducible]
+def mainOfTable
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL) :
+    ZiskFv.Airs.Main.Valid_Main FGL FGL where
+  a_0 := fun row => (mainTableRowAtOrZero program table row).core.a_0
+  a_1 := fun row => (mainTableRowAtOrZero program table row).core.a_1
+  b_0 := fun row => (mainTableRowAtOrZero program table row).core.b_0
+  b_1 := fun row => (mainTableRowAtOrZero program table row).core.b_1
+  c_0 := fun row => (mainTableRowAtOrZero program table row).core.c_0
+  c_1 := fun row => (mainTableRowAtOrZero program table row).core.c_1
+  flag := fun row => (mainTableRowAtOrZero program table row).core.flag
+  pc := fun row => (mainTableRowAtOrZero program table row).core.pc
+  is_external_op := fun row => (mainTableRowAtOrZero program table row).core.is_external_op
+  op := fun row => (mainTableRowAtOrZero program table row).core.op
+  b_src_imm := fun row => (mainTableRowAtOrZero program table row).rom.b_src_imm
+  b_src_mem := fun row => (mainTableRowAtOrZero program table row).rom.b_src_mem
+  b_src_ind := fun row => (mainTableRowAtOrZero program table row).rom.b_src_ind
+  b_src_reg := fun row => (mainTableRowAtOrZero program table row).rom.b_src_reg
+  m32 := fun row => (mainTableRowAtOrZero program table row).core.m32
+  ind_width := fun row => (mainTableRowAtOrZero program table row).core.ind_width
+  set_pc := fun row => (mainTableRowAtOrZero program table row).core.set_pc
+  jmp_offset1 := fun row => (mainTableRowAtOrZero program table row).core.jmp_offset1
+  jmp_offset2 := fun row => (mainTableRowAtOrZero program table row).core.jmp_offset2
+  store_pc := fun row => (mainTableRowAtOrZero program table row).core.store_pc
+  im_high_degree_2 := fun row => (mainTableRowAtOrZero program table row).core.im_high_degree_2
+  segment_l1 := fun row => (mainTableRowAtOrZero program table row).core.segment_l1
+
+/-- In-range concrete table projection agrees with `List.get`. -/
+theorem mainTableRowAtOrZero_get
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    mainTableRowAtOrZero program table idx.val =
+      eval (table.environment (table.table.get idx))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar := by
+  unfold mainTableRowAtOrZero
+  rw [dif_pos idx.isLt]
+
+/-- The named-column projection of a concrete unified Main table has the
+    expected core `rowAt` view at every in-range index. -/
+theorem rowAt_mainOfTable
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Main.rowAt (mainOfTable program table) idx.val =
+      (eval (table.environment (table.table.get idx))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar).core := by
+  simp [ZiskFv.AirsClean.Main.rowAt, mainTableRowAtOrZero_get program table idx]
+
+/-- The legacy `opBus_row_Main` view of `mainOfTable` is the Clean Main
+    operation-bus message evaluated on the same concrete row. -/
+theorem opBus_row_Main_mainOfTable
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.Airs.OperationBus.opBus_row_Main (mainOfTable program table) idx.val =
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Main.opBusMessage
+          (eval (table.environment (table.table.get idx))
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar).core)
+        (eval (table.environment (table.table.get idx))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar).core.is_external_op := by
+  rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
+  rw [rowAt_mainOfTable program table idx]
+  simp [mainTableRowAtOrZero_get program table idx]
 
 /-- Zero fallback for out-of-range projections from a concrete Mem table.
     In-range rows are the only rows consumed by the table bridge below. -/

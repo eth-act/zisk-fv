@@ -2,7 +2,7 @@
 
 ## Endgame
 
-Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — the campaign from the current envelope-conditional global theorem to a trace-level public statement, in six phases (P1 foundations & bucket-audit verdict; P2 validation tooling; P3 memory argument; P4 construction theorem; P5 trace-level export; P6 OpEnvelope retirement), anchored to issues #61/#74–#78. Plans are written per-phase at ~5 PRs each, only when the phase is staffed. P1 is ready for execution: `docs/ai/plan/PLAN_ENDGAME_P1.md` (finalization sweep + kernel-only axiom closure + ADD instantiation + envelope burden audit + lean4lean scouting).
+Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — the campaign from the current envelope-conditional global theorem to a trace-level public statement, in six phases anchored to issues #61/#74-#78. P1 is complete on main via #89 (`cf2a4aa6`), and P3 is complete on main via #90/#91 (`4456a9e5`) as an auditable reshape rather than a memory-trust reduction. Active stream: `docs/ai/plan/PLAN_ENDGAME_P4.md`, the first trust-reducing phase: build `AcceptedTrace -> OpEnvelope`, discharge derivable bucket-(a) evidence from accepted trace data, and leave only the named bucket-(b) residuals (`aeneasBridgeTrust`, `ProgramBinding`/boot, `NoKnownDefect`). Current focus is P4 PR1 in `.worktrees/endgame-p4-pr1`: `AcceptedTrace`, `ProgramBinding`, `mainOfTable`, one BEQ construction template, and the construction-binder audit gate.
 
 ## Clean Completeness Proofs
 

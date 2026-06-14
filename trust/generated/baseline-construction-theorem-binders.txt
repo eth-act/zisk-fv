@@ -1,0 +1,4 @@
+0 :: trace :: ZiskFv.Compliance.AcceptedTrace
+1 :: binding :: ZiskFv.Compliance.ProgramBinding trace
+2 :: i :: Fin trace.length
+3 :: h_tag :: Eq (binding.armTag i) ZiskFv.Compliance.ArmTag.beq

@@ -131,6 +131,7 @@ import ZiskFv.AirsClean.FullEnsemble.Balance
 import ZiskFv.ZiskCircuit.MemTimeline.Construction
 import ZiskFv.ZiskCircuit.MemTimeline.Linkage
 import ZiskFv.Compliance.RowProvenance
+import ZiskFv.Compliance.AcceptedTrace
 import ZiskFv.Compliance
 import ZiskFv.Completeness.Rv
 import ZiskFv.Completeness.Rv64im
