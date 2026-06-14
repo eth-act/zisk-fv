@@ -24,6 +24,7 @@ locally from those binding projections.
 namespace ZiskFv.Compliance
 
 open Goldilocks
+open ZiskFv.AirsClean.FullEnsemble
 
 /-- Accepted committed trace for the full RV64IM Clean ensemble. -/
 structure AcceptedTrace where
@@ -33,6 +34,7 @@ structure AcceptedTrace where
     Air.Flat.EnsembleWitness
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble
   constraints : witness.Constraints
+  spec : witness.Spec
   balanced : witness.BalancedChannels
 
 /-- Opcode-family selector exposed by the program binding. PR1 only consumes
@@ -791,6 +793,7 @@ structure ProgramBinding (trace : AcceptedTrace) where
     mainTable.component =
       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
         trace.length trace.program
+  mainTable_index : ∀ i : Fin trace.length, i.val < mainTable.table.length
   armTag : Fin trace.length → ArmTag
   beq :
     ∀ i : Fin trace.length, armTag i = ArmTag.beq →
@@ -1141,6 +1144,90 @@ theorem construction_xor_aeneasBridgeTrust
       b.bus b.provenance b.h_op b.h_external
       providerTable providerRow h_component h_table_spec h_provider_row
       h_match_static h_input_r1_row h_input_r2_row b.laneRd b.promises
+
+theorem exists_construction_xor_from_balance
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (i : Fin trace.length)
+    (h_tag : binding.armTag i = ArmTag.xor) :
+    ∃ env :
+      OpEnvelope
+        (binding.stateAt i)
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val,
+      env.aeneasBridgeTrust := by
+  let b := binding.xor i h_tag
+  have h_mainIdx_lt : i.val < binding.mainTable.table.length :=
+    binding.mainTable_index i
+  let mainIdx : Fin binding.mainTable.table.length :=
+    ⟨i.val, h_mainIdx_lt⟩
+  let mainRow := binding.mainTable.table.get mainIdx
+  let mainInteraction :=
+    ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
+      (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          trace.length trace.program).rowInputVar.core.is_external_op)
+      (ZiskFv.AirsClean.Main.opBusMessageExpr
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          trace.length trace.program).rowInputVar.core)).toRaw).eval
+      (binding.mainTable.environment mainRow)
+  have h_mainRow_mem : mainRow ∈ binding.mainTable.table := by
+    simp [mainRow]
+  have h_main_row :
+      eval (binding.mainTable.environment mainRow)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          trace.length trace.program).rowInputVar.core =
+        ZiskFv.AirsClean.Main.rowAt
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+          i.val := by
+    simpa [mainIdx, mainRow] using
+      ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable_core
+        trace.program binding.mainTable mainIdx
+  have h_pins :=
+    MainRowProvenance.xorPins_of_extracted_shape
+      b.provenance b.h_op b.h_external
+  have h_mainInteraction_mem :
+      mainInteraction ∈
+        binding.mainTable.interactionsWith
+          ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
+    simpa [mainInteraction, mainRow] using
+      ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
+        (length := trace.length) (program := trace.program)
+        binding.mainTable_component h_mainRow_mem
+  have h_mainInteraction_eval :
+      mainInteraction =
+        ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              trace.length trace.program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              trace.length trace.program).rowInputVar.core)).toRaw).eval
+          (binding.mainTable.environment mainRow) := rfl
+  have h_active_row :
+      (eval (binding.mainTable.environment mainRow)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          trace.length trace.program).rowInputVar.core).is_external_op = 1 := by
+    rw [h_main_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using h_pins.main_active
+  have h_active : mainInteraction.mult = -1 := by
+    rw [h_mainInteraction_eval]
+    exact
+      ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
+        (length := trace.length) (program := trace.program)
+        (binding.mainTable.environment mainRow) h_active_row
+  obtain ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_table_spec, h_match_static⟩ :=
+    exists_staticBinary_provider_row_matches_legacy_main_of_xor_active_main_row_interaction
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val trace.witness trace.constraints trace.balanced trace.spec
+        binding.mainTable_mem binding.mainTable_component h_mainRow_mem
+        h_main_row h_pins.main_active h_mainInteraction_mem
+        h_mainInteraction_eval h_active h_pins.main_op
+  let env :=
+    construction_xor trace binding i h_tag providerTable providerRow
+      h_component h_table_spec h_providerRow h_match_static
+  exact ⟨env,
+    construction_xor_aeneasBridgeTrust trace binding i h_tag providerTable
+      providerRow h_component h_table_spec h_providerRow h_match_static⟩
 
 /-- Construct the FENCE envelope arm from an accepted trace plus the named
     program-binding projection for a FENCE row. -/
