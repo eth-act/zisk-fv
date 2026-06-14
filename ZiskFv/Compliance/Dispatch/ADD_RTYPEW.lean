@@ -67,10 +67,24 @@ theorem zisk_riscv_compliant_program_bus_add_rtypew
     change execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-    exact ZiskFv.Compliance.equiv_ADD_via_binaryadd
-      state add_input r1 r2 rd m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_binaryadd h_main_subset
-      h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_m32 h_lane_rd promises
+    let row :=
+      ZiskFv.AirsClean.BinaryAdd.component.rowInput
+        (providerTable.environment providerRow)
+    have h_facts : ZiskFv.AirsClean.BinaryAdd.ComponentSpecFacts row := by
+      have h_component_spec :
+          ZiskFv.AirsClean.BinaryAdd.component.Spec
+            (providerTable.environment providerRow) := by
+        simpa [h_component] using h_table_spec providerRow h_provider_row
+      simpa [row, ZiskFv.AirsClean.BinaryAdd.component_spec] using h_component_spec
+    exact ZiskFv.EquivCore.Add.equiv_ADD_of_binaryadd_row
+      state add_input r1 r2 rd m row r_main bus promises pins
+      h_match_binaryadd
+      (ZiskFv.AirsClean.BinaryAdd.core_every_row_of_component_spec_facts row h_facts)
+      h_main_subset h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_m32
+      (ZiskFv.AirsClean.BinaryAdd.a_chunks_in_range_of_component_spec_facts row h_facts)
+      (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts row h_facts)
+      (ZiskFv.AirsClean.BinaryAdd.c_chunks_in_range_of_component_spec_facts row h_facts)
+      h_lane_rd
   | addw addw_input r1 r2 rd _v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static
       h_input_r1_extract h_input_r2_extract h_lane_rd promises =>

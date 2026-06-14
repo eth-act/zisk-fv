@@ -4,7 +4,9 @@
 # documented because the constructor names intentionally expose provider shape.
 
 add_via_binary:canonical route variant for ADD through Binary.staticLookupComponent
+add_via_binaryadd:canonical route variant for ADD through BinaryAdd.component
 addi_via_binary:canonical route variant for ADDI through Binary.staticLookupComponent
+addi_via_binaryadd:canonical route variant for ADDI through BinaryAdd.component
 auipc_x0:canonical route variant for AUIPC with rd=x0 and no memory-bus write
 jal_x0:canonical route variant for JAL with rd=x0 and no memory-bus write
 lb_via_static_match:canonical route variant for LB with BinaryExtension static-match witness
