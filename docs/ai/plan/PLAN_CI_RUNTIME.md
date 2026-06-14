@@ -19,7 +19,8 @@ Goal: reduce the `proofs` workflow wall clock after run 27457939944 reached
 - [x] Keep plain local `nix run .#test` as the full all-in-one gate by default.
 - [x] Verify workflow/Nix syntax.
 - [x] Commit the CI speedup branch.
-- [ ] Push/open PR and compare the first split CI run wall time.
+- [x] Push/open PR (#92).
+- [ ] Compare the first split CI run wall time after merge or manual dispatch.
 
 ## Log
 
@@ -31,4 +32,5 @@ Goal: reduce the `proofs` workflow wall clock after run 27457939944 reached
   Actions cache for `build/aeneas-production-extraction/lean-check/.lake`.
   Verified with YAML parse, `git diff --check`, `nix flake check --no-build`,
   and `bash -n` on the generated Nix app wrappers.
-- 2026-06-14: committed the speedup branch locally as `ci/proofs-parallel-aeneas`.
+- 2026-06-14: committed the speedup branch locally as `ci/proofs-parallel-aeneas`;
+  pushed and opened PR #92.

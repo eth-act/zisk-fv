@@ -13,5 +13,7 @@ Approach: keep local `nix run .#test` as the full all-in-one gate, but let CI
 skip the Aeneas subcheck in the Lake job while a parallel Aeneas job runs the
 same full production extraction check and caches its temporary Lake artifacts.
 
-Next step: push/open PR for `ci/proofs-parallel-aeneas`, then compare the first
-split `proofs` run wall time against run 27457939944.
+PR: #92 (`ci/proofs-parallel-aeneas`) is open.
+
+Next step: after merge or manual dispatch, compare the first split `proofs` run
+wall time against run 27457939944 and check hosted Aeneas/cache behavior.
