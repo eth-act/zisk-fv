@@ -18,12 +18,13 @@ are implemented in rebased commit `ecea9e95`, pushed to
 provider-free Branch construction breadth is implemented in `98e3ca92`, pushed,
 and focused-build green. Provider-free `fence`/`auipc_x0`/`jal_x0` construction
 breadth is implemented in `4e16a47e`, pushed, and focused-build green.
-The lookup-aware ArithMul component wrapper is now implemented in
-`ZiskFv/AirsClean/ArithMul/Circuit.lean`; it exposes `FullSpec` without yet
-swapping the full ensemble to that component. The next local slice swaps
-`fullRv64imEnsemble` to the lookup-aware ArithMul provider and adds a balance
-projection from generic component `Spec` to ArithMul `FullSpec`; focused builds
-are green.
+The ArithMul provider path is pushed through `64ec2e75`: `0f3c859b` added the
+lookup-aware wrapper exposing `FullSpec`, and `64ec2e75` swapped
+`fullRv64imEnsemble` to that provider plus added a balance projection from
+generic component `Spec` to ArithMul `FullSpec`. Current local slice adds the
+ArithTable opcode-range projection and the first honest ArithMul provider
+branch exclusion (`xor`): a lookup-aware ArithMul provider match forces
+`m.op.val >= 176`, so Binary-family opcode 16 cannot be that branch.
 
 Blocking: none for stack-building. PR1 #94 is still open, but Cody explicitly
 directed building the remaining P4 PRs as a stack. REPL is already configured
@@ -32,8 +33,11 @@ for Lean v4.28.0. PR1 final verification was green: `lake build`,
 `nix run .#test`, axiom-closure print, and `git diff origin/main -- trust/`.
 Pulled new `origin/main` (`236449c9`) and rebased/pushed PR1 (`da0dfc2c`) and
 PR2 (`4e16a47e`) on 2026-06-14. Latest upstream change only touched
-`flake.nix`; broad gates were not rerun.
+`flake.nix`; broad gates were not rerun. Rechecked after Cody's pull/rebase
+request on 2026-06-14: `main`, PR1, and PR2 were already up to date, so no
+commits were rewritten.
 
-Next step: use the new ArithMul `FullSpec`/`ArithTableSpec` provider branch to
-exclude ArithMul honestly for Binary/BinaryExtension provider-match discharge.
-Do not fake that discharge from the old carry-chain-only ArithMul `Spec`.
+Next step: consume the new ArithMul branch exclusion in Binary `xor`
+provider-match discharge, then generalize the same opcode-range route across
+the remaining Binary/BinaryExtension branches. Do not fake discharges from the
+old carry-chain-only ArithMul `Spec`.

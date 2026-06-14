@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.FullEnsemble
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
@@ -916,6 +917,86 @@ theorem arithMul_fullSpec_of_component_spec
   rw [h_component] at h_spec
   simpa [arithMulProviderComponent,
     ZiskFv.AirsClean.ArithMul.componentWithArithTable_spec] using h_spec
+
+/-- A lookup-aware ArithMul provider branch can only match Main rows whose
+    operation-bus opcode lies in the Arith ROM opcode range. -/
+theorem arithMul_primary_provider_match_main_op_val_ge_176
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL}
+    (h_full : ZiskFv.AirsClean.ArithMul.FullSpec row)
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage row) 1)) :
+    176 <= (m.op r_main).val := by
+  have h_provider_ge :=
+    ZiskFv.AirsClean.ArithTableProjections.Mul.op_val_ge_176 row h_full.2
+  have h_op_match : m.op r_main = row.flags.op := by
+    simpa [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.ArithMul.primaryOpBusMessage] using h_match.2.1
+  simpa [h_op_match] using h_provider_ge
+
+/-- Full-ensemble version of
+    `arithMul_primary_provider_match_main_op_val_ge_176`, projecting the
+    generic component `Spec` to ArithMul `FullSpec` first. -/
+theorem arithMul_provider_branch_main_op_val_ge_176
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1)) :
+    176 <= (m.op r_main).val := by
+  have h_full := arithMul_fullSpec_of_component_spec h_component h_providerSpec
+  let env := providerTable.environment providerRow
+  let row := eval env arithMulProviderComponent.rowInputVar
+  have h_row_eq : row = arithMulProviderComponent.rowInput env := by
+    dsimp [row]
+    simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
+      (eval_varFromOffset_valueFromOffset arithMulProviderComponent.Input 0 env)
+  have h_full_row :
+      ZiskFv.AirsClean.ArithMul.FullSpec row := by
+    simpa [h_row_eq] using h_full
+  have h_provider_ge :=
+    ZiskFv.AirsClean.ArithTableProjections.Mul.op_val_ge_176
+      row h_full_row.2
+  have h_op_match : m.op r_main = row.flags.op := by
+    have h_op := h_match.2.1
+    rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr_toEntry_op] at h_op
+    simpa [row, env, ZiskFv.Airs.OperationBus.opBus_row_Main] using h_op
+  simpa [h_op_match] using h_provider_ge
+
+/-- The lookup-aware ArithMul branch cannot be the provider for a Main XOR
+    operation.  This is the first Binary-family branch exclusion used by the
+    P4 provider-match discharge. -/
+theorem arithMul_provider_branch_ne_xor
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    False := by
+  have h_ge :=
+    arithMul_provider_branch_main_op_val_ge_176 h_component h_providerSpec h_match
+  rw [h_main_op] at h_ge
+  norm_num [ZiskFv.Trusted.OP_XOR] at h_ge
 
 /-! ## Full-ensemble operation-bus row bridges -/
 
