@@ -18,13 +18,14 @@ are implemented in rebased commit `ecea9e95`, pushed to
 provider-free Branch construction breadth is implemented in `98e3ca92`, pushed,
 and focused-build green. Provider-free `fence`/`auipc_x0`/`jal_x0` construction
 breadth is implemented in `4e16a47e`, pushed, and focused-build green.
-The ArithMul provider path is pushed through `64ec2e75`: `0f3c859b` added the
-lookup-aware wrapper exposing `FullSpec`, and `64ec2e75` swapped
+The ArithMul provider path is pushed through `8805c7ec`: `0f3c859b` added the
+lookup-aware wrapper exposing `FullSpec`, `64ec2e75` swapped
 `fullRv64imEnsemble` to that provider plus added a balance projection from
-generic component `Spec` to ArithMul `FullSpec`. Current local slice adds the
-ArithTable opcode-range projection and the first honest ArithMul provider
-branch exclusion (`xor`): a lookup-aware ArithMul provider match forces
-`m.op.val >= 176`, so Binary-family opcode 16 cannot be that branch.
+generic component `Spec` to ArithMul `FullSpec`, and `8805c7ec` added the
+ArithTable opcode-range projection plus the first honest ArithMul provider
+branch exclusion (`xor`). The current slice adds the full-ensemble XOR provider
+selector: it rules out ArithMul/BinaryExtension/BinaryAdd and returns the
+lookup-aware Binary provider row plus table `Spec`.
 
 Blocking: none for stack-building. PR1 #94 is still open, but Cody explicitly
 directed building the remaining P4 PRs as a stack. REPL is already configured
@@ -32,12 +33,16 @@ for Lean v4.28.0. PR1 final verification was green: `lake build`,
 `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
 `nix run .#test`, axiom-closure print, and `git diff origin/main -- trust/`.
 Pulled new `origin/main` (`236449c9`) and rebased/pushed PR1 (`da0dfc2c`) and
-PR2 (`4e16a47e`) on 2026-06-14. Latest upstream change only touched
-`flake.nix`; broad gates were not rerun. Rechecked after Cody's pull/rebase
-request on 2026-06-14: `main`, PR1, and PR2 were already up to date, so no
-commits were rewritten.
+PR2 (`4e16a47e`) on 2026-06-14; PR2 later advanced to `8805c7ec`. Latest
+upstream change only touched `flake.nix`; broad gates were not rerun. Rechecked
+after Cody's latest pull/rebase request on 2026-06-14: `main`, PR1, and PR2 were
+already up to date, so no commits were rewritten and the local Balance edit was
+preserved by autostash. Focused verification for the XOR selector passed:
+`lake build ZiskFv.AirsClean.FullEnsemble.Balance`,
+`lake build ZiskFv.Compliance.AcceptedTrace`, added-line forbidden-token scan,
+declaration-level forbidden-token scan, added-line width check, and
+`git diff --check`.
 
-Next step: consume the new ArithMul branch exclusion in Binary `xor`
-provider-match discharge, then generalize the same opcode-range route across
-the remaining Binary/BinaryExtension branches. Do not fake discharges from the
-old carry-chain-only ArithMul `Spec`.
+Next step after this selector slice lands: derive the register memory-bus rows
+and `RTypePromises` needed for `construction_xor`. Do not fake discharges from
+the old carry-chain-only ArithMul `Spec`.
