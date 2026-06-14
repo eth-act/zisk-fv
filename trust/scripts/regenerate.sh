@@ -2,10 +2,11 @@
 # Refresh the trust baseline files. Run this after a legitimate
 # trust-surface change, commit the updated baseline files alongside.
 #
-# Six baselines:
+# Seven baselines:
 #   trust/generated/baseline-axioms.txt                  — V1: source-text-hash per axiom
 #   trust/generated/baseline-equiv-axiom-deps.txt        — V2: per-theorem axiom closure
 #   trust/generated/baseline-zisk-riscv-compliant.txt    — V2: uber-theorem project-axiom closure
+#   trust/generated/baseline-global-theorem-binders.txt  — V2: uber-theorem binder list
 #   trust/generated/baseline-hypothesis-count.txt        — anti-laundering: per-theorem binder counts
 #   trust/generated/baseline-caller-burden.txt           — anti-laundering: per-binder ledger (canonical)
 #   trust/generated/baseline-wrapper-caller-burden.txt   — anti-laundering: per-binder ledger (wrappers)
@@ -38,6 +39,10 @@ if [ -d .lake/build ]; then
   echo "Refreshing V2 per-theorem axiom-dep baseline..."
   lake exe trust-gate regenerate-deps > trust/generated/baseline-equiv-axiom-deps.txt
   echo "  → trust/generated/baseline-equiv-axiom-deps.txt"
+
+  echo "Refreshing global theorem binder baseline..."
+  lake exe trust-gate print-global-binders > trust/generated/baseline-global-theorem-binders.txt
+  echo "  → trust/generated/baseline-global-theorem-binders.txt"
 
   echo "Refreshing uber-theorem axiom-closure baseline..."
   {
@@ -86,5 +91,6 @@ if [ -d .lake/build ]; then
   echo "  → trust/generated/baseline-zisk-riscv-compliant.txt"
 else
   echo "Skipping V2 axiom-dep regeneration (no .lake/build/ — run \`lake build\` first)."
+  echo "Skipping global theorem binder baseline (no .lake/build/ — run \`lake build\` first)."
   echo "Skipping uber-theorem closure baseline (no .lake/build/ — run \`lake build\` first)."
 fi
