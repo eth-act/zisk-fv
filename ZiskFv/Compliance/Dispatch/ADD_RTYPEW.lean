@@ -29,6 +29,9 @@ def OpEnvelope.exec_eq_add_rtypew
   | .add_via_binary _ r1 r2 rd bus _ _ _ _ _ _ _ _ _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .add_via_binaryadd _ r1 r2 rd bus _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
+      execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | .addw _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
@@ -58,6 +61,16 @@ theorem zisk_riscv_compliant_program_bus_add_rtypew
       state add_input r1 r2 rd m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static
       h_input_r1_row h_input_r2_row h_lane_rd promises
+  | add_via_binaryadd add_input r1 r2 rd bus pins providerTable providerRow
+      h_component h_table_spec h_provider_row h_match_binaryadd h_main_subset
+      h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_m32 h_lane_rd promises =>
+    change execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    exact ZiskFv.Compliance.equiv_ADD_via_binaryadd
+      state add_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_binaryadd h_main_subset
+      h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_m32 h_lane_rd promises
   | addw addw_input r1 r2 rd _v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static
       h_input_r1_extract h_input_r2_extract h_lane_rd promises =>

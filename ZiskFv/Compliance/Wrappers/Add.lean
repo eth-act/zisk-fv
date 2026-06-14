@@ -3,6 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Add
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.AirsClean.BinaryFamily.Balance
+import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -101,6 +102,72 @@ lemma equiv_ADD
     h_match h_core h_facts h_mode32_zero h_b_op
     (by simpa [row] using h_input_r1_row)
     (by simpa [row] using h_input_r2_row)
+    h_lane_rd
+
+/-- ADD wrapper via the BinaryAdd provider arm. The provider table's Clean
+    `Spec` exposes BinaryAdd's row constraints and range facts; the caller
+    supplies the Main add-subset projection from the selected Main row. -/
+lemma equiv_ADD_via_binaryadd
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (add_input : PureSpec.AddInput)
+    (r1 r2 rd : regidx)
+    (m : Valid_Main FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryAdd.component)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : matches_entry
+      (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryAdd.opBusMessage
+          (ZiskFv.AirsClean.BinaryAdd.component.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_main_subset : ZiskFv.Airs.Main.add_subset_holds m r_main)
+    (h_a_lo_t : m.a_0 r_main =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r1)))
+    (h_a_hi_t : m.a_1 r_main =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r1)))
+    (h_b_lo_t : m.b_0 r_main =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r2)))
+    (h_b_hi_t : m.b_1 r_main =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r2)))
+    (h_m32 : m.m32 r_main = 0)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  let row :=
+    ZiskFv.AirsClean.BinaryAdd.component.rowInput
+      (providerTable.environment providerRow)
+  have h_facts : ZiskFv.AirsClean.BinaryAdd.ComponentSpecFacts row := by
+    have h_component_spec :
+        ZiskFv.AirsClean.BinaryAdd.component.Spec
+          (providerTable.environment providerRow) := by
+      simpa [h_component] using h_table_spec providerRow h_provider_row
+    simpa [row, ZiskFv.AirsClean.BinaryAdd.component_spec] using h_component_spec
+  exact ZiskFv.EquivCore.Add.equiv_ADD_of_binaryadd_row
+    state add_input r1 r2 rd m row r_main bus promises pins h_match
+    (ZiskFv.AirsClean.BinaryAdd.core_every_row_of_component_spec_facts row h_facts)
+    h_main_subset h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_m32
+    (ZiskFv.AirsClean.BinaryAdd.a_chunks_in_range_of_component_spec_facts row h_facts)
+    (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts row h_facts)
+    (ZiskFv.AirsClean.BinaryAdd.c_chunks_in_range_of_component_spec_facts row h_facts)
     h_lane_rd
 
 end ZiskFv.Compliance

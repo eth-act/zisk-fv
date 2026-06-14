@@ -57,6 +57,11 @@ def OpEnvelope.exec_eq_misc
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .addi_via_binaryadd _ r1 rd imm bus _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | .addiw _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -160,6 +165,19 @@ theorem zisk_riscv_compliant_program_bus_misc
       state addi_input r1 rd imm m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static h_addi_subset
       h_input_r1_row h_input_imm_row h_lane_rd promises
+  | addi_via_binaryadd addi_input r1 rd imm bus pins providerTable providerRow
+      h_component h_table_spec h_provider_row h_match_binaryadd h_main_subset
+      h_addi_subset h_a_lo_t h_a_hi_t h_m32 h_set_pc h_lane_rd promises =>
+    change
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    exact ZiskFv.Compliance.equiv_ADDI_via_binaryadd
+      state addi_input r1 rd imm m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_binaryadd h_main_subset
+      h_addi_subset h_a_lo_t h_a_hi_t h_m32 h_set_pc h_lane_rd promises
   | addiw addiw_input r1 rd imm _v bus pins h_addiw_subset providerTable providerRow
       h_component h_table_spec h_provider_row h_match_static h_input_r1_extract
       h_lane_rd promises =>
