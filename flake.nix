@@ -119,6 +119,7 @@
               gnumake
               jq
               libclang.lib
+              nasm
               nix
               rustc
               pkgsCross.riscv64-embedded.stdenv.cc
