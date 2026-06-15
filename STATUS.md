@@ -20,11 +20,21 @@ Done:
 - Added ConstructionSub.lean (sound construction_sub_sound).
 
 DONE: lake build green (8681 jobs); check-all.sh 18/18; check-all-semantic.sh
-11/11; 0 PROJECT axioms (construction_sub_sound closure empty); 17 + execRow
+12/12; 0 PROJECT axioms (construction_sub_sound closure empty); 17 + execRow
 honest binders; net diff vs main has 0 relabel decls. Committed 9b55bcdb, pushed,
 opened do-not-merge PR #99 (eth-act/zisk-fv, base main) superseding #94/#97.
 
-Next (follow-up increments, NOT this PR): recursive (Option X) construction-binder
-gate; second ALU family (PR3); close stale #94/#97 on merge (Cody's call).
+DONE (recursive gate, Option X): re-added the DEEP construction-binder gate.
+TypeWalk.lean renderTheoremBindersDeep + renderDeep (descend only into ZiskFv.*
+project structures; library structures are leaves; visited-set cycle guard).
+Main.lean print-construction-binders-deep targeting construction_sub_sound.
+check-construction-theorem-binders.sh re-added (points at -deep), re-wired into
+check-all-semantic.sh (5/12) + regenerate.sh + README. Deep baseline = 17 flat
+h_ residual lines + execRow; ZERO RowBinding/MainRowProvenance substrings; setup
+binders (trace/binding) descend into honest trace structure only. nix run .#test
+green. Committed 0e25550d, pushed to update PR #99.
+
+Next (follow-up increments, NOT this PR): second ALU family (PR3); close stale
+#94/#97 on merge (Cody's call).
 
 Blocking: none.
