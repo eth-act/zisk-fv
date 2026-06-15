@@ -34,7 +34,24 @@ h_ residual lines + execRow; ZERO RowBinding/MainRowProvenance substrings; setup
 binders (trace/binding) descend into honest trace structure only. nix run .#test
 green. Committed 0e25550d, pushed to update PR #99.
 
-Next (follow-up increments, NOT this PR): second ALU family (PR3); close stale
-#94/#97 on merge (Cody's call).
+DONE (PR3 — second sound family, AND, logic route): added
+ConstructionAnd.lean (`construction_and_sound`), the mechanical mirror of
+`construction_sub_sound` for the logic family. Op-bus match via the salvaged
+logic Layer-A wrapper `exists_staticBinary_provider_row_matches_logic_from_binding`
+(op pin via `Or.inl h_main_op`); OP_AND (=14, <16) byte-chain path
+(`logic_row_mode_pins_of_emit_op_lt_16_of_static_spec` + `BinaryTable.OP_AND`);
+data effect concluded via `equiv_AND` (`execute_RTYPE_and_pure`, bottoms in
+`binary_and_chunks_eq_bv_and_of_wf`). Same 17 + execRow residual budget, flat
+top-level binders, no `*RowBinding`/`MainRowProvenance` leaf. Generalized the
+recursive gate: `soundConstructionTheorems` list + labelled-block deep render
+in TrustGate/Main.lean (adding a family = append to the list + regen). Deep
+baseline grew 34→71 lines = +2 headers + 1 blank + 34 honest AND binders; SUB
+block byte-identical. lake build green (8682 jobs); check-all.sh 18/18;
+check-all-semantic.sh 12/12 (deep check now covers both); 0 PROJECT
+(ZiskFv.*) axioms (construction_and_sound closure empty of ZiskFv.* names);
+nix run .#test green.
+
+Next (follow-up increments, NOT this PR): the remaining ALU/sweep families;
+close stale #94/#97 on merge (Cody's call).
 
 Blocking: none.

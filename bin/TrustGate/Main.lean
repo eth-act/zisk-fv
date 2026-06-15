@@ -234,24 +234,44 @@ def cmdPrintGlobalBinders (env : Environment) (theoremName : Name) : IO UInt32 :
     IO.println s!"{r.binderIdx} :: {r.binderName} :: {normalizeWhitespace r.binderType}"
   return 0
 
-/-- Subcommand: render the DEEP (recursive) construction-theorem binder list.
+/-- The list of sound P4 construction theorems whose DEEP binder render is
+audited by the recursive (Option X) gate. Adding a sound family = append its
+`construction_<fam>_sound` here and regenerate
+`trust/generated/baseline-construction-theorem-binders.txt`; the baseline must
+grow by EXACTLY that family's honest top-level binders (no `*RowBinding` /
+`MainRowProvenance` leaf). The block for each theorem is labelled by a
+`# <theoremName>` header line so the per-family audit surface stays separable in
+the diff. -/
+def soundConstructionTheorems : List Name :=
+  [ `ZiskFv.Compliance.construction_sub_sound
+  , `ZiskFv.Compliance.construction_and_sound ]
+
+/-- Subcommand: render the DEEP (recursive) construction-theorem binder list,
+for EVERY sound construction theorem in `soundConstructionTheorems`.
 
 Unlike `print-global-binders`, this recurses into every `ZiskFv.*` project
 structure appearing in a binder type, emitting one `<path> :: <type>` leaf line
 per reachable non-descended field (library structures `Fin`/`And`/`Exists`/…
-are leaves). Because the sound P4 construction carries NO `*RowBinding` /
-`MainRowProvenance` deep record, the deep render is the flat list of its honest
-top-level binders — and any future smuggling of a fact inside a project
-structure surfaces immediately as new dotted leaf lines. The numeric binder
-index is dropped: the dotted path is the stable key. -/
-def cmdPrintConstructionBindersDeep (env : Environment) (theoremName : Name)
+are leaves). Because the sound P4 constructions carry NO `*RowBinding` /
+`MainRowProvenance` deep record, the deep render is the flat list of each
+theorem's honest top-level binders — and any future smuggling of a fact inside a
+project structure surfaces immediately as new dotted leaf lines. Each theorem's
+block is prefixed by a `# <theoremName>` header; the numeric binder index is
+dropped (the dotted path is the stable key). -/
+def cmdPrintConstructionBindersDeep (env : Environment) (theoremNames : List Name)
     : IO UInt32 := do
-  if (env.find? theoremName).isNone then
-    IO.eprintln s!"trust-gate: unknown const {theoremName}"
-    return 1
-  let rows ← runMeta env (TypeWalk.renderTheoremBindersDeep theoremName)
-  for r in rows do
-    IO.println s!"{r.path} :: {r.fieldType}"
+  let mut first := true
+  for theoremName in theoremNames do
+    if (env.find? theoremName).isNone then
+      IO.eprintln s!"trust-gate: unknown const {theoremName}"
+      return 1
+    if !first then
+      IO.println ""
+    first := false
+    IO.println s!"# {theoremName}"
+    let rows ← runMeta env (TypeWalk.renderTheoremBindersDeep theoremName)
+    for r in rows do
+      IO.println s!"{r.path} :: {r.fieldType}"
   return 0
 
 /-- Subcommand: enumerate every auditable `ZiskFv.*` const, subtract
@@ -319,7 +339,7 @@ def usage : IO Unit := do
   IO.println "  find-unused PATH               enumerate ZiskFv.* consts not reachable from PATH entry points"
   IO.println "  check-closure-vs-baseline PATH check zisk_riscv_compliant_program_bus axiom closure == generated/baseline-axioms.txt"
   IO.println "  print-global-binders           print zisk_riscv_compliant_program_bus binder baseline rows"
-  IO.println "  print-construction-binders-deep  print DEEP (recursive) construction_sub_sound binder leaf rows"
+  IO.println "  print-construction-binders-deep  print DEEP (recursive) binder leaf rows for every sound construction theorem"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
@@ -351,8 +371,7 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
     cmdPrintGlobalBinders env
       `ZiskFv.Compliance.zisk_riscv_compliant_program_bus
   | ["print-construction-binders-deep"] =>
-    cmdPrintConstructionBindersDeep env
-      `ZiskFv.Compliance.construction_sub_sound
+    cmdPrintConstructionBindersDeep env soundConstructionTheorems
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/generated/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline
