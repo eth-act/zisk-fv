@@ -54,22 +54,23 @@ run_witnesses() {
   return $ok
 }
 
-run "1/11 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
-run "2/11 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
-run "3/11 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
-run "4/11 global theorem binders (V2)"     "$dir/check-global-theorem-binders.sh"
-run "5/11 consistency false probe rejected" reject_false_probe
-run "6/11 Sail memory timeline witness" \
+run "1/12 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
+run "2/12 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
+run "3/12 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
+run "4/12 global theorem binders (V2)"     "$dir/check-global-theorem-binders.sh"
+run "5/12 DEEP construction theorem binders (V2)" "$dir/check-construction-theorem-binders.sh"
+run "6/12 consistency false probe rejected" reject_false_probe
+run "7/12 Sail memory timeline witness" \
   run_lean_no_sorry trust/consistency/load_byte_agreement_witness.lean
-run "7/11 memory timeline construction witness" \
+run "8/12 memory timeline construction witness" \
   run_lean_no_sorry trust/consistency/memory_timeline_construction_witness.lean
-run "8/11 memory prefix alignment witness" \
+run "9/12 memory prefix alignment witness" \
   run_lean_no_sorry trust/consistency/memory_prefix_alignment_witness.lean
-run "9/11 global ADD theorem instantiation" \
+run "10/12 global ADD theorem instantiation" \
   run_lean_no_sorry trust/consistency/global_theorem_instantiation_add.lean
-run "10/11 global LD theorem instantiation" \
+run "11/12 global LD theorem instantiation" \
   run_lean_no_sorry trust/consistency/global_theorem_instantiation_ld.lean
-run "11/11 Clean completeness witnesses" run_witnesses
+run "12/12 Clean completeness witnesses" run_witnesses
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate (V2 semantic): ALL CHECKS PASSED."

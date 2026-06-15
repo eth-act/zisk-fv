@@ -82,9 +82,10 @@ def diffStrings (regenerated committed : String) : IO UInt32 := do
   return 1
 
 /-- Collapse pretty-printer whitespace so generated baselines keep one row per
-binder even when the type is too wide for the default formatter. -/
+binder even when the type is too wide for the default formatter. (Re-exported
+from `TrustGate.TypeWalk`, where the deep renderer also uses it.) -/
 def normalizeWhitespace (s : String) : String :=
-  String.intercalate " " (s.splitToList (·.isWhitespace) |>.filter (!·.isEmpty))
+  TypeWalk.normalizeWhitespace s
 
 /-- Execute the type-walk against `forbidden`; returns 0 on clean run. -/
 def runTypeWalk (env : Environment) (forbidden : NameSet) : IO UInt32 := do
@@ -233,6 +234,26 @@ def cmdPrintGlobalBinders (env : Environment) (theoremName : Name) : IO UInt32 :
     IO.println s!"{r.binderIdx} :: {r.binderName} :: {normalizeWhitespace r.binderType}"
   return 0
 
+/-- Subcommand: render the DEEP (recursive) construction-theorem binder list.
+
+Unlike `print-global-binders`, this recurses into every `ZiskFv.*` project
+structure appearing in a binder type, emitting one `<path> :: <type>` leaf line
+per reachable non-descended field (library structures `Fin`/`And`/`Exists`/…
+are leaves). Because the sound P4 construction carries NO `*RowBinding` /
+`MainRowProvenance` deep record, the deep render is the flat list of its honest
+top-level binders — and any future smuggling of a fact inside a project
+structure surfaces immediately as new dotted leaf lines. The numeric binder
+index is dropped: the dotted path is the stable key. -/
+def cmdPrintConstructionBindersDeep (env : Environment) (theoremName : Name)
+    : IO UInt32 := do
+  if (env.find? theoremName).isNone then
+    IO.eprintln s!"trust-gate: unknown const {theoremName}"
+    return 1
+  let rows ← runMeta env (TypeWalk.renderTheoremBindersDeep theoremName)
+  for r in rows do
+    IO.println s!"{r.path} :: {r.fieldType}"
+  return 0
+
 /-- Subcommand: enumerate every auditable `ZiskFv.*` const, subtract
 the reachable set, print the unreachable ones grouped by module. -/
 def cmdFindUnused (env : Environment) (path : String) : IO UInt32 := do
@@ -298,6 +319,7 @@ def usage : IO Unit := do
   IO.println "  find-unused PATH               enumerate ZiskFv.* consts not reachable from PATH entry points"
   IO.println "  check-closure-vs-baseline PATH check zisk_riscv_compliant_program_bus axiom closure == generated/baseline-axioms.txt"
   IO.println "  print-global-binders           print zisk_riscv_compliant_program_bus binder baseline rows"
+  IO.println "  print-construction-binders-deep  print DEEP (recursive) construction_sub_sound binder leaf rows"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
@@ -328,6 +350,9 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   | ["print-global-binders"] =>
     cmdPrintGlobalBinders env
       `ZiskFv.Compliance.zisk_riscv_compliant_program_bus
+  | ["print-construction-binders-deep"] =>
+    cmdPrintConstructionBindersDeep env
+      `ZiskFv.Compliance.construction_sub_sound
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/generated/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline

@@ -21,6 +21,11 @@ open Lean
 
 namespace TrustGate.TypeWalk
 
+/-- Collapse pretty-printer whitespace so generated baselines keep one row per
+binder even when the type is too wide for the default formatter. -/
+def normalizeWhitespace (s : String) : String :=
+  String.intercalate " " (s.splitToList (·.isWhitespace) |>.filter (!·.isEmpty))
+
 /-- Gather every distinct `Expr.const` Name appearing syntactically in `e`. -/
 partial def gatherConsts (e : Expr) (acc : NameSet) : NameSet :=
   match e with
@@ -130,6 +135,85 @@ def renderTheoremBinders (name : Name) : Meta.MetaM (Array BinderInfo) := do
           binderIdx := i
           binderName := localDecl.userName
           binderType := fmt.pretty }
+    return rows
+
+/-- One leaf line of the DEEP (recursive) construction-binder render.
+
+`path` is a dotted accessor path from a top-level binder down to a leaf field
+(e.g. `binding.mainTable`); `fieldType` is the normalized pretty-printed leaf
+type. The numeric binder index is deliberately DROPPED — paths are the stable
+key, so a re-ordering refactor does not churn the baseline. -/
+structure DeepBinderInfo where
+  path      : String
+  fieldType : String
+  deriving Inhabited
+
+/-- True iff the recursive deep walk should DESCEND into structure `head`.
+
+Only `ZiskFv.*` project structures are descended. Library structures
+(`Fin`, `And`, `Exists`, `Prod`, `Subtype`, `BitVec`, `EStateM.Result`, `Eq`,
+…) are treated as LEAVES — this stop-set is critical: naive recursion into
+library structures explodes into anonymous-projection (`s✝.1`) noise. -/
+def shouldRecurse (head : Name) : Bool :=
+  head.getRoot == `ZiskFv
+
+/-- Recursively render the leaf fields reachable from a single binder.
+
+`path` is the accessor path so far; `parent` is the elaborated `Expr` for the
+value at `path`; `parentTy` is its (already-inferred) type; `visited` guards
+against cyclic structure references. We descend into a structure `head` iff
+`parentTy` is not itself a forall AND `head` is a project structure
+(`shouldRecurse`). Function-valued fields are leaves (descending into them would
+require telescoping, and they are honest "is a function" facts, not smuggled
+data). Each non-descended node emits exactly one leaf line. -/
+partial def renderDeep (name : Name) (path : String)
+    (parent parentTy : Expr) (visited : NameSet) :
+    Meta.MetaM (Array DeepBinderInfo) := do
+  let (head, _) := parentTy.getAppFnArgs
+  let env ← getEnv
+  -- Descend only into ZiskFv.* project structures whose type is not a forall.
+  if parentTy.isForall || !(Lean.isStructure env head) || !(shouldRecurse head) then
+    let fmt ← Meta.ppExpr parentTy
+    return #[{ path := path, fieldType := normalizeWhitespace fmt.pretty }]
+  if visited.contains head then
+    return #[{ path := path, fieldType := s!"<CYCLE {head}>" }]
+  let visited := visited.insert head
+  let fields := Lean.getStructureFields env head
+  let mut rows : Array DeepBinderInfo := #[]
+  for h : idx in [0:fields.size] do
+    let fieldName := fields[idx]
+    let proj := Expr.proj head idx parent
+    let fieldTy ← Meta.inferType proj
+    if fieldTy.isForall then
+      -- Function-valued field: leaf (do not telescope).
+      let fmt ← Meta.ppExpr fieldTy
+      rows := rows.push
+        { path := s!"{path}.{fieldName}"
+          fieldType := normalizeWhitespace fmt.pretty }
+    else
+      let sub ← renderDeep name s!"{path}.{fieldName}" proj fieldTy visited
+      rows := rows ++ sub
+  return rows
+
+/-- Deep (recursive) render of `name`'s parameter binders. Top-level binders
+are telescoped; each is then recursively descended via `renderDeep`, emitting
+one leaf line per reachable non-descended field. The output is the audit
+surface for the P4 construction theorem: because the sound construction carries
+NO `*RowBinding` / `MainRowProvenance` deep record, the deep baseline is just
+the flat list of its honest top-level binders — and any future attempt to
+smuggle a fact inside a project structure surfaces as new dotted leaf lines. -/
+def renderTheoremBindersDeep (name : Name)
+    : Meta.MetaM (Array DeepBinderInfo) := do
+  let some ci := (← getEnv).find? name
+    | throwError s!"unknown const: {name}"
+  let typ := ci.type
+  Meta.forallTelescope typ fun args _ => do
+    let mut rows : Array DeepBinderInfo := #[]
+    for arg in args do
+      let localDecl ← arg.fvarId!.getDecl
+      let bt ← Meta.inferType arg
+      let sub ← renderDeep name (toString localDecl.userName) arg bt {}
+      rows := rows ++ sub
     return rows
 
 end TrustGate.TypeWalk
