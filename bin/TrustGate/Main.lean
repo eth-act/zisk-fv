@@ -298,7 +298,6 @@ def usage : IO Unit := do
   IO.println "  find-unused PATH               enumerate ZiskFv.* consts not reachable from PATH entry points"
   IO.println "  check-closure-vs-baseline PATH check zisk_riscv_compliant_program_bus axiom closure == generated/baseline-axioms.txt"
   IO.println "  print-global-binders           print zisk_riscv_compliant_program_bus binder baseline rows"
-  IO.println "  print-construction-binders     print P4 construction theorem binder baseline rows"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
@@ -329,9 +328,6 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   | ["print-global-binders"] =>
     cmdPrintGlobalBinders env
       `ZiskFv.Compliance.zisk_riscv_compliant_program_bus
-  | ["print-construction-binders"] =>
-    cmdPrintGlobalBinders env
-      `ZiskFv.Compliance.construction_beq
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/generated/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline

@@ -1,34 +1,25 @@
-Active plan: docs/ai/plan/PLAN_ENDGAME_P4.md.
+Active plan: docs/ai/plan/PLAN_ENDGAME_P4_CLOSEOUT.md (§5 PR2, rework-off-#97).
 
-P1: COMPLETE on main (#79-#83 via #89). P3: COMPLETE on main (#90/#91).
-This worktree is stacked on P4 PR1 commit `da0dfc2c` (`endgame-p4-pr1`), whose
-base is current `origin/main` at `236449c9`.
+Branch `p4-closeout-construction` off `origin/endgame-p4-pr2` (#97 @ 6c414ffa).
 
-P4 is the first genuinely trust-reducing phase: build `AcceptedTrace ->
-OpEnvelope`, discharge derivable bucket-(a) evidence from accepted trace data,
-and leave only the named bucket-(b) residuals (`aeneasBridgeTrust`,
-`ProgramBinding`/boot, `NoKnownDefect`). Balance is assumed via
-`trace.balanced`, never proven.
+Focus: EXECUTE PR2 — strip the P4 relabel, keep the salvage + via_binaryadd
+route, add the first honest sound construction (`construction_sub_sound`, 17 +
+execRow residual binders). End in a CLEAN do-not-merge PR superseding #94/#97.
 
-Current focus: P4 PR2/PR2a in `.worktrees/endgame-p4-pr2` on branch
-`endgame-p4-pr2`, continuing as a stack instead of waiting for PR1 review.
-Pushed PR2 history through `5c261c7`: extractors, provider-free Branch/NoMem
-breadth, lookup-aware ArithMul provider swap/exclusion, full-ensemble XOR
-provider selector, XOR promises, Binary provider input-row derivation,
-balance-fed XOR construction, and balance-fed AND construction via a shared
-logical Binary provider selector. This changeset adds the same balance-fed
-construction path for OR.
+Done:
+- Stripped AcceptedTrace.lean to the salvage (AcceptedTrace + ProgramBinding
+  skeleton + Layer-A provider-match wrappers). Removed ArmTag, 37 *RowBinding
+  structs, per-op ProgramBinding projections, all construction_<op> defs +
+  aeneasBridgeTrust theorems, the 28 exists_construction_*_from_balance wrappers.
+- Stripped the 4 addViaBinaryAdd*OfExtractedShape decls (AeneasBridgeTrust.lean).
+- Stripped the print-construction-binders subcommand (TrustGate/Main.lean), the
+  blind check-construction-theorem-binders.sh + its baseline + its wiring in
+  check-all-semantic.sh / regenerate.sh / README.md.
+- KEPT the via_binaryadd salvage route (OpEnvelope arms, Dispatch, EquivCore/Add,
+  BinaryAdd circuit, route ledger).
+- Added ConstructionSub.lean (sound construction_sub_sound).
 
-Blocking: none for stack-building. PR1 #94 is still open, but Cody explicitly
-directed building the remaining P4 PRs as a stack. REPL is already configured
-for Lean v4.28.0. Cody's latest 2026-06-14 pull/rebase request was a no-op:
-`main` stayed `236449c9`, PR1 stayed `da0dfc2c`, and PR2 stayed `f31bbc6`;
-local AND/logical-Binary edits were preserved by autostash. Focused verification
-for the current logical Binary/OR construction slice passed:
-`lake build ZiskFv.AirsClean.FullEnsemble.Balance`,
-`lake build ZiskFv.Compliance.AcceptedTrace`, no forbidden tokens in touched
-Lean files, added-line width check, and `git diff --check`.
+Next: lake build green -> check-all.sh / check-all-semantic.sh -> commit -> push
+-> PR.
 
-Next step: continue the Binary-family balance-fed construction breadth beyond
-AND/OR/XOR. Do not fake discharges from the old carry-chain-only ArithMul
-`Spec`.
+Blocking: (none yet; awaiting build result).
