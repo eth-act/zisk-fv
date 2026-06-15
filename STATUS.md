@@ -19,7 +19,12 @@ Done:
   BinaryAdd circuit, route ledger).
 - Added ConstructionSub.lean (sound construction_sub_sound).
 
-Next: lake build green -> check-all.sh / check-all-semantic.sh -> commit -> push
--> PR.
+DONE: lake build green (8681 jobs); check-all.sh 18/18; check-all-semantic.sh
+11/11; 0 PROJECT axioms (construction_sub_sound closure empty); 17 + execRow
+honest binders; net diff vs main has 0 relabel decls. Committed 9b55bcdb, pushed,
+opened do-not-merge PR #99 (eth-act/zisk-fv, base main) superseding #94/#97.
 
-Blocking: (none yet; awaiting build result).
+Next (follow-up increments, NOT this PR): recursive (Option X) construction-binder
+gate; second ALU family (PR3); close stale #94/#97 on merge (Cody's call).
+
+Blocking: none.
