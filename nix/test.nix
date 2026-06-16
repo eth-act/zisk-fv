@@ -61,6 +61,25 @@ writeShellApplication {
       echo
     }
 
+    # Like `run`, but skipped when the named env var is set truthy. Used so
+    # the independent Aeneas production-extraction harness can be run in a
+    # parallel CI job (see .github/workflows/proofs.yml) instead of
+    # serializing the ~1.5h generated-extraction gate ahead of `lake build`.
+    # Local `nix run .#test` keeps running every step by default.
+    run_unless_skipped() {
+      local skip_var=$1
+      local name=$2
+      shift 2
+      local skip_value="''${!skip_var:-0}"
+      if [[ "$skip_value" != 0 && "$skip_value" != false && "$skip_value" != FALSE ]]; then
+        echo "::: $name :::"
+        echo "skipped because $skip_var=$skip_value"
+        echo
+        return 0
+      fi
+      run "$name" "$@"
+    }
+
     # shellcheck disable=SC2329
     mem_generated_artifact_wrapper() {
       test -f build/extraction/Extraction/Circuit.lean
@@ -99,7 +118,7 @@ writeShellApplication {
     # build and checks the production-backed extraction boundary. The canonical
     # ProductionM2 extraction is tracked under trust/aeneas/ and diff-checked by
     # CI; temporary generated harness files remain under build/.
-    run "3/8 Aeneas production extraction harness" bash -c '
+    run_unless_skipped ZISK_FV_TEST_SKIP_AENEAS "3/8 Aeneas production extraction harness" bash -c '
       AENEAS_FLAKE="${aeneas}" AENEAS_CHECK_RV_COMPLETENESS=1 scripts/aeneas-production-extract.sh
     '
 
