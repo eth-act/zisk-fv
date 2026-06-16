@@ -59,7 +59,8 @@ namespace ZiskFv.AirsClean.Mem.SeamVm
 open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.SegmentContinuation (SeamContChannel SeamMessage)
-open ZiskFv.AirsClean.Mem (MemSeamRow prevSeamMessageExpr lastSeamMessageExpr)
+open ZiskFv.AirsClean.Mem (MemSeamRow prevSeamMessageExpr lastSeamMessageExpr
+  componentWithSeamAndMemBus)
 
 /-- Goldilocks has characteristic `GL_prime`, a large prime, so `ringChar ≠ 2`.
     `addVm_soundVmChannel_of_soundChannels` (via `SoundEnsemble.addVm`) needs it. -/
@@ -162,7 +163,90 @@ def memSegVm : VmTables FGL SeamMessage where
     -- witnesses so the membership is structural (`List.mem_singleton`), avoiding a
     -- full whnf of the 22-field `MemSeamRow` `varFromOffset`/`toElements`.
     intro table h_table
-    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at h_table
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at h_table
+    rcases h_table with rfl | rfl <;>
+      exact ⟨ prevSeamMessageExpr (varFromOffset MemSeamRow 0),
+             lastSeamMessageExpr (varFromOffset MemSeamRow 0), List.mem_singleton.mpr rfl ⟩
+  verifier_channel :=
+    ⟨ varFromOffset SeamMessage 0, ProvableType.const bootSeam, List.mem_singleton.mpr rfl ⟩
+  verifier_requirements env := by
+    simp only [circuit_norm, memSeamVerifier, SeamContChannel]
+
+/-! ## The DUAL-bus VM tables (the migration host).
+
+`memSegVmFull` hosts the REAL Step-1 dual-bus component
+`componentWithSeamAndMemBus` (MemBus provider emission + segment-continuation
+seam pull/push) as the VM tables, NOT the seam-only projection. It is the
+faithful VM host the migration would consume — its seam hosting is identical to
+`memSegVm` (same `exposedChannels` = `expose SeamContChannel [pulled prev, pushed
+last]`), so `tables_channel` / `verifier_channel` / `verifier_requirements`
+discharge the same way, and it is sound + kernel-only.
+
+## XCAP #103 Step 2b: VERIFIED BLOCKING OBSTACLE (the make-or-break, resolved NO)
+
+The Step-2a STATUS note hypothesized that finishing `MemBusChannel` BEFORE
+`addVm` would make `addVm`'s side conditions satisfiable. That is HALF right and
+HALF wrong, and the wrong half is a hard wall. Building the migrated
+`SoundEnsemble FGL SeamMessage` skeleton (Mem moved out of the base, OpBus +
+MemBus finished) and attempting `(skeleton).addVm memSegVmFull` gives three
+obligations:
+
+* `ne_mem_vm_channel` (SeamCont ∉ each base table's channels): MECHANICAL, holds.
+* `grts_subset_finished` (`memSegVmFull` guarantees ⊆ SeamCont :: finished):
+  MECHANICAL, holds — the dual-bus table's `SeamContChannel` guarantee is the VM
+  channel; its `MemBusChannel` guarantee lands in `finished`.
+* `reqs_disjoint_finished` (`∀ ch ∈ finished, ch ∉ memSegVmFull.{verifier,tables}
+  .channelsWithRequirements`): **UNSATISFIABLE.** After simp the residual goal is
+  literally
+  `∀ channel ∈ finished, ¬channel = SeamCont ∧ ¬channel = MemoryBus ∧ ¬channel =
+  SeamCont`, and for `channel = MemBusChannel.toRaw ∈ finished` the middle
+  conjunct `¬MemBusChannel.toRaw = MemoryBus.toRaw` is provably FALSE.
+
+ROOT CAUSE (architectural, not tactical). By `Operations.ChannelsLawful`
+(`Clean/Circuit/Operations.lean:1094`), an interaction with `assumeGuarantees =
+false` — i.e. every `MemBusChannel.emit` (a provider push) — is classified into
+`channelsWithRequirements`, NOT `channelsWithGuarantees` (which holds only the
+`assumeGuarantees = true` pulls). So the dual-bus Mem component MANDATORILY lists
+`MemBusChannel.toRaw` in `channelsWithRequirements`. And `addVm`
+(`Clean/Air/Vm.lean:688`) requires every FINISHED channel to be ABSENT from every
+VM table's `channelsWithRequirements`. This is mathematically essential, not an
+artificial guard: `addVm_soundVmChannel_of_soundChannels` narrows the VM-channel
+balance argument to the VM tables alone, and derives the finished channels'
+guarantees on the VM tables from the base ensemble's `SoundChannels`
+(`guarantees_of_requirements_append`, `Clean/Air/OrderedChannel.lean:384`); that
+derivation REQUIRES the VM tables to contribute no provider interactions to a
+finished channel. The `Clean/Air/OrderedChannel.lean:440-445` doc comment states
+this directly: a channel that a circuit BOTH pushes and pulls (a VM channel)
+"does not hold `SoundChannels` for ANY list of channels."
+
+The deeper truth: the Mem rows ARE the MemBus providers. MemBus's balance
+(Main pulls, Mem pushes) cannot be "finished" (closed) by the base ensemble
+WITHOUT the Mem rows — but the migration moves exactly those rows into the VM.
+You cannot simultaneously (a) finish MemBus before `addVm` and (b) host the
+MemBus-providing rows inside the VM. The two are contradictory.
+
+Leaving MemBus UNfinished is also a dead end: it then has no soundness path at
+all (it is neither a finished `SoundChannels` channel nor the VM channel), so the
+ensemble's `SoundVmEnsemble.soundness` cannot be established — `addVm` only
+discharges the single VM channel, and `SoundChannels` is over `finished` only.
+
+CONCLUSION: re-rooting the global compliance ensemble onto a VM seam channel via
+the existing Clean `addVm` API is NOT possible while MemBus stays a finished,
+sound channel. A different framework primitive is needed (e.g. an `addVm` variant
+that admits VM tables which also PROVIDE an already-finished channel, with a
+combined balance argument; or hosting BOTH MemBus and the seam as VM channels of
+a single multi-channel VM). Both are framework-level changes to
+`Clean/Air/Vm.lean`, out of scope for this seam-tag migration. `memSegVmFull`
+remains checked in as the faithful (sound, kernel-only) VM host so the framework
+fix, once available, can consume it directly. -/
+def memSegVmFull : VmTables FGL SeamMessage where
+  channel := SeamContChannel
+  tables := [componentWithSeamAndMemBus, componentWithSeamAndMemBus]
+  verifier := memSeamVerifier
+  verifier_length_zero := by simp [circuit_norm, memSeamVerifier]
+  tables_channel := by
+    intro table h_table
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with rfl | rfl <;>
       exact ⟨ prevSeamMessageExpr (varFromOffset MemSeamRow 0),
              lastSeamMessageExpr (varFromOffset MemSeamRow 0), List.mem_singleton.mpr rfl ⟩
@@ -191,20 +275,23 @@ def memSegFormal : FormalEnsemble FGL SeamMessage :=
   memSegEnsemble.toFormal FGL (fun _ _ => True)
     (by simp [circuit_norm, memSegEnsemble, memSegVm, memSeamTable])
 
-/-! ## Deferred (the ensemble-migration increment).
+/-! ## Blocked (the ensemble-migration increment) — see `memSegVmFull` above.
 
-To host the DUAL-bus `componentWithSeamAndMemBus` (so `MemBusChannel` genuinely
-balances alongside the seam) the ensemble must first finish `MemBusChannel` via a
-real `SoundChannels` proof — i.e. include the MemBus provider/consumer tables that
-make MemBus a balanced finished channel — BEFORE `addVm`. That is the disruptive
-`fullRv64imEnsemble` migration (`SoundEnsemble → SoundVmEnsemble`, prepend the
-seam tables, non-empty verifier, re-prove `Balance.lean`'s projections). It is
-explicitly out of scope for this additive increment.
+The disruptive `fullRv64imEnsemble` migration (`SoundEnsemble → SoundVmEnsemble`,
+move Mem into the VM, `addVm memSegVmFull`, re-prove `Balance.lean`) is BLOCKED at
+`addVm`'s `reqs_disjoint_finished` obligation: the dual-bus Mem component lists
+`MemBusChannel.toRaw` in `channelsWithRequirements` (its provider emit, by
+`Operations.ChannelsLawful`), which `addVm` forbids for the finished `MemBus`
+channel. The full verified analysis + root cause is in the `memSegVmFull`
+docstring above. This is NOT a tactic gap; it requires a framework-level change to
+`Clean/Air/Vm.lean`. `fullRv64imEnsemble`, `Balance.lean`, `AcceptedTrace.lean`,
+and the 28 construction families are therefore LEFT BYTE-IDENTICAL.
 
-The downstream seam-derivation consumer (`exists_push_of_pull` over
-`memSegEnsemble`, deriving `seg.segment_last_* = next_seg.previous_segment_*` from
-balance + the `segment_id` tag pins) reuses the validated PoC `tagged_seam_forced`
-shape; it is also deferred — this increment delivers only the hosted VM tables.
+The downstream seam-derivation consumer (`exists_push_of_pull` over a migrated
+`SoundVmEnsemble`, deriving `seg.segment_last_* = next_seg.previous_segment_*`
+from balance + the `segment_id` tag pins) reuses the validated PoC
+`tagged_seam_forced` shape; it is downstream of the blocked migration and is not
+reachable until the framework fix lands.
 -/
 
 end ZiskFv.AirsClean.Mem.SeamVm
@@ -217,5 +304,6 @@ documented external trust. NO `sorry`, NO project axiom, NO `native_decide`. -/
 #print axioms ZiskFv.AirsClean.Mem.SeamVm.memSeamTable
 #print axioms ZiskFv.AirsClean.Mem.SeamVm.memSeamVerifier
 #print axioms ZiskFv.AirsClean.Mem.SeamVm.memSegVm
+#print axioms ZiskFv.AirsClean.Mem.SeamVm.memSegVmFull
 #print axioms ZiskFv.AirsClean.Mem.SeamVm.memSegEnsemble
 #print axioms ZiskFv.AirsClean.Mem.SeamVm.memSegFormal

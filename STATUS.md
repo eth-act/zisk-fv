@@ -1,7 +1,56 @@
-Active plan: docs/ai/plan/PLAN_ENDGAME_XCAP.md §4.B (XS-PR1, framework — cross-segment Mem seam).
-Branch: xcap-xseg (off origin/main eb19cc8f). Worktree: .worktrees/xcap-xseg.
+Active plan: docs/ai/plan/PLAN_ENDGAME_XCAP.md §4.B (XS-PR1 — cross-segment Mem seam).
+Branch: xcap-seam-tag (off xcap-xseg / PR #104). Worktree: .worktrees/xcap-seam-tag.
 
-## Current focus: XS-PR1 Step 1 (structural seam-channel exposure) — DONE, green.
+## Current focus: XS-PR1 Step 2b (VM re-root migration) — VERIFIED BLOCKED.
+
+VERDICT: BLOCKED at a framework-level wall (NOT a tactic gap, NOT a half-broken
+foundation). The whole project stays GREEN and byte-identical for every canonical
+theorem; only the additive `memSegVmFull` host was added.
+
+What was done this increment (additive, green, kernel-only):
+- `memSegVmFull : VmTables FGL SeamMessage` in SeamVm.lean — the REAL dual-bus VM
+  host (hosts `Mem.componentWithSeamAndMemBus`: MemBus provider emit + seam
+  pull/push from the SAME rows), NOT the seam-only projection. Sound, 0 PROJECT
+  (ZiskFv.*) axioms (kernel-only).
+
+The make-or-break (`addVm` re-root) resolved NO. Constructing the migrated
+`SoundEnsemble FGL SeamMessage` skeleton (Mem out of base, OpBus+MemBus finished)
+and attempting `skeleton.addVm memSegVmFull` produces three obligations; the third,
+`reqs_disjoint_finished`, is PROVABLY FALSE. Verified residual goal:
+  `∀ ch ∈ finished, ¬ch=SeamCont ∧ ¬ch=MemoryBus ∧ ¬ch=SeamCont`
+and for `ch = MemBusChannel.toRaw ∈ finished` the middle conjunct
+`¬MemBusChannel.toRaw = MemoryBus.toRaw` is false.
+
+ROOT CAUSE (architectural): by `Operations.ChannelsLawful` a `MemBus.emit`
+(assumeGuarantees=false) is classified into `channelsWithRequirements`, and
+`addVm` (Vm.lean:688) forbids any FINISHED channel from appearing in a VM table's
+`channelsWithRequirements`. This is mathematically essential — the VM-channel
+soundness argument (`guarantees_of_requirements_append`) requires VM tables to
+contribute no provider interactions to a finished channel. The Mem rows ARE the
+MemBus providers, so MemBus cannot be finished WITHOUT them, yet the migration
+moves exactly those rows into the VM. Contradiction. Leaving MemBus unfinished is
+also dead (no soundness path: neither finished nor the VM channel). The
+Clean/Air/OrderedChannel.lean:440-445 doc states this directly: a both-push-and-
+pull (VM) channel "does not hold SoundChannels for ANY list of channels."
+
+CONSEQUENCE: re-rooting onto the seam via the existing Clean `addVm` API is
+impossible while MemBus stays finished/sound. Needs a framework change to
+Clean/Air/Vm.lean (an `addVm` variant admitting VM tables that also PROVIDE an
+already-finished channel; or a multi-channel VM hosting BOTH MemBus and seam).
+`fullRv64imEnsemble`, Balance.lean, AcceptedTrace.lean, the 28 families: LEFT
+BYTE-IDENTICAL — none re-proved, none can be (the migration never reaches them).
+
+Gates: full lake build GREEN (8691 jobs). memSegVmFull + 5 prior SeamVm decls all
+kernel-only [propext,Classical.choice,Quot.sound] = 0 PROJECT (ZiskFv.*) axioms;
+global theorem + fullRv64imEnsemble + construction_add/sub_sound = 0 PROJECT
+axioms (external Sail/kernel only). check-all.sh: all pass EXCEPT check 16 =
+pre-existing FileNotFound on uninitialized zisk/ submodule (unrelated).
+check-all-semantic.sh (V2): ALL PASS. Checks 4/7/8 floors byte-identical
+(0 axioms / 63 equiv / hypothesis-count / caller-burden unchanged).
+
+--- prior (Step 1) ---
+
+## XS-PR1 Step 1 (structural seam-channel exposure) — DONE, green.
 
 Landed the MINIMAL first green increment of XS-PR1: the live Clean Mem layer can
 now EXPOSE a segment-continuation channel from row-local columns — the capability
