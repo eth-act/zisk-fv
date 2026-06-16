@@ -103,6 +103,22 @@ theorem spec_of_valid
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h_constraints
   exact soundness (rowAt m r) h_assumptions h1 h2 h3 h4 h5 h6 h7 h8 h9
 
+theorem add_subset_holds_of_spec_rowAt
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r : ℕ)
+    (h_spec : Spec (rowAt m r)) :
+    ZiskFv.Airs.Main.add_subset_holds m r := by
+  obtain ⟨h_flag, h_external, h_c0, h_c1, h_b0, h_b1, h_set_flag,
+      h_clear_flag, h_disjoint⟩ := h_spec
+  exact ⟨ by simpa [rowAt, ZiskFv.Airs.Main.internal_op0_zeroes_c0] using h_c0
+        , by simpa [rowAt, ZiskFv.Airs.Main.internal_op1_copies_b0] using h_b0
+        , by simpa [rowAt, ZiskFv.Airs.Main.internal_op0_zeroes_c1] using h_c1
+        , by simpa [rowAt, ZiskFv.Airs.Main.internal_op1_copies_b1] using h_b1
+        , by simpa [rowAt, ZiskFv.Airs.Main.internal_op0_sets_flag] using h_set_flag
+        , by simpa [rowAt, ZiskFv.Airs.Main.internal_op1_clears_flag] using h_clear_flag
+        , by simpa [rowAt, ZiskFv.Airs.Main.flag_set_pc_disjoint] using h_disjoint
+        , by simpa [rowAt, ZiskFv.Airs.Main.flag_boolean] using h_flag
+        , by simpa [rowAt, ZiskFv.Airs.Main.is_external_op_boolean] using h_external ⟩
+
 /-- Main's operation-bus message without multiplicity, as a concrete row
     value. Clean carries multiplicity on the interaction, while the legacy
     `OperationBusEntry` carries it in the record. -/

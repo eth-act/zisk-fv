@@ -282,6 +282,15 @@ theorem eval_primaryOpBusMessageExpr
     ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
   repeat constructor
 
+/-- Op-only projection of `eval_primaryOpBusMessageExpr`, used to avoid
+    unfolding the entire operation-bus message in downstream provider
+    branch exclusions. -/
+theorem eval_primaryOpBusMessageExpr_toEntry_op
+    (env : Environment FGL) (row : Var ArithMulRow FGL) (multiplicity : FGL) :
+    (OpBusMessage.toEntry (eval env (primaryOpBusMessageExpr row)) multiplicity).op =
+      (eval env row).flags.op := by
+  rw [eval_primaryOpBusMessageExpr]
+
 theorem eval_secondaryOpBusMessageExpr
     (env : Environment FGL) (row : Var ArithMulRow FGL) :
     eval env (secondaryOpBusMessageExpr row) =

@@ -1,4 +1,8 @@
 import ZiskFv.AirsClean.FullEnsemble
+import ZiskFv.AirsClean.ArithTableProjections
+import ZiskFv.AirsClean.Binary.Bridge
+import ZiskFv.AirsClean.BinaryAdd.Bridge
+import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.Mem.TraceSpec
 
@@ -23,6 +27,12 @@ open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
+
+/-- The lookup-aware ArithMul provider component used by the full ensemble. -/
+@[reducible]
+def arithMulProviderComponent : Component FGL :=
+  ZiskFv.AirsClean.ArithMul.componentWithArithTable
 
 /-- Concrete component classification for the row-coherent full Clean
     ensemble. Components appear newest-first after the empty verifier table,
@@ -37,8 +47,8 @@ theorem component_mem_fullRv64im_cases
       ∨ component = ZiskFv.AirsClean.MemAlign.component
       ∨ component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
       ∨ component = ZiskFv.AirsClean.ArithDiv.component
-      ∨ component = ZiskFv.AirsClean.ArithMul.component
-      ∨ component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+      ∨ component = arithMulProviderComponent
+      ∨ component = shiftStaticLookupComponent
       ∨ component = ZiskFv.AirsClean.Binary.staticLookupComponent
       ∨ component = ZiskFv.AirsClean.BinaryAdd.component
       ∨ component =
@@ -78,6 +88,71 @@ theorem exists_mem_table_of_fullRv64im_witness
       SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
   have h_in_map :
       ZiskFv.AirsClean.Mem.componentWithDualMemBus ∈
+        witness.allTables.map (·.component) := by
+    rw [witness.allTables_map_component]
+    exact h_component_mem
+  rcases List.mem_map.mp h_in_map with ⟨table, h_table, h_component⟩
+  exact ⟨table, h_table, h_component⟩
+
+/-- Every concrete witness for the full RV64IM ensemble contains the unified
+    Main table. This is only table selection; row-level decode/provenance is
+    supplied separately by `ProgramBinding`. -/
+theorem exists_main_table_of_fullRv64im_witness
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
+    ∃ table ∈ witness.allTables,
+      table.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program := by
+  have h_component_mem :
+      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program ∈
+        (fullRv64imEnsemble length program).ensemble.allTables := by
+    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+  have h_in_map :
+      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program ∈
+        witness.allTables.map (·.component) := by
+    rw [witness.allTables_map_component]
+    exact h_component_mem
+  rcases List.mem_map.mp h_in_map with ⟨table, h_table, h_component⟩
+  exact ⟨table, h_table, h_component⟩
+
+/-- Every concrete witness for the full RV64IM ensemble contains the
+    lookup-aware Binary provider table. This is only table selection; opcode
+    construction still resolves provider matches from channel balance. -/
+theorem exists_binary_table_of_fullRv64im_witness
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
+    ∃ table ∈ witness.allTables,
+      table.component = ZiskFv.AirsClean.Binary.staticLookupComponent := by
+  have h_component_mem :
+      ZiskFv.AirsClean.Binary.staticLookupComponent ∈
+        (fullRv64imEnsemble length program).ensemble.allTables := by
+    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+  have h_in_map :
+      ZiskFv.AirsClean.Binary.staticLookupComponent ∈
+        witness.allTables.map (·.component) := by
+    rw [witness.allTables_map_component]
+    exact h_component_mem
+  rcases List.mem_map.mp h_in_map with ⟨table, h_table, h_component⟩
+  exact ⟨table, h_table, h_component⟩
+
+/-- Every concrete witness for the full RV64IM ensemble contains the
+    lookup-aware BinaryExtension provider table. This is only table selection;
+    opcode construction still resolves provider matches from channel balance. -/
+theorem exists_binaryExtension_table_of_fullRv64im_witness
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
+    ∃ table ∈ witness.allTables,
+      table.component =
+        shiftStaticLookupComponent := by
+  have h_component_mem :
+      shiftStaticLookupComponent ∈
+        (fullRv64imEnsemble length program).ensemble.allTables := by
+    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+  have h_in_map :
+      shiftStaticLookupComponent ∈
         witness.allTables.map (·.component) := by
     rw [witness.allTables_map_component]
     exact h_component_mem
@@ -259,11 +334,11 @@ theorem staticBinaryExtension_table_interactionsWith_memBus_nil
     {table : Table FGL}
     (h_component :
       table.component =
-        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent) :
+        shiftStaticLookupComponent) :
     table.interactionsWith MemBusChannel.toRaw = [] := by
   have h_not :
       MemBusChannel.toRaw ∉
-        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.circuit.channels := by
+        shiftStaticLookupComponent.circuit.channels := by
     change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw]
     simp only [List.mem_singleton]
     intro h
@@ -276,12 +351,13 @@ theorem staticBinaryExtension_table_interactionsWith_memBus_nil
 /-- A table whose component is ArithMul has no memory-bus interactions. -/
 theorem arithMul_table_interactionsWith_memBus_nil
     {table : Table FGL}
-    (h_component : table.component = ZiskFv.AirsClean.ArithMul.component) :
+    (h_component : table.component = arithMulProviderComponent) :
     table.interactionsWith MemBusChannel.toRaw = [] := by
   have h_not :
       MemBusChannel.toRaw ∉
-        ZiskFv.AirsClean.ArithMul.component.circuit.channels := by
-    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw]
+        arithMulProviderComponent.circuit.channels := by
+    rw [arithMulProviderComponent,
+      ZiskFv.AirsClean.ArithMul.componentWithArithTable_channels]
     simp only [List.mem_singleton]
     intro h
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
@@ -411,8 +487,8 @@ theorem exists_matching_op_component_of_active_main_interaction
         ∧ providerInteraction.mult ≠ 0
         ∧ ∃ table ∈ witness.allTables,
           providerInteraction ∈ table.interactionsWith OpBusChannel.toRaw
-            ∧ (table.component = ZiskFv.AirsClean.ArithMul.component
-              ∨ table.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+            ∧ (table.component = arithMulProviderComponent
+              ∨ table.component = shiftStaticLookupComponent
               ∨ table.component = ZiskFv.AirsClean.Binary.staticLookupComponent
               ∨ table.component = ZiskFv.AirsClean.BinaryAdd.component
               ∨ table.component =
@@ -493,8 +569,8 @@ theorem exists_matching_provider_op_component_of_active_main_interaction
         ∧ providerInteraction.mult ≠ 0
         ∧ ∃ table ∈ witness.allTables,
           providerInteraction ∈ table.interactionsWith OpBusChannel.toRaw
-            ∧ (table.component = ZiskFv.AirsClean.ArithMul.component
-              ∨ table.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+            ∧ (table.component = arithMulProviderComponent
+              ∨ table.component = shiftStaticLookupComponent
               ∨ table.component = ZiskFv.AirsClean.Binary.staticLookupComponent
               ∨ table.component = ZiskFv.AirsClean.BinaryAdd.component) := by
   obtain ⟨providerInteraction, h_provider_mem, h_msg, h_nonpull, h_nonzero,
@@ -702,6 +778,38 @@ theorem exists_main_op_row_eval_of_interaction_mem
         length program
   · exact h_mem
 
+/-- The concrete unified Main operation-bus interaction for any row of the
+    selected Main table is a member of that table's op-bus interactions. -/
+theorem main_op_row_eval_mem_interactionsWith
+    {length : ℕ} {program : Program length}
+    {table : Table FGL}
+    (h_component :
+      table.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {row : Array FGL}
+    (h_row : row ∈ table.table) :
+    ((OpBusChannel.emitted
+      (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core.is_external_op)
+      (ZiskFv.AirsClean.Main.opBusMessageExpr
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core)).toRaw).eval
+      (table.environment row) ∈ table.interactionsWith OpBusChannel.toRaw := by
+  have h_singleton :
+      table.component.operations.interactionsWith OpBusChannel.toRaw =
+        [((OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)).toRaw)] := by
+    simpa [h_component] using
+      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_opBus
+        length program
+  simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_singleton]
+  exact ⟨row, h_row, rfl⟩
+
 /-- Row extraction for the unified Main memory-bus interactions in the full
     ensemble. Main exposes three memory interactions (`a`, `b`, and
     `c/store`), so the result keeps that side disjunction explicit. -/
@@ -799,37 +907,820 @@ theorem exists_staticBinary_row_eval_of_interaction_mem
 theorem exists_staticBinaryExtension_row_eval_of_interaction_mem
     {table : Table FGL}
     (h_component :
-      table.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+      table.component = shiftStaticLookupComponent)
     {interaction : Interaction FGL}
     (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
     ∃ row ∈ table.table,
       interaction =
         ((OpBusChannel.pushed
           (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-            ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar)).toRaw).eval
+            shiftStaticLookupComponent.rowInputVar)).toRaw).eval
           (table.environment row) := by
   apply exists_opBus_row_eval_of_singleton_interactionsWith
   · simpa [h_component] using
-      ZiskFv.AirsClean.BinaryExtension.staticLookupComponent_interactionsWith_opBus
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_interactionsWith_opBus
   · exact h_mem
 
 /-- Row extraction for an ArithMul operation-bus provider interaction in the
     full ensemble. -/
 theorem exists_arithMul_row_eval_of_interaction_mem
     {table : Table FGL}
-    (h_component : table.component = ZiskFv.AirsClean.ArithMul.component)
+    (h_component : table.component = arithMulProviderComponent)
     {interaction : Interaction FGL}
     (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
     ∃ row ∈ table.table,
       interaction =
         ((OpBusChannel.pushed
           (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
-            ZiskFv.AirsClean.ArithMul.component.rowInputVar)).toRaw).eval
+            arithMulProviderComponent.rowInputVar)).toRaw).eval
           (table.environment row) := by
   apply exists_opBus_row_eval_of_singleton_interactionsWith
   · simpa [h_component] using
-      ZiskFv.AirsClean.ArithMul.component_interactionsWith_opBus
+      ZiskFv.AirsClean.ArithMul.componentWithArithTable_interactionsWith_opBus
   · exact h_mem
+
+/-- Project the lookup-aware ArithMul provider branch's generic component
+    `Spec` to the concrete `FullSpec`. -/
+theorem arithMul_fullSpec_of_component_spec
+    {table : Table FGL} {row : Array FGL}
+    (h_component : table.component = arithMulProviderComponent)
+    (h_spec : table.component.Spec (table.environment row)) :
+    ZiskFv.AirsClean.ArithMul.FullSpec
+      (arithMulProviderComponent.rowInput
+        (table.environment row)) := by
+  rw [h_component] at h_spec
+  simpa [arithMulProviderComponent,
+    ZiskFv.AirsClean.ArithMul.componentWithArithTable_spec] using h_spec
+
+/-- A lookup-aware ArithMul provider branch can only match Main rows whose
+    operation-bus opcode lies in the Arith ROM opcode range. -/
+theorem arithMul_primary_provider_match_main_op_val_ge_176
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL}
+    (h_full : ZiskFv.AirsClean.ArithMul.FullSpec row)
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage row) 1)) :
+    176 <= (m.op r_main).val := by
+  have h_provider_ge :=
+    ZiskFv.AirsClean.ArithTableProjections.Mul.op_val_ge_176 row h_full.2
+  have h_op_match : m.op r_main = row.flags.op := by
+    simpa [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.ArithMul.primaryOpBusMessage] using h_match.2.1
+  simpa [h_op_match] using h_provider_ge
+
+/-- Full-ensemble version of
+    `arithMul_primary_provider_match_main_op_val_ge_176`, projecting the
+    generic component `Spec` to ArithMul `FullSpec` first. -/
+theorem arithMul_provider_branch_main_op_val_ge_176
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1)) :
+    176 <= (m.op r_main).val := by
+  have h_full := arithMul_fullSpec_of_component_spec h_component h_providerSpec
+  let env := providerTable.environment providerRow
+  let row := eval env arithMulProviderComponent.rowInputVar
+  have h_row_eq : row = arithMulProviderComponent.rowInput env := by
+    dsimp [row]
+    simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
+      (eval_varFromOffset_valueFromOffset arithMulProviderComponent.Input 0 env)
+  have h_full_row :
+      ZiskFv.AirsClean.ArithMul.FullSpec row := by
+    simpa [h_row_eq] using h_full
+  have h_provider_ge :=
+    ZiskFv.AirsClean.ArithTableProjections.Mul.op_val_ge_176
+      row h_full_row.2
+  have h_op_match : m.op r_main = row.flags.op := by
+    have h_op := h_match.2.1
+    rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr_toEntry_op] at h_op
+    simpa [row, env, ZiskFv.Airs.OperationBus.opBus_row_Main] using h_op
+  simpa [h_op_match] using h_provider_ge
+
+/-- The lookup-aware ArithMul branch cannot be the provider for a Main XOR
+    operation.  This is the first Binary-family branch exclusion used by the
+    P4 provider-match discharge. -/
+theorem arithMul_provider_branch_ne_xor
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    False := by
+  have h_ge :=
+    arithMul_provider_branch_main_op_val_ge_176 h_component h_providerSpec h_match
+  rw [h_main_op] at h_ge
+  norm_num [ZiskFv.Trusted.OP_XOR] at h_ge
+
+/-- A lookup-aware BinaryExtension provider branch cannot be the provider for a
+    Main XOR operation. -/
+theorem staticBinaryExtension_provider_branch_ne_xor
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component :
+      providerTable.component = shiftStaticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+              shiftStaticLookupComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    False := by
+  let env := providerTable.environment providerRow
+  have h_componentSpec :
+      shiftStaticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  have h_ne :=
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_bitwise_of_spec
+      env h_componentSpec
+  have h_provider_op :
+      (m.op r_main).val =
+        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      using h_op_val
+  exact h_ne.2.2 (by
+    rw [← h_provider_op, h_main_op]
+    norm_num [ZiskFv.Trusted.OP_XOR])
+
+/-- The BinaryAdd provider branch cannot be the provider for a Main XOR
+    operation. -/
+theorem binaryAdd_provider_branch_ne_xor
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    False := by
+  have h_provider_op : (m.op r_main).val = 10 := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr,
+      ZiskFv.Channels.OperationBus.OpBusMessage.eval_op]
+      using h_op_val
+  rw [h_main_op] at h_provider_op
+  norm_num [ZiskFv.Trusted.OP_XOR] at h_provider_op
+
+/-- The lookup-aware ArithMul branch cannot be the provider for a Main logical
+    Binary operation (`AND`, `OR`, or `XOR`). -/
+theorem arithMul_provider_branch_ne_staticBinaryLogic
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_AND
+        ∨ m.op r_main = ZiskFv.Trusted.OP_OR
+        ∨ m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    False := by
+  have h_ge :=
+    arithMul_provider_branch_main_op_val_ge_176 h_component h_providerSpec h_match
+  rcases h_main_op with h_and | h_or | h_xor
+  · rw [h_and] at h_ge
+    norm_num [ZiskFv.Trusted.OP_AND] at h_ge
+  · rw [h_or] at h_ge
+    norm_num [ZiskFv.Trusted.OP_OR] at h_ge
+  · rw [h_xor] at h_ge
+    norm_num [ZiskFv.Trusted.OP_XOR] at h_ge
+
+/-- A lookup-aware BinaryExtension provider branch cannot be the provider for a
+    Main logical Binary operation (`AND`, `OR`, or `XOR`). -/
+theorem staticBinaryExtension_provider_branch_ne_staticBinaryLogic
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component :
+      providerTable.component = shiftStaticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+              shiftStaticLookupComponent.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_AND
+        ∨ m.op r_main = ZiskFv.Trusted.OP_OR
+        ∨ m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    False := by
+  let env := providerTable.environment providerRow
+  have h_componentSpec :
+      shiftStaticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  have h_ne :=
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_bitwise_of_spec
+      env h_componentSpec
+  have h_provider_op :
+      (m.op r_main).val =
+        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      using h_op_val
+  rcases h_main_op with h_and | h_or | h_xor
+  · exact h_ne.1 (by
+      rw [← h_provider_op, h_and]
+      norm_num [ZiskFv.Trusted.OP_AND])
+  · exact h_ne.2.1 (by
+      rw [← h_provider_op, h_or]
+      norm_num [ZiskFv.Trusted.OP_OR])
+  · exact h_ne.2.2 (by
+      rw [← h_provider_op, h_xor]
+      norm_num [ZiskFv.Trusted.OP_XOR])
+
+/-- The BinaryAdd provider branch cannot be the provider for a Main logical
+    Binary operation (`AND`, `OR`, or `XOR`). -/
+theorem binaryAdd_provider_branch_ne_staticBinaryLogic
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_AND
+        ∨ m.op r_main = ZiskFv.Trusted.OP_OR
+        ∨ m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    False := by
+  have h_provider_op : (m.op r_main).val = 10 := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr,
+      ZiskFv.Channels.OperationBus.OpBusMessage.eval_op]
+      using h_op_val
+  rcases h_main_op with h_and | h_or | h_xor
+  · rw [h_and] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_AND] at h_provider_op
+  · rw [h_or] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_OR] at h_provider_op
+  · rw [h_xor] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_XOR] at h_provider_op
+
+/-- The lookup-aware ArithMul branch cannot be the provider for a Main Binary
+    comparison operation (`LT` or `LTU`). -/
+theorem arithMul_provider_branch_ne_staticBinaryCompare
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_LT
+        ∨ m.op r_main = ZiskFv.Trusted.OP_LTU) :
+    False := by
+  have h_ge :=
+    arithMul_provider_branch_main_op_val_ge_176 h_component h_providerSpec h_match
+  rcases h_main_op with h_lt | h_ltu
+  · rw [h_lt] at h_ge
+    norm_num [ZiskFv.Trusted.OP_LT] at h_ge
+  · rw [h_ltu] at h_ge
+    norm_num [ZiskFv.Trusted.OP_LTU] at h_ge
+
+/-- A lookup-aware BinaryExtension provider branch cannot be the provider for a
+    Main Binary comparison operation (`LT` or `LTU`). -/
+theorem staticBinaryExtension_provider_branch_ne_staticBinaryCompare
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component :
+      providerTable.component = shiftStaticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+              shiftStaticLookupComponent.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_LT
+        ∨ m.op r_main = ZiskFv.Trusted.OP_LTU) :
+    False := by
+  let env := providerTable.environment providerRow
+  have h_componentSpec :
+      shiftStaticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  have h_ne :=
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_compare_of_spec
+      env h_componentSpec
+  have h_provider_op :
+      (m.op r_main).val =
+        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      using h_op_val
+  rcases h_main_op with h_lt | h_ltu
+  · exact h_ne.2 (by
+      rw [← h_provider_op, h_lt]
+      norm_num [ZiskFv.Trusted.OP_LT])
+  · exact h_ne.1 (by
+      rw [← h_provider_op, h_ltu]
+      norm_num [ZiskFv.Trusted.OP_LTU])
+
+/-- The BinaryAdd provider branch cannot be the provider for a Main Binary
+    comparison operation (`LT` or `LTU`). -/
+theorem binaryAdd_provider_branch_ne_staticBinaryCompare
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_LT
+        ∨ m.op r_main = ZiskFv.Trusted.OP_LTU) :
+    False := by
+  have h_provider_op : (m.op r_main).val = 10 := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr,
+      ZiskFv.Channels.OperationBus.OpBusMessage.eval_op]
+      using h_op_val
+  rcases h_main_op with h_lt | h_ltu
+  · rw [h_lt] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_LT] at h_provider_op
+  · rw [h_ltu] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_LTU] at h_provider_op
+
+/-- The lookup-aware ArithMul branch cannot be the provider for a Main Binary
+    `SUB` operation. -/
+theorem arithMul_provider_branch_ne_staticBinarySub
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SUB) :
+    False := by
+  have h_ge :=
+    arithMul_provider_branch_main_op_val_ge_176 h_component h_providerSpec h_match
+  rw [h_main_op] at h_ge
+  norm_num [ZiskFv.Trusted.OP_SUB] at h_ge
+
+/-- The lookup-aware ArithMul branch cannot be the provider for a Main Binary
+    `ADD` operation. -/
+theorem arithMul_provider_branch_ne_staticBinaryAdd
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_ADD) :
+    False := by
+  have h_ge :=
+    arithMul_provider_branch_main_op_val_ge_176 h_component h_providerSpec h_match
+  rw [h_main_op] at h_ge
+  norm_num [ZiskFv.Trusted.OP_ADD] at h_ge
+
+/-- A lookup-aware BinaryExtension provider branch cannot be the provider for a
+    Main Binary `SUB` operation. -/
+theorem staticBinaryExtension_provider_branch_ne_staticBinarySub
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component :
+      providerTable.component = shiftStaticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+              shiftStaticLookupComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SUB) :
+    False := by
+  let env := providerTable.environment providerRow
+  have h_componentSpec :
+      shiftStaticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  have h_ne :=
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_add_sub_of_spec
+      env h_componentSpec
+  have h_provider_op :
+      (m.op r_main).val =
+        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      using h_op_val
+  exact h_ne.2 (by
+    rw [← h_provider_op, h_main_op]
+    norm_num [ZiskFv.Trusted.OP_SUB])
+
+/-- A lookup-aware BinaryExtension provider branch cannot be the provider for a
+    Main Binary `ADD` operation. -/
+theorem staticBinaryExtension_provider_branch_ne_staticBinaryAdd
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component :
+      providerTable.component = shiftStaticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+              shiftStaticLookupComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_ADD) :
+    False := by
+  let env := providerTable.environment providerRow
+  have h_componentSpec :
+      shiftStaticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  have h_ne :=
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_add_sub_of_spec
+      env h_componentSpec
+  have h_provider_op :
+      (m.op r_main).val =
+        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      using h_op_val
+  exact h_ne.1 (by
+    rw [← h_provider_op, h_main_op]
+    norm_num [ZiskFv.Trusted.OP_ADD])
+
+/-- The BinaryAdd provider branch cannot be the provider for a Main Binary
+    `SUB` operation. -/
+theorem binaryAdd_provider_branch_ne_staticBinarySub
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SUB) :
+    False := by
+  have h_provider_op : (m.op r_main).val = 10 := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr,
+      ZiskFv.Channels.OperationBus.OpBusMessage.eval_op]
+      using h_op_val
+  rw [h_main_op] at h_provider_op
+  norm_num [ZiskFv.Trusted.OP_SUB] at h_provider_op
+
+/-- The lookup-aware ArithMul branch cannot be the provider for a Main W-mode
+    Binary ADD/SUB operation (`ADDW` or `SUBW`). -/
+theorem arithMul_provider_branch_ne_staticBinaryW
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_ADD_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SUB_W) :
+    False := by
+  have h_ge :=
+    arithMul_provider_branch_main_op_val_ge_176 h_component h_providerSpec h_match
+  rcases h_main_op with h_addw | h_subw
+  · rw [h_addw] at h_ge
+    norm_num [ZiskFv.Trusted.OP_ADD_W] at h_ge
+  · rw [h_subw] at h_ge
+    norm_num [ZiskFv.Trusted.OP_SUB_W] at h_ge
+
+/-- A lookup-aware BinaryExtension provider branch cannot be the provider for a
+    Main W-mode Binary ADD/SUB operation (`ADDW` or `SUBW`). -/
+theorem staticBinaryExtension_provider_branch_ne_staticBinaryW
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component :
+      providerTable.component = shiftStaticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+              shiftStaticLookupComponent.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_ADD_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SUB_W) :
+    False := by
+  let env := providerTable.environment providerRow
+  have h_componentSpec :
+      shiftStaticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  have h_ne :=
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_W_add_sub_of_spec
+      env h_componentSpec
+  have h_provider_op :
+      (m.op r_main).val =
+        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      using h_op_val
+  rcases h_main_op with h_addw | h_subw
+  · exact h_ne.1 (by
+      rw [← h_provider_op, h_addw]
+      norm_num [ZiskFv.Trusted.OP_ADD_W])
+  · exact h_ne.2 (by
+      rw [← h_provider_op, h_subw]
+      norm_num [ZiskFv.Trusted.OP_SUB_W])
+
+/-- The BinaryAdd provider branch cannot be the provider for a Main W-mode
+    Binary ADD/SUB operation (`ADDW` or `SUBW`). -/
+theorem binaryAdd_provider_branch_ne_staticBinaryW
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_ADD_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SUB_W) :
+    False := by
+  have h_provider_op : (m.op r_main).val = 10 := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr,
+      ZiskFv.Channels.OperationBus.OpBusMessage.eval_op]
+      using h_op_val
+  rcases h_main_op with h_addw | h_subw
+  · rw [h_addw] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_ADD_W] at h_provider_op
+  · rw [h_subw] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_SUB_W] at h_provider_op
+
+/-- The lookup-aware ArithMul branch cannot be the provider for a Main
+    BinaryExtension shift operation. -/
+theorem arithMul_provider_branch_ne_staticBinaryExtensionShift
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_SLL
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRL
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRA
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SLL_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRL_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRA_W) :
+    False := by
+  have h_ge :=
+    arithMul_provider_branch_main_op_val_ge_176 h_component h_providerSpec h_match
+  rcases h_main_op with h_sll | h_srl | h_sra | h_sllw | h_srlw | h_sraw
+  · rw [h_sll] at h_ge
+    norm_num [ZiskFv.Trusted.OP_SLL] at h_ge
+  · rw [h_srl] at h_ge
+    norm_num [ZiskFv.Trusted.OP_SRL] at h_ge
+  · rw [h_sra] at h_ge
+    norm_num [ZiskFv.Trusted.OP_SRA] at h_ge
+  · rw [h_sllw] at h_ge
+    norm_num [ZiskFv.Trusted.OP_SLL_W] at h_ge
+  · rw [h_srlw] at h_ge
+    norm_num [ZiskFv.Trusted.OP_SRL_W] at h_ge
+  · rw [h_sraw] at h_ge
+    norm_num [ZiskFv.Trusted.OP_SRA_W] at h_ge
+
+/-- A lookup-aware static Binary provider branch cannot be the provider for a
+    Main BinaryExtension shift operation. -/
+theorem staticBinary_provider_branch_ne_staticBinaryExtensionShift
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.Binary.opBusMessageExpr
+              ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_SLL
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRL
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRA
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SLL_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRL_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRA_W) :
+    False := by
+  let env := providerTable.environment providerRow
+  let row := ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput env
+  have h_componentSpec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_componentSpec
+  have h_provider_op :
+      m.op r_main = row.chain.b_op + 16 * row.mode.mode32 := by
+    have h_op := h_match.2.1
+    simpa [env, row, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr,
+      ZiskFv.AirsClean.Binary.opBusMessage] using h_op
+  have h_contra
+      (op_val : ℕ)
+      (h_shift :
+        op_val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL
+          ∨ op_val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL
+          ∨ op_val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA
+          ∨ op_val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W
+          ∨ op_val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W
+          ∨ op_val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W)
+      (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_val : FGL)) :
+      False :=
+    ZiskFv.AirsClean.Binary.static_table_op_val_ne_binaryExtension_shift_of_emit
+      row h_componentSpec.1 h_componentSpec.2 op_val h_shift h_emit
+  rcases h_main_op with h_sll | h_srl | h_sra | h_sllw | h_srlw | h_sraw
+  · exact h_contra ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL
+      (Or.inl rfl)
+      (by
+        rw [← h_provider_op, h_sll]
+        norm_num [ZiskFv.Trusted.OP_SLL,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL])
+  · exact h_contra ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL
+      (Or.inr (Or.inl rfl))
+      (by
+        rw [← h_provider_op, h_srl]
+        norm_num [ZiskFv.Trusted.OP_SRL,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL])
+  · exact h_contra ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA
+      (Or.inr (Or.inr (Or.inl rfl)))
+      (by
+        rw [← h_provider_op, h_sra]
+        norm_num [ZiskFv.Trusted.OP_SRA,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA])
+  · exact h_contra ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W
+      (Or.inr (Or.inr (Or.inr (Or.inl rfl))))
+      (by
+        rw [← h_provider_op, h_sllw]
+        norm_num [ZiskFv.Trusted.OP_SLL_W,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W])
+  · exact h_contra ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))
+      (by
+        rw [← h_provider_op, h_srlw]
+        norm_num [ZiskFv.Trusted.OP_SRL_W,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W])
+  · exact h_contra ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))))
+      (by
+        rw [← h_provider_op, h_sraw]
+        norm_num [ZiskFv.Trusted.OP_SRA_W,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W])
+
+/-- The BinaryAdd provider branch cannot be the provider for a Main
+    BinaryExtension shift operation. -/
+theorem binaryAdd_provider_branch_ne_staticBinaryExtensionShift
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1))
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_SLL
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRL
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRA
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SLL_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRL_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRA_W) :
+    False := by
+  have h_provider_op : (m.op r_main).val = 10 := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr,
+      ZiskFv.Channels.OperationBus.OpBusMessage.eval_op]
+      using h_op_val
+  rcases h_main_op with h_sll | h_srl | h_sra | h_sllw | h_srlw | h_sraw
+  · rw [h_sll] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_SLL] at h_provider_op
+  · rw [h_srl] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_SRL] at h_provider_op
+  · rw [h_sra] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_SRA] at h_provider_op
+  · rw [h_sllw] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_SLL_W] at h_provider_op
+  · rw [h_srlw] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_SRL_W] at h_provider_op
+  · rw [h_sraw] at h_provider_op
+    norm_num [ZiskFv.Trusted.OP_SRA_W] at h_provider_op
 
 /-! ## Full-ensemble operation-bus row bridges -/
 
@@ -872,20 +1763,20 @@ theorem exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
                 ∧
                 ((∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
-                      ∧ providerTable.component = ZiskFv.AirsClean.ArithMul.component
+                      ∧ providerTable.component = arithMulProviderComponent
                       ∧ providerInteraction =
                         ((OpBusChannel.pushed
                           (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
-                            ZiskFv.AirsClean.ArithMul.component.rowInputVar)).toRaw).eval
+                            arithMulProviderComponent.rowInputVar)).toRaw).eval
                           (providerTable.environment providerRow))
                   ∨ (∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
                       ∧ providerTable.component =
-                        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+                        shiftStaticLookupComponent
                       ∧ providerInteraction =
                         ((OpBusChannel.pushed
                           (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-                            ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar)).toRaw).eval
+                            shiftStaticLookupComponent.rowInputVar)).toRaw).eval
                           (providerTable.environment providerRow))
                   ∨ (∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
@@ -993,7 +1884,7 @@ theorem exists_op_provider_row_matches_entry_spec_of_active_main_table_interacti
                 ∧
                 ((∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
-                      ∧ providerTable.component = ZiskFv.AirsClean.ArithMul.component
+                      ∧ providerTable.component = arithMulProviderComponent
                       ∧ ZiskFv.Airs.OperationBus.matches_entry
                         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
                           (eval (mainTable.environment mainRow)
@@ -1003,11 +1894,11 @@ theorem exists_op_provider_row_matches_entry_spec_of_active_main_table_interacti
                         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
                           (eval (providerTable.environment providerRow)
                             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
-                              ZiskFv.AirsClean.ArithMul.component.rowInputVar)) 1))
+                              arithMulProviderComponent.rowInputVar)) 1))
                   ∨ (∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
                       ∧ providerTable.component =
-                        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+                        shiftStaticLookupComponent
                       ∧ ZiskFv.Airs.OperationBus.matches_entry
                         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
                           (eval (mainTable.environment mainRow)
@@ -1017,7 +1908,7 @@ theorem exists_op_provider_row_matches_entry_spec_of_active_main_table_interacti
                         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
                           (eval (providerTable.environment providerRow)
                             (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-                              ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar)) 1))
+                              shiftStaticLookupComponent.rowInputVar)) 1))
                   ∨ (∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
                       ∧ providerTable.component =
@@ -1127,23 +2018,23 @@ theorem exists_op_provider_row_matches_legacy_main_spec_of_active_main_table_int
             ∧
             ((∃ providerRow ∈ providerTable.table,
                 providerTable.component.Spec (providerTable.environment providerRow)
-                  ∧ providerTable.component = ZiskFv.AirsClean.ArithMul.component
+                  ∧ providerTable.component = arithMulProviderComponent
                   ∧ ZiskFv.Airs.OperationBus.matches_entry
                     (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
                     (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
                       (eval (providerTable.environment providerRow)
                         (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
-                          ZiskFv.AirsClean.ArithMul.component.rowInputVar)) 1))
+                          arithMulProviderComponent.rowInputVar)) 1))
               ∨ (∃ providerRow ∈ providerTable.table,
                 providerTable.component.Spec (providerTable.environment providerRow)
                   ∧ providerTable.component =
-                    ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+                    shiftStaticLookupComponent
                   ∧ ZiskFv.Airs.OperationBus.matches_entry
                     (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
                     (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
                       (eval (providerTable.environment providerRow)
                         (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-                          ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar)) 1))
+                          shiftStaticLookupComponent.rowInputVar)) 1))
               ∨ (∃ providerRow ∈ providerTable.table,
                 providerTable.component.Spec (providerTable.environment providerRow)
                   ∧ providerTable.component =
@@ -1216,6 +2107,1088 @@ theorem exists_op_provider_row_matches_legacy_main_spec_of_active_main_table_int
       by
         rw [← h_main_entry]
         exact h_match⟩
+
+/-- XOR specialization of the full-ensemble operation-bus provider bridge.
+
+    For an active legacy Main row whose opcode is `OP_XOR`, balanced operation-bus
+    coverage cannot use ArithMul, BinaryExtension, or BinaryAdd.  The remaining
+    branch is the lookup-aware Binary provider row, with the provider table's
+    full `Spec` retained for wrapper construction. -/
+theorem exists_staticBinary_provider_row_matches_legacy_main_of_xor_active_main_table_interaction
+    {length : ℕ} {program : Program length}
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    (h_main_row :
+      ∀ mainRow ∈ mainTable.table,
+        eval (mainTable.environment mainRow)
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.core =
+          ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_main_active : m.is_external_op r_main = 1)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith OpBusChannel.toRaw)
+    (h_active : mainInteraction.mult = -1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    ∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  obtain ⟨providerInteraction, _h_provider_witness, _h_msg, _h_nonpull,
+      _h_nonzero, providerTable, h_providerTable, _h_providerInteraction,
+      h_providerBranches⟩ :=
+    exists_op_provider_row_matches_legacy_main_spec_of_active_main_table_interaction
+      m r_main witness h_constraints h_balanced h_specs h_mainTable
+      h_mainComponent h_main_row h_main_active h_mainInteraction h_active
+  rcases h_providerBranches with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component, h_match⟩ :=
+      h_arithMul
+    exact False.elim
+      (arithMul_provider_branch_ne_xor h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component, h_match⟩ :=
+      h_binExt
+    exact False.elim
+      (staticBinaryExtension_provider_branch_ne_xor h_component h_providerSpec
+        h_match h_main_op)
+  · obtain ⟨providerRow, h_providerRow, _h_providerSpec, h_component, h_match⟩ :=
+      h_binary
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.Binary.opBusMessage
+              (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_specs providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨providerRow, _h_providerRow, _h_providerSpec, _h_component, h_match⟩ :=
+      h_binaryAdd
+    exact False.elim (binaryAdd_provider_branch_ne_xor h_match h_main_op)
+
+/-- Row-indexed XOR specialization of the full-ensemble operation-bus provider
+    bridge.
+
+Unlike `exists_staticBinary_provider_row_matches_legacy_main_of_xor_active_main_table_interaction`,
+this adapter rewrites only the concrete Main table row that emitted the selected
+interaction.  It is the construction-facing form: callers identify row `i` in
+the selected Main table, and balance supplies the Binary provider row. -/
+theorem exists_staticBinary_provider_row_matches_legacy_main_of_xor_active_main_row_interaction
+    {length : ℕ} {program : Program length}
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainRow : Array FGL}
+    (_h_mainRow : mainRow ∈ mainTable.table)
+    (h_main_row :
+      eval (mainTable.environment mainRow)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_main_active : m.is_external_op r_main = 1)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith OpBusChannel.toRaw)
+    (h_mainInteraction_eval :
+      mainInteraction =
+        ((OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    ∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  have h_main_entry :
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (eval (mainTable.environment mainRow)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)) 1 =
+        ZiskFv.Airs.OperationBus.opBus_row_Main m r_main := by
+    rw [ZiskFv.AirsClean.Main.eval_opBusMessageExpr]
+    rw [h_main_row]
+    rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
+    rw [h_main_active]
+  obtain ⟨_selectedMainRow, _h_selectedMainRow, _h_mainSpec, _h_selectedMainEval,
+      providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction, h_providerBranches⟩ :=
+    exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
+      witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
+      h_mainInteraction h_active
+  rcases h_providerBranches with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_arithMul
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                arithMulProviderComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (arithMul_provider_branch_ne_xor h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_binExt
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+                shiftStaticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (staticBinaryExtension_provider_branch_ne_xor h_component h_providerSpec
+        h_match h_main_op)
+  · obtain ⟨providerRow, h_providerRow, _h_providerSpec, h_component,
+      h_providerEval⟩ := h_binary
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.Binary.opBusMessage
+              (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_specs providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨providerRow, _h_providerRow, _h_providerSpec, _h_component,
+      h_providerEval⟩ := h_binaryAdd
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+                ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim (binaryAdd_provider_branch_ne_xor h_match h_main_op)
+
+/-- Row-indexed logical-Binary specialization of the full-ensemble operation-bus
+    provider bridge.
+
+For a concrete active Main row whose opcode is `AND`, `OR`, or `XOR`, balance
+cannot use ArithMul, BinaryExtension, or BinaryAdd.  The remaining branch is the
+lookup-aware Binary provider row. -/
+theorem exists_staticBinary_provider_row_matches_legacy_main_of_logic_active_main_row_interaction
+    {length : ℕ} {program : Program length}
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainRow : Array FGL}
+    (_h_mainRow : mainRow ∈ mainTable.table)
+    (h_main_row :
+      eval (mainTable.environment mainRow)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_main_active : m.is_external_op r_main = 1)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith OpBusChannel.toRaw)
+    (h_mainInteraction_eval :
+      mainInteraction =
+        ((OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_AND
+        ∨ m.op r_main = ZiskFv.Trusted.OP_OR
+        ∨ m.op r_main = ZiskFv.Trusted.OP_XOR) :
+    ∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  have h_main_entry :
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (eval (mainTable.environment mainRow)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)) 1 =
+        ZiskFv.Airs.OperationBus.opBus_row_Main m r_main := by
+    rw [ZiskFv.AirsClean.Main.eval_opBusMessageExpr]
+    rw [h_main_row]
+    rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
+    rw [h_main_active]
+  obtain ⟨_selectedMainRow, _h_selectedMainRow, _h_mainSpec, _h_selectedMainEval,
+      providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction, h_providerBranches⟩ :=
+    exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
+      witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
+      h_mainInteraction h_active
+  rcases h_providerBranches with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_arithMul
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                arithMulProviderComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (arithMul_provider_branch_ne_staticBinaryLogic
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_binExt
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+                shiftStaticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (staticBinaryExtension_provider_branch_ne_staticBinaryLogic
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, h_providerRow, _h_providerSpec, h_component,
+      h_providerEval⟩ := h_binary
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.Binary.opBusMessage
+              (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_specs providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨providerRow, _h_providerRow, _h_providerSpec, _h_component,
+      h_providerEval⟩ := h_binaryAdd
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+                ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim (binaryAdd_provider_branch_ne_staticBinaryLogic h_match h_main_op)
+
+/-- Row-indexed comparison-Binary specialization of the full-ensemble
+    operation-bus provider bridge.
+
+For a concrete active Main row whose opcode is `LT` or `LTU`, balance cannot
+use ArithMul, BinaryExtension, or BinaryAdd.  The remaining branch is the
+lookup-aware Binary provider row. -/
+theorem exists_staticBinary_provider_row_matches_legacy_main_of_compare_active_main_row_interaction
+    {length : ℕ} {program : Program length}
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainRow : Array FGL}
+    (_h_mainRow : mainRow ∈ mainTable.table)
+    (h_main_row :
+      eval (mainTable.environment mainRow)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_main_active : m.is_external_op r_main = 1)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith OpBusChannel.toRaw)
+    (h_mainInteraction_eval :
+      mainInteraction =
+        ((OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_LT
+        ∨ m.op r_main = ZiskFv.Trusted.OP_LTU) :
+    ∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  have h_main_entry :
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (eval (mainTable.environment mainRow)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)) 1 =
+        ZiskFv.Airs.OperationBus.opBus_row_Main m r_main := by
+    rw [ZiskFv.AirsClean.Main.eval_opBusMessageExpr]
+    rw [h_main_row]
+    rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
+    rw [h_main_active]
+  obtain ⟨_selectedMainRow, _h_selectedMainRow, _h_mainSpec, _h_selectedMainEval,
+      providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction, h_providerBranches⟩ :=
+    exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
+      witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
+      h_mainInteraction h_active
+  rcases h_providerBranches with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_arithMul
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                arithMulProviderComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (arithMul_provider_branch_ne_staticBinaryCompare
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_binExt
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+                shiftStaticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (staticBinaryExtension_provider_branch_ne_staticBinaryCompare
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, h_providerRow, _h_providerSpec, h_component,
+      h_providerEval⟩ := h_binary
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.Binary.opBusMessage
+              (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_specs providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨providerRow, _h_providerRow, _h_providerSpec, _h_component,
+      h_providerEval⟩ := h_binaryAdd
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+                ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim (binaryAdd_provider_branch_ne_staticBinaryCompare h_match h_main_op)
+
+/-- Row-indexed `SUB` Binary specialization of the full-ensemble operation-bus
+    provider bridge.
+
+For a concrete active Main row whose opcode is `SUB`, balance cannot use
+ArithMul, BinaryExtension, or BinaryAdd.  The remaining branch is the
+lookup-aware Binary provider row. -/
+theorem exists_staticBinary_provider_row_matches_legacy_main_of_sub_active_main_row_interaction
+    {length : ℕ} {program : Program length}
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainRow : Array FGL}
+    (_h_mainRow : mainRow ∈ mainTable.table)
+    (h_main_row :
+      eval (mainTable.environment mainRow)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_main_active : m.is_external_op r_main = 1)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith OpBusChannel.toRaw)
+    (h_mainInteraction_eval :
+      mainInteraction =
+        ((OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SUB) :
+    ∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  have h_main_entry :
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (eval (mainTable.environment mainRow)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)) 1 =
+        ZiskFv.Airs.OperationBus.opBus_row_Main m r_main := by
+    rw [ZiskFv.AirsClean.Main.eval_opBusMessageExpr]
+    rw [h_main_row]
+    rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
+    rw [h_main_active]
+  obtain ⟨_selectedMainRow, _h_selectedMainRow, _h_mainSpec, _h_selectedMainEval,
+      providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction, h_providerBranches⟩ :=
+    exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
+      witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
+      h_mainInteraction h_active
+  rcases h_providerBranches with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_arithMul
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                arithMulProviderComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (arithMul_provider_branch_ne_staticBinarySub
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_binExt
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+                shiftStaticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (staticBinaryExtension_provider_branch_ne_staticBinarySub
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, h_providerRow, _h_providerSpec, h_component,
+      h_providerEval⟩ := h_binary
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.Binary.opBusMessage
+              (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_specs providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨providerRow, _h_providerRow, _h_providerSpec, _h_component,
+      h_providerEval⟩ := h_binaryAdd
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+                ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim (binaryAdd_provider_branch_ne_staticBinarySub h_match h_main_op)
+
+/-- Row-indexed ADD provider specialization of the full-ensemble operation-bus
+    provider bridge.
+
+For a concrete active Main row whose opcode is `ADD`, balance cannot use
+ArithMul or BinaryExtension. The remaining honest providers are lookup-aware
+Binary and BinaryAdd, so the result preserves that disjunction for callers. -/
+theorem exists_add_provider_row_matches_legacy_main_of_add_active_main_row_interaction
+    {length : ℕ} {program : Program length}
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainRow : Array FGL}
+    (_h_mainRow : mainRow ∈ mainTable.table)
+    (h_main_row :
+      eval (mainTable.environment mainRow)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_main_active : m.is_external_op r_main = 1)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith OpBusChannel.toRaw)
+    (h_mainInteraction_eval :
+      mainInteraction =
+        ((OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_ADD) :
+    (∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1))
+    ∨
+    (∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.BinaryAdd.component
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.BinaryAdd.opBusMessage
+                (ZiskFv.AirsClean.BinaryAdd.component.rowInput
+                  (providerTable.environment providerRow))) 1)) := by
+  have h_main_entry :
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (eval (mainTable.environment mainRow)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)) 1 =
+        ZiskFv.Airs.OperationBus.opBus_row_Main m r_main := by
+    rw [ZiskFv.AirsClean.Main.eval_opBusMessageExpr]
+    rw [h_main_row]
+    rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
+    rw [h_main_active]
+  obtain ⟨_selectedMainRow, _h_selectedMainRow, _h_mainSpec, _h_selectedMainEval,
+      providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction, h_providerBranches⟩ :=
+    exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
+      witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
+      h_mainInteraction h_active
+  rcases h_providerBranches with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_arithMul
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                arithMulProviderComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (arithMul_provider_branch_ne_staticBinaryAdd
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_binExt
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+                shiftStaticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (staticBinaryExtension_provider_branch_ne_staticBinaryAdd
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, h_providerRow, _h_providerSpec, h_component,
+      h_providerEval⟩ := h_binary
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.Binary.opBusMessage
+              (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact Or.inl ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_specs providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨providerRow, h_providerRow, _h_providerSpec, h_component,
+      h_providerEval⟩ := h_binaryAdd
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+                ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessage
+              (ZiskFv.AirsClean.BinaryAdd.component.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.BinaryAdd.component_eval_opBusMessageExpr]
+        using h_match
+    exact Or.inr ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_specs providerTable h_providerTable, h_match_row⟩
+
+/-- Row-indexed W-mode ADD/SUB Binary specialization of the full-ensemble
+    operation-bus provider bridge.
+
+For a concrete active Main row whose opcode is `ADDW` or `SUBW`, balance cannot
+use ArithMul, BinaryExtension, or BinaryAdd.  The remaining branch is the
+lookup-aware Binary provider row. -/
+theorem exists_staticBinary_provider_row_matches_legacy_main_of_w_active_main_row_interaction
+    {length : ℕ} {program : Program length}
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainRow : Array FGL}
+    (_h_mainRow : mainRow ∈ mainTable.table)
+    (h_main_row :
+      eval (mainTable.environment mainRow)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_main_active : m.is_external_op r_main = 1)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith OpBusChannel.toRaw)
+    (h_mainInteraction_eval :
+      mainInteraction =
+        ((OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_ADD_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SUB_W) :
+    ∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  have h_main_entry :
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (eval (mainTable.environment mainRow)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)) 1 =
+        ZiskFv.Airs.OperationBus.opBus_row_Main m r_main := by
+    rw [ZiskFv.AirsClean.Main.eval_opBusMessageExpr]
+    rw [h_main_row]
+    rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
+    rw [h_main_active]
+  obtain ⟨_selectedMainRow, _h_selectedMainRow, _h_mainSpec, _h_selectedMainEval,
+      providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction, h_providerBranches⟩ :=
+    exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
+      witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
+      h_mainInteraction h_active
+  rcases h_providerBranches with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_arithMul
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                arithMulProviderComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (arithMul_provider_branch_ne_staticBinaryW
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_binExt
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+                shiftStaticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (staticBinaryExtension_provider_branch_ne_staticBinaryW
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, h_providerRow, _h_providerSpec, h_component,
+      h_providerEval⟩ := h_binary
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.Binary.opBusMessage
+              (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_specs providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨providerRow, _h_providerRow, _h_providerSpec, _h_component,
+      h_providerEval⟩ := h_binaryAdd
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+                ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim (binaryAdd_provider_branch_ne_staticBinaryW h_match h_main_op)
+
+/-- Row-indexed BinaryExtension shift specialization of the full-ensemble
+    operation-bus provider bridge.
+
+For a concrete active Main row whose opcode is one of the BinaryExtension shift
+opcodes, balance cannot use ArithMul, static Binary, or BinaryAdd.  The
+remaining branch is the lookup-aware BinaryExtension provider row. -/
+theorem exists_binaryExtension_provider_row_matches_legacy_main_of_shift_active_main_row_interaction
+    {length : ℕ} {program : Program length}
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainRow : Array FGL}
+    (_h_mainRow : mainRow ∈ mainTable.table)
+    (h_main_row :
+      eval (mainTable.environment mainRow)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_main_active : m.is_external_op r_main = 1)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith OpBusChannel.toRaw)
+    (h_mainInteraction_eval :
+      mainInteraction =
+        ((OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_op :
+      m.op r_main = ZiskFv.Trusted.OP_SLL
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRL
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRA
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SLL_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRL_W
+        ∨ m.op r_main = ZiskFv.Trusted.OP_SRA_W) :
+    ∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = shiftStaticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+                (shiftStaticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  have h_main_entry :
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (eval (mainTable.environment mainRow)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)) 1 =
+        ZiskFv.Airs.OperationBus.opBus_row_Main m r_main := by
+    rw [ZiskFv.AirsClean.Main.eval_opBusMessageExpr]
+    rw [h_main_row]
+    rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
+    rw [h_main_active]
+  obtain ⟨_selectedMainRow, _h_selectedMainRow, _h_mainSpec, _h_selectedMainEval,
+      providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction, h_providerBranches⟩ :=
+    exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
+      witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
+      h_mainInteraction h_active
+  rcases h_providerBranches with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_arithMul
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                arithMulProviderComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (arithMul_provider_branch_ne_staticBinaryExtensionShift
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, h_providerRow, _h_providerSpec, h_component,
+      h_providerEval⟩ := h_binExt
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+                shiftStaticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+              (shiftStaticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_component, h_specs providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
+      h_providerEval⟩ := h_binary
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (staticBinary_provider_branch_ne_staticBinaryExtensionShift
+        h_component h_providerSpec h_match h_main_op)
+  · obtain ⟨providerRow, _h_providerRow, _h_providerSpec, _h_component,
+      h_providerEval⟩ := h_binaryAdd
+    have h_match :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+                ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1) := by
+      rw [← h_main_entry]
+      apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+      rw [← h_providerEval, ← h_mainInteraction_eval]
+      exact h_msg
+    exact False.elim
+      (binaryAdd_provider_branch_ne_staticBinaryExtensionShift h_match h_main_op)
 
 /-- Row extraction for a Mem memory-bus provider interaction in the full
     ensemble. -/
@@ -1833,6 +3806,560 @@ theorem activeMemReplayRowsOfTable_nonempty_of_split
     0 < (activeMemReplayRowsOfTable table).length := by
   rw [h_split]
   simp
+
+/-- Zero row for totalizing concrete Main table projections. -/
+def zeroMainRowWithRom : ZiskFv.AirsClean.Main.MainRowWithRom FGL where
+  core := {
+    a_0 := 0
+    a_1 := 0
+    b_0 := 0
+    b_1 := 0
+    c_0 := 0
+    c_1 := 0
+    flag := 0
+    pc := 0
+    is_external_op := 0
+    op := 0
+    m32 := 0
+    ind_width := 0
+    set_pc := 0
+    jmp_offset1 := 0
+    jmp_offset2 := 0
+    store_pc := 0
+    im_high_degree_2 := 0
+    segment_l1 := 0 }
+  rom := {
+    a_offset_imm0 := 0
+    a_imm1 := 0
+    b_offset_imm0 := 0
+    b_imm1 := 0
+    store_offset := 0
+    a_src_imm := 0
+    a_src_mem := 0
+    is_precompiled := 0
+    b_src_imm := 0
+    b_src_mem := 0
+    store_mem := 0
+    store_ind := 0
+    b_src_ind := 0
+    a_src_reg := 0
+    b_src_reg := 0
+    store_reg := 0
+    addr0 := 0
+    addr1 := 0
+    addr2 := 0
+    main_step := 0 }
+
+/-- Project row `row` of a concrete Clean Main table to its unified Main+ROM
+    row input. Out-of-range rows use `zeroMainRowWithRom` only to keep the
+    named-column view total. -/
+@[reducible]
+def mainTableRowAtOrZero
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (row : ℕ) : ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
+  if h_row : row < table.table.length then
+    eval (table.environment (table.table.get ⟨row, h_row⟩))
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar
+  else
+    zeroMainRowWithRom
+
+/-- Named-column Main view obtained from the concrete Clean unified Main table. -/
+@[reducible]
+def mainOfTable
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL) :
+    ZiskFv.Airs.Main.Valid_Main FGL FGL where
+  a_0 := fun row => (mainTableRowAtOrZero program table row).core.a_0
+  a_1 := fun row => (mainTableRowAtOrZero program table row).core.a_1
+  b_0 := fun row => (mainTableRowAtOrZero program table row).core.b_0
+  b_1 := fun row => (mainTableRowAtOrZero program table row).core.b_1
+  c_0 := fun row => (mainTableRowAtOrZero program table row).core.c_0
+  c_1 := fun row => (mainTableRowAtOrZero program table row).core.c_1
+  flag := fun row => (mainTableRowAtOrZero program table row).core.flag
+  pc := fun row => (mainTableRowAtOrZero program table row).core.pc
+  is_external_op := fun row => (mainTableRowAtOrZero program table row).core.is_external_op
+  op := fun row => (mainTableRowAtOrZero program table row).core.op
+  b_src_imm := fun row => (mainTableRowAtOrZero program table row).rom.b_src_imm
+  b_src_mem := fun row => (mainTableRowAtOrZero program table row).rom.b_src_mem
+  b_src_ind := fun row => (mainTableRowAtOrZero program table row).rom.b_src_ind
+  b_src_reg := fun row => (mainTableRowAtOrZero program table row).rom.b_src_reg
+  m32 := fun row => (mainTableRowAtOrZero program table row).core.m32
+  ind_width := fun row => (mainTableRowAtOrZero program table row).core.ind_width
+  set_pc := fun row => (mainTableRowAtOrZero program table row).core.set_pc
+  jmp_offset1 := fun row => (mainTableRowAtOrZero program table row).core.jmp_offset1
+  jmp_offset2 := fun row => (mainTableRowAtOrZero program table row).core.jmp_offset2
+  store_pc := fun row => (mainTableRowAtOrZero program table row).core.store_pc
+  im_high_degree_2 := fun row => (mainTableRowAtOrZero program table row).core.im_high_degree_2
+  segment_l1 := fun row => (mainTableRowAtOrZero program table row).core.segment_l1
+
+/-- In-range concrete table projection agrees with `List.get`. -/
+theorem mainTableRowAtOrZero_get
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    mainTableRowAtOrZero program table idx.val =
+      eval (table.environment (table.table.get idx))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar := by
+  unfold mainTableRowAtOrZero
+  rw [dif_pos idx.isLt]
+
+/-- The named-column projection of a concrete unified Main table has the
+    expected core `rowAt` view at every in-range index. -/
+theorem rowAt_mainOfTable
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Main.rowAt (mainOfTable program table) idx.val =
+      (eval (table.environment (table.table.get idx))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar).core := by
+  simp [ZiskFv.AirsClean.Main.rowAt, mainTableRowAtOrZero_get program table idx]
+
+/-- Evaluating the `core` projection of the combined Main+ROM row variable
+    agrees with projecting `core` after evaluating the combined row. -/
+theorem mainRowWithRom_eval_core
+    (env : Environment FGL)
+    (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    eval env row.core = (eval env row).core := by
+  cases row
+  simp [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go]
+
+/-- Evaluating the `is_external_op` projection directly agrees with projecting
+    it after evaluating the Main core row. -/
+theorem mainRow_eval_is_external_op
+    (env : Environment FGL)
+    (row : Var ZiskFv.AirsClean.Main.MainRow FGL) :
+    Expression.eval env row.is_external_op = (eval env row).is_external_op := by
+  cases row with
+  | mk a_0 a_1 b_0 b_1 c_0 c_1 flag pc is_external_op op m32 ind_width
+      set_pc jmp_offset1 jmp_offset2 store_pc im_high_degree_2 segment_l1 =>
+    simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+      ProvableStruct.fromComponents, ProvableStruct.components,
+      ProvableStruct.toComponents, ProvableStruct.eval.go] using
+      (CircuitType.eval_expr env is_external_op).symm
+
+/-- The concrete unified Main operation-bus interaction has multiplicity `-1`
+    when the evaluated Main core row is active. -/
+theorem main_op_row_eval_mult_neg_one_of_active
+    {length : ℕ} {program : Program length}
+    (env : Environment FGL)
+    (h_active :
+      (eval env
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core).is_external_op = 1) :
+    (((OpBusChannel.emitted
+      (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core.is_external_op)
+      (ZiskFv.AirsClean.Main.opBusMessageExpr
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core)).toRaw).eval env).mult = -1 := by
+  have h_field :=
+    mainRow_eval_is_external_op env
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        length program).rowInputVar.core
+  change
+    Expression.eval env
+      (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.core.is_external_op) = -1
+  simp [Expression.eval, h_field, h_active]
+
+/-- Field-projection form of `rowAt_mainOfTable`, matching callers that already
+    evaluate the Main core row input directly. -/
+theorem rowAt_mainOfTable_core
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    eval (table.environment (table.table.get idx))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar.core =
+      ZiskFv.AirsClean.Main.rowAt (mainOfTable program table) idx.val := by
+  rw [rowAt_mainOfTable program table idx]
+  exact mainRowWithRom_eval_core _ _
+
+/-- The component `Spec` for a concrete unified Main table row projects to the
+    named-column `Spec` for the corresponding `mainOfTable` row. -/
+theorem mainSpec_rowAt_mainOfTable_of_component_spec
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (idx : Fin table.table.length)
+    (h_component :
+      table.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    (h_component_spec :
+      table.component.Spec (table.environment (table.table.get idx))) :
+    ZiskFv.AirsClean.Main.Spec
+      (ZiskFv.AirsClean.Main.rowAt (mainOfTable program table) idx.val) := by
+  let component :=
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+  let env := table.environment (table.table.get idx)
+  have h_unified_spec :
+      component.Spec env := by
+    simpa [component, env, h_component] using h_component_spec
+  have h_input_eq :
+      eval env component.rowInputVar = component.rowInput env := by
+    simpa only [component, Air.Flat.Component.rowInput,
+      Air.Flat.Component.rowInputVar] using
+        (eval_varFromOffset_valueFromOffset component.Input 0 env)
+  have h_core_eq :
+      (component.rowInput env).core = eval env component.rowInputVar.core := by
+    rw [← h_input_eq]
+    exact (mainRowWithRom_eval_core env component.rowInputVar).symm
+  have h_row_spec :
+      ZiskFv.AirsClean.Main.Spec (eval env component.rowInputVar.core) := by
+    have h_row_input_spec :
+        ZiskFv.AirsClean.Main.Spec ((component.rowInput env).core) := by
+      simpa [component, ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_spec]
+        using h_unified_spec
+    simpa [h_core_eq] using h_row_input_spec
+  rw [← rowAt_mainOfTable_core program table idx]
+  exact h_row_spec
+
+/-- The legacy `opBus_row_Main` view of `mainOfTable` is the Clean Main
+    operation-bus message evaluated on the same concrete row. -/
+theorem opBus_row_Main_mainOfTable
+    {length : ℕ}
+    (program : Program length)
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.Airs.OperationBus.opBus_row_Main (mainOfTable program table) idx.val =
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Main.opBusMessage
+          (eval (table.environment (table.table.get idx))
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar).core)
+        (eval (table.environment (table.table.get idx))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar).core.is_external_op := by
+  rw [← ZiskFv.AirsClean.Main.opBusMessage_toEntry_rowAt_eq_opBus_row]
+  rw [rowAt_mainOfTable program table idx]
+  simp [mainTableRowAtOrZero_get program table idx]
+
+/-- Zero fallback for out-of-range projections from a concrete Binary table.
+    In-range rows are the only rows consumed by the table bridge below. -/
+@[reducible]
+def zeroBinaryRow : ZiskFv.AirsClean.Binary.BinaryRow FGL where
+  aBytes := {
+    free_in_a_0 := 0
+    free_in_a_1 := 0
+    free_in_a_2 := 0
+    free_in_a_3 := 0
+    free_in_a_4 := 0
+    free_in_a_5 := 0
+    free_in_a_6 := 0
+    free_in_a_7 := 0 }
+  bBytes := {
+    free_in_b_0 := 0
+    free_in_b_1 := 0
+    free_in_b_2 := 0
+    free_in_b_3 := 0
+    free_in_b_4 := 0
+    free_in_b_5 := 0
+    free_in_b_6 := 0
+    free_in_b_7 := 0 }
+  cBytes := {
+    free_in_c_0 := 0
+    free_in_c_1 := 0
+    free_in_c_2 := 0
+    free_in_c_3 := 0
+    free_in_c_4 := 0
+    free_in_c_5 := 0
+    free_in_c_6 := 0
+    free_in_c_7 := 0 }
+  chain := {
+    carry_0 := 0
+    carry_1 := 0
+    carry_2 := 0
+    carry_3 := 0
+    carry_4 := 0
+    carry_5 := 0
+    carry_6 := 0
+    carry_7 := 0
+    b_op := 0
+    b_op_or_sext := 0 }
+  mode := {
+    mode32 := 0
+    result_is_a := 0
+    use_first_byte := 0
+    c_is_signed := 0
+    mode32_and_c_is_signed := 0 }
+
+/-- Project row `row` of a concrete Clean Binary table to the Binary row input.
+    Out-of-range rows use `zeroBinaryRow` only to make the named-column view total. -/
+@[reducible]
+def binaryTableRowAtOrZero
+    (table : Table FGL)
+    (row : ℕ) : ZiskFv.AirsClean.Binary.BinaryRow FGL :=
+  if h_row : row < table.table.length then
+    eval (table.environment (table.table.get ⟨row, h_row⟩))
+      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar
+  else
+    zeroBinaryRow
+
+/-- Named-column Binary view obtained from the concrete Clean Binary table. -/
+@[reducible]
+def binaryOfTable
+    (table : Table FGL) :
+    ZiskFv.Airs.Binary.Valid_Binary FGL FGL where
+  b_op := fun row => (binaryTableRowAtOrZero table row).chain.b_op
+  free_in_a_0 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_0
+  free_in_a_1 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_1
+  free_in_a_2 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_2
+  free_in_a_3 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_3
+  free_in_a_4 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_4
+  free_in_a_5 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_5
+  free_in_a_6 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_6
+  free_in_a_7 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_7
+  free_in_b_0 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_0
+  free_in_b_1 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_1
+  free_in_b_2 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_2
+  free_in_b_3 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_3
+  free_in_b_4 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_4
+  free_in_b_5 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_5
+  free_in_b_6 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_6
+  free_in_b_7 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_7
+  free_in_c_0 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_0
+  free_in_c_1 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_1
+  free_in_c_2 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_2
+  free_in_c_3 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_3
+  free_in_c_4 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_4
+  free_in_c_5 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_5
+  free_in_c_6 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_6
+  free_in_c_7 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_7
+  carry_0 := fun row => (binaryTableRowAtOrZero table row).chain.carry_0
+  carry_1 := fun row => (binaryTableRowAtOrZero table row).chain.carry_1
+  carry_2 := fun row => (binaryTableRowAtOrZero table row).chain.carry_2
+  carry_3 := fun row => (binaryTableRowAtOrZero table row).chain.carry_3
+  carry_4 := fun row => (binaryTableRowAtOrZero table row).chain.carry_4
+  carry_5 := fun row => (binaryTableRowAtOrZero table row).chain.carry_5
+  carry_6 := fun row => (binaryTableRowAtOrZero table row).chain.carry_6
+  carry_7 := fun row => (binaryTableRowAtOrZero table row).chain.carry_7
+  mode32 := fun row => (binaryTableRowAtOrZero table row).mode.mode32
+  result_is_a := fun row => (binaryTableRowAtOrZero table row).mode.result_is_a
+  use_first_byte := fun row => (binaryTableRowAtOrZero table row).mode.use_first_byte
+  c_is_signed := fun row => (binaryTableRowAtOrZero table row).mode.c_is_signed
+  b_op_or_sext := fun row => (binaryTableRowAtOrZero table row).chain.b_op_or_sext
+  mode32_and_c_is_signed :=
+    fun row => (binaryTableRowAtOrZero table row).mode.mode32_and_c_is_signed
+  gsum := fun _ => 0
+  im_0 := fun _ => 0
+  im_1 := fun _ => 0
+  im_2 := fun _ => 0
+  im_3 := fun _ => 0
+
+/-- In-range concrete Binary table projection agrees with `List.get`. -/
+theorem binaryTableRowAtOrZero_get
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    binaryTableRowAtOrZero table idx.val =
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar := by
+  unfold binaryTableRowAtOrZero
+  rw [dif_pos idx.isLt]
+
+/-- The named-column projection of a concrete Binary table has the expected
+    `rowAt` view at every in-range index. -/
+theorem rowAt_binaryOfTable
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Binary.rowAt (binaryOfTable table) idx.val =
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar := by
+  simp [ZiskFv.AirsClean.Binary.rowAt, binaryTableRowAtOrZero_get table idx]
+  let row :=
+    eval (table.environment (table.table.get idx))
+      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar
+  change
+    { aBytes := row.aBytes
+      bBytes := row.bBytes
+      cBytes := row.cBytes
+      chain := row.chain
+      mode := row.mode } = row
+  cases row
+  rfl
+
+/-- The legacy `opBus_row_Binary` view of `binaryOfTable` is the Clean Binary
+    operation-bus message evaluated on the same concrete row. -/
+theorem opBus_row_Binary_binaryOfTable
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.Airs.OperationBus.opBus_row_Binary (binaryOfTable table) idx.val =
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (eval (table.environment (table.table.get idx))
+            ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1 := by
+  rw [← ZiskFv.AirsClean.Binary.opBusMessage_toEntry_rowAt_eq_opBus_row]
+  rw [rowAt_binaryOfTable table idx]
+
+/-- Zero fallback for out-of-range projections from a concrete BinaryExtension
+    table. In-range rows are the only rows consumed by the table bridge below. -/
+@[reducible]
+def zeroBinaryExtensionRow : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL where
+  aCols := {
+    free_in_a_0 := 0
+    free_in_a_1 := 0
+    free_in_a_2 := 0
+    free_in_a_3 := 0
+    free_in_a_4 := 0
+    free_in_a_5 := 0
+    free_in_a_6 := 0
+    free_in_a_7 := 0 }
+  cColsLo := {
+    free_in_c_0 := 0
+    free_in_c_1 := 0
+    free_in_c_2 := 0
+    free_in_c_3 := 0
+    free_in_c_4 := 0
+    free_in_c_5 := 0
+    free_in_c_6 := 0
+    free_in_c_7 := 0 }
+  cColsHi := {
+    free_in_c_8 := 0
+    free_in_c_9 := 0
+    free_in_c_10 := 0
+    free_in_c_11 := 0
+    free_in_c_12 := 0
+    free_in_c_13 := 0
+    free_in_c_14 := 0
+    free_in_c_15 := 0 }
+  flags := {
+    op := 0
+    free_in_b := 0
+    op_is_shift := 0
+    b_0 := 0
+    b_1 := 0 }
+
+/-- Project row `row` of a concrete Clean BinaryExtension table to the
+    BinaryExtension row input. Out-of-range rows use `zeroBinaryExtensionRow`
+    only to make the named-column view total. -/
+@[reducible]
+def binaryExtensionTableRowAtOrZero
+    (table : Table FGL)
+    (row : ℕ) : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL :=
+  if h_row : row < table.table.length then
+    eval (table.environment (table.table.get ⟨row, h_row⟩))
+      shiftStaticLookupComponent.rowInputVar
+  else
+    zeroBinaryExtensionRow
+
+/-- Named-column BinaryExtension view obtained from the concrete Clean
+    BinaryExtension table. -/
+@[reducible]
+def binaryExtensionOfTable
+    (table : Table FGL) :
+    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL where
+  op := fun row => (binaryExtensionTableRowAtOrZero table row).flags.op
+  free_in_a_0 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_0
+  free_in_a_1 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_1
+  free_in_a_2 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_2
+  free_in_a_3 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_3
+  free_in_a_4 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_4
+  free_in_a_5 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_5
+  free_in_a_6 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_6
+  free_in_a_7 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_7
+  free_in_b := fun row => (binaryExtensionTableRowAtOrZero table row).flags.free_in_b
+  free_in_c_0 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_0
+  free_in_c_1 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_1
+  free_in_c_2 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_2
+  free_in_c_3 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_3
+  free_in_c_4 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_4
+  free_in_c_5 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_5
+  free_in_c_6 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_6
+  free_in_c_7 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_7
+  free_in_c_8 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_8
+  free_in_c_9 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_9
+  free_in_c_10 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_10
+  free_in_c_11 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_11
+  free_in_c_12 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_12
+  free_in_c_13 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_13
+  free_in_c_14 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_14
+  free_in_c_15 := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_15
+  op_is_shift := fun row =>
+    (binaryExtensionTableRowAtOrZero table row).flags.op_is_shift
+  b_0 := fun row => (binaryExtensionTableRowAtOrZero table row).flags.b_0
+  b_1 := fun row => (binaryExtensionTableRowAtOrZero table row).flags.b_1
+  gsum := fun _ => 0
+  im_0 := fun _ => 0
+  im_1 := fun _ => 0
+  im_2 := fun _ => 0
+  im_3 := fun _ => 0
+  im_high_degree_0 := fun _ => 0
+
+/-- In-range concrete BinaryExtension table projection agrees with `List.get`. -/
+theorem binaryExtensionTableRowAtOrZero_get
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    binaryExtensionTableRowAtOrZero table idx.val =
+      eval (table.environment (table.table.get idx))
+        shiftStaticLookupComponent.rowInputVar := by
+  unfold binaryExtensionTableRowAtOrZero
+  rw [dif_pos idx.isLt]
+
+/-- The named-column projection of a concrete BinaryExtension table has the
+    expected `rowAt` view at every in-range index. -/
+theorem rowAt_binaryExtensionOfTable
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.BinaryExtension.rowAt
+      (binaryExtensionOfTable table) idx.val =
+      eval (table.environment (table.table.get idx))
+        shiftStaticLookupComponent.rowInputVar := by
+  simp [ZiskFv.AirsClean.BinaryExtension.rowAt,
+    binaryExtensionTableRowAtOrZero_get table idx]
+  let row :=
+    eval (table.environment (table.table.get idx))
+      shiftStaticLookupComponent.rowInputVar
+  change
+    { aCols := row.aCols
+      cColsLo := row.cColsLo
+      cColsHi := row.cColsHi
+      flags := row.flags } = row
+  cases row
+  rfl
+
+/-- The legacy `opBus_row_BinaryExtension` view of `binaryExtensionOfTable` is
+    the Clean BinaryExtension operation-bus message evaluated on the same row. -/
+theorem opBus_row_BinaryExtension_binaryExtensionOfTable
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension
+        (binaryExtensionOfTable table) idx.val =
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (eval (table.environment (table.table.get idx))
+            shiftStaticLookupComponent.rowInputVar)) 1 := by
+  rw [← ZiskFv.AirsClean.BinaryExtension.opBusMessage_toEntry_rowAt_eq_opBus_row]
+  rw [rowAt_binaryExtensionOfTable table idx]
 
 /-- Zero fallback for out-of-range projections from a concrete Mem table.
     In-range rows are the only rows consumed by the table bridge below. -/

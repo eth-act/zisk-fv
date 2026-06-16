@@ -79,6 +79,24 @@ end Counterexamples
 
 namespace Mul
 
+/-- Every lookup-aware ArithMul row carries an Arith-family opcode.  This is
+    the data fact used by full-ensemble provider matching to rule out low
+    Binary-family opcodes from the ArithMul branch. -/
+theorem op_val_ge_176
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row) :
+    176 <= row.flags.op.val := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, _hna, _hnb, _hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, _hmain_mul, _hmain_div, _hsigned,
+      _hrange_ab, _hrange_cd⟩
+    rw [hop]
+    norm_num
+
 theorem mul_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec

@@ -1,0 +1,810 @@
+# ZiskFv.Compliance.construction_sub_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+sub_input :: PureSpec.SubInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SUB
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok sub_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok sub_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some sub_input.PC)
+h_input_rd :: Eq sub_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
+h_rd_idx :: Eq sub_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_and_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+and_input :: PureSpec.AndInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_AND
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok and_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok and_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some and_input.PC)
+h_input_rd :: Eq and_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_and_pure and_input).nextPC
+h_rd_idx :: Eq and_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_or_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+or_input :: PureSpec.OrInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_OR
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok or_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok or_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some or_input.PC)
+h_input_rd :: Eq or_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_or_pure or_input).nextPC
+h_rd_idx :: Eq or_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_xor_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+xor_input :: PureSpec.XorInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_XOR
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok xor_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok xor_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some xor_input.PC)
+h_input_rd :: Eq xor_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC
+h_rd_idx :: Eq xor_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_slt_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+slt_input :: PureSpec.SltInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_LT
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok slt_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok slt_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some slt_input.PC)
+h_input_rd :: Eq slt_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC
+h_rd_idx :: Eq slt_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_sltu_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+sltu_input :: PureSpec.SltuInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_LTU
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok sltu_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok sltu_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some sltu_input.PC)
+h_input_rd :: Eq sltu_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
+h_rd_idx :: Eq sltu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_andi_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+andi_input :: PureSpec.AndiInput
+r1 :: regidx
+rd :: regidx
+imm :: BitVec 12
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_AND
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok andi_input.r1_val (binding.stateAt i))
+h_input_imm :: Eq andi_input.imm imm
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some andi_input.PC)
+h_input_rd :: Eq andi_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_andi_subset :: ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val andi_input.imm
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
+h_rd_idx :: Eq andi_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_ori_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+ori_input :: PureSpec.OriInput
+r1 :: regidx
+rd :: regidx
+imm :: BitVec 12
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_OR
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok ori_input.r1_val (binding.stateAt i))
+h_input_imm :: Eq ori_input.imm imm
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some ori_input.PC)
+h_input_rd :: Eq ori_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_ori_subset :: ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val ori_input.imm
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
+h_rd_idx :: Eq ori_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_xori_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+xori_input :: PureSpec.XoriInput
+r1 :: regidx
+rd :: regidx
+imm :: BitVec 12
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_XOR
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok xori_input.r1_val (binding.stateAt i))
+h_input_imm :: Eq xori_input.imm imm
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some xori_input.PC)
+h_input_rd :: Eq xori_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_xori_subset :: ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val xori_input.imm
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
+h_rd_idx :: Eq xori_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_slti_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+slti_input :: PureSpec.SltiInput
+r1 :: regidx
+rd :: regidx
+imm :: BitVec 12
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_LT
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok slti_input.r1_val (binding.stateAt i))
+h_input_imm :: Eq slti_input.imm imm
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some slti_input.PC)
+h_input_rd :: Eq slti_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_slti_subset :: ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val slti_input.imm
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
+h_rd_idx :: Eq slti_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_sltiu_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+sltiu_input :: PureSpec.SltiuInput
+r1 :: regidx
+rd :: regidx
+imm :: BitVec 12
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_LTU
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok sltiu_input.r1_val (binding.stateAt i))
+h_input_imm :: Eq sltiu_input.imm imm
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some sltiu_input.PC)
+h_input_rd :: Eq sltiu_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_sltiu_subset :: ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val sltiu_input.imm
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC
+h_rd_idx :: Eq sltiu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_sll_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+sll_input :: PureSpec.SllInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SLL
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok sll_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok sll_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some sll_input.PC)
+h_input_rd :: Eq sll_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
+h_rd_idx :: Eq sll_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_srl_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+srl_input :: PureSpec.SrlInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SRL
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok srl_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok srl_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some srl_input.PC)
+h_input_rd :: Eq srl_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_srl_pure srl_input).nextPC
+h_rd_idx :: Eq srl_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_sra_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+sra_input :: PureSpec.SraInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SRA
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok sra_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok sra_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some sra_input.PC)
+h_input_rd :: Eq sra_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
+h_rd_idx :: Eq sra_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_slli_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+slli_input :: PureSpec.SlliInput
+r1 :: regidx
+rd :: regidx
+shamt :: BitVec 6
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SLL
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok slli_input.r1_val (binding.stateAt i))
+h_input_shamt :: Eq slli_input.shamt shamt
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some slli_input.PC)
+h_input_rd :: Eq slli_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.shamt_b_lo shamt)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
+h_rd_idx :: Eq slli_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_srli_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+srli_input :: PureSpec.SrliInput
+r1 :: regidx
+rd :: regidx
+shamt :: BitVec 6
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SRL
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok srli_input.r1_val (binding.stateAt i))
+h_input_shamt :: Eq srli_input.shamt shamt
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some srli_input.PC)
+h_input_rd :: Eq srli_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.shamt_b_lo shamt)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC
+h_rd_idx :: Eq srli_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_srai_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+srai_input :: PureSpec.SraiInput
+r1 :: regidx
+rd :: regidx
+shamt :: BitVec 6
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SRA
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 0
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok srai_input.r1_val (binding.stateAt i))
+h_input_shamt :: Eq srai_input.shamt shamt
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some srai_input.PC)
+h_input_rd :: Eq srai_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.shamt_b_lo shamt)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC
+h_rd_idx :: Eq srai_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_sllw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+sllw_input :: PureSpec.SllwInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SLL_W
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok sllw_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok sllw_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some sllw_input.PC)
+h_input_rd :: Eq sllw_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sllw_pure sllw_input).nextPC
+h_rd_idx :: Eq sllw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_srlw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+srlw_input :: PureSpec.SrlwInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SRL_W
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok srlw_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok srlw_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some srlw_input.PC)
+h_input_rd :: Eq srlw_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_srlw_pure srlw_input).nextPC
+h_rd_idx :: Eq srlw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_sraw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+sraw_input :: PureSpec.SrawInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SRA_W
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok sraw_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok sraw_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some sraw_input.PC)
+h_input_rd :: Eq sraw_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+h_b_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r2)))
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sraw_pure sraw_input).nextPC
+h_rd_idx :: Eq sraw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_slliw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+slliw_input :: PureSpec.SlliwInput
+r1 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SLL_W
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok slliw_input.r1_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some slliw_input.PC)
+h_input_rd :: Eq slliw_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.shamt_w_b_lo slliw_input.shamt)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC
+h_rd_idx :: Eq slliw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_srliw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+srliw_input :: PureSpec.SrliwInput
+r1 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SRL_W
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok srliw_input.r1_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some srliw_input.PC)
+h_input_rd :: Eq srliw_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.shamt_w_b_lo srliw_input.shamt)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC
+h_rd_idx :: Eq srliw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+
+# ZiskFv.Compliance.construction_sraiw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+sraiw_input :: PureSpec.SraiwInput
+r1 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SRA_W
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_m32 :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32 i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok sraiw_input.r1_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some sraiw_input.PC)
+h_input_rd :: Eq sraiw_input.rd (regidx_to_fin rd)
+h_a_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val) (ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_a_hi_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val) (ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg (regidx_to_fin r1)))
+h_b_lo_t :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val) (ZiskFv.Trusted.shamt_w_b_lo sraiw_input.shamt)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC
+h_rd_idx :: Eq sraiw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)

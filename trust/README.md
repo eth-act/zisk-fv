@@ -46,6 +46,7 @@ when they are not trust policy or trust evidence.
 | `generated/baseline-axioms.txt`                | `trust/scripts/regenerate.py`                                 | Hash-pinned source ledger for allowed Lean trust declarations. |
 | `generated/baseline-zisk-riscv-compliant.txt`  | `lake exe trust-gate print-axiom-closure` via `regenerate.sh` | Active project-axiom closure of the global compliance theorem. |
 | `generated/baseline-global-theorem-binders.txt` | `lake exe trust-gate print-global-binders` via `regenerate.sh` | Elaborated binder list for the global compliance theorem.      |
+| `generated/baseline-construction-theorem-binders.txt` | `lake exe trust-gate print-construction-binders-deep` via `regenerate.sh` | DEEP (recursive) binder-leaf render of the sound P4 construction theorem `construction_sub_sound`: recurses into every `ZiskFv.*` project structure (library structures are leaves), so any future `*RowBinding`/`MainRowProvenance`-style smuggling surfaces as new dotted leaf lines. |
 | `generated/baseline-equiv-axiom-deps.txt`      | `lake exe trust-gate regenerate-deps`                         | Per-canonical-theorem axiom closures.                          |
 | `generated/baseline-hypothesis-count.txt`      | `trust/scripts/count-hypotheses.py`                           | Anti-laundering metric for canonical theorem binder counts.    |
 | `generated/baseline-caller-burden.txt`         | `trust/scripts/regenerate-caller-burden.py`                   | Caller-burden ledger for canonical theorem binders.            |

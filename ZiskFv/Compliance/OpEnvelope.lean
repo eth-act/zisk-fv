@@ -392,6 +392,46 @@ inductive OpEnvelope
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+  -- ============================ ADD via BinaryAdd arm ====================
+  | add_via_binaryadd
+    (add_input : PureSpec.AddInput) (r1 r2 rd : regidx)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryAdd.component)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_binaryadd : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryAdd.opBusMessage
+          (ZiskFv.AirsClean.BinaryAdd.component.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_main_subset : ZiskFv.Airs.Main.add_subset_holds m r_main)
+    (h_a_lo_t : m.a_0 r_main =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r1)))
+    (h_a_hi_t : m.a_1 r_main =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r1)))
+    (h_b_lo_t : m.b_0 r_main =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r2)))
+    (h_b_hi_t : m.b_1 r_main =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r2)))
+    (h_m32 : m.m32 r_main = 0)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ ADDI via Binary arm (sole provider after T4-purge) =
   | addi_via_binary
     (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -418,6 +458,40 @@ inductive OpEnvelope
       ZiskFv.EquivCore.Add.binaryRowB64
         (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
           (providerTable.environment providerRow)))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
+        state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
+        (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+  -- ============================ ADDI via BinaryAdd arm ===================
+  | addi_via_binaryadd
+    (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryAdd.component)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_binaryadd : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryAdd.opBusMessage
+          (ZiskFv.AirsClean.BinaryAdd.component.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_main_subset : ZiskFv.Airs.Main.add_subset_holds m r_main)
+    (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
+    (h_a_lo_t : m.a_0 r_main =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r1)))
+    (h_a_hi_t : m.a_1 r_main =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
+          (regidx_to_fin r1)))
+    (h_m32 : m.m32 r_main = 0)
+    (h_set_pc : m.set_pc r_main = 0)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC

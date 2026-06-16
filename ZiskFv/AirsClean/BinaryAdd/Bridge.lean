@@ -198,6 +198,38 @@ theorem rowAt_validOfRow_zero (row : BinaryAddRow FGL) :
   cases row
   rfl
 
+theorem core_every_row_of_component_spec_facts
+    (row : BinaryAddRow FGL) (h : ComponentSpecFacts row) :
+    ZiskFv.Airs.BinaryAdd.core_every_row (validOfRow row) 0 := by
+  obtain ⟨h_bool0, h_carry0, h_bool1, h_carry1⟩ := h.2.1
+  exact ⟨ by simpa [validOfRow, ZiskFv.Airs.BinaryAdd.boolean_cout_0] using h_bool0
+        , by simpa [validOfRow, ZiskFv.Airs.BinaryAdd.carry_chain_0] using h_carry0
+        , by simpa [validOfRow, ZiskFv.Airs.BinaryAdd.boolean_cout_1] using h_bool1
+        , by simpa [validOfRow, ZiskFv.Airs.BinaryAdd.carry_chain_1] using h_carry1 ⟩
+
+theorem a_chunks_in_range_of_component_spec_facts
+    (row : BinaryAddRow FGL) (h : ComponentSpecFacts row) :
+    ZiskFv.Airs.BinaryAdd.a_chunks_in_range (validOfRow row) 0 := by
+  obtain ⟨ha0, ha1, _hb0, _hb1, _hc0, _hc1, _hc2, _hc3⟩ := h.2.2
+  exact ⟨ by simpa [validOfRow] using ha0
+        , by simpa [validOfRow] using ha1 ⟩
+
+theorem b_chunks_in_range_of_component_spec_facts
+    (row : BinaryAddRow FGL) (h : ComponentSpecFacts row) :
+    ZiskFv.Airs.BinaryAdd.b_chunks_in_range (validOfRow row) 0 := by
+  obtain ⟨_ha0, _ha1, hb0, hb1, _hc0, _hc1, _hc2, _hc3⟩ := h.2.2
+  exact ⟨ by simpa [validOfRow] using hb0
+        , by simpa [validOfRow] using hb1 ⟩
+
+theorem c_chunks_in_range_of_component_spec_facts
+    (row : BinaryAddRow FGL) (h : ComponentSpecFacts row) :
+    ZiskFv.Airs.BinaryAdd.c_chunks_in_range (validOfRow row) 0 := by
+  obtain ⟨_ha0, _ha1, _hb0, _hb1, hc0, hc1, hc2, hc3⟩ := h.2.2
+  exact ⟨ by simpa [validOfRow] using hc0
+        , by simpa [validOfRow] using hc1
+        , by simpa [validOfRow] using hc2
+        , by simpa [validOfRow] using hc3 ⟩
+
 theorem eval_opBusMessageExpr
     (env : Environment FGL) (row : Var BinaryAddRow FGL) :
     eval env (opBusMessageExpr row) = opBusMessage (eval env row) := by

@@ -636,6 +636,24 @@ theorem static_table_op_val_ne_bitwise_of_spec_facts
     row.flags.op.val ≠ 14 ∧ row.flags.op.val ≠ 15 ∧ row.flags.op.val ≠ 16 := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_bitwise h_specs.1
 
+theorem static_table_op_val_ne_compare_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 6 ∧ row.flags.op.val ≠ 7 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_compare h_specs.1
+
+theorem static_table_op_val_ne_add_sub_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 10 ∧ row.flags.op.val ≠ 11 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_add_sub h_specs.1
+
+theorem static_table_op_val_ne_W_add_sub_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 0x1A ∧ row.flags.op.val ≠ 0x1B := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_W_add_sub h_specs.1
+
 /-- A row accepted by the lookup-aware BinaryExtension component cannot carry
     Binary-table bitwise opcodes (`AND`/`OR`/`XOR`, values 14/15/16). -/
 theorem staticLookupComponent_op_val_ne_bitwise_of_spec
@@ -648,14 +666,153 @@ theorem staticLookupComponent_op_val_ne_bitwise_of_spec
   exact static_table_op_val_ne_bitwise_of_spec_facts
     (staticLookupComponent.rowInput env) h_spec.2
 
-theorem flags_eval_op
+/-- A row accepted by the lookup-aware BinaryExtension component cannot carry
+    Binary-table comparison opcodes (`LTU`/`LT`, values 6/7). -/
+theorem staticLookupComponent_op_val_ne_compare_of_spec
+    (env : Environment FGL)
+    (h_spec : staticLookupComponent.Spec env) :
+    (staticLookupComponent.rowInput env).flags.op.val ≠ 6
+      ∧ (staticLookupComponent.rowInput env).flags.op.val ≠ 7 := by
+  rw [staticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_compare_of_spec_facts
+    (staticLookupComponent.rowInput env) h_spec.2
+
+/-- A row accepted by the lookup-aware BinaryExtension component cannot carry
+    Binary-table ADD/SUB opcodes (`ADD`/`SUB`, values 10/11). -/
+theorem staticLookupComponent_op_val_ne_add_sub_of_spec
+    (env : Environment FGL)
+    (h_spec : staticLookupComponent.Spec env) :
+    (staticLookupComponent.rowInput env).flags.op.val ≠ 10
+      ∧ (staticLookupComponent.rowInput env).flags.op.val ≠ 11 := by
+  rw [staticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_add_sub_of_spec_facts
+    (staticLookupComponent.rowInput env) h_spec.2
+
+/-- A row accepted by the lookup-aware BinaryExtension component cannot carry
+    Main W-mode ADD/SUB opcodes (`ADDW`/`SUBW`, values 0x1A/0x1B). -/
+theorem staticLookupComponent_op_val_ne_W_add_sub_of_spec
+    (env : Environment FGL)
+    (h_spec : staticLookupComponent.Spec env) :
+    (staticLookupComponent.rowInput env).flags.op.val ≠ 0x1A
+      ∧ (staticLookupComponent.rowInput env).flags.op.val ≠ 0x1B := by
+  rw [staticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_W_add_sub_of_spec_facts
+    (staticLookupComponent.rowInput env) h_spec.2
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry Binary-table bitwise opcodes (`AND`/`OR`/`XOR`, values 14/15/16). -/
+theorem shiftStaticLookupComponent_op_val_ne_bitwise_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 14
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 15
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 16 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_bitwise_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry Binary-table comparison opcodes (`LTU`/`LT`, values 6/7). -/
+theorem shiftStaticLookupComponent_op_val_ne_compare_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 6
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 7 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_compare_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry Binary-table ADD/SUB opcodes (`ADD`/`SUB`, values 10/11). -/
+theorem shiftStaticLookupComponent_op_val_ne_add_sub_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 10
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 11 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_add_sub_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry Main W-mode ADD/SUB opcodes (`ADDW`/`SUBW`, values 0x1A/0x1B). -/
+theorem shiftStaticLookupComponent_op_val_ne_W_add_sub_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 0x1A
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 0x1B := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_W_add_sub_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+theorem aCols_eval_eq
+    (env : Environment FGL) (cols : BinaryExtensionACols (Expression FGL)) :
+    eval env cols =
+      { free_in_a_0 := Expression.eval env cols.free_in_a_0
+        free_in_a_1 := Expression.eval env cols.free_in_a_1
+        free_in_a_2 := Expression.eval env cols.free_in_a_2
+        free_in_a_3 := Expression.eval env cols.free_in_a_3
+        free_in_a_4 := Expression.eval env cols.free_in_a_4
+        free_in_a_5 := Expression.eval env cols.free_in_a_5
+        free_in_a_6 := Expression.eval env cols.free_in_a_6
+        free_in_a_7 := Expression.eval env cols.free_in_a_7 } := by
+  rw [ProvableStruct.eval_eq_eval]
+  cases cols
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+
+theorem cColsLo_eval_eq
+    (env : Environment FGL) (cols : BinaryExtensionCColsLo (Expression FGL)) :
+    eval env cols =
+      { free_in_c_0 := Expression.eval env cols.free_in_c_0
+        free_in_c_1 := Expression.eval env cols.free_in_c_1
+        free_in_c_2 := Expression.eval env cols.free_in_c_2
+        free_in_c_3 := Expression.eval env cols.free_in_c_3
+        free_in_c_4 := Expression.eval env cols.free_in_c_4
+        free_in_c_5 := Expression.eval env cols.free_in_c_5
+        free_in_c_6 := Expression.eval env cols.free_in_c_6
+        free_in_c_7 := Expression.eval env cols.free_in_c_7 } := by
+  rw [ProvableStruct.eval_eq_eval]
+  cases cols
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+
+theorem cColsHi_eval_eq
+    (env : Environment FGL) (cols : BinaryExtensionCColsHi (Expression FGL)) :
+    eval env cols =
+      { free_in_c_8 := Expression.eval env cols.free_in_c_8
+        free_in_c_9 := Expression.eval env cols.free_in_c_9
+        free_in_c_10 := Expression.eval env cols.free_in_c_10
+        free_in_c_11 := Expression.eval env cols.free_in_c_11
+        free_in_c_12 := Expression.eval env cols.free_in_c_12
+        free_in_c_13 := Expression.eval env cols.free_in_c_13
+        free_in_c_14 := Expression.eval env cols.free_in_c_14
+        free_in_c_15 := Expression.eval env cols.free_in_c_15 } := by
+  rw [ProvableStruct.eval_eq_eval]
+  cases cols
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+
+theorem flags_eval_eq
     (env : Environment FGL) (flags : BinaryExtensionFlags (Expression FGL)) :
-    (eval env flags).op = Expression.eval env flags.op := by
+    eval env flags =
+      { op := Expression.eval env flags.op
+        free_in_b := Expression.eval env flags.free_in_b
+        op_is_shift := Expression.eval env flags.op_is_shift
+        b_0 := Expression.eval env flags.b_0
+        b_1 := Expression.eval env flags.b_1 } := by
   rw [ProvableStruct.eval_eq_eval]
   cases flags
   simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
     ProvableStruct.components, ProvableStruct.toComponents,
     ProvableStruct.eval.go, ProvableType.eval_field]
+
+theorem flags_eval_op
+    (env : Environment FGL) (flags : BinaryExtensionFlags (Expression FGL)) :
+    (eval env flags).op = Expression.eval env flags.op := by
+  rw [flags_eval_eq]
 
 theorem row_eval_flags_op
     (env : Environment FGL) (row : Var BinaryExtensionRow FGL) :
@@ -666,6 +823,18 @@ theorem row_eval_flags_op
     ProvableStruct.components, ProvableStruct.toComponents,
     ProvableStruct.eval.go]
   exact flags_eval_op env _
+
+theorem eval_opBusMessageExpr
+    (env : Environment FGL) (row : Var BinaryExtensionRow FGL) :
+    eval env (opBusMessageExpr row) = opBusMessage (eval env row) := by
+  cases row
+  simp only [opBusMessageExpr, opBusMessage, aLo, aHi, aLoValue, aHiValue,
+    ProvableStruct.eval_eq_eval]
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+  simp [aCols_eval_eq, cColsLo_eval_eq, cColsHi_eval_eq, flags_eval_eq, Expression.eval,
+    sub_eq_add_neg, add_assoc, add_comm, add_left_comm]
 
 /-- Evaluating the static BinaryExtension op-bus expression preserves the
     row's opcode slot. Kept local to avoid unfolding the full row expression
@@ -692,6 +861,16 @@ theorem shiftStaticLookupComponent_eval_opBusMessageExpr_op
     (shiftStaticLookupComponent.rowInput env).flags.op
   rw [← row_eval_flags_op env shiftStaticLookupComponent.rowInputVar]
   exact congrArg (fun row : BinaryExtensionRow FGL => row.flags.op)
+    (by
+      simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
+        (eval_varFromOffset_valueFromOffset shiftStaticLookupComponent.Input 0 env))
+
+theorem shiftStaticLookupComponent_eval_opBusMessageExpr
+    (env : Environment FGL) :
+    eval env (opBusMessageExpr shiftStaticLookupComponent.rowInputVar) =
+      opBusMessage (shiftStaticLookupComponent.rowInput env) := by
+  rw [eval_opBusMessageExpr]
+  exact congrArg opBusMessage
     (by
       simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
         (eval_varFromOffset_valueFromOffset shiftStaticLookupComponent.Input 0 env))
