@@ -1,136 +1,46 @@
-Active plan: docs/ai/plan/PLAN_ENDGAME_P4_SWEEP.md (PR5 W-ALU, NEEDS-WORK Wave 6).
+Active plan: docs/ai/plan/PLAN_ENDGAME_XCAP.md §4.B (XS-PR1, framework — cross-segment Mem seam).
+Branch: xcap-xseg (off origin/main eb19cc8f). Worktree: .worktrees/xcap-xseg.
 
-DONE (SWEEP Wave 6 — W-ALU ADDW/SUBW/ADDIW, the NEEDS-WORK m32=1 binary
-families): AUTHORED the missing m32=1 32-bit lane-binding lemmas
-`input_r1_packed_a32_row` / `input_r2_packed_b32_row` in
-ZiskFv/EquivCore/Bridge/Binary.lean (the binary analog of the BinaryExtension
-shift bridge's packed_a_lo32_eq_of_shift_match_m32_1_of_a_range). KEY FINDING:
-the m32=1 binary lane DOES close cleanly, and WITHOUT needing one_sub_one_mul on
-a_hi — for the staticBinary provider the a_lo conjunct of matches_entry is
-m32-independent, so the 32-bit operand binding (extractLsb r1_val 31 0).toNat =
-binaryRowA32 row % 2^32 derives from the low-4-byte a_lo equation alone (the
-a_hi=(1-m32)*a_1 collapses to 0 but is not consumed for the low half). Lane
-lemmas take 4 explicit a/b byte-range (<256) hyps, sourced in the constructions
-from h_facts (StaticBinaryTableWfFacts) — no byte_chain_discharge_64 (which
-requires mode32=0). Added ConstructionWAlu.lean with construction_subw_sound
-(unique OP_SUB_W, Or.inr), construction_addw_sound (OP_ADD_W, Or.inl), and
-construction_addiw_sound (ITYPE, OP_ADD_W; imm + h_addiw_subset named pin +
-ITypePromises; wrapper derives the immediate byte decomposition internally).
-W bus harness: m32=1, writeReg-nextPC prelude retained. Appended all three to
-soundConstructionTheorems (25 → 28); deep baseline grew +3 honest flat blocks
-(subw 34, addw 34, addiw 33 binders; ZERO RowBinding/MainRowProvenance leaves;
-prior 25 blocks byte-identical prefix). lake build green (8688 jobs);
-check-all.sh 18/18; check-all-semantic.sh 12/12; baseline-axioms.txt UNCHANGED
-(lane lemmas add NO axiom); 0 PROJECT (ZiskFv.*) axioms per new theorem and lane
-lemma (closure = [cancel_reservation, propext, Classical.choice, Quot.sound] for
-constructions; [propext, Classical.choice, Quot.sound] for the lane lemmas —
-Sail+kernel external only). NO sorry/admit/native_decide.
+## Current focus: XS-PR1 Step 1 (structural seam-channel exposure) — DONE, green.
 
---- prior (Wave 5, from base p4-closeout-construction) ---
+Landed the MINIMAL first green increment of XS-PR1: the live Clean Mem layer can
+now EXPOSE a segment-continuation channel from row-local columns — the capability
+the per-row component "structurally cannot" do today (PLAN §1 TL;DR).
 
-Active plan: docs/ai/plan/PLAN_ENDGAME_P4_CLOSEOUT.md (§5 PR2, rework-off-#97).
+New files (additive; nothing in the live ensemble imports them — 28 families
+byte-identical green):
+- ZiskFv/Channels/SegmentContinuation.lean — SeamMessage (raw 5-tuple
+  [value_0,value_1,addr,step,segment_id]) + SeamContChannel (Guarantees := True,
+  mirroring MemBusChannel).
+- ZiskFv/AirsClean/Mem/SeamCircuit.lean — MemSeamRow (MemRow + 9 segment-boundary
+  Var fields) + circuitWithSeamAndMemBus / componentWithSeamAndMemBus: emits dual
+  MemBus + pull(previous_segment_*) + push(segment_last_*). Soundness/completeness
+  closed; 0 PROJECT axioms (kernel-only).
+- ZiskFv.lean: + import of SeamCircuit (build coverage only).
 
-Branch `p4-closeout-construction` off `origin/endgame-p4-pr2` (#97 @ 6c414ffa).
+Gates: full lake build green (8690 jobs); check-all.sh (V1) ALL PASS;
+check-all-semantic.sh (V2) ALL PASS. 63-theorem baselines unchanged (additive).
 
-Focus: EXECUTE PR2 — strip the P4 relabel, keep the salvage + via_binaryadd
-route, add the first honest sound construction (`construction_sub_sound`, 17 +
-execRow residual binders). End in a CLEAN do-not-merge PR superseding #94/#97.
+## Blocking / reported residual (CRITICAL — see PR body)
 
-Done:
-- Stripped AcceptedTrace.lean to the salvage (AcceptedTrace + ProgramBinding
-  skeleton + Layer-A provider-match wrappers). Removed ArmTag, 37 *RowBinding
-  structs, per-op ProgramBinding projections, all construction_<op> defs +
-  aeneasBridgeTrust theorems, the 28 exists_construction_*_from_balance wrappers.
-- Stripped the 4 addViaBinaryAdd*OfExtractedShape decls (AeneasBridgeTrust.lean).
-- Stripped the print-construction-binders subcommand (TrustGate/Main.lean), the
-  blind check-construction-theorem-binders.sh + its baseline + its wiring in
-  check-all-semantic.sh / regenerate.sh / README.md.
-- KEPT the via_binaryadd salvage route (OpEnvelope arms, Dispatch, EquivCore/Add,
-  BinaryAdd circuit, route ledger).
-- Added ConstructionSub.lean (sound construction_sub_sound).
+The firstGreenIncrement asked the seam emission's Requirements/Guarantees be
+PROVEN from permutation_every_row. That half is NOT delivered, and is a genuine
+reportable obstacle (NOT faked / NOT axiomatized):
+- permutation_every_row is ABSENT from the live Clean Mem component (it + the
+  SegmentColumns/PermutationColumns live only as Valid_Mem-parameterized defs in
+  Airs/Mem.lean + dead defs in Mem/Constraints.lean — grep confirms 0 refs under
+  AirsClean/ outside Constraints.lean).
+- permutation_every_row is a NON-VANISHING constraint on a Horner HASH
+  (im_direct_i * direct_gsum_i + 1 = 0); it carries NO raw-tuple statement, so the
+  raw-tuple seam emission cannot be derived from it row-locally (Risk #1).
+- The seam fact is a BALANCE fact (exists_push_of_pull over SoundVmEnsemble), per
+  the validated route — Channel.Guarantees := True deliberately carries nothing.
 
-DONE: lake build green (8681 jobs); check-all.sh 18/18; check-all-semantic.sh
-12/12; 0 PROJECT axioms (construction_sub_sound closure empty); 17 + execRow
-honest binders; net diff vs main has 0 relabel decls. Committed 9b55bcdb, pushed,
-opened do-not-merge PR #99 (eth-act/zisk-fv, base main) superseding #94/#97.
+## Next step (XS-PR1 Step 2, separate later PR — DISRUPTIVE)
 
-DONE (recursive gate, Option X): re-added the DEEP construction-binder gate.
-TypeWalk.lean renderTheoremBindersDeep + renderDeep (descend only into ZiskFv.*
-project structures; library structures are leaves; visited-set cycle guard).
-Main.lean print-construction-binders-deep targeting construction_sub_sound.
-check-construction-theorem-binders.sh re-added (points at -deep), re-wired into
-check-all-semantic.sh (5/12) + regenerate.sh + README. Deep baseline = 17 flat
-h_ residual lines + execRow; ZERO RowBinding/MainRowProvenance substrings; setup
-binders (trace/binding) descend into honest trace structure only. nix run .#test
-green. Committed 0e25550d, pushed to update PR #99.
-
-DONE (PR3 — second sound family, AND, logic route): added
-ConstructionAnd.lean (`construction_and_sound`), the mechanical mirror of
-`construction_sub_sound` for the logic family. Op-bus match via the salvaged
-logic Layer-A wrapper `exists_staticBinary_provider_row_matches_logic_from_binding`
-(op pin via `Or.inl h_main_op`); OP_AND (=14, <16) byte-chain path
-(`logic_row_mode_pins_of_emit_op_lt_16_of_static_spec` + `BinaryTable.OP_AND`);
-data effect concluded via `equiv_AND` (`execute_RTYPE_and_pure`, bottoms in
-`binary_and_chunks_eq_bv_and_of_wf`). Same 17 + execRow residual budget, flat
-top-level binders, no `*RowBinding`/`MainRowProvenance` leaf. Generalized the
-recursive gate: `soundConstructionTheorems` list + labelled-block deep render
-in TrustGate/Main.lean (adding a family = append to the list + regen). Deep
-baseline grew 34→71 lines = +2 headers + 1 blank + 34 honest AND binders; SUB
-block byte-identical. lake build green (8682 jobs); check-all.sh 18/18;
-check-all-semantic.sh 12/12 (deep check now covers both); 0 PROJECT
-(ZiskFv.*) axioms (construction_and_sound closure empty of ZiskFv.* names);
-nix run .#test green.
-
-DONE (SWEEP Wave 2 — I-type logic + compare, ANDI/ORI/XORI/SLTI/SLTIU): added
-ConstructionIType.lean with five sound constructions, each the mechanical mirror
-of its R-type sibling (AND/OR/XOR/SLT/SLTU) through the uniform I-type immediate
-DELTA. The second operand is the immediate (NOT a register read): drop r2's Sail
-read + `h_b_lo_t`/`h_b_hi_t` lane bridges; add the `imm : BitVec 12` binder, the
-immediate-decode equality `h_input_imm : input.imm = imm`, and the NAMED
-top-level `itype_imm_subset_holds_main` pin (`h_<op>_subset`); swap
-RTypePromises→ITypePromises (carries `input_imm_eq`); route via `equiv_<OP>I`.
-Logic ops (ANDI/ORI/XORI) DERIVE the 8-byte Binary-row imm form `h_input_imm_row`
-in-body via `itype_imm_subset_binary_row_of_main_row` (NOT a binder); compare ops
-(SLTI/SLTIU) pass `m32=0`+`h_<op>_subset` directly and the wrapper re-derives it.
-XORI inherits XOR's OP_XOR=16 wrinkle (static_table_logic_mode_pins_of_emit +
-byte_chain_discharge_logic). Per-family budget: 16 hyp binders + `imm` + execRow
-(33 deep leaves vs R-type's 34; net -1, fully honest: -r2/-h_input_r2/-h_b_lo_t/
--h_b_hi_t = -4, +imm/+h_input_imm/+h_<op>_subset = +3). Appended all five to
-`soundConstructionTheorems`; deep baseline grew +175 lines (5 honest blocks);
-prior 6 blocks byte-identical; ZERO RowBinding/MainRowProvenance leaves;
-itype_imm_subset_holds_main is a flat binder line in all 5. lake build green
-(8685 jobs); check-all.sh 18/18; check-all-semantic.sh 12/12; 0 PROJECT
-(ZiskFv.*) axioms per new theorem (Sail+kernel external).
-
-DONE (SWEEP Wave 3 — m32 = 0 shifts SLL/SRL/SRA/SLLI/SRLI/SRAI): added
-ConstructionShift.lean with six sound constructions on the BinaryExtension
-template (NOT the busSub/staticBinary path). SLL was the exemplar that solved
-the three shift novelties: (1) op-bus match via the salvaged shift Layer-A
-wrapper exists_binaryExtension_provider_row_matches_shift_from_binding (6-way op
-disjunction; SLL/SLLI Or.inl, SRL/SRLI Or.inr (Or.inl ·), SRA/SRAI
-Or.inr (Or.inr (Or.inl ·))); (2) BARE-execute conclusion (no writeReg-nextPC
-prelude) — the construction concludes equiv_<OP>'s conclusion verbatim, so the
-exec-bus bookkeeping (h_exec_len/h_e0_mult/h_e1_mult/busSub/h_nextPC_matches)
-rides inside the RTypePromises / ShiftImmPromises bundle against the bare-execute
-pure spec; (3) the m32 = 0 lane route — packed_a_eq_of_shift_match_m32_0_of_a_range
-(one_sub_zero_mul, Bridge/BinaryExtension.lean:240/269) + shift-pin lemmas.
-To keep the giant shiftStaticLookupComponent.rowInput term opaque (a `set row`
-inline derivation timed out at whnf), the lane/op-is-shift derivations are
-factored into five opaque-`row` helper theorems in ConstructionShift.lean
-(shift_op_pin_eq_of_match, shift_op_is_shift_of_facts,
-shift_m32_0_input_r1_row_of_facts, shift_m32_0_shift_pin_row_of_facts,
-shift_imm_shift_pin_row_of_facts) which mirror equiv_SLL_of_static_row's internal
-block. Register variants carry SUB's 17 + execRow budget; immediate variants drop
-r2's read + hi-lane, add shamt + h_input_shamt + the b_0 shamt_b_lo decode pin
-(16 hyp + shamt + execRow). Appended all six to soundConstructionTheorems
-(11 → 17); deep baseline grew +201 lines = 6 honest flat blocks; prior 11 blocks
-byte-identical; ZERO RowBinding/MainRowProvenance leaves. lake build green
-(8686 jobs); check-all.sh 18/18; check-all-semantic.sh 12/12; 0 PROJECT (ZiskFv.*)
-axioms per new theorem (closure = [cancel_reservation, propext, Classical.choice,
-Quot.sound], i.e. Sail+kernel external only).
-
-Next (follow-up increments, NOT this PR): the remaining ALU/sweep families
-(ADD/ADDI provider-disjunction PR4; W-types PR5 incl. m32 = 1 W-shifts;
-M-ext; branches; loads/stores); close stale #94/#97 on merge (Cody's call).
-
-Blocking: none.
+Build memSegVm : VmTables over componentWithSeamAndMemBus; migrate
+fullRv64imEnsemble SoundEnsemble→SoundVmEnsemble + non-empty verifier; absorb the
+Balance.lean re-proves (shifted channel list, prepended tables, non-empty
+verifier); derive SeamColumnEquality from balance + the tag pins. The tag-pin
+derivation from segment_every_row + boot saturation (Risk #3) and the
+verifier-endpoint discharge (PLAN §7.5) are the Step-2 make-or-break.
