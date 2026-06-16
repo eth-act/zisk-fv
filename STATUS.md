@@ -1,3 +1,33 @@
+Active plan: docs/ai/plan/PLAN_ENDGAME_P4_SWEEP.md (PR5 W-ALU, NEEDS-WORK Wave 6).
+
+DONE (SWEEP Wave 6 — W-ALU ADDW/SUBW/ADDIW, the NEEDS-WORK m32=1 binary
+families): AUTHORED the missing m32=1 32-bit lane-binding lemmas
+`input_r1_packed_a32_row` / `input_r2_packed_b32_row` in
+ZiskFv/EquivCore/Bridge/Binary.lean (the binary analog of the BinaryExtension
+shift bridge's packed_a_lo32_eq_of_shift_match_m32_1_of_a_range). KEY FINDING:
+the m32=1 binary lane DOES close cleanly, and WITHOUT needing one_sub_one_mul on
+a_hi — for the staticBinary provider the a_lo conjunct of matches_entry is
+m32-independent, so the 32-bit operand binding (extractLsb r1_val 31 0).toNat =
+binaryRowA32 row % 2^32 derives from the low-4-byte a_lo equation alone (the
+a_hi=(1-m32)*a_1 collapses to 0 but is not consumed for the low half). Lane
+lemmas take 4 explicit a/b byte-range (<256) hyps, sourced in the constructions
+from h_facts (StaticBinaryTableWfFacts) — no byte_chain_discharge_64 (which
+requires mode32=0). Added ConstructionWAlu.lean with construction_subw_sound
+(unique OP_SUB_W, Or.inr), construction_addw_sound (OP_ADD_W, Or.inl), and
+construction_addiw_sound (ITYPE, OP_ADD_W; imm + h_addiw_subset named pin +
+ITypePromises; wrapper derives the immediate byte decomposition internally).
+W bus harness: m32=1, writeReg-nextPC prelude retained. Appended all three to
+soundConstructionTheorems (25 → 28); deep baseline grew +3 honest flat blocks
+(subw 34, addw 34, addiw 33 binders; ZERO RowBinding/MainRowProvenance leaves;
+prior 25 blocks byte-identical prefix). lake build green (8688 jobs);
+check-all.sh 18/18; check-all-semantic.sh 12/12; baseline-axioms.txt UNCHANGED
+(lane lemmas add NO axiom); 0 PROJECT (ZiskFv.*) axioms per new theorem and lane
+lemma (closure = [cancel_reservation, propext, Classical.choice, Quot.sound] for
+constructions; [propext, Classical.choice, Quot.sound] for the lane lemmas —
+Sail+kernel external only). NO sorry/admit/native_decide.
+
+--- prior (Wave 5, from base p4-closeout-construction) ---
+
 Active plan: docs/ai/plan/PLAN_ENDGAME_P4_CLOSEOUT.md (§5 PR2, rework-off-#97).
 
 Branch `p4-closeout-construction` off `origin/endgame-p4-pr2` (#97 @ 6c414ffa).
