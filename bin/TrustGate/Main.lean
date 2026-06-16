@@ -259,7 +259,13 @@ def soundConstructionTheorems : List Name :=
   , `ZiskFv.Compliance.construction_sra_sound
   , `ZiskFv.Compliance.construction_slli_sound
   , `ZiskFv.Compliance.construction_srli_sound
-  , `ZiskFv.Compliance.construction_srai_sound ]
+  , `ZiskFv.Compliance.construction_srai_sound
+  , `ZiskFv.Compliance.construction_sllw_sound
+  , `ZiskFv.Compliance.construction_srlw_sound
+  , `ZiskFv.Compliance.construction_sraw_sound
+  , `ZiskFv.Compliance.construction_slliw_sound
+  , `ZiskFv.Compliance.construction_srliw_sound
+  , `ZiskFv.Compliance.construction_sraiw_sound ]
 
 /-- Subcommand: render the DEEP (recursive) construction-theorem binder list,
 for EVERY sound construction theorem in `soundConstructionTheorems`.
