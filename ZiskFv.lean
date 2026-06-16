@@ -137,6 +137,7 @@ import ZiskFv.Compliance.ConstructionAnd
 import ZiskFv.Compliance.ConstructionLogic
 import ZiskFv.Compliance.ConstructionCompare
 import ZiskFv.Compliance.ConstructionIType
+import ZiskFv.Compliance.ConstructionShift
 import ZiskFv.Compliance
 import ZiskFv.Completeness.Rv
 import ZiskFv.Completeness.Rv64im
