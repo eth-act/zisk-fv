@@ -2970,6 +2970,149 @@ lemma input_r2_packed_b_row
   rw [h_b0_val, h_b1_val]
   ring
 
+open ZiskFv.EquivCore.Bridge.SailStateBridge in
+/-- Row-native 32-bit (W-mode) `input_r1` binding for the **m32 = 1** case.
+
+    The binary analog of the shift bridge's
+    `packed_a_lo32_eq_of_shift_match_m32_1_of_a_range`
+    (`Bridge/BinaryExtension.lean:402`). For the staticBinary provider, the
+    op-bus `a_hi` lane is `b.free_in_a_4 + … + 16777216 * b.free_in_a_7` with no
+    `op_is_shift` factor, while the Main side carries the PIL factor
+    `(1 - m32) * a_1`. With `m32 = 1`, `one_sub_one_mul` collapses the Main
+    `a_hi` lane to `0`, so the provider's high a-bytes are pinned to zero and the
+    32-bit operand is sourced solely from the `a_lo` conjunct (`m.a_0`). Since
+    `m.a_0` packs the 4 low bytes (each `< 256`, sum `< 2^32`), taking the low
+    32 bits of `r1_val = a_0 + a_1 * 2^32` yields exactly `binaryRowA32 row`.
+
+    Unlike the m32 = 0 sibling `input_r1_packed_a_row` this does NOT use
+    `one_sub_zero_mul` (CLAUDE.md trap #3); the `(1 - 1) * a_hi` term collapses
+    via `one_sub_one_mul` after `rw [h_m32]`, and the low-half binding closes by
+    `omega` on the byte bounds. No `simp`/`decide` papers over the field term. -/
+lemma input_r1_packed_a32_row
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (r_main : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
+    (ha0 : (row.aBytes.free_in_a_0).val < 256)
+    (ha1 : (row.aBytes.free_in_a_1).val < 256)
+    (ha2 : (row.aBytes.free_in_a_2).val < 256)
+    (ha3 : (row.aBytes.free_in_a_3).val < 256)
+    (_h_m32 : m.m32 r_main = 1)
+    (h_a_lo_t : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
+    (h_a_hi_t : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
+    (h_input_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state) :
+    (Sail.BitVec.extractLsb r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+      = (row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+          + row.aBytes.free_in_a_2.val * 65536
+          + row.aBytes.free_in_a_3.val * 16777216) % 2^32 := by
+  have h_match' : matches_entry (opBus_row_Main m r_main)
+      (opBus_row_Binary (ZiskFv.AirsClean.Binary.validOfRow row) 0) := by
+    simpa [ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.AirsClean.Binary.opBusMessage] using h_match
+  have h_r1_main :=
+    packed_lane_eq_of_read_xreg state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main)
+      h_a_lo_t h_a_hi_t h_input_r1
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
+  obtain ⟨_, _, h_a_lo_m, _, _, _, _, _, _, _, _, _⟩ := h_match'
+  -- low-half binding: `m.a_0` packs the 4 low a-bytes (m32 does not enter `a_lo`)
+  have h_a0_val : (m.a_0 r_main).val =
+      row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+      + row.aBytes.free_in_a_2.val * 65536
+      + row.aBytes.free_in_a_3.val * 16777216 := by
+    rw [h_a_lo_m]
+    have h_cast :
+        row.aBytes.free_in_a_0 + 256 * row.aBytes.free_in_a_1
+          + 65536 * row.aBytes.free_in_a_2 + 16777216 * row.aBytes.free_in_a_3
+        = (((row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+              + row.aBytes.free_in_a_2.val * 65536
+              + row.aBytes.free_in_a_3.val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    omega
+  rw [h_r1_main]
+  -- extract the low 32 bits of `ofNat 64 (a0 + a1 * 2^32)`
+  have h_extract_eq :
+      (Sail.BitVec.extractLsb
+        (BitVec.ofNat 64
+          ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296)) 31 0
+        : BitVec (31 - 0 + 1)).toNat
+      = ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) % 2^32 := by
+    simp [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
+          BitVec.toNat_ofNat]
+  rw [h_extract_eq, h_a0_val]
+  -- the `a_1 * 2^32` summand contributes only to bits ≥ 32; the low-half sum
+  -- is `< 2^32`, so the two `% 2^32` reductions agree.
+  have h_a0_lt : row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+        + row.aBytes.free_in_a_2.val * 65536 + row.aBytes.free_in_a_3.val * 16777216
+        < 4294967296 := by omega
+  omega
+
+open ZiskFv.EquivCore.Bridge.SailStateBridge in
+/-- Row-native 32-bit (W-mode) `input_r2` binding for the **m32 = 1** case.
+    Mirror of `input_r1_packed_a32_row` on the `b` lanes. -/
+lemma input_r2_packed_b32_row
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (r_main : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
+    (hb0 : (row.bBytes.free_in_b_0).val < 256)
+    (hb1 : (row.bBytes.free_in_b_1).val < 256)
+    (hb2 : (row.bBytes.free_in_b_2).val < 256)
+    (hb3 : (row.bBytes.free_in_b_3).val < 256)
+    (_h_m32 : m.m32 r_main = 1)
+    (h_b_lo_t : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
+    (h_b_hi_t : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
+    (h_input_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
+    (Sail.BitVec.extractLsb r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+      = (row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+          + row.bBytes.free_in_b_2.val * 65536
+          + row.bBytes.free_in_b_3.val * 16777216) % 2^32 := by
+  have h_match' : matches_entry (opBus_row_Main m r_main)
+      (opBus_row_Binary (ZiskFv.AirsClean.Binary.validOfRow row) 0) := by
+    simpa [ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.AirsClean.Binary.opBusMessage] using h_match
+  have h_r2_main :=
+    packed_lane_eq_of_read_xreg state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main)
+      h_b_lo_t h_b_hi_t h_input_r2
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_match'
+  have h_b0_val : (m.b_0 r_main).val =
+      row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+      + row.bBytes.free_in_b_2.val * 65536
+      + row.bBytes.free_in_b_3.val * 16777216 := by
+    rw [h_b_lo_m]
+    have h_cast :
+        row.bBytes.free_in_b_0 + 256 * row.bBytes.free_in_b_1
+          + 65536 * row.bBytes.free_in_b_2 + 16777216 * row.bBytes.free_in_b_3
+        = (((row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+              + row.bBytes.free_in_b_2.val * 65536
+              + row.bBytes.free_in_b_3.val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    omega
+  rw [h_r2_main]
+  have h_extract_eq :
+      (Sail.BitVec.extractLsb
+        (BitVec.ofNat 64
+          ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296)) 31 0
+        : BitVec (31 - 0 + 1)).toNat
+      = ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) % 2^32 := by
+    simp [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
+          BitVec.toNat_ofNat]
+  rw [h_extract_eq, h_b0_val]
+  have h_b0_lt : row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+        + row.bBytes.free_in_b_2.val * 65536 + row.bBytes.free_in_b_3.val * 16777216
+        < 4294967296 := by omega
+  omega
+
 /-! ## c-lane match discharge for AND / OR / XOR rows (Round-3 lift)
 
 Combines the existing `carry_7_zero_<X>_pure` helpers with
