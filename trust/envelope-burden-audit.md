@@ -28,9 +28,16 @@ Buckets:
 - (b) Genuine named top-level premise for the trace-level theorem: boot/profile
   assumptions, program binding, `aeneasBridgeTrust`, load memory timeline until
   #76, and `Defects.NoKnownDefect`.
+  - (b)-pending-infrastructure: a *real* semantic fact that is currently a named
+    premise only because the live formal model cannot yet represent the source
+    constraint. The next-PC / cross-row PC handshake is the canonical case (see
+    the cross-row note below); it returns to bucket-(a) once the cross-row
+    capability prerequisite lands.
 - (c) Neither: constructor-carried facts that are not consequences of
   constraints/channel balance and should not appear as standalone public
-  assumptions.
+  assumptions. This includes both the subword-store preserved-byte RMW facts
+  and the execution-bus shape artifacts (`exec_len`/`e0_mult`/`e1_mult`), the
+  latter being pure `bus_effect` bookkeeping with no ZisK circuit counterpart.
 
 ## Result
 
@@ -40,13 +47,29 @@ facts, or promise-bundle projections. The public theorem still needs bucket (b)
 premises for the Rust/Aeneas lowering boundary, the memory replay boundary, the
 machine profile, program binding, and known-defect exclusions.
 
-Bucket (c) is not empty. The sub-doubleword store constructors (`sb`, `sh`,
-`sw`) expose high-byte read-modify-write facts (`h_m1` through `h_m7`, with the
-width-specific subset per opcode) that are not covered by the current named
-load-only `OpEnvelope.memoryTimelineEvidence`. These facts should be folded into
-the #76 memory replay/timeline construction or replaced by a named memory-replay
-premise that covers store events; they should not become per-store public
-premises.
+Bucket (c) is not empty. It now holds **two** classes of constructor-carried
+facts that are not consequences of constraints/channel balance:
+
+1. **Subword-store preserved bytes.** The sub-doubleword store constructors
+   (`sb`, `sh`, `sw`) expose high-byte read-modify-write facts (`h_m1` through
+   `h_m7`, with the width-specific subset per opcode) that are not covered by
+   the current named load-only `OpEnvelope.memoryTimelineEvidence`. These facts
+   should be folded into the #76 memory replay/timeline construction or replaced
+   by a named memory-replay premise that covers store events; they should not
+   become per-store public premises. (Recorded on #61 via PR #83.)
+2. **Execution-bus shape artifacts.** The branch and FENCE constructors carry
+   `exec_len`/`e0_mult`/`e1_mult` (and the underlying `exec_row`) — assertions
+   about a phantom `Interaction.ExecutionBusEntry` list with no ZisK circuit
+   counterpart. This class was previously misclassified as bucket-(a) and is
+   corrected here (P4-PR1 / RESEARCH_PR94_CLOSEOUT.md). See the exec-row
+   bucket-(c) section below; it is the same category as class 1, not a parallel
+   audit axis.
+
+The previously bucket-(a) "PC/nextPC bus bridge" entry is separately reclassified
+to **bucket-(b)-pending-infrastructure** (a named premise gated on a foundational
+cross-row capability), not bucket-(c) — see the cross-row note below. It is not
+an artifact: `nextPC` is the real semantic effect; it is simply not derivable
+from the live single-row ensemble today.
 
 ## Bucket (b) Premises
 
@@ -77,14 +100,16 @@ should expose the named defect predicate, not raw contradictions.
 | Pure/state bridge equalities | `input_r1_eq`, `input_r2_eq`, `input_pc_eq`, `h_input_rs1`, `h_cur_privilege`, `h_mseccfg`, `h_input_imm`, `h_not_throws` | (a)/(b source) | Construct input records from state/program data; privilege/profile facts come from bucket (b) profile invariant |
 | Arithmetic row facts and ranges | `h_row_constraints`, `ByteBounds`, `Arith*ChunkRangeWitness`, `Arith*CarryRangeWitness`, `h_rs*_value`, `h_a23`, `h_b23`, `h_c23`, `h_sext_choice`, `h_na_bool`, `h_nb_bool`, `h_nr_bool`, `h_np_xor`, `remainder_bound` | (a), with defect-gated exceptions | Unsigned paths are constructive today; signed defect paths remain under `NoKnownDefect` until repaired |
 | Load memory timeline | `OpEnvelope.memoryTimelineEvidence` for load arms; `LoadStructuralPromises.withMemoryTimelineEvidence` in dispatch | (b) now, (a) after #76 | Named residual memory boundary |
-| Subword-store preserved bytes | `sb.h_m1..h_m7`, `sh.h_m2..h_m7`, `sw.h_m4..h_m7` | (c) | See bucket-(c) finding below |
+| Subword-store preserved bytes | `sb.h_m1..h_m7`, `sh.h_m2..h_m7`, `sw.h_m4..h_m7` | (c) | See bucket-(c) finding (class 1) below |
+| Execution-bus shape artifacts | branch/FENCE `exec_row`, `h_exec_len`, `h_e0_mult`, `h_e1_mult` | (c) | Phantom `Interaction.ExecutionBusEntry` bookkeeping; no ZisK bus carries it. See exec-row bucket-(c) section (class 2) below |
+| PC / next-PC bus bridge | branch/FENCE/jump `h_nextPC_matches`, PC handshake | (b)-pending-infra | Real semantic effect, but cross-row; not derivable from the live single-row ensemble today. See cross-row note below |
 
 ## Per-Family Classification
 
 | Family / constructors | Bucket (a) constructor burden | Bucket (b) premise source | Bucket (c) |
 |-----------------------|-------------------------------|---------------------------|------------|
-| Branch: `beq`, `bne`, `blt`, `bge`, `bltu`, `bgeu` | Branch input, operands, exec-row shape, PC/nextPC bus bridge, Main row pins | Program binding; `misa.C = 0` as profile invariant; `aeneasBridgeTrust` until imported | None |
-| FENCE: `fence` | `exec_row`, `MainRowPins`, PC bus shape | Machine privilege/profile; `NoKnownDefect` restricts to ZisK's known-good FENCE shape | None |
+| Branch: `beq`, `bne`, `blt`, `bge`, `bltu`, `bgeu` | Branch input, operands, Main row pins | Program binding; `misa.C = 0` as profile invariant; `aeneasBridgeTrust` until imported; PC/nextPC bus bridge as **(b)-pending-infra** (see below) | exec-row shape facts (`exec_len`/`e0_mult`/`e1_mult`); see exec-row bucket-(c) section |
+| FENCE: `fence` | `MainRowPins`, PC bus shape | Machine privilege/profile; `NoKnownDefect` restricts to ZisK's known-good FENCE shape; PC/nextPC bus bridge as **(b)-pending-infra** | `exec_row` exec-bus shape facts; see exec-row bucket-(c) section |
 | U/J control flow: `lui`, `auipc`, `auipc_x0`, `jal`, `jal_x0`, `jalr` | Store-PC memory witness, row provenance, subset facts, PC/offset finite arithmetic, no-write variants | Program binding; `misa`, privilege, and `mseccfg` profile facts; `aeneasBridgeTrust` | None |
 | Binary/Add/ITYPE: `add_via_binary`, `addi_via_binary`, `addw`, `subw`, `addiw`, `sub`, `and`, `or`, `xor`, `slt`, `sltu`, `andi`, `ori`, `xori`, `slti`, `sltiu` | Static Binary lookup table, provider row, operation-bus match, input-lane bridges, write-lane bridge, R/I-type promises | Program binding and Aeneas bridge | None |
 | Shift: `sll`, `srl`, `sra`, `slli`, `srli`, `srai`, `sllw`, `srlw`, `sraw`, `slliw`, `srliw`, `sraiw` | Static BinaryExtension lookup, shift amount pins, R/shift promise bundles or expanded W-form promise fields | Program binding and Aeneas bridge | None |
@@ -96,7 +121,7 @@ should expose the named defect predicate, not raw contradictions.
 | ArithDiv unsigned/non-defect: `divu`, `divuw`, `remu`, `remuw` | ArithDiv row constraints, table/range/carry/remainder witnesses, op-bus match, external-arith memory witness, operand/result packing facts | Program binding and Aeneas bridge | None |
 | ArithDiv signed defect-gated: `div`, `divw`, `rem`, `remw` | Constructor fields include dynamic sign/overflow/divisor facts, but dispatch is defect-qualified | `NoKnownDefect` excludes the current signed-DIV/REM defect region | None under current defect-qualified theorem |
 
-## Bucket-(c) Finding: Subword Store Preserved Bytes
+## Bucket-(c) Finding, class 1: Subword Store Preserved Bytes
 
 `OpEnvelope.sb`, `OpEnvelope.sh`, and `OpEnvelope.sw` carry the preserved
 high-byte facts that let Sail's byte/halfword/word store update be compared to
@@ -123,6 +148,87 @@ events or, preferably, #76 deriving the store replay step from Mem AIR accepted
 rows so these facts become bucket (a). Until then, the trace-level theorem
 should not claim that all store-memory facts have been hidden behind named
 public premises.
+
+## Bucket-(c) Finding, class 2: Execution-Bus Shape Artifacts
+
+This is the same bucket-(c) category as class 1 (subword-store preserved bytes
+above) — a constructor-carried fact that is not a consequence of constraints or
+channel balance — applied to the branch and FENCE control-flow constructors.
+Source: P4-PR1 / `docs/ai/plan/RESEARCH_PR94_CLOSEOUT.md`. It corrects an earlier
+bucket-(a) classification (the per-family rows above listed branch/FENCE
+"exec-row shape" as derivable bucket-(a) burden; that was aspirational and false
+against the live ensemble).
+
+The branch and FENCE constructors carry `exec_row : List
+(Interaction.ExecutionBusEntry FGL)` and the shape assertions `h_exec_len`,
+`h_e0_mult`, `h_e1_mult` over it. These have **no ZisK circuit counterpart**:
+
+- `Interaction.ExecutionBusEntry` is a legacy port. Its file docstring states it
+  is a "Minimal ZisK port of `OpenvmFv/Fundamentals/Interaction.lean`"
+  (`ZiskFv/Airs/Bus/Interaction.lean:5`), and the structure itself
+  (`Interaction.lean:41`) notes the RV32 (openvm-fv) and RV64 (zisk-fv) shapes
+  coincide (`Interaction.lean:38`). It is an openvm import, not a ZisK bus
+  message.
+- **ZisK has exactly three buses**, none of them an execution bus:
+  `OPERATION_BUS_ID = BusId(0)` (`zisk/common/src/bus/data_bus_operation.rs:11`),
+  `ROM_BUS_ID = BusId(1)` (`zisk/common/src/bus/data_bus_rom.rs:9`), and
+  `MEM_BUS_ID = BusId(2)` (`zisk/common/src/bus/data_bus_mem.rs:5`). The
+  operation-bus payload is `[op, op_type, a, b]`
+  (`data_bus_operation.rs:366`) — no PC, no next-PC, no execution-bus shape.
+- The live Clean ensemble (`fullRv64imEnsemble`) finishes only the OpBus and
+  MemBus channels; nothing in the formal model wires `exec_row` to any channel
+  or constraint. The `h_exec_len`/`h_e0_mult`/`h_e1_mult` facts only gate the
+  structural `if` inside the `bus_effect` interpreter — they assert the shape of
+  a list the real Clean circuit never produces.
+
+Disposition: these are **pure artifacts** of the `bus_effect` /
+`Interaction.ExecutionBusEntry` conclusion form. They carry no real-circuit
+content and cannot be derived from the accepted trace, because there is no trace
+object to derive them from. They are **eliminated** (not derived, not named-as-a-
+real-premise) when the canonical conclusion is restated off the foreign openvm
+`bus_effect` onto the ZisK-native channels — a tracked, lower-priority retirement
+(P6-style negative-diff campaign over the 63-opcode shared conclusion form). Until
+then they remain explicit named residuals, honestly classified as bucket-(c)
+artifacts rather than bucket-(a) derivations.
+
+## Cross-row note: PC / next-PC is bucket-(b)-pending-infrastructure
+
+`h_nextPC_matches` (branch / FENCE / jump next-PC) is the **one semantically
+real** fact in the exec-bus cluster: `bus_effect` writes `Register.nextPC` and
+this equates it to the Sail next-PC. Unlike the exec-row artifacts, it is not an
+artifact to be eliminated — it is a real effect. But it is **not derivable from
+the live ensemble today**, so it is reclassified from bucket-(a) to
+**bucket-(b)-pending-infrastructure** for **every** opcode (not just branches):
+sequential next-PC = `pc + 4` is *also* a cross-row property.
+
+The blocker is a **cross-row ceiling** in the live model:
+
+- The live `Air.Flat.Component` model evaluates each row independently. The
+  component is defined as "one circuit whose constraints are checked
+  independently on each row. There are no direct adjacent-row constraints"
+  (`build/clean-lean/Clean/Air/FlatComponent.lean:7-10`), and
+  `Table.environment row = Environment.fromArray row table.data`
+  (`FlatComponent.lean:149-150`) is built from a **single row**;
+  `EnsembleWitness.Constraints` ranges over `∀ row, … ConstraintsHold
+  (environment row)` (`FlatComponent.lean:171-172`). There is no `Var` that
+  reaches `row-1`.
+- The live Clean Main component is deliberately single-row: its header states
+  "Cross-row pc_handshake stays in Bridge as a separate adjacency theorem" and
+  it emits only the 9 per-row asserts plus channels
+  (`ZiskFv/AirsClean/Main/Constraints.lean:12-13`).
+- The cross-row PC-transition constraint (`constraint_18`) **is** extracted, but
+  only into the dead legacy `[Circuit F ExtF C]` model
+  (`build/extraction/Extraction/Main.lean:97`,
+  `constraint_18_every_row`, parameterized over the legacy typeclass) — and
+  nothing under `ZiskFv/` imports `Extraction.*`. So `constraint_18` is **not**
+  in `trace.constraints` and `pc_handshake` is **not** derivable today.
+
+Returning `h_nextPC_matches` to bucket-(a) requires a foundational cross-row
+capability for the Clean ensemble (a rotation-capable component or shadow-column
+encoding), filed as a prerequisite (see `trust/p4-construction-closeout.md`).
+The branch next-PC additionally needs a missing Binary-EQ 8-byte aggregation
+lemma. This audit does not claim next-PC is derivable today; it records it as an
+explicit named premise with a tracked prerequisite.
 
 ## Non-Findings
 
