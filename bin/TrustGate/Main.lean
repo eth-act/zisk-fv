@@ -244,7 +244,11 @@ grow by EXACTLY that family's honest top-level binders (no `*RowBinding` /
 the diff. -/
 def soundConstructionTheorems : List Name :=
   [ `ZiskFv.Compliance.construction_sub_sound
-  , `ZiskFv.Compliance.construction_and_sound ]
+  , `ZiskFv.Compliance.construction_and_sound
+  , `ZiskFv.Compliance.construction_or_sound
+  , `ZiskFv.Compliance.construction_xor_sound
+  , `ZiskFv.Compliance.construction_slt_sound
+  , `ZiskFv.Compliance.construction_sltu_sound ]
 
 /-- Subcommand: render the DEEP (recursive) construction-theorem binder list,
 for EVERY sound construction theorem in `soundConstructionTheorems`.
