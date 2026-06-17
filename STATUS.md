@@ -1,100 +1,55 @@
-Active plan: docs/ai/plan/PLAN_ENDGAME_P4_103.md (#103 cross-segment memory seam, PATH 1 / addChannel).
+Active plan: docs/ai/plan/PLAN_ENDGAME_P4_103.md (#103 cross-segment memory seam, route (b)).
 Branch: p4-103-landing. Worktree: .worktrees/xcap-seam-tag.
 
-## Current focus: L2 + L3 + L4 LANDED on the real production component — GREEN.
+## Current focus: ROUTE (b) LANDED on the real fullRv64imEnsemble — GREEN.
 
-This increment landed the confirmed PATH-1 (addChannel) route on the production
-Mem-with-both-buses component, non-vacuously, with 0 PROJECT axioms.
+The seam is now UNIFIED into the real Mem component (route b, the L4.5 fallback),
+so the load/store Mem-timeline machinery (keyed on componentWithDualMemBus / MemRow
+/ real Mem.Spec) keeps applying. Whole project GREEN, 0 PROJECT axioms, all
+protected baselines/families/Equivalence BYTE-IDENTICAL.
 
-- L2 (ZiskFv/AirsClean/Mem/SeamCircuit.lean): componentWithSeamAndMemBus now emits
-  the seam via SeamContChannel.emit — prev: emit (-1); last: emit (1 - is_last_segment)
-  (the gated push). channelsWithGuarantees = [MemBus] only (seam OUT of guarantees,
-  in requirements → escapes subset_finished). + is_last_segment column +
-  componentWithSeamAndMemBus_interactionsWith_seam projection.
+## What landed (3 green commits)
 
-- L3 (ZiskFv/AirsClean/Mem/SeamEnsemble.lean): seamEnsemble = bootComp (verifier
-  endpoint: boot push tag 0 + final pull tag tf) + two production
-  componentWithSeamAndMemBus tables + addChannel SeamContChannel. Extraction:
-  theList2_balanced_of_balancedChannels pulls the seam balance out of
-  BalancedChannels (the addChannel conjunct). NON-VACUITY: good_balancedChannels
-  PROVES the antecedent satisfiable on a concrete boot+2-segment MemSeamRow witness.
-
-- L4 (same file): seam_value_equality discharges SeamTagChain.tag_chain_derived to
-  force seg_n.segment_last_* = seg_{n+1}.previous_segment_* (honest permutation
-  disjunction) on the real-component ensemble. good_seam_holds runs it non-vacuously.
-
-- Tag-chain derivation moved out of Spike/ → ZiskFv/Channels/SeamTagChain.lean
-  (production module; trust-gate check 13 wording fixed).
+- Stage 1+2 (commit aa09babf): unify the seam into componentWithDualMemBus/MemRow.
+  - MemRow + 9 segment columns + is_last_segment (13 base columns untouched →
+    real per-row Mem.Spec preserved verbatim).
+  - memWithDualMemBus: two MemBus emits BYTE-IDENTICAL; ALSO emits the seam via
+    emit(-1) prev / emit(1-is_last) last (requirements bucket; seam OUT of
+    channelsWithGuarantees). New projection componentWithDualMemBus_interactionsWith_seam.
+  - Valid_Mem + 10 segment per-row columns with `:= fun _ => 0` DEFAULTS (so every
+    existing Valid_Mem literal/proof is untouched); rowAt/memOfTable thread them so
+    rowAt_memOfTable stays a faithful full-row equality (the bridge rowAt_eq the
+    load/store timeline consumes). Segment cols are NOT in Spec nor the MemBus
+    message → timeline path unaffected.
+  - Obsolete SEPARATE scaffold deleted: Mem/SeamCircuit.lean + Mem/SeamEnsemble.lean.
+    KEPT the reusable channel-level derivation Channels/SeamTagChain.lean.
+- Stage 3 (commit b21cb1ba): seam on the REAL ensemble.
+  - FullEnsemble.lean: .addChannel SeamContChannel.toRaw (no soundness obligation;
+    its balance becomes a BalancedChannels conjunct).
+  - Balance.lean: seam_balanced_of_witness (BalancedChannels → seam
+    BalancedInteractions on the real ensemble).
+  - AcceptedTrace.lean: AcceptedTrace.seam_balanced — seam BALANCED on EVERY
+    accepted trace, from the trace's existing `balanced` field, NO extra hypothesis.
+    Non-vacuous: quantifies over AcceptedTrace (the structure the proved global
+    theorem consumes).
 
 ## Gates
 
-- Whole-project `nix develop --command lake build`: GREEN (8692 jobs).
-- 0 PROJECT axioms everywhere (seam = kernel-only; global theorem + equiv_ADD/MUL
-  unchanged externs only — no ZiskFv.* axioms).
-- V1 check-all.sh: ALL PASS except check 16 (Aeneas production boundary —
-  PRE-EXISTING, uninitialized zisk submodule, missing zisk/core/src/aeneas_extract.rs).
-- V2 check-all-semantic.sh: ALL PASS (63 canonical equiv_<OP> + global theorem
-  axiom-closure baseline BYTE-IDENTICAL). hypothesis-count / caller-burden
-  baselines byte-identical.
+- Whole-project nix develop --command lake build: GREEN (8689 jobs).
+- 0 PROJECT (ZiskFv.*) axioms; fullRv64imEnsemble + both new seam theorems are
+  kernel-only (propext/Classical.choice/Quot.sound).
+- 28 construction families + 63 canonical equiv_<OP> + all 4 trust baselines
+  BYTE-IDENTICAL (md5 + git diff --stat empty; V2 axiom-dep/binder match).
+- V2 semantic gate: ALL PASS. V1 syntactic: 17/17 substantive pass (check 16
+  Aeneas boundary = PRE-EXISTING uninitialized-submodule FileNotFoundError,
+  unrelated).
 
-## Key design decision (faithfulness vs HARD constraint)
+## Remaining (next concrete step)
 
-fullRv64imEnsemble is UNTOUCHED (Balance.lean's 11-way rcases + AcceptedTrace are
-brittle to its table list; touching it breaks the 28 families). The seam lands on
-a SEPARATE seamEnsemble built from the production seam component + boot endpoint.
-The 28 families root on the untouched ensemble and do not consume the seam yet
-(that is L5/#76). The 10 non-Mem provider tables of the real ensemble contribute
-[] to the seam balance, so they add no seam-soundness content; embedding the seam
-component into the full 11-table fullRv64imEnsemble for the #76 consumer is L5.
-
-## L4.5 (in-place real-ensemble integration): BLOCKED — verdict recorded 2026-06-17
-
-Attempted the in-place swap (componentWithDualMemBus → componentWithSeamAndMemBus
-+ .addChannel SeamContChannel) in fullRv64imEnsemble and built. RESULT: the swap
-does NOT stay confined to Balance.lean enumeration infra — it breaks the Mem
-timeline machinery that the GLOBAL theorem's load/store dispatch transitively
-consumes. Root cause (structurally proven, not an overclaim):
-
-1. The seam component is built on a DIFFERENT row type (MemSeamRow, 22 fields) than
-   componentWithDualMemBus (MemRow, 13 fields), and its per-row Spec is TRIVIAL
-   (`Spec _ _ _ := True`, SeamCircuit.lean:191).
-2. Balance.lean has 145 references to componentWithDualMemBus, most in the deep Mem
-   replay/timeline machinery (memOfTable / MemTableGeneratedRowsBridge / memReplay /
-   memoryTimelineEvidence, lines ~3195-end). MemTableGeneratedRowsBridge.component
-   REQUIRES `table.component = componentWithDualMemBus` and rowAt_eq projects
-   componentWithDualMemBus.rowInputVar (a MemRow). After the swap the ensemble's Mem
-   table component is the seam component, so this bridge is UNSATISFIABLE for the real
-   ensemble.
-3. Dependency chain confirmed: Compliance.lean (global theorem) → Dispatch/LDSD →
-   Compliance/OpEnvelope → ZiskCircuit/MemTimeline/Construction (references
-   componentWithDualMemBus.rowInputVar + MemReplayRowsEmbeddedInTrace directly) →
-   Balance.lean Mem machinery. The load/store path needs the Mem per-row Spec
-   (value/addr/ordering) that componentWithDualMemBus provides via
-   spec_of_componentWithDualMemBus_spec; the seam component's trivial Spec provides
-   NONE of it, so the path becomes unprovable, not merely mechanically different.
-
-NOT a construction-family break: the 28 ALU/shift/W-ALU construction families
-(Construction*.lean) reference ONLY Main machinery (mainOfTable, rowAt_mainOfTable,
-*_from_binding) — verified — so they stay clean. The break is in the GLOBAL theorem's
-load/store dispatch via the Mem timeline. Acceptance ("whole project builds, global
-theorem green") cannot be met by the in-place swap as designed.
-
-Tree fully reverted to the L4 green baseline (8278 jobs GREEN). No partial swap left.
-
-FALLBACK (the plan's named alternative): keep fullRv64imEnsemble's Mem table as
-componentWithDualMemBus and supply the seam by a DIFFERENT mechanism — either
-(a) add a SEPARATE seam-bearing Mem table alongside (not replacing) the DualMemBus
-table, OR (b) extend MemRow / componentWithDualMemBus itself to carry the 9 segment
-columns + emit the seam (so MemSeamRow and componentWithDualMemBus unify into one
-component on one row type with the REAL Mem Spec). (b) is the only route that keeps
-the Mem timeline machinery AND adds the seam in-place; it is a larger refactor of
-Mem/Constraints.lean + the 145 Balance.lean refs, not the additive swap L4.5 assumed.
-
-## Next steps (deferred, separate increments)
-
-- L1: general-N tag-chain derivation (currently N=2 via theList2). The Newton
-  power-sum chain forces {0..N-1} for any N; induction is the work.
-- L5: hook the derived seam into the 11 loads/stores cross-entry obligations (#76,
-  PLAN_ENDGAME_P4_MEMORY.md). Now gated on resolving L4.5's block via fallback (b)
-  (unify the seam into componentWithDualMemBus/MemRow) OR a proven relation from
-  seamEnsemble's seam to AcceptedTrace's Mem rows.
+The full N-segment cross-segment VALUE-seam derivation (SeamTagChain.tag_chain_derived
+against the ensemble balance) needs the boot/end seam ENDPOINT also emitted into
+fullRv64imEnsemble: as wired, Mem rows emit pull(tag=segment_id)/gated-push(
+tag=segment_id+1) but NO table emits the tag-0 boot push (mem.pil:253
+direct_global_update), so a NONZERO multi-segment seam chain only balances once the
+verifier endpoint is hosted on the seam channel. That endpoint + the general-N tag
+chain = L1; the #76 load/store consumption = L5.
