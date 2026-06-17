@@ -1,46 +1,57 @@
-Active plan: docs/ai/plan/PLAN_ENDGAME_XCAP.md §4.B (XS-PR1, framework — cross-segment Mem seam).
-Branch: xcap-xseg (off origin/main eb19cc8f). Worktree: .worktrees/xcap-xseg.
+Active plan: docs/ai/plan/PLAN_ENDGAME_P4_103.md (#103 cross-segment memory seam, PATH 1 / addChannel).
+Branch: p4-103-landing. Worktree: .worktrees/xcap-seam-tag.
 
-## Current focus: XS-PR1 Step 1 (structural seam-channel exposure) — DONE, green.
+## Current focus: L2 + L3 + L4 LANDED on the real production component — GREEN.
 
-Landed the MINIMAL first green increment of XS-PR1: the live Clean Mem layer can
-now EXPOSE a segment-continuation channel from row-local columns — the capability
-the per-row component "structurally cannot" do today (PLAN §1 TL;DR).
+This increment landed the confirmed PATH-1 (addChannel) route on the production
+Mem-with-both-buses component, non-vacuously, with 0 PROJECT axioms.
 
-New files (additive; nothing in the live ensemble imports them — 28 families
-byte-identical green):
-- ZiskFv/Channels/SegmentContinuation.lean — SeamMessage (raw 5-tuple
-  [value_0,value_1,addr,step,segment_id]) + SeamContChannel (Guarantees := True,
-  mirroring MemBusChannel).
-- ZiskFv/AirsClean/Mem/SeamCircuit.lean — MemSeamRow (MemRow + 9 segment-boundary
-  Var fields) + circuitWithSeamAndMemBus / componentWithSeamAndMemBus: emits dual
-  MemBus + pull(previous_segment_*) + push(segment_last_*). Soundness/completeness
-  closed; 0 PROJECT axioms (kernel-only).
-- ZiskFv.lean: + import of SeamCircuit (build coverage only).
+- L2 (ZiskFv/AirsClean/Mem/SeamCircuit.lean): componentWithSeamAndMemBus now emits
+  the seam via SeamContChannel.emit — prev: emit (-1); last: emit (1 - is_last_segment)
+  (the gated push). channelsWithGuarantees = [MemBus] only (seam OUT of guarantees,
+  in requirements → escapes subset_finished). + is_last_segment column +
+  componentWithSeamAndMemBus_interactionsWith_seam projection.
 
-Gates: full lake build green (8690 jobs); check-all.sh (V1) ALL PASS;
-check-all-semantic.sh (V2) ALL PASS. 63-theorem baselines unchanged (additive).
+- L3 (ZiskFv/AirsClean/Mem/SeamEnsemble.lean): seamEnsemble = bootComp (verifier
+  endpoint: boot push tag 0 + final pull tag tf) + two production
+  componentWithSeamAndMemBus tables + addChannel SeamContChannel. Extraction:
+  theList2_balanced_of_balancedChannels pulls the seam balance out of
+  BalancedChannels (the addChannel conjunct). NON-VACUITY: good_balancedChannels
+  PROVES the antecedent satisfiable on a concrete boot+2-segment MemSeamRow witness.
 
-## Blocking / reported residual (CRITICAL — see PR body)
+- L4 (same file): seam_value_equality discharges SeamTagChain.tag_chain_derived to
+  force seg_n.segment_last_* = seg_{n+1}.previous_segment_* (honest permutation
+  disjunction) on the real-component ensemble. good_seam_holds runs it non-vacuously.
 
-The firstGreenIncrement asked the seam emission's Requirements/Guarantees be
-PROVEN from permutation_every_row. That half is NOT delivered, and is a genuine
-reportable obstacle (NOT faked / NOT axiomatized):
-- permutation_every_row is ABSENT from the live Clean Mem component (it + the
-  SegmentColumns/PermutationColumns live only as Valid_Mem-parameterized defs in
-  Airs/Mem.lean + dead defs in Mem/Constraints.lean — grep confirms 0 refs under
-  AirsClean/ outside Constraints.lean).
-- permutation_every_row is a NON-VANISHING constraint on a Horner HASH
-  (im_direct_i * direct_gsum_i + 1 = 0); it carries NO raw-tuple statement, so the
-  raw-tuple seam emission cannot be derived from it row-locally (Risk #1).
-- The seam fact is a BALANCE fact (exists_push_of_pull over SoundVmEnsemble), per
-  the validated route — Channel.Guarantees := True deliberately carries nothing.
+- Tag-chain derivation moved out of Spike/ → ZiskFv/Channels/SeamTagChain.lean
+  (production module; trust-gate check 13 wording fixed).
 
-## Next step (XS-PR1 Step 2, separate later PR — DISRUPTIVE)
+## Gates
 
-Build memSegVm : VmTables over componentWithSeamAndMemBus; migrate
-fullRv64imEnsemble SoundEnsemble→SoundVmEnsemble + non-empty verifier; absorb the
-Balance.lean re-proves (shifted channel list, prepended tables, non-empty
-verifier); derive SeamColumnEquality from balance + the tag pins. The tag-pin
-derivation from segment_every_row + boot saturation (Risk #3) and the
-verifier-endpoint discharge (PLAN §7.5) are the Step-2 make-or-break.
+- Whole-project `nix develop --command lake build`: GREEN (8692 jobs).
+- 0 PROJECT axioms everywhere (seam = kernel-only; global theorem + equiv_ADD/MUL
+  unchanged externs only — no ZiskFv.* axioms).
+- V1 check-all.sh: ALL PASS except check 16 (Aeneas production boundary —
+  PRE-EXISTING, uninitialized zisk submodule, missing zisk/core/src/aeneas_extract.rs).
+- V2 check-all-semantic.sh: ALL PASS (63 canonical equiv_<OP> + global theorem
+  axiom-closure baseline BYTE-IDENTICAL). hypothesis-count / caller-burden
+  baselines byte-identical.
+
+## Key design decision (faithfulness vs HARD constraint)
+
+fullRv64imEnsemble is UNTOUCHED (Balance.lean's 11-way rcases + AcceptedTrace are
+brittle to its table list; touching it breaks the 28 families). The seam lands on
+a SEPARATE seamEnsemble built from the production seam component + boot endpoint.
+The 28 families root on the untouched ensemble and do not consume the seam yet
+(that is L5/#76). The 10 non-Mem provider tables of the real ensemble contribute
+[] to the seam balance, so they add no seam-soundness content; embedding the seam
+component into the full 11-table fullRv64imEnsemble for the #76 consumer is L5.
+
+## Next steps (deferred, separate increments)
+
+- L1: general-N tag-chain derivation (currently N=2 via theList2). The Newton
+  power-sum chain forces {0..N-1} for any N; induction is the work.
+- L5: hook the derived seam into the 11 loads/stores cross-entry obligations (#76,
+  PLAN_ENDGAME_P4_MEMORY.md). Needs embedding the seam component + boot endpoint
+  into fullRv64imEnsemble (Balance.lean rcases widening) OR a relation from
+  seamEnsemble's seam to AcceptedTrace's Mem rows.
