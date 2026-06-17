@@ -517,7 +517,14 @@ theorem mainWithRomMemAndOpBus_soundness (length : ℕ) (program : Program lengt
   have h_sound :=
     mainWithRomAndMemBus_soundness length program
       offset env input_var input h_input h_assumptions h_mem
-  simpa [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel] using h_sound
+  -- PROBE (XCAP #100): `h_sound.1` is `Spec input.core`; `h_sound.2` is the base
+  -- (MemBus+OpBus) `Operations.Requirements`. The new goal's requirements ALSO
+  -- carry the PcContChannel interaction, whose guarantee is `True`. We rebuild
+  -- the requirements bundle, discharging the extra PC conjunct trivially (the
+  -- #103 SeamContChannel idiom: trivially-true channel guarantee).
+  refine ⟨h_sound.1, ?_⟩
+  simp only [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel,
+    ZiskFv.Channels.PcContinuation.PcContChannel] at h_sound ⊢
 
 /-- Completeness wrapper for the unified ROM/memory/op-bus Main component.
     The added operation-bus emission has a trivial channel guarantee, so the
@@ -538,7 +545,8 @@ theorem mainWithRomMemAndOpBus_completeness (length : ℕ) (program : Program le
         simp [mainWithRomMemAndOpBus, circuit_norm] at h_env
         exact h_env)
       input h_input h_assumptions
-  simpa [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel] using h_base
+  simpa [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel,
+    ZiskFv.Channels.PcContinuation.PcContChannel] using h_base
 
 /-- Main as one Clean `GeneralFormalCircuit` exposing both Main channel
     surfaces from the same `MainRowWithRom`: the operation-bus consumer

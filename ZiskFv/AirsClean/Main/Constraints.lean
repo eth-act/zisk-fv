@@ -3,6 +3,7 @@ import ZiskFv.AirsClean.ZiskInstructionRom
 import ZiskFv.Channels.OperationBus
 import ZiskFv.Channels.MemoryBus
 import ZiskFv.Channels.ZiskRomBus
+import ZiskFv.Channels.PcContinuation
 import Clean.Circuit.Basic
 import Clean.Circuit.Lookup
 
@@ -418,6 +419,21 @@ the same Main row.  This combined circuit exposes both channels from the
 single `MainRowWithRom.core`.
 -/
 
+open ZiskFv.Channels.PcContinuation (PcContChannel PcMessage)
+
+/-- PROBE: the PC pulled into this row, tagged with the row counter `main_step`.
+    `[pc, main_step]`. -/
+@[reducible]
+def pcPrevMessageExpr (row : Var MainRowWithRom FGL) : PcMessage (Expression FGL) :=
+  { pc := row.core.pc, tag := row.rom.main_step }
+
+/-- PROBE: the next-PC pushed out of this row, tagged `main_step + 1`. Stubbed
+    nextpc = pc + 4 (the sequential case; real nextpc from set_pc/jmp_offset is
+    SPINE-#2 work, out of scope for this blast-radius probe). -/
+@[reducible]
+def pcLastMessageExpr (row : Var MainRowWithRom FGL) : PcMessage (Expression FGL) :=
+  { pc := row.core.pc + 4, tag := row.rom.main_step + 1 }
+
 /-- Main constraints + ROM lookup + memory-bus consumer emissions +
     operation-bus consumer emission, all from one `MainRowWithRom`.
 
@@ -429,6 +445,10 @@ def mainWithRomMemAndOpBus (length : ℕ) (program : Program length)
     (row : Var MainRowWithRom FGL) : Circuit FGL Unit := do
   mainWithRomAndMemBus length program row
   OpBusChannel.emit (-row.core.is_external_op) (opBusMessageExpr row.core)
+  -- PROBE (XCAP #100): PC-continuation channel. Mirror the #103 seam emission:
+  -- pull(tag = main_step), push(tag = main_step + 1). Gating stubbed to 1.
+  PcContChannel.emit (-1) (pcPrevMessageExpr row)
+  PcContChannel.emit 1 (pcLastMessageExpr row)
 
 /-- Elaborated unified Main circuit for the full Clean ensemble. -/
 @[reducible] def mainWithRomMemAndOpBusElaborated
@@ -437,7 +457,7 @@ def mainWithRomMemAndOpBus (length : ℕ) (program : Program length)
   main := mainWithRomMemAndOpBus length program
   localLength _ := 0
   output _ _ := ()
-  channelsWithRequirements := [MemBusChannel.toRaw, OpBusChannel.toRaw]
+  channelsWithRequirements := [MemBusChannel.toRaw, OpBusChannel.toRaw, PcContChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
       [ MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
@@ -449,12 +469,16 @@ def mainWithRomMemAndOpBus (length : ℕ) (program : Program length)
     ++ expose OpBusChannel
       [ OpBusChannel.emitted (-row.core.is_external_op)
           (opBusMessageExpr row.core) ]
+    ++ expose PcContChannel
+      [ PcContChannel.emitted (-1) (pcPrevMessageExpr row)
+      , PcContChannel.emitted 1 (pcLastMessageExpr row) ]
   channelsLawful := by
     simp [circuit_norm, mainWithRomMemAndOpBus, mainWithRomAndMemBus,
       mainWithRom, main, romMessageExpr, romFlagsExpr, romStaticTable,
       aMemMessageExpr, bMemMessageExpr, cMemMessageExpr,
       aMemOpExpr, bMemOpExpr, cMemOpExpr,
       storeValueLoExpr, storeValueHiExpr, opBusMessageExpr,
-      MemBusChannel, OpBusChannel]
+      pcPrevMessageExpr, pcLastMessageExpr,
+      MemBusChannel, OpBusChannel, PcContChannel]
 
 end ZiskFv.AirsClean.Main
