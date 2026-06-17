@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.FullEnsemble.Balance
+import ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity
 import ZiskFv.Compliance.AeneasBridgeTrust
 import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.EquivCore.Bridge.BinaryExtension
@@ -73,6 +74,33 @@ theorem AcceptedTrace.seam_balanced (trace : AcceptedTrace) :
       (trace.witness.interactionsWith
         ZiskFv.Channels.SegmentContinuation.SeamContChannel.toRaw) :=
   ZiskFv.AirsClean.FullEnsemble.seam_balanced_of_witness trace.witness trace.balanced
+
+/-- **Seam conjunct NON-VACUITY (XCAP #103, route (b), L4.6).** The seam conjunct
+    of `AcceptedTrace.BalancedChannels` (= `seam_balanced` above) is SATISFIABLE
+    by a CONCRETE real-`fullRv64imEnsemble` witness whose Mem table carries TWO
+    NONZERO segments plus the tag-0 boot endpoint. This is the exact
+    `BalancedChannel witness SeamContChannel.toRaw` conjunct that
+    `AcceptedTrace.balanced` carries for the seam channel — exhibited here
+    inhabited, NOT degenerate (zero/empty-Mem). It closes the latent vacuity that
+    route (b) surfaced: before the boot endpoint the seam balanced only for
+    zero-segment traces.
+
+    The companion `SeamNonVacuity.good_seam_holds` runs the channel-level
+    boot-chain derivation on this same balance to land the cross-segment VALUE
+    seam (`seg1.previous_segment_* = seg0.segment_last_*`), confirming the
+    antecedent does real work. -/
+theorem AcceptedTrace.seam_conjunct_satisfiable
+    (length : ℕ) (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (publicInput : unit FGL) (data : ProverData FGL) :
+    Air.Flat.EnsembleWitness.BalancedChannel
+      (ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.mkFullWitness
+        (length := length) (program := program)
+        ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.goodBoot
+        ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.goodSeg0
+        ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.goodSeg1 publicInput data)
+      ZiskFv.Channels.SegmentContinuation.SeamContChannel.toRaw :=
+  ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.good_seam_balancedChannel
+    (length := length) (program := program) publicInput data
 
 
 /-- The named program-binding premise for the P4 construction (table skeleton).

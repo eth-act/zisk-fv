@@ -526,6 +526,198 @@ theorem goodList2_chain :
   · -- the second (permutation) disjunct would force t1 = 0 here, but t1 = 1; absurd
     exact absurd h.1 (by simpa using zero_ne_one_FGL)
 
+/-! ## THE REAL-ENSEMBLE BOOT CHAIN (XCAP #103, route (b), L4.6).
+
+`theList2` above models the deleted SEPARATE scaffold ensemble, whose two
+segments were BOTH non-last and therefore needed a verifier FINAL PULL to close
+the chain. The REAL `fullRv64imEnsemble` is different: its Mem rows emit
+`pull(tag = segment_id)` and `push(tag = segment_id + 1)` GATED by
+`1 - is_last_segment`, so the LAST segment's push is turned OFF. With a single
+tag-0 boot push, the chain telescopes to zero with NO final pull — and, because
+the gating breaks the symmetry, the tags are forced UNIQUELY (no permutation
+disjunction).
+
+This section derives that boot chain for N = 2 (`seg1` is the last segment, its
+push gated off, modelled as multiplicity 0). It is the channel-level engine the
+real-ensemble non-vacuity witness (`FullEnsemble/SeamNonVacuity.lean`) discharges. -/
+
+section BootChain
+
+/-- A raw boundary+tag message at a FREE multiplicity `mult` (used for the
+    `is_last`-gated segment push, whose multiplicity is `1 - is_last_segment`). -/
+def gatedMsg5 (mult : FGL) (m : Array FGL) (hm : m.size = 5) : Interaction FGL where
+  channel := SeamChannel5.toRaw
+  mult := mult
+  msg := m
+  same_size := by simpa [SeamChannel5, Channel.toRaw] using hm
+  assumeGuarantees := false
+
+/-- The N = 2 boot interaction list with FREE per-segment pull-tags and FREE
+    boundary values, matching the REAL ensemble's emission. Order mirrors the
+    real witness `[boot] ++ [seg0 pull, seg0 push] ++ [seg1 pull, seg1 push]`:
+
+      boot:  push (bootV, 0)                                   [endpoint]
+      seg0:  pull (p0V, t0),   push (l0V, t0 + 1)              [non-last]
+      seg1:  pull (p1V, t1),   gated-push (l1V, t1 + 1) @ g1   [g1 = 1 - is_last]
+
+    With `seg1` the last segment, `g1 = 0`, so its push contributes nothing —
+    exactly the real emission. -/
+def bootList2
+    (bv0 bv1 ba bs : FGL)        -- boot value (4 lanes); tag 0
+    (p0v0 p0v1 p0a p0s t0 : FGL) -- seg0 prev value + free pull-tag t0
+    (l0v0 l0v1 l0a l0s : FGL)    -- seg0 last value; tag t0+1
+    (p1v0 p1v1 p1a p1s t1 : FGL) -- seg1 prev value + free pull-tag t1
+    (l1v0 l1v1 l1a l1s g1 : FGL) -- seg1 last value; tag t1+1; gate g1
+    : List (Interaction FGL) :=
+  [ pushMsg5 (seam5 bv0 bv1 ba bs 0) (seam5_size ..)            -- boot push, tag 0
+  , pullMsg5 (seam5 p0v0 p0v1 p0a p0s t0) (seam5_size ..)       -- seg0 pull, tag t0
+  , pushMsg5 (seam5 l0v0 l0v1 l0a l0s (t0 + 1)) (seam5_size ..) -- seg0 push, tag t0+1
+  , pullMsg5 (seam5 p1v0 p1v1 p1a p1s t1) (seam5_size ..)       -- seg1 pull, tag t1
+  , gatedMsg5 g1 (seam5 l1v0 l1v1 l1a l1s (t1 + 1)) (seam5_size ..) -- seg1 gated push
+  ]
+
+/-- The `weightedSum` of `bootList2` against weight `g` (computed). -/
+theorem weightedSum_bootList2 (g : Array FGL → FGL)
+    (bv0 bv1 ba bs p0v0 p0v1 p0a p0s t0
+     l0v0 l0v1 l0a l0s p1v0 p1v1 p1a p1s t1 l1v0 l1v1 l1a l1s g1 : FGL) :
+    weightedSum (bootList2 bv0 bv1 ba bs p0v0 p0v1 p0a p0s t0
+        l0v0 l0v1 l0a l0s p1v0 p1v1 p1a p1s t1 l1v0 l1v1 l1a l1s g1) g
+      = g (seam5 bv0 bv1 ba bs 0)
+        - g (seam5 p0v0 p0v1 p0a p0s t0)
+        + g (seam5 l0v0 l0v1 l0a l0s (t0 + 1))
+        - g (seam5 p1v0 p1v1 p1a p1s t1)
+        + g1 * g (seam5 l1v0 l1v1 l1a l1s (t1 + 1)) := by
+  simp only [bootList2, weightedSum, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
+    pushMsg5, pullMsg5, gatedMsg5]
+  ring
+
+section BootTagEquations
+variable (bv0 bv1 ba bs p0v0 p0v1 p0a p0s t0
+  l0v0 l0v1 l0a l0s p1v0 p1v1 p1a p1s t1 l1v0 l1v1 l1a l1s : FGL)
+
+/-- Shorthand for the N = 2 boot list with `g1 = 0` (seg1 is the last segment). -/
+local notation "B2" => bootList2 bv0 bv1 ba bs p0v0 p0v1 p0a p0s t0
+  l0v0 l0v1 l0a l0s p1v0 p1v1 p1a p1s t1 l1v0 l1v1 l1a l1s 0
+
+/-- With `seg1` the last segment (`g1 = 0`), balance + the +1 emission force the
+    pull-tags UNIQUELY: `t0 = 0`, `t1 = 1`. No permutation disjunction — the
+    boot push pins tag 0 and the gated-off push breaks the symmetry. -/
+theorem boot_tags_forced (balance : BalancedInteractions B2) :
+    t0 = 0 ∧ t1 = 1 := by
+  have e1 := weightedSum_eq_zero_of_balance tagW balance
+  have e2 := weightedSum_eq_zero_of_balance (fun m => tagW m ^ 2) balance
+  rw [weightedSum_bootList2] at e1 e2
+  simp only [tagW_seam5, zero_mul, add_zero] at e1 e2
+  -- e1 : 0 - t0 + (t0+1) - t1 = 0  (= 1 - t1)  ⇒  t1 = 1
+  have ht1 : t1 = 1 := by linear_combination -e1
+  subst ht1
+  -- e2 : 0 - t0^2 + (t0+1)^2 - 1 = 0  ⇒  2 t0 = 0  ⇒  t0 = 0
+  have h2t : (2 : FGL) * t0 = 2 * 0 := by linear_combination e2
+  exact ⟨mul_left_cancel₀ two_ne_zero_FGL h2t, rfl⟩
+
+end BootTagEquations
+
+/-- THE BOOT-CHAIN DERIVATION on the real-ensemble emission. From balance alone
+    (the boot push at tag 0 is a member — a verifier endpoint, NOT a caller
+    premise) and the +1/gated emission, the pull-tags are forced to `t0 = 0`,
+    `t1 = 1` (UNIQUELY) and the per-tag VALUE seam holds:
+
+      * `seg0.prev = boot`             (seg0 pulls the boot tuple at tag 0)
+      * `seg1.prev = seg0.last`        (THE SEAM: seg1 pulls seg0's pushed last). -/
+theorem boot_chain_derived
+    (bv0 bv1 ba bs p0v0 p0v1 p0a p0s t0
+     l0v0 l0v1 l0a l0s p1v0 p1v1 p1a p1s t1 l1v0 l1v1 l1a l1s : FGL)
+    (balance : BalancedInteractions
+      (bootList2 bv0 bv1 ba bs p0v0 p0v1 p0a p0s t0
+        l0v0 l0v1 l0a l0s p1v0 p1v1 p1a p1s t1 l1v0 l1v1 l1a l1s 0)) :
+    t0 = 0 ∧ t1 = 1
+      ∧ seam5 p0v0 p0v1 p0a p0s t0 = seam5 bv0 bv1 ba bs 0           -- seg0 pulls boot
+      ∧ seam5 p1v0 p1v1 p1a p1s t1 = seam5 l0v0 l0v1 l0a l0s (t0 + 1) -- SEAM: seg1.prev = seg0.last
+      := by
+  obtain ⟨ht0, ht1⟩ := boot_tags_forced bv0 bv1 ba bs p0v0 p0v1 p0a p0s t0
+    l0v0 l0v1 l0a l0s p1v0 p1v1 p1a p1s t1 l1v0 l1v1 l1a l1s balance
+  obtain ⟨h01, h02, h10, h12, h20, h21⟩ := small_tag_ne
+  subst ht0 ht1
+  refine ⟨rfl, rfl, ?_, ?_⟩
+  · -- seg0 pull (tag 0) = boot push (tag 0)
+    have hpull : pullMsg5 (seam5 p0v0 p0v1 p0a p0s 0) (seam5_size ..) ∈
+        bootList2 bv0 bv1 ba bs p0v0 p0v1 p0a p0s 0
+          l0v0 l0v1 l0a l0s p1v0 p1v1 p1a p1s 1 l1v0 l1v1 l1a l1s 0 := by
+      unfold bootList2; simp
+    obtain ⟨b, hb_mem, hb_msg, hb_ne1, hb_ne0⟩ := exists_push_of_pull _ balance _ hpull rfl
+    unfold bootList2 at hb_mem
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hb_mem
+    rcases hb_mem with h | h | h | h | h <;> subst h <;>
+      simp only [pushMsg5, pullMsg5, gatedMsg5] at hb_msg ⊢
+    · exact hb_msg.symm
+    · exact absurd rfl hb_ne1
+    · exact absurd hb_msg (seam5_tag_ne (by simpa using h10))
+    · exact absurd rfl hb_ne1
+    · -- the gated push has multiplicity 0; `exists_push_of_pull` returns mult ≠ 0
+      exact absurd rfl hb_ne0
+  · -- seg1 pull (tag 1) = seg0 push (tag 0+1 = 1) : THE SEAM
+    have hpull : pullMsg5 (seam5 p1v0 p1v1 p1a p1s 1) (seam5_size ..) ∈
+        bootList2 bv0 bv1 ba bs p0v0 p0v1 p0a p0s 0
+          l0v0 l0v1 l0a l0s p1v0 p1v1 p1a p1s 1 l1v0 l1v1 l1a l1s 0 := by
+      unfold bootList2; simp
+    obtain ⟨b, hb_mem, hb_msg, hb_ne1, hb_ne0⟩ := exists_push_of_pull _ balance _ hpull rfl
+    unfold bootList2 at hb_mem
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hb_mem
+    rcases hb_mem with h | h | h | h | h <;> subst h <;>
+      simp only [pushMsg5, pullMsg5, gatedMsg5] at hb_msg ⊢
+    · exact absurd hb_msg (seam5_tag_ne (by simpa using h01))
+    · exact absurd rfl hb_ne1
+    · exact hb_msg.symm
+    · exact absurd rfl hb_ne1
+    · exact absurd rfl hb_ne0
+
+/-! ## NON-VACUITY of the boot chain (channel level).
+
+We exhibit a concrete balanced boot witness — the intended 2-segment chain with
+`seg1` the last segment — and run `boot_chain_derived`, confirming the seam holds
+(`seg1.prev = seg0.last`). The full real-ensemble witness lifts this. -/
+
+/-- The intended boot chain: boot `(0,0,B,0)` tag 0; seg0 pulls boot, pushes
+    `(1,0,100,5)` tag 1; seg1 pulls `(1,0,100,5)` tag 1 (the SEAM), is the LAST
+    segment so its push `(2,0,200,9)` at tag 2 is GATED OFF (`g1 = 0`). -/
+def goodBootList2 : List (Interaction FGL) :=
+  bootList2
+    0 0 335544320 0                 -- boot value, tag 0
+    0 0 335544320 0 0               -- seg0.prev = boot, tag t0 = 0
+    1 0 100 5                        -- seg0.last, pushed tag t0+1 = 1
+    1 0 100 5 1                      -- seg1.prev = seg0.last (SEAM), tag t1 = 1
+    2 0 200 9 0                      -- seg1.last (gated off, g1 = 0), would-be tag 2
+
+theorem goodBootList2_balanced : BalancedInteractions goodBootList2 := by
+  refine ⟨Or.inl ?_, ?_⟩
+  · show ([_, _, _, _, _] : List _).length < ringChar FGL
+    have : (5 : ℕ) < ringChar FGL := by
+      haveI hc : CharP FGL GL_prime := inferInstanceAs (CharP (Fin GL_prime) GL_prime)
+      rw [ringChar.eq FGL GL_prime]; norm_num
+    simpa using this
+  · intro msg
+    unfold goodBootList2 bootList2 balanceOf pullMsg5 pushMsg5 gatedMsg5 seam5
+    have d01 : (#[0,0,335544320,0,0] : Array FGL) ≠ #[1,0,100,5,1] := by decide
+    have d02 : (#[0,0,335544320,0,0] : Array FGL) ≠ #[2,0,200,9,2] := by decide
+    have d12 : (#[1,0,100,5,1] : Array FGL) ≠ #[2,0,200,9,2] := by decide
+    by_cases h0 : (#[0,0,335544320,0,0] : Array FGL) = msg <;>
+    by_cases h1 : (#[1,0,100,5,1] : Array FGL) = msg <;>
+    by_cases h2 : (#[2,0,200,9,2] : Array FGL) = msg <;>
+      simp_all [List.filter, List.sum]
+
+/-- Running `boot_chain_derived` on the concrete boot witness: tags resolve to
+    `(0,1)` and the SEAM holds (`seg1.prev = seg0.last = (1,0,100,5)`). Certifies
+    non-vacuity of the boot chain end-to-end. -/
+theorem goodBootList2_chain :
+    (0:FGL) = 0 ∧ (1:FGL) = 1
+      ∧ seam5 0 0 335544320 0 0 = seam5 0 0 335544320 0 0
+      ∧ seam5 1 0 100 5 1 = seam5 1 0 100 5 (0 + 1) :=
+  boot_chain_derived
+    0 0 335544320 0 0 0 335544320 0 0 1 0 100 5 1 0 100 5 1 2 0 200 9
+    goodBootList2_balanced
+
+end BootChain
+
 end ZiskFv.Channels.SeamTagChain
 
 /-! ## Axiom-closure checks.
@@ -539,3 +731,7 @@ NO `native_decide`. -/
 #print axioms ZiskFv.Channels.SeamTagChain.tag_chain_derived
 #print axioms ZiskFv.Channels.SeamTagChain.goodList2_balanced
 #print axioms ZiskFv.Channels.SeamTagChain.goodList2_chain
+#print axioms ZiskFv.Channels.SeamTagChain.boot_tags_forced
+#print axioms ZiskFv.Channels.SeamTagChain.boot_chain_derived
+#print axioms ZiskFv.Channels.SeamTagChain.goodBootList2_balanced
+#print axioms ZiskFv.Channels.SeamTagChain.goodBootList2_chain
