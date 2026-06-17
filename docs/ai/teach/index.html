@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zisk-fv · Architecture — course home</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --soft:#5f5f56; --rule:#d8d4c8; --bg:#fdfcf7;
+    --accent:#7a2e1d; --gold:#9a7b1f; --done:#2d6a3f; --code:#f1ecdd;
+  }
+  *{box-sizing:border-box}
+  html{font-size:17px}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:48rem;margin:0 auto;padding:3rem 1.5rem 5rem}
+  code{background:var(--code);padding:.05em .32em;border-radius:3px;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.82em}
+  a{color:var(--accent)}
+  .kicker{font-variant:small-caps;letter-spacing:.13em;color:var(--accent);font-size:.82rem;font-weight:600}
+  h1{font-size:2.2rem;line-height:1.06;margin:.3rem 0 .5rem;font-weight:600}
+  .why{font-size:1.05rem;color:#33332e;font-style:italic}
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:1.4rem;margin-bottom:1.8rem}
+  .next{background:#f6f1e1;border:1px solid var(--rule);border-left:3px solid var(--gold);
+    padding:.7rem 1rem;margin:1.4rem 0 0;font-size:.95rem;border-radius:0 5px 5px 0}
+  .next b{font-variant:small-caps;letter-spacing:.05em;color:var(--gold)}
+  h2{font-size:1.15rem;margin:2.4rem 0 .6rem;font-weight:600;font-variant:small-caps;
+     letter-spacing:.05em;color:var(--soft);border-bottom:1px solid var(--rule);padding-bottom:.3rem}
+  /* lesson cards */
+  .lesson{display:block;text-decoration:none;color:inherit;border:1px solid var(--rule);
+    border-radius:8px;background:#fffdf6;padding:.85rem 1rem;margin:.6rem 0;transition:all .12s}
+  .lesson:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(122,46,29,.08);transform:translateY(-1px)}
+  .lesson .row1{display:flex;align-items:baseline;gap:.6rem}
+  .lesson .no{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;color:#fff;background:var(--accent);
+    border-radius:5px;padding:.1rem .45rem;flex:none}
+  .lesson .ttl{font-weight:600;font-size:1.08rem}
+  .lesson .badge{margin-left:auto;font-size:.7rem;font-variant:small-caps;letter-spacing:.06em;
+    padding:.12rem .5rem;border-radius:20px;flex:none}
+  .badge.done{background:#e6f0e8;color:var(--done);border:1px solid #bcd8c2}
+  .badge.soon{background:#efe9d8;color:var(--soft);border:1px solid var(--rule)}
+  .lesson .desc{font-size:.9rem;color:#33332e;margin:.4rem 0 0}
+  .lesson .take{font-size:.82rem;color:var(--soft);margin:.35rem 0 0}
+  .lesson .take b{color:var(--done);font-variant:small-caps;letter-spacing:.04em;font-weight:600}
+  .planned{border-style:dashed;background:#fbf9f1}
+  .planned:hover{transform:none;box-shadow:none;border-color:var(--rule);cursor:default}
+  .planned .no{background:var(--soft)}
+  /* compact link rows */
+  .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.5rem;margin:.5rem 0}
+  .lk{border:1px solid var(--rule);border-radius:6px;background:#fff;padding:.5rem .7rem;
+    text-decoration:none;color:inherit;font-size:.86rem;transition:border-color .12s}
+  .lk:hover{border-color:var(--accent)}
+  .lk .t{font-weight:600} .lk .d{color:var(--soft);font-size:.78rem;margin-top:.15rem}
+  .lk .ic{font-family:ui-monospace,Menlo,monospace;color:var(--accent);margin-right:.35rem}
+  .note{font-size:.85rem;color:var(--soft);background:#f4f1e6;border:1px solid var(--rule);
+    border-radius:6px;padding:.6rem .9rem;margin-top:.6rem}
+  footer{margin-top:3rem;padding-top:1.1rem;border-top:1px solid var(--rule);color:var(--soft);font-size:.83rem}
+  @media print{.lesson:hover{box-shadow:none;transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">teaching workspace</div>
+  <h1>zisk-fv · Architecture</h1>
+  <p class="why">Build an accurate mental model of this repo's architecture — proof structure first, then build &amp; CI — in order to deliberately re-architect it.</p>
+  <div class="next"><b>Continue →</b> You've finished <a href="lessons/0002-one-opcode-end-to-end.html">Lesson 02</a>. Suggested next: <strong>Lesson 04 — the three global hypotheses</strong> (closes the "what do these hypotheses mean" thread), or <strong>Lesson 03 — the RHS circuit stack</strong>. Ask your teacher to build either.</div>
+</header>
+
+<h2>Lessons</h2>
+
+<a class="lesson" href="lessons/0001-the-territory-map.html">
+  <div class="row1"><span class="no">01</span><span class="ttl">The Territory Map</span><span class="badge done">done</span></div>
+  <div class="desc">The whole repo as two arcs — Sail spec (LHS) and ZisK circuit (RHS) — meeting at the per-opcode equivalence theorems, climbed to one global theorem. Plus the trust gate and CI as cross-cutting layers.</div>
+  <div class="take"><b>Takeaway —</b> green <code>lake build</code> = the claim; the trust gate guards its integrity; the claim is <em>conditioned</em>, not absolute.</div>
+</a>
+
+<a class="lesson" href="lessons/0002-one-opcode-end-to-end.html">
+  <div class="row1"><span class="no">02</span><span class="ttl">One Opcode, End to End (ADD)</span><span class="badge done">done</span></div>
+  <div class="desc">ADD traced up all six rungs of the tower, watching where each hypothesis is born, discharged, or relocated. Separates what the math proves from what the <code>OpEnvelope</code> assumes.</div>
+  <div class="take"><b>Takeaway —</b> rungs 1–3 discharge (arithmetic ← row ← table); rungs 4–6 reshape/unpack/aggregate; the promises relocate into <code>OpEnvelope</code>, never eliminated.</div>
+</a>
+
+<div class="lesson planned">
+  <div class="row1"><span class="no">03</span><span class="ttl">The RHS Circuit Stack</span><span class="badge soon">planned</span></div>
+  <div class="desc">pilout → <code>pil-extract</code> → <code>Airs</code> vs <code>AirsClean</code> → <code>ZiskCircuit</code>. The big duplication-seam question: two circuit-side stacks, and what to do about them.</div>
+</div>
+
+<div class="lesson planned">
+  <div class="row1"><span class="no">04</span><span class="ttl">The Three Global Hypotheses &amp; Trust Structure</span><span class="badge soon">planned</span></div>
+  <div class="desc"><code>aeneasBridgeTrust</code>, <code>memoryTimelineConstructionEvidence</code>, <code>NoKnownDefect</code> — what each really asserts, where the trust ultimately bottoms out, and how the trust gate enforces it. Previewed in Lesson 02 §4.</div>
+</div>
+
+<div class="lesson planned">
+  <div class="row1"><span class="no">05</span><span class="ttl">Build System &amp; CI Sanity</span><span class="badge soon">planned</span></div>
+  <div class="desc">The Nix derivations, cachix, and <code>proofs.yml</code> shape — is the pipeline sensible, and what would you change?</div>
+</div>
+
+<h2>Reference</h2>
+<div class="links">
+  <a class="lk" href="reference/glossary.html"><div class="t"><span class="ic">▤</span>Glossary</div><div class="d">Every term — AIR, op-bus, promise discharge, channel-balance, the global hypotheses — defined once. Printable.</div></a>
+</div>
+
+<h2>Workspace</h2>
+<div class="links">
+  <a class="lk" href="MISSION.md"><div class="t"><span class="ic">◎</span>MISSION.md</div><div class="d">Why we're learning this; what success looks like.</div></a>
+  <a class="lk" href="RESOURCES.md"><div class="t"><span class="ic">❡</span>RESOURCES.md</div><div class="d">Trusted in-repo + external sources. The re-arch backlog lives here.</div></a>
+  <a class="lk" href="NOTES.md"><div class="t"><span class="ic">✎</span>NOTES.md</div><div class="d">Calibration, preferences, lesson plan, validation discipline.</div></a>
+</div>
+<div class="links" style="margin-top:.5rem">
+  <a class="lk" href="learning-records/0001-starting-point-and-mission.md"><div class="t"><span class="ic">LR</span>0001 · Starting point &amp; mission</div></a>
+  <a class="lk" href="learning-records/0002-claim-is-conditioned-not-unconditional.md"><div class="t"><span class="ic">LR</span>0002 · The claim is conditioned</div></a>
+  <a class="lk" href="learning-records/0003-discharge-is-layered-promises-relocate.md"><div class="t"><span class="ic">LR</span>0003 · Discharge is layered</div></a>
+</div>
+
+<div class="note"><b>Validation status:</b> every lesson claim has been checked against repo source (signatures, baselines), cited by <code>file:line</code>. Still outstanding — the definitive <code>lake build</code> in this worktree: <code>build/</code> and <code>.lake/</code> are unpopulated, so the kernel check hasn't been run here. Ask your teacher to run <code>nix run .#populate &amp;&amp; lake build</code> for ground truth.</div>
+
+<footer>
+  Teaching workspace at <code>docs/ai/teach/</code> in the <code>review</code> worktree ·
+  served locally. Your teacher (Claude) is on call — ask to go deeper, challenge a claim, or pick what to learn next.
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 02 · One Opcode, End to End (ADD) — zisk-fv</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --soft:#5f5f56; --rule:#d8d4c8; --bg:#fdfcf7;
+    --accent:#7a2e1d; --lhs:#2d5a4a; --rhs:#3a4a78; --gold:#9a7b1f;
+    --proven:#2d6a3f; --assumed:#9a2b1f;
+    --chip:#efe9d8; --code:#f1ecdd; --ok:#2d6a3f; --no:#9a2b1f;
+  }
+  *{box-sizing:border-box}
+  html{font-size:17px}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:46rem;margin:0 auto;padding:3rem 1.5rem 5rem}
+  code{background:var(--code);padding:.05em .32em;border-radius:3px;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.81em}
+  a{color:var(--accent)}
+  .kicker{font-variant:small-caps;letter-spacing:.13em;color:var(--accent);
+    font-size:.82rem;font-weight:600}
+  h1{font-size:2.0rem;line-height:1.08;margin:.3rem 0 .5rem;font-weight:600}
+  .lede{font-size:1.06rem;color:#33332e}
+  .lede em{color:var(--accent)}
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:1.3rem;margin-bottom:2rem}
+  .win{background:#f6f1e1;border:1px solid var(--rule);border-left:3px solid var(--gold);
+    padding:.7rem 1rem;margin:1.4rem 0 0;font-size:.95rem}
+  .win b{font-variant:small-caps;letter-spacing:.06em;color:var(--gold)}
+  .recap{background:#eef0f6;border:1px solid #c6cde0;border-radius:6px;padding:.6rem 1rem;
+    font-size:.9rem;margin:1.2rem 0 0}
+  .recap b{color:var(--rhs)}
+  h2{font-size:1.3rem;margin:2.6rem 0 .5rem;font-weight:600}
+  h2 .num{color:var(--soft);font-weight:400;margin-right:.45rem}
+  p{margin:.7rem 0}
+  .soft{color:var(--soft)}
+  .side{float:right;clear:right;width:13.5rem;margin:.35rem -14.8rem .8rem 0;
+    font-size:.8rem;line-height:1.42;color:var(--soft);border-top:1px solid var(--rule);
+    padding-top:.35rem}
+  .side b{color:var(--accent);font-variant:small-caps;letter-spacing:.04em}
+  @media(max-width:1180px){.side{float:none;width:auto;margin:.7rem 0;
+    border:1px solid var(--rule);border-left:3px solid var(--accent);
+    padding:.5rem .8rem;background:#faf7ee}}
+  cite{display:block;color:var(--soft);font-style:normal;font-size:.74rem;
+    font-family:ui-monospace,Menlo,monospace;margin-top:.2rem}
+  /* ends panel */
+  .ends{display:flex;gap:.7rem;margin:1.2rem 0}
+  .end{flex:1;border-radius:6px;padding:.6rem .75rem;font-size:.86rem}
+  .end.l{background:#eef4f0;border:1px solid #c4d8cd}
+  .end.r{background:#eef0f6;border:1px solid #c6cde0}
+  .end .h{font-weight:600;font-variant:small-caps;letter-spacing:.05em}
+  .end.l .h{color:var(--lhs)} .end.r .h{color:var(--rhs)}
+  /* ladder */
+  .ladder{margin:1.4rem 0;display:flex;flex-direction:column;gap:.32rem}
+  .rung{border:1px solid var(--rule);border-radius:6px;background:#fffdf6;padding:.55rem .7rem}
+  .rung .top{display:flex;align-items:baseline;gap:.5rem}
+  .rung .lvl{font-size:.72rem;color:#fff;background:var(--accent);border-radius:4px;
+    padding:.05rem .4rem;flex:none}
+  .rung .name{font-weight:600;font-size:.9rem}
+  .rung .loc{margin-left:auto;color:var(--soft);font-family:ui-monospace,Menlo,monospace;font-size:.7rem}
+  .rung .body{font-size:.83rem;margin-top:.25rem}
+  .rung .disc{color:var(--proven);font-weight:600}
+  .rung .keep{color:var(--assumed);font-weight:600}
+  .rung.global{background:#f6f1e1;border-color:var(--gold)}
+  .uparr{text-align:center;color:var(--soft);font-size:.8rem;margin:-.12rem 0}
+  /* proven vs assumed split */
+  .split{display:flex;gap:.7rem;margin:1.1rem 0}
+  .pane{flex:1;border-radius:6px;padding:.6rem .75rem;font-size:.85rem}
+  .pane.p{background:#edf5ee;border:1px solid #bcd8c2}
+  .pane.a{background:#f6ecea;border:1px solid #e0c2bc}
+  .pane .h{font-weight:600;font-variant:small-caps;letter-spacing:.05em;margin-bottom:.2rem}
+  .pane.p .h{color:var(--proven)} .pane.a .h{color:var(--assumed)}
+  .pane ul{margin:.2rem 0 0;padding-left:1rem} .pane li{margin:.18rem 0}
+  /* promises grid */
+  .pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.5rem;margin:.7rem 0}
+  .pgc{border:1px solid var(--rule);border-radius:6px;background:#fff;padding:.5rem .6rem;font-size:.82rem}
+  .pgc .t{font-weight:600;font-variant:small-caps;letter-spacing:.04em;color:var(--accent);font-size:.78rem}
+  /* labs */
+  .lab{border:1px solid var(--rule);border-radius:6px;background:#fffdf6;padding:1.1rem;margin:1.3rem 0}
+  .lab .tag{font-variant:small-caps;letter-spacing:.08em;font-size:.74rem;color:var(--accent);font-weight:600}
+  .lab h3{margin:.15rem 0 .5rem}
+  .btn{font-family:inherit;font-size:.84rem;border:1px solid var(--accent);color:var(--accent);
+    background:#fff;border-radius:5px;padding:.34rem .8rem;cursor:pointer;margin-right:.5rem}
+  .btn:hover{background:var(--accent);color:#fff}
+  .verdict{margin-top:.7rem;font-size:.9rem;min-height:1.2rem}
+  .verdict.ok{color:var(--ok)} .verdict.no{color:var(--no)}
+  /* sorter */
+  .srow{display:flex;align-items:center;gap:.5rem;border:1px solid var(--rule);border-radius:6px;
+    background:#fff;padding:.4rem .55rem;margin:.35rem 0;font-size:.84rem}
+  .srow .q{flex:1}
+  .seg{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;flex:none}
+  .seg button{font-family:inherit;font-size:.76rem;border:0;background:#fff;cursor:pointer;
+    padding:.28rem .55rem;color:var(--soft)}
+  .seg button.on.p{background:var(--proven);color:#fff}
+  .seg button.on.a{background:var(--assumed);color:#fff}
+  .srow.right{box-shadow:inset 3px 0 0 var(--ok)} .srow.wrong{box-shadow:inset 3px 0 0 var(--no)}
+  /* flip cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.6rem;margin-top:.5rem}
+  .card{perspective:900px;height:8.6rem;cursor:pointer}
+  .card .inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+  .card.flip .inner{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;border:1px solid var(--rule);
+    border-radius:6px;padding:.55rem .65rem;display:flex;flex-direction:column;justify-content:center}
+  .face.front{background:#fff} .face.back{background:#f3efe2;transform:rotateY(180deg);font-size:.79rem}
+  .face .q{font-weight:600;font-size:.84rem} .face .hint{color:var(--soft);font-size:.72rem;margin-top:.3rem}
+  .face .path{color:var(--soft);font-family:ui-monospace,Menlo,monospace;font-size:.68rem;margin-top:.35rem}
+  .src{border:1px solid var(--rule);border-left:3px solid var(--lhs);background:#f1f5f2;
+    padding:.8rem 1rem;margin:1.6rem 0;font-size:.92rem;border-radius:0 5px 5px 0}
+  .src b{font-variant:small-caps;letter-spacing:.05em;color:var(--lhs)}
+  .ask{background:#f6f1e1;border:1px solid var(--rule);border-radius:6px;padding:.8rem 1rem;margin:1.8rem 0 0;font-size:.92rem}
+  .ask b{color:var(--accent)}
+  footer{margin-top:2.6rem;padding-top:1.1rem;border-top:1px solid var(--rule);
+    display:flex;justify-content:space-between;font-size:.85rem;color:var(--soft);flex-wrap:wrap;gap:.6rem}
+  @media print{.lab,.ask{break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+<a href="../index.html" title="Course home" style="position:fixed;top:.7rem;left:.7rem;z-index:50;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:.78rem;font-weight:600;text-decoration:none;background:#7a2e1d;color:#fff;padding:.32rem .66rem;border-radius:20px;box-shadow:0 1px 5px rgba(0,0,0,.22)">⌂&nbsp;Home</a>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">zisk-fv architecture · lesson 02</div>
+  <h1>One Opcode, End to End</h1>
+  <p class="lede">Lesson 01 ended on a warning: the global theorem is <em>conditioned</em>, not absolute. Today we make that concrete by following a single opcode — <strong>ADD</strong> — all the way up the tower, watching exactly where each hypothesis is <em>born</em>, where it gets <em>discharged</em>, and where it simply <em>relocates</em>. By the end you'll know precisely what this project proves about ADD and what it assumes.</p>
+  <div class="win"><b>Your win today —</b> for one real opcode, separate <em>what the math proves</em> from <em>what the OpEnvelope assumes</em>, and name the layer that does each job.</div>
+  <div class="recap"><b>Carried over from Lesson 01:</b> green <code>lake build</code> proves <code>zisk_riscv_compliant_program_bus (env) (h_bridge) (h_memory_construction) (h_known_bugs) : env.exec_eq</code>. The work today is unpacking what producing that <code>env</code> actually costs.</div>
+</header>
+
+<h2><span class="num">1</span>The two ends</h2>
+<p>Every opcode proof is a bridge between two fixed endpoints. For ADD:</p>
+<div class="ends">
+  <div class="end l">
+    <div class="h">LHS · what ADD means</div>
+    <p style="margin:.3rem 0 0">The Sail spec, run on a state:<br><code>execute_instruction (instruction.RTYPE (r2,r1,rd, rop.ADD)) state</code></p>
+    <cite>ZiskFv/Equivalence/Add.lean:55 · pure form: PureSpec.execute_RTYPE_add_pure</cite>
+  </div>
+  <div class="end r">
+    <div class="h">RHS · what ZisK does</div>
+    <p style="margin:.3rem 0 0">A well-formed <code>Binary</code> AIR row — 8 byte-lanes with a carry chain and lookup flags — folded through the bus into a state change: <code>(bus_effect …).2</code>.</p>
+    <cite>ZiskFv/AirsClean/Binary · row type BinaryRow FGL</cite>
+  </div>
+</div>
+<p>The whole tower exists to prove these two are equal. The interesting part is <em>how the burden is distributed</em> across the climb.</p>
+
+<h2><span class="num">2</span>The climb — six rungs, three kinds of work</h2>
+<p>Read bottom-up. Watch the green (<span class="disc">discharges</span>) and red (<span class="keep">still assumes</span>) — that contrast is the whole lesson.</p>
+
+<div class="ladder">
+  <div class="rung">
+    <div class="top"><span class="lvl">1</span><span class="name">EquivCore · equiv_ADD_of_wf</span><span class="loc">EquivCore/Add.lean</span></div>
+    <div class="body">The <b>real arithmetic proof</b>. Given the ~80 fully-exploded row facts (every byte lane, carry, lookup flag, lane equation), it proves Sail's ADD equals the bus effect. This is where the actual mathematics lives. <span class="disc">Proves: Sail ADD = circuit, given exploded facts.</span></div>
+  </div>
+  <div class="uparr">▲</div>
+  <div class="rung">
+    <div class="top"><span class="lvl">2</span><span class="name">EquivCore · equiv_ADD_of_static_row</span><span class="loc">EquivCore/Add.lean:378</span></div>
+    <div class="body">Takes <em>one</em> well-formed <code>BinaryRow</code> (+ <code>h_core</code>, <code>h_facts</code>, mode/op pins) and <span class="disc">discharges</span> the ~80 exploded facts from it — via <code>byte_chain_discharge_64_of_static_row</code> and <code>carry_7_zero_ADD_of_static_chain</code> — then calls rung 1. <span class="disc">Discharges: circuit-arithmetic facts ← a single WF row.</span></div>
+  </div>
+  <div class="uparr">▲</div>
+  <div class="rung">
+    <div class="top"><span class="lvl">3</span><span class="name">Compliance · equiv_ADD (wrapper)</span><span class="loc">Compliance/Wrappers/Add.lean:42</span></div>
+    <div class="body">Takes a Clean <code>Air.Flat.Table</code> (+ <code>h_component</code>, <code>h_table_spec</code>, <code>h_provider_row</code>) and <span class="disc">discharges</span> the <em>existence + well-formedness</em> of that row from the table's spec, then calls rung 2. <span class="keep">Still threads through, untouched: <code>promises</code>, <code>pins</code>, <code>h_match</code>, the lane facts.</span></div>
+  </div>
+  <div class="uparr">▲</div>
+  <div class="rung">
+    <div class="top"><span class="lvl">4</span><span class="name">Equivalence · equiv_ADD (canonical)</span><span class="loc">Equivalence/Add.lean:21</span></div>
+    <div class="body"><b>No discharge.</b> Same hypothesis list as rung 3; only the conclusion changes shape — <code>(bus_effect …).2</code> becomes <code>state_effect_via_channels …</code> via one rewrite. This is the public per-opcode statement. <span class="keep">Carries every promise forward.</span></div>
+  </div>
+  <div class="uparr">▲</div>
+  <div class="rung">
+    <div class="top"><span class="lvl">5</span><span class="name">Dispatch · exec_eq_add_rtypew</span><span class="loc">Dispatch/ADD_RTYPEW.lean:48</span></div>
+    <div class="body"><code>cases env</code> on the <code>OpEnvelope</code>; for the <code>.add_via_binary</code> arm it <b>unpacks the constructor fields</b> — including <code>promises</code> — and feeds them to rung 4. <span class="keep">The promises are read <em>out of the envelope</em>, not proved.</span></div>
+  </div>
+  <div class="uparr">▲</div>
+  <div class="rung global">
+    <div class="top"><span class="lvl">6</span><span class="name">Compliance · zisk_riscv_compliant_program_bus ★</span><span class="loc">Compliance.lean:95</span></div>
+    <div class="body">Aggregates the ten family dispatchers and adds the three <b>global</b> hypotheses: <code>aeneasBridgeTrust</code>, <code>memoryTimelineConstructionEvidence</code>, <code>NoKnownDefect</code>. <span class="keep">Top-level residual trust.</span></div>
+  </div>
+</div>
+
+<p><span class="side"><b>Re-arch lens —</b> notice the burden never disappears; it <em>moves</em>. Rungs 1–3 are real reductions (arithmetic ← row ← table). Rungs 4–6 are plumbing + relocation. A re-architecture question worth holding: should the per-opcode <code>promises</code> be <em>derived</em> (from the extraction/trace side) rather than parked as <code>OpEnvelope</code> fields a caller must hand-build? That single decision reshapes the top half of this tower.</span>
+The headline: <strong>rungs 1–3 genuinely discharge</strong> (arithmetic from a row, row from a table). <strong>Rungs 4–6 don't discharge anything</strong> — rung 4 reshapes, rung 5 unpacks, rung 6 aggregates and bolts on the three global premises. The per-opcode <code>promises</code> ride all the way up and end their life as <em>constructor fields of the <code>OpEnvelope</code> you must build</em>.</p>
+
+<h2><span class="num">3</span>So what is actually proven — and what is assumed?</h2>
+<p>This is the question the mission turns on. For ADD, validated against source:</p>
+<div class="split">
+  <div class="pane p">
+    <div class="h">✓ Proven (the math)</div>
+    <ul>
+      <li>Given a well-formed Binary row, its byte/carry arithmetic <strong>equals Sail's ADD</strong>.</li>
+      <li>Given a valid provider table, <strong>such a row exists</strong> and is well-formed.</li>
+      <li>The two conclusion forms (<code>bus_effect.2</code> ↔ channel-balance) <strong>coincide</strong>.</li>
+    </ul>
+  </div>
+  <div class="pane a">
+    <div class="h">✗ Assumed (bundled into env / global)</div>
+    <ul>
+      <li><code>promises : RTypePromises</code> — the Sail-state ↔ bus correspondence (§4).</li>
+      <li><code>h_match</code> — the op-bus permutation lines up; <code>pins</code> — the Main row.</li>
+      <li><code>aeneasBridgeTrust</code>, <code>memoryTimelineConstruction</code>, <code>NoKnownDefect</code>.</li>
+    </ul>
+  </div>
+</div>
+<p class="soft" style="font-size:.9rem">This is why "0 axioms" and "real residual trust" are both true at once. Nothing is an <code>axiom</code>; the trust is the right-hand column — obligations you must satisfy to <em>construct</em> an <code>OpEnvelope</code> and supply the three globals. The caller-burden ledger is exactly the catalogue of that right-hand column.</p>
+
+<h2><span class="num">4</span>What the hypotheses <em>mean</em>: <code>RTypePromises</code></h2>
+<p>You asked what these hypotheses actually say. Here's the per-opcode bundle for ADD, in plain terms — 15 structural facts asserting <em>the circuit's bus rows faithfully mirror what Sail did</em>:</p>
+<div class="pg">
+  <div class="pgc"><div class="t">register reads</div><code>input_r1_eq</code>, <code>input_r2_eq</code> — reading rs1/rs2 in Sail yields exactly the values the row consumed.</div>
+  <div class="pgc"><div class="t">target &amp; pc</div><code>input_rd_eq</code>, <code>input_pc_eq</code>, <code>nextPC_matches</code> — rd index, current PC, and next PC line up with the spec.</div>
+  <div class="pgc"><div class="t">exec-bus shape</div><code>exec_len=2</code>, <code>e0_mult=-1</code> (consume), <code>e1_mult=1</code> (produce).</div>
+  <div class="pgc"><div class="t">mem-bus roles</div><code>m0/m1_mult=-1</code> reads, <code>m2_mult=1</code> write; all <code>as=1</code> (register space); <code>rd_idx</code> matches e2's target.</div>
+</div>
+<p><span class="side"><b>The honest core —</b> these promises are the bridge between two <em>models</em> (Sail's state monad and the bus) that the arithmetic proof can't see. Until something <em>derives</em> them (the Aeneas/trace side), they are assumed. That's not a flaw to hide — it's the precise location of the remaining work, and the thing a re-architecture must either preserve or close.</span>
+None of these are proved in the ADD tower — they're the <em>premises</em> the arithmetic proof needs in order to connect "Sail read register rs1" to "the circuit row's input lane A." They are supplied when the <code>.add_via_binary</code> envelope is constructed.
+<cite>ZiskFv/EquivCore/Promises/RType.lean:31 (structure, 15 fields) · field of OpEnvelope.add_via_binary at OpEnvelope.lean:391</cite></p>
+
+<p><b>The three global hypotheses</b> (<code>aeneasBridgeTrust</code>, <code>memoryTimelineConstructionEvidence</code>, <code>NoKnownDefect</code>) are a different animal — they're not per-opcode and they encode where the project's trust ultimately bottoms out. They get their own lesson:</p>
+<p style="text-align:center"><a href="#" onclick="return false" style="font-weight:600">▸ Lesson 04 — The trust structure &amp; the three global hypotheses</a> <span class="soft">(ask me to build it)</span></p>
+
+<!-- ===================== RETRIEVAL ===================== -->
+<h2><span class="num">5</span>Make it stick</h2>
+<p>Two drills. Do them from memory before scrolling back.</p>
+
+<div class="lab">
+  <div class="tag">Drill A · sort</div>
+  <h3>Proven by the math, or assumed via the envelope?</h3>
+  <p class="soft" style="font-size:.88rem;margin:.2rem 0 .5rem">For each fact about the ADD proof, choose where it lives. Then check.</p>
+  <div id="sorter"></div>
+  <button class="btn" id="scheck">Check</button>
+  <button class="btn" id="sreset" style="border-color:var(--soft);color:var(--soft)">Reset</button>
+  <div class="verdict" id="sverdict"></div>
+</div>
+
+<div class="lab">
+  <div class="tag">Drill B · recall cards</div>
+  <h3>Which rung does each job?</h3>
+  <p class="soft" style="font-size:.88rem;margin:.2rem 0 .3rem">Name the layer out loud, then flip.</p>
+  <div class="cards" id="cards"></div>
+</div>
+
+<div class="src">
+  <b>Primary source —</b> open <a href="../../../ZiskFv/EquivCore/Add.lean">ZiskFv/EquivCore/Add.lean</a> and read the signature of <code>equiv_ADD_of_static_row</code> (line 378) against <code>equiv_ADD_of_wf</code>. Then diff <a href="../../../ZiskFv/Compliance/Wrappers/Add.lean">Wrappers/Add.lean</a> vs <a href="../../../ZiskFv/Equivalence/Add.lean">Equivalence/Add.lean</a> — same hypotheses, different conclusion — and see the <code>.add_via_binary</code> constructor in <a href="../../../ZiskFv/Compliance/OpEnvelope.lean">OpEnvelope.lean:366</a>. Everything in this lesson was read from those files.
+</div>
+
+<div class="ask">
+  <b>Your teacher is on call.</b> Want the same trace for a <em>harder</em> opcode (a load like <code>LD</code>, where the memory bus and the timeline hypotheses actually bite)? Or shall I build Lesson 03 (the RHS circuit stack: <code>Airs</code> vs <code>AirsClean</code>) or jump to Lesson 04 (the three global hypotheses)? Ask, or challenge anything above.
+</div>
+
+<footer>
+  <span>◂ <a href="0001-the-territory-map.html">Lesson 01</a> · <a href="../reference/glossary.html">Glossary</a></span>
+  <span>Next ▸ <em>03 — RHS circuit stack</em> · or <em>04 — the global hypotheses</em></span>
+</footer>
+
+</div>
+
+<script>
+/* ---- Drill A: proven vs assumed ---- */
+const ITEMS = [
+  {q:'8-byte carry chain computes the same sum Sail’s ADD does', a:'p'},
+  {q:'A well-formed Binary row exists for this instruction', a:'p'},
+  {q:'bus_effect.2 form equals the channel-balance form', a:'p'},
+  {q:'Reading rs1 in Sail yields the row’s input lane A value', a:'a'},
+  {q:'The op-bus permutation lines up (h_match)', a:'a'},
+  {q:'This arm is outside the known-defect regions', a:'a'},
+  {q:'The Aeneas-extracted lowering bridge holds', a:'a'},
+];
+let choice = {};
+const sorter = document.getElementById('sorter');
+function renderSorter(){
+  sorter.innerHTML='';
+  ITEMS.forEach((it,i)=>{
+    const row=document.createElement('div'); row.className='srow'; row.id='srow'+i;
+    row.innerHTML='<span class="q">'+it.q+'</span>'+
+      '<span class="seg"><button class="p" data-i="'+i+'" data-v="p">Proven</button>'+
+      '<button class="a" data-i="'+i+'" data-v="a">Assumed</button></span>';
+    sorter.appendChild(row);
+  });
+  sorter.querySelectorAll('button').forEach(b=>{
+    const i=b.dataset.i, v=b.dataset.v;
+    if(choice[i]===v) b.classList.add('on');
+    b.onclick=()=>{ choice[i]=v; renderSorter(); };
+  });
+}
+document.getElementById('scheck').onclick=()=>{
+  const v=document.getElementById('sverdict');
+  if(Object.keys(choice).length<ITEMS.length){v.className='verdict no';v.textContent='Classify all seven first.';return;}
+  let ok=0;
+  ITEMS.forEach((it,i)=>{
+    const row=document.getElementById('srow'+i);
+    row.classList.remove('right','wrong');
+    row.classList.add(choice[i]===it.a?'right':'wrong'); if(choice[i]===it.a)ok++;
+  });
+  v.className='verdict '+(ok===ITEMS.length?'ok':'no');
+  v.textContent = ok===ITEMS.length
+    ? '✓ All seven. The first three are theorems; the rest are obligations you must supply to build the env / globals.'
+    : '✗ '+ok+'/'+ITEMS.length+' right. Rule of thumb: if it’s about arithmetic or row existence, the math proves it. If it bridges Sail-state to the bus, or is a top-level premise, it’s assumed.';
+};
+document.getElementById('sreset').onclick=()=>{choice={};renderSorter();const v=document.getElementById('sverdict');v.textContent='';v.className='verdict';};
+renderSorter();
+
+/* ---- Drill B: rung recall ---- */
+const CARDS=[
+  {q:'Where does the real ADD arithmetic get proved?',a:'EquivCore equiv_ADD_of_wf — Sail ADD = bus effect, given the exploded row facts.',p:'rung 1'},
+  {q:'What turns one well-formed row into the ~80 facts?',a:'EquivCore equiv_ADD_of_static_row (line 378) — byte/carry discharge from the static row.',p:'rung 2'},
+  {q:'What proves a valid row exists?',a:'The Compliance wrapper — derives row existence + WF from the Air.Flat.Table spec.',p:'rung 3'},
+  {q:'What only reshapes the conclusion?',a:'The canonical Equivalence.equiv_ADD — bus_effect.2 → channel-balance, no discharge.',p:'rung 4'},
+  {q:'Where do the promises come from at the top?',a:'They’re fields of the OpEnvelope .add_via_binary constructor; the dispatcher unpacks them.',p:'rung 5–6'},
+];
+const cardsEl=document.getElementById('cards');
+CARDS.forEach(c=>{const d=document.createElement('div');d.className='card';
+  d.innerHTML='<div class="inner"><div class="face front"><div class="q">'+c.q+'</div><div class="hint">recall → flip</div></div><div class="face back">'+c.a+'<div class="path">'+c.p+'</div></div></div>';
+  d.onclick=()=>d.classList.toggle('flip');cardsEl.appendChild(d);});
+</script>
+</body>
+</html>

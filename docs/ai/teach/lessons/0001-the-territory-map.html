@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 01 · The Territory Map — zisk-fv</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --soft:#5f5f56; --rule:#d8d4c8; --bg:#fdfcf7;
+    --accent:#7a2e1d; --lhs:#2d5a4a; --rhs:#3a4a78; --gold:#9a7b1f;
+    --chip:#efe9d8; --code:#f1ecdd; --ok:#2d6a3f; --no:#9a2b1f;
+  }
+  *{box-sizing:border-box}
+  html{font-size:17px}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:46rem;margin:0 auto;padding:3rem 1.5rem 5rem}
+  code{background:var(--code);padding:.05em .32em;border-radius:3px;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.82em}
+  a{color:var(--accent)}
+  /* header */
+  .kicker{font-variant:small-caps;letter-spacing:.13em;color:var(--accent);
+    font-size:.82rem;font-weight:600}
+  h1{font-size:2.05rem;line-height:1.08;margin:.3rem 0 .5rem;font-weight:600}
+  .lede{font-size:1.08rem;color:#33332e}
+  .lede em{color:var(--accent)}
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:1.3rem;margin-bottom:2rem}
+  .win{background:#f6f1e1;border:1px solid var(--rule);border-left:3px solid var(--gold);
+    padding:.7rem 1rem;margin:1.4rem 0 0;font-size:.95rem}
+  .win b{font-variant:small-caps;letter-spacing:.06em;color:var(--gold)}
+  /* sections */
+  h2{font-size:1.32rem;margin:2.6rem 0 .5rem;font-weight:600}
+  h2 .num{color:var(--soft);font-weight:400;margin-right:.45rem}
+  h3{font-size:1.02rem;margin:1.6rem 0 .2rem;font-weight:600}
+  p{margin:.7rem 0}
+  .soft{color:var(--soft)}
+  /* sidenote */
+  .side{float:right;clear:right;width:13.5rem;margin:.35rem -14.8rem .8rem 0;
+    font-size:.8rem;line-height:1.4;color:var(--soft);border-top:1px solid var(--rule);
+    padding-top:.35rem}
+  .side b{color:var(--accent);font-variant:small-caps;letter-spacing:.04em}
+  @media(max-width:1180px){.side{float:none;width:auto;margin:.7rem 0;
+    border:1px solid var(--rule);border-left:3px solid var(--accent);
+    padding:.5rem .8rem;background:#faf7ee}}
+  /* diagram */
+  .diagram{margin:1.6rem 0;border:1px solid var(--rule);border-radius:6px;
+    background:#fffdf6;padding:1.2rem 1rem .9rem}
+  .band-label{font-variant:small-caps;letter-spacing:.08em;font-size:.74rem;
+    color:var(--soft);margin:.2rem 0 .5rem}
+  .gen{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;font-size:.82rem}
+  .node{border:1px solid var(--rule);border-radius:5px;padding:.32rem .55rem;background:#fff}
+  .node .t{font-weight:600}
+  .node .p{color:var(--soft);font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:.74rem}
+  .arr{color:var(--soft);font-size:1rem}
+  .cols{display:flex;gap:.6rem;margin-top:1rem}
+  .col{flex:1;border-radius:5px;padding:.55rem .6rem;font-size:.82rem}
+  .col.l{background:#eef4f0;border:1px solid #c4d8cd}
+  .col.r{background:#eef0f6;border:1px solid #c6cde0}
+  .col .h{font-weight:600;font-variant:small-caps;letter-spacing:.05em}
+  .col.l .h{color:var(--lhs)} .col.r .h{color:var(--rhs)}
+  .col ul{margin:.3rem 0 0;padding-left:1.05rem}
+  .col li{margin:.12rem 0}
+  .meet{text-align:center;color:var(--soft);font-size:1.1rem;margin:.45rem 0 .1rem}
+  .tower{margin-top:.6rem;display:flex;flex-direction:column;align-items:stretch;gap:.28rem}
+  .step{display:flex;align-items:baseline;gap:.5rem;border:1px solid var(--rule);
+    border-radius:5px;padding:.34rem .6rem;background:#fff;font-size:.83rem}
+  .step .lvl{font-size:.7rem;color:var(--soft);width:1.1rem;flex:none;text-align:right}
+  .step .t{font-weight:600}
+  .step .p{color:var(--soft);font-family:ui-monospace,Menlo,monospace;font-size:.73rem;margin-left:auto}
+  .step.global{background:#f6f1e1;border-color:var(--gold)}
+  .step.global .t{color:var(--accent)}
+  .tower .up{text-align:center;color:var(--soft);font-size:.85rem;margin:-.05rem 0}
+  .crosscut{display:flex;gap:.6rem;margin-top:1rem;font-size:.78rem}
+  .cc{flex:1;border:1px dashed var(--rule);border-radius:5px;padding:.4rem .6rem;color:var(--soft)}
+  .cc b{color:var(--ink)}
+  /* interactive */
+  .lab{border:1px solid var(--rule);border-radius:6px;background:#fffdf6;
+    padding:1.1rem 1.1rem 1.2rem;margin:1.3rem 0}
+  .lab .tag{font-variant:small-caps;letter-spacing:.08em;font-size:.74rem;color:var(--accent);font-weight:600}
+  .lab h3{margin:.15rem 0 .5rem}
+  .chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0}
+  .chip{border:1px solid var(--rule);background:#fff;border-radius:20px;
+    padding:.3rem .7rem;cursor:pointer;font-size:.84rem;user-select:none;
+    font-family:inherit;transition:all .12s}
+  .chip:hover{border-color:var(--accent)}
+  .chip.picked{background:var(--chip);color:var(--soft);border-style:dashed;cursor:default}
+  .chip .badge{display:inline-block;min-width:1.1em;text-align:center;
+    font-weight:700;color:var(--accent);margin-right:.35em}
+  .seq{min-height:1.2rem;font-size:.84rem;color:var(--soft);margin:.5rem 0}
+  .btn{font-family:inherit;font-size:.84rem;border:1px solid var(--accent);color:var(--accent);
+    background:#fff;border-radius:5px;padding:.34rem .8rem;cursor:pointer;margin-right:.5rem}
+  .btn:hover{background:var(--accent);color:#fff}
+  .verdict{margin-top:.7rem;font-size:.9rem;min-height:1.2rem}
+  .verdict.ok{color:var(--ok)} .verdict.no{color:var(--no)}
+  .step.right{box-shadow:inset 3px 0 0 var(--ok)} .step.wrong{box-shadow:inset 3px 0 0 var(--no)}
+  /* flip cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.6rem;margin-top:.6rem}
+  .card{perspective:900px;height:8.2rem;cursor:pointer}
+  .card .inner{position:relative;width:100%;height:100%;transition:transform .5s;
+    transform-style:preserve-3d}
+  .card.flip .inner{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;border:1px solid var(--rule);
+    border-radius:6px;padding:.6rem .7rem;display:flex;flex-direction:column;justify-content:center}
+  .face.front{background:#fff}
+  .face.back{background:#f3efe2;transform:rotateY(180deg);font-size:.82rem}
+  .face .q{font-weight:600;font-size:.9rem}
+  .face .hint{color:var(--soft);font-size:.74rem;margin-top:.3rem}
+  .face .path{color:var(--soft);font-family:ui-monospace,Menlo,monospace;font-size:.72rem;margin-top:.4rem}
+  /* misc */
+  .src{border:1px solid var(--rule);border-left:3px solid var(--lhs);background:#f1f5f2;
+    padding:.8rem 1rem;margin:1.6rem 0;font-size:.92rem;border-radius:0 5px 5px 0}
+  .src b{font-variant:small-caps;letter-spacing:.05em;color:var(--lhs)}
+  .ask{background:#f6f1e1;border:1px solid var(--rule);border-radius:6px;
+    padding:.8rem 1rem;margin:1.8rem 0 0;font-size:.92rem}
+  .ask b{color:var(--accent)}
+  footer{margin-top:2.6rem;padding-top:1.1rem;border-top:1px solid var(--rule);
+    display:flex;justify-content:space-between;font-size:.85rem;color:var(--soft);flex-wrap:wrap;gap:.6rem}
+  @media print{.lab,.ask{break-inside:avoid}.chip{cursor:default}body{background:#fff}}
+</style>
+</head>
+<body>
+<a href="../index.html" title="Course home" style="position:fixed;top:.7rem;left:.7rem;z-index:50;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:.78rem;font-weight:600;text-decoration:none;background:#7a2e1d;color:#fff;padding:.32rem .66rem;border-radius:20px;box-shadow:0 1px 5px rgba(0,0,0,.22)">⌂&nbsp;Home</a>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">zisk-fv architecture · lesson 01</div>
+  <h1>The Territory Map</h1>
+  <p class="lede">Before you can re-architect this repo, you need to see it whole. The trick: it's <em>two arcs that meet at one place</em> — the spec coming down, the circuit coming up, joined at the per-opcode equivalence theorems. Everything else hangs off that.</p>
+  <div class="win"><b>Your win today —</b> draw the repo from memory as two converging arcs, name each territory and its job, and say in one sentence what a green <code>lake build</code> actually proves.</div>
+</header>
+
+<h2><span class="num">1</span>The one shape to hold in your head</h2>
+<p>The whole project exists to prove one statement, 63 times over (once per RV64IM opcode) and then aggregate them:</p>
+<p style="text-align:center;font-size:.95rem"><code>Sail&nbsp;spec&nbsp;(what&nbsp;RISC-V&nbsp;<em>means</em>)&nbsp;&nbsp;=&nbsp;&nbsp;ZisK&nbsp;circuit&nbsp;(what&nbsp;the&nbsp;zkVM&nbsp;<em>does</em>)</code></p>
+<p>The <span style="color:var(--lhs);font-weight:600">left-hand side</span> is generated from the official spec. The <span style="color:var(--rhs);font-weight:600">right-hand side</span> is generated from ZisK's real circuit constraints. The proof tower in the middle is the work of showing they agree. Read the map below top-to-bottom: generation first (how the two sides get into Lean), then the tower (how they're proved equal).</p>
+
+<div class="diagram" aria-label="Architecture map">
+  <div class="band-label">① Generation — Nix turns pinned sources into Lean inputs</div>
+  <div class="gen">
+    <span class="node"><span class="t">flake.lock</span><br><span class="p">pins every input by hash</span></span>
+    <span class="arr">→</span>
+    <span class="node"><span class="t">nix run .#populate</span></span>
+    <span class="arr">→</span>
+    <span class="node"><span class="t">build/sail-lean/</span><br><span class="p">LHS spec, compiled</span></span>
+    <span class="node"><span class="t">build/zisk.pilout</span> → <span class="t">pil-extract</span><br><span class="p">→ build/extraction/*.lean (RHS feed)</span></span>
+  </div>
+
+  <div class="band-label" style="margin-top:1rem">② The two arcs, as hand-written Lean territories</div>
+  <div class="cols">
+    <div class="col l">
+      <div class="h">LHS · the spec</div>
+      <ul>
+        <li><code>SailSpec/</code> — pure specs + bridge <span class="soft">(65)</span></li>
+      </ul>
+    </div>
+    <div class="col r">
+      <div class="h">RHS · the circuit</div>
+      <ul>
+        <li><code>Airs/</code> — op-bus &amp; memory model <span class="soft">(32)</span></li>
+        <li><code>AirsClean/</code> — Clean-DSL ensemble <span class="soft">(73)</span></li>
+        <li><code>ZiskCircuit/</code> — circuit semantics <span class="soft">(65)</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="meet">▼ &nbsp; they meet &nbsp; ▼</div>
+
+  <div class="band-label">③ The proof tower — read upward; each layer consumes the one below</div>
+  <div class="tower">
+    <div class="step"><span class="lvl">1</span><span class="t">EquivCore/&lt;Op&gt;</span> — the real proof: <code>Sail.execute = bus_effect.2</code><span class="p">93 files</span></div>
+    <div class="up">▲</div>
+    <div class="step"><span class="lvl">2</span><span class="t">Compliance/Wrappers/&lt;Op&gt;</span> — discharge AIR-row/table facts (promises relocate up)<span class="p">in Compliance/ · 78</span></div>
+    <div class="up">▲</div>
+    <div class="step"><span class="lvl">3</span><span class="t">Equivalence/&lt;Op&gt;</span> — canonical <code>equiv_&lt;OP&gt;</code>, channel-balance<span class="p">63 files = 63 opcodes</span></div>
+    <div class="up">▲</div>
+    <div class="step"><span class="lvl">4</span><span class="t">Compliance/Dispatch/</span> — per-family aggregation (OpEnvelope)<span class="p">10 dispatchers</span></div>
+    <div class="up">▲</div>
+    <div class="step global"><span class="lvl">5</span><span class="t">Compliance.lean</span> — <code>zisk_riscv_compliant_program_bus</code> ★<span class="p">global claim · conditioned</span></div>
+  </div>
+
+  <div class="crosscut">
+    <div class="cc"><b>trust/</b> — wraps the claim. Scripts + baselines that mechanically prevent the trust surface from regressing. 0 axioms today.</div>
+    <div class="cc"><b>.github/workflows/</b> — the outer loop. <code>proofs.yml</code> runs populate → lake build → trust gate; <code>trust-gate.yml</code> runs the fast syntactic checks.</div>
+  </div>
+</div>
+<p class="soft" style="font-size:.85rem">Numbers in parentheses are <code>.lean</code> file counts per territory (506 total) — a rough proxy for where the mass sits. Notice the RHS (Airs + AirsClean + ZiskCircuit ≈ 170) and the tower (EquivCore + Compliance + Equivalence ≈ 234) dominate; the spec side is comparatively thin.</p>
+
+<h2><span class="num">2</span>What each territory is <em>for</em></h2>
+
+<p><span class="side"><b>Re-arch lens —</b> <code>Airs/</code> (op-bus model) and <code>AirsClean/</code> (Clean-DSL ensemble) are <em>two</em> circuit-side stacks that grew at different times. Whether they should stay separate, merge, or one should subsume the other is one of the sharpest re-architecture questions. We'll dedicate a later lesson to it.</span>
+<b>The RHS (circuit) — three layers.</b> <code>pil-extract</code> drops raw, generated constraint files into <code>build/extraction/</code> (gitignored). <code>Airs/</code> wraps those into human-readable named-column records (<code>Valid_&lt;AIR&gt;</code>) plus the <em>operation-bus</em> model that says how an instruction maps to circuit rows. <code>AirsClean/</code> formalizes the AIR ensemble in the Clean DSL. <code>ZiskCircuit/</code> states the circuit's actual arithmetic semantics in <code>BitVec</code>/field terms.</p>
+
+<p><b>The LHS (spec) — one layer.</b> <code>build/sail-lean/</code> is the official RISC-V spec compiled to Lean. <code>SailSpec/</code> is the thin hand-written bridge: per-opcode "pure specs" restating the Sail semantics in a shape the proofs can chew on.</p>
+
+<p><span class="side"><b>Re-arch lens —</b> the 3-layer tower is the densest, most duplicated region (234 files for 63 opcodes ≈ 3.7 files/opcode). The in-repo <code>simplification-suggestions.md</code> is your ranked backlog here — several collapses already shipped. This is priority #1 for your mission.</span>
+<b>The tower — where the proof lives.</b> For each opcode: <code>EquivCore/&lt;Op&gt;</code> does the real work (spec = bus effect, given a well-formed AIR row). <code>Compliance/Wrappers/&lt;Op&gt;</code> discharges the <em>row/table</em> facts from the provider's <code>Valid_&lt;AIR&gt;</code> spec — but, as <a href="0002-one-opcode-end-to-end.html">Lesson 02</a> shows, the per-opcode "promise" bundle is <em>not</em> eliminated; it's relocated upward into the <code>OpEnvelope</code>. <code>Equivalence/&lt;Op&gt;</code> restates the result in the canonical <em>channel-balance</em> form — these 63 files are the public per-opcode theorems. <code>Compliance/Dispatch/</code> aggregates them per instruction-family, and <code>Compliance.lean</code> routes all 63 through a sum type into the single global theorem.</p>
+
+<p><b>Supporting cast.</b> <code>Field/</code> (Goldilocks field + the one global <code>FGL</code> instance), <code>Bits/</code> (PackedBitVec no-wrap toolkits), <code>Channels/</code> (the channel-balance machinery), <code>RowShape/</code>, and <code>Tactics/</code> (proof automation) are shared infrastructure the tower leans on. <code>Completeness/</code> is a separate coverage claim (every decodable RV64IM word is accepted), backed by the Aeneas extraction of ZisK's Rust lowering.</p>
+
+<h2><span class="num">3</span>What "green" actually means</h2>
+<p>Two distinct gates, often conflated — plus one subtlety the slogans hide.</p>
+<p><b>1. <code>lake build</code> typechecks</b> ⇒ every per-opcode <code>equiv_&lt;OP&gt;</code> and the global <code>zisk_riscv_compliant_program_bus</code> hold <em>in Lean's kernel</em>. <span class="soft">This <em>is</em> the formal-verification claim. Everything else is scaffolding.</span></p>
+<p><span class="side"><b>Read the signature, not the slogan —</b> verified against <code>Compliance.lean:95</code>. The bridge + no-known-defect hypotheses are the residual trust, expressed as theorem parameters the caller must supply — tracked in the caller-burden ledger, not as axioms. "0 axioms" is true <em>and</em> the trust is real; it just moved.</span>
+<b>But it is <em>not</em> unconditional.</b> The global theorem's signature is <code>zisk_riscv_compliant_program_bus (env : OpEnvelope) (h_bridge : env.aeneasBridgeTrust) (h_memory_construction) (h_known_bugs : Defects.NoKnownDefect env) : env.exec_eq</code>. In words: <em>for any opcode arm, <b>given</b> Aeneas-bridge trust, memory-timeline construction evidence, and that the arm is <b>outside</b> the ledgered known-defect regions (<code>trust/defects.md</code>), Sail = circuit.</em> So green ≠ "ZisK matches the spec, period." It's "matches, modulo these stated premises and known defects."</p>
+<p><b>2. The trust gate passes</b> ⇒ the <em>shape</em> of that claim hasn't been quietly weakened — no new axioms, no laundered hypotheses, no over-strong validators. It guards the claim's <em>integrity over time</em>, not its truth at one instant.</p>
+<p class="soft" style="font-size:.9rem">Mission-critical for re-architecting: the "0 axioms" headline is true, but the residual trust is <em>relocated</em> into the global theorem's hypotheses + the caller-burden ledger — not eliminated. A refactor can keep <code>lake build</code> green while silently moving trust around; the trust gate exists to catch that. Respect it, don't route around it.</p>
+<p class="soft" style="font-size:.82rem;border-top:1px dotted var(--rule);padding-top:.5rem"><b>Provenance note —</b> the structural map above (territories, file counts, import flow) was read directly from the tree. The claims in this section were validated against source: global theorem present, both axiom ledgers empty, 63 <code>Equivalence/</code> files, <code>Wrappers/</code> current. <em>Not</em> yet verified: a green <code>lake build</code> in this worktree — <code>build/</code> and <code>.lake/</code> are unpopulated, so the definitive kernel check hasn't been run here. Ask me to run <code>nix run .#populate &amp;&amp; lake build</code> for the real thing (it's heavy).</p>
+
+<!-- ===================== RETRIEVAL PRACTICE ===================== -->
+<h2><span class="num">4</span>Make it stick</h2>
+<p>Reading a map isn't knowing it. Two quick retrieval drills — do them now, from memory, before you look back up.</p>
+
+<div class="lab">
+  <div class="tag">Drill A · retrieval</div>
+  <h3>Rebuild the proof tower, bottom to top</h3>
+  <p class="soft" style="font-size:.88rem;margin:.2rem 0 .2rem">Click the five layers in the order the proof climbs them — from the real per-opcode proof up to the single global theorem.</p>
+  <div class="chips" id="chips"></div>
+  <div class="seq" id="seq">Your order: <span style="font-style:italic">(click chips above)</span></div>
+  <button class="btn" id="check">Check</button>
+  <button class="btn" id="reset" style="border-color:var(--soft);color:var(--soft)">Reset</button>
+  <div class="verdict" id="verdict"></div>
+</div>
+
+<div class="lab">
+  <div class="tag">Drill B · recall cards</div>
+  <h3>Territory → job</h3>
+  <p class="soft" style="font-size:.88rem;margin:.2rem 0 .4rem">Say the answer out loud first, <em>then</em> click to flip. Honest recall is the point.</p>
+  <div class="cards" id="cards"></div>
+</div>
+
+<div class="src">
+  <b>Primary source —</b> read the repo's own <a href="../../../README.md">README.md</a>, the <em>Layout</em> table and the <em>Pipeline</em> diagram. It's the highest-trust one-page statement of this map. Then skim <a href="../../../simplification-suggestions.md">simplification-suggestions.md</a> — your ranked re-architecture backlog. For the deep version of the tower, <a href="../../../CLAUDE.md">CLAUDE.md</a> §Pipeline.
+</div>
+
+<div class="ask">
+  <b>Your teacher is on call.</b> This is one lesson in a stateful course — ask me to go deeper on any territory, to draw the real import graph, to challenge a claim here, or to sanity-check a re-architecture idea before you commit to it. Unsure what's next? Ask, and I'll pick the lesson that fits where you are.
+</div>
+
+<footer>
+  <span>↔ <a href="../reference/glossary.html">Glossary</a> — every term used above, defined.</span>
+  <span>Next ▸ <em>Lesson 02 — one opcode, end to end</em> (ask me to build it)</span>
+</footer>
+
+</div>
+
+<script>
+/* ---- Drill A: order the proof tower ---- */
+const STAGES = [
+  {id:'core',   t:'EquivCore/<Op>'},
+  {id:'wrap',   t:'Compliance/Wrappers/<Op>'},
+  {id:'equiv',  t:'Equivalence/<Op>  (equiv_<OP>)'},
+  {id:'disp',   t:'Compliance/Dispatch/'},
+  {id:'global', t:'Compliance.lean  (global theorem)'},
+];
+const ORDER = ['core','wrap','equiv','disp','global'];
+// deterministic-ish scramble for display
+const SHOW = ['disp','core','global','equiv','wrap'];
+let picks = [];
+const chipsEl = document.getElementById('chips');
+const seqEl   = document.getElementById('seq');
+const verdict = document.getElementById('verdict');
+
+function renderChips(){
+  chipsEl.innerHTML = '';
+  SHOW.forEach(id=>{
+    const s = STAGES.find(x=>x.id===id);
+    const b = document.createElement('button');
+    b.className='chip'; b.dataset.id=id; b.textContent=s.t;
+    const i = picks.indexOf(id);
+    if(i>=0){ b.classList.add('picked');
+      b.innerHTML='<span class="badge">'+(i+1)+'</span>'+s.t; }
+    b.onclick=()=>{ if(picks.includes(id))return; picks.push(id); draw(); };
+    chipsEl.appendChild(b);
+  });
+}
+function draw(){
+  renderChips();
+  seqEl.innerHTML = 'Your order: ' + (picks.length
+    ? picks.map((id,i)=>(i+1)+'. '+STAGES.find(x=>x.id===id).t).join('  →  ')
+    : '<span style="font-style:italic">(click chips above)</span>');
+}
+document.getElementById('check').onclick=()=>{
+  if(picks.length<ORDER.length){ verdict.className='verdict no';
+    verdict.textContent='Pick all five first.'; return; }
+  const right = picks.every((id,i)=>id===ORDER[i]);
+  verdict.className='verdict '+(right?'ok':'no');
+  verdict.textContent = right
+    ? '✓ Exactly. Real proof → discharge promises → canonical form → aggregate by family → global theorem.'
+    : '✗ Not yet. Hint: it starts with the file that does the actual Sail-vs-circuit proof, and ends with the one global theorem. Reset and retry.';
+};
+document.getElementById('reset').onclick=()=>{ picks=[]; verdict.textContent=''; verdict.className='verdict'; draw(); };
+draw();
+
+/* ---- Drill B: recall cards ---- */
+const CARDS = [
+  {q:'build/sail-lean/', a:'The LHS — official RISC-V spec compiled to Lean. The reference truth every opcode is proved against.', p:'LeanRV dep'},
+  {q:'Airs/ vs ZiskCircuit/', a:'Airs = named-column AIR wrappers + the op-bus / memory model. ZiskCircuit = the circuit’s actual arithmetic semantics in BitVec/field.', p:'RHS'},
+  {q:'EquivCore/<Op>', a:'The real per-opcode proof: Sail.execute = bus_effect.2. The hardest layer; 93 files.', p:'tower L1'},
+  {q:'Compliance/Wrappers/<Op>', a:'Discharges the caller-supplied promise hypotheses, producing Compliance.equiv_<OP>.', p:'tower L2'},
+  {q:'Equivalence/<Op>', a:'The 63 canonical equiv_<OP> theorems in channel-balance form — the public per-opcode statements.', p:'tower L3'},
+  {q:'trust/', a:'The meta-gate: scripts + baselines that stop the trust surface from regressing. Guards the claim’s integrity, not its truth.', p:'cross-cutting'},
+];
+const cardsEl = document.getElementById('cards');
+CARDS.forEach(c=>{
+  const d=document.createElement('div'); d.className='card';
+  d.innerHTML='<div class="inner"><div class="face front"><div class="q">'+c.q+
+    '</div><div class="hint">recall its job → then flip</div></div>'+
+    '<div class="face back">'+c.a+'<div class="path">'+c.p+'</div></div></div>';
+  d.onclick=()=>d.classList.toggle('flip');
+  cardsEl.appendChild(d);
+});
+</script>
+</body>
+</html>
