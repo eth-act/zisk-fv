@@ -81,6 +81,11 @@ structure MemSeamRow (F : Type) where
   segment_last_value_1 : F
   segment_last_addr : F
   segment_last_step : F
+  -- last-segment gating column: the outgoing PUSH of `segment_last_*` is
+  -- multiplied by `(1 - is_last_segment)` so the final segment emits NO push
+  -- (`mem.pil:241` `direct_gsum_1` gated `* (1 - is_last_segment)`). On the last
+  -- segment the chain is terminated by the verifier's global END, not a push.
+  is_last_segment : F
 deriving ProvableStruct
 
 /-- The base MemBus provider message read off a `MemSeamRow`
@@ -129,14 +134,27 @@ def lastSeamMessageExpr (row : Var MemSeamRow FGL) : SeamMessage (Expression FGL
     segment_id := row.segment_id + 1 }
 
 /-- Mem constraints + dual MemBus emission + segment-continuation seam
-    pull/push. The seam channel PULLs the incoming boundary and PUSHes the
-    outgoing boundary — one VM transition. -/
+    emission. The seam interactions use `emit` (NOT `pull`/`push`): both go into
+    `channelsWithRequirements` (`assumeGuarantees = false`), keeping the seam OUT
+    of `channelsWithGuarantees`. That is the decisive fix (PLAN §4 gotcha): a
+    `pull` lands in `channelsWithGuarantees`, which `SoundEnsemble.subset_finished`
+    would drag into `finished` — impossible for the both-pull-and-push seam. With
+    `emit`, the seam channel joins `ens.channels` via `addChannel` with no
+    soundness obligation; only its BALANCE is consumed (the same trust class as
+    `trace.balanced`).
+
+    The incoming boundary is emitted at multiplicity `-1` (a pull) tagged
+    `segment_id`; the outgoing boundary at multiplicity `(1 - is_last_segment)`
+    (a gated push) tagged `segment_id + 1` (`mem.pil:198/235/241`,
+    `ZiskFv/Airs/Mem.lean:1357/1367`). On the last segment the gate zeroes the
+    push, so it contributes nothing to balance (exercises `exists_push_of_pull`'s
+    nonzero-push clause). -/
 @[circuit_norm]
 def memWithSeamAndMemBus (row : Var MemSeamRow FGL) : Circuit FGL Unit := do
   MemBusChannel.emit row.sel (seamRowMemBusMessageExpr row)
   MemBusChannel.emit row.sel_dual (seamRowMemBusDualMessageExpr row)
-  SeamContChannel.pull (prevSeamMessageExpr row)
-  SeamContChannel.push (lastSeamMessageExpr row)
+  SeamContChannel.emit (-1) (prevSeamMessageExpr row)
+  SeamContChannel.emit (1 - row.is_last_segment) (lastSeamMessageExpr row)
 
 /-- Elaborated `memWithSeamAndMemBus` circuit. Exposes both the MemBus
     provider emissions and the segment-continuation pull/push. -/
@@ -149,10 +167,13 @@ def memWithSeamAndMemBus (row : Var MemSeamRow FGL) : Circuit FGL Unit := do
   channelsWithRequirements := [MemBusChannel.toRaw, SeamContChannel.toRaw]
   -- Expose the SEAM interactions in detail (the new Step-1 capability); the
   -- MemBus interactions are covered by the requirements/guarantees lists, as in
-  -- `Main.mainWithRomMemAndOpBus` (which exposes only its OpBus in detail).
+  -- `Main.mainWithRomMemAndOpBus` (which exposes only its OpBus in detail). The
+  -- seam interactions are `emitted` (NOT `pulled`/`pushed`): the incoming
+  -- boundary at multiplicity `-1`, the outgoing at the gated `(1 - is_last)`.
   exposedChannels row _ :=
     expose SeamContChannel
-      [ pulled (prevSeamMessageExpr row), pushed (lastSeamMessageExpr row) ]
+      [ emitted (-1) (prevSeamMessageExpr row),
+        emitted (1 - row.is_last_segment) (lastSeamMessageExpr row) ]
   channelsLawful := by
     simp [circuit_norm, memWithSeamAndMemBus, seamRowMemBusMessageExpr,
       seamRowMemBusDualMessageExpr, prevSeamMessageExpr, lastSeamMessageExpr,
@@ -170,11 +191,18 @@ def circuitWithSeamAndMemBus : GeneralFormalCircuit FGL MemSeamRow unit where
   Spec _ _ _ := True
   ProverAssumptions _ _ _ := True
   ProverSpec _ _ _ := True
-  channelsWithGuarantees := [MemBusChannel.toRaw, SeamContChannel.toRaw]
+  -- The seam channel is DELIBERATELY absent from `channelsWithGuarantees`: it is
+  -- emitted (`assumeGuarantees = false`), so it is a REQUIREMENT, never a
+  -- guarantee. This keeps it out of the `subset_finished ⊆ finished` obligation
+  -- (PLAN §4); the seam joins the ensemble via `addChannel` (no soundness
+  -- obligation), and only its balance is consumed. MemBus stays a guarantee (it
+  -- is a finished provider channel).
+  channelsWithGuarantees := [MemBusChannel.toRaw]
   channelsWithRequirements := [MemBusChannel.toRaw, SeamContChannel.toRaw]
   exposedChannels row _ :=
     expose SeamContChannel
-      [ pulled (prevSeamMessageExpr row), pushed (lastSeamMessageExpr row) ]
+      [ emitted (-1) (prevSeamMessageExpr row),
+        emitted (1 - row.is_last_segment) (lastSeamMessageExpr row) ]
   channelsLawful := by
     simp [circuit_norm, memWithSeamAndMemBus, seamRowMemBusMessageExpr,
       seamRowMemBusDualMessageExpr, prevSeamMessageExpr, lastSeamMessageExpr,
@@ -197,5 +225,27 @@ def circuitWithSeamAndMemBus : GeneralFormalCircuit FGL MemSeamRow unit where
     normalization context that keeps the `interactionsWith` computation
     tractable). It is NOT needed by this Step-1 capability increment. -/
 def componentWithSeamAndMemBus : Air.Flat.Component FGL := ⟨ circuitWithSeamAndMemBus ⟩
+
+/-- Project this component's `interactionsWith SeamContChannel.toRaw` to the raw
+    `emitted` pull/push pair (the analogue of
+    `componentWithDualMemBus_interactionsWith_memBus`). This is the Step-2 (L4)
+    handoff: the seam-balance extraction over the real ensemble reduces each
+    Mem-table row's seam contribution through this lemma. -/
+theorem componentWithSeamAndMemBus_interactionsWith_seam :
+    componentWithSeamAndMemBus.operations.interactionsWith SeamContChannel.toRaw =
+      [ ((SeamContChannel.emitted (-1)
+            (prevSeamMessageExpr componentWithSeamAndMemBus.rowInputVar)).toRaw)
+        , ((SeamContChannel.emitted (1 - componentWithSeamAndMemBus.rowInputVar.is_last_segment)
+            (lastSeamMessageExpr componentWithSeamAndMemBus.rowInputVar)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨SeamContChannel.toRaw,
+      [ ((SeamContChannel.emitted (-1)
+            (prevSeamMessageExpr componentWithSeamAndMemBus.rowInputVar)).toRaw)
+        , ((SeamContChannel.emitted (1 - componentWithSeamAndMemBus.rowInputVar.is_last_segment)
+            (lastSeamMessageExpr componentWithSeamAndMemBus.rowInputVar)).toRaw) ]⟩ ∈
+    componentWithSeamAndMemBus.exposedChannels
+  simp only [componentWithSeamAndMemBus, circuitWithSeamAndMemBus,
+    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+    List.map_nil, Channel.emitted]
 
 end ZiskFv.AirsClean.Mem
