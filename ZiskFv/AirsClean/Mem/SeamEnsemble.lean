@@ -296,4 +296,274 @@ theorem segTable_interactionsWith (v : MemSeamRow FGL) (data : ProverData FGL) :
     eval_emittedSeam, eval_emittedSeam, eval_segPrevMsg, eval_segLastMsg,
     h_prevmult, h_lastmult]
 
+/-! ## The seam ensemble (real-component) and a concrete witness.
+
+ONE ensemble: the boot/endpoint table + two segment tables built from the
+production `componentWithSeamAndMemBus`, with the seam channel in `ens.channels`
+(the `SoundEnsemble.addChannel` position — `verifier := .empty`, no soundness
+obligation). This is the N=2 instance of "model the whole multi-segment execution
+as one ensemble whose Mem rows hold every segment boundary." -/
+
+/-- The real-component seam ensemble: boot/endpoint + 2 production seam-Mem
+    tables, seam channel ∈ `ens.channels`. -/
+def seamEnsemble : Ensemble FGL unit where
+  tables := [bootComp, segComp, segComp]
+  channels := [SeamContChannel.toRaw]
+  verifier := .empty FGL unit
+
+theorem seam_mem_channels : SeamContChannel.toRaw ∈ seamEnsemble.channels := by
+  simp [seamEnsemble]
+
+/-- A concrete `EnsembleWitness` over `seamEnsemble`: one boot row + two segment
+    (`MemSeamRow`) rows. -/
+def mkWitness (vb : BootRow FGL) (v0 v1 : MemSeamRow FGL) (data : ProverData FGL) :
+    EnsembleWitness seamEnsemble where
+  tables := [mkTable bootComp vb data, mkTable segComp v0 data, mkTable segComp v1 data]
+  data := data
+  publicInput := ()
+  same_length := by rfl
+  same_circuits := by
+    intro i hi
+    simp only [seamEnsemble, List.length_cons, List.length_nil] at hi ⊢
+    interval_cases i <;> rfl
+  same_data := by
+    intro table htable
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at htable
+    rcases htable with rfl | rfl | rfl <;> rfl
+
+/-- The witness's seam interactions reduce to the 6-element faithful list:
+    boot push (tag 0), final pull (tag tf), seg0 pull/gated-push, seg1
+    pull/gated-push. -/
+theorem mkWitness_interactionsWith (vb : BootRow FGL) (v0 v1 : MemSeamRow FGL)
+    (data : ProverData FGL) :
+    (mkWitness vb v0 v1 data).interactionsWith SeamContChannel.toRaw
+      = [ emittedSeamValue 1 (bootPushVal vb),
+          emittedSeamValue (-1) (finalPullVal vb),
+          emittedSeamValue (-1) (segPrevVal v0),
+          emittedSeamValue (1 - v0.is_last_segment) (segLastVal v0),
+          emittedSeamValue (-1) (segPrevVal v1),
+          emittedSeamValue (1 - v1.is_last_segment) (segLastVal v1) ] := by
+  rw [EnsembleWitness.interactionsWith_of_verifier_empty (by rfl)]
+  simp only [mkWitness, List.flatMap_cons, List.flatMap_nil, List.append_nil,
+    bootTable_interactionsWith, segTable_interactionsWith, List.cons_append,
+    List.nil_append]
+
+/-! ## Bridge: `BalancedInteractions` ignores the channel field.
+
+`balanceOf` (hence `BalancedInteractions`) inspects only `.msg` and `.mult`. So a
+list of production seam interactions and the derivation's `theList2` (which uses
+its own `SeamChannel5`) have identical balance iff their `(mult, msg)` projections
+agree element-wise. (Verbatim from the confirmed probe — balance is
+channel-blind.) -/
+
+theorem balanceOf_proj (l : List (Interaction FGL)) (m : Array FGL) :
+    balanceOf l m
+      = (((l.map (fun i => (i.mult, i.msg))).filter (fun p => p.2 = m)).map
+          (fun p => p.1)).sum := by
+  simp only [balanceOf, List.filter_map, List.map_map]; rfl
+
+theorem balanceOf_congr_of_proj {as bs : List (Interaction FGL)}
+    (h : as.map (fun i => (i.mult, i.msg)) = bs.map (fun i => (i.mult, i.msg)))
+    (m : Array FGL) : balanceOf as m = balanceOf bs m := by
+  rw [balanceOf_proj, balanceOf_proj, h]
+
+theorem balancedInteractions_of_proj {as bs : List (Interaction FGL)}
+    (h : as.map (fun i => (i.mult, i.msg)) = bs.map (fun i => (i.mult, i.msg)))
+    (hbal : BalancedInteractions as) : BalancedInteractions bs := by
+  refine ⟨?_, ?_⟩
+  · have hlen : as.length = bs.length := by
+      have := congrArg List.length h; simpa using this
+    rw [← hlen]; exact hbal.1
+  · intro m
+    rw [← balanceOf_congr_of_proj h m]
+    exact hbal.2 m
+
+/-- The production `SeamMessage` value's `toElements` array equals the
+    derivation's `seam5` 5-tuple (so the message arrays coincide and balance
+    transfers). -/
+theorem toElements_seamMessage (a b c d e : FGL) :
+    (toElements ({ value_0 := a, value_1 := b, addr := c, step := d, segment_id := e } : SeamMessage FGL)).toArray
+      = seam5 a b c d e := by
+  simp [seam5, explicit_provable_type, ProvableStruct.componentsToElements,
+    components, ProvableStruct.toComponents, Vector.toArray_cast,
+    Vector.toArray_append]
+
+/-- Map a `BootRow`/`MemSeamRow` triple onto `theList2`'s 26 free arguments. The
+    segment tags are the rows' `segment_id`s; the +1 push tags are intrinsic. -/
+@[reducible] def asTheList2 (vb : BootRow FGL) (v0 v1 : MemSeamRow FGL) :
+    List (Interaction FGL) :=
+  theList2
+    vb.boot_value_0 vb.boot_value_1 vb.boot_addr vb.boot_step
+    vb.final_value_0 vb.final_value_1 vb.final_addr vb.final_step vb.tf
+    v0.previous_segment_value_0 v0.previous_segment_value_1 v0.previous_segment_addr
+    v0.previous_segment_step v0.segment_id
+    v0.segment_last_value_0 v0.segment_last_value_1 v0.segment_last_addr v0.segment_last_step
+    v1.previous_segment_value_0 v1.previous_segment_value_1 v1.previous_segment_addr
+    v1.previous_segment_step v1.segment_id
+    v1.segment_last_value_0 v1.segment_last_value_1 v1.segment_last_addr v1.segment_last_step
+
+/-- The production 6-element seam list projects onto `theList2` PROVIDED both
+    segments are non-last (`is_last_segment = 0`, so the gated push multiplicity
+    is `1 - 0 = 1`, matching `theList2`'s `pushMsg5`). A last segment's push is
+    gated off and is closed instead by the boot/verifier END (it would not appear
+    in this 6-element chain). -/
+theorem proj_eq (vb : BootRow FGL) (v0 v1 : MemSeamRow FGL)
+    (h0 : v0.is_last_segment = 0) (h1 : v1.is_last_segment = 0) :
+    ([ emittedSeamValue 1 (bootPushVal vb),
+       emittedSeamValue (-1) (finalPullVal vb),
+       emittedSeamValue (-1) (segPrevVal v0),
+       emittedSeamValue (1 - v0.is_last_segment) (segLastVal v0),
+       emittedSeamValue (-1) (segPrevVal v1),
+       emittedSeamValue (1 - v1.is_last_segment) (segLastVal v1) ]
+        : List (Interaction FGL)).map (fun i => (i.mult, i.msg))
+      = (asTheList2 vb v0 v1).map (fun i => (i.mult, i.msg)) := by
+  simp only [asTheList2, theList2, List.map_cons, List.map_nil,
+    pushMsg5, pullMsg5, emittedSeamValue, h0, h1, sub_zero,
+    bootPushVal, finalPullVal, segPrevVal, segLastVal, toElements_seamMessage]
+
+/-! ## EXTRACTION: from the ensemble `BalancedChannels` to `theList2` balance.
+
+`BalancedChannels` is a conjunct of the ensemble `Statement`; it holds for the
+seam channel because it is in `ens.channels` (the `addChannel` position). We pull
+out the seam-channel balance and transport it to the derivation's `theList2`
+shape (balance is channel-blind). -/
+
+/-- From the full `BalancedChannels`, extract the `theList2` balance for the seam
+    channel (both segments non-last). -/
+theorem theList2_balanced_of_balancedChannels (vb : BootRow FGL) (v0 v1 : MemSeamRow FGL)
+    (data : ProverData FGL)
+    (h0 : v0.is_last_segment = 0) (h1 : v1.is_last_segment = 0)
+    (hbal : EnsembleWitness.BalancedChannels (mkWitness vb v0 v1 data)) :
+    BalancedInteractions (asTheList2 vb v0 v1) := by
+  have hseam := hbal SeamContChannel.toRaw (by simp [seamEnsemble])
+  rw [EnsembleWitness.BalancedChannel, EnsembleWitness.interactionsWith_allTablesWitness,
+    mkWitness_interactionsWith] at hseam
+  exact balancedInteractions_of_proj (proj_eq vb v0 v1 h0 h1) hseam
+
+/-! ## THE SEAM VALUE-EQUALITY, derived end-to-end from ensemble balance (L4).
+
+From the ensemble's `BalancedChannels` (the assumed channel-balance trust class,
+holding on the seam channel because it is in `ens.channels`),
+`SeamVmTagChain.tag_chain_derived` forces the per-tag value seam. We expose the
+SEAM conjunct: one segment's incoming boundary equals the other's outgoing
+boundary. The disjunction is the honest permutation ambiguity (which physical
+segment plays which chain position); both disjuncts carry a genuine seam. -/
+theorem seam_value_equality (vb : BootRow FGL) (v0 v1 : MemSeamRow FGL)
+    (data : ProverData FGL)
+    (h0 : v0.is_last_segment = 0) (h1 : v1.is_last_segment = 0)
+    (hbal : EnsembleWitness.BalancedChannels (mkWitness vb v0 v1 data)) :
+    -- chain position 0 = seg0: seg1.prev = seg0.last (THE SEAM)
+    ( v0.segment_id = 0 ∧ v1.segment_id = 1 ∧ vb.tf = 2
+      ∧ seam5 v1.previous_segment_value_0 v1.previous_segment_value_1
+          v1.previous_segment_addr v1.previous_segment_step v1.segment_id
+        = seam5 v0.segment_last_value_0 v0.segment_last_value_1
+          v0.segment_last_addr v0.segment_last_step (v0.segment_id + 1) )
+    -- chain position 0 = seg1 (permutation): seg0.prev = seg1.last (THE SEAM)
+    ∨ ( v1.segment_id = 0 ∧ v0.segment_id = 1 ∧ vb.tf = 2
+      ∧ seam5 v0.previous_segment_value_0 v0.previous_segment_value_1
+          v0.previous_segment_addr v0.previous_segment_step v0.segment_id
+        = seam5 v1.segment_last_value_0 v1.segment_last_value_1
+          v1.segment_last_addr v1.segment_last_step (v1.segment_id + 1) ) := by
+  have hbalanced := theList2_balanced_of_balancedChannels vb v0 v1 data h0 h1 hbal
+  rw [asTheList2] at hbalanced
+  rcases tag_chain_derived
+      vb.boot_value_0 vb.boot_value_1 vb.boot_addr vb.boot_step
+      vb.final_value_0 vb.final_value_1 vb.final_addr vb.final_step vb.tf
+      v0.previous_segment_value_0 v0.previous_segment_value_1 v0.previous_segment_addr
+      v0.previous_segment_step v0.segment_id
+      v0.segment_last_value_0 v0.segment_last_value_1 v0.segment_last_addr v0.segment_last_step
+      v1.previous_segment_value_0 v1.previous_segment_value_1 v1.previous_segment_addr
+      v1.previous_segment_step v1.segment_id
+      v1.segment_last_value_0 v1.segment_last_value_1 v1.segment_last_addr v1.segment_last_step
+      hbalanced with
+    ⟨ht0, ht1, htf, _, hseam, _⟩ | ⟨ht1, ht0, htf, _, hseam, _⟩
+  · exact Or.inl ⟨ht0, ht1, htf, hseam⟩
+  · exact Or.inr ⟨ht1, ht0, htf, hseam⟩
+
+/-! ## NON-VACUITY: a concrete balanced multi-segment witness over the real
+    component ensemble (the anti-laundering guard).
+
+`seam_value_equality` quantifies over genuinely free rows; its antecedent
+`BalancedChannels (mkWitness ..)` must be SATISFIABLE for the theorem to say
+something. We exhibit the intended 2-segment chain — using the PRODUCTION
+`MemSeamRow` rows — and prove its seam-channel balance, transported from
+`SeamVmTagChain.goodList2_balanced`. -/
+
+/-- The boot row of the intended chain: boot `(0,0,B,0)` tag 0; final `(2,0,200,9)`
+    tag tf = 2. -/
+@[reducible] def goodBoot : BootRow FGL :=
+  { boot_value_0 := 0, boot_value_1 := 0, boot_addr := 335544320, boot_step := 0,
+    final_value_0 := 2, final_value_1 := 0, final_addr := 200, final_step := 9, tf := 2 }
+
+/-- seg0 (`MemSeamRow`): prev = boot `(0,0,B,0)` tag 0; last `(1,0,100,5)` pushed
+    tag 1; non-last (`is_last_segment = 0`). The base MemRow columns are 0 (they
+    do not participate in the seam channel; they drive the separate MemBus). -/
+@[reducible] def goodSeg0 : MemSeamRow FGL :=
+  { addr := 0, step := 0, sel := 0, addr_changes := 0, step_dual := 0, sel_dual := 0,
+    value_0 := 0, value_1 := 0, wr := 0, previous_step := 0, increment_0 := 0,
+    increment_1 := 0, read_same_addr := 0,
+    segment_id := 0,
+    previous_segment_value_0 := 0, previous_segment_value_1 := 0,
+    previous_segment_addr := 335544320, previous_segment_step := 0,
+    segment_last_value_0 := 1, segment_last_value_1 := 0,
+    segment_last_addr := 100, segment_last_step := 5,
+    is_last_segment := 0 }
+
+/-- seg1 (`MemSeamRow`): prev = seg0.last `(1,0,100,5)` tag 1 (THE SEAM); last
+    `(2,0,200,9)` tag 2; non-last. -/
+@[reducible] def goodSeg1 : MemSeamRow FGL :=
+  { addr := 0, step := 0, sel := 0, addr_changes := 0, step_dual := 0, sel_dual := 0,
+    value_0 := 0, value_1 := 0, wr := 0, previous_step := 0, increment_0 := 0,
+    increment_1 := 0, read_same_addr := 0,
+    segment_id := 1,
+    previous_segment_value_0 := 1, previous_segment_value_1 := 0,
+    previous_segment_addr := 100, previous_segment_step := 5,
+    segment_last_value_0 := 2, segment_last_value_1 := 0,
+    segment_last_addr := 200, segment_last_step := 9,
+    is_last_segment := 0 }
+
+/-- The intended chain's `asTheList2` is exactly `SeamVmTagChain.goodList2`. -/
+theorem asTheList2_good : asTheList2 goodBoot goodSeg0 goodSeg1 = goodList2 := by
+  rfl
+
+/-- THE SATISFIABILITY WITNESS: the concrete 2-segment chain's seam channel is
+    balanced. This proves the antecedent of `seam_value_equality` is INHABITED on
+    the REAL-component ensemble, so the theorem is NOT vacuously true. -/
+theorem good_balancedChannels (data : ProverData FGL) :
+    EnsembleWitness.BalancedChannels (mkWitness goodBoot goodSeg0 goodSeg1 data) := by
+  intro channel hchannel
+  simp only [seamEnsemble, List.mem_singleton] at hchannel
+  subst hchannel
+  rw [EnsembleWitness.BalancedChannel, EnsembleWitness.interactionsWith_allTablesWitness,
+    mkWitness_interactionsWith]
+  exact balancedInteractions_of_proj (by
+    have := proj_eq goodBoot goodSeg0 goodSeg1 (by rfl) (by rfl)
+    rwa [asTheList2_good] at this)
+    goodList2_balanced
+
+/-- NON-VACUOUS instantiation: running `seam_value_equality` on the concrete
+    balanced witness lands in the first disjunct, tags resolve to `(0,1)`,
+    `tf = 2`, and the SEAM holds: seg1.prev `(1,0,100,5)` = seg0.last
+    `(1,0,100,5)`. Certifies non-vacuity end-to-end on the real component. -/
+theorem good_seam_holds (data : ProverData FGL) :
+    seam5 1 0 100 5 1 = seam5 1 0 100 5 (0 + 1) := by
+  rcases seam_value_equality goodBoot goodSeg0 goodSeg1 data (by rfl) (by rfl)
+      (good_balancedChannels data) with
+    ⟨_, _, _, hseam⟩ | ⟨ht1, _, _, _⟩
+  · exact hseam
+  · -- the permutation disjunct forces goodSeg1.segment_id = 0, but it is 1; absurd
+    simp only [goodSeg1] at ht1
+    exact (one_ne_zero ht1).elim
+
 end ZiskFv.AirsClean.Mem.SeamEnsemble
+
+/-! ## Axiom-closure checks.
+
+`#print axioms` returns only Lean-kernel axioms (`propext`, `Classical.choice`,
+`Quot.sound`): 0 PROJECT (`ZiskFv.*`) axioms. NO `sorry`, NO project axiom, NO
+`native_decide`. -/
+#print axioms ZiskFv.AirsClean.Mem.SeamEnsemble.mkWitness_interactionsWith
+#print axioms ZiskFv.AirsClean.Mem.SeamEnsemble.theList2_balanced_of_balancedChannels
+#print axioms ZiskFv.AirsClean.Mem.SeamEnsemble.seam_value_equality
+#print axioms ZiskFv.AirsClean.Mem.SeamEnsemble.good_balancedChannels
+#print axioms ZiskFv.AirsClean.Mem.SeamEnsemble.good_seam_holds
