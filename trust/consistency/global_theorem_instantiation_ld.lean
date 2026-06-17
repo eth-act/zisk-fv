@@ -180,7 +180,19 @@ private def ldMemRow : ZiskFv.AirsClean.Mem.MemRow FGL :=
     previous_step := 0
     increment_0 := 0
     increment_1 := 0
-    read_same_addr := 0 }
+    read_same_addr := 0
+    -- Cross-segment seam columns (XCAP #103, route (b)); not used by the load
+    -- consistency probe, set to 0.
+    segment_id := 0
+    previous_segment_value_0 := 0
+    previous_segment_value_1 := 0
+    previous_segment_addr := 0
+    previous_segment_step := 0
+    segment_last_value_0 := 0
+    segment_last_value_1 := 0
+    segment_last_addr := 0
+    segment_last_step := 0
+    is_last_segment := 0 }
 
 private def ldMem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL :=
   ZiskFv.AirsClean.Mem.validOfRow ldMemRow

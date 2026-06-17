@@ -84,6 +84,22 @@ structure Valid_Mem (F ExtF : Type) [Field F] [Field ExtF] where
   gsum : ℕ → F
   im_0 : ℕ → F
   im_1 : ℕ → F
+  /-- Cross-segment continuation columns (XCAP #103, route (b)). These carry the
+      RAW segment-boundary seam tuple per row so the unified Mem component can
+      emit the segment-continuation channel from `rowInputVar`. They are NOT part
+      of the per-row Mem `Spec` (value/addr/ordering) and play no role in the
+      MemBus provider emission consumed by the load/store timeline; the cross-
+      segment seam is forced by the seam channel's global balance instead. -/
+  segment_id : ℕ → F := fun _ => 0
+  previous_segment_value_0 : ℕ → F := fun _ => 0
+  previous_segment_value_1 : ℕ → F := fun _ => 0
+  previous_segment_addr : ℕ → F := fun _ => 0
+  previous_segment_step : ℕ → F := fun _ => 0
+  segment_last_value_0 : ℕ → F := fun _ => 0
+  segment_last_value_1 : ℕ → F := fun _ => 0
+  segment_last_addr : ℕ → F := fun _ => 0
+  segment_last_step : ℕ → F := fun _ => 0
+  is_last_segment : ℕ → F := fun _ => 0
 
 variable {F ExtF : Type} [Field F] [Field ExtF]
 

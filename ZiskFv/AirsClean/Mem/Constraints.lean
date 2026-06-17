@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.Mem.Spec
 import ZiskFv.AirsClean.RangeTables
 import ZiskFv.Airs.Mem
 import ZiskFv.Channels.MemoryBus
+import ZiskFv.Channels.SegmentContinuation
 import Clean.Circuit.Basic
 
 /-!
@@ -195,6 +196,7 @@ only the primary row; `memWithDualMemBus` also models the pinned
 `step_dual`, and `sel_dual`. -/
 
 open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
+open ZiskFv.Channels.SegmentContinuation (SeamContChannel SeamMessage)
 
 /-- Mem's provider-side memory-bus message: `mem_op = wr + 1` (LOAD=1,
     STORE=2), `ptr = addr * 8`, `width = 8`, `value` from the row's
@@ -220,6 +222,28 @@ def memBusDualMessageExpr (row : Var MemRow FGL) : MemBusMessage (Expression FGL
     value_0 := row.value_0
     value_1 := row.value_1 }
 
+/-- The incoming-boundary seam message PULLed by a segment (the raw
+    `previous_segment_*` tuple, tagged with `segment_id`). Mirrors the
+    `direct_gsum_0` tag (`ZiskFv/Airs/Mem.lean:1351-1358`). -/
+@[reducible]
+def prevSeamMessageExpr (row : Var MemRow FGL) : SeamMessage (Expression FGL) :=
+  { value_0 := row.previous_segment_value_0
+    value_1 := row.previous_segment_value_1
+    addr := row.previous_segment_addr
+    step := row.previous_segment_step
+    segment_id := row.segment_id }
+
+/-- The outgoing-boundary seam message PUSHed by a segment (the raw
+    `segment_last_*` tuple, tagged with `segment_id + 1`). Mirrors the
+    `direct_gsum_1` tag (`ZiskFv/Airs/Mem.lean:1361-1368`). -/
+@[reducible]
+def lastSeamMessageExpr (row : Var MemRow FGL) : SeamMessage (Expression FGL) :=
+  { value_0 := row.segment_last_value_0
+    value_1 := row.segment_last_value_1
+    addr := row.segment_last_addr
+    step := row.segment_last_step
+    segment_id := row.segment_id + 1 }
+
 /-- Mem constraints + provider-side memory-bus emission.
 
     Clean's `pull` has fixed multiplicity `+1`; Mem needs the
@@ -230,12 +254,25 @@ def memWithMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
   MemBusChannel.emit row.sel (memBusMessageExpr row)
 
 /-- Mem constraints + both provider-side memory-bus emissions for the
-    pinned `dual_mem = 1` PIL instance. -/
+    pinned `dual_mem = 1` PIL instance, PLUS the cross-segment continuation
+    seam emission (XCAP #103, route (b)).
+
+    The two MemBus emits are IDENTICAL to the bus-only component, so the Mem
+    timeline machinery (keyed on those emissions + the per-row `Spec`) is
+    unaffected. The seam interactions use `emit` (NOT `pull`/`push`): both go
+    into `channelsWithRequirements` (`assumeGuarantees = false`), keeping the
+    seam OUT of `channelsWithGuarantees` (PLAN §4 gotcha — a `pull` would land in
+    guarantees, which `SoundEnsemble.subset_finished` drags into `finished`).
+    The incoming boundary is pulled (mult `-1`, tag `segment_id`); the outgoing
+    boundary is pushed gated by `(1 - is_last_segment)` (tag `segment_id + 1`,
+    `mem.pil:198/235/241`). -/
 @[circuit_norm]
 def memWithDualMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
   main row
   MemBusChannel.emit row.sel (memBusMessageExpr row)
   MemBusChannel.emit row.sel_dual (memBusDualMessageExpr row)
+  SeamContChannel.emit (-1) (prevSeamMessageExpr row)
+  SeamContChannel.emit (1 - row.is_last_segment) (lastSeamMessageExpr row)
 
 /-- Elaborated `memWithMemBus` circuit, ready for use in Clean
     memory-bus component assembly. -/
@@ -260,13 +297,21 @@ def memWithDualMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
   main := memWithDualMemBus
   localLength _ := 0
   output _ _ := ()
-  channelsWithRequirements := [MemBusChannel.toRaw]
+  channelsWithRequirements := [MemBusChannel.toRaw, SeamContChannel.toRaw]
+  -- Expose BOTH the MemBus provider emissions (unchanged) AND the seam pull/push.
+  -- Listing MemBus first keeps `componentWithDualMemBus_interactionsWith_memBus`
+  -- selecting the MemBus entry by `interactionsWith MemBusChannel.toRaw`; the seam
+  -- entry is reached by `interactionsWith SeamContChannel.toRaw`.
   exposedChannels row _ :=
     expose MemBusChannel
       [ MemBusChannel.emitted row.sel (memBusMessageExpr row)
         , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ]
+    ++ expose SeamContChannel
+      [ SeamContChannel.emitted (-1) (prevSeamMessageExpr row),
+        SeamContChannel.emitted (1 - row.is_last_segment) (lastSeamMessageExpr row) ]
   channelsLawful := by
-    simp only [circuit_norm, memWithDualMemBus, main, memBusMessageExpr,
-      memBusDualMessageExpr, MemBusChannel]
+    simp [circuit_norm, memWithDualMemBus, main, memBusMessageExpr,
+      memBusDualMessageExpr, prevSeamMessageExpr, lastSeamMessageExpr,
+      MemBusChannel, SeamContChannel, Channel.toRaw, RawChannel.mk.injEq]
 
 end ZiskFv.AirsClean.Mem

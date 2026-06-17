@@ -46,6 +46,21 @@ def rowAt (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : MemRow FGL where
   increment_0 := v.increment_0 r
   increment_1 := v.increment_1 r
   read_same_addr := v.read_same_addr r
+  -- The 10 segment-boundary columns (XCAP #103, route (b)) are carried per row by
+  -- the unified `Valid_Mem` so `rowAt` faithfully reflects the concrete Clean Mem
+  -- row (including its seam columns). They do not affect the per-row Mem `Spec`
+  -- (value/addr/ordering) nor the MemBus emission consumed by the load/store
+  -- timeline; the cross-segment seam is forced by the seam channel's balance.
+  segment_id := v.segment_id r
+  previous_segment_value_0 := v.previous_segment_value_0 r
+  previous_segment_value_1 := v.previous_segment_value_1 r
+  previous_segment_addr := v.previous_segment_addr r
+  previous_segment_step := v.previous_segment_step r
+  segment_last_value_0 := v.segment_last_value_0 r
+  segment_last_value_1 := v.segment_last_value_1 r
+  segment_last_addr := v.segment_last_addr r
+  segment_last_step := v.segment_last_step r
+  is_last_segment := v.is_last_segment r
 
 @[reducible]
 def constVar (row : MemRow FGL) : Var MemRow FGL where
@@ -62,6 +77,16 @@ def constVar (row : MemRow FGL) : Var MemRow FGL where
   increment_0 := .const row.increment_0
   increment_1 := .const row.increment_1
   read_same_addr := .const row.read_same_addr
+  segment_id := .const row.segment_id
+  previous_segment_value_0 := .const row.previous_segment_value_0
+  previous_segment_value_1 := .const row.previous_segment_value_1
+  previous_segment_addr := .const row.previous_segment_addr
+  previous_segment_step := .const row.previous_segment_step
+  segment_last_value_0 := .const row.segment_last_value_0
+  segment_last_value_1 := .const row.segment_last_value_1
+  segment_last_addr := .const row.segment_last_addr
+  segment_last_step := .const row.segment_last_step
+  is_last_segment := .const row.is_last_segment
 
 @[reducible]
 def validOfRow (row : MemRow FGL) :

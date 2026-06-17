@@ -34,6 +34,26 @@ structure MemRow (F : Type) where
   increment_0 : F
   increment_1 : F
   read_same_addr : F
+  -- segment-boundary columns (XCAP #103, route (b)): the raw cross-segment seam
+  -- tuple components + tag. They carry the segment-continuation channel
+  -- (`ZiskFv/Channels/SegmentContinuation.lean`) RAW so that — once the seam
+  -- channel is added to the ensemble via `SoundEnsemble.addChannel` — global
+  -- balance forces `seg_n.segment_last_* = seg_{n+1}.previous_segment_*`. They
+  -- do NOT participate in the per-row Mem `Spec` (value/addr/ordering), which is
+  -- about the 13 base columns above and is preserved unchanged.
+  segment_id : F
+  previous_segment_value_0 : F
+  previous_segment_value_1 : F
+  previous_segment_addr : F
+  previous_segment_step : F
+  segment_last_value_0 : F
+  segment_last_value_1 : F
+  segment_last_addr : F
+  segment_last_step : F
+  -- last-segment gating column: the outgoing PUSH of `segment_last_*` is
+  -- multiplied by `(1 - is_last_segment)` so the final segment emits NO push
+  -- (`mem.pil:241` `direct_gsum_1` gated `* (1 - is_last_segment)`).
+  is_last_segment : F
 deriving ProvableStruct
 
 end ZiskFv.AirsClean.Mem

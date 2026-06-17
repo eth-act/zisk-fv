@@ -1,6 +1,7 @@
 import ZiskFv.AirsClean.Mem.Constraints
 import ZiskFv.AirsClean.Mem.Soundness
 import ZiskFv.AirsClean.CompletenessHelpers
+import ZiskFv.Channels.SegmentContinuation
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -28,6 +29,7 @@ namespace ZiskFv.AirsClean.Mem
 
 open Goldilocks
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open ZiskFv.Channels.SegmentContinuation (SeamContChannel SeamMessage)
 open Air.Flat
 
 /-- Honest `read_same_addr` column for Mem. -/
@@ -57,7 +59,19 @@ def memRowOf (sel selDual wr addrChanges : Bool)
     previous_step := previousStep
     increment_0 := increment_0
     increment_1 := increment_1
-    read_same_addr := memReadSameAddrOf addrChanges wr }
+    read_same_addr := memReadSameAddrOf addrChanges wr
+    -- The 10 segment-boundary columns (XCAP #103, route (b)) are not part of the
+    -- per-row Mem `Spec`; this honest row-local builder sets them to 0.
+    segment_id := 0
+    previous_segment_value_0 := 0
+    previous_segment_value_1 := 0
+    previous_segment_addr := 0
+    previous_segment_step := 0
+    segment_last_value_0 := 0
+    segment_last_value_1 := 0
+    segment_last_addr := 0
+    segment_last_step := 0
+    is_last_segment := 0 }
 
 lemma memRowOf_constraintsHold (sel selDual wr addrChanges : Bool)
     (addr step stepDual previousStep increment_0 increment_1 value_0 value_1 : FGL)
@@ -195,7 +209,10 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
               , by simpa only [sub_eq_add_neg] using h6
               , by simpa only [sub_eq_add_neg] using h7
               , by simpa only [sub_eq_add_neg] using h8 ⟩
-      · exact ⟨by intro _; trivial, by intro _; trivial⟩
+      · -- The channel emissions (two MemBus, two seam) all have
+        -- `Guarantees := True`, so every guarantee conjunct is trivial.
+        simp only [MemBusChannel, SeamContChannel, and_imp, implies_true,
+          and_true, true_and, forall_const]
     completeness := by
       circuit_proof_start [MemBusChannel]
       obtain ⟨sel, selDual, wr, addrChanges, addr, step, stepDual, previousStep,
@@ -241,8 +258,32 @@ theorem componentWithDualMemBus_interactionsWith_memBus :
             (memBusDualMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ]⟩ ∈
     componentWithDualMemBus.exposedChannels
   simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusElaborated,
-    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
-    List.map_nil]
+    Component.exposedChannels, expose, List.cons_append, List.nil_append,
+    List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
+  tauto
+
+/-- Project `componentWithDualMemBus`'s `interactionsWith SeamContChannel.toRaw`
+    to the raw emitted pull/gated-push pair (the route-(b) analogue of
+    `componentWithDualMemBus_interactionsWith_memBus`). The seam-balance
+    extraction over `fullRv64imEnsemble` reduces each Mem-table row's seam
+    contribution through this lemma. -/
+theorem componentWithDualMemBus_interactionsWith_seam :
+    componentWithDualMemBus.operations.interactionsWith SeamContChannel.toRaw =
+      [ ((SeamContChannel.emitted (-1)
+            (prevSeamMessageExpr componentWithDualMemBus.rowInputVar)).toRaw)
+        , ((SeamContChannel.emitted (1 - componentWithDualMemBus.rowInputVar.is_last_segment)
+            (lastSeamMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨SeamContChannel.toRaw,
+      [ ((SeamContChannel.emitted (-1)
+            (prevSeamMessageExpr componentWithDualMemBus.rowInputVar)).toRaw)
+        , ((SeamContChannel.emitted (1 - componentWithDualMemBus.rowInputVar.is_last_segment)
+            (lastSeamMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ]⟩ ∈
+    componentWithDualMemBus.exposedChannels
+  simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusElaborated,
+    Component.exposedChannels, expose, List.cons_append, List.nil_append,
+    List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
+  tauto
 
 /-- Project the generic Clean component `Spec` for `componentWithMemBus` to
     the concrete Mem row `Spec`. -/
@@ -310,7 +351,17 @@ theorem spec_via_component (row : MemRow FGL)
       previous_step := .const row.previous_step
       increment_0 := .const row.increment_0
       increment_1 := .const row.increment_1
-      read_same_addr := .const row.read_same_addr }
+      read_same_addr := .const row.read_same_addr
+      segment_id := .const row.segment_id
+      previous_segment_value_0 := .const row.previous_segment_value_0
+      previous_segment_value_1 := .const row.previous_segment_value_1
+      previous_segment_addr := .const row.previous_segment_addr
+      previous_segment_step := .const row.previous_segment_step
+      segment_last_value_0 := .const row.segment_last_value_0
+      segment_last_value_1 := .const row.segment_last_value_1
+      segment_last_addr := .const row.segment_last_addr
+      segment_last_step := .const row.segment_last_step
+      is_last_segment := .const row.is_last_segment }
     row ?_ ?_
   · rfl
   · simpa only [Spec, sub_eq_add_neg] using h_constraints

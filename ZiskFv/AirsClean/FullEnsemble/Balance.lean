@@ -4378,6 +4378,16 @@ def zeroMemRow : ZiskFv.AirsClean.Mem.MemRow FGL where
   increment_0 := 0
   increment_1 := 0
   read_same_addr := 0
+  segment_id := 0
+  previous_segment_value_0 := 0
+  previous_segment_value_1 := 0
+  previous_segment_addr := 0
+  previous_segment_step := 0
+  segment_last_value_0 := 0
+  segment_last_value_1 := 0
+  segment_last_addr := 0
+  segment_last_step := 0
+  is_last_segment := 0
 
 /-- Project row `row` of a concrete Clean Mem table to the Mem row input.
     Out-of-range rows use `zeroMemRow` only to make the named-column view total. -/
@@ -4417,6 +4427,19 @@ def memOfTable
   gsum := gsum
   im_0 := im0
   im_1 := im1
+  -- Carry the unified Mem row's segment-boundary columns (XCAP #103, route (b))
+  -- so `rowAt (memOfTable ...)` reflects the concrete Clean Mem row faithfully,
+  -- including its seam columns (keeping `rowAt_memOfTable` a full-row equality).
+  segment_id := fun row => (memTableRowAtOrZero table row).segment_id
+  previous_segment_value_0 := fun row => (memTableRowAtOrZero table row).previous_segment_value_0
+  previous_segment_value_1 := fun row => (memTableRowAtOrZero table row).previous_segment_value_1
+  previous_segment_addr := fun row => (memTableRowAtOrZero table row).previous_segment_addr
+  previous_segment_step := fun row => (memTableRowAtOrZero table row).previous_segment_step
+  segment_last_value_0 := fun row => (memTableRowAtOrZero table row).segment_last_value_0
+  segment_last_value_1 := fun row => (memTableRowAtOrZero table row).segment_last_value_1
+  segment_last_addr := fun row => (memTableRowAtOrZero table row).segment_last_addr
+  segment_last_step := fun row => (memTableRowAtOrZero table row).segment_last_step
+  is_last_segment := fun row => (memTableRowAtOrZero table row).is_last_segment
 
 /-- In-range concrete table projection agrees with `List.get`. -/
 theorem memTableRowAtOrZero_get
@@ -4454,7 +4477,17 @@ theorem rowAt_memOfTable
       previous_step := row.previous_step
       increment_0 := row.increment_0
       increment_1 := row.increment_1
-      read_same_addr := row.read_same_addr } = row
+      read_same_addr := row.read_same_addr
+      segment_id := row.segment_id
+      previous_segment_value_0 := row.previous_segment_value_0
+      previous_segment_value_1 := row.previous_segment_value_1
+      previous_segment_addr := row.previous_segment_addr
+      previous_segment_step := row.previous_segment_step
+      segment_last_value_0 := row.segment_last_value_0
+      segment_last_value_1 := row.segment_last_value_1
+      segment_last_addr := row.segment_last_addr
+      segment_last_step := row.segment_last_step
+      is_last_segment := row.is_last_segment } = row
   cases row
   rfl
 
