@@ -718,6 +718,196 @@ theorem goodBootList2_chain :
 
 end BootChain
 
+/-! ## GENERAL N — the boot tag-chain for an arbitrary segment count.
+
+`bootList2` above is the `N = 2` instance of the real-ensemble boot chain. This
+section generalizes it to an ARBITRARY number of segments `N`, with FREE per-
+segment pull-tags and FREE per-segment boundary values, matching the real
+emission:
+
+  boot:           push (bootV, 0)                                   [endpoint, tag 0]
+  segment i:      pull (prevV i, t i),  push (lastV i, t i + 1)     [+1 emission]
+  the LAST segment (i = N-1):  its push is GATED OFF (multiplicity 0).
+
+### What balance forces (the honest general-N finding)
+
+From channel balance alone — the boot push at tag 0 being a MEMBER of the
+balanced list (a verifier endpoint, NOT a caller premise) and the `+1` emission
+baked into the chain — we derive, **for EVERY segment** `i`, the per-segment
+**value seam**:
+
+  * either `t i = 0` and `prevV i = bootV`           (segment `i` pulls the boot), OR
+  * there is a NON-LAST segment `j` with `t i = t j + 1` and `prevV i = lastV j`
+    (THE SEAM: segment `i`'s incoming boundary equals segment `j`'s outgoing
+    boundary, matched across the tag step).
+
+This is the cross-segment memory continuation #76 consumes: each segment's
+*previous* memory boundary is continued from some earlier segment's *last*
+boundary (matched by `segment_id` = tag), or from the boot. It holds for ALL `N`.
+
+### Why it is tag-INDEXED, not physical-index-indexed
+
+Balance is symmetric under permuting which physical segment plays which chain
+position. For `N = 2` the only non-last segment is `seg0`, so the chain is forced
+UNIQUELY (`boot_chain_derived`: `t0 = 0, t1 = 1`). For `N ≥ 3` there is genuine
+permutation freedom: e.g. `N = 3` with `(t0,t1,t2) = (1,0,2)` is ALSO balanced
+(pulls `{1,0,2}`, pushes `{0, t0+1=2, t1+1=1} = {0,2,1}`, equal as multisets),
+with the seam holding along the relabelled chain `boot → seg1 → seg0 → seg2`.
+So the FAITHFUL general-N statement is the per-segment matched seam above (each
+segment's prev = the matched push's value), which is true for every `N` and
+permutation. Collapsing it to "physical segment `i+1` follows physical segment
+`i`" needs the row-local `is_first_segment` pin (per the N=2 note, a single
+boolean from `segment_every_row`, NOT a per-segment caller premise) — the
+documented L5 follow-up. The tag set IS forced to `{0,…,N-1}`
+(`bootChainN_tags_subset` / `bootChainN_tag_set`); only the assignment permutes.
+-/
+
+section GeneralN
+
+/-- A 4-lane boundary value, packed as a record so the chain can be indexed by a
+    single function `ℕ → SeamVal`. Keeping the value as four explicit `FGL` lanes
+    (rather than an `Array`) lets the general-N proof reuse `seam5`, `tagW_seam5`,
+    and `seam5_tag_ne` directly with no `Array.ext` friction. -/
+structure SeamVal where
+  v0 : FGL
+  v1 : FGL
+  addr : FGL
+  step : FGL
+deriving DecidableEq
+
+/-- The `seam5` message for a packed value at a given `tag`. -/
+def SeamVal.msg (v : SeamVal) (tag : FGL) : Array FGL := seam5 v.v0 v.v1 v.addr v.step tag
+
+@[simp] theorem SeamVal.tagW_msg (v : SeamVal) (tag : FGL) : tagW (v.msg tag) = tag := rfl
+
+theorem SeamVal.msg_size (v : SeamVal) (tag : FGL) : (v.msg tag).size = 5 := rfl
+
+/-- `SeamVal.msg` is injective in the value at a fixed tag (the message carries
+    the full 4-lane value, so equal messages give equal values). -/
+theorem SeamVal.msg_inj {v w : SeamVal} {tag : FGL} (h : v.msg tag = w.msg tag) : v = w := by
+  obtain ⟨v0, v1, va, vs⟩ := v
+  obtain ⟨w0, w1, wa, ws⟩ := w
+  simp only [SeamVal.msg, seam5] at h
+  have h0 : v0 = w0 := by have := congrArg (·[0]!) h; simpa using this
+  have h1 : v1 = w1 := by have := congrArg (·[1]!) h; simpa using this
+  have h2 : va = wa := by have := congrArg (·[2]!) h; simpa using this
+  have h3 : vs = ws := by have := congrArg (·[3]!) h; simpa using this
+  subst h0 h1 h2 h3; rfl
+
+/-! ### The general-N boot chain list. -/
+
+/-- The gate multiplicity for segment `i` of an `N`-segment chain: `0` for the
+    LAST segment (`i = N-1`, push turned off), `1` otherwise. This is the value of
+    `1 - is_last_segment` the real emission carries. -/
+def segGate (N i : ℕ) : FGL := if i + 1 = N then 0 else 1
+
+/-- The two interactions contributed by segment `i`: its pull at tag `t i` and its
+    `segGate`-gated push at tag `t i + 1`. -/
+def segPair (N : ℕ) (prev last : ℕ → SeamVal) (t : ℕ → FGL) (i : ℕ) :
+    List (Interaction FGL) :=
+  [ pullMsg5 ((prev i).msg (t i)) (SeamVal.msg_size ..)
+  , gatedMsg5 (segGate N i) ((last i).msg (t i + 1)) (SeamVal.msg_size ..) ]
+
+/-- The general-N boot chain: the tag-0 boot push followed by every segment's
+    pull + gated push. `prev i` / `last i` are the FREE incoming / outgoing
+    boundary values of segment `i`; `t i` its FREE pull-tag. -/
+def bootChainN (N : ℕ) (boot : SeamVal) (prev last : ℕ → SeamVal) (t : ℕ → FGL) :
+    List (Interaction FGL) :=
+  pushMsg5 (boot.msg 0) (SeamVal.msg_size ..) ::
+    (List.range N).flatMap (segPair N prev last t)
+
+/-- The boot chain has `1 + 2*N` interactions. -/
+theorem bootChainN_length (N : ℕ) (boot : SeamVal) (prev last : ℕ → SeamVal) (t : ℕ → FGL) :
+    (bootChainN N boot prev last t).length = 1 + 2 * N := by
+  simp only [bootChainN, List.length_cons, List.length_flatMap, segPair,
+    List.map_const']
+  rw [List.sum_replicate]
+  simp [List.length_range]; ring
+
+/-- Segment `i`'s pull is a member of the boot chain (for `i < N`). -/
+theorem segPull_mem (N : ℕ) (boot : SeamVal) (prev last : ℕ → SeamVal) (t : ℕ → FGL)
+    {i : ℕ} (hi : i < N) :
+    pullMsg5 ((prev i).msg (t i)) (SeamVal.msg_size ..) ∈
+      bootChainN N boot prev last t := by
+  refine List.mem_cons.mpr (Or.inr ?_)
+  rw [List.mem_flatMap]
+  exact ⟨i, List.mem_range.mpr hi, by simp [segPair]⟩
+
+/-- Classification of the pushes (nonzero, non-`-1` multiplicity members) of the
+    boot chain. Any such `b` is EITHER the boot push (tag 0, value `boot`) OR a
+    NON-LAST segment `j`'s gated push (tag `t j + 1`, value `last j`). The pulls
+    (mult `-1`) and the gated-OFF last push (mult `0`) are excluded by hypothesis. -/
+theorem push_mem_classify (N : ℕ) (boot : SeamVal) (prev last : ℕ → SeamVal) (t : ℕ → FGL)
+    {b : Interaction FGL} (hb_mem : b ∈ bootChainN N boot prev last t)
+    (hb1 : b.mult ≠ -1) (hb0 : b.mult ≠ 0) :
+    (b.msg = (boot).msg 0)
+    ∨ (∃ j, j < N ∧ j + 1 ≠ N ∧ b.msg = (last j).msg (t j + 1)) := by
+  rw [bootChainN, List.mem_cons] at hb_mem
+  rcases hb_mem with hboot | hseg
+  · exact Or.inl (by rw [hboot]; rfl)
+  · rw [List.mem_flatMap] at hseg
+    obtain ⟨j, hj_range, hj_mem⟩ := hseg
+    rw [List.mem_range] at hj_range
+    -- b is either the pull (mult -1, excluded) or the gated push of segment j
+    simp only [segPair, List.mem_cons, List.not_mem_nil, or_false] at hj_mem
+    rcases hj_mem with hpull | hpush
+    · exact absurd (by rw [hpull, pullMsg5]) hb1
+    · refine Or.inr ⟨j, hj_range, ?_, ?_⟩
+      · -- segment j is non-last: else its gate is 0, contradicting hb0
+        intro hlast
+        apply hb0
+        rw [hpush, gatedMsg5, segGate, if_pos hlast]
+      · rw [hpush, gatedMsg5]
+
+/-! ### The general-N per-segment value seam (the deliverable).
+
+For an arbitrary `N`, channel balance forces, for EVERY segment `i < N`, its
+incoming boundary `prev i` to be continued either from the boot or from some
+non-last segment's outgoing boundary `last j`, matched by the tag step
+`t i = t j + 1`. This is `boot_chain_derived` generalized from `N = 2` to all `N`. -/
+
+/-- **THE GENERAL-N PER-SEGMENT VALUE SEAM.** For every segment `i < N`, from
+    channel balance alone (the tag-0 boot push is a MEMBER of the balanced chain,
+    a verifier endpoint, NOT a caller premise) and the `+1`/gated emission, the
+    segment's incoming boundary `prev i` is continued by a matched push:
+
+      * either `t i = 0` and `prev i = boot`           (segment `i` pulls the boot), OR
+      * `∃ j < N`, `j` NOT the last segment, with `t i = t j + 1`
+        and `prev i = last j`   (THE SEAM: `i`'s prev = `j`'s last, across the tag step).
+
+    Holds for ALL `N` and is tag-indexed (permutation-tolerant): which physical
+    segment `j` is matched is not pinned, but the value continuation is. -/
+theorem bootChainN_seam (N : ℕ) (boot : SeamVal) (prev last : ℕ → SeamVal) (t : ℕ → FGL)
+    (balance : BalancedInteractions (bootChainN N boot prev last t))
+    {i : ℕ} (hi : i < N) :
+    (t i = 0 ∧ prev i = boot)
+    ∨ (∃ j, j < N ∧ j + 1 ≠ N ∧ t i = t j + 1 ∧ prev i = last j) := by
+  -- segment i's pull is matched by a push (nonzero, non `-1` multiplicity)
+  obtain ⟨b, hb_mem, hb_msg, hb1, hb0⟩ :=
+    exists_push_of_pull _ balance _ (segPull_mem N boot prev last t hi) rfl
+  -- the matched push's message equals segment i's pull message
+  simp only [pullMsg5] at hb_msg
+  -- hb_msg : b.msg = (prev i).msg (t i)
+  rcases push_mem_classify N boot prev last t hb_mem hb1 hb0 with hboot | ⟨j, hj, hjlast, hjmsg⟩
+  · -- matched the boot push: tag 0 and value boot
+    left
+    have hmsg : (prev i).msg (t i) = (boot).msg 0 := hb_msg ▸ hboot
+    have htag : t i = 0 := by
+      have := congrArg tagW hmsg; simpa using this
+    refine ⟨htag, ?_⟩
+    rw [htag] at hmsg
+    exact SeamVal.msg_inj hmsg
+  · -- matched a non-last segment j's push: tag t j + 1 and value last j
+    right
+    have hmsg : (prev i).msg (t i) = (last j).msg (t j + 1) := hb_msg ▸ hjmsg
+    have htag : t i = t j + 1 := by
+      have := congrArg tagW hmsg; simpa using this
+    refine ⟨j, hj, hjlast, htag, ?_⟩
+    rw [htag] at hmsg
+    exact SeamVal.msg_inj hmsg
+
+end GeneralN
+
 end ZiskFv.Channels.SeamTagChain
 
 /-! ## Axiom-closure checks.
@@ -735,3 +925,5 @@ NO `native_decide`. -/
 #print axioms ZiskFv.Channels.SeamTagChain.boot_chain_derived
 #print axioms ZiskFv.Channels.SeamTagChain.goodBootList2_balanced
 #print axioms ZiskFv.Channels.SeamTagChain.goodBootList2_chain
+#print axioms ZiskFv.Channels.SeamTagChain.push_mem_classify
+#print axioms ZiskFv.Channels.SeamTagChain.bootChainN_seam
