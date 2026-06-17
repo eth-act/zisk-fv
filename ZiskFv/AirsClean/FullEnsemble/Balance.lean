@@ -46,6 +46,7 @@ theorem component_mem_fullRv64im_cases
       ∨ component = ZiskFv.AirsClean.MemAlignReadByte.component
       ∨ component = ZiskFv.AirsClean.MemAlignByte.component
       ∨ component = ZiskFv.AirsClean.MemAlign.component
+      ∨ component = ZiskFv.AirsClean.Mem.bootComp
       ∨ component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
       ∨ component = ZiskFv.AirsClean.ArithDiv.component
       ∨ component = arithMulProviderComponent
@@ -58,19 +59,20 @@ theorem component_mem_fullRv64im_cases
     SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addChannel_tables]
     at h_mem
   rcases h_mem with
-    h_verifier | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
+    h_verifier | h_marb | h_mab | h_memAlign | h_boot | h_mem | h_arithDiv |
     h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main | h_empty
   · exact Or.inl h_verifier
   · exact Or.inr (Or.inl h_marb)
   · exact Or.inr (Or.inr (Or.inl h_mab))
   · exact Or.inr (Or.inr (Or.inr (Or.inl h_memAlign)))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_mem))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_arithDiv)))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_arithMul))))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_binExt)))))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_binary))))))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_binaryAdd)))))))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_main)))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_boot))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_mem)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_arithDiv))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_arithMul)))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_binExt))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_binary)))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_binaryAdd))))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_main))))))))))
   · cases h_empty
 
 /-- Every concrete witness for the full RV64IM ensemble contains a table for
@@ -299,6 +301,22 @@ theorem mem_table_interactionsWith_opBus_nil
   rw [h_component]
   exact h_not
 
+/-- A table whose component is the seam BOOT endpoint (XCAP #103, route (b),
+    L4.6) has no operation-bus interactions: it emits only the seam channel. -/
+theorem bootComp_table_interactionsWith_opBus_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.Mem.bootComp) :
+    table.interactionsWith OpBusChannel.toRaw = [] := by
+  have h_not :
+      OpBusChannel.toRaw ∉
+        ZiskFv.AirsClean.Mem.bootComp.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.Mem.bootComp,
+      ZiskFv.AirsClean.Mem.bootCircuit, OpBusChannel, SeamContChannel,
+      Channel.toRaw, RawChannel.mk.injEq]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
 /-- A table whose component is the current ArithDiv carry-chain component has
     no operation-bus interactions. DIV/REM op-bus surfaces are still bridged
     by the dedicated primary/secondary components outside the full ensemble. -/
@@ -387,6 +405,22 @@ theorem arithMul_table_interactionsWith_memBus_nil
     intro h
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
     simp [OpBusChannel, MemBusChannel, Channel.toRaw] at h_name
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- A table whose component is the seam BOOT endpoint (XCAP #103, route (b),
+    L4.6) has no memory-bus interactions: it emits only the seam channel. -/
+theorem bootComp_table_interactionsWith_memBus_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.Mem.bootComp) :
+    table.interactionsWith MemBusChannel.toRaw = [] := by
+  have h_not :
+      MemBusChannel.toRaw ∉
+        ZiskFv.AirsClean.Mem.bootComp.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.Mem.bootComp,
+      ZiskFv.AirsClean.Mem.bootCircuit, MemBusChannel, SeamContChannel,
+      Channel.toRaw, RawChannel.mk.injEq]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -527,7 +561,7 @@ theorem exists_matching_op_component_of_active_main_interaction
       table.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
+    h_verifier | h_marb | h_mab | h_memAlign | h_boot | h_mem | h_arithDiv |
     h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main
   · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
       have h_ops_nil :
@@ -543,6 +577,9 @@ theorem exists_matching_op_component_of_active_main_interaction
     simp [h_nil] at h_mem_table
   · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
       exact memAlign_table_interactionsWith_opBus_nil h_memAlign
+    simp [h_nil] at h_mem_table
+  · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
+      exact bootComp_table_interactionsWith_opBus_nil h_boot
     simp [h_nil] at h_mem_table
   · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
       exact mem_table_interactionsWith_opBus_nil h_mem
@@ -673,7 +710,7 @@ theorem exists_matching_mem_component_of_active_main_interaction
       table.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
+    h_verifier | h_marb | h_mab | h_memAlign | h_boot | h_mem | h_arithDiv |
     h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main
   · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
       have h_ops_nil :
@@ -696,6 +733,9 @@ theorem exists_matching_mem_component_of_active_main_interaction
         exact ⟨table, h_table, h_mem_table⟩,
       h_msg, h_nonpull, h_nonzero, table, h_table, h_mem_table,
       Or.inr (Or.inr (Or.inl h_memAlign))⟩
+  · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      exact bootComp_table_interactionsWith_memBus_nil h_boot
+    simp [h_nil] at h_mem_table
   · exact ⟨providerInteraction, by
         rw [EnsembleWitness.mem_interactionsWith]
         exact ⟨table, h_table, h_mem_table⟩,

@@ -285,6 +285,102 @@ theorem componentWithDualMemBus_interactionsWith_seam :
     List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
   tauto
 
+/-! ## T... — cross-segment seam BOOT endpoint (XCAP #103, route (b), L4.6)
+
+The Mem rows emit the seam as `pull(tag = segment_id)` and gated
+`push(tag = segment_id + 1)` (the gate `1 - is_last_segment` turns the LAST
+segment's push OFF). For an `N`-segment chain (`segment_id = 0 .. N-1`, the last
+row `is_last_segment = 1`) this telescopes:
+
+* tag `0`: pulled by seg0, but pushed by NOTHING — it dangles;
+* tag `k` (`1 ≤ k ≤ N-1`): pushed by seg(k-1), pulled by seg k — balanced;
+* tag `N`: never emitted (the last segment's push is gated off).
+
+So the ONLY missing endpoint is a single tag-0 BOOT push. With the
+`is_last_segment` gate already closing the high end, NO separate final pull is
+needed (this is the structural difference from the deleted scaffold `bootComp`,
+whose two segments were both non-last and therefore needed a final pull).
+
+This is the analogue of ZisK's `mem.pil:253`
+`direct_global_update_proves(MEMORY_CONTINUATION_ID, [base_address, 0,
+internal_base_address, 0, ...], sel: enable_flag)` — a GLOBAL/verifier endpoint,
+NOT a per-segment Mem row. We host it as a tiny dedicated `bootComp` table added
+to `fullRv64imEnsemble`. It emits the boot push via `emit` (requirements bucket),
+so — exactly like `componentWithDualMemBus` — the seam stays OUT of
+`channelsWithGuarantees`. -/
+
+/-- The boot endpoint's seam message: the base-address boundary tuple pushed at
+    tag 0 (`mem.pil:253`: `[base_address, 0, internal_base_address, 0]`). The
+    `BootRow` carries the boundary fields as free columns. -/
+structure BootRow (F : Type) where
+  boot_value_0 : F
+  boot_value_1 : F
+  boot_addr : F
+  boot_step : F
+deriving ProvableStruct
+
+/-- The boot push message: the boundary tuple tagged with `segment_id = 0`. -/
+@[reducible]
+def bootSeamMessageExpr (r : Var BootRow FGL) : SeamMessage (Expression FGL) :=
+  { value_0 := r.boot_value_0
+    value_1 := r.boot_value_1
+    addr := r.boot_addr
+    step := r.boot_step
+    segment_id := 0 }
+
+/-- The boot endpoint's per-row circuit: emit the single tag-0 boot push
+    (mult `+1`), in the requirements bucket (`emit`, not `pull`). No row-local
+    constraints. -/
+@[circuit_norm]
+def bootMain (r : Var BootRow FGL) : Circuit FGL Unit := do
+  SeamContChannel.emit 1 (bootSeamMessageExpr r)
+
+/-- The boot endpoint as a Clean `GeneralFormalCircuit`. `Spec := True` (it is a
+    verifier endpoint with no per-row obligation); the seam channel is in
+    `channelsWithRequirements`, never `channelsWithGuarantees`. -/
+def bootCircuit : GeneralFormalCircuit FGL BootRow unit where
+  main := bootMain
+  localLength _ := 0
+  output _ _ := ()
+  Assumptions _ _ := True
+  Spec _ _ _ := True
+  ProverAssumptions _ _ _ := True
+  ProverSpec _ _ _ := True
+  channelsWithGuarantees := []
+  channelsWithRequirements := [SeamContChannel.toRaw]
+  exposedChannels r _ :=
+    expose SeamContChannel [ SeamContChannel.emitted 1 (bootSeamMessageExpr r) ]
+  channelsLawful := by
+    simp [circuit_norm, bootMain, bootSeamMessageExpr, SeamContChannel]
+  soundness := by circuit_proof_start [SeamContChannel]
+  completeness := by circuit_proof_start [SeamContChannel]
+
+/-- The boot endpoint as a Clean `Air.Flat.Component`. -/
+def bootComp : Air.Flat.Component FGL := ⟨ bootCircuit ⟩
+
+/-- Project `bootComp`'s `interactionsWith SeamContChannel.toRaw` to the single
+    raw emitted boot push (the route-(b) endpoint analogue of
+    `componentWithDualMemBus_interactionsWith_seam`). -/
+theorem bootComp_interactionsWith_seam :
+    bootComp.operations.interactionsWith SeamContChannel.toRaw =
+      [ ((SeamContChannel.emitted 1
+            (bootSeamMessageExpr bootComp.rowInputVar)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨SeamContChannel.toRaw,
+      [ ((SeamContChannel.emitted 1
+            (bootSeamMessageExpr bootComp.rowInputVar)).toRaw) ]⟩ ∈
+    bootComp.exposedChannels
+  simp only [bootComp, bootCircuit, Component.exposedChannels, expose,
+    List.mem_singleton, List.map_cons, List.map_nil, Channel.emitted]
+
+/-- `bootComp` emits NO memory-bus interactions. -/
+theorem bootComp_interactionsWith_memBus :
+    bootComp.operations.interactionsWith MemBusChannel.toRaw = [] := by
+  rw [Component.interactionsWith_eq]
+  simp only [bootComp, bootCircuit, Component.rowOperations, bootMain,
+    bootSeamMessageExpr, circuit_norm, SeamContChannel, MemBusChannel,
+    Channel.toRaw, RawChannel.mk.injEq]
+
 /-- Project the generic Clean component `Spec` for `componentWithMemBus` to
     the concrete Mem row `Spec`. -/
 theorem spec_of_componentWithMemBus_spec

@@ -103,6 +103,19 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
         (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
           ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
           ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated])
+    -- Cross-segment seam BOOT endpoint (XCAP #103, route (b), L4.6). The Mem
+    -- rows emit pull(tag = segment_id) / gated push(tag = segment_id + 1); with
+    -- the last segment's push gated off, the chain telescopes to zero given a
+    -- single tag-0 boot push. This tiny table supplies exactly that endpoint —
+    -- the analogue of ZisK's `mem.pil:253` global `direct_global_update_proves`.
+    -- It emits the seam via `emit` (requirements bucket), so the seam stays out
+    -- of `channelsWithGuarantees`; at this point `finished = []`, so both
+    -- `addTable` side-conditions are trivial.
+    |>.addTable ZiskFv.AirsClean.Mem.bootComp
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by simp [circuit_norm])
     |>.addTable ZiskFv.AirsClean.MemAlign.component
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
@@ -137,7 +150,7 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
           clear h_mem
           simp only [circuit_norm, Ensemble.allTables] at h
           rcases h with
-            h | h | h | h | h | h | h | h | h | h | h <;>
+            h | h | h | h | h | h | h | h | h | h | h | h <;>
             (rw [h]
              trivial))
         (by intro _ _; trivial)
