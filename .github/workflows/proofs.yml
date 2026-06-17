@@ -160,6 +160,12 @@ jobs:
           # That fits the 16 GiB L runner with headroom after the sd
           # proof-memory fix, and matches nix/test.nix's default.
           LEAN_NUM_THREADS: "4"
+          # The independent Aeneas production-extraction completeness check
+          # (step 3/8) is the single largest cost (~1.5h) and is unrelated to
+          # the Lake proof graph. Run it in the parallel
+          # aeneas-production-extraction job below instead of serializing it
+          # ahead of `lake build`. Plain local `nix run .#test` is unaffected.
+          ZISK_FV_TEST_SKIP_AENEAS: "1"
         run: |
           # Memory + lean-process sidecar. Run 25230110804 died with no
           # step log content preserved → strong signal the runner host
@@ -218,3 +224,58 @@ jobs:
           echo "  - CLAUDE.md  (working conventions for agents)"
           echo "  - trust/README.md  (overview of the trust gate)"
           echo "  - flake.lock  (the audit surface for build-input changes)"
+
+  # ------------------------------------------------------------------
+  # Aeneas RV-completeness extraction harness, run in PARALLEL with the
+  # Lake FV gate above. Previously this ran as step 3/8 of `nix run .#test`
+  # inside the lake-build job, serializing ~1.5h of generated-extraction
+  # work ahead of the proof build. It is independent of the Lake proof
+  # graph (the `aeneas-extraction-diff` job already guards the tracked
+  # ProductionM2 artifact), so it belongs off the critical path.
+  #
+  # The temporary `build/aeneas-production-extraction/lean-check/.lake` is
+  # cached across runs: the generated completeness files are deterministic
+  # given the extraction inputs, so an unchanged harness is a near no-op
+  # lake build instead of recompiling ~26 RvDecode* files (~580-820s each)
+  # from scratch every push.
+  # ------------------------------------------------------------------
+  aeneas-production-extraction:
+    name: Aeneas production extraction
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - uses: cachix/cachix-action@v15
+        with:
+          name: zisk-fv
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      - name: Cache Aeneas lean-check .lake
+        uses: actions/cache@v4
+        with:
+          path: build/aeneas-production-extraction/lean-check/.lake
+          key: aeneas-lean-check-${{ runner.os }}-${{ hashFiles('flake.lock', 'lean-toolchain', 'scripts/aeneas-production-extract.sh', 'zisk/core/src/aeneas_extract.rs', 'ZiskFv/Compliance/RowProvenance.lean', 'trust/aeneas/ProductionM2.lean') }}
+          restore-keys: |
+            aeneas-lean-check-${{ runner.os }}-
+
+      - name: Run full Aeneas production extraction completeness check
+        env:
+          AENEAS_CHECK_RV_COMPLETENESS: "1"
+          LEAN_NUM_THREADS: "4"
+        run: nix run .#aeneas-production-extract
+
+      - name: On failure — show next-step pointers
+        if: failure()
+        run: |
+          echo "::error::Aeneas production extraction failed. Documentation:"
+          echo "  - scripts/aeneas-production-extract.sh"
+          echo "  - trust/aeneas/README.md"
+          echo "  - flake.lock  (the audit surface for Aeneas/build-input changes)"
