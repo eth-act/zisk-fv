@@ -1,53 +1,57 @@
 Active plan: docs/ai/plan/PLAN_ENDGAME_P4_103.md (#103 cross-segment memory seam, route (b)).
 Branch: p4-103-landing. Worktree: .worktrees/xcap-seam-tag.
 
-## Current focus: L1 GENERAL-N TAG-CHAIN DERIVATION — DONE, GREEN.
+## Current focus: L5 STEP 1 (the "tie", step B) — DONE, GREEN.
 
-The seam tag-chain derivation is generalized from N=2 to ARBITRARY segment count
-N, in ZiskFv/Channels/SeamTagChain.lean (channel-level lemma file; ensemble /
-families / global UNTOUCHED). Whole project GREEN (8691), 0 PROJECT axioms; only
-SeamTagChain.lean changed (460 additions, 0 deletions vs the L4.6 commit).
+The seam boundary columns are now TIED to real Mem-row state. The L1 seam forced
+seg_{i+1}.previous_segment_* = seg_i.segment_last_* on the CHANNEL/emission
+columns; this step pins those columns to actual Mem-row memory via mem.pil's
+SEGMENT_LAST clauses, and derives the cross-segment REAL-memory continuity #76
+needs. New file ZiskFv/AirsClean/Mem/SeamRowTie.lean (+ one import line in
+ZiskFv.lean); families/global/baselines BYTE-IDENTICAL. Whole project GREEN (8692).
 
-## What landed for L1 (3 green commits)
+## What landed for L5 step 1 (commit 362c6e83)
 
-- c720503f (per-segment seam): bootChainN (boot push tag 0 + N segments, each
-  pull(t_i)+gated push(t_i+1), last gated off) + bootChainN_seam: for ALL N, every
-  segment i<N has prev_i = boot (t_i=0) OR prev_i = last_j for a non-last j with
-  t_i=t_j+1 (THE SEAM). Proof = exists_push_of_pull + push classification +
-  SeamVal.msg_inj. Tag-indexed (permutation-tolerant); honest finding: per-PHYSICAL
-  -index order is NOT forced for N>=3 (the balanced witness t=(1,0,2) at N=3 shows
-  it), which needs the is_first_segment row pin (the documented L5 follow-up).
-- e6d5e05e (N=3 non-vacuity): goodBootChain3 = concrete BALANCED N=3 chain;
-  goodBootChain3_seams runs bootChainN_seam on all 3 segments (seam fires each).
-- 9eb8c912 (tag arithmetic + headline): weightedSum_bootChainN (Finset.range form)
-  + sum_segGate telescoping → bootChainN_last_tag (t (N-1) = N-1 for all N>=1).
-  boot_chain_derived_generalN = the headline analogue of boot_chain_derived (N=2):
-  for all N>=1, (1) per-segment value seam for every i AND (2) t (N-1) = N-1.
-
-Approach: DIRECT telescoping (exists_push_of_pull + classification) for the seam;
-weighted-balance telescoping for the last tag. NOT full Newton. The FULL
-tag-multiset = {0..N-1} (only the SET, since the assignment permutes for N>=3) needs
-symmetric-function / Newton inversion and is the documented bounded follow-up; the
-value seam (the #76 deliverable) and the last-tag are proved for ALL N.
+- MemRow.SegmentLastRowTie: the row-local SEGMENT_LAST tie (mem.pil:212-230,
+  SEGMENT_LAST=1 on a segment's last row). Pins segment_last_value/addr/step to
+  the row's genuine memory state (mem.pil:215/220/226). Constructible — exactly
+  the PIL clauses, NOT stronger.
+- segment_last_seam5_eq_row_state_of_tie: the tie as a seam5 tuple equality
+  (segment_last_* boundary = (value_0,value_1,addr,effectiveStep), same tag).
+- cross_segment_real_memory_continuity (THE PAYOFF): composes the
+  balance-derived seam (SeamNonVacuity.seam_value_equality:
+  seg1.previous_segment_* = seg0.segment_last_*) with the SEGMENT_LAST tie on
+  seg0 to give seg1.previous_segment_* = seg0's REAL last Mem-row state
+  (value/addr/effectiveStep), tagged. No free emission column dangles.
+- good_seg0_tie / good_seg1_tie: the existing non-vacuity witnesses goodSeg0 /
+  goodSeg1 STILL satisfy the strengthened tie (segment_last_* = row's
+  value/addr/step; sel_dual=0).
+- good_cross_segment_continuity: NON-VACUITY end-to-end on the REAL ensemble —
+  run on the concrete balanced 2-nonzero-segment witness; seg1's incoming
+  boundary = seg0's real last state (1,0,100,5).
 
 ## Gates
 
-- Whole-project nix develop --command lake build: GREEN (8691 jobs).
-- All new theorems kernel-only (propext/Classical.choice/Quot.sound); 0 PROJECT
+- Whole-project nix develop --command lake build: GREEN (8692 jobs; +1 = the new
+  SeamRowTie module).
+- All 5 new theorems kernel-only (propext/Classical.choice/Quot.sound); 0 PROJECT
   axioms; NO sorry/admit/native_decide.
-- 28 construction families + global theorem + all protected baselines BYTE-IDENTICAL
-  (git diff d986ca03 HEAD: only ZiskFv/Channels/SeamTagChain.lean changed).
-- V1 syntactic: 17/17 substantive pass (check 16 = uninitialized zisk/ submodule
+- 28 construction families + global theorem + all protected baselines
+  (hypothesis-count, caller-burden, equiv-axiom-deps, axioms,
+  zisk-riscv-compliant) BYTE-IDENTICAL (git status: only ZiskFv.lean +
+  SeamRowTie.lean changed).
+- V1 syntactic: 17/18 substantive pass (check 16 = uninitialized zisk/ submodule
   FileNotFoundError on zisk/core/src/aeneas_extract.rs, pre-existing, unrelated —
-  needs nix run .#populate; my change never touches the submodule). V2 semantic:
-  ALL PASS (per-theorem axiom-closure baselines byte-identical).
+  needs nix run .#populate). V2 semantic: ALL PASS.
 
-## Remaining (L1 follow-up + L5)
+## Remaining (L1 follow-up + L5 step 2)
 
-- L1 follow-up (optional strengthening): the full tag-multiset = {0..N-1} (the SET)
-  via Newton/symmetric-function inversion, and the is_first_segment row pin to
-  collapse the permutation to physical order. The value seam (load-bearing) is done.
-- L5 (#76 consumption): hook the derived seg.previous_* = prev_seg.last_* (now
-  bootChainN_seam / boot_chain_derived_generalN, general N) into the 11 loads/stores'
-  cross-entry Mem obligations (PLAN_ENDGAME_P4_MEMORY.md). The intra-segment load
-  machinery already exists; #103 supplies the cross-segment link.
+- L5 step 2 (the 11 loads/stores consumption, part A): feed
+  cross_segment_real_memory_continuity (seg.previous = prev_seg's real last
+  Mem-row state) into the per-opcode cross-entry Mem obligations the 11
+  loads/stores consume (PLAN_ENDGAME_P4_MEMORY.md). The intra-segment load
+  machinery (LoadDerivation / SextLoadBridge / MemAlignBridge) already exists;
+  L5 step 1 now supplies the cross-segment link as a REAL-memory equation.
+- L1 follow-up (optional strengthening): full tag-multiset = {0..N-1} (the SET)
+  via Newton inversion, + the is_first_segment row pin to collapse the
+  permutation to physical order. Value seam (load-bearing) already done.
