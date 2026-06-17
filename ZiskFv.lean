@@ -130,6 +130,7 @@ import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.FullEnsemble.Balance
 import ZiskFv.ZiskCircuit.MemTimeline.Construction
 import ZiskFv.ZiskCircuit.MemTimeline.Linkage
+import ZiskFv.AirsClean.Mem.SeamRowTie
 import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance.AcceptedTrace
 import ZiskFv.Compliance.ConstructionSub
