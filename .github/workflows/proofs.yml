@@ -80,6 +80,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      # ubuntu-latest ships ~14 GiB free on /. The Aeneas regeneration's Nix
+      # closure (charon, rust-std, rustc-dev, OCaml) overflowed it ("No space
+      # left on device", run 27665019733). Reclaim the preinstalled toolchains
+      # we don't use before any Nix store writes.
+      - name: Free disk space
+        run: |
+          echo "before:"; df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/share/swift /usr/local/share/boost || true
+          sudo docker image prune --all --force || true
+          echo "after:"; df -h /
+
       - uses: actions/checkout@v4
         with:
           submodules: true
@@ -88,6 +100,14 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+
+      # Pull prebuilt charon / rust-std / rustc-dev from zisk-fv.cachix.org
+      # instead of compiling them from source — the source build is what
+      # exhausted the runner disk. (The other Aeneas jobs already do this.)
+      - uses: cachix/cachix-action@v15
+        with:
+          name: zisk-fv
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
       - name: Regenerate and diff ProductionM2.lean
         run: nix run .#aeneas-production-extract-check-tracked
@@ -244,6 +264,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 240
     steps:
+      # Restoring the multi-GiB lean-check .lake cache below on top of the
+      # ~14 GiB-free ubuntu-latest disk crashed the runner agent ("No space
+      # left on device", run 27702413061 — a warm-cache run, where the cold
+      # merge run had passed). Reclaim unused preinstalled toolchains first.
+      - name: Free disk space
+        run: |
+          echo "before:"; df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/share/swift /usr/local/share/boost || true
+          sudo docker image prune --all --force || true
+          echo "after:"; df -h /
+
       - uses: actions/checkout@v4
         with:
           submodules: true
