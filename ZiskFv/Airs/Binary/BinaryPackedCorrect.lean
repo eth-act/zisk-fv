@@ -2367,4 +2367,211 @@ lemma binary_subw_chunks_eq_bv_sub_w_of_wf
       (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
       B3 (by omega) (by omega) (by omega) hB3_le h_telescope hCneg
 
+/-! ## Chain lift: EQ
+
+64-bit equality via the byte chain. This is the simplest chain op:
+no carry arithmetic, no signed final-byte polarity beyond the
+table's built-in flip. The running carry `cout_i` for non-final
+bytes encodes "some byte so far differs" (`cout = 1`) versus "all
+bytes so far equal" (`cout = 0`); the final byte flips polarity so
+that `flags_7 % 2 = 1` iff every byte matched, i.e. `a64 = b64`.
+
+Chain links (same as LTU/LT): `cin_0 = 0`, `cin_{i+1} = flags_i % 2`. -/
+
+/-! ### EQ byte-relation extractor -/
+
+private lemma byte_relation_EQ_of_wf
+    (e : BinaryTableEntry FGL)
+    (h_wf : wf_properties e)
+    (h_op : e.op.val = OP_EQ) :
+    e.c_byte.val = 0 ∧
+    (e.pos_ind.val ≠ 1 →
+      ((e.cin.val = 0 ∧ e.a_byte.val = e.b_byte.val) → e.flags.val % 2 = 0) ∧
+      (¬ (e.cin.val = 0 ∧ e.a_byte.val = e.b_byte.val) → e.flags.val % 2 = 1)) ∧
+    (e.pos_ind.val = 1 →
+      ((e.cin.val = 0 ∧ e.a_byte.val = e.b_byte.val) → e.flags.val % 2 = 1) ∧
+      (¬ (e.cin.val = 0 ∧ e.a_byte.val = e.b_byte.val) → e.flags.val % 2 = 0)) := by
+  obtain ⟨_, _, _, _, _, _, h_eq, _⟩ := h_wf
+  exact h_eq h_op
+
+private lemma eq_byte_chain_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf OP_EQ a b c cin_cell flags_cell pos_cell) :
+    c.val = 0 ∧
+    (pos_cell.val ≠ 1 →
+      ((cin_cell.val = 0 ∧ a.val = b.val) → flags_cell.val % 2 = 0) ∧
+      (¬ (cin_cell.val = 0 ∧ a.val = b.val) → flags_cell.val % 2 = 1)) ∧
+    (pos_cell.val = 1 →
+      ((cin_cell.val = 0 ∧ a.val = b.val) → flags_cell.val % 2 = 1) ∧
+      (¬ (cin_cell.val = 0 ∧ a.val = b.val) → flags_cell.val % 2 = 0)) := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos⟩ := h
+  have hrel := byte_relation_EQ_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos] at hrel
+  exact hrel
+
+/-! ### EQ prefix and step helpers -/
+
+/-- For a "limb + high digit" decomposition `Aprev + a·W` with the
+    limb `Aprev < W`, two such values are equal iff both the limb and
+    the high digit agree. This is the no-carry core of the EQ chain. -/
+private lemma prefix_eq_split (Aprev Bprev a b W : ℕ)
+    (hW : W ≥ 1) (hPa : Aprev < W) (hPb : Bprev < W) :
+    (Aprev + a * W = Bprev + b * W) ↔ (Aprev = Bprev ∧ a = b) := by
+  constructor
+  · intro h
+    have hmod : Aprev = Bprev := by
+      have hc := congrArg (· % W) h
+      simpa [Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hPa, Nat.mod_eq_of_lt hPb] using hc
+    refine ⟨hmod, ?_⟩
+    subst hmod
+    have : a * W = b * W := by omega
+    exact Nat.eq_of_mul_eq_mul_right (by omega) this
+  · rintro ⟨h1, h2⟩; subst h1; subst h2; rfl
+
+/-- Non-final EQ step. The running carry `cout = 0` exactly tracks
+    "the prefix up to and including this byte is equal". Given the
+    prior-byte equivalence `cin = 0 ↔ Aprev = Bprev`, conclude the
+    extended equivalence on the limb `Aprev + a·W`. -/
+private lemma eq_step
+    (cin a b cout Aprev Bprev W : ℕ)
+    (hW : W ≥ 1) (hPa : Aprev < W) (hPb : Bprev < W)
+    (h_rule_eq : (cin = 0 ∧ a = b) → cout = 0)
+    (h_rule_neq : ¬ (cin = 0 ∧ a = b) → cout = 1)
+    (h_cin_iff : cin = 0 ↔ Aprev = Bprev) :
+    cout = 0 ↔ Aprev + a * W = Bprev + b * W := by
+  have hcout_iff : cout = 0 ↔ (cin = 0 ∧ a = b) := by
+    constructor
+    · intro h0
+      by_contra hne
+      have := h_rule_neq hne
+      omega
+    · intro hp; exact h_rule_eq hp
+  rw [hcout_iff, h_cin_iff]
+  exact (prefix_eq_split Aprev Bprev a b W hW hPa hPb).symm
+
+/-- Final EQ step. The table flips polarity at `pos_ind = 1`, so the
+    output flag is `1` exactly when the full word is equal. -/
+private lemma eq_final_step
+    (cin a b fl Aprev Bprev W : ℕ)
+    (hW : W ≥ 1) (hPa : Aprev < W) (hPb : Bprev < W)
+    (h_rule_eq : (cin = 0 ∧ a = b) → fl % 2 = 1)
+    (h_rule_neq : ¬ (cin = 0 ∧ a = b) → fl % 2 = 0)
+    (h_cin_iff : cin = 0 ↔ Aprev = Bprev) :
+    fl % 2 = 1 ↔ Aprev + a * W = Bprev + b * W := by
+  have hiff : fl % 2 = 1 ↔ (cin = 0 ∧ a = b) := by
+    constructor
+    · intro h1
+      by_contra hne
+      have := h_rule_neq hne
+      omega
+    · intro hp; exact h_rule_eq hp
+  rw [hiff, h_cin_iff]
+  exact (prefix_eq_split Aprev Bprev a b W hW hPa hPb).symm
+
+/-- **Lift for EQ.** Bytes 0..6 use OP_EQ at `pos_ind ≠ 1` (running
+    "all equal so far" carry); byte 7 uses OP_EQ at `pos_ind = 1`
+    (polarity flipped). Output is `flags_7 % 2 = 1` iff the 64-bit
+    packed sums are equal. Mirrors `binary_ltu_chunks_eq_bv_ult_of_wf`,
+    adapting `<` to `=`. -/
+lemma binary_eq_chunks_eq_bv_eq_of_wf
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain_wf OP_EQ a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain_wf OP_EQ a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain_wf OP_EQ a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain_wf OP_EQ a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain_wf OP_EQ a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain_wf OP_EQ a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain_wf OP_EQ a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain_wf OP_EQ a7 b7 c7 cin7 fl7 pi7)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (_ha7 : a7.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (_hb7 : b7.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val ≠ 1) (h_pi4 : pi4.val ≠ 1) (h_pi5 : pi5.val ≠ 1)
+    (h_pi6 : pi6.val ≠ 1)
+    (h_pi7 : pi7.val = 1) :
+    (fl7.val % 2 = 1 ↔
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936)
+      =
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+        + b4.val * 4294967296 + b5.val * 1099511627776
+        + b6.val * 281474976710656 + b7.val * 72057594037927936)) := by
+  -- Extract the per-byte EQ chain clauses.
+  obtain ⟨_hc0, h0_chain, _⟩ := eq_byte_chain_of_wf _ _ _ _ _ _ h_byte_0
+  obtain ⟨_hc1, h1_chain, _⟩ := eq_byte_chain_of_wf _ _ _ _ _ _ h_byte_1
+  obtain ⟨_hc2, h2_chain, _⟩ := eq_byte_chain_of_wf _ _ _ _ _ _ h_byte_2
+  obtain ⟨_hc3, h3_chain, _⟩ := eq_byte_chain_of_wf _ _ _ _ _ _ h_byte_3
+  obtain ⟨_hc4, h4_chain, _⟩ := eq_byte_chain_of_wf _ _ _ _ _ _ h_byte_4
+  obtain ⟨_hc5, h5_chain, _⟩ := eq_byte_chain_of_wf _ _ _ _ _ _ h_byte_5
+  obtain ⟨_hc6, h6_chain, _⟩ := eq_byte_chain_of_wf _ _ _ _ _ _ h_byte_6
+  obtain ⟨_hc7, _, h7_final⟩ := eq_byte_chain_of_wf _ _ _ _ _ _ h_byte_7
+  -- Specialize non-final clauses to pos_ind ≠ 1, final to pos_ind = 1.
+  obtain ⟨h0_eq, h0_neq⟩ := h0_chain h_pi0
+  obtain ⟨h1_eq, h1_neq⟩ := h1_chain h_pi1
+  obtain ⟨h2_eq, h2_neq⟩ := h2_chain h_pi2
+  obtain ⟨h3_eq, h3_neq⟩ := h3_chain h_pi3
+  obtain ⟨h4_eq, h4_neq⟩ := h4_chain h_pi4
+  obtain ⟨h5_eq, h5_neq⟩ := h5_chain h_pi5
+  obtain ⟨h6_eq, h6_neq⟩ := h6_chain h_pi6
+  obtain ⟨h7_eq, h7_neq⟩ := h7_final h_pi7
+  -- Initial step: byte 0, with Aprev = Bprev = 0, W = 1. cin_0 = 0.
+  have h_init : cin0.val = 0 ↔ (0 : ℕ) = 0 := by rw [h_cin0]
+  have step0 := eq_step cin0.val a0.val b0.val (fl0.val % 2) 0 0 1
+    (by norm_num) (by norm_num) (by norm_num) h0_eq h0_neq h_init
+  simp only [Nat.mul_one, Nat.zero_add] at step0
+  -- step0 : fl0.val % 2 = 0 ↔ a0.val = b0.val
+  have step1 := eq_step cin1.val a1.val b1.val (fl1.val % 2)
+    a0.val b0.val 256 (by norm_num) (by omega) (by omega) h1_eq h1_neq
+    (by rw [h_cin1]; exact step0)
+  have step2 := eq_step cin2.val a2.val b2.val (fl2.val % 2)
+    (a0.val + a1.val * 256) (b0.val + b1.val * 256) 65536
+    (by norm_num) (by omega) (by omega) h2_eq h2_neq
+    (by rw [h_cin2]; exact step1)
+  have step3 := eq_step cin3.val a3.val b3.val (fl3.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536) (b0.val + b1.val * 256 + b2.val * 65536)
+    16777216 (by norm_num) (by omega) (by omega) h3_eq h3_neq
+    (by rw [h_cin3]; exact step2)
+  have step4 := eq_step cin4.val a4.val b4.val (fl4.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+    4294967296 (by norm_num) (by omega) (by omega) h4_eq h4_neq
+    (by rw [h_cin4]; exact step3)
+  have step5 := eq_step cin5.val a5.val b5.val (fl5.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216 + a4.val * 4294967296)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216 + b4.val * 4294967296)
+    1099511627776 (by norm_num) (by omega) (by omega) h5_eq h5_neq
+    (by rw [h_cin5]; exact step4)
+  have step6 := eq_step cin6.val a6.val b6.val (fl6.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776)
+    281474976710656 (by norm_num) (by omega) (by omega) h6_eq h6_neq
+    (by rw [h_cin6]; exact step5)
+  -- Final byte 7: polarity flipped, output flag is 1 iff full word equal.
+  have step7 := eq_final_step cin7.val a7.val b7.val fl7.val
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776 + a6.val * 281474976710656)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776 + b6.val * 281474976710656)
+    72057594037927936 (by norm_num) (by omega) (by omega) h7_eq h7_neq
+    (by rw [h_cin7]; exact step6)
+  exact step7
+
 end ZiskFv.Airs.Binary
