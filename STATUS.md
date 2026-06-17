@@ -1,7 +1,34 @@
-Active plan: docs/ai/plan/PLAN_ENDGAME_P4_SWEEP.md (PR5 W-ALU, NEEDS-WORK Wave 6).
+Active plan: docs/ai/plan/PLAN_ENDGAME_P4_SWEEP.md (Wave A LUI/AUIPC DONE).
 
-DONE (SWEEP Wave 6 — W-ALU ADDW/SUBW/ADDIW, the NEEDS-WORK m32=1 binary
-families): AUTHORED the missing m32=1 32-bit lane-binding lemmas
+DONE (SWEEP Wave A — LUI/AUIPC, the FIRST provider-free is_external_op=0
+families): added ConstructionLui.lean (construction_lui_sound, 15 + execRow
+honest binders) and ConstructionAuipc.lean (construction_auipc_sound, 18 +
+execRow honest binders), the AUIPC clone of LUI. No op-bus provider block (LUI
+is internal OP_COPYB, AUIPC internal OP_FLAG) — STRICTLY MORE derivable than the
+28. Body: derive Main per-row Spec from trace.spec (mainSpec_at helper) ⇒
+add_subset_holds ⇒ lui/auipc_subset_holds (6 derived fields + DEFINITIONAL
+pc_handshake — next_pc chosen as the handshake RHS, holds by rfl, so it is NOT a
+residual); StorePcMemoryWitness via matches_memory_entry_refl off the real Clean
+cMemMessage row; rd-write MemBus shape + pure-spec nextPC_eq by rfl; h_circuit
+via lui/auipc_h_circuit_of_main_constraints (FLAT facts, NOT _of_row_provenance);
+conclude through EquivCore.Lui.equiv_LUI / EquivCore.Auipc.equiv_AUIPC (rd value
+DERIVED inside equiv_*: LUI rd = signExtend(imm<<12) from internal_op1_copies;
+AUIPC rd = pc+imm from internal_op0_* + h_pc_bridge/h_offset_bridge). Residuals
+are the standard named pins: decode pins, Sail-value bridges (incl. AUIPC's
+intra-row h_pc_bridge = the m.pc column, a bucket-b bridge NOT #100), the lone
+sequential pc+4 h_nextPC_matches (NOT #100 jump-target), exec artifacts + execRow
+∀-binder, AUIPC's 2 RANGE pins. Appended both to soundConstructionTheorems
+(28 → 30); deep construction-binder baseline grew +68 lines (2 honest flat
+blocks, prior 28 byte-identical, ZERO RowProvenance/RowBinding leaves). Whole
+project lake build green (8690 jobs); check-all.sh 18/18; check-all-semantic.sh
+12/12 (incl. 5/12 deep construction binder); 0 PROJECT (ZiskFv.*) axioms per new
+theorem (closure = Sail FP primitives + kernel only); baseline-axioms /
+hypothesis-count / caller-burden / equiv-axiom-deps UNCHANGED (constructions
+don't touch canonical equiv_<OP>). P4 sound construction count: 28 → 30.
+
+--- prior (SWEEP Wave 6 — W-ALU ADDW/SUBW/ADDIW) ---
+
+AUTHORED the missing m32=1 32-bit lane-binding lemmas
 `input_r1_packed_a32_row` / `input_r2_packed_b32_row` in
 ZiskFv/EquivCore/Bridge/Binary.lean (the binary analog of the BinaryExtension
 shift bridge's packed_a_lo32_eq_of_shift_match_m32_1_of_a_range). KEY FINDING:
