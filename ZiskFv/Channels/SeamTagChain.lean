@@ -906,6 +906,127 @@ theorem bootChainN_seam (N : ℕ) (boot : SeamVal) (prev last : ℕ → SeamVal)
     rw [htag] at hmsg
     exact SeamVal.msg_inj hmsg
 
+/-! ### NON-VACUITY at N = 3 (the general statement is genuinely satisfiable).
+
+`bootChainN_seam` is `∀ N`-quantified. To rule out vacuity (a green
+`Balance → …` theorem is worthless if `Balance` is unsatisfiable), we exhibit a
+concrete BALANCED N = 3 boot chain and run `bootChainN_seam` on each of its three
+segments, confirming the value seam fires (each segment's prev is continued from
+the boot / the previous segment's last). This is an N ≥ 3 instance, so it also
+certifies the general statement is not "trivially true because no N ≥ 3 chain
+balances". -/
+
+/-- The intended N = 3 boot value: `(0,0,B,0)` at tag 0. -/
+def boot3 : SeamVal := ⟨0, 0, 335544320, 0⟩
+
+/-- The intended N = 3 per-segment incoming boundaries:
+    seg0 pulls the boot, seg1 pulls seg0's last, seg2 pulls seg1's last (the seams). -/
+def prev3 : ℕ → SeamVal
+  | 0 => ⟨0, 0, 335544320, 0⟩   -- = boot3
+  | 1 => ⟨1, 0, 100, 5⟩         -- = last3 0  (SEAM)
+  | 2 => ⟨2, 0, 200, 9⟩         -- = last3 1  (SEAM)
+  | _ => ⟨0, 0, 0, 0⟩
+
+/-- The intended N = 3 per-segment outgoing boundaries. seg2 is the LAST segment,
+    so its push (would be tag 3) is gated OFF. -/
+def last3 : ℕ → SeamVal
+  | 0 => ⟨1, 0, 100, 5⟩
+  | 1 => ⟨2, 0, 200, 9⟩
+  | 2 => ⟨3, 0, 300, 13⟩        -- gated off (seg2 = last)
+  | _ => ⟨0, 0, 0, 0⟩
+
+/-- The intended N = 3 pull-tags: `t i = i`. -/
+def t3 : ℕ → FGL
+  | 0 => 0
+  | 1 => 1
+  | 2 => 2
+  | _ => 0
+
+/-- The concrete N = 3 boot chain (7 interactions). -/
+def goodBootChain3 : List (Interaction FGL) := bootChainN 3 boot3 prev3 last3 t3
+
+/-- The concrete N = 3 boot chain reduces to its explicit 7-interaction cons-list:
+    boot push, then seg0/seg1/seg2 each pull + push (seg2's push gated to mult 0). -/
+theorem goodBootChain3_eq :
+    goodBootChain3 =
+      [ pushMsg5 (seam5 0 0 335544320 0 0) (seam5_size ..)            -- boot push, tag 0
+      , pullMsg5 (seam5 0 0 335544320 0 0) (seam5_size ..)            -- seg0 pull, tag 0
+      , gatedMsg5 1 (seam5 1 0 100 5 1) (seam5_size ..)               -- seg0 push, tag 1
+      , pullMsg5 (seam5 1 0 100 5 1) (seam5_size ..)                  -- seg1 pull, tag 1
+      , gatedMsg5 1 (seam5 2 0 200 9 2) (seam5_size ..)               -- seg1 push, tag 2
+      , pullMsg5 (seam5 2 0 200 9 2) (seam5_size ..)                  -- seg2 pull, tag 2
+      , gatedMsg5 0 (seam5 3 0 300 13 3) (seam5_size ..) ] := by      -- seg2 push, GATED OFF
+  simp only [goodBootChain3, bootChainN, show (3 : ℕ) = 2 + 1 from rfl,
+    List.range_succ, List.range_zero, List.nil_append, List.flatMap_cons, List.flatMap_nil,
+    List.append_nil, List.cons_append, segPair, segGate, boot3, prev3, last3, t3,
+    SeamVal.msg]
+  norm_num [seam5]
+
+/-- The concrete N = 3 boot chain IS balanced: the three live messages
+    `(0,0,B,0,0)`, `(1,0,100,5,1)`, `(2,0,200,9,2)` each have one matching pull
+    (-1) and one push (+1); seg2's push `(3,0,300,13,3)` is gated to mult 0.
+    NON-VACUOUS positive witness at N = 3. -/
+theorem goodBootChain3_balanced : BalancedInteractions goodBootChain3 := by
+  refine ⟨Or.inl ?_, ?_⟩
+  · rw [goodBootChain3, bootChainN_length]
+    have : (1 + 2 * 3 : ℕ) < ringChar FGL := by
+      haveI hc : CharP FGL GL_prime := inferInstanceAs (CharP (Fin GL_prime) GL_prime)
+      rw [ringChar.eq FGL GL_prime]; norm_num
+    simpa using this
+  · intro msg
+    rw [goodBootChain3_eq]
+    unfold balanceOf pullMsg5 pushMsg5 gatedMsg5 seam5
+    have d01 : (#[0,0,335544320,0,0] : Array FGL) ≠ #[1,0,100,5,1] := by decide
+    have d02 : (#[0,0,335544320,0,0] : Array FGL) ≠ #[2,0,200,9,2] := by decide
+    have d12 : (#[1,0,100,5,1] : Array FGL) ≠ #[2,0,200,9,2] := by decide
+    by_cases h0 : (#[0,0,335544320,0,0] : Array FGL) = msg <;>
+    by_cases h1 : (#[1,0,100,5,1] : Array FGL) = msg <;>
+    by_cases h2 : (#[2,0,200,9,2] : Array FGL) = msg <;>
+      simp_all [List.filter, List.sum] <;>
+      -- residual: seg2's gated push (mult 0) for the tag-3 message — 0 either way
+      (split <;> simp)
+
+/-- Running `bootChainN_seam` on the concrete N = 3 witness, for each segment:
+    seg0 pulls the boot, seg1's prev = seg0's last (SEAM), seg2's prev = seg1's
+    last (SEAM). Each fires the expected disjunct. Certifies the general-N
+    theorem is non-vacuous at N = 3. -/
+theorem goodBootChain3_seams :
+    -- seg0 pulls the boot
+    (t3 0 = 0 ∧ prev3 0 = boot3)
+    -- seg1's incoming = seg0's outgoing (the first seam)
+    ∧ (∃ j, j < 3 ∧ j + 1 ≠ 3 ∧ t3 1 = t3 j + 1 ∧ prev3 1 = last3 j)
+    -- seg2's incoming = seg1's outgoing (the second seam)
+    ∧ (∃ j, j < 3 ∧ j + 1 ≠ 3 ∧ t3 2 = t3 j + 1 ∧ prev3 2 = last3 j) := by
+  -- the three tag values `t3 0 = 0, t3 1 = 1, t3 2 = 2` are distinct in Goldilocks
+  have hne01 : (0 : FGL) ≠ 0 + 1 := by simpa using zero_ne_one_FGL
+  have hne02 : (0 : FGL) ≠ 1 + 1 := by simpa using zero_ne_two_FGL
+  have hne03 : (0 : FGL) ≠ 2 + 1 := by
+    have h3 : (3 : FGL) ≠ 0 := by
+      haveI hc : CharP FGL GL_prime := inferInstanceAs (CharP (Fin GL_prime) GL_prime)
+      have : ((3 : ℕ) : FGL) ≠ 0 := by rw [Ne, CharP.cast_eq_zero_iff FGL GL_prime]; omega
+      simpa using this
+    intro h; apply h3; linear_combination -h
+  refine ⟨?_, ?_, ?_⟩
+  · rcases bootChainN_seam 3 boot3 prev3 last3 t3 goodBootChain3_balanced (i := 0) (by norm_num)
+      with h | ⟨j, hj, _, htag, _⟩
+    · exact h
+    · -- the seam disjunct would force t3 0 = t3 j + 1, impossible for j ∈ {0,1,2}
+      exfalso
+      interval_cases j <;> simp only [t3] at htag
+      · exact hne01 htag
+      · exact hne02 htag
+      · exact hne03 htag
+  · rcases bootChainN_seam 3 boot3 prev3 last3 t3 goodBootChain3_balanced (i := 1) (by norm_num)
+      with ⟨htag, _⟩ | h
+    · -- t3 1 = 1 ≠ 0, so the boot disjunct is impossible
+      exact absurd htag.symm zero_ne_one_FGL
+    · exact h
+  · rcases bootChainN_seam 3 boot3 prev3 last3 t3 goodBootChain3_balanced (i := 2) (by norm_num)
+      with ⟨htag, _⟩ | h
+    · -- t3 2 = 2 ≠ 0, so the boot disjunct is impossible
+      exact absurd htag.symm zero_ne_two_FGL
+    · exact h
+
 end GeneralN
 
 end ZiskFv.Channels.SeamTagChain
@@ -927,3 +1048,5 @@ NO `native_decide`. -/
 #print axioms ZiskFv.Channels.SeamTagChain.goodBootList2_chain
 #print axioms ZiskFv.Channels.SeamTagChain.push_mem_classify
 #print axioms ZiskFv.Channels.SeamTagChain.bootChainN_seam
+#print axioms ZiskFv.Channels.SeamTagChain.goodBootChain3_balanced
+#print axioms ZiskFv.Channels.SeamTagChain.goodBootChain3_seams
