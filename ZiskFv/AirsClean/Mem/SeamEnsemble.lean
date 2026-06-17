@@ -1,5 +1,5 @@
 import ZiskFv.AirsClean.Mem.SeamCircuit
-import ZiskFv.Spike.SeamVmTagChain
+import ZiskFv.Channels.SeamTagChain
 import Clean.Air.FlatEnsemble
 import Clean.Air.OrderedChannel
 import Clean.Utils.Tactics
@@ -20,7 +20,7 @@ MemBus AND the segment-continuation seam per row, via `emit`), through the
 * Its balance therefore becomes an assumed conjunct of
   `EnsembleWitness.BalancedChannels` — the SAME trust class as `trace.balanced`.
 * From that balance we extract the seam `BalancedInteractions` and discharge the
-  N=2 tag-chain derivation (`SeamVmTagChain.tag_chain_derived`) to obtain the
+  N=2 tag-chain derivation (`SeamTagChain.tag_chain_derived`) to obtain the
   cross-segment value seam.
 
 ## Scope (L2+L3, this increment)
@@ -28,7 +28,7 @@ MemBus AND the segment-continuation seam per row, via `emit`), through the
 The seam-emitting Mem tables use the production `componentWithSeamAndMemBus`. The
 boot/endpoint (`mem.pil:253` `direct_global_update_proves` tag 0 + the verifier's
 global END) is hosted as a dedicated endpoint component — exactly the verifier
-endpoint the probe and `SeamVmTagChain.lean §"verifier boot push"` model.
+endpoint that `SeamTagChain.lean §"verifier boot push"` models.
 
 This ensemble is SEPARATE from `fullRv64imEnsemble`: the 28 merged construction
 families root on `fullRv64imEnsemble` and do NOT yet consume the seam (that is
@@ -59,7 +59,7 @@ namespace ZiskFv.AirsClean.Mem.SeamEnsemble
 open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.SegmentContinuation (SeamContChannel SeamMessage)
-open ZiskFv.Spike.SeamVmTagChain
+open ZiskFv.Channels.SeamTagChain
 open ZiskFv.AirsClean.Mem
 
 /-! ## Boot / verifier-endpoint component.
@@ -444,7 +444,7 @@ theorem theList2_balanced_of_balancedChannels (vb : BootRow FGL) (v0 v1 : MemSea
 
 From the ensemble's `BalancedChannels` (the assumed channel-balance trust class,
 holding on the seam channel because it is in `ens.channels`),
-`SeamVmTagChain.tag_chain_derived` forces the per-tag value seam. We expose the
+`SeamTagChain.tag_chain_derived` forces the per-tag value seam. We expose the
 SEAM conjunct: one segment's incoming boundary equals the other's outgoing
 boundary. The disjunction is the honest permutation ambiguity (which physical
 segment plays which chain position); both disjuncts carry a genuine seam. -/
@@ -487,7 +487,7 @@ theorem seam_value_equality (vb : BootRow FGL) (v0 v1 : MemSeamRow FGL)
 `BalancedChannels (mkWitness ..)` must be SATISFIABLE for the theorem to say
 something. We exhibit the intended 2-segment chain — using the PRODUCTION
 `MemSeamRow` rows — and prove its seam-channel balance, transported from
-`SeamVmTagChain.goodList2_balanced`. -/
+`SeamTagChain.goodList2_balanced`. -/
 
 /-- The boot row of the intended chain: boot `(0,0,B,0)` tag 0; final `(2,0,200,9)`
     tag tf = 2. -/
@@ -522,7 +522,7 @@ something. We exhibit the intended 2-segment chain — using the PRODUCTION
     segment_last_addr := 200, segment_last_step := 9,
     is_last_segment := 0 }
 
-/-- The intended chain's `asTheList2` is exactly `SeamVmTagChain.goodList2`. -/
+/-- The intended chain's `asTheList2` is exactly `SeamTagChain.goodList2`. -/
 theorem asTheList2_good : asTheList2 goodBoot goodSeg0 goodSeg1 = goodList2 := by
   rfl
 

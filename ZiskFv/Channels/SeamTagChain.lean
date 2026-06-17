@@ -2,43 +2,41 @@ import Clean.Air.Balance
 import ZiskFv.Field.Goldilocks
 
 /-!
-# SPIKE — DERIVE the segment_id tag chain (#103 make-or-break)
+# Segment-continuation tag-chain derivation (#103, N=2)
 
-THROWAWAY go/no-go proof of concept. NOT for merge. Additive spike file; nothing
-in the live ensemble imports it.
+This module DERIVES the per-segment `segment_id` tag chain that forces the
+cross-segment memory seam, from channel balance alone — with NO per-segment tag
+pin as a hypothesis. It is the derivation engine consumed by the seam ensemble
+(`ZiskFv/AirsClean/Mem/SeamEnsemble.lean`).
 
-## What this settles
-
-Spike B (`.worktrees/spike-b-xseg/ZiskFv/Spike/SeamVm.lean`) proved
-`tagged_seam_forced` **GIVEN** a per-segment tag pin `hprev1_tag : prev1.tag = 1`.
-That ASSUMED the tag. This spike asks the make-or-break question:
+The question it answers:
 
   Is the per-segment `segment_id` tag chain DERIVED from
     [verifier boot-push at tag 0] + [per-row push_tag = pull_tag + 1] + [global balance]
   WITHOUT any per-segment tag pin as a hypothesis?
 
-## Faithfulness of the two model facts (CRITICAL — see report §5)
+## Faithfulness of the two model facts
 
 1. **The +1 (push_tag = pull_tag + 1) is FAITHFUL.** It is intrinsic to the real
    emission: `direct_gsum_0` (the PULL of `previous_segment_*`) hashes tag
    `segment_id`, `direct_gsum_1` (the PUSH of `segment_last_*`) hashes tag
    `segment_id + 1` (`mem.pil:198` vs `mem.pil:235`; `ZiskFv/Airs/Mem.lean:1357`
    vs `:1367`). There is NO free column and NO extra equality — the `+1` is baked
-   into the polynomial the verifier hashes. So I MAY impose, per segment, that the
+   into the polynomial the verifier hashes. So we MAY impose, per segment, that the
    push-tag is the pull-tag + 1; this is not an added assumption, it is the
    emission. Each segment's pull-tag `t_i` is a GENUINELY FREE variable here; only
    the relation push = pull + 1 is fixed.
 
 2. **The verifier boot push at tag 0 is a VERIFIER ENDPOINT, not a caller premise.**
    It is modeled as a member of the SAME balanced interaction list (mirroring
-   Spike B's `seamVerifier` / Fibonacci's `fibonacciVerifier` / `mem.pil:253`'s
+   Fibonacci's `fibonacciVerifier` / `mem.pil:253`'s
    `direct_global_update_proves(MEMORY_CONTINUATION_ID, [..,0,..], sel:enable_flag)`).
    Its trust class is channel balance — the same `BalancedChannels` antecedent the
    proof system already discharges. It is NOT a hypothesis a downstream `equiv_<OP>`
    consumer carries. This is the decisive legitimacy distinction (verifier endpoint
-   vs. failure-mode-#94/#97 relocation).
+   vs. relocating the obligation onto a caller-supplied premise).
 
-## The honest finding (see report §2)
+## The honest finding
 
 Balance + the +1 emission + the boot endpoint, with NO per-segment tag pin, DO
 force the tag SET to be `{0, 1, ..., N-1}` and the per-tag value seam to hold. They
@@ -48,12 +46,17 @@ permutation is pure relabeling and is irrelevant to the seam property. We theref
 prove the honest disjunction for N=2 (both disjuncts are valid chains with the seam
 holding). Adding the faithful row-local `is_first_segment` pin (one boolean from
 `segment_every_row`, NOT a per-segment caller premise) would collapse the
-disjunction to the canonical order; we record that as the Step-2 follow-up.
+disjunction to the canonical order; general N is the documented follow-up (L1).
+
+## Trust note
+
+No axioms. The whole derivation is kernel-only (`propext`, `Classical.choice`,
+`Quot.sound`); see the `#print axioms` checks at the bottom.
 -/
 
 set_option linter.unnecessarySimpa false
 
-namespace ZiskFv.Spike.SeamVmTagChain
+namespace ZiskFv.Channels.SeamTagChain
 
 open Goldilocks
 
@@ -63,7 +66,7 @@ instance : Fact (ringChar FGL ≠ 2) := .mk <| by
   have h : ringChar FGL = GL_prime := ringChar.eq FGL GL_prime
   rw [h]; norm_num
 
-/-! ## The tagged seam channel and the pull/push message builders (from Spike B). -/
+/-! ## The tagged seam channel and the pull/push message builders. -/
 
 /-- The tagged seam channel (arity 5: 4 boundary fields + segment-id tag).
     `Guarantees := True`: the cross-segment link comes from BALANCE alone, never
@@ -324,7 +327,7 @@ theorem small_tag_ne : (0 : FGL) ≠ 1 ∧ (0 : FGL) ≠ 2 ∧ (1 : FGL) ≠ 0 �
 
 /-! ## THE FULL RESULT — tag chain AND value seam, derived without a tag premise.
 
-`tag_chain_derived` is the make-or-break theorem. With FREE per-segment pull-tags
+`tag_chain_derived` is the central theorem. With FREE per-segment pull-tags
 `t0, t1` and FREE boundary values, balance (which contains the verifier boot push
 at tag 0 as a member — a verifier endpoint, NOT a separate caller premise) forces:
 
@@ -506,7 +509,7 @@ theorem goodList2_balanced : BalancedInteractions goodList2 := by
     by_cases h2 : (#[2,0,200,9,2] : Array FGL) = msg <;>
       simp_all [List.filter, List.sum]
 
-/-- Running the make-or-break theorem on the concrete witness: it lands in the
+/-- Running `tag_chain_derived` on the concrete witness: it lands in the
     first disjunct, the tags resolve to `(0,1)` and `tf = 2`, and the seam holds
     (`seg1.prev = seg0.last = (1,0,100,5)`). This certifies non-vacuity end-to-end:
     a real balanced trace satisfies `tag_chain_derived`'s antecedent, and the
@@ -523,16 +526,16 @@ theorem goodList2_chain :
   · -- the second (permutation) disjunct would force t1 = 0 here, but t1 = 1; absurd
     exact absurd h.1 (by simpa using zero_ne_one_FGL)
 
-end ZiskFv.Spike.SeamVmTagChain
+end ZiskFv.Channels.SeamTagChain
 
-/-! ## Axiom-closure checks (§0 phrasing).
+/-! ## Axiom-closure checks.
 
 `#print axioms` returns only Lean-kernel axioms (`propext`, `Classical.choice`,
-`Quot.sound`): i.e. 0 PROJECT (`ZiskFv.*`) axioms; Lean-kernel axioms present as
-documented external trust. NO `sorry`, NO project axiom, NO `native_decide`. -/
-#print axioms ZiskFv.Spike.SeamVmTagChain.weightedSum_eq_zero_of_balance
-#print axioms ZiskFv.Spike.SeamVmTagChain.tag_power_sums
-#print axioms ZiskFv.Spike.SeamVmTagChain.tags_forced
-#print axioms ZiskFv.Spike.SeamVmTagChain.tag_chain_derived
-#print axioms ZiskFv.Spike.SeamVmTagChain.goodList2_balanced
-#print axioms ZiskFv.Spike.SeamVmTagChain.goodList2_chain
+`Quot.sound`): i.e. 0 PROJECT (`ZiskFv.*`) axioms. NO `sorry`, NO project axiom,
+NO `native_decide`. -/
+#print axioms ZiskFv.Channels.SeamTagChain.weightedSum_eq_zero_of_balance
+#print axioms ZiskFv.Channels.SeamTagChain.tag_power_sums
+#print axioms ZiskFv.Channels.SeamTagChain.tags_forced
+#print axioms ZiskFv.Channels.SeamTagChain.tag_chain_derived
+#print axioms ZiskFv.Channels.SeamTagChain.goodList2_balanced
+#print axioms ZiskFv.Channels.SeamTagChain.goodList2_chain
