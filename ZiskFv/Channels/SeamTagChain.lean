@@ -1027,6 +1027,148 @@ theorem goodBootChain3_seams :
       exact absurd htag.symm zero_ne_two_FGL
     · exact h
 
+/-! ### Tag arithmetic: the last segment's tag is forced to `N-1`.
+
+Beyond the per-segment value seam, the weighted-balance machinery pins the LAST
+segment's tag exactly: `t (N-1) = N - 1`. (For `N = 2` this recovers
+`boot_tags_forced`'s `t1 = 1`.) The proof is a clean telescoping of the `f = tag`
+weighted balance — see the doc note below on why the FULL tag set `{0,…,N-1}`
+needs a symmetric-function / Newton argument and is the documented follow-up. -/
+
+/-- `weightedSum` is additive over list append. -/
+theorem weightedSum_append (a b : List (Interaction FGL)) (f : Array FGL → FGL) :
+    weightedSum (a ++ b) f = weightedSum a f + weightedSum b f := by
+  simp [weightedSum, List.map_append, List.sum_append]
+
+/-- `weightedSum` distributes over `flatMap` as a sum of per-element weighted sums. -/
+theorem weightedSum_flatMap (l : List ℕ) (g : ℕ → List (Interaction FGL))
+    (f : Array FGL → FGL) :
+    weightedSum (l.flatMap g) f = (l.map (fun i => weightedSum (g i) f)).sum := by
+  unfold weightedSum
+  induction l with
+  | nil => simp
+  | cons a as ih => simp [List.flatMap_cons, List.map_append, List.sum_append, ih]
+
+/-- A `(List.range N).map`-sum equals the corresponding `Finset.range` sum. -/
+theorem list_map_range_sum (N : ℕ) (g : ℕ → FGL) :
+    (List.map g (List.range N)).sum = ∑ i ∈ Finset.range N, g i := by
+  induction N with
+  | zero => simp
+  | succ n ih =>
+    rw [List.range_succ, List.map_append, List.sum_append, Finset.sum_range_succ, ih]
+    simp
+
+/-- The weighted sum of a single segment's pair (pull + gated push). -/
+theorem weightedSum_segPair (N : ℕ) (prev last : ℕ → SeamVal) (t : ℕ → FGL)
+    (f : Array FGL → FGL) (i : ℕ) :
+    weightedSum (segPair N prev last t i) f
+      = - f ((prev i).msg (t i)) + segGate N i * f ((last i).msg (t i + 1)) := by
+  simp only [segPair, weightedSum, pullMsg5, gatedMsg5, List.map_cons, List.map_nil,
+    List.sum_cons, List.sum_nil, add_zero, neg_one_mul]
+
+/-- The weighted sum of the whole boot chain as a `Finset.range` sum. -/
+theorem weightedSum_bootChainN (N : ℕ) (boot : SeamVal) (prev last : ℕ → SeamVal)
+    (t : ℕ → FGL) (f : Array FGL → FGL) :
+    weightedSum (bootChainN N boot prev last t) f
+      = f (boot.msg 0)
+        + ∑ i ∈ Finset.range N,
+            (- f ((prev i).msg (t i)) + segGate N i * f ((last i).msg (t i + 1))) := by
+  rw [bootChainN, show (pushMsg5 (boot.msg 0) (SeamVal.msg_size ..) ::
+      (List.range N).flatMap (segPair N prev last t))
+      = [pushMsg5 (boot.msg 0) (SeamVal.msg_size ..)] ++
+        (List.range N).flatMap (segPair N prev last t) from rfl,
+    weightedSum_append, weightedSum_flatMap]
+  rw [list_map_range_sum]
+  congr 1
+  · simp [weightedSum, pushMsg5]
+  · apply Finset.sum_congr rfl
+    intro i _; exact weightedSum_segPair N prev last t f i
+
+/-- The sum of `segGate N i` over `i < N` is `N - 1` (for `N ≥ 1`): every segment
+    contributes `1` except the last (`i = N-1`, gate `0`). -/
+theorem sum_segGate (N : ℕ) (hN : 0 < N) :
+    ∑ i ∈ Finset.range N, segGate N i = ((N : FGL) - 1) := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN.ne'
+  rw [Finset.sum_range_succ]
+  have hlast : segGate (n + 1) n = 0 := by simp [segGate]
+  have hrest : ∀ i ∈ Finset.range n, segGate (n + 1) i = 1 := by
+    intro i hi; simp only [Finset.mem_range] at hi
+    simp only [segGate]; rw [if_neg]; omega
+  rw [Finset.sum_congr rfl hrest, hlast]
+  simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one, add_zero]
+  push_cast; ring
+
+/-- **THE LAST SEGMENT'S TAG IS FORCED TO `N-1`.** From channel balance with the
+    `f = tag` weight, the telescoping `∑ (t_i + 1 - t_i) = ∑ 1 = N - 1` (the boot
+    contributes tag 0, the last segment's push is gated off) pins the last
+    segment's pull-tag: `t (N-1) = N - 1`. For `N = 2` this is
+    `boot_tags_forced`'s `t1 = 1`. -/
+theorem bootChainN_last_tag (N : ℕ) (hN : 0 < N) (boot : SeamVal)
+    (prev last : ℕ → SeamVal) (t : ℕ → FGL)
+    (balance : BalancedInteractions (bootChainN N boot prev last t)) :
+    t (N - 1) = (N : FGL) - 1 := by
+  have e := weightedSum_eq_zero_of_balance tagW balance
+  rw [weightedSum_bootChainN] at e
+  -- evaluate the tag weight on every message
+  simp only [SeamVal.tagW_msg] at e
+  -- the segment sum telescopes: the -t_i and +segGate*t_i cancel for every non-last
+  -- segment; the last segment (gate 0) keeps -t_{N-1}; plus ∑ segGate = N-1.
+  have hcancel : ∑ i ∈ Finset.range N, (- t i + segGate N i * (t i + 1))
+      = (- t (N - 1)) + ∑ i ∈ Finset.range N, segGate N i := by
+    have key : ∀ i ∈ Finset.range N,
+        (- t i + segGate N i * (t i + 1)) = (segGate N i - 1) * t i + segGate N i := by
+      intro i _; ring
+    rw [Finset.sum_congr rfl key, Finset.sum_add_distrib]
+    congr 1
+    obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN.ne'
+    rw [Finset.sum_range_succ]
+    have hrest : ∀ i ∈ Finset.range n, (segGate (n+1) i - 1) * t i = 0 := by
+      intro i hi; simp only [Finset.mem_range] at hi
+      have : segGate (n+1) i = 1 := by simp only [segGate]; rw [if_neg]; omega
+      rw [this]; ring
+    rw [Finset.sum_congr rfl hrest, Finset.sum_const_zero]
+    have hlast : segGate (n+1) n = 0 := by simp [segGate]
+    rw [hlast]
+    simp
+  rw [hcancel, sum_segGate N hN] at e
+  -- e is `0 + (- t (N-1) + (N - 1)) = 0` (boot tag already simplified to 0)
+  linear_combination -e
+
+/-! ### The headline general-N theorem (the `boot_chain_derived` analogue). -/
+
+/-- **GENERAL-N BOOT-CHAIN DERIVATION** — the analogue of `boot_chain_derived`
+    (`N = 2`) for an ARBITRARY segment count `N ≥ 1`. From channel balance alone on
+    the boot chain (the tag-0 boot push a verifier endpoint, NOT a caller premise)
+    and the `+1`/gated emission, two facts are forced:
+
+    1. **The per-segment value seam** (the load-bearing cross-segment continuation
+       #76 consumes): for EVERY segment `i < N`, its incoming boundary `prev i` is
+       continued either from the boot (`t i = 0`, `prev i = boot`) or from a
+       non-last segment `j`'s outgoing boundary (`t i = t j + 1`, `prev i = last j`).
+
+    2. **The last segment's tag** is forced exactly: `t (N-1) = N - 1`.
+
+    The seam is tag-indexed (permutation-tolerant); see the section doc for why
+    balance does not pin the *physical* segment ordering for `N ≥ 3` (the
+    documented `is_first_segment` follow-up), while the value continuation itself
+    is forced for every `N`. -/
+theorem boot_chain_derived_generalN (N : ℕ) (hN : 0 < N) (boot : SeamVal)
+    (prev last : ℕ → SeamVal) (t : ℕ → FGL)
+    (balance : BalancedInteractions (bootChainN N boot prev last t)) :
+    (∀ i, i < N →
+        (t i = 0 ∧ prev i = boot)
+        ∨ (∃ j, j < N ∧ j + 1 ≠ N ∧ t i = t j + 1 ∧ prev i = last j))
+    ∧ t (N - 1) = (N : FGL) - 1 :=
+  ⟨fun _ hi => bootChainN_seam N boot prev last t balance hi,
+   bootChainN_last_tag N hN boot prev last t balance⟩
+
+/-- The last-tag derivation, run on the concrete N = 3 witness: `t3 2 = 2`
+    (i.e. `t (N-1) = N - 1` at N = 3). Certifies `bootChainN_last_tag` /
+    `boot_chain_derived_generalN`'s tag arithmetic is non-vacuous at N ≥ 3. -/
+theorem goodBootChain3_last_tag : t3 2 = (3 : FGL) - 1 := by
+  have h := bootChainN_last_tag 3 (by norm_num) boot3 prev3 last3 t3 goodBootChain3_balanced
+  simpa using h
+
 end GeneralN
 
 end ZiskFv.Channels.SeamTagChain
@@ -1050,3 +1192,6 @@ NO `native_decide`. -/
 #print axioms ZiskFv.Channels.SeamTagChain.bootChainN_seam
 #print axioms ZiskFv.Channels.SeamTagChain.goodBootChain3_balanced
 #print axioms ZiskFv.Channels.SeamTagChain.goodBootChain3_seams
+#print axioms ZiskFv.Channels.SeamTagChain.bootChainN_last_tag
+#print axioms ZiskFv.Channels.SeamTagChain.boot_chain_derived_generalN
+#print axioms ZiskFv.Channels.SeamTagChain.goodBootChain3_last_tag
