@@ -26,6 +26,7 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open ZiskFv.Channels.SegmentContinuation (SeamContChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
 
@@ -54,7 +55,7 @@ theorem component_mem_fullRv64im_cases
       ∨ component =
         ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program := by
   simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
-    SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+    SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addChannel_tables]
     at h_mem
   rcases h_mem with
     h_verifier | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
@@ -85,7 +86,7 @@ theorem exists_mem_table_of_fullRv64im_witness
       ZiskFv.AirsClean.Mem.componentWithDualMemBus ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
     simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
-      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addChannel_tables]
   have h_in_map :
       ZiskFv.AirsClean.Mem.componentWithDualMemBus ∈
         witness.allTables.map (·.component) := by
@@ -107,7 +108,7 @@ theorem exists_main_table_of_fullRv64im_witness
       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
     simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
-      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addChannel_tables]
   have h_in_map :
       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program ∈
         witness.allTables.map (·.component) := by
@@ -128,7 +129,7 @@ theorem exists_binary_table_of_fullRv64im_witness
       ZiskFv.AirsClean.Binary.staticLookupComponent ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
     simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
-      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addChannel_tables]
   have h_in_map :
       ZiskFv.AirsClean.Binary.staticLookupComponent ∈
         witness.allTables.map (·.component) := by
@@ -150,7 +151,7 @@ theorem exists_binaryExtension_table_of_fullRv64im_witness
       shiftStaticLookupComponent ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
     simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
-      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
+      SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addChannel_tables]
   have h_in_map :
       shiftStaticLookupComponent ∈
         witness.allTables.map (·.component) := by
@@ -187,7 +188,8 @@ theorem opBus_balanced_of_witness
     (h_balanced : witness.BalancedChannels) :
     BalancedInteractions (witness.interactionsWith OpBusChannel.toRaw) := by
   have h := h_balanced OpBusChannel.toRaw (by
-    change OpBusChannel.toRaw ∈ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    change OpBusChannel.toRaw ∈
+      [SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h
@@ -200,7 +202,30 @@ theorem memBus_balanced_of_witness
     (h_balanced : witness.BalancedChannels) :
     BalancedInteractions (witness.interactionsWith MemBusChannel.toRaw) := by
   have h := h_balanced MemBusChannel.toRaw (by
-    change MemBusChannel.toRaw ∈ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    change MemBusChannel.toRaw ∈
+      [SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
+    simp)
+  simpa [EnsembleWitness.BalancedChannel,
+    EnsembleWitness.interactionsWith_allTablesWitness] using h
+
+/-- Project the full ensemble's `BalancedChannels` hypothesis to the concrete
+    cross-segment continuation seam interaction list (XCAP #103, route (b)).
+
+    The seam channel is in `fullRv64imEnsemble.ensemble.channels` (the
+    `addChannel` position), so `BalancedChannels` carries its balance as a
+    conjunct — the SAME channel-balance trust class as the OpBus/MemBus
+    projections above. This is the prerequisite that feeds the channel-level
+    tag-chain derivation (`ZiskFv.Channels.SeamTagChain`) on the REAL ensemble.
+    The seam channel is consumed only for its BALANCE; nothing consumes its
+    guarantees (`SeamContChannel.Guarantees := True`). -/
+theorem seam_balanced_of_witness
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_balanced : witness.BalancedChannels) :
+    BalancedInteractions (witness.interactionsWith SeamContChannel.toRaw) := by
+  have h := h_balanced SeamContChannel.toRaw (by
+    change SeamContChannel.toRaw ∈
+      [SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h

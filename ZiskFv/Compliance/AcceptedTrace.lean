@@ -52,6 +52,28 @@ structure AcceptedTrace where
   spec : witness.Spec
   balanced : witness.BalancedChannels
 
+/-- The cross-segment continuation seam channel (XCAP #103, route (b)) is
+    BALANCED on EVERY accepted trace of the real `fullRv64imEnsemble`.
+
+    This is the seam-balance fact on the REAL ensemble: it falls straight out of
+    the accepted trace's existing `balanced : BalancedChannels` field (the seam
+    channel is in `fullRv64imEnsemble.ensemble.channels` via `addChannel`), with
+    NO extra hypothesis — exactly the channel-balance trust class the proof
+    system already discharges. It is the ensemble-level prerequisite the
+    channel-level tag-chain derivation (`ZiskFv.Channels.SeamTagChain`) consumes
+    to force the cross-segment value seam.
+
+    Non-vacuity: this quantifies over `AcceptedTrace`, the same structure the
+    proved global theorem `zisk_riscv_compliant_program_bus` consumes, so the
+    antecedent is inhabited by every real accepted trace — not a degenerate
+    single-row instance. The full N-segment value-seam derivation against this
+    balance is the documented L1/L5 follow-up. -/
+theorem AcceptedTrace.seam_balanced (trace : AcceptedTrace) :
+    BalancedInteractions
+      (trace.witness.interactionsWith
+        ZiskFv.Channels.SegmentContinuation.SeamContChannel.toRaw) :=
+  ZiskFv.AirsClean.FullEnsemble.seam_balanced_of_witness trace.witness trace.balanced
+
 
 /-- The named program-binding premise for the P4 construction (table skeleton).
 

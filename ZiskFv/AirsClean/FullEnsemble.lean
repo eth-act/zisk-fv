@@ -41,6 +41,7 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open ZiskFv.Channels.SegmentContinuation (SeamContChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 
 /-- The currently migrated full Clean ensemble for the supported RV64IM
@@ -123,6 +124,12 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
           ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated])
     |>.addFinishedChannel OpBusChannel.toRaw
     |>.addFinishedChannel MemBusChannel.toRaw
+    -- Cross-segment continuation seam (XCAP #103, route (b)). The unified Mem
+    -- component emits the seam via `emit` (requirements bucket), so the seam is a
+    -- plain (non-finished) channel; `addChannel` joins it to `ens.channels` with
+    -- NO soundness obligation, and its balance becomes a conjunct of
+    -- `BalancedChannels` — the same channel-balance trust class as `trace.balanced`.
+    |>.addChannel SeamContChannel.toRaw
     |>.toFormal (fun _ => True) (fun _ => True)
         (by
           intro _ _ table h_mem row _
