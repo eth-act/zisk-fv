@@ -103,6 +103,22 @@ theorem pcLastMessage_pc_sequential
   simp only [pcLastMessage, h_set_pc, h_flag]
   ring
 
+/-- **Flag-free sequential mux reduction.** With `set_pc = 0` and
+    `jmp_offset1 = jmp_offset2` the next-PC mux output collapses to
+    `pc + jmp_offset2` REGARDLESS of `flag`: the flag term of the mux is
+    `flag * (jmp_offset1 - jmp_offset2)`, which vanishes when the two offsets
+    are equal. For every sequential ALU opcode the ZisK decode sets
+    `jmp_offset1 = jmp_offset2 = 4` (documented in
+    `Tactics/ALURTypeArchetype.lean`), so this is the faithful reduction and it
+    DROPS the `flag = 0` hypothesis that `pcLastMessage_pc_sequential` needed. -/
+theorem pcLastMessage_pc_sequential_of_jmp_eq
+    (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (h_set_pc : row.core.set_pc = 0)
+    (h_jmp_eq : row.core.jmp_offset1 = row.core.jmp_offset2) :
+    (pcLastMessage row).pc = row.core.pc + row.core.jmp_offset2 := by
+  simp only [pcLastMessage, h_set_pc, h_jmp_eq]
+  ring
+
 /-! ## The Route C bridge lemma -/
 
 /-- **Route C bridge lemma (`nextPC_matches_of_seam`).** Discharge a
@@ -134,6 +150,41 @@ theorem nextPC_matches_of_seam
   have h_field : nextPcVal = row.core.pc + 4 := by
     rw [h_seam, pcLastMessage_pc_sequential row h_set_pc h_flag, h_jmp2]
   -- The `register_type_pc_equiv ▸` coercion is `rfl` (both sides are `BitVec 64`).
+  show (BitVec.ofNat 64 nextPcVal.val : BitVec 64) = sailPC + 4#64
+  rw [← h_pc_col]
+  show (BitVec.ofNat 64 nextPcVal.val : BitVec 64)
+    = BitVec.ofNat 64 (row.core.pc).val + 4#64
+  rw [h_field, ofNat_val_add_four (row.core.pc) h_no_overflow]
+
+/-- **Route C bridge lemma, flag-free (`nextPC_matches_of_seam'`).** Same as
+    `nextPC_matches_of_seam`, but the sequential mux is collapsed via
+    `pcLastMessage_pc_sequential_of_jmp_eq` (offsets equal) rather than
+    `flag = 0`. This DROPS the `h_flag` hypothesis: the flag term of the mux
+    cancels once `jmp_offset1 = jmp_offset2`, so for a sequential ALU op (where
+    the decode sets both offsets to 4) the next-PC value is `pc + jmp_offset2`
+    independent of `flag`.
+
+    The remaining hypotheses are exactly the genuine residuals:
+    * `h_seam` — the X100.1a SEAM output (the channel-balance trust class).
+    * `h_decode` (`set_pc = 0`, `jmp_offset1 = jmp_offset2`, `jmp_offset2 = 4`)
+      — ROM/decode column facts (the `aeneasBridgeTrust` decode class).
+    * `h_pc_col` — the FAITHFUL pc-column ↔ Sail-PC bridge (the control-flow
+      analogue of the operand lane bridges; the `aeneasBridgeTrust` pc class).
+    * `h_no_overflow` — a pure `+4` field side-condition. -/
+theorem nextPC_matches_of_seam'
+    (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (nextPcVal : FGL) (sailPC : BitVec 64)
+    (h_seam : nextPcVal = (pcLastMessage row).pc)
+    (h_set_pc : row.core.set_pc = 0)
+    (h_jmp_eq : row.core.jmp_offset1 = row.core.jmp_offset2)
+    (h_jmp2 : row.core.jmp_offset2 = 4)
+    (h_pc_col :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (row.core.pc).val) : BitVec 64) = sailPC)
+    (h_no_overflow : (row.core.pc).val + 4 < GL_prime) :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 nextPcVal.val) : BitVec 64)
+      = sailPC + 4#64 := by
+  have h_field : nextPcVal = row.core.pc + 4 := by
+    rw [h_seam, pcLastMessage_pc_sequential_of_jmp_eq row h_set_pc h_jmp_eq, h_jmp2]
   show (BitVec.ofNat 64 nextPcVal.val : BitVec 64) = sailPC + 4#64
   rw [← h_pc_col]
   show (BitVec.ofNat 64 nextPcVal.val : BitVec 64)
