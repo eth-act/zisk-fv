@@ -142,6 +142,8 @@ import ZiskFv.Compliance.ConstructionIType
 import ZiskFv.Compliance.ConstructionShift
 import ZiskFv.Compliance.ConstructionAdd
 import ZiskFv.Compliance.ConstructionWAlu
+import ZiskFv.Compliance.GapC.NextPcOfSeam
+import ZiskFv.Compliance.GapC.ConstructionAddViaSeam
 import ZiskFv.Compliance
 import ZiskFv.Completeness.Rv
 import ZiskFv.Completeness.Rv64im
