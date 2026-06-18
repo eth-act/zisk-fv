@@ -35,8 +35,15 @@ re-compose) then RANK 2 (range providers). User directed: expand extraction +
 solve c46 + ranges. This is the ONLY extraction lever for P4/P5 (unblocks
 full-fidelity M-ext → 36/63); rest of P4/P5 is non-extraction (see plan P4/P5 PATH).
 
-RANK 1 c46: add the bus_res1 mux equation (mul_constraint_46_named, arith.pil:262,
-extracted Arith.lean:165 but dropped at AirsClean) into circuitWithArithTable so
-componentWithArithTable.Spec conjoins it. Anti-laundering POSITIVE (discharges the
-c46 caller promise by composing the real PIL constraint). Must stay green + 0
-ZiskFv axioms + ensemble balance intact.
+RANK 1 c46: DONE (committed cd26a331). FullSpec = Spec ∧ ArithTableSpec ∧ C46Spec.
+RANK 2a chunk ranges: DONE (committed d9e59667). FullSpec = Spec ∧ ArithTableSpec
+∧ C46Spec ∧ ChunkRangeSpec. mainWithArithTable now includes 16 bits(16) chunk
+lookups. ArithMulTableWitness.chunk_ranges derivation added. ArithMulChunkRangeWitness
+kept as deprecated alias. Full lake build green, 0 sorry, 0 new ZiskFv.* axioms,
+trust gate checks #3/#5/#7/#8 pass.
+
+NEXT: RANK 2b carry ranges (signed carry range lookups into shared component?
+NOTE: carry ranges are mode-dependent — unsigned=rangeTable17, signed uses
+signedCarryRangeTable. Cannot add unsigned carry to SHARED component without
+vacuity. Evaluate separately. RANK 3 = use FullSpec to discharge ArithMulChunkRangeWitness
+from equiv_MUL/MULH/MULW canonical signatures (requires updating Equivalence/Wrappers).
