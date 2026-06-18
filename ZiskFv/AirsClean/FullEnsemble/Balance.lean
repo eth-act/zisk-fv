@@ -27,6 +27,7 @@ open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.Channels.SegmentContinuation (SeamContChannel)
+open ZiskFv.Channels.PcContinuation (PcContChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
 
@@ -191,7 +192,7 @@ theorem opBus_balanced_of_witness
     BalancedInteractions (witness.interactionsWith OpBusChannel.toRaw) := by
   have h := h_balanced OpBusChannel.toRaw (by
     change OpBusChannel.toRaw ∈
-      [SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
+      [PcContChannel.toRaw, SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h
@@ -205,7 +206,7 @@ theorem memBus_balanced_of_witness
     BalancedInteractions (witness.interactionsWith MemBusChannel.toRaw) := by
   have h := h_balanced MemBusChannel.toRaw (by
     change MemBusChannel.toRaw ∈
-      [SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
+      [PcContChannel.toRaw, SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h
@@ -227,7 +228,29 @@ theorem seam_balanced_of_witness
     BalancedInteractions (witness.interactionsWith SeamContChannel.toRaw) := by
   have h := h_balanced SeamContChannel.toRaw (by
     change SeamContChannel.toRaw ∈
-      [SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
+      [PcContChannel.toRaw, SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
+    simp)
+  simpa [EnsembleWitness.BalancedChannel,
+    EnsembleWitness.interactionsWith_allTablesWitness] using h
+
+/-- Project the full ensemble's `BalancedChannels` hypothesis to the concrete
+    PC-continuation seam interaction list (XCAP #100).
+
+    The PC channel is in `fullRv64imEnsemble.ensemble.channels` (the `addChannel`
+    position), so `BalancedChannels` carries its balance as a conjunct — the SAME
+    channel-balance trust class as the OpBus/MemBus/Seam projections above. This
+    is the prerequisite that feeds the channel-level PC seam derivation
+    (`ZiskFv.Compliance.GapC.PcSeam.pc_seam_of_balanced`) on the REAL ensemble.
+    The PC channel is consumed only for its BALANCE; nothing consumes its
+    guarantees (`PcContChannel.Guarantees := True`). -/
+theorem pcCont_balanced_of_witness
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_balanced : witness.BalancedChannels) :
+    BalancedInteractions (witness.interactionsWith PcContChannel.toRaw) := by
+  have h := h_balanced PcContChannel.toRaw (by
+    change PcContChannel.toRaw ∈
+      [PcContChannel.toRaw, SeamContChannel.toRaw, MemBusChannel.toRaw, OpBusChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h

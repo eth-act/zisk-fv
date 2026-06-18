@@ -42,6 +42,7 @@ open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.Channels.SegmentContinuation (SeamContChannel)
+open ZiskFv.Channels.PcContinuation (PcContChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 
 /-- The currently migrated full Clean ensemble for the supported RV64IM
@@ -143,6 +144,12 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
     -- NO soundness obligation, and its balance becomes a conjunct of
     -- `BalancedChannels` — the same channel-balance trust class as `trace.balanced`.
     |>.addChannel SeamContChannel.toRaw
+    -- PC-continuation seam (XCAP #100). The unified Main component emits the PC
+    -- chain via `emit` (requirements bucket): pull(tag = main_step) /
+    -- push(tag = main_step + 1). `addChannel` joins it to `ens.channels` with NO
+    -- soundness obligation; its balance becomes a conjunct of `BalancedChannels`
+    -- — the same channel-balance trust class as `SeamContChannel`.
+    |>.addChannel PcContChannel.toRaw
     |>.toFormal (fun _ => True) (fun _ => True)
         (by
           intro _ _ table h_mem row _
