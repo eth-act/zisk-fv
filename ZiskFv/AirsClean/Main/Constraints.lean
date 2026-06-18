@@ -427,12 +427,21 @@ open ZiskFv.Channels.PcContinuation (PcContChannel PcMessage)
 def pcPrevMessageExpr (row : Var MainRowWithRom FGL) : PcMessage (Expression FGL) :=
   { pc := row.core.pc, tag := row.rom.main_step }
 
-/-- PROBE: the next-PC pushed out of this row, tagged `main_step + 1`. Stubbed
-    nextpc = pc + 4 (the sequential case; real nextpc from set_pc/jmp_offset is
-    SPINE-#2 work, out of scope for this blast-radius probe). -/
+/-- PROBE (XCAP #100, PIN (i)): the next-PC pushed out of this row, tagged
+    `main_step + 1`. This is the REAL next-PC mux from `main.pil:410`
+    (`pc_handshake_at` / `ZiskFv.Airs.Main.pc_handshake`):
+
+    `nextpc = set_pc * (c_0 + jmp_offset1)
+            + (1 - set_pc) * (pc + jmp_offset2)
+            + flag * (jmp_offset1 - jmp_offset2)`
+
+    All operands are existing `MainRow.core` columns — no new column. -/
 @[reducible]
 def pcLastMessageExpr (row : Var MainRowWithRom FGL) : PcMessage (Expression FGL) :=
-  { pc := row.core.pc + 4, tag := row.rom.main_step + 1 }
+  { pc := row.core.set_pc * (row.core.c_0 + row.core.jmp_offset1)
+            + (1 - row.core.set_pc) * (row.core.pc + row.core.jmp_offset2)
+            + row.core.flag * (row.core.jmp_offset1 - row.core.jmp_offset2)
+    tag := row.rom.main_step + 1 }
 
 /-- Main constraints + ROM lookup + memory-bus consumer emissions +
     operation-bus consumer emission, all from one `MainRowWithRom`.
