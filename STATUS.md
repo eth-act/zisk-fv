@@ -30,7 +30,13 @@ construction_mulw_sound cannot derive c46+ranges from balance today. See memory
 `project_extraction_fidelity_scope` + PLAN FIDELITY CEILING (audited verdict +
 5-step path).
 
-AWAITING USER DECISION: fund the ensemble-extension (model c46 + compose range
-lookups, ~Step1-2 of the path) for true full fidelity, vs accept c46+ranges as
-named residuals, vs redirect. /goal "land the M-ext part" was cleared by user
-after the audit re-scoped it.
+CURRENT FOCUS (2026-06-18): EXECUTING the extraction expansion — RANK 1 (c46
+re-compose) then RANK 2 (range providers). User directed: expand extraction +
+solve c46 + ranges. This is the ONLY extraction lever for P4/P5 (unblocks
+full-fidelity M-ext → 36/63); rest of P4/P5 is non-extraction (see plan P4/P5 PATH).
+
+RANK 1 c46: add the bus_res1 mux equation (mul_constraint_46_named, arith.pil:262,
+extracted Arith.lean:165 but dropped at AirsClean) into circuitWithArithTable so
+componentWithArithTable.Spec conjoins it. Anti-laundering POSITIVE (discharges the
+c46 caller promise by composing the real PIL constraint). Must stay green + 0
+ZiskFv axioms + ensemble balance intact.
