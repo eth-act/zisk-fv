@@ -654,6 +654,12 @@ theorem static_table_op_val_ne_W_add_sub_of_spec_facts
     row.flags.op.val ≠ 0x1A ∧ row.flags.op.val ≠ 0x1B := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_W_add_sub h_specs.1
 
+theorem static_table_op_val_ne_arith_mul_w_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 182 ∧ row.flags.op.val ≠ 166 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_mul_w h_specs.1
+
 /-- A row accepted by the lookup-aware BinaryExtension component cannot carry
     Binary-table bitwise opcodes (`AND`/`OR`/`XOR`, values 14/15/16). -/
 theorem staticLookupComponent_op_val_ne_bitwise_of_spec
@@ -742,6 +748,18 @@ theorem shiftStaticLookupComponent_op_val_ne_W_add_sub_of_spec
       ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 0x1B := by
   rw [shiftStaticLookupComponent_spec] at h_spec
   exact static_table_op_val_ne_W_add_sub_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith MULW bus opcode `182` (`OP_MUL_W`) nor the alternate
+    `m32 = 0` decomposition value `166`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_mul_w_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 182
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 166 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_mul_w_of_spec_facts
     (shiftStaticLookupComponent.rowInput env) h_spec.2.1
 
 theorem aCols_eval_eq

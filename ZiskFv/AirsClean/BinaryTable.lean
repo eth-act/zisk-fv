@@ -693,6 +693,32 @@ theorem spec_op_val_ne_shift_ops {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_op_val_ne_shift_ops i
 
+/-- No static BinaryTable row carries the Arith MULW bus opcode `182`
+    (`OP_MUL_W`) nor the alternate `m32 = 0` decomposition value `166`
+    (`= 182 - 16`). Used by the MULW dispatch to exclude the static
+    Binary provider branch. -/
+theorem rowOfIndex_op_val_ne_arith_mul_w (i : Fin tableSize) :
+    (rowOfIndex i.val).op.val ≠ 182
+      ∧ (rowOfIndex i.val).op.val ≠ 166 := by
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  unfold rowOfIndex opOfIndex
+  rw [Fin.val_natCast]
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  refine ⟨?_, ?_⟩ <;>
+    interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR,
+      OP_LTU, OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE,
+      OP_SEXT_00, OP_SEXT_FF, OP_MINU, OP_MIN, OP_MAXU, OP_MAX,
+      OP_LT_ABS_NP, OP_LT_ABS_PN]
+
+theorem spec_op_val_ne_arith_mul_w {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    t.op.val ≠ 182 ∧ t.op.val ≠ 166 := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_op_val_ne_arith_mul_w i
+
 theorem signByte_eq_zero_iff_lt_128 {a : ℕ} (ha : a < 256) :
     signByte a = 0 ↔ a < 128 := by
   interval_cases a <;> decide

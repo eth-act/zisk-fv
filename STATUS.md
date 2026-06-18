@@ -14,11 +14,23 @@ packaging (the 30 ALU constructions reused pre-existing Binary packaging). The
 core balance enumeration (Balance.lean:1732) already surfaces an arithMul branch
 the ALU theorems refute; M-ext keeps it. 0 PROJECT axioms required.
 
-Current focus: PR-MEXT.1 — MULW spike (primary op-bus, op=182). This is the
-make-or-break Arith balance+witness foundation; once it lands, MULHU (secondary)
-and the DIV family follow incrementally.
+DONE: MULW provider-match foundation (F1 table-exclusion + F2 refutations + F3
+`exists_arithMul_provider_row_matches_primary_of_mulw_active_main_row_interaction`
+in ZiskFv/AirsClean/FullEnsemble/ArithBalance.lean). Full `lake build` green, 0
+sorry, 0 new ZiskFv.* axioms. (Committed: foundation files are uncommitted working
+changes — commit before switching context.)
 
-Next step: build `exists_arithMul_provider_row_matches_primary_from_binding`
-(mirror the Binary `_logic_` theorem, keep arithMul branch, refute the other 3).
+BLOCKER (AUDITED 2026-06-18, workflow wmd3batug, adversarially confirmed): full-
+fidelity arith is blocked by an EXTRACTION-SCOPE reality, not just proof effort.
+The extracted ensemble = F-only polynomial slice. Arith carry-chain is balance-
+derivable (✓), but **c46 (bus_res1 mux) and chunk/carry range checks are NOT
+composed into the ensemble** (c46 = modeling drop; ranges = extraction-skip +
+deliberate non-composition; SpecifiedRanges AIR #19 not extracted at all). So
+construction_mulw_sound cannot derive c46+ranges from balance today. See memory
+`project_extraction_fidelity_scope` + PLAN FIDELITY CEILING (audited verdict +
+5-step path).
 
-No blockers. Goal hook active: "land the M-ext part."
+AWAITING USER DECISION: fund the ensemble-extension (model c46 + compose range
+lookups, ~Step1-2 of the path) for true full fidelity, vs accept c46+ranges as
+named residuals, vs redirect. /goal "land the M-ext part" was cleared by user
+after the audit re-scoped it.
