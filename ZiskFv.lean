@@ -142,6 +142,7 @@ import ZiskFv.Compliance.ConstructionAdd
 import ZiskFv.Compliance.ConstructionWAlu
 import ZiskFv.Compliance.ConstructionLui
 import ZiskFv.Compliance.ConstructionAuipc
+import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.Compliance
 import ZiskFv.Completeness.Rv
 import ZiskFv.Completeness.Rv64im
