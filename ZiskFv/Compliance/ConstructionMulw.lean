@@ -199,18 +199,32 @@ theorem mulwArow_fullSpec
     (mulwArow_fullSpec_row trace binding i h_main_active h_main_op)
 
 /-- The op-bus match transports along the row-native view: a match against the
-    ArithMul primary op-bus message of a concrete row carries over to
-    `opBus_row_Arith (vOfMulwRow arow) 0`, because (with `multiplicity = 1`) the
-    `toEntry (primaryOpBusMessage arow) 1` entry is definitionally
-    `opBus_row_Arith (vOfMulwRow arow) 0`. -/
+    FAITHFUL muxed ArithMul primary op-bus message of a concrete row carries
+    over to `opBus_row_Arith (vOfMulwRow arow) 0` exactly at the MUL/MULW mode
+    pins (`div=0`, `main_mul=1`, `main_div=0`), via the mode-conditional bridge
+    `primaryOpBusMessage_toEntry_rowAt_eq_opBus_row`.
+
+    (Previously `rfl`; the faithful mux makes `toEntry (primaryOpBusMessage arow)
+    1` equal `opBus_row_Arith (vOfMulwRow arow) 0` only once the muxes reduce
+    under the mode pins — which the construction derives from the provider row's
+    `ArithTableSpec` + opcode pin.) -/
 theorem match_opBus_row_Arith_vOfMulwRow
     {x : ZiskFv.Airs.OperationBus.OperationBusEntry FGL}
     {arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL}
+    (h_div : arow.flags.div = 0)
+    (h_main_mul : arow.flags.main_mul = 1)
+    (h_main_div : arow.flags.main_div = 0)
     (h :
       matches_entry x
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage arow) 1)) :
-    matches_entry x (ZiskFv.Airs.ArithMul.opBus_row_Arith (vOfMulwRow arow) 0) := h
+    matches_entry x (ZiskFv.Airs.ArithMul.opBus_row_Arith (vOfMulwRow arow) 0) := by
+  -- `rowAt (vOfMulwRow arow) 0` agrees with `arow` field-for-field, and
+  -- `(vOfMulwRow arow).multiplicity 0 = 1`, so the mode-gated bridge rewrites
+  -- the matched entry from the muxed message to `opBus_row_Arith`.
+  rw [← ZiskFv.AirsClean.ArithMul.primaryOpBusMessage_toEntry_rowAt_eq_opBus_row
+        (vOfMulwRow arow) 0 h_div h_main_mul h_main_div]
+  exact h
 
 /-- The op-bus match of the balance-selected MULW provider row against the Main
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. Cheap: the row
@@ -229,12 +243,52 @@ theorem mulwArow_match_row
   unfold mulwArow
   set H := exists_arithMul_provider_row_matches_primary_of_mulw_from_binding
     trace binding i h_main_active h_main_op with hH
-  obtain ⟨_h_pt_mem, h_rest⟩ := H.choose_spec
-  obtain ⟨_h_pr_mem, _h_component, _h_spec, h_match⟩ := h_rest.choose_spec
-  exact h_match
+  -- Use direct `.choose_spec` projections (NOT `obtain`, which introduces a
+  -- fresh fvar for the row that the muxed message would force `exact` to
+  -- whnf-reconcile against the goal's `H.choose_spec.2.choose`).
+  exact H.choose_spec.2.choose_spec.2.2.2
+
+/-- MUL/MULW mode pins on the balance-selected provider row, DERIVED from its
+    `ArithTableSpec` (part of the balance-derived `FullSpec`) plus the opcode
+    pin `arow.flags.op = 182`.  These are not caller binders: they come from the
+    multiplier ROM membership the provider component already proves.
+
+    PERFORMANCE: the provider row `mulwArow …` is a heavy `Classical.choose`
+    application whose fields explode under whnf.  We therefore `set arow := …`
+    so `arow` is an opaque fvar — `ArithTableSpec`, the op-pin, and the ROM
+    `fin_cases` all act on `arow.flags.*` SYMBOLICALLY, never forcing the row's
+    `componentWithArithTable.rowInput` evaluation.  The op-pin is read off the
+    op-bus match via the CHEAP `rfl`-projection lemma `primaryOpBusMessage_toEntry_op`
+    (a rewrite, not a reduction). -/
+theorem mulwArow_mode_pins
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (h_main_active :
+      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
+    (mulwArow trace binding i h_main_active h_main_op).flags.div = 0
+      ∧ (mulwArow trace binding i h_main_active h_main_op).flags.main_mul = 1
+      ∧ (mulwArow trace binding i h_main_active h_main_op).flags.main_div = 0 := by
+  -- Read the mode flags off the BARE provider `ArithMulRow` (`mulwArow …`),
+  -- never wrapping it in `vOfMulwRow` (whose per-field closures whnf-force the
+  -- heavy `Classical.choose` row).  `ArithTableSpec` comes from the bare
+  -- `mulwArow_fullSpec_row`; the op-pin from the muxed op-bus match via the cheap
+  -- `rfl`-projection lemma; the ROM pins from the bare-row `mulw_mode_pins_of_row`.
+  have h_table := (mulwArow_fullSpec_row trace binding i h_main_active h_main_op).2.1
+  have h_op : (mulwArow trace binding i h_main_active h_main_op).flags.op = 182 := by
+    have h_match := mulwArow_match_row trace binding i h_main_active h_main_op
+    have h_op := h_match.2.1
+    rw [ZiskFv.AirsClean.ArithMul.primaryOpBusMessage_toEntry_op,
+        show (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val).op
+          = (mainOfTable trace.program binding.mainTable).op i.val from rfl,
+        h_main_op] at h_op
+    exact h_op.symm
+  exact ZiskFv.AirsClean.ArithTableProjections.Mul.mulw_mode_pins_of_row
+    (mulwArow trace binding i h_main_active h_main_op) h_table h_op
 
 /-- The op-bus match of the balance-selected MULW provider row view against the
-    Main row's emission, in `opBus_row_Arith` form. -/
+    Main row's emission, in `opBus_row_Arith` form. The MUL/MULW mode pins
+    needed to reduce the faithful mux are DERIVED via `mulwArow_mode_pins`. -/
 theorem mulwArow_match
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
     (h_main_active :
@@ -244,8 +298,10 @@ theorem mulwArow_match
     matches_entry
       (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val)
       (ZiskFv.Airs.ArithMul.opBus_row_Arith
-        (vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)) 0) :=
-  match_opBus_row_Arith_vOfMulwRow
+        (vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)) 0) := by
+  obtain ⟨h_div, h_main_mul, h_main_div⟩ :=
+    mulwArow_mode_pins trace binding i h_main_active h_main_op
+  exact match_opBus_row_Arith_vOfMulwRow h_div h_main_mul h_main_div
     (mulwArow_match_row trace binding i h_main_active h_main_op)
 
 /-- Sound MULW construction: from the accepted trace + honest residual binders,

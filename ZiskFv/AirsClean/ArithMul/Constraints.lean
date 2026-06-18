@@ -39,16 +39,35 @@ open Circuit (assertZero lookup)
 open ZiskFv.AirsClean.RangeTables
 open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
 
-/-- Primary MUL/MULW op-bus message: low result in the `c[]` chunks. -/
+/-- ArithMul op-bus message — FAITHFUL to the real PIL `bus_emission_Arith_0`
+    (`arith.pil:247-258`, extracted verbatim in
+    `build/extraction/Extraction/Buses.lean`).  The `a_lo` / `a_hi` / `c_lo`
+    lanes are the real MUXED lanes covering every arith mode (mul-low /
+    mul-high / div / rem) via `div` / `main_mul` / `main_div`:
+
+    * `a_lo` (bus_a0)  = `div·(c_0+c_1·2^16) + (1-div)·(a_0+a_1·2^16)`
+    * `a_hi` (bus_a1)  = `div·(c_2+c_3·2^16) + (1-div)·(a_2+a_3·2^16)`
+    * `c_lo` (bus_res0)= `(1-main_mul-main_div)·(d_0+d_1·2^16)
+                         + main_mul·(c_0+c_1·2^16) + main_div·(a_0+a_1·2^16)`
+
+    `b_lo` / `b_hi` / `c_hi` (= bus_res1) are unchanged.  Under the MUL/MULW
+    mode pins (`div=0`, `main_mul=1`, `main_div=0`) these muxes reduce to the
+    plain `a`/`c`-chunk lanes (the previous hand-specialization); the per-mode
+    reduction is the bridge in `Bridge.lean`. -/
 @[reducible]
 def primaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
     OpBusMessage (Expression FGL) :=
   { op := row.flags.op
-    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
-    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    a_lo := row.flags.div * (row.chunks.c_0 + row.chunks.c_1 * 65536)
+      + (1 - row.flags.div) * (row.chunks.a_0 + row.chunks.a_1 * 65536)
+    a_hi := row.flags.div * (row.chunks.c_2 + row.chunks.c_3 * 65536)
+      + (1 - row.flags.div) * (row.chunks.a_2 + row.chunks.a_3 * 65536)
     b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
     b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
-    c_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
+    c_lo := (1 - row.flags.main_mul - row.flags.main_div)
+        * (row.chunks.d_0 + row.chunks.d_1 * 65536)
+      + row.flags.main_mul * (row.chunks.c_0 + row.chunks.c_1 * 65536)
+      + row.flags.main_div * (row.chunks.a_0 + row.chunks.a_1 * 65536)
     c_hi := row.flags.bus_res1
     flag := 0
     main_step := 0

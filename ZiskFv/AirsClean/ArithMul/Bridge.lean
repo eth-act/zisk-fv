@@ -322,15 +322,31 @@ theorem signed_carry_ranges_of_lookup_aware_const_soundness
     by simpa [rowAt, constVar] using h_cy5,
     by simpa [rowAt, constVar] using h_cy6⟩
 
-/-- Concrete primary MUL/MULW op-bus message for a Clean ArithMul row. -/
-@[reducible]
+/-- Concrete ArithMul op-bus message for a Clean ArithMul row — the
+    field-valued image of `primaryOpBusMessageExpr`, carrying the same real
+    PIL MUXED `a_lo` / `a_hi` / `c_lo` lanes (`arith.pil:247-258`).  Under the
+    MUL/MULW mode pins (`div=0`, `main_mul=1`, `main_div=0`) the muxes reduce
+    to the plain `a`/`c`-chunk lanes — see
+    `primaryOpBusMessage_toEntry_rowAt_eq_opBus_row`.
+
+    NOTE: deliberately NOT `@[reducible]`.  The faithful mux makes this message
+    large; leaving it reducible caused `exact`/`isDefEq` in the MULW construction
+    to eagerly unfold it and whnf the heavy balance-selected provider row while
+    comparing the per-lane field projections.  Every consumer unfolds it
+    explicitly (`simp only [primaryOpBusMessage]` or `eval_primaryOpBusMessageExpr`),
+    so non-reducibility is safe. -/
 def primaryOpBusMessage (row : ArithMulRow FGL) : OpBusMessage FGL :=
   { op := row.flags.op
-    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
-    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    a_lo := row.flags.div * (row.chunks.c_0 + row.chunks.c_1 * 65536)
+      + (1 - row.flags.div) * (row.chunks.a_0 + row.chunks.a_1 * 65536)
+    a_hi := row.flags.div * (row.chunks.c_2 + row.chunks.c_3 * 65536)
+      + (1 - row.flags.div) * (row.chunks.a_2 + row.chunks.a_3 * 65536)
     b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
     b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
-    c_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
+    c_lo := (1 - row.flags.main_mul - row.flags.main_div)
+        * (row.chunks.d_0 + row.chunks.d_1 * 65536)
+      + row.flags.main_mul * (row.chunks.c_0 + row.chunks.c_1 * 65536)
+      + row.flags.main_div * (row.chunks.a_0 + row.chunks.a_1 * 65536)
     c_hi := row.flags.bus_res1
     flag := 0
     main_step := 0
@@ -355,12 +371,14 @@ def secondaryOpBusMessage (row : ArithMulRow FGL) : OpBusMessage FGL :=
 theorem eval_primaryOpBusMessageExpr
     (env : Environment FGL) (row : Var ArithMulRow FGL) :
     eval env (primaryOpBusMessageExpr row) = primaryOpBusMessage (eval env row) := by
-  rw [OpBusMessage.mk.injEq]
+  rw [primaryOpBusMessage, OpBusMessage.mk.injEq]
   simp only [primaryOpBusMessageExpr, ProvableStruct.eval_eq_eval,
     ProvableStruct.eval, ProvableStruct.fromComponents,
     ProvableStruct.components, ProvableStruct.toComponents,
     ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
-  repeat constructor
+  -- `eval` normalizes `1 - x` to `1 + -1 * x`; the `a_lo`/`a_hi`/`c_lo` mux
+  -- lanes therefore need `ring`, not `rfl` (the other lanes are `True`/defeq).
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> first | trivial | ring
 
 /-- Op-only projection of `eval_primaryOpBusMessageExpr`, used to avoid
     unfolding the entire operation-bus message in downstream provider
@@ -370,6 +388,18 @@ theorem eval_primaryOpBusMessageExpr_toEntry_op
     (OpBusMessage.toEntry (eval env (primaryOpBusMessageExpr row)) multiplicity).op =
       (eval env row).flags.op := by
   rw [eval_primaryOpBusMessageExpr]
+  -- `primaryOpBusMessage` is no longer reducible; project `.op` explicitly.
+  simp only [primaryOpBusMessage]
+
+/-- Cheap `op`-lane projection of the concrete primary message.  Stated over a
+    FREE `ArithMulRow` so the proof is `rfl` (a single structure-literal `.op`
+    pick that never touches the muxed `a_lo`/`a_hi`/`c_lo` lanes); applying it
+    to a balance-selected (heavy `Classical.choose`) provider row is then mere
+    substitution, avoiding the whnf blow-up of forcing the full message. -/
+@[simp]
+theorem primaryOpBusMessage_toEntry_op (row : ArithMulRow FGL) (multiplicity : FGL) :
+    (OpBusMessage.toEntry (primaryOpBusMessage row) multiplicity).op = row.flags.op :=
+  rfl
 
 theorem eval_secondaryOpBusMessageExpr
     (env : Environment FGL) (row : Var ArithMulRow FGL) :
@@ -382,11 +412,24 @@ theorem eval_secondaryOpBusMessageExpr
     ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
   repeat constructor
 
+/-- Mode-conditional MUL/MULW bridge: the FAITHFUL muxed primary message
+    reduces to the plain MUL/MULW `opBus_row_Arith` entry exactly at the
+    MUL/MULW mode pins (`div=0`, `main_mul=1`, `main_div=0`).
+
+    With the muxed `primaryOpBusMessage`, the `a_lo`/`a_hi` lanes carry
+    `div·c + (1-div)·a` (→ `a` at `div=0`) and the `c_lo` lane carries
+    `(1-main_mul-main_div)·d + main_mul·c + main_div·a` (→ `c` at
+    `main_mul=1, main_div=0`).  This is no longer `rfl`; the mode pins are
+    discharged by the caller (e.g. `construction_mulw_sound`) from the
+    provider row's `ArithTableSpec` + opcode pin. -/
 theorem primaryOpBusMessage_toEntry_rowAt_eq_opBus_row
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_div : v.div r = 0) (h_main_mul : v.main_mul r = 1) (h_main_div : v.main_div r = 0) :
     OpBusMessage.toEntry (primaryOpBusMessage (rowAt v r)) (v.multiplicity r) =
       ZiskFv.Airs.ArithMul.opBus_row_Arith v r := by
-  rfl
+  simp only [OpBusMessage.toEntry, primaryOpBusMessage, rowAt,
+    ZiskFv.Airs.ArithMul.opBus_row_Arith, h_div, h_main_mul, h_main_div]
+  ring
 
 theorem secondaryOpBusMessage_toEntry_rowAt_eq_opBus_row
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :

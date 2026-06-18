@@ -97,6 +97,30 @@ theorem op_val_ge_176
     rw [hop]
     norm_num
 
+/-- Bare-`ArithMulRow` MULW mode pins (mirrors `op_val_ge_176`'s shape — a bare
+    row + `ArithTableSpec`, no `Valid_ArithMul`/`rowAt` wrapper).  This lets the
+    P4 MULW construction read the mode flags off the balance-selected provider
+    `ArithMulRow` WITHOUT routing through `vOfMulwRow`, whose per-field closures
+    force a costly whnf of the heavy `Classical.choose` provider row. -/
+theorem mulw_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 182) :
+    row.flags.div = 0 ∧ row.flags.main_mul = 1 ∧ row.flags.main_div = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, hdiv, _hna, _hnb, _hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hdiv, hmain_mul, hmain_div⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
 theorem mul_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
