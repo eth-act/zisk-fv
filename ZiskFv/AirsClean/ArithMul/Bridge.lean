@@ -84,7 +84,7 @@ theorem arith_table_spec_of_lookup_aware_soundness
   simp only [mainWithArithTable, main, circuit_norm] at h_holds
   rcases h_holds with
     ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
-      h_lookup⟩
+      _h46, h_lookup⟩
   simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
     ArithTableSpec, arithTableRow] using h_lookup
 
@@ -383,18 +383,21 @@ theorem mul_carry_chain_holds_via_component
   · exact hs38
 
 /-- Combine the load-bearing Clean carry-chain route with a separately
-    sourced ArithTable lookup membership proof.
+    sourced ArithTable lookup membership proof and the `bus_res1` mux
+    equation (constraint 46, `arith.pil:262`).
 
-    This is the non-laundered C3/C4-b shape: `h_table` is explicit here
-    because the current global theorem does not yet provide lookup
-    membership. Compliance wrappers must not acquire this as a fresh
-    per-opcode promise; the proof becomes useful only once the shared
-    lookup/ensemble statement supplies `ArithTableSpec (rowAt v r)`. -/
+    This is the non-laundered C3/C4-b shape: `h_table` and `h_c46` are
+    explicit here because the current global theorem does not yet provide
+    lookup membership.  Compliance wrappers must not acquire these as
+    fresh per-opcode promises; the proof becomes useful only once the
+    shared lookup/ensemble statement supplies `ArithTableSpec (rowAt v r)`
+    and `C46Spec (rowAt v r)`. -/
 theorem full_spec_of_carry_chain_and_arith_table
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r)
-    (h_table : ArithTableSpec (rowAt v r)) :
+    (h_table : ArithTableSpec (rowAt v r))
+    (h_c46 : C46Spec (rowAt v r)) :
     FullSpec (rowAt v r) := by
-  exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table⟩
+  exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table, h_c46⟩
 
 end ZiskFv.AirsClean.ArithMul

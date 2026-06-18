@@ -273,9 +273,10 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
       circuit_proof_start
       refine ⟨?_, ?_⟩
       · obtain ⟨h_c6, h_c7, h_c8, h_c31, h_c32, h_c33, h_c34,
-                h_c35, h_c36, h_c37, h_c38, h_lookup⟩ := h_holds
-        refine ⟨?_, ?_⟩
-        · refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+                h_c35, h_c36, h_c37, h_c38, h_c46, h_lookup⟩ := h_holds
+        refine ⟨?_, ?_, ?_⟩
+        · -- Carry-chain Spec (11 clauses).
+          refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
           · linear_combination h_c6
           · linear_combination h_c7
           · linear_combination h_c8
@@ -287,7 +288,8 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
           · linear_combination h_c36
           · linear_combination h_c37
           · linear_combination h_c38
-        · obtain ⟨_, h_flags, _⟩ := h_input
+        · -- ArithTableSpec: from the ROM lookup.
+          obtain ⟨_, h_flags, _⟩ := h_input
           obtain ⟨h_na, h_nb, h_nr, h_np, h_sext, h_m32, h_div, h_div_by_zero,
             h_div_overflow, h_main_div, h_main_mul, h_signed, h_range_ab, h_range_cd,
             h_op, _h_bus_res1, _h_multiplicity⟩ := h_flags
@@ -295,6 +297,8 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
             StaticTable.toTable, Table.toRaw, h_op, h_m32, h_div, h_na, h_nb, h_np,
             h_nr, h_sext, h_div_by_zero, h_div_overflow, h_main_mul, h_main_div,
             h_signed, h_range_ab, h_range_cd] using h_lookup
+        · -- C46Spec: bus_res1 mux equation (constraint 46, arith.pil:262).
+          linear_combination h_c46
       · intro _
         trivial
     completeness := by

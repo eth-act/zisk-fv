@@ -150,11 +150,33 @@ def Spec (row : ArithMulRow FGL) : Prop :=
 def ArithTableSpec (row : ArithMulRow FGL) : Prop :=
   ArithTable.arithTable.Spec (arithTableRow row)
 
-/-- Full ArithMul row contract once the ArithTable lookup is plumbed into
-    Compliance: carry-chain algebra plus ROM membership for the full
-    `arith_table_assumes` tuple. -/
+/-- Constraint 46 (`arith.pil:262`): the `bus_res1` output mux.
+    Pins `bus_res1` to its mode-specialised value — sign-extension path
+    (`sext * 4294967295`) or the appropriate high-chunk pair depending
+    on `m32`, `main_mul`, and `main_div`.
+
+    This is a verbatim algebraic mirror of `constraint_46_every_row` in
+    `build/extraction/Extraction/Arith.lean:165`.  Constructibility:
+    real Arith rows satisfy this because `arith_full.rs` computes
+    `bus_res1` as exactly this mux (PIL `arith.pil:262`).  No axiom is
+    introduced — the constraint is discharged by the `assertZero` in
+    `mainWithArithTable`. -/
+@[reducible]
+def C46Spec (row : ArithMulRow FGL) : Prop :=
+  row.flags.bus_res1
+    - (row.flags.sext * 4294967295
+      + (1 - row.flags.m32) * (
+          (1 - row.flags.main_mul - row.flags.main_div)
+              * (row.chunks.d_2 + row.chunks.d_3 * 65536)
+          + row.flags.main_mul * (row.chunks.c_2 + row.chunks.c_3 * 65536)
+          + row.flags.main_div
+              * (row.chunks.a_2 + row.chunks.a_3 * 65536))) = 0
+
+/-- Full ArithMul row contract once the ArithTable lookup and the
+    `bus_res1` mux constraint (c46) are plumbed into Compliance:
+    carry-chain algebra + ROM membership + `bus_res1` pinning. -/
 @[reducible]
 def FullSpec (row : ArithMulRow FGL) : Prop :=
-  Spec row ∧ ArithTableSpec row
+  Spec row ∧ ArithTableSpec row ∧ C46Spec row
 
 end ZiskFv.AirsClean.ArithMul

@@ -171,12 +171,26 @@ def main (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
 
 
 /-- Lookup-aware ArithMul circuit path. This appends the full 15-column
-    `arith_table_assumes` ROM lookup after the existing carry-chain/op-bus
+    `arith_table_assumes` ROM lookup and the `bus_res1` mux constraint
+    (constraint 46, `arith.pil:262`) after the existing carry-chain/op-bus
     component body. The current load-bearing carry-chain component remains
     unchanged until Compliance supplies this lookup evidence globally. -/
 @[circuit_norm]
 def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   main row
+  -- Constraint 46 (`arith.pil:262`): bus_res1 − (sext·4294967295 +
+  --   (1 − m32)·((1 − main_mul − main_div)·(d_2 + d_3·65536)
+  --              + main_mul·(c_2 + c_3·65536)
+  --              + main_div·(a_2 + a_3·65536))) = 0.
+  -- Mirror of `constraint_46_every_row` in `Extraction/Arith.lean:165`.
+  assertZero (row.flags.bus_res1
+    - (row.flags.sext * 4294967295
+      + (1 - row.flags.m32) * (
+          (1 - row.flags.main_mul - row.flags.main_div)
+              * (row.chunks.d_2 + row.chunks.d_3 * 65536)
+          + row.flags.main_mul * (row.chunks.c_2 + row.chunks.c_3 * 65536)
+          + row.flags.main_div
+              * (row.chunks.a_2 + row.chunks.a_3 * 65536))))
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
 
 /-- Lookup-aware ArithMul path for the sixteen `bits(16)` chunk columns.

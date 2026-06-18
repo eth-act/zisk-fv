@@ -965,7 +965,7 @@ theorem arithMul_primary_provider_match_main_op_val_ge_176
           (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage row) 1)) :
     176 <= (m.op r_main).val := by
   have h_provider_ge :=
-    ZiskFv.AirsClean.ArithTableProjections.Mul.op_val_ge_176 row h_full.2
+    ZiskFv.AirsClean.ArithTableProjections.Mul.op_val_ge_176 row h_full.2.1
   have h_op_match : m.op r_main = row.flags.op := by
     simpa [ZiskFv.Airs.OperationBus.matches_entry,
       ZiskFv.Airs.OperationBus.opBus_row_Main,
@@ -1002,7 +1002,7 @@ theorem arithMul_provider_branch_main_op_val_ge_176
     simpa [h_row_eq] using h_full
   have h_provider_ge :=
     ZiskFv.AirsClean.ArithTableProjections.Mul.op_val_ge_176
-      row h_full_row.2
+      row h_full_row.2.1
   have h_op_match : m.op r_main = row.flags.op := by
     have h_op := h_match.2.1
     rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr_toEntry_op] at h_op
