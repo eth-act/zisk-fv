@@ -192,6 +192,26 @@ def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
           + row.flags.main_div
               * (row.chunks.a_2 + row.chunks.a_3 * 65536))))
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+  -- Sixteen `bits(16)` chunk column range lookups (`arith.pil:18-21`).
+  -- These are shared across signed and unsigned Arith rows, so they are
+  -- sound to include in the SHARED component: real arith rows always
+  -- have 16-bit a/b/c/d chunks.
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_3
 
 /-- Lookup-aware ArithMul path for the sixteen `bits(16)` chunk columns.
     This models the column-level PIL declarations at `arith.pil:18-21`.

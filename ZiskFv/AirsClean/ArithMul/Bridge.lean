@@ -84,9 +84,73 @@ theorem arith_table_spec_of_lookup_aware_soundness
   simp only [mainWithArithTable, main, circuit_norm] at h_holds
   rcases h_holds with
     ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
-      _h46, h_lookup⟩
+      _h46, h_lookup, _ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
+      _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3⟩
   simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
     ArithTableSpec, arithTableRow] using h_lookup
+
+/-- Extract the sixteen 16-bit chunk range bounds from a `mainWithArithTable`
+    soundness proof.  After RANK 2a, `mainWithArithTable` includes the chunk
+    range lookups, so the ArithTable witness alone supplies chunk ranges. -/
+theorem chunk_ranges_of_arith_table_soundness
+    (offset : ℕ) (env : Environment FGL)
+    (input_var : Var ArithMulRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable input_var).operations offset)) :
+    (Expression.eval env input_var.chunks.a_0).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.a_1).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.a_2).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.a_3).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.b_0).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.b_1).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.b_2).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.b_3).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.c_0).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.c_1).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.c_2).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.c_3).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.d_0).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.d_1).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.d_2).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.d_3).val < 2 ^ 16 := by
+  simp only [mainWithArithTable, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      _h46, _h_lookup, ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+      hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩
+  exact ⟨by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using ha0,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using ha1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using ha2,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using ha3,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hb0,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hb1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hb2,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hb3,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hc0,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hc1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hc2,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hc3,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hd0,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hd1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hd2,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hd3⟩
 
 /-- Constant-row specialization of
     `arith_table_spec_of_lookup_aware_soundness`.
@@ -103,6 +167,20 @@ theorem arith_table_spec_of_lookup_aware_const_soundness
   have h_table :=
     arith_table_spec_of_lookup_aware_soundness offset env (constVar row) h_holds
   simpa [ArithTableSpec, arithTableRow, constVar] using h_table
+
+/-- Constant-row specialization of `chunk_ranges_of_arith_table_soundness`.
+
+    After RANK 2a the ArithTable witness (which holds `mainWithArithTable`
+    soundness) automatically supplies the chunk range bounds via the 16
+    newly-embedded chunk lookups. -/
+theorem chunk_ranges_of_arith_table_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : ArithMulRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable (constVar row)).operations offset)) :
+    ChunkRangeSpec row := by
+  have h := chunk_ranges_of_arith_table_soundness offset env (constVar row) h_holds
+  simpa [ChunkRangeSpec, constVar] using h
 
 /-- Project a `Valid_ArithMul` at row `r` into a Clean `ArithMulRow FGL`.
     The `Valid_ArithMul` record exposes all 28 chunk / flag / carry
@@ -396,8 +474,9 @@ theorem full_spec_of_carry_chain_and_arith_table
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r)
     (h_table : ArithTableSpec (rowAt v r))
-    (h_c46 : C46Spec (rowAt v r)) :
+    (h_c46 : C46Spec (rowAt v r))
+    (h_chunk_ranges : ChunkRangeSpec (rowAt v r)) :
     FullSpec (rowAt v r) := by
-  exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table, h_c46⟩
+  exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table, h_c46, h_chunk_ranges⟩
 
 end ZiskFv.AirsClean.ArithMul

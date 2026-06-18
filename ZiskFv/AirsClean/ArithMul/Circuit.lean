@@ -273,8 +273,12 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
       circuit_proof_start
       refine ⟨?_, ?_⟩
       · obtain ⟨h_c6, h_c7, h_c8, h_c31, h_c32, h_c33, h_c34,
-                h_c35, h_c36, h_c37, h_c38, h_c46, h_lookup⟩ := h_holds
-        refine ⟨?_, ?_, ?_⟩
+                h_c35, h_c36, h_c37, h_c38, h_c46, h_lookup,
+                h_a0, h_a1, h_a2, h_a3,
+                h_b0, h_b1, h_b2, h_b3,
+                h_c0, h_c1, h_c2, h_c3,
+                h_d0, h_d1, h_d2, h_d3⟩ := h_holds
+        refine ⟨?_, ?_, ?_, ?_⟩
         · -- Carry-chain Spec (11 clauses).
           refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
           · linear_combination h_c6
@@ -299,6 +303,42 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
             h_signed, h_range_ab, h_range_cd] using h_lookup
         · -- C46Spec: bus_res1 mux equation (constraint 46, arith.pil:262).
           linear_combination h_c46
+        · -- ChunkRangeSpec: sixteen 16-bit chunk column range lookups.
+          obtain ⟨h_chunks, _, _⟩ := h_input
+          obtain ⟨h_ia0, h_ia1, h_ia2, h_ia3, h_ib0, h_ib1, h_ib2, h_ib3,
+                  h_ic0, h_ic1, h_ic2, h_ic3, h_id0, h_id1, h_id2, h_id3⟩ := h_chunks
+          exact ⟨by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ia0] using h_a0,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ia1] using h_a1,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ia2] using h_a2,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ia3] using h_a3,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ib0] using h_b0,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ib1] using h_b1,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ib2] using h_b2,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ib3] using h_b3,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ic0] using h_c0,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ic1] using h_c1,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ic2] using h_c2,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_ic3] using h_c3,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_id0] using h_d0,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_id1] using h_d1,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_id2] using h_d2,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, h_id3] using h_d3⟩
       · intro _
         trivial
     completeness := by

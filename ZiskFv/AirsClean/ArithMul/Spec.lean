@@ -172,11 +172,28 @@ def C46Spec (row : ArithMulRow FGL) : Prop :=
           + row.flags.main_div
               * (row.chunks.a_2 + row.chunks.a_3 * 65536))) = 0
 
-/-- Full ArithMul row contract once the ArithTable lookup and the
-    `bus_res1` mux constraint (c46) are plumbed into Compliance:
-    carry-chain algebra + ROM membership + `bus_res1` pinning. -/
+/-- The sixteen 16-bit chunk column range constraints (`arith.pil:18-21`):
+    each of the a/b/c/d chunks is a 16-bit value.  These hold for every
+    Arith row (signed or unsigned), so they are part of the shared
+    component's contract.  Constructibility: real ZisK Arith rows have
+    16-bit chunks by construction in `arith_full.rs`. -/
+@[reducible]
+def ChunkRangeSpec (row : ArithMulRow FGL) : Prop :=
+  (row.chunks.a_0).val < 2 ^ 16 ∧ (row.chunks.a_1).val < 2 ^ 16
+  ∧ (row.chunks.a_2).val < 2 ^ 16 ∧ (row.chunks.a_3).val < 2 ^ 16
+  ∧ (row.chunks.b_0).val < 2 ^ 16 ∧ (row.chunks.b_1).val < 2 ^ 16
+  ∧ (row.chunks.b_2).val < 2 ^ 16 ∧ (row.chunks.b_3).val < 2 ^ 16
+  ∧ (row.chunks.c_0).val < 2 ^ 16 ∧ (row.chunks.c_1).val < 2 ^ 16
+  ∧ (row.chunks.c_2).val < 2 ^ 16 ∧ (row.chunks.c_3).val < 2 ^ 16
+  ∧ (row.chunks.d_0).val < 2 ^ 16 ∧ (row.chunks.d_1).val < 2 ^ 16
+  ∧ (row.chunks.d_2).val < 2 ^ 16 ∧ (row.chunks.d_3).val < 2 ^ 16
+
+/-- Full ArithMul row contract once the ArithTable lookup, the
+    `bus_res1` mux constraint (c46), and the sixteen 16-bit chunk range
+    lookups are plumbed into Compliance: carry-chain algebra + ROM
+    membership + `bus_res1` pinning + 16-bit chunk bounds. -/
 @[reducible]
 def FullSpec (row : ArithMulRow FGL) : Prop :=
-  Spec row ∧ ArithTableSpec row ∧ C46Spec row
+  Spec row ∧ ArithTableSpec row ∧ C46Spec row ∧ ChunkRangeSpec row
 
 end ZiskFv.AirsClean.ArithMul
