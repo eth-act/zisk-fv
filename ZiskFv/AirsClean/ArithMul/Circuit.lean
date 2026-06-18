@@ -39,6 +39,7 @@ open Goldilocks
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open Air.Flat
 open ZiskFv.Airs.ArithCarryChainCompleteness
+open ZiskFv.AirsClean.RangeTables (signedCarryRangeTable)
 
 /-- Columns not constrained by the unsigned carry-chain completeness slice. -/
 structure ArithMulFreeCols where
@@ -277,8 +278,9 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
                 h_a0, h_a1, h_a2, h_a3,
                 h_b0, h_b1, h_b2, h_b3,
                 h_c0, h_c1, h_c2, h_c3,
-                h_d0, h_d1, h_d2, h_d3⟩ := h_holds
-        refine ⟨?_, ?_, ?_, ?_⟩
+                h_d0, h_d1, h_d2, h_d3,
+                h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6⟩ := h_holds
+        refine ⟨?_, ?_, ?_, ?_, ?_⟩
         · -- Carry-chain Spec (11 clauses).
           refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
           · linear_combination h_c6
@@ -339,6 +341,24 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
                     Table.toRaw, h_id2] using h_d2,
                  by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
                     Table.toRaw, h_id3] using h_d3⟩
+        · -- CarryRangeSpec: seven signed-carry range lookups (arith.pil:17,280).
+          obtain ⟨_, _, h_carries⟩ := h_input
+          obtain ⟨h_icy0, h_icy1, h_icy2, h_icy3, h_icy4, h_icy5, h_icy6,
+                  _h_fab, _h_na_fb, _h_nb_fa⟩ := h_carries
+          exact ⟨by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, signedCarryRangeTable, h_icy0] using h_cy0,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, signedCarryRangeTable, h_icy1] using h_cy1,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, signedCarryRangeTable, h_icy2] using h_cy2,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, signedCarryRangeTable, h_icy3] using h_cy3,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, signedCarryRangeTable, h_icy4] using h_cy4,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, signedCarryRangeTable, h_icy5] using h_cy5,
+                 by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw, signedCarryRangeTable, h_icy6] using h_cy6⟩
       · intro _
         trivial
     completeness := by

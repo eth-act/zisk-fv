@@ -85,7 +85,8 @@ theorem arith_table_spec_of_lookup_aware_soundness
   rcases h_holds with
     ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
       _h46, h_lookup, _ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
-      _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3⟩
+      _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3,
+      _hcy0, _hcy1, _hcy2, _hcy3, _hcy4, _hcy5, _hcy6⟩
   simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
     ArithTableSpec, arithTableRow] using h_lookup
 
@@ -118,7 +119,8 @@ theorem chunk_ranges_of_arith_table_soundness
   rcases h_holds with
     ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
       _h46, _h_lookup, ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
-      hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩
+      hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3,
+      _hcy0, _hcy1, _hcy2, _hcy3, _hcy4, _hcy5, _hcy6⟩
   exact ⟨by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
               Table.toRaw] using ha0,
          by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
@@ -475,8 +477,10 @@ theorem full_spec_of_carry_chain_and_arith_table
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r)
     (h_table : ArithTableSpec (rowAt v r))
     (h_c46 : C46Spec (rowAt v r))
-    (h_chunk_ranges : ChunkRangeSpec (rowAt v r)) :
+    (h_chunk_ranges : ChunkRangeSpec (rowAt v r))
+    (h_carry_ranges : CarryRangeSpec (rowAt v r)) :
     FullSpec (rowAt v r) := by
-  exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table, h_c46, h_chunk_ranges⟩
+  exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table, h_c46, h_chunk_ranges,
+    h_carry_ranges⟩
 
 end ZiskFv.AirsClean.ArithMul

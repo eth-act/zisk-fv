@@ -212,6 +212,20 @@ def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   lookup (Table.fromStatic rangeTable16) row.chunks.d_1
   lookup (Table.fromStatic rangeTable16) row.chunks.d_2
   lookup (Table.fromStatic rangeTable16) row.chunks.d_3
+  -- Seven `ARITH_RANGE_CARRY` signed-carry range lookups (`arith.pil:17,280`).
+  -- `carry[]` is declared as `bits(64, signed)` and range-checked with the
+  -- single ARITH_RANGE_CARRY type = the signed-carry range. The
+  -- `signedCarryRangeTable.Spec t = (t.val < 983041 ∨ GL_prime − 983040 ≤ t.val)`
+  -- holds for EVERY Arith row: unsigned carries are < 2^17 < 983041 (first
+  -- disjunct) and signed carries satisfy the disjunction by construction.
+  -- Sound to include in the SHARED component — no vacuity.
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_0
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_1
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_2
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_3
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_4
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_5
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_6
 
 /-- Lookup-aware ArithMul path for the sixteen `bits(16)` chunk columns.
     This models the column-level PIL declarations at `arith.pil:18-21`.

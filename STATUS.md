@@ -42,8 +42,19 @@ lookups. ArithMulTableWitness.chunk_ranges derivation added. ArithMulChunkRangeW
 kept as deprecated alias. Full lake build green, 0 sorry, 0 new ZiskFv.* axioms,
 trust gate checks #3/#5/#7/#8 pass.
 
-NEXT: RANK 2b carry ranges (signed carry range lookups into shared component?
-NOTE: carry ranges are mode-dependent — unsigned=rangeTable17, signed uses
-signedCarryRangeTable. Cannot add unsigned carry to SHARED component without
-vacuity. Evaluate separately. RANK 3 = use FullSpec to discharge ArithMulChunkRangeWitness
-from equiv_MUL/MULH/MULW canonical signatures (requires updating Equivalence/Wrappers).
+RANK 2b carry ranges: IN PROGRESS. CORRECTION (verified arith.pil:17,280): carry
+ranges are NOT mode-dependent. The PIL carries are `bits(64, signed)` range-checked
+with the single ARITH_RANGE_CARRY type = signedCarryRangeTable
+(val < 983041 ∨ GL_prime−983040 ≤ val), which holds for ALL arith rows (unsigned
+carries < 2^17 < 983041, first disjunct). So composing signedCarryRangeTable into
+the SHARED component is faithful + sound (no vacuity). The earlier "mode-dependent /
+cannot add" note was wrong (conflated the real PIL range with the tight unsigned
+rangeTable17 hand-specialization). 2b composes signedCarryRangeTable ×7 →
+FullSpec += CarryRangeSpec. The unsigned arms' tight < 2^17 bound is a
+construction-layer derivation (not an extraction blocker).
+
+NEXT after 2b: RANK 3 = use the now-fuller FullSpec to DISCHARGE the chunk/carry/c46
+witnesses from the M-ext construction theorems (the construction-layer plumbing,
+the active P4 M-ext stream) — derive them from the provider match instead of
+caller witnesses. Then RANK 3 (ArithDiv table-component) + RANK 4 (remainder
+self-edge) for the div/rem arms.
