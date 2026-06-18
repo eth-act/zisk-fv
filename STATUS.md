@@ -1,163 +1,24 @@
-Active plan: docs/ai/plan/PLAN_ENDGAME_P4_SWEEP.md (Wave A LUI/AUIPC DONE).
+Active stream: P4 M-ext constructions — add the 6 unsigned RV64M
+`construction_<op>_sound` theorems (MULW, MULHU, DIVU, DIVUW, REMU, REMUW) to the
+P4 construction set (30 → 36). Feeds the P5 env-removal assembly.
 
-DONE (SWEEP Wave A — LUI/AUIPC, the FIRST provider-free is_external_op=0
-families): added ConstructionLui.lean (construction_lui_sound, 15 + execRow
-honest binders) and ConstructionAuipc.lean (construction_auipc_sound, 18 +
-execRow honest binders), the AUIPC clone of LUI. No op-bus provider block (LUI
-is internal OP_COPYB, AUIPC internal OP_FLAG) — STRICTLY MORE derivable than the
-28. Body: derive Main per-row Spec from trace.spec (mainSpec_at helper) ⇒
-add_subset_holds ⇒ lui/auipc_subset_holds (6 derived fields + DEFINITIONAL
-pc_handshake — next_pc chosen as the handshake RHS, holds by rfl, so it is NOT a
-residual); StorePcMemoryWitness via matches_memory_entry_refl off the real Clean
-cMemMessage row; rd-write MemBus shape + pure-spec nextPC_eq by rfl; h_circuit
-via lui/auipc_h_circuit_of_main_constraints (FLAT facts, NOT _of_row_provenance);
-conclude through EquivCore.Lui.equiv_LUI / EquivCore.Auipc.equiv_AUIPC (rd value
-DERIVED inside equiv_*: LUI rd = signExtend(imm<<12) from internal_op1_copies;
-AUIPC rd = pc+imm from internal_op0_* + h_pc_bridge/h_offset_bridge). Residuals
-are the standard named pins: decode pins, Sail-value bridges (incl. AUIPC's
-intra-row h_pc_bridge = the m.pc column, a bucket-b bridge NOT #100), the lone
-sequential pc+4 h_nextPC_matches (NOT #100 jump-target), exec artifacts + execRow
-∀-binder, AUIPC's 2 RANGE pins. Appended both to soundConstructionTheorems
-(28 → 30); deep construction-binder baseline grew +68 lines (2 honest flat
-blocks, prior 28 byte-identical, ZERO RowProvenance/RowBinding leaves). Whole
-project lake build green (8690 jobs); check-all.sh 18/18; check-all-semantic.sh
-12/12 (incl. 5/12 deep construction binder); 0 PROJECT (ZiskFv.*) axioms per new
-theorem (closure = Sail FP primitives + kernel only); baseline-axioms /
-hypothesis-count / caller-burden / equiv-axiom-deps UNCHANGED (constructions
-don't touch canonical equiv_<OP>). P4 sound construction count: 28 → 30.
+Worktree `.worktrees/p4-mext`, branch `p4-mext` off `origin/main` (a5679e5b).
+build/ symlinked to main checkout; `lake exe cache get` done.
 
---- prior (SWEEP Wave 6 — W-ALU ADDW/SUBW/ADDIW) ---
+Plan: docs/ai/plan/PLAN_ENDGAME_P4_MEXT.md (navigable spine + checklist).
 
-AUTHORED the missing m32=1 32-bit lane-binding lemmas
-`input_r1_packed_a32_row` / `input_r2_packed_b32_row` in
-ZiskFv/EquivCore/Bridge/Binary.lean (the binary analog of the BinaryExtension
-shift bridge's packed_a_lo32_eq_of_shift_match_m32_1_of_a_range). KEY FINDING:
-the m32=1 binary lane DOES close cleanly, and WITHOUT needing one_sub_one_mul on
-a_hi — for the staticBinary provider the a_lo conjunct of matches_entry is
-m32-independent, so the 32-bit operand binding (extractLsb r1_val 31 0).toNat =
-binaryRowA32 row % 2^32 derives from the low-4-byte a_lo equation alone (the
-a_hi=(1-m32)*a_1 collapses to 0 but is not consumed for the low half). Lane
-lemmas take 4 explicit a/b byte-range (<256) hyps, sourced in the constructions
-from h_facts (StaticBinaryTableWfFacts) — no byte_chain_discharge_64 (which
-requires mode32=0). Added ConstructionWAlu.lean with construction_subw_sound
-(unique OP_SUB_W, Or.inr), construction_addw_sound (OP_ADD_W, Or.inl), and
-construction_addiw_sound (ITYPE, OP_ADD_W; imm + h_addiw_subset named pin +
-ITypePromises; wrapper derives the immediate byte decomposition internally).
-W bus harness: m32=1, writeReg-nextPC prelude retained. Appended all three to
-soundConstructionTheorems (25 → 28); deep baseline grew +3 honest flat blocks
-(subw 34, addw 34, addiw 33 binders; ZERO RowBinding/MainRowProvenance leaves;
-prior 25 blocks byte-identical prefix). lake build green (8688 jobs);
-check-all.sh 18/18; check-all-semantic.sh 12/12; baseline-axioms.txt UNCHANGED
-(lane lemmas add NO axiom); 0 PROJECT (ZiskFv.*) axioms per new theorem and lane
-lemma (closure = [cancel_reservation, propext, Classical.choice, Quot.sound] for
-constructions; [propext, Classical.choice, Quot.sound] for the lane lemmas —
-Sail+kernel external only). NO sorry/admit/native_decide.
+Scope (verified 2026-06-18): equiv_<OP> layer DONE + axiom-free for all 6;
+MISSING = the P4 construction layer. M-ext is the FIRST construction-layer touch
+of the Arith family — needs NEW Arith provider-match-from-balance + witness
+packaging (the 30 ALU constructions reused pre-existing Binary packaging). The
+core balance enumeration (Balance.lean:1732) already surfaces an arithMul branch
+the ALU theorems refute; M-ext keeps it. 0 PROJECT axioms required.
 
---- prior (Wave 5, from base p4-closeout-construction) ---
+Current focus: PR-MEXT.1 — MULW spike (primary op-bus, op=182). This is the
+make-or-break Arith balance+witness foundation; once it lands, MULHU (secondary)
+and the DIV family follow incrementally.
 
-Active plan: docs/ai/plan/PLAN_ENDGAME_P4_CLOSEOUT.md (§5 PR2, rework-off-#97).
+Next step: build `exists_arithMul_provider_row_matches_primary_from_binding`
+(mirror the Binary `_logic_` theorem, keep arithMul branch, refute the other 3).
 
-Branch `p4-closeout-construction` off `origin/endgame-p4-pr2` (#97 @ 6c414ffa).
-
-Focus: EXECUTE PR2 — strip the P4 relabel, keep the salvage + via_binaryadd
-route, add the first honest sound construction (`construction_sub_sound`, 17 +
-execRow residual binders). End in a CLEAN do-not-merge PR superseding #94/#97.
-
-Done:
-- Stripped AcceptedTrace.lean to the salvage (AcceptedTrace + ProgramBinding
-  skeleton + Layer-A provider-match wrappers). Removed ArmTag, 37 *RowBinding
-  structs, per-op ProgramBinding projections, all construction_<op> defs +
-  aeneasBridgeTrust theorems, the 28 exists_construction_*_from_balance wrappers.
-- Stripped the 4 addViaBinaryAdd*OfExtractedShape decls (AeneasBridgeTrust.lean).
-- Stripped the print-construction-binders subcommand (TrustGate/Main.lean), the
-  blind check-construction-theorem-binders.sh + its baseline + its wiring in
-  check-all-semantic.sh / regenerate.sh / README.md.
-- KEPT the via_binaryadd salvage route (OpEnvelope arms, Dispatch, EquivCore/Add,
-  BinaryAdd circuit, route ledger).
-- Added ConstructionSub.lean (sound construction_sub_sound).
-
-DONE: lake build green (8681 jobs); check-all.sh 18/18; check-all-semantic.sh
-12/12; 0 PROJECT axioms (construction_sub_sound closure empty); 17 + execRow
-honest binders; net diff vs main has 0 relabel decls. Committed 9b55bcdb, pushed,
-opened do-not-merge PR #99 (eth-act/zisk-fv, base main) superseding #94/#97.
-
-DONE (recursive gate, Option X): re-added the DEEP construction-binder gate.
-TypeWalk.lean renderTheoremBindersDeep + renderDeep (descend only into ZiskFv.*
-project structures; library structures are leaves; visited-set cycle guard).
-Main.lean print-construction-binders-deep targeting construction_sub_sound.
-check-construction-theorem-binders.sh re-added (points at -deep), re-wired into
-check-all-semantic.sh (5/12) + regenerate.sh + README. Deep baseline = 17 flat
-h_ residual lines + execRow; ZERO RowBinding/MainRowProvenance substrings; setup
-binders (trace/binding) descend into honest trace structure only. nix run .#test
-green. Committed 0e25550d, pushed to update PR #99.
-
-DONE (PR3 — second sound family, AND, logic route): added
-ConstructionAnd.lean (`construction_and_sound`), the mechanical mirror of
-`construction_sub_sound` for the logic family. Op-bus match via the salvaged
-logic Layer-A wrapper `exists_staticBinary_provider_row_matches_logic_from_binding`
-(op pin via `Or.inl h_main_op`); OP_AND (=14, <16) byte-chain path
-(`logic_row_mode_pins_of_emit_op_lt_16_of_static_spec` + `BinaryTable.OP_AND`);
-data effect concluded via `equiv_AND` (`execute_RTYPE_and_pure`, bottoms in
-`binary_and_chunks_eq_bv_and_of_wf`). Same 17 + execRow residual budget, flat
-top-level binders, no `*RowBinding`/`MainRowProvenance` leaf. Generalized the
-recursive gate: `soundConstructionTheorems` list + labelled-block deep render
-in TrustGate/Main.lean (adding a family = append to the list + regen). Deep
-baseline grew 34→71 lines = +2 headers + 1 blank + 34 honest AND binders; SUB
-block byte-identical. lake build green (8682 jobs); check-all.sh 18/18;
-check-all-semantic.sh 12/12 (deep check now covers both); 0 PROJECT
-(ZiskFv.*) axioms (construction_and_sound closure empty of ZiskFv.* names);
-nix run .#test green.
-
-DONE (SWEEP Wave 2 — I-type logic + compare, ANDI/ORI/XORI/SLTI/SLTIU): added
-ConstructionIType.lean with five sound constructions, each the mechanical mirror
-of its R-type sibling (AND/OR/XOR/SLT/SLTU) through the uniform I-type immediate
-DELTA. The second operand is the immediate (NOT a register read): drop r2's Sail
-read + `h_b_lo_t`/`h_b_hi_t` lane bridges; add the `imm : BitVec 12` binder, the
-immediate-decode equality `h_input_imm : input.imm = imm`, and the NAMED
-top-level `itype_imm_subset_holds_main` pin (`h_<op>_subset`); swap
-RTypePromises→ITypePromises (carries `input_imm_eq`); route via `equiv_<OP>I`.
-Logic ops (ANDI/ORI/XORI) DERIVE the 8-byte Binary-row imm form `h_input_imm_row`
-in-body via `itype_imm_subset_binary_row_of_main_row` (NOT a binder); compare ops
-(SLTI/SLTIU) pass `m32=0`+`h_<op>_subset` directly and the wrapper re-derives it.
-XORI inherits XOR's OP_XOR=16 wrinkle (static_table_logic_mode_pins_of_emit +
-byte_chain_discharge_logic). Per-family budget: 16 hyp binders + `imm` + execRow
-(33 deep leaves vs R-type's 34; net -1, fully honest: -r2/-h_input_r2/-h_b_lo_t/
--h_b_hi_t = -4, +imm/+h_input_imm/+h_<op>_subset = +3). Appended all five to
-`soundConstructionTheorems`; deep baseline grew +175 lines (5 honest blocks);
-prior 6 blocks byte-identical; ZERO RowBinding/MainRowProvenance leaves;
-itype_imm_subset_holds_main is a flat binder line in all 5. lake build green
-(8685 jobs); check-all.sh 18/18; check-all-semantic.sh 12/12; 0 PROJECT
-(ZiskFv.*) axioms per new theorem (Sail+kernel external).
-
-DONE (SWEEP Wave 3 — m32 = 0 shifts SLL/SRL/SRA/SLLI/SRLI/SRAI): added
-ConstructionShift.lean with six sound constructions on the BinaryExtension
-template (NOT the busSub/staticBinary path). SLL was the exemplar that solved
-the three shift novelties: (1) op-bus match via the salvaged shift Layer-A
-wrapper exists_binaryExtension_provider_row_matches_shift_from_binding (6-way op
-disjunction; SLL/SLLI Or.inl, SRL/SRLI Or.inr (Or.inl ·), SRA/SRAI
-Or.inr (Or.inr (Or.inl ·))); (2) BARE-execute conclusion (no writeReg-nextPC
-prelude) — the construction concludes equiv_<OP>'s conclusion verbatim, so the
-exec-bus bookkeeping (h_exec_len/h_e0_mult/h_e1_mult/busSub/h_nextPC_matches)
-rides inside the RTypePromises / ShiftImmPromises bundle against the bare-execute
-pure spec; (3) the m32 = 0 lane route — packed_a_eq_of_shift_match_m32_0_of_a_range
-(one_sub_zero_mul, Bridge/BinaryExtension.lean:240/269) + shift-pin lemmas.
-To keep the giant shiftStaticLookupComponent.rowInput term opaque (a `set row`
-inline derivation timed out at whnf), the lane/op-is-shift derivations are
-factored into five opaque-`row` helper theorems in ConstructionShift.lean
-(shift_op_pin_eq_of_match, shift_op_is_shift_of_facts,
-shift_m32_0_input_r1_row_of_facts, shift_m32_0_shift_pin_row_of_facts,
-shift_imm_shift_pin_row_of_facts) which mirror equiv_SLL_of_static_row's internal
-block. Register variants carry SUB's 17 + execRow budget; immediate variants drop
-r2's read + hi-lane, add shamt + h_input_shamt + the b_0 shamt_b_lo decode pin
-(16 hyp + shamt + execRow). Appended all six to soundConstructionTheorems
-(11 → 17); deep baseline grew +201 lines = 6 honest flat blocks; prior 11 blocks
-byte-identical; ZERO RowBinding/MainRowProvenance leaves. lake build green
-(8686 jobs); check-all.sh 18/18; check-all-semantic.sh 12/12; 0 PROJECT (ZiskFv.*)
-axioms per new theorem (closure = [cancel_reservation, propext, Classical.choice,
-Quot.sound], i.e. Sail+kernel external only).
-
-Next (follow-up increments, NOT this PR): the remaining ALU/sweep families
-(ADD/ADDI provider-disjunction PR4; W-types PR5 incl. m32 = 1 W-shifts;
-M-ext; branches; loads/stores); close stale #94/#97 on merge (Cody's call).
-
-Blocking: none.
+No blockers. Goal hook active: "land the M-ext part."
