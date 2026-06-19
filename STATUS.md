@@ -149,3 +149,21 @@ construction-binder baseline refreshed (purely additive +120). NOT committed (pa
 
 NEXT after Stage 5: REMUW. Then P5 assembly over the 36 constructions,
 carrying the non-extraction residuals.
+
+DONE (Stage 6 — construction_remuw_sound, secondary remainder lane + W-mode, → 36/63):
+mirrors REMU (secondary lane: main_div=0, main_mul=0, c_lo→d_0+d_1*65536 via
+opBus_row_ArithDivSecondary; reuses REMU's match_opBus_row_ArithDivSecondary_vOfDivuRow
+verbatim — m32 not a mux selector) PLUS DIVUW W-mode (m32=1, h_b23/h_c23/h_sext_choice
+W residuals, h_d23 derived via arith_div_remainder_bound_unsigned_w, loose <983041
+carry route). Built full op-189 stack: spec_op_val_ne_arith_remuw (BinaryTable +
+BinaryExtensionTable), static_table_op_val_ne_arith_remuw_of_emit (Binary/Bridge),
+_of_spec_facts + shiftStaticLookupComponent_op_val_ne_arith_remuw_of_spec
+(BinaryExtension/StaticCircuit), 3 refute lemmas + keep theorem
+exists_arithMul_provider_row_matches_primary_of_remuw_active_main_row_interaction
+(ArithBalance), _from_binding wrapper (AcceptedTrace), remuw_mode_pins_of_row
+(ArithTableProjections: na=nb=np=nr=0, m32=1, div=1, main_div=0, main_mul=0),
+h_rd_val_mdru_remuw_loose (MulDivRemUnsigned), ConstructionRemuw.lean (F4 bridge
+equiv_REMUW_of_fullSpec + construction_remuw_sound). REMUW = OP_REMU_W = 189 (m32=0
+decomp = 173). Sail conclusion: instruction.REMW (r2,r1,rd,true) /
+execute_DIVREM_remuw_pure. ONE remainder_bound residual + W-mode (h_b23,h_c23,
+h_sext_choice) + operand bridges. Completes the 6 unsigned M-ext constructions.

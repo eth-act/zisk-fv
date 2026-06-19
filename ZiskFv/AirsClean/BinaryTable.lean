@@ -807,6 +807,28 @@ theorem spec_op_val_ne_arith_divuw {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_op_val_ne_arith_divuw i
 
+theorem rowOfIndex_op_val_ne_arith_remuw (i : Fin tableSize) :
+    (rowOfIndex i.val).op.val ≠ 189
+      ∧ (rowOfIndex i.val).op.val ≠ 173 := by
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  unfold rowOfIndex opOfIndex
+  rw [Fin.val_natCast]
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  refine ⟨?_, ?_⟩ <;>
+    interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR,
+      OP_LTU, OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE,
+      OP_SEXT_00, OP_SEXT_FF, OP_MINU, OP_MIN, OP_MAXU, OP_MAX,
+      OP_LT_ABS_NP, OP_LT_ABS_PN]
+
+theorem spec_op_val_ne_arith_remuw {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    t.op.val ≠ 189 ∧ t.op.val ≠ 173 := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_op_val_ne_arith_remuw i
+
 theorem signByte_eq_zero_iff_lt_128 {a : ℕ} (ha : a < 256) :
     signByte a = 0 ↔ a < 128 := by
   interval_cases a <;> decide
