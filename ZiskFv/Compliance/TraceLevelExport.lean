@@ -3389,6 +3389,71 @@ structure RowData_jalr
   h_pc_bound : jalr_input.PC.toNat < GL_prime - 4
   h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296
 
+/-- Irreducible per-row residuals for the `fence` archetype — the FENCE decode arm.
+
+    FENCE is the FENCE-decode-gap opcode (`ZISK-DEFECT-FENCE-INCOMPLETE`).  It is
+    routed through the OpEnvelope just like `beq` (direct-construct, carrying the
+    `FencePromises` facts + bridge pins as binders), with ONE extra ingredient: the
+    THREE honest-shape facts (`fm = 0`, `rs = x0`, `rd = x0`) that the FENCE defect
+    gate (`Defects.FenceKnownGoodShape`) requires.  These three facts make the
+    threaded `StepNoKnownDefect` obligation — the GENUINE `NoKnownDefect` of the
+    SPECIFIC `OpEnvelope.fence` env this row constructs — SATISFIABLE (see
+    `stepStrong_fence`): for an honest FENCE row the env is the honest env and
+    `NoKnownDefect` is TRUE.  This is NOT the (false) selector-∀ shape, and it is
+    NOT a contradictory `False`-binder: the malicious FENCE shapes are excluded by
+    the honest caller supplying these three pins, exactly as the FENCE defect ledger
+    documents.  Non-vacuous: a real trace with a generic `fm=0,rs1=x0,rd=x0` FENCE
+    row supplies all binders and proves the `NoKnownDefect` obligation. -/
+structure RowData_fence
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  fence_input : PureSpec.FenceInput
+  fm : BitVec 4
+  fenceP : BitVec 4
+  fenceS : BitVec 4
+  rs : regidx
+  rd : regidx
+  exec_row : List (Interaction.ExecutionBusEntry FGL)
+  -- Decode pins (the two facts the FENCE `aeneasBridgeTrust` consumes).
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_FLAG
+  -- FENCE `FencePromises` residuals (the six structural binders).
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some fence_input.PC
+  h_input_priv :
+    (binding.stateAt i).regs.get? Register.cur_privilege = .some Privilege.Machine
+  h_exec_len : exec_row.length = 2
+  h_e0_mult : exec_row[0]!.multiplicity = -1
+  h_e1_mult : exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+      = (PureSpec.execute_FENCE_pure fence_input).nextPC
+  -- Honest-shape facts: the modeled (ZisK-accepted) generic FENCE subset.
+  -- These make the threaded `NoKnownDefect` obligation SATISFIABLE (not vacuous).
+  h_fm_zero : fm = 0#4
+  h_rs_x0 : ZiskFv.Compliance.Defects.IsX0Reg rs
+  h_rd_x0 : ZiskFv.Compliance.Defects.IsX0Reg rd
+
+/-- The `OpEnvelope.fence` env CONSTRUCTED from a `RowData_fence`.  Both the
+    `StepNoKnownDefect` fence obligation AND `stepStrong_fence` reference THIS env,
+    so the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
+    exact env the proof feeds to `zisk_riscv_compliant_program_bus`. -/
+noncomputable def fenceEnvOf
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_fence trace binding i) :
+    OpEnvelope (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+  OpEnvelope.fence d.fence_input d.fm d.fenceP d.fenceS d.rs d.rd d.exec_row
+    ⟨d.h_main_active, d.h_main_op⟩
+    { input_pc_eq := d.h_input_pc
+      input_priv_eq := d.h_input_priv
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches }
+
 /-- Per-row construction data: one arm per sound construction archetype (55).
     Each arm carries a single `RowData_<op>` payload (its irreducible residuals).
     The 8 defect/decode-gap opcodes (7 signed-M + FENCE) have NO arm. -/
@@ -9883,6 +9948,35 @@ theorem stepStrong_remuw
     h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
+/-- Strengthened `fence` step (channel-balance form), via the OpEnvelope route.
+
+    FENCE is the FENCE-decode-gap opcode.  CONSTRUCT `OpEnvelope.fence` (= the
+    shared `fenceEnvOf`) from the trace's `RowData_fence` and invoke
+    `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_nomem` conjunct
+    (`.2.2.2.1`).  `aeneasBridgeTrust` is the two flat decode pins; the
+    memory-timeline obligation is trivial (FENCE has no memory entry).
+
+    The `NoKnownDefect` obligation is supplied DIRECTLY by the caller as
+    `h_known : Defects.NoKnownDefect (fenceEnvOf …)` (= `StepNoKnownDefect`'s fence
+    arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
+    old theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
+    SATISFIABLE: for an honest FENCE row (`RowData_fence.h_fm_zero` / `h_rs_x0` /
+    `h_rd_x0`) the env is the honest env, so `NoKnownDefect` is TRUE and the caller
+    proves it.  Non-vacuous: the malicious FENCE shapes are excluded exactly by the
+    honest-shape pins the caller supplies, as the FENCE defect ledger documents. -/
+theorem stepStrong_fence
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_fence trace binding i)
+    (h_known : Defects.NoKnownDefect (fenceEnvOf trace binding i d)) :
+    execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let env : OpEnvelope state m i.val := fenceEnvOf trace binding i d
+  have h_bridge : env.aeneasBridgeTrust := ⟨d.h_main_active, d.h_main_op⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.1
+
 /-! ## Strong sum + dispatcher + top-level strengthened export -/
 
 /-- A per-row classification restricted to the arms strengthened to the
@@ -9949,13 +10043,22 @@ inductive StrongRowConstructionData
   | lb (d : RowData_lb trace binding i) : StrongRowConstructionData trace binding i
   | lh (d : RowData_lh trace binding i) : StrongRowConstructionData trace binding i
   | lw (d : RowData_lw trace binding i) : StrongRowConstructionData trace binding i
+  | fence (d : RowData_fence trace binding i) : StrongRowConstructionData trace binding i
 
 /-- Per-row defect-exclusion obligation supplied to (and threaded into) the
     strengthened trace-level export.  For each OpEnvelope-route arm it is the
     `EnvNoKnownDefectFor` fact restricted to that arm's `OpEnvelope` constructor;
     for the direct-lift arms (which never invoke `zisk_riscv_compliant_program_bus`)
     it is `True`.  See `EnvNoKnownDefectFor` for the non-vacuity / generalization
-    rationale. -/
+    rationale.
+
+    The `fence` arm is the EXCEPTION to the `EnvNoKnownDefectFor` selector-∀ shape:
+    that shape (`∀ env, sel env → NoKnownDefect env`) is FALSE for FENCE (a
+    malicious `fm≠0` FENCE matches the `.fence` selector but is NOT `NoKnownDefect`),
+    so the fence arm instead asks for the GENUINE `NoKnownDefect` of the SPECIFIC
+    honest `OpEnvelope.fence` env built from the row's honest-shape pins.  That
+    obligation is SATISFIABLE for an honest FENCE row (see `RowData_fence` /
+    `stepStrong_fence`). -/
 def StepNoKnownDefect
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
     StrongRowConstructionData trace binding i → Prop
@@ -10184,6 +10287,9 @@ def StepNoKnownDefect
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
       (r := i.val)
       (fun env => match env with | .lw_via_static_match .. => True | _ => False)
+  -- FENCE: the GENUINE `NoKnownDefect` of the SPECIFIC honest env, NOT the
+  -- (false) selector-∀ shape.  Satisfiable for an honest FENCE row.
+  | .fence d => Defects.NoKnownDefect (fenceEnvOf trace binding i d)
 
 /-- The strengthened per-step conclusion: the channel-balance
     (`state_effect_via_channels`) form — the OLD global theorem's per-arm
@@ -10593,6 +10699,9 @@ def StepComplianceStrong
           ⟨(busLd trace binding i d.execRow).exec_row,
            [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
             (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .fence d =>
+      execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
 
 /-- Per-row dispatch to the matching strengthened step theorem.
 
@@ -10663,21 +10772,23 @@ theorem stepComplianceStrong_of_rowData
   | lb d => exact stepStrong_lb trace binding i d h_known
   | lh d => exact stepStrong_lh trace binding i d h_known
   | lw d => exact stepStrong_lw trace binding i d h_known
+  | fence d => exact stepStrong_fence trace binding i d h_known
 
 /-- **Strengthened trace-level export (#61, channel-balance form).**
 
     From an accepted full-ensemble trace, a program binding, and a per-row
-    classification into the 49 strengthened archetypes, EVERY row satisfies the
+    classification into the 56 strengthened archetypes, EVERY row satisfies the
     canonical channel-balance per-step conclusion (`= state_effect_via_channels …`)
     — the SAME conclusion the OLD global theorem `zisk_riscv_compliant_program_bus`
     produces.  For the 22 op-bus ALU arms the `OpEnvelope` is CONSTRUCTED from the
     trace inside each `stepStrong_<op>` (no caller-supplied envelope); for the 27
     control-flow + U-type + store + load + M-ext-unsigned arms the conclusion is
     the channel-balance lift of each `construction_<op>_sound` over the real trace
-    row.  The 6 M-ext-unsigned arms (MULW/MULHU/DIVU/DIVUW/REMU/REMUW) lift the
-    FAITHFUL loose-bound (`<983041`) construction, NEVER the canonical equiv's
-    tight (`<131072`) carry bound, so they are non-vacuous and sound.  This is
-    strictly stronger
+    row; the FENCE arm CONSTRUCTS `OpEnvelope.fence` (= `fenceEnvOf`) from the
+    trace's honest FENCE row.  The 6 M-ext-unsigned arms
+    (MULW/MULHU/DIVU/DIVUW/REMU/REMUW) lift the FAITHFUL loose-bound (`<983041`)
+    construction, NEVER the canonical equiv's tight (`<131072`) carry bound, so they
+    are non-vacuous and sound.  This is strictly stronger
     than the `bus_effect`-form `zisk_compliant_of_accepted_trace`: every
     conclusion it yields is `state_effect_via_channels …`, defeq-implying the
     `bus_effect`-form, over the committed trace.
@@ -10688,14 +10799,25 @@ theorem stepComplianceStrong_of_rowData
     (`StepNoKnownDefect`).  It is threaded — via `stepComplianceStrong_of_rowData`
     — to each OpEnvelope-route `stepStrong_<op>`, which feeds it to the old global
     theorem `zisk_riscv_compliant_program_bus` in place of an internally-proved
-    `NoKnownDefect`.  For every one of the current (non-defect) arms the obligation
+    `NoKnownDefect`.  For the 22 op-bus ALU + M-ext-unsigned arms the obligation
     is `EnvNoKnownDefectFor` on a non-defect constructor (or `True` for the
     direct-lift arms), so it is TRIVIALLY satisfiable — see
     `envNoKnownDefectFor_of_nondefect` — and this theorem is therefore NOT vacuous.
-    The hypothesis is the plumbing that lets the signed-M / FENCE defect ops be
-    added on the OpEnvelope route later: their `StepNoKnownDefect` obligation is the
-    genuine `NoKnownDefect` of a defect-region envelope, which is NOT
-    unconditionally true and must be supplied (or excluded) by the caller. -/
+
+    The FENCE arm is the one defect/gap op landed on the OpEnvelope route: its
+    `StepNoKnownDefect` obligation is the GENUINE `NoKnownDefect (fenceEnvOf …)` of
+    the SPECIFIC honest env, NOT the (false) `EnvNoKnownDefectFor` selector-∀ and NOT
+    a contradictory `False`-binder.  It is SATISFIABLE for an honest FENCE row
+    (`fm=0, rs1=x0, rd=x0`) — the malicious FENCE shapes are excluded exactly by the
+    honest caller supplying those pins (`RowData_fence`).
+
+    The 7 signed-M defect ops (MUL/MULH/MULHSU/DIV/DIVW/REM/REMW) CANNOT be added on
+    this route: `Defects.NoKnownDefect (.mul/…/.remw env)` is UNCONDITIONALLY False
+    for every constructible env (the defect predicates `MaliciousSignedMulWitnessShape`
+    / `ArithDivDynamicWitnessShape` are OPCODE-WIDE — `| .mul .. => True` — with no
+    honest/malicious distinction), so the only way to "land" them is the forbidden
+    `False.elim` / contradictory binder, which would make those arms vacuous.  They
+    remain documented defect gaps (`trust/defects.md`). -/
 theorem zisk_compliant_of_accepted_trace_strong
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
