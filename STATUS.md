@@ -97,5 +97,28 @@ divu_mode_pins_of_row + MulDivRemUnsigned loose divu path; registered in ZiskFv.
 + bin/TrustGate/Main.lean; construction-binder baseline refreshed. NOT committed
 (parent commits).
 
-NEXT after Stage 3: DIVUW/REMU/REMUW. Then P5 assembly over the 36 constructions,
+DONE (Stage 4 — construction_divuw_sound, unsigned W-mode DIVUW op-188 a-lane, 34/63):
+mirrors DIVU. Provider = SHARED ArithMul componentWithArithTable; reuses DIVU's
+vOfDivuRow + DIVU-mode op-bus bridge (the div=1∧main_div=1∧main_mul=0 mux selectors
+are m32-agnostic, so the SAME bridge reduces the muxed primaryOpBusMessage to
+opBus_row_ArithDiv). Arith witnesses (ArithTable/chunk/signed-carry/c46/carry-chain)
+ALL DERIVED from FullSpec; the W-mode chain (m32=1) is m32-independent so divuw_chain_eqs
+= divu_chain_eqs. CARRY BOUND: same blocker — loose <983041 derived + NEW loose
+W-mode write-value path h_rd_val_mdru_divuw_loose (in MulDivRemUnsigned.lean) routed
+through a custom equiv_DIVUW_of_fullSpec (NOT equiv_DIVUW). h_byte_lo DERIVED from the
+op-bus c-lane projection. RESIDUALS = DIVU shape (decode/Sail/operand/exec/nextPC) +
+remainder_bound (the ArithDiv LTU self-edge, NOT balance-derivable) + the THREE W-mode
+residuals the canonical equiv_DIVUW also carries: h_b23, h_c23 (high-lane zeros — m32 is
+NOT an op-bus field, so not balance-derivable), h_sext_choice (SEXT_00/SEXT_FF bus
+encoding on bytes 4..7, class #4). NO arith-witness binders. Full lake build GREEN (8695);
+0 sorry; 0 PROJECT ZiskFv.* axioms (closure carries Classical.choice + Quot.sound + Sail
++ Lean.ofReduceBool/trustCompiler native_decide INHERITED from canonical equiv_DIVUW path
+— NOT new; #75). V1 18/18 + V2 12/12 ALL PASS. Files: NEW Compliance/ConstructionDivuw.lean;
++op-188/offset-172 exclusions (BinaryTable, BinaryExtensionTable, Binary/Bridge,
+BinaryExtension/StaticCircuit) + ArithBalance keep/refute + AcceptedTrace from_binding
+wrapper + ArithTableProjections divuw_mode_pins_of_row + MulDivRemUnsigned loose divuw path;
+registered in ZiskFv.lean + bin/TrustGate/Main.lean; construction-binder baseline refreshed
+(purely additive +123). NOT committed (parent commits).
+
+NEXT after Stage 4: REMU/REMUW. Then P5 assembly over the 36 constructions,
 carrying the non-extraction residuals.
