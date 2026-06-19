@@ -233,7 +233,7 @@ ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 014 bounds [other] ZiskFv.Compliance.
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 016 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
-ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 019 remainder_bound [other] ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 020 h_rs1_value [bridge] divu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 021 h_rs2_value [bridge] divu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val
@@ -255,7 +255,7 @@ ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 014 bounds [other] ZiskFv.Complianc
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 015 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 016 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
-ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 019 remainder_bound [other] ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 020 _ [other] not class #6b — bus encoding / -- operand bridge in W-form
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 021 h_b23 [other] (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0
@@ -544,7 +544,7 @@ ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 014 bounds [other] ZiskFv.Complianc
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 015 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 016 arith_table [other] ZiskFv.Compliance.ArithMulTableWitness v r_a
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a
-ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 019 h_rs1_value [bridge] mulhu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 020 h_rs2_value [bridge] mulhu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -650,7 +650,7 @@ ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 014 bounds [other] ZiskFv.Compliance.
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 016 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
-ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 019 remainder_bound [other] ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 020 h_rs1_value [bridge] remu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 021 h_rs2_value [bridge] remu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val
@@ -672,7 +672,7 @@ ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 014 bounds [other] ZiskFv.Complianc
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 015 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 016 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
-ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 019 remainder_bound [other] ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 020 mirror [other] bus encoding / -- operand bridge in W-form
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 021 DIVUW [other] bus encoding / -- operand bridge in W-form

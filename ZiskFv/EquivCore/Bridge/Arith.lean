@@ -580,6 +580,387 @@ lemma div_unsigned_chain_witnesses_of_carry_ranges
   · linear_combination h37
   · linear_combination h38
 
+/-! ### Loose unsigned carry bounds from the FAITHFUL signed carry disjunction
+
+The unsigned high-half / Euclidean reconstructions (MULHU / DIVU / REMU and
+their W siblings) need an *unsigned-side* per-carry bound to run the no-wrap
+chunk → ℕ lifts.  The genuine 4×4 unsigned-multiply / Euclidean carries can
+reach `~3·2^16 ≈ 196608 > 2^17 = 131072`, so the tight `< 131072` bound is
+**not** satisfiable by real rows — only the looser `< 983041` bound is.
+
+`unsigned_carry_step_nat` refutes the huge branch of the signed disjunction
+(`GL_prime - 983040 ≤ cy.val`) for one accumulated carry-chain step bounded
+below `983040 · 2^16`, leaving the small-side bound `cy.val < 983041`.  The two
+`*_carry_bounds_of_signed` lemmas run it up the chain; the two
+`*_chain_witnesses_of_signed_carry_ranges` lemmas package the result into the
+same existential witness shape the unsigned write-value path consumes, but with
+the balance-constructible `< 983041` bound throughout. -/
+
+/-- **Unsigned carry-step bound.** From a single carry-chain step over `FGL`
+    in natCast form (`(N : FGL) = c + cy * 65536)` with `c` a 16-bit chunk, the
+    accumulated column value `N` bounded below `983040 · 2^16` (covers every step
+    of the 4×4 unsigned chain), and the balance-supplied **signed** carry
+    disjunction on `cy`, conclude the looser *unsigned-side* bound
+    `cy.val < 983041`.
+
+    The huge branch of the signed disjunction is refuted: a carry near `GL_prime`
+    would force `(c + cy·2^16) % GL_prime ≥ GL_prime - 983040·2^16`, contradicting
+    the small `N`.  The small branch is the conclusion verbatim. -/
+theorem unsigned_carry_step_nat
+    (N : ℕ) (c cy : FGL)
+    (h_eq : ((N : ℕ) : FGL) = c + cy * 65536)
+    (hc : c.val < 65536)
+    (h_N : N < 64424509440)
+    (h_sgn : cy.val < 983041 ∨ GL_prime - 983040 ≤ cy.val) :
+    cy.val < 983041 := by
+  have key : ((N : ℕ) : FGL) = ((c.val + cy.val * 65536 : ℕ) : FGL) := by
+    rw [h_eq]; push_cast; ring
+  have key2 := congrArg Fin.val key
+  rw [Fin.val_natCast, Fin.val_natCast] at key2
+  rw [Nat.mod_eq_of_lt (by omega : N < GL_prime)] at key2
+  rcases h_sgn with h | h
+  · exact h
+  · exfalso
+    obtain ⟨k, hcy, hk1, hk2⟩ : ∃ k, cy.val = GL_prime - k ∧ 1 ≤ k ∧ k ≤ 983040 := by
+      refine ⟨GL_prime - cy.val, ?_, ?_, ?_⟩ <;> omega
+    have hkmul : k * 65536 ≤ 983040 * 65536 := Nat.mul_le_mul_right 65536 hk2
+    have hkle : k ≤ GL_prime := by omega
+    have hpk : k * 65536 ≤ GL_prime * 65536 := Nat.mul_le_mul_right 65536 hkle
+    have hkmul1 : 65536 ≤ k * 65536 := by
+      calc 65536 = 1 * 65536 := by ring
+        _ ≤ k * 65536 := Nat.mul_le_mul_right 65536 hk1
+    have hr_eq : c.val + cy.val * 65536 = 65535 * GL_prime + (GL_prime + c.val - k * 65536) := by
+      rw [hcy, Nat.sub_mul]; omega
+    have hr_lt : GL_prime + c.val - k * 65536 < GL_prime := by omega
+    rw [hr_eq, Nat.mul_add_mod', Nat.mod_eq_of_lt hr_lt] at key2
+    omega
+
+/-- **MULHU/unsigned-MUL loose carry bounds.** From the eight mode-pinned
+    unsigned-multiply chunk equations + the sixteen 16-bit chunk bounds + the
+    seven *signed* carry disjunctions (the FAITHFUL, balance-constructible
+    `CarryRangeSpec` shape), derive the looser *unsigned-side* carry bounds
+    `cy_i.val < 983041` by running `unsigned_carry_step_nat` up the chain. -/
+lemma mul_unsigned_carry_bounds_of_signed
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_chunks : ArithMulChunkRangesAt v r_a)
+    (h_csgn : ArithMulSignedCarryRangesAt v r_a)
+    (heqs :
+      (v.a_0 r_a * v.b_0 r_a = v.c_0 r_a + v.cy_0 r_a * 65536)
+      ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + v.cy_0 r_a
+          = v.c_1 r_a + v.cy_1 r_a * 65536)
+      ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a + v.cy_1 r_a
+          = v.c_2 r_a + v.cy_2 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+          + v.a_0 r_a * v.b_3 r_a + v.cy_2 r_a = v.c_3 r_a + v.cy_3 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + v.cy_3 r_a
+          = v.d_0 r_a + v.cy_4 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + v.cy_4 r_a
+          = v.d_1 r_a + v.cy_5 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_3 r_a + v.cy_5 r_a = v.d_2 r_a + v.cy_6 r_a * 65536)
+      ∧ (v.cy_6 r_a = v.d_3 r_a)) :
+    (v.cy_0 r_a).val < 983041 ∧ (v.cy_1 r_a).val < 983041
+    ∧ (v.cy_2 r_a).val < 983041 ∧ (v.cy_3 r_a).val < 983041
+    ∧ (v.cy_4 r_a).val < 983041 ∧ (v.cy_5 r_a).val < 983041
+    ∧ (v.cy_6 r_a).val < 983041 := by
+  obtain ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+          hc0, hc1, hc2, hc3, hd0, hd1, hd2, _hd3⟩ := h_chunks
+  obtain ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6⟩ := h_csgn
+  obtain ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, _hC38⟩ := heqs
+  have b0 : (v.cy_0 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat ((v.a_0 r_a).val * (v.b_0 r_a).val) _ _ ?_ hc0 ?_ hs0
+    · push_cast; linear_combination hC31
+    · have : (v.a_0 r_a).val * (v.b_0 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b1 : (v.cy_1 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_1 r_a).val * (v.b_0 r_a).val + (v.a_0 r_a).val * (v.b_1 r_a).val + (v.cy_0 r_a).val)
+      _ _ ?_ hc1 ?_ hs1
+    · push_cast; linear_combination hC32
+    · have h1 : (v.a_1 r_a).val * (v.b_0 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_0 r_a).val * (v.b_1 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b2 : (v.cy_2 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_2 r_a).val * (v.b_0 r_a).val + (v.a_1 r_a).val * (v.b_1 r_a).val
+        + (v.a_0 r_a).val * (v.b_2 r_a).val + (v.cy_1 r_a).val) _ _ ?_ hc2 ?_ hs2
+    · push_cast; linear_combination hC33
+    · have h1 : (v.a_2 r_a).val * (v.b_0 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_1 r_a).val * (v.b_1 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h3 : (v.a_0 r_a).val * (v.b_2 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b3 : (v.cy_3 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_3 r_a).val * (v.b_0 r_a).val + (v.a_2 r_a).val * (v.b_1 r_a).val
+        + (v.a_1 r_a).val * (v.b_2 r_a).val + (v.a_0 r_a).val * (v.b_3 r_a).val
+        + (v.cy_2 r_a).val) _ _ ?_ hc3 ?_ hs3
+    · push_cast; linear_combination hC34
+    · have h1 : (v.a_3 r_a).val * (v.b_0 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_2 r_a).val * (v.b_1 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h3 : (v.a_1 r_a).val * (v.b_2 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h4 : (v.a_0 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b4 : (v.cy_4 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_3 r_a).val * (v.b_1 r_a).val + (v.a_2 r_a).val * (v.b_2 r_a).val
+        + (v.a_1 r_a).val * (v.b_3 r_a).val + (v.cy_3 r_a).val) _ _ ?_ hd0 ?_ hs4
+    · push_cast; linear_combination hC35
+    · have h1 : (v.a_3 r_a).val * (v.b_1 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_2 r_a).val * (v.b_2 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h3 : (v.a_1 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b5 : (v.cy_5 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_3 r_a).val * (v.b_2 r_a).val + (v.a_2 r_a).val * (v.b_3 r_a).val
+        + (v.cy_4 r_a).val) _ _ ?_ hd1 ?_ hs5
+    · push_cast; linear_combination hC36
+    · have h1 : (v.a_3 r_a).val * (v.b_2 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_2 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b6 : (v.cy_6 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_3 r_a).val * (v.b_3 r_a).val + (v.cy_5 r_a).val) _ _ ?_ hd2 ?_ hs6
+    · push_cast; linear_combination hC37
+    · have h1 : (v.a_3 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  exact ⟨b0, b1, b2, b3, b4, b5, b6⟩
+
+/-- **MULHU/unsigned-MUL loose chain witnesses.** Mirror of
+    `mul_unsigned_chain_witnesses_of_carry_ranges` but consuming the FAITHFUL
+    signed carry disjunction (`ArithMulSignedCarryRangesAt`) instead of the
+    tight `< 131072` bound, and producing carry witnesses with the
+    balance-constructible `< 983041` bound.  The chunk equations are identical;
+    only the per-carry range bound is loosened.  This is the route the unsigned
+    high-half reconstruction (`h_rd_val_mdru_mulhu`-loose path) actually uses. -/
+lemma mul_unsigned_chain_witnesses_of_signed_carry_ranges
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_chain : mul_carry_chain_holds v r_a)
+    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (_h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (h_div : v.div r_a = 0)
+    (h_chunk_ranges : ArithMulChunkRangesAt v r_a)
+    (h_carry_ranges : ArithMulSignedCarryRangesAt v r_a) :
+    ∃ cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL,
+      cy₀.val < 983041 ∧ cy₁.val < 983041 ∧ cy₂.val < 983041 ∧ cy₃.val < 983041
+    ∧ cy₄.val < 983041 ∧ cy₅.val < 983041 ∧ cy₆.val < 983041
+    ∧ (v.a_0 r_a * v.b_0 r_a = v.c_0 r_a + cy₀ * 65536)
+    ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + cy₀ = v.c_1 r_a + cy₁ * 65536)
+    ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a + cy₁
+        = v.c_2 r_a + cy₂ * 65536)
+    ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+        + v.a_0 r_a * v.b_3 r_a + cy₂ = v.c_3 r_a + cy₃ * 65536)
+    ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + cy₃
+        = v.d_0 r_a + cy₄ * 65536)
+    ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄
+        = v.d_1 r_a + cy₅ * 65536)
+    ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = v.d_2 r_a + cy₆ * 65536)
+    ∧ (cy₆ = v.d_3 r_a) := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  simp only [mul_constraint_6_named, mul_constraint_7_named, mul_constraint_8_named,
+             h_na, h_nb, mul_zero, zero_mul, add_zero, sub_zero] at h6 h7 h8
+  have h_fab : v.fab r_a = (1 : FGL) := by linear_combination h6
+  have h_nafb : v.na_fb r_a = (0 : FGL) := by linear_combination h7
+  have h_nbfa : v.nb_fa r_a = (0 : FGL) := by linear_combination h8
+  simp only [mul_constraint_31_named, mul_constraint_32_named,
+             mul_constraint_33_named, mul_constraint_34_named,
+             mul_constraint_35_named, mul_constraint_36_named,
+             mul_constraint_37_named, mul_constraint_38_named,
+             h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, zero_mul, add_zero, sub_zero, zero_sub,
+             mul_one, one_mul]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  have heqs :
+      (v.a_0 r_a * v.b_0 r_a = v.c_0 r_a + v.cy_0 r_a * 65536)
+      ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + v.cy_0 r_a
+          = v.c_1 r_a + v.cy_1 r_a * 65536)
+      ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a + v.cy_1 r_a
+          = v.c_2 r_a + v.cy_2 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+          + v.a_0 r_a * v.b_3 r_a + v.cy_2 r_a = v.c_3 r_a + v.cy_3 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + v.cy_3 r_a
+          = v.d_0 r_a + v.cy_4 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + v.cy_4 r_a
+          = v.d_1 r_a + v.cy_5 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_3 r_a + v.cy_5 r_a = v.d_2 r_a + v.cy_6 r_a * 65536)
+      ∧ (v.cy_6 r_a = v.d_3 r_a) := by
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · linear_combination h31
+    · linear_combination h32
+    · linear_combination h33
+    · linear_combination h34
+    · linear_combination h35
+    · linear_combination h36
+    · linear_combination h37
+    · linear_combination h38
+  obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ :=
+    mul_unsigned_carry_bounds_of_signed v r_a h_chunk_ranges h_carry_ranges heqs
+  obtain ⟨he0, he1, he2, he3, he4, he5, he6, he7⟩ := heqs
+  exact ⟨_, _, _, _, _, _, _, hr0, hr1, hr2, hr3, hr4, hr5, hr6,
+    he0, he1, he2, he3, he4, he5, he6, he7⟩
+
+/-- **DIVU/REMU loose carry bounds.** Euclidean-chain analogue of
+    `mul_unsigned_carry_bounds_of_signed`. -/
+lemma div_unsigned_carry_bounds_of_signed
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_chunks : ArithDivChunkRangesAt v r_a)
+    (h_csgn : ArithDivSignedCarryRangesAt v r_a)
+    (heqs :
+      (v.a_0 r_a * v.b_0 r_a + v.d_0 r_a = v.c_0 r_a + v.cy_0 r_a * 65536)
+      ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + v.d_1 r_a + v.cy_0 r_a
+          = v.c_1 r_a + v.cy_1 r_a * 65536)
+      ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a
+          + v.d_2 r_a + v.cy_1 r_a
+          = v.c_2 r_a + v.cy_2 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+          + v.a_0 r_a * v.b_3 r_a + v.d_3 r_a + v.cy_2 r_a
+          = v.c_3 r_a + v.cy_3 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + v.cy_3 r_a
+          = v.cy_4 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + v.cy_4 r_a = v.cy_5 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_3 r_a + v.cy_5 r_a = v.cy_6 r_a * 65536)
+      ∧ (v.cy_6 r_a = 0)) :
+    (v.cy_0 r_a).val < 983041 ∧ (v.cy_1 r_a).val < 983041
+    ∧ (v.cy_2 r_a).val < 983041 ∧ (v.cy_3 r_a).val < 983041
+    ∧ (v.cy_4 r_a).val < 983041 ∧ (v.cy_5 r_a).val < 983041
+    ∧ (v.cy_6 r_a).val < 983041 := by
+  obtain ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+          hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩ := h_chunks
+  obtain ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6⟩ := h_csgn
+  obtain ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, _hC38⟩ := heqs
+  have b0 : (v.cy_0 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_0 r_a).val * (v.b_0 r_a).val + (v.d_0 r_a).val) _ _ ?_ hc0 ?_ hs0
+    · push_cast; linear_combination hC31
+    · have : (v.a_0 r_a).val * (v.b_0 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b1 : (v.cy_1 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_1 r_a).val * (v.b_0 r_a).val + (v.a_0 r_a).val * (v.b_1 r_a).val
+        + (v.d_1 r_a).val + (v.cy_0 r_a).val) _ _ ?_ hc1 ?_ hs1
+    · push_cast; linear_combination hC32
+    · have h1 : (v.a_1 r_a).val * (v.b_0 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_0 r_a).val * (v.b_1 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b2 : (v.cy_2 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_2 r_a).val * (v.b_0 r_a).val + (v.a_1 r_a).val * (v.b_1 r_a).val
+        + (v.a_0 r_a).val * (v.b_2 r_a).val + (v.d_2 r_a).val + (v.cy_1 r_a).val) _ _ ?_ hc2 ?_ hs2
+    · push_cast; linear_combination hC33
+    · have h1 : (v.a_2 r_a).val * (v.b_0 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_1 r_a).val * (v.b_1 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h3 : (v.a_0 r_a).val * (v.b_2 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b3 : (v.cy_3 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_3 r_a).val * (v.b_0 r_a).val + (v.a_2 r_a).val * (v.b_1 r_a).val
+        + (v.a_1 r_a).val * (v.b_2 r_a).val + (v.a_0 r_a).val * (v.b_3 r_a).val
+        + (v.d_3 r_a).val + (v.cy_2 r_a).val) _ _ ?_ hc3 ?_ hs3
+    · push_cast; linear_combination hC34
+    · have h1 : (v.a_3 r_a).val * (v.b_0 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_2 r_a).val * (v.b_1 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h3 : (v.a_1 r_a).val * (v.b_2 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h4 : (v.a_0 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b4 : (v.cy_4 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_3 r_a).val * (v.b_1 r_a).val + (v.a_2 r_a).val * (v.b_2 r_a).val
+        + (v.a_1 r_a).val * (v.b_3 r_a).val + (v.cy_3 r_a).val) 0 _ ?_ (by omega) ?_ hs4
+    · push_cast; linear_combination hC35
+    · have h1 : (v.a_3 r_a).val * (v.b_1 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_2 r_a).val * (v.b_2 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h3 : (v.a_1 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b5 : (v.cy_5 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_3 r_a).val * (v.b_2 r_a).val + (v.a_2 r_a).val * (v.b_3 r_a).val
+        + (v.cy_4 r_a).val) 0 _ ?_ (by omega) ?_ hs5
+    · push_cast; linear_combination hC36
+    · have h1 : (v.a_3 r_a).val * (v.b_2 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      have h2 : (v.a_2 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  have b6 : (v.cy_6 r_a).val < 983041 := by
+    refine unsigned_carry_step_nat
+      ((v.a_3 r_a).val * (v.b_3 r_a).val + (v.cy_5 r_a).val) 0 _ ?_ (by omega) ?_ hs6
+    · push_cast; linear_combination hC37
+    · have h1 : (v.a_3 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+      omega
+  exact ⟨b0, b1, b2, b3, b4, b5, b6⟩
+
+/-- **DIVU/REMU loose chain witnesses.** Mirror of
+    `div_unsigned_chain_witnesses_of_carry_ranges` but consuming the FAITHFUL
+    signed carry disjunction (`ArithDivSignedCarryRangesAt`) and producing carry
+    witnesses with the balance-constructible `< 983041` bound. -/
+lemma div_unsigned_chain_witnesses_of_signed_carry_ranges
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_chain : div_carry_chain_holds v r_a)
+    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (h_div : v.div r_a = 1)
+    (h_chunk_ranges : ArithDivChunkRangesAt v r_a)
+    (h_carry_ranges : ArithDivSignedCarryRangesAt v r_a) :
+    ∃ cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL,
+      cy₀.val < 983041 ∧ cy₁.val < 983041 ∧ cy₂.val < 983041 ∧ cy₃.val < 983041
+    ∧ cy₄.val < 983041 ∧ cy₅.val < 983041 ∧ cy₆.val < 983041
+    ∧ (v.a_0 r_a * v.b_0 r_a + v.d_0 r_a = v.c_0 r_a + cy₀ * 65536)
+    ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + v.d_1 r_a + cy₀
+        = v.c_1 r_a + cy₁ * 65536)
+    ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a
+        + v.d_2 r_a + cy₁
+        = v.c_2 r_a + cy₂ * 65536)
+    ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+        + v.a_0 r_a * v.b_3 r_a + v.d_3 r_a + cy₂
+        = v.c_3 r_a + cy₃ * 65536)
+    ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + cy₃
+        = cy₄ * 65536)
+    ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄ = cy₅ * 65536)
+    ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = cy₆ * 65536)
+    ∧ (cy₆ = 0) := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
+             ZiskFv.Airs.ArithDiv.nb_fa_eq_div] at h6 h7 h8
+  simp only [h_na, h_nb] at h6 h7 h8
+  have h_fab : v.fab r_a = (1 : FGL) := by linear_combination h6
+  have h_nafb : v.na_fb r_a = (0 : FGL) := by linear_combination h7
+  have h_nbfa : v.nb_fa r_a = (0 : FGL) := by linear_combination h8
+  simp only [ZiskFv.Airs.ArithDiv.carry_eq_0_div, ZiskFv.Airs.ArithDiv.carry_eq_1_div,
+             ZiskFv.Airs.ArithDiv.carry_eq_2_div, ZiskFv.Airs.ArithDiv.carry_eq_3_div,
+             ZiskFv.Airs.ArithDiv.carry_eq_4_div, ZiskFv.Airs.ArithDiv.carry_eq_5_div,
+             ZiskFv.Airs.ArithDiv.carry_eq_6_div, ZiskFv.Airs.ArithDiv.carry_eq_7_div]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  simp only [h_na, h_nb, h_np, h_nr, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, zero_mul, add_zero, sub_zero, zero_sub,
+             mul_one, one_mul]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  have heqs :
+      (v.a_0 r_a * v.b_0 r_a + v.d_0 r_a = v.c_0 r_a + v.cy_0 r_a * 65536)
+      ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + v.d_1 r_a + v.cy_0 r_a
+          = v.c_1 r_a + v.cy_1 r_a * 65536)
+      ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a
+          + v.d_2 r_a + v.cy_1 r_a
+          = v.c_2 r_a + v.cy_2 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+          + v.a_0 r_a * v.b_3 r_a + v.d_3 r_a + v.cy_2 r_a
+          = v.c_3 r_a + v.cy_3 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + v.cy_3 r_a
+          = v.cy_4 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + v.cy_4 r_a = v.cy_5 r_a * 65536)
+      ∧ (v.a_3 r_a * v.b_3 r_a + v.cy_5 r_a = v.cy_6 r_a * 65536)
+      ∧ (v.cy_6 r_a = 0) := by
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · linear_combination h31
+    · linear_combination h32
+    · linear_combination h33
+    · linear_combination h34
+    · linear_combination h35
+    · linear_combination h36
+    · linear_combination h37
+    · linear_combination h38
+  obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ :=
+    div_unsigned_carry_bounds_of_signed v r_a h_chunk_ranges h_carry_ranges heqs
+  obtain ⟨he0, he1, he2, he3, he4, he5, he6, he7⟩ := heqs
+  exact ⟨_, _, _, _, _, _, _, hr0, hr1, hr2, hr3, hr4, hr5, hr6,
+    he0, he1, he2, he3, he4, he5, he6, he7⟩
+
 end UnsignedChainWitnesses
 
 /-! ## Per-opcode discharge helpers — signed-mode chain witnesses
@@ -1648,5 +2029,66 @@ lemma mul_w_chain_witnesses
   linear_combination h_agg
 
 end WChainWitnesses
+
+/-! ## Non-vacuity probe — the faithful M-ext carry bound accepts real carries
+
+These committed `example`s witness that the carry-range slot the rewired
+unsigned-M canonical equivs (`equiv_MULHU` / `equiv_DIVU` and siblings) and
+their `OpEnvelope` arms now require — the FAITHFUL signed disjunction
+`< 983041 ∨ GL_prime - 983040 ≤ ·` — is SATISFIABLE at the realistic 4×4
+unsigned-multiply carry value `196608 = 3·2^16`, while the previous suspect
+TIGHT `< 131072 = 2^17` bound REJECTS that same value.  Genuine unsigned
+high-half / Euclidean carries reach `~3·2^16`, so the old tight bound made the
+canonical effectively vacuous; the faithful loose bound makes it satisfiable by
+real rows.  These examples are complete proofs, 0-axiom beyond the standard
+kernel postulates, and run as part of `lake build`. -/
+
+/-- `196608 : FGL` is well below `GL_prime`, so its `.val` is exactly `196608`. -/
+example : ((196608 : FGL)).val = 196608 := by decide
+
+/-- The realistic carry `196608` satisfies the faithful disjunction (small
+    branch) but exceeds the old tight `< 131072` bound. -/
+example :
+    (196608 < 983041 ∨ GL_prime - 983040 ≤ 196608) ∧ ¬ (196608 < 131072) := by
+  refine ⟨Or.inl ?_, ?_⟩ <;> norm_num
+
+/-- **OpEnvelope-level non-vacuity.** For ANY real `Valid_ArithMul` row whose
+    seven carry columns equal the realistic `196608`, the FAITHFUL
+    `ArithMulSignedCarryRangesAt` predicate (the exact carry-range slot the
+    rewired `equiv_MULHU` / `OpEnvelope.mulhu` arm now requires) HOLDS, while
+    the OLD tight per-carry bound `< 131072` FAILS for the same row. -/
+example (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (hcy : v.cy_0 r = 196608 ∧ v.cy_1 r = 196608 ∧ v.cy_2 r = 196608
+         ∧ v.cy_3 r = 196608 ∧ v.cy_4 r = 196608 ∧ v.cy_5 r = 196608
+         ∧ v.cy_6 r = 196608) :
+    ArithMulSignedCarryRangesAt v r ∧ ¬ ((v.cy_0 r).val < 131072) := by
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6⟩ := hcy
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · left; rw [h0]; decide
+  · left; rw [h1]; decide
+  · left; rw [h2]; decide
+  · left; rw [h3]; decide
+  · left; rw [h4]; decide
+  · left; rw [h5]; decide
+  · left; rw [h6]; decide
+  · rw [h0]; decide
+
+/-- Same non-vacuity probe for the DIV/REM Euclidean family
+    (`equiv_DIVU` / `equiv_REMU` and W siblings). -/
+example (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (hcy : v.cy_0 r = 196608 ∧ v.cy_1 r = 196608 ∧ v.cy_2 r = 196608
+         ∧ v.cy_3 r = 196608 ∧ v.cy_4 r = 196608 ∧ v.cy_5 r = 196608
+         ∧ v.cy_6 r = 196608) :
+    ArithDivSignedCarryRangesAt v r ∧ ¬ ((v.cy_0 r).val < 131072) := by
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6⟩ := hcy
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · left; rw [h0]; decide
+  · left; rw [h1]; decide
+  · left; rw [h2]; decide
+  · left; rw [h3]; decide
+  · left; rw [h4]; decide
+  · left; rw [h5]; decide
+  · left; rw [h6]; decide
+  · rw [h0]; decide
 
 end ZiskFv.EquivCore.Bridge.Arith

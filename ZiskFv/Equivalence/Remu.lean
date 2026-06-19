@@ -47,7 +47,7 @@ theorem equiv_REMU
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : remu_input.r1_val.toNat

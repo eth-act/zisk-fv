@@ -77,7 +77,7 @@ lemma equiv_DIVUW_of_table
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     -- Pass-through caller burdens (not class #6b — bus encoding /
@@ -162,7 +162,7 @@ lemma equiv_DIVUW
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     -- Pass-through caller burdens (not class #6b — bus encoding /

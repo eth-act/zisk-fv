@@ -72,28 +72,10 @@ theorem unsigned_carry_step_nat
     (hc : c.val < 65536)
     (h_N : N < 64424509440)
     (h_sgn : cy.val < 983041 ∨ GL_prime - 983040 ≤ cy.val) :
-    cy.val < 983041 := by
-  have key : ((N : ℕ) : FGL) = ((c.val + cy.val * 65536 : ℕ) : FGL) := by
-    rw [h_eq]; push_cast; ring
-  have key2 := congrArg Fin.val key
-  rw [Fin.val_natCast, Fin.val_natCast] at key2
-  rw [Nat.mod_eq_of_lt (by omega : N < GL_prime)] at key2
-  rcases h_sgn with h | h
-  · exact h
-  · exfalso
-    obtain ⟨k, hcy, hk1, hk2⟩ : ∃ k, cy.val = GL_prime - k ∧ 1 ≤ k ∧ k ≤ 983040 := by
-      refine ⟨GL_prime - cy.val, ?_, ?_, ?_⟩ <;> omega
-    have hkmul : k * 65536 ≤ 983040 * 65536 := Nat.mul_le_mul_right 65536 hk2
-    have hkle : k ≤ GL_prime := by omega
-    have hpk : k * 65536 ≤ GL_prime * 65536 := Nat.mul_le_mul_right 65536 hkle
-    have hkmul1 : 65536 ≤ k * 65536 := by
-      calc 65536 = 1 * 65536 := by ring
-        _ ≤ k * 65536 := Nat.mul_le_mul_right 65536 hk1
-    have hr_eq : c.val + cy.val * 65536 = 65535 * GL_prime + (GL_prime + c.val - k * 65536) := by
-      rw [hcy, Nat.sub_mul]; omega
-    have hr_lt : GL_prime + c.val - k * 65536 < GL_prime := by omega
-    rw [hr_eq, Nat.mul_add_mod', Nat.mod_eq_of_lt hr_lt] at key2
-    omega
+    cy.val < 983041 :=
+  -- Now a thin re-export of the shared Bridge lemma (single proof source);
+  -- the sibling DIVU/REMU/DIVUW/REMUW constructions reference this name.
+  ZiskFv.EquivCore.Bridge.Arith.unsigned_carry_step_nat N c cy h_eq hc h_N h_sgn
 
 /-! ### Loose-bound FGL → ℕ chunk lifts (carry bound `< 983041`)
 

@@ -1963,8 +1963,10 @@ inductive OpEnvelope
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    -- FAITHFUL signed-carry witness (`< 983041 ∨ ·`): balance-constructible,
+    -- replaces the vacuous tight `< 2^17` UnsignedCarryRangeWitness.
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
     (h_rs1_value : mulhu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
           (v.a_2 r_a).val (v.a_3 r_a).val)
@@ -2074,7 +2076,7 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : divu_input.r1_val.toNat
@@ -2146,7 +2148,7 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
@@ -2209,7 +2211,7 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : remu_input.r1_val.toNat
@@ -2281,7 +2283,7 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
