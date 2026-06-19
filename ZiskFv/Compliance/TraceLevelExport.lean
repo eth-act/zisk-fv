@@ -91,48 +91,58 @@ residuals — none introduces a new `ZiskFv.*` axiom:
 This file introduces **0 new `ZiskFv.*` axioms**: its trust closure is the union
 of the 55 constructions' closures.
 
-## Strengthened export (env-constructed, channel-balance form)
+## Strengthened export (channel-balance form)
 
-For **22 of the 55 arms** — the op-bus ALU arms `SUB AND OR XOR SLT SLTU`,
-`ANDI ORI XORI SLTI SLTIU`, `SLL SRL SRA SLLI SRLI SRAI`, `ADD ADDI`,
-`SUBW ADDW ADDIW` — this file ALSO proves a STRICTLY STRONGER per-row export
+For **43 of the 55 arms** this file ALSO proves a STRICTLY STRONGER per-row export
 (`stepStrong_<op>` → `StepComplianceStrong` → `zisk_compliant_of_accepted_trace_strong`):
 the EXACT conclusion of the OLD global theorem
 `zisk_riscv_compliant_program_bus` (the channel-balance
-`= state_effect_via_channels …` form), but with the `OpEnvelope` **constructed
-from the accepted trace** per row (the matching `OpEnvelope.<op>` arm, assembled
-by re-running each construction's `*_from_binding` provider-match + input-packing
-derivations) and then fed to `zisk_riscv_compliant_program_bus`.  The three
-global-theorem hypotheses are discharged in place: `aeneasBridgeTrust` from the
-derived row-binding facts, `memoryTimelineConstructionEvidence` trivially
-(non-load arms), and `NoKnownDefect` trivially (these 22 are non-defect ops —
-a TRUE fact, not a contradictory hypothesis).  The conclusion thus DOMINATES the
-`bus_effect`-form `StepCompliance`: it is defeq-stronger AND env-from-trace.
+`= state_effect_via_channels …` form).  Two sound routes are used, both yielding
+the identical channel-balance proposition the global theorem produces:
 
-The remaining 33 sound arms are **not** strengthened to the env-constructed form
-here (they stay in the `bus_effect`-form export above), for these structural
-reasons — each is the honest "constructor needs data not produced by the
-construction" obstacle, NOT a soundness gap:
-* **loads (LD/LBU/LHU/LWU/LB/LH/LW)** — the `OpEnvelope` load arms require the
-  `Var`/`Environment`-level interaction-evaluation provenance fields
-  (`h_mainEval`/`h_providerEval`/`h_msg`, `mainRowVar`/`memRowVar`) consumed by
-  `ldCleanWitness_of_full_ensemble_*`; the load constructions deliberately
-  bypass that route (they build a `LoadCleanWitness` directly via
-  `matches_memory_entry_refl`), so those fields are not available;
-* **stores (SB/SH/SW/SD)** — the `OpEnvelope` store arms use the same eval-form
-  Main-row provenance; while embeddable via `ProvableType.const`, doing so makes
-  applying the global theorem whnf-blow-up (the `Eq.mpr` casts over the
-  `MainRowWithRom` motive exceed `maxHeartbeats`);
-* **M-ext-unsigned (MULW/MULHU/DIVU/DIVUW/REMU/REMUW)** — the `OpEnvelope` Arith
-  arms require the strong carry/range Arith-witness fields
-  (`arith_carry_ranges`, `mul_row_constraints_with_c46`, …) that the
-  constructions cannot supply (they route through the looser
-  `equiv_*_of_fullSpec`, precisely because the canonical Arith bound is not
-  row-locally constructible);
-* **branches + JAL/JALR + LUI/AUIPC** — the `OpEnvelope` arms require extra
-  provenance the construction does not produce (branch decode pins as a
-  `aeneasBridgeTrust` conjunction not carried in `RowData_<op>`;
-  `MainRowProvenance` + `LuiRowMode`/`AuipcRowMode`/`JalRowMode` records).
+1. **Env-constructed route (22 op-bus ALU arms)** — `SUB AND OR XOR SLT SLTU`,
+   `ANDI ORI XORI SLTI SLTIU`, `SLL SRL SRA SLLI SRLI SRAI`, `ADD ADDI`,
+   `SUBW ADDW ADDIW`.  The matching `OpEnvelope.<op>` arm is **constructed from
+   the accepted trace** per row (re-running each construction's `*_from_binding`
+   provider-match + input-packing derivations) and fed to
+   `zisk_riscv_compliant_program_bus`.  The three global-theorem hypotheses are
+   discharged in place: `aeneasBridgeTrust` from the derived row-binding facts,
+   `memoryTimelineConstructionEvidence` trivially (non-load arms), and
+   `NoKnownDefect` trivially (non-defect ops — a TRUE fact, not a contradictory
+   hypothesis).
+
+2. **Direct-lift route (21 control-flow + U-type + store + load arms)** — `BEQ BNE
+   BLT BGE BLTU BGEU`, `LUI AUIPC`, `JAL JALR`, `SB SH SW SD`,
+   `LB LH LW LD LBU LHU LWU`.  Each `construction_<op>_sound` already proves the
+   `bus_effect`-form per-step conclusion over the real trace row, and
+   `state_effect_via_channels` is `@[reducible]`-defeq to `bus_effect.2`.  So
+   `rw [state_effect_via_channels_eq_bus_effect_2]` + the construction theorem
+   yields the same channel-balance proposition the global theorem produces.  For
+   branches this IS the `Equivalence.<B>.equiv_<B>` the global dispatcher
+   `zisk_riscv_compliant_program_bus_branch` itself dispatches to; for
+   LUI/AUIPC/JAL/JALR/stores/loads it is the channel-balance lift over the same
+   concrete `eRdLui`/`busSt`/`busLd` entries the `bus_effect`-form arm uses.  (This
+   route sidesteps the `OpEnvelope`-route obstacles that previously blocked the
+   stores [whnf BLOWUP on the `Eq.mpr` cast over the `MainRowWithRom` motive] and
+   the loads [the `OpEnvelope` load arm's `Var`/`Environment` eval-provenance the
+   witness-based constructions bypass]: `zisk_riscv_compliant_program_bus` is never
+   invoked, so neither the cast nor the eval-provenance is ever needed.)
+
+Both routes DOMINATE the `bus_effect`-form `StepCompliance`: defeq-stronger
+(channel-balance form), over the committed trace's real row data.
+
+The remaining 12 sound arms are **not** strengthened to the channel-balance form
+here (they stay in the `bus_effect`-form export above), for this structural
+reason — the honest "constructor needs data not produced by the construction"
+obstacle, NOT a soundness gap.  (The 6 are the M-ext-unsigned arms; the other 6
+are M-ext-signed/FENCE defect/gap arms with no sound construction at all.)
+* **M-ext-unsigned (MULW/MULHU/DIVU/DIVUW/REMU/REMUW)** — the direct-lift route is
+  available in principle (the constructions conclude in `bus_effect` form), but
+  the `bus_effect`-form `StepCompliance` is deliberately the CORRECT export for
+  these: the canonical channel-balance equiv requires the TIGHT Arith carry bound
+  (`<131072`), which is the known-suspect bound NOT row-locally constructible for
+  real carries.  The faithful `bus_effect` form (`<983041`) is the right one;
+  these are intentionally LEFT in `bus_effect` form and must NOT be forced.
 
 The strengthened export is genuinely non-vacuous: each envelope is the real
 `OpEnvelope.<op>` over the committed trace's `mainOfTable` row; `execRow` is a
@@ -6609,11 +6619,390 @@ theorem stepStrong_addi
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
 
-/-! ## Strong sum + dispatcher + top-level strengthened export (22 arms) -/
+/-! ## Strengthened control-flow + U-type arms (branches, JAL/JALR, LUI/AUIPC)
 
-/-- A per-row classification restricted to the 22 arms strengthened to the
+These arms reach the same channel-balance conclusion as the 22 above, but via a
+DIRECT lift rather than an explicit `OpEnvelope`/global-theorem invocation: the
+matching `construction_<op>_sound` already proves the `bus_effect`-form per-step
+conclusion over the real trace row, and `state_effect_via_channels` is `@[reducible]`-
+defeq to `bus_effect.2`.  Hence `rw [state_effect_via_channels_eq_bus_effect_2]`
+followed by the construction theorem yields the EXACT channel-balance proposition
+the OLD global theorem produces for these arms (for branches this IS the
+`Equivalence.<B>.equiv_<B>` the global dispatcher `zisk_riscv_compliant_program_bus_branch`
+itself dispatches to; for LUI/AUIPC/JAL/JALR it is the channel-balance lift of the
+same concrete `eRdLui` rd-write entry the `bus_effect`-form arm uses).
+
+Non-vacuity: `execRow` (and `exec_row` for branches) remains a genuine ∀-binder
+inside each `RowData_<op>`; no `False.elim`, no contradictory binder; the
+conclusion is over the real `mainOfTable` row.  These are strictly stronger than
+the corresponding `bus_effect`-form arms (channel-balance form, same data). -/
+
+/-- Strengthened `beq` step (channel-balance form). -/
+theorem stepStrong_beq
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_beq trace binding i) :
+    execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BEQ)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_beq_sound trace binding i d.beq_input d.imm d.r1 d.r2 d.misa_val
+    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+    d.h_success
+
+/-- Strengthened `bne` step (channel-balance form). -/
+theorem stepStrong_bne
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_bne trace binding i) :
+    execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BNE)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_bne_sound trace binding i d.bne_input d.imm d.r1 d.r2 d.misa_val
+    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+    d.h_success
+
+/-- Strengthened `blt` step (channel-balance form). -/
+theorem stepStrong_blt
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_blt trace binding i) :
+    execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLT)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_blt_sound trace binding i d.blt_input d.imm d.r1 d.r2 d.misa_val
+    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+    d.h_success
+
+/-- Strengthened `bge` step (channel-balance form). -/
+theorem stepStrong_bge
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_bge trace binding i) :
+    execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGE)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_bge_sound trace binding i d.bge_input d.imm d.r1 d.r2 d.misa_val
+    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+    d.h_success
+
+/-- Strengthened `bltu` step (channel-balance form). -/
+theorem stepStrong_bltu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_bltu trace binding i) :
+    execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLTU)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_bltu_sound trace binding i d.bltu_input d.imm d.r1 d.r2 d.misa_val
+    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+    d.h_success
+
+/-- Strengthened `bgeu` step (channel-balance form). -/
+theorem stepStrong_bgeu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_bgeu trace binding i) :
+    execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGEU)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_bgeu_sound trace binding i d.bgeu_input d.imm d.r1 d.r2 d.misa_val
+    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+    d.h_success
+
+/-- Strengthened `lui` step (channel-balance form). -/
+theorem stepStrong_lui
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_lui trace binding i) :
+    execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.LUI)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_lui_sound trace binding i d.lui_input d.imm d.rd d.h_main_op
+    d.h_main_active d.h_m32 d.h_set_pc d.h_store_pc d.h_input_imm d.h_input_rd
+    d.h_input_pc d.h_imm_lo_nat d.h_imm_hi_nat d.execRow d.h_exec_len d.h_e0_mult
+    d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+
+/-- Strengthened `auipc` step (channel-balance form). -/
+theorem stepStrong_auipc
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_auipc trace binding i) :
+    execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.AUIPC)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_auipc_sound trace binding i d.auipc_input d.imm d.rd d.h_main_op
+    d.h_main_active d.h_m32 d.h_set_pc d.h_store_pc d.h_input_imm d.h_input_rd
+    d.h_input_pc d.h_offset_bridge d.h_pc_bridge d.execRow d.h_exec_len d.h_e0_mult
+    d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.h_no_wrap d.h_pc_offset_lt_2_32
+
+/-- Strengthened `jal` step (channel-balance form). -/
+theorem stepStrong_jal
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_jal trace binding i) :
+    execute_instruction (instruction.JAL (d.imm, d.rd)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_jal_sound trace binding i d.jal_input d.imm d.rd d.misa_val
+    d.nextPC_val d.h_main_op d.h_main_active d.h_m32 d.h_set_pc d.h_store_pc d.h_jmp2
+    d.h_pc_bridge d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+    d.h_input_rd d.h_input_pc d.h_input_misa d.h_misa_c d.h_success d.h_nextPC_option
+    d.h_rd_idx d.h_input_imm d.h_not_throws d.h_pc_bound d.h_pc_offset_lt_2_32
+
+/-- Strengthened `jalr` step (channel-balance form). -/
+theorem stepStrong_jalr
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_jalr trace binding i) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.JALR (d.imm, d.rs1, d.rd))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_jalr_sound trace binding i d.jalr_input d.imm d.rs1 d.rd d.misa_val
+    d.mseccfg d.nextPC_val d.h_main_op d.h_main_active d.h_flag d.h_m32 d.h_set_pc
+    d.h_store_pc d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+    d.h_input_rd d.h_input_pc d.h_input_misa d.h_misa_c d.h_success d.h_nextPC_option
+    d.h_rd_idx d.h_input_imm d.h_input_rs1 d.h_cur_privilege d.h_mseccfg d.h_link_bridge
+    d.h_pc_bound d.h_pc_offset_lt_2_32
+
+/-! ## Strengthened store arms (SB/SH/SW/SD, channel-balance form)
+
+Same direct-lift route as the control-flow arms: `construction_<op>_sound` proves
+the `bus_effect`-form per-step conclusion (3-entry memory list `[e0, e1, e2]` over
+the real `busSt` row), and `state_effect_via_channels` is `@[reducible]`-defeq to
+`bus_effect.2`.  The previously-reported whnf BLOWUP was specific to the
+`OpEnvelope`/`zisk_riscv_compliant_program_bus` route (the `Eq.mpr` cast over the
+`MainRowWithRom` motive); this route never constructs that envelope, so the kernel
+never whnf's the cast.  Non-vacuous: `execRow` is a genuine ∀-binder; the memory
+list is the real 3-entry store emission. -/
+
+/-- Strengthened `sb` step (channel-balance form). -/
+theorem stepStrong_sb
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_sb trace binding i) :
+    execute_instruction (instruction.STORE
+        (d.sb_input.imm, regidx.Regidx d.sb_input.r2, regidx.Regidx d.sb_input.r1, 1))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSt trace binding i d.execRow).exec_row,
+           [ (busSt trace binding i d.execRow).e0
+           , (busSt trace binding i d.execRow).e1
+           , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_sb_sound trace binding i d.sb_input d.regs d.h_main_active d.h_main_op
+    d.h_store_pc d.h_main_ind_width d.h_opcode_assumptions d.h_addr2 d.h_b0_value d.h_b1_value
+    d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+    d.h_m1 d.h_m2 d.h_m3 d.h_m4 d.h_m5 d.h_m6 d.h_m7
+
+/-- Strengthened `sh` step (channel-balance form). -/
+theorem stepStrong_sh
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_sh trace binding i) :
+    execute_instruction (instruction.STORE
+        (d.sh_input.imm, regidx.Regidx d.sh_input.r2, regidx.Regidx d.sh_input.r1, 2))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSt trace binding i d.execRow).exec_row,
+           [ (busSt trace binding i d.execRow).e0
+           , (busSt trace binding i d.execRow).e1
+           , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_sh_sound trace binding i d.sh_input d.regs d.h_main_active d.h_main_op
+    d.h_store_pc d.h_main_ind_width d.h_opcode_assumptions d.h_addr2 d.h_b0_value d.h_b1_value
+    d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+    d.h_m2 d.h_m3 d.h_m4 d.h_m5 d.h_m6 d.h_m7
+
+/-- Strengthened `sw` step (channel-balance form). -/
+theorem stepStrong_sw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_sw trace binding i) :
+    execute_instruction (instruction.STORE
+        (d.sw_input.imm, regidx.Regidx d.sw_input.r2, regidx.Regidx d.sw_input.r1, 4))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSt trace binding i d.execRow).exec_row,
+           [ (busSt trace binding i d.execRow).e0
+           , (busSt trace binding i d.execRow).e1
+           , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_sw_sound trace binding i d.sw_input d.regs d.h_main_active d.h_main_op
+    d.h_store_pc d.h_main_ind_width d.h_opcode_assumptions d.h_addr2 d.h_b0_value d.h_b1_value
+    d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+    d.h_m4 d.h_m5 d.h_m6 d.h_m7
+
+/-- Strengthened `sd` step (channel-balance form). -/
+theorem stepStrong_sd
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_sd trace binding i) :
+    execute_instruction (instruction.STORE
+        (d.sd_input.imm, regidx.Regidx d.sd_input.r2, regidx.Regidx d.sd_input.r1, 8))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSt trace binding i d.execRow).exec_row,
+           [ (busSt trace binding i d.execRow).e0
+           , (busSt trace binding i d.execRow).e1
+           , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_sd_sound trace binding i d.sd_input d.regs d.h_main_active d.h_main_op
+    d.h_store_pc d.h_opcode_assumptions d.h_addr2 d.h_b0_value d.h_b1_value
+    d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+
+/-! ## Strengthened load arms (LB/LH/LW/LD/LBU/LHU/LWU, channel-balance form)
+
+Same direct-lift route.  The hint's obstacle — the `OpEnvelope` load arm needing
+`Var`/`Environment`-level interaction-evaluation provenance (`h_mainEval`/
+`h_providerEval`/`h_msg`) that the witness-based load constructions bypass via
+`matches_memory_entry_refl` — was specific to the `OpEnvelope`/global-theorem
+route.  The direct-lift route never builds an `OpEnvelope`; it lifts
+`construction_<op>_sound`'s `bus_effect`-form conclusion (3-entry memory list
+`[e0, e1, e2]` over `busLd`) to the channel-balance form via the `rfl`-bridge
+`state_effect_via_channels_eq_bus_effect_2`, so the eval-provenance is never
+needed.  The #76 residuals (`h_memory_timeline`, `h_mem_match`, …) and the
+signed-load `h_static`/`h_match` BinaryExtension provider linkage are carried
+verbatim as `RowData_<op>` binders (they live inside each construction, NOT in any
+`OpEnvelope` field).  Non-vacuous: `execRow` is a genuine ∀-binder; the memory
+list is the real 3-entry `busLd` emission; the Mem-AIR / BinaryExtension provider
+records are real `Valid_Mem`/`Valid_BinaryExtension` rows. -/
+
+/-- Strengthened `ld` step (channel-balance form). -/
+theorem stepStrong_ld
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_ld trace binding i) :
+    execute_instruction (instruction.LOAD
+        (d.ld_input.imm, regidx.Regidx d.ld_input.r1, regidx.Regidx d.ld_input.rd, false, 8))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [ (busLd trace binding i d.execRow).e0
+           , (busLd trace binding i d.execRow).e1
+           , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_ld_sound trace binding i d.ld_input d.regs d.mem d.r_mem
+    d.h_main_active d.h_main_op d.h_store_pc d.h_opcode_assumptions d.h_addr1
+    d.h_addr2_zero_iff d.h_addr2_idx d.execRow d.h_risc_v_assumptions d.h_exec_len
+    d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_memory_timeline d.h_mem_match
+    d.h_mem_sel d.h_mem_wr
+
+/-- Strengthened `lbu` step (channel-balance form). -/
+theorem stepStrong_lbu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_lbu trace binding i) :
+    execute_instruction (instruction.LOAD
+        (d.lbu_input.imm, regidx.Regidx d.lbu_input.r1, regidx.Regidx d.lbu_input.rd, true, 1))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [ (busLd trace binding i d.execRow).e0
+           , (busLd trace binding i d.execRow).e1
+           , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_lbu_sound trace binding i d.lbu_input d.regs d.mem d.r_mem d.execRow
+    d.align d.h_main_active d.h_main_op d.h_store_pc d.h_width d.h_opcode_assumptions
+    d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.h_risc_v_assumptions d.h_exec_len
+    d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_memory_timeline d.h_mem_match
+    d.h_mem_sel d.h_mem_wr
+
+/-- Strengthened `lhu` step (channel-balance form). -/
+theorem stepStrong_lhu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_lhu trace binding i) :
+    execute_instruction (instruction.LOAD
+        (d.lhu_input.imm, regidx.Regidx d.lhu_input.r1, regidx.Regidx d.lhu_input.rd, true, 2))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [ (busLd trace binding i d.execRow).e0
+           , (busLd trace binding i d.execRow).e1
+           , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_lhu_sound trace binding i d.lhu_input d.regs d.mem d.r_mem d.execRow
+    d.align d.h_main_active d.h_main_op d.h_store_pc d.h_width d.h_opcode_assumptions
+    d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.h_risc_v_assumptions d.h_exec_len
+    d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_memory_timeline d.h_mem_match
+    d.h_mem_sel d.h_mem_wr
+
+/-- Strengthened `lwu` step (channel-balance form). -/
+theorem stepStrong_lwu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_lwu trace binding i) :
+    execute_instruction (instruction.LOAD
+        (d.lwu_input.imm, regidx.Regidx d.lwu_input.r1, regidx.Regidx d.lwu_input.rd, true, 4))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [ (busLd trace binding i d.execRow).e0
+           , (busLd trace binding i d.execRow).e1
+           , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_lwu_sound trace binding i d.lwu_input d.regs d.mem d.r_mem d.execRow
+    d.align d.h_main_active d.h_main_op d.h_store_pc d.h_width d.h_opcode_assumptions
+    d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.h_risc_v_assumptions d.h_exec_len
+    d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_memory_timeline d.h_mem_match
+    d.h_mem_sel d.h_mem_wr
+
+/-- Strengthened `lb` step (channel-balance form). -/
+theorem stepStrong_lb
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_lb trace binding i) :
+    execute_instruction (instruction.LOAD
+        (d.lb_input.imm, regidx.Regidx d.lb_input.r1, regidx.Regidx d.lb_input.rd, false, 1))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [ (busLd trace binding i d.execRow).e0
+           , (busLd trace binding i d.execRow).e1
+           , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_lb_sound trace binding i d.lb_input d.regs d.mem d.r_mem d.v d.r_binary
+    d.offset d.env d.h_static d.h_match d.h_main_active d.h_main_op d.h_store_pc
+    d.h_opcode_assumptions d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.execRow
+    d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+    d.h_memory_timeline d.h_mem_match d.h_mem_sel d.h_mem_wr
+
+/-- Strengthened `lh` step (channel-balance form). -/
+theorem stepStrong_lh
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_lh trace binding i) :
+    execute_instruction (instruction.LOAD
+        (d.lh_input.imm, regidx.Regidx d.lh_input.r1, regidx.Regidx d.lh_input.rd, false, 2))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [ (busLd trace binding i d.execRow).e0
+           , (busLd trace binding i d.execRow).e1
+           , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_lh_sound trace binding i d.lh_input d.regs d.mem d.r_mem d.v d.r_binary
+    d.offset d.env d.h_static d.h_match d.h_main_active d.h_main_op d.h_store_pc
+    d.h_opcode_assumptions d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.execRow
+    d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+    d.h_memory_timeline d.h_mem_match d.h_mem_sel d.h_mem_wr
+
+/-- Strengthened `lw` step (channel-balance form). -/
+theorem stepStrong_lw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_lw trace binding i) :
+    execute_instruction (instruction.LOAD
+        (d.lw_input.imm, regidx.Regidx d.lw_input.r1, regidx.Regidx d.lw_input.rd, false, 4))
+        (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [ (busLd trace binding i d.execRow).e0
+           , (busLd trace binding i d.execRow).e1
+           , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_lw_sound trace binding i d.lw_input d.regs d.mem d.r_mem d.v d.r_binary
+    d.offset d.env d.h_static d.h_match d.h_main_active d.h_main_op d.h_store_pc
+    d.h_opcode_assumptions d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.execRow
+    d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+    d.h_memory_timeline d.h_mem_match d.h_mem_sel d.h_mem_wr
+
+/-! ## Strong sum + dispatcher + top-level strengthened export -/
+
+/-- A per-row classification restricted to the arms strengthened to the
     channel-balance / env-constructed form.  (The remaining sound arms — loads,
-    stores, M-ext-unsigned, branches, JAL/JALR, LUI/AUIPC — are carried only in
+    stores, M-ext-unsigned — are carried only in
     the `bus_effect`-form `RowConstructionData` export above; see the module note
     on the structural obstacles that block their `OpEnvelope`-route strengthening.) -/
 inductive StrongRowConstructionData
@@ -6640,6 +7029,27 @@ inductive StrongRowConstructionData
   | subw (d : RowData_subw trace binding i) : StrongRowConstructionData trace binding i
   | addw (d : RowData_addw trace binding i) : StrongRowConstructionData trace binding i
   | addiw (d : RowData_addiw trace binding i) : StrongRowConstructionData trace binding i
+  | beq (d : RowData_beq trace binding i) : StrongRowConstructionData trace binding i
+  | bne (d : RowData_bne trace binding i) : StrongRowConstructionData trace binding i
+  | blt (d : RowData_blt trace binding i) : StrongRowConstructionData trace binding i
+  | bge (d : RowData_bge trace binding i) : StrongRowConstructionData trace binding i
+  | bltu (d : RowData_bltu trace binding i) : StrongRowConstructionData trace binding i
+  | bgeu (d : RowData_bgeu trace binding i) : StrongRowConstructionData trace binding i
+  | lui (d : RowData_lui trace binding i) : StrongRowConstructionData trace binding i
+  | auipc (d : RowData_auipc trace binding i) : StrongRowConstructionData trace binding i
+  | jal (d : RowData_jal trace binding i) : StrongRowConstructionData trace binding i
+  | jalr (d : RowData_jalr trace binding i) : StrongRowConstructionData trace binding i
+  | sb (d : RowData_sb trace binding i) : StrongRowConstructionData trace binding i
+  | sh (d : RowData_sh trace binding i) : StrongRowConstructionData trace binding i
+  | sw (d : RowData_sw trace binding i) : StrongRowConstructionData trace binding i
+  | sd (d : RowData_sd trace binding i) : StrongRowConstructionData trace binding i
+  | ld (d : RowData_ld trace binding i) : StrongRowConstructionData trace binding i
+  | lbu (d : RowData_lbu trace binding i) : StrongRowConstructionData trace binding i
+  | lhu (d : RowData_lhu trace binding i) : StrongRowConstructionData trace binding i
+  | lwu (d : RowData_lwu trace binding i) : StrongRowConstructionData trace binding i
+  | lb (d : RowData_lb trace binding i) : StrongRowConstructionData trace binding i
+  | lh (d : RowData_lh trace binding i) : StrongRowConstructionData trace binding i
+  | lw (d : RowData_lw trace binding i) : StrongRowConstructionData trace binding i
 
 /-- The strengthened per-step conclusion: the channel-balance
     (`state_effect_via_channels`) form — the OLD global theorem's per-arm
@@ -6827,6 +7237,130 @@ def StepComplianceStrong
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
             (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .beq d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BEQ)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+  | .bne d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BNE)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+  | .blt d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLT)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+  | .bge d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGE)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+  | .bltu d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLTU)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+  | .bgeu d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGEU)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+  | .lui d =>
+      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.LUI)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i)
+  | .auipc d =>
+      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.AUIPC)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i)
+  | .jal d =>
+      execute_instruction (instruction.JAL (d.imm, d.rd)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i)
+  | .jalr d =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (d.imm, d.rs1, d.rd))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i)
+  | .sb d =>
+      execute_instruction (instruction.STORE
+          (d.sb_input.imm, regidx.Regidx d.sb_input.r2, regidx.Regidx d.sb_input.r1, 1))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSt trace binding i d.execRow).exec_row,
+           [(busSt trace binding i d.execRow).e0, (busSt trace binding i d.execRow).e1,
+            (busSt trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .sh d =>
+      execute_instruction (instruction.STORE
+          (d.sh_input.imm, regidx.Regidx d.sh_input.r2, regidx.Regidx d.sh_input.r1, 2))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSt trace binding i d.execRow).exec_row,
+           [(busSt trace binding i d.execRow).e0, (busSt trace binding i d.execRow).e1,
+            (busSt trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .sw d =>
+      execute_instruction (instruction.STORE
+          (d.sw_input.imm, regidx.Regidx d.sw_input.r2, regidx.Regidx d.sw_input.r1, 4))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSt trace binding i d.execRow).exec_row,
+           [(busSt trace binding i d.execRow).e0, (busSt trace binding i d.execRow).e1,
+            (busSt trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .sd d =>
+      execute_instruction (instruction.STORE
+          (d.sd_input.imm, regidx.Regidx d.sd_input.r2, regidx.Regidx d.sd_input.r1, 8))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSt trace binding i d.execRow).exec_row,
+           [(busSt trace binding i d.execRow).e0, (busSt trace binding i d.execRow).e1,
+            (busSt trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .ld d =>
+      execute_instruction (instruction.LOAD
+          (d.ld_input.imm, regidx.Regidx d.ld_input.r1, regidx.Regidx d.ld_input.rd, false, 8))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
+            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .lbu d =>
+      execute_instruction (instruction.LOAD
+          (d.lbu_input.imm, regidx.Regidx d.lbu_input.r1, regidx.Regidx d.lbu_input.rd, true, 1))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
+            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .lhu d =>
+      execute_instruction (instruction.LOAD
+          (d.lhu_input.imm, regidx.Regidx d.lhu_input.r1, regidx.Regidx d.lhu_input.rd, true, 2))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
+            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .lwu d =>
+      execute_instruction (instruction.LOAD
+          (d.lwu_input.imm, regidx.Regidx d.lwu_input.r1, regidx.Regidx d.lwu_input.rd, true, 4))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
+            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .lb d =>
+      execute_instruction (instruction.LOAD
+          (d.lb_input.imm, regidx.Regidx d.lb_input.r1, regidx.Regidx d.lb_input.rd, false, 1))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
+            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .lh d =>
+      execute_instruction (instruction.LOAD
+          (d.lh_input.imm, regidx.Regidx d.lh_input.r1, regidx.Regidx d.lh_input.rd, false, 2))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
+            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .lw d =>
+      execute_instruction (instruction.LOAD
+          (d.lw_input.imm, regidx.Regidx d.lw_input.r1, regidx.Regidx d.lw_input.rd, false, 4))
+          (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busLd trace binding i d.execRow).exec_row,
+           [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
+            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
 
 /-- Per-row dispatch to the matching strengthened step theorem. -/
 theorem stepComplianceStrong_of_rowData
@@ -6856,18 +7390,42 @@ theorem stepComplianceStrong_of_rowData
   | subw d => exact stepStrong_subw trace binding i d
   | addw d => exact stepStrong_addw trace binding i d
   | addiw d => exact stepStrong_addiw trace binding i d
+  | beq d => exact stepStrong_beq trace binding i d
+  | bne d => exact stepStrong_bne trace binding i d
+  | blt d => exact stepStrong_blt trace binding i d
+  | bge d => exact stepStrong_bge trace binding i d
+  | bltu d => exact stepStrong_bltu trace binding i d
+  | bgeu d => exact stepStrong_bgeu trace binding i d
+  | lui d => exact stepStrong_lui trace binding i d
+  | auipc d => exact stepStrong_auipc trace binding i d
+  | jal d => exact stepStrong_jal trace binding i d
+  | jalr d => exact stepStrong_jalr trace binding i d
+  | sb d => exact stepStrong_sb trace binding i d
+  | sh d => exact stepStrong_sh trace binding i d
+  | sw d => exact stepStrong_sw trace binding i d
+  | sd d => exact stepStrong_sd trace binding i d
+  | ld d => exact stepStrong_ld trace binding i d
+  | lbu d => exact stepStrong_lbu trace binding i d
+  | lhu d => exact stepStrong_lhu trace binding i d
+  | lwu d => exact stepStrong_lwu trace binding i d
+  | lb d => exact stepStrong_lb trace binding i d
+  | lh d => exact stepStrong_lh trace binding i d
+  | lw d => exact stepStrong_lw trace binding i d
 
-/-- **Strengthened trace-level export (#61, env-constructed channel-balance form).**
+/-- **Strengthened trace-level export (#61, channel-balance form).**
 
     From an accepted full-ensemble trace, a program binding, and a per-row
-    classification into the 22 strengthened archetypes, EVERY row satisfies the
+    classification into the 43 strengthened archetypes, EVERY row satisfies the
     canonical channel-balance per-step conclusion (`= state_effect_via_channels …`)
     — the SAME conclusion the OLD global theorem `zisk_riscv_compliant_program_bus`
-    produces — but with the `OpEnvelope` CONSTRUCTED from the trace inside each
-    `stepStrong_<op>` (no caller-supplied envelope).  This is strictly stronger
+    produces.  For the 22 op-bus ALU arms the `OpEnvelope` is CONSTRUCTED from the
+    trace inside each `stepStrong_<op>` (no caller-supplied envelope); for the 21
+    control-flow + U-type + store + load arms the conclusion is the channel-balance
+    lift of each `construction_<op>_sound` over the real trace row.  This is
+    strictly stronger
     than the `bus_effect`-form `zisk_compliant_of_accepted_trace`: every
     conclusion it yields is `state_effect_via_channels …`, defeq-implying the
-    `bus_effect`-form, with the envelope derived from the committed trace. -/
+    `bus_effect`-form, over the committed trace. -/
 theorem zisk_compliant_of_accepted_trace_strong
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)

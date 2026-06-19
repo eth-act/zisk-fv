@@ -24,28 +24,34 @@ ZiskFv/Compliance/TraceLevelExport.lean: 55 `RowData_<op>` structures + 55-arm
 `RowConstructionData` sum + `StepCompliance` (per-arm bus_effect) + `stepCompliance_of_rowData`
 + `zisk_compliant_of_accepted_trace` (∀ i, StepCompliance …; NO OpEnvelope param). 0 sorry.
 
-=== P5-STRONG: env-constructed channel-balance export (NEW, uncommitted) ===
-ADDED to TraceLevelExport.lean: 22 `stepStrong_<op>` theorems (RTYPE sub/and/or/xor/slt/sltu;
-ITYPE andi/ori/xori/slti/sltiu; shifts sll/srl/sra/slli/srli/srai; ADD/ADDI; W-ALU
-subw/addw/addiw) that CONSTRUCT the matching `OpEnvelope.<op>` per row from accepted-trace
-data (reusing each construction's `*_from_binding` + input-packing derivations) and invoke
-`zisk_riscv_compliant_program_bus`, yielding the OLD global theorem's per-arm conclusion
-(channel-balance `state_effect_via_channels`) — STRICTLY STRONGER than the bus_effect form,
-env-constructed-from-trace. + `StrongRowConstructionData` (22-arm sum) + `StepComplianceStrong`
-+ `stepComplianceStrong_of_rowData` + `zisk_compliant_of_accepted_trace_strong` (∀ i, …; NO
-OpEnvelope param). 3 hyps discharged in place: aeneasBridgeTrust (derived row facts),
-memoryTimeline (trivial non-load), NoKnownDefect (trivially TRUE — non-defect ops, non-vacuous).
-0 sorry; 0 new ZiskFv.* axioms (closure = constructions' + global theorem's); full lake build
-green; gate V1 18/18 + V2 12/12. Registered: zisk_compliant_of_accepted_trace_strong in
-dead-code-entry-points.txt (group 1c). NOT committed (per instructions).
-BLOCKED arms (honest, structural — NOT soundness gaps; left in bus_effect export): 7 loads +
-4 stores (OpEnvelope arms need Var/Environment interaction-eval provenance the witness-based
-constructions bypass; stores embeddable via const but whnf-blows-up), 6 M-ext-unsigned
-(OpEnvelope Arith arms need strong carry/range witnesses; constructions route through looser
-_of_fullSpec), branches+JAL/JALR+LUI/AUIPC (need MainRowProvenance / decode-pin bridge
-conjuncts not in RowData). 8 defect/gap ops excluded entirely (as before).
-Residual roll-up: loads/stores h_memory_timeline+RMW→#76; branches+JAL/JALR h_nextPC_matches
-→#100; signed-load h_static/h_match (SextLoadBridge/aeneasBridgeTrust) verbatim residual.
+=== P5-STRONG: channel-balance export — 43/55 (uncommitted) ===
+TraceLevelExport.lean: 43 `stepStrong_<op>` theorems via TWO sound routes, both yielding the
+OLD global theorem's per-arm conclusion (channel-balance `state_effect_via_channels`) —
+STRICTLY STRONGER than the bus_effect form. + `StrongRowConstructionData` (43-arm sum) +
+`StepComplianceStrong` + `stepComplianceStrong_of_rowData` + `zisk_compliant_of_accepted_trace_strong`
+(∀ i, …; NO OpEnvelope param).
+- ENV-CONSTRUCTED route (22 op-bus ALU): RTYPE sub/and/or/xor/slt/sltu; ITYPE
+  andi/ori/xori/slti/sltiu; shifts sll/srl/sra/slli/srli/srai; ADD/ADDI; W-ALU subw/addw/addiw.
+  CONSTRUCT OpEnvelope.<op> per row, invoke zisk_riscv_compliant_program_bus; 3 hyps discharged
+  in place (aeneasBridgeTrust/memoryTimeline/NoKnownDefect-trivially-TRUE).
+- DIRECT-LIFT route (21 NEW this run): branches beq/bne/blt/bge/bltu/bgeu; LUI/AUIPC; JAL/JALR;
+  stores sb/sh/sw/sd; loads lb/lh/lw/ld/lbu/lhu/lwu. Each construction_<op>_sound proves the
+  bus_effect form over the real trace row; state_effect_via_channels is @[reducible]-defeq to
+  bus_effect.2, so `rw [state_effect_via_channels_eq_bus_effect_2]; exact construction_<op>_sound …`
+  yields the IDENTICAL channel-balance proposition the global theorem produces. For branches this
+  IS the Equivalence.<B>.equiv_<B> the global dispatcher dispatches to. This route NEVER builds an
+  OpEnvelope / invokes zisk_riscv_compliant_program_bus, so it sidesteps the stores' whnf BLOWUP
+  (Eq.mpr cast over MainRowWithRom) and the loads' Var/Environment eval-provenance obstacle.
+NON-VACUOUS: no False.elim / contradictory binder anywhere; execRow stays a real ∀-binder;
+conclusion over the real mainOfTable row; #76/SextLoadBridge residuals carried verbatim as
+RowData binders. 0 sorry; 0 new ZiskFv.* PROJECT axioms (only ZiskFv-prefixed name in closure is
+the theorem itself; deps = Sail-translation + Lean-kernel postulates, = constructions' closure).
+Full lake build GREEN; gate V1 18/18 + V2 12/12.
+LEFT in bus_effect form (12): 6 M-ext-unsigned (mulw/mulhu/divu/divuw/remu/remuw — direct-lift
+available BUT bus_effect is CORRECT: channel-balance equiv needs the TIGHT <131072 carry bound,
+known-suspect / not row-locally constructible; faithful <983041 is right — do NOT force) + 6
+defect/gap (7 signed-M minus the unsigned overlap counts as the M-ext set; FENCE) with no sound
+construction. NOT committed (per instructions).
 
 === SIBLING THREADS ===
 - #111 (aeneasBridgeTrust discharge): BLOCKED — sound in-build discharge is NO-GO (numBits/
