@@ -6998,13 +6998,148 @@ theorem stepStrong_lw
     d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
     d.h_memory_timeline d.h_mem_match d.h_mem_sel d.h_mem_wr
 
+/-! ## Strengthened M-ext-unsigned arms (MULW/MULHU/DIVU/DIVUW/REMU/REMUW)
+
+Same DIRECT-LIFT route as the control-flow / store / load arms — NOT the
+`OpEnvelope`/`zisk_riscv_compliant_program_bus` route.  Each
+`construction_<op>_sound` already proves the `bus_effect`-form per-step
+conclusion (2-entry exec row + `[e0, e1, e2]` over the real `busSub` row) using
+the FAITHFUL loose Arith carry bound (`<983041`).  `state_effect_via_channels`
+is `@[reducible]`-defeq to `bus_effect.2`, so
+`rw [state_effect_via_channels_eq_bus_effect_2]` + the construction theorem
+yields the channel-balance proposition WITHOUT ever invoking the canonical
+`equiv_<op>` (whose tight `<131072` carry bound is row-locally suspect /
+unconstructible for real 4×4 carries).  This lift therefore NEVER touches that
+tight bound: it is the channel-balance lift of the same loose-bound construction
+already exported in `bus_effect` form by `RowConstructionData` / `StepCompliance`.
+
+Non-vacuity: `execRow` remains a genuine `∀`-binder inside each
+`RowData_<op>`; no `False.elim`, no contradictory binder; the conclusion is over
+the real `busSub` row.  These are strictly stronger than the corresponding
+`bus_effect`-form M-ext arms (channel-balance form, same data). -/
+
+/-- Strengthened `mulw` step (channel-balance form). -/
+theorem stepStrong_mulw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mulw trace binding i) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.MULW (d.r2, d.r1, d.rd))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_mulw_sound trace binding i d.mulw_input d.r1 d.r2 d.rd d.h_main_op
+    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.h_a23
+    d.h_b23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+
+/-- Strengthened `mulhu` step (channel-balance form). -/
+theorem stepStrong_mulhu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mulhu trace binding i) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (d.r2, d.r1, d.rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Unsigned
+             signed_rs2 := .Unsigned }))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_mulhu_sound trace binding i d.mulhu_input d.r1 d.r2 d.rd d.h_main_op
+    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+    d.h_rs1_value d.h_rs2_value
+
+/-- Strengthened `divu` step (channel-balance form). -/
+theorem stepStrong_divu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_divu trace binding i) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_divu_sound trace binding i d.divu_input d.r1 d.r2 d.rd d.h_main_op
+    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+    d.remainder_bound d.h_rs1_value d.h_rs2_value
+
+/-- Strengthened `divuw` step (channel-balance form). -/
+theorem stepStrong_divuw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_divuw trace binding i) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_divuw_sound trace binding i d.divuw_input d.r1 d.r2 d.rd d.h_main_op
+    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+    d.remainder_bound d.h_b23 d.h_c23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+
+/-- Strengthened `remu` step (channel-balance form). -/
+theorem stepStrong_remu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_remu trace binding i) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_remu_sound trace binding i d.remu_input d.r1 d.r2 d.rd d.h_main_op
+    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+    d.remainder_bound d.h_rs1_value d.h_rs2_value
+
+/-- Strengthened `remuw` step (channel-balance form). -/
+theorem stepStrong_remuw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_remuw trace binding i) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact construction_remuw_sound trace binding i d.remuw_input d.r1 d.r2 d.rd d.h_main_op
+    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+    d.remainder_bound d.h_b23 d.h_c23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+
 /-! ## Strong sum + dispatcher + top-level strengthened export -/
 
 /-- A per-row classification restricted to the arms strengthened to the
-    channel-balance / env-constructed form.  (The remaining sound arms — loads,
-    stores, M-ext-unsigned — are carried only in
-    the `bus_effect`-form `RowConstructionData` export above; see the module note
-    on the structural obstacles that block their `OpEnvelope`-route strengthening.) -/
+    channel-balance / env-constructed form.  Covers all 49 non-defect-gated
+    constructible arms (the 22 op-bus ALU arms via the env-constructed route; the
+    27 control-flow / U-type / store / load / M-ext-unsigned arms via the
+    direct-lift route).  The remaining 6 arms (signed M-ext minus the unsigned
+    overlap, plus FENCE) are defect/gap-gated — they have NO sound construction
+    and therefore NO arm here. -/
 inductive StrongRowConstructionData
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
   | sub (d : RowData_sub trace binding i) : StrongRowConstructionData trace binding i
@@ -7029,6 +7164,12 @@ inductive StrongRowConstructionData
   | subw (d : RowData_subw trace binding i) : StrongRowConstructionData trace binding i
   | addw (d : RowData_addw trace binding i) : StrongRowConstructionData trace binding i
   | addiw (d : RowData_addiw trace binding i) : StrongRowConstructionData trace binding i
+  | mulw (d : RowData_mulw trace binding i) : StrongRowConstructionData trace binding i
+  | mulhu (d : RowData_mulhu trace binding i) : StrongRowConstructionData trace binding i
+  | divu (d : RowData_divu trace binding i) : StrongRowConstructionData trace binding i
+  | divuw (d : RowData_divuw trace binding i) : StrongRowConstructionData trace binding i
+  | remu (d : RowData_remu trace binding i) : StrongRowConstructionData trace binding i
+  | remuw (d : RowData_remuw trace binding i) : StrongRowConstructionData trace binding i
   | beq (d : RowData_beq trace binding i) : StrongRowConstructionData trace binding i
   | bne (d : RowData_bne trace binding i) : StrongRowConstructionData trace binding i
   | blt (d : RowData_blt trace binding i) : StrongRowConstructionData trace binding i
@@ -7237,6 +7378,65 @@ def StepComplianceStrong
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
             (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .mulw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.MULW (d.r2, d.r1, d.rd))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .mulhu d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (d.r2, d.r1, d.rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Unsigned
+             signed_rs2 := .Unsigned }))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .divu d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .divuw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .remu d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .remuw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
   | .beq d =>
       execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BEQ)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
@@ -7390,6 +7590,12 @@ theorem stepComplianceStrong_of_rowData
   | subw d => exact stepStrong_subw trace binding i d
   | addw d => exact stepStrong_addw trace binding i d
   | addiw d => exact stepStrong_addiw trace binding i d
+  | mulw d => exact stepStrong_mulw trace binding i d
+  | mulhu d => exact stepStrong_mulhu trace binding i d
+  | divu d => exact stepStrong_divu trace binding i d
+  | divuw d => exact stepStrong_divuw trace binding i d
+  | remu d => exact stepStrong_remu trace binding i d
+  | remuw d => exact stepStrong_remuw trace binding i d
   | beq d => exact stepStrong_beq trace binding i d
   | bne d => exact stepStrong_bne trace binding i d
   | blt d => exact stepStrong_blt trace binding i d
@@ -7415,13 +7621,16 @@ theorem stepComplianceStrong_of_rowData
 /-- **Strengthened trace-level export (#61, channel-balance form).**
 
     From an accepted full-ensemble trace, a program binding, and a per-row
-    classification into the 43 strengthened archetypes, EVERY row satisfies the
+    classification into the 49 strengthened archetypes, EVERY row satisfies the
     canonical channel-balance per-step conclusion (`= state_effect_via_channels …`)
     — the SAME conclusion the OLD global theorem `zisk_riscv_compliant_program_bus`
     produces.  For the 22 op-bus ALU arms the `OpEnvelope` is CONSTRUCTED from the
-    trace inside each `stepStrong_<op>` (no caller-supplied envelope); for the 21
-    control-flow + U-type + store + load arms the conclusion is the channel-balance
-    lift of each `construction_<op>_sound` over the real trace row.  This is
+    trace inside each `stepStrong_<op>` (no caller-supplied envelope); for the 27
+    control-flow + U-type + store + load + M-ext-unsigned arms the conclusion is
+    the channel-balance lift of each `construction_<op>_sound` over the real trace
+    row.  The 6 M-ext-unsigned arms (MULW/MULHU/DIVU/DIVUW/REMU/REMUW) lift the
+    FAITHFUL loose-bound (`<983041`) construction, NEVER the canonical equiv's
+    tight (`<131072`) carry bound, so they are non-vacuous and sound.  This is
     strictly stronger
     than the `bus_effect`-form `zisk_compliant_of_accepted_trace`: every
     conclusion it yields is `state_effect_via_channels …`, defeq-implying the

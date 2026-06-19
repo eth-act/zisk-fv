@@ -24,7 +24,14 @@ ZiskFv/Compliance/TraceLevelExport.lean: 55 `RowData_<op>` structures + 55-arm
 `RowConstructionData` sum + `StepCompliance` (per-arm bus_effect) + `stepCompliance_of_rowData`
 + `zisk_compliant_of_accepted_trace` (∀ i, StepCompliance …; NO OpEnvelope param). 0 sorry.
 
-=== P5-STRONG: channel-balance export — 43/55 (uncommitted) ===
+=== P5-STRONG: channel-balance export — 49/55 (uncommitted) ===
+[UPDATE] +6 M-ext-unsigned arms (mulw/mulhu/divu/divuw/remu/remuw) added via DIRECT-LIFT:
+rw [state_effect_via_channels_eq_bus_effect_2]; exact construction_<op>_sound … — lifts the
+FAITHFUL loose-bound (<983041) construction, NEVER the canonical equiv tight (<131072) bound.
+Non-vacuous (execRow real ∀-binder; no False.elim). 0 new ZiskFv.* axioms. Full lake build GREEN.
+Gate V1 18/18 + V2 12/12. registered in StrongRowConstructionData/StepComplianceStrong/dispatcher.
+LEFT in bus_effect form (6): 6 defect/gap (7 signed-M minus unsigned overlap; FENCE). NOT committed.
+--- (prior note, now superseded by the line above) ---
 TraceLevelExport.lean: 43 `stepStrong_<op>` theorems via TWO sound routes, both yielding the
 OLD global theorem's per-arm conclusion (channel-balance `state_effect_via_channels`) —
 STRICTLY STRONGER than the bus_effect form. + `StrongRowConstructionData` (43-arm sum) +
