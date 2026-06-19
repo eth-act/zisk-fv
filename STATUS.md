@@ -1,8 +1,58 @@
-Active plan: docs/ai/plan/PLAN_ENDGAME_P4_MEMORY.md (#76 PR-76.5) +
+Active plan: docs/ai/plan/PLAN_ENDGAME_P4_MEMORY.md (#76 — PR-76.0 DONE/GO; PR-76.1 next) +
 docs/ai/research/RESEARCH_XCAP.md §3 (#103 deep refactor B→A→C→D…).
 Branch: p76-memory. Worktree: .worktrees/p76-memory.
 
-## Current focus: PR-76.5 STEP D (seg_last-gated REAL Mem AIR) — DONE, GREEN. GO.
+## PR-76.0 make-or-break Fold-B reduction — DONE, GREEN, GO (2026-06-19).
+
+New module ZiskFv/ZiskCircuit/MemTimeline/Spike.lean (additive; no canonical
+equiv_<OP> or baseline touched). The store-driven Fold-B reduction (PLAN §3/§5):
+DERIVED the byte-local stateBytesAtPrefix / MemoryTraceAgreement for a load from
+{store-fold replayAgreement_of_rowTraceCoherence} + {seed initialAgreement} +
+{prefixReadSound (PR#65)}, with the load state OPAQUE — modulo ONE explicit NAMED
+trace-coherence residual `RowTraceCoherence` (external trust, like channel-balance).
+Metric STRICTLY SHRANK: whole-SailState `MemoryPrefixStateAlignment` identity →
+per-row memory-only `RowTraceCoherence` (never constrains regs/PC/cycleCount).
+Non-degenerate witness (witness_nondegenerate / witness_memoryTraceAgreement):
+realistic store-then-read same-address segment, load state's regs AND cycleCount
+≠ initial (NOT the rfl/frozen floor); store step from the canonical write
+transition (replayMemoryAgreement_write_entry), not a hand-built {state with mem}.
+0 new ZiskFv.* axioms (kernel-only: propext/Classical.choice/Quot.sound). Full
+lake build GREEN (8693). V2 semantic ALL PASS; baselines byte-identical. V1
+substantive pass — only the PRE-EXISTING check-13 "spike"-wording hit on the
+parent's committed Spike/MultiRowSegmentSeam.lean remains (untouched). NOT committed.
+Next: PR-76.1 (per-STORE EventReplayStep from equiv_<store> for SB/SH/SW/SD +
+.mem-invariance for loads/non-mem, supplying RowTraceCoherence's per-row conjuncts).
+
+## SPIKE (2026-06-19): re-attempt #76 the OpenVM "channel-level from balance" way — NO-GO.
+
+Investigated whether deriving memory consistency from `trace.balanced` (the MemBus
+channel balance), OpenVM-template style (rising-bus + per-ptr quotient + single-balancer
+characterisation), gets FURTHER than the row-level route toward discharging
+`h_memory_timeline`. Conclusion: **NO-GO** — it does not reach a different layer.
+Findings (full report in the agent transcript):
+1. OpenVM's `memory_bus_consistency_per_ptr` (the channel-balance result) has ZERO
+   consumers in openvm-fv — it never binds the Sail-side load value. OpenVM's loads
+   take `state.mem[ptr]? = read_data` as a `bus_effect.1` premise, exactly like zisk's
+   `h_memory_timeline.memoryTraceAgreement`. So the template does NOT close the gap that
+   #76 is about.
+2. zisk ALREADY has the per-pointer "read = previous write at addr" result
+   (`MemoryBusRowsPrefixReadSound`, derived in FullEnsemble/Balance.lean:8353-8768) — the
+   exact analog of OpenVM's consistency theorem. It is `[✓ already derived]`, NOT the
+   residual (PLAN_ENDGAME_P4_MEMORY §1 line 41-42). Wiring it / re-deriving it from
+   balance buys nothing.
+3. The actual residual is `MemoryPrefixStateAlignment` / `stateBytesAtPrefix`
+   (Construction.lean:21-31): the load's *real Sail execution state* memory =
+   replay of the accepted prefix. That is a TRACE-COHERENCE premise (`stateAt(i+1) =
+   execute step_i (stateAt i)`); neither balance nor per-row Mem constraints supply it.
+   OpenVM doesn't close it either.
+4. Infrastructure: the OpenVM rising-bus engine (`rising_bus_with_single_balancer_
+   characterisation` + ~44 supporting lemmas, ~1100 lines) is ABSENT from ZiskFv and
+   the Clean Air framework, and sits on `LeanZKCircuit.Interactions` (a substrate zisk
+   does not use; Clean uses count-based `BalancedInteractions`). A port would be large
+   AND would only re-derive item (2), which is already in hand. No code landed (landing
+   would be non-shrinking scaffolding). Build warm + green (8148). 0 new ZiskFv.* axioms.
+
+## Prior focus: PR-76.5 STEP D (seg_last-gated REAL Mem AIR) — DONE, GREEN. GO.
 
 STEP D landed the `seg_last` (SEGMENT_LAST) selector into the REAL `MemRow`,
 gated the `memWithDualMemBus` seam emission by it (one live pull/push per
