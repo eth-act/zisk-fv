@@ -148,6 +148,7 @@ import ZiskFv.Compliance.ConstructionDivu
 import ZiskFv.Compliance.ConstructionDivuw
 import ZiskFv.Compliance.ConstructionRemu
 import ZiskFv.Compliance.ConstructionRemuw
+import ZiskFv.Compliance.ConstructionStore
 import ZiskFv.Compliance
 import ZiskFv.Completeness.Rv
 import ZiskFv.Completeness.Rv64im
