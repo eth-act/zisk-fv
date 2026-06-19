@@ -1766,3 +1766,729 @@ h_exec_len :: Eq (ZiskFv.Compliance.busSt trace binding i execRow).exec_row.leng
 h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSt trace binding i execRow).exec_row 0).multiplicity (-1)
 h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSt trace binding i execRow).exec_row 1).multiplicity 1
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSt trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_STORED_pure sd_input).nextPC
+
+# ZiskFv.Compliance.construction_ld_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+ld_input :: PureSpec.LdInput
+regs.mstatus :: RegisterType Register.mstatus
+regs.pmaRegion :: PMA_Region
+regs.misa :: RegisterType Register.misa
+regs.mseccfg :: RegisterType Register.mseccfg
+mem.addr :: Nat → Fin 18446744069414584321
+mem.step :: Nat → Fin 18446744069414584321
+mem.sel :: Nat → Fin 18446744069414584321
+mem.addr_changes :: Nat → Fin 18446744069414584321
+mem.step_dual :: Nat → Fin 18446744069414584321
+mem.sel_dual :: Nat → Fin 18446744069414584321
+mem.value_0 :: Nat → Fin 18446744069414584321
+mem.value_1 :: Nat → Fin 18446744069414584321
+mem.wr :: Nat → Fin 18446744069414584321
+mem.previous_step :: Nat → Fin 18446744069414584321
+mem.increment_0 :: Nat → Fin 18446744069414584321
+mem.increment_1 :: Nat → Fin 18446744069414584321
+mem.read_same_addr :: Nat → Fin 18446744069414584321
+mem.gsum :: Nat → Fin 18446744069414584321
+mem.im_0 :: Nat → Fin 18446744069414584321
+mem.im_1 :: Nat → Fin 18446744069414584321
+r_mem :: Nat
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 0
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_COPYB
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_opcode_assumptions :: PureSpec.ld_state_assumptions ld_input (binding.stateAt i)
+h_addr1 :: Eq (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr1.toNat (instHAdd.hAdd ld_input.r1_val.toNat (BitVec.signExtend 64 ld_input.imm).toNat)
+h_addr2_zero_iff :: Iff (Eq (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2) 0) (Eq ld_input.rd 0)
+h_addr2_idx :: Eq ld_input.rd.toNat (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2).val
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_risc_v_assumptions :: RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+h_exec_len :: Eq (ZiskFv.Compliance.busLd trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_LOADD_pure ld_input).nextPC
+h_memory_timeline.acceptedReplay.rows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.acceptedReplay.initialMemory :: Std.ExtHashMap Nat (BitVec 8)
+h_memory_timeline.acceptedReplay.prefixReadSound :: ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound h_memory_timeline.1.2 h_memory_timeline.1.1
+h_memory_timeline.priorRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.laterRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.traceSplit :: Eq h_memory_timeline.1.rows (instHAppendOfAppend.hAppend h_memory_timeline.2 (List.cons (ZiskFv.Compliance.busLd trace binding i execRow).e1 h_memory_timeline.3))
+h_memory_timeline.selectedRead :: Eq (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Option.some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read (ZiskFv.Compliance.busLd trace binding i execRow).e1))
+h_memory_timeline.stateBytesAtPrefix :: ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreementOnBytes (binding.stateAt i) (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows h_memory_timeline.1.initialMemory h_memory_timeline.2) (ZiskFv.Compliance.busLd trace binding i execRow).e1.ptr.toNat
+h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.busLd trace binding i execRow).e1 ((ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)).toEntry 1 2)
+h_mem_sel :: Eq (mem.sel r_mem) 1
+h_mem_wr :: Eq (mem.wr r_mem) 0
+
+# ZiskFv.Compliance.construction_lbu_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+lbu_input :: PureSpec.LbuInput
+regs.mstatus :: RegisterType Register.mstatus
+regs.pmaRegion :: PMA_Region
+regs.misa :: RegisterType Register.misa
+regs.mseccfg :: RegisterType Register.mseccfg
+mem.addr :: Nat → Fin 18446744069414584321
+mem.step :: Nat → Fin 18446744069414584321
+mem.sel :: Nat → Fin 18446744069414584321
+mem.addr_changes :: Nat → Fin 18446744069414584321
+mem.step_dual :: Nat → Fin 18446744069414584321
+mem.sel_dual :: Nat → Fin 18446744069414584321
+mem.value_0 :: Nat → Fin 18446744069414584321
+mem.value_1 :: Nat → Fin 18446744069414584321
+mem.wr :: Nat → Fin 18446744069414584321
+mem.previous_step :: Nat → Fin 18446744069414584321
+mem.increment_0 :: Nat → Fin 18446744069414584321
+mem.increment_1 :: Nat → Fin 18446744069414584321
+mem.read_same_addr :: Nat → Fin 18446744069414584321
+mem.gsum :: Nat → Fin 18446744069414584321
+mem.im_0 :: Nat → Fin 18446744069414584321
+mem.im_1 :: Nat → Fin 18446744069414584321
+r_mem :: Nat
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+align.mab.sel_high_4b :: Nat → Fin 18446744069414584321
+align.mab.sel_high_2b :: Nat → Fin 18446744069414584321
+align.mab.sel_high_b :: Nat → Fin 18446744069414584321
+align.mab.direct_value :: Nat → Fin 18446744069414584321
+align.mab.composed_value :: Nat → Fin 18446744069414584321
+align.mab.written_composed_value :: Nat → Fin 18446744069414584321
+align.mab.written_byte_value :: Nat → Fin 18446744069414584321
+align.mab.value_16b :: Nat → Fin 18446744069414584321
+align.mab.value_8b :: Nat → Fin 18446744069414584321
+align.mab.byte_value :: Nat → Fin 18446744069414584321
+align.mab.addr_w :: Nat → Fin 18446744069414584321
+align.mab.step :: Nat → Fin 18446744069414584321
+align.mab.is_write :: Nat → Fin 18446744069414584321
+align.mab.mem_write_values_0 :: Nat → Fin 18446744069414584321
+align.mab.mem_write_values_1 :: Nat → Fin 18446744069414584321
+align.mab.bus_byte :: Nat → Fin 18446744069414584321
+align.marb.sel_high_4b :: Nat → Fin 18446744069414584321
+align.marb.sel_high_2b :: Nat → Fin 18446744069414584321
+align.marb.sel_high_b :: Nat → Fin 18446744069414584321
+align.marb.direct_value :: Nat → Fin 18446744069414584321
+align.marb.composed_value :: Nat → Fin 18446744069414584321
+align.marb.value_16b :: Nat → Fin 18446744069414584321
+align.marb.value_8b :: Nat → Fin 18446744069414584321
+align.marb.byte_value :: Nat → Fin 18446744069414584321
+align.marb.addr_w :: Nat → Fin 18446744069414584321
+align.marb.step :: Nat → Fin 18446744069414584321
+align.ma.addr :: Nat → Fin 18446744069414584321
+align.ma.offset :: Nat → Fin 18446744069414584321
+align.ma.width :: Nat → Fin 18446744069414584321
+align.ma.wr :: Nat → Fin 18446744069414584321
+align.ma.pc :: Nat → Fin 18446744069414584321
+align.ma.reset :: Nat → Fin 18446744069414584321
+align.ma.sel_up_to_down :: Nat → Fin 18446744069414584321
+align.ma.sel_down_to_up :: Nat → Fin 18446744069414584321
+align.ma.reg_0 :: Nat → Fin 18446744069414584321
+align.ma.reg_1 :: Nat → Fin 18446744069414584321
+align.ma.reg_2 :: Nat → Fin 18446744069414584321
+align.ma.reg_3 :: Nat → Fin 18446744069414584321
+align.ma.reg_4 :: Nat → Fin 18446744069414584321
+align.ma.reg_5 :: Nat → Fin 18446744069414584321
+align.ma.reg_6 :: Nat → Fin 18446744069414584321
+align.ma.reg_7 :: Nat → Fin 18446744069414584321
+align.ma.sel_0 :: Nat → Fin 18446744069414584321
+align.ma.sel_1 :: Nat → Fin 18446744069414584321
+align.ma.sel_2 :: Nat → Fin 18446744069414584321
+align.ma.sel_3 :: Nat → Fin 18446744069414584321
+align.ma.sel_4 :: Nat → Fin 18446744069414584321
+align.ma.sel_5 :: Nat → Fin 18446744069414584321
+align.ma.sel_6 :: Nat → Fin 18446744069414584321
+align.ma.sel_7 :: Nat → Fin 18446744069414584321
+align.ma.step :: Nat → Fin 18446744069414584321
+align.ma.delta_addr :: Nat → Fin 18446744069414584321
+align.ma.sel_prove :: Nat → Fin 18446744069414584321
+align.ma.value_0 :: Nat → Fin 18446744069414584321
+align.ma.value_1 :: Nat → Fin 18446744069414584321
+align.ma.preL1 :: Nat → Fin 18446744069414584321
+align.mab_core :: ∀ (r : Nat), ZiskFv.Airs.MemAlignByte.core_every_row align.1 r
+align.marb_core :: ∀ (r : Nat), ZiskFv.Airs.MemAlignReadByte.core_every_row align.2 r
+align.mab_lookup :: (r : Nat) → ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness align.1 r
+align.marb_lookup :: (r : Nat) → ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness align.2 r
+align.provider.provider :: Or (Exists fun r => And (ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_byte_row_matches_load_entry align.1 r (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val) 1)) (Or (Exists fun r => And (ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_read_byte_row_matches_load_entry align.2 r (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val) 1)) (Exists fun r => And (ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry align.3 r (ZiskFv.Compliance.busLd trace binding i execRow).e1) (And (Eq (align.3.width r) ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val)) (And (Eq (align.3.value_1 r) 0) (And (Eq (align.3.width r) 1 → instLTNat.lt (align.3.value_0 r).val 256) (Eq (align.3.width r) 2 → instLTNat.lt (align.3.value_0 r).val 65536))))))
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 0
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_COPYB
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_width :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val) 1
+h_opcode_assumptions :: PureSpec.lbu_state_assumptions lbu_input (binding.stateAt i)
+h_addr1 :: Eq (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr1.toNat (instHAdd.hAdd lbu_input.r1_val.toNat (BitVec.signExtend 64 lbu_input.imm).toNat)
+h_addr2_zero_iff :: Iff (Eq (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2) 0) (Eq lbu_input.rd 0)
+h_addr2_idx :: Eq lbu_input.rd.toNat (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2).val
+h_risc_v_assumptions :: RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+h_exec_len :: Eq (ZiskFv.Compliance.busLd trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_LOADBU_pure lbu_input).nextPC
+h_memory_timeline.acceptedReplay.rows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.acceptedReplay.initialMemory :: Std.ExtHashMap Nat (BitVec 8)
+h_memory_timeline.acceptedReplay.prefixReadSound :: ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound h_memory_timeline.1.2 h_memory_timeline.1.1
+h_memory_timeline.priorRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.laterRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.traceSplit :: Eq h_memory_timeline.1.rows (instHAppendOfAppend.hAppend h_memory_timeline.2 (List.cons (ZiskFv.Compliance.busLd trace binding i execRow).e1 h_memory_timeline.3))
+h_memory_timeline.selectedRead :: Eq (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Option.some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read (ZiskFv.Compliance.busLd trace binding i execRow).e1))
+h_memory_timeline.stateBytesAtPrefix :: ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreementOnBytes (binding.stateAt i) (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows h_memory_timeline.1.initialMemory h_memory_timeline.2) (ZiskFv.Compliance.busLd trace binding i execRow).e1.ptr.toNat
+h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.busLd trace binding i execRow).e1 ((ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)).toEntry 1 2)
+h_mem_sel :: Eq (mem.sel r_mem) 1
+h_mem_wr :: Eq (mem.wr r_mem) 0
+
+# ZiskFv.Compliance.construction_lhu_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+lhu_input :: PureSpec.LhuInput
+regs.mstatus :: RegisterType Register.mstatus
+regs.pmaRegion :: PMA_Region
+regs.misa :: RegisterType Register.misa
+regs.mseccfg :: RegisterType Register.mseccfg
+mem.addr :: Nat → Fin 18446744069414584321
+mem.step :: Nat → Fin 18446744069414584321
+mem.sel :: Nat → Fin 18446744069414584321
+mem.addr_changes :: Nat → Fin 18446744069414584321
+mem.step_dual :: Nat → Fin 18446744069414584321
+mem.sel_dual :: Nat → Fin 18446744069414584321
+mem.value_0 :: Nat → Fin 18446744069414584321
+mem.value_1 :: Nat → Fin 18446744069414584321
+mem.wr :: Nat → Fin 18446744069414584321
+mem.previous_step :: Nat → Fin 18446744069414584321
+mem.increment_0 :: Nat → Fin 18446744069414584321
+mem.increment_1 :: Nat → Fin 18446744069414584321
+mem.read_same_addr :: Nat → Fin 18446744069414584321
+mem.gsum :: Nat → Fin 18446744069414584321
+mem.im_0 :: Nat → Fin 18446744069414584321
+mem.im_1 :: Nat → Fin 18446744069414584321
+r_mem :: Nat
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+align.mab.sel_high_4b :: Nat → Fin 18446744069414584321
+align.mab.sel_high_2b :: Nat → Fin 18446744069414584321
+align.mab.sel_high_b :: Nat → Fin 18446744069414584321
+align.mab.direct_value :: Nat → Fin 18446744069414584321
+align.mab.composed_value :: Nat → Fin 18446744069414584321
+align.mab.written_composed_value :: Nat → Fin 18446744069414584321
+align.mab.written_byte_value :: Nat → Fin 18446744069414584321
+align.mab.value_16b :: Nat → Fin 18446744069414584321
+align.mab.value_8b :: Nat → Fin 18446744069414584321
+align.mab.byte_value :: Nat → Fin 18446744069414584321
+align.mab.addr_w :: Nat → Fin 18446744069414584321
+align.mab.step :: Nat → Fin 18446744069414584321
+align.mab.is_write :: Nat → Fin 18446744069414584321
+align.mab.mem_write_values_0 :: Nat → Fin 18446744069414584321
+align.mab.mem_write_values_1 :: Nat → Fin 18446744069414584321
+align.mab.bus_byte :: Nat → Fin 18446744069414584321
+align.marb.sel_high_4b :: Nat → Fin 18446744069414584321
+align.marb.sel_high_2b :: Nat → Fin 18446744069414584321
+align.marb.sel_high_b :: Nat → Fin 18446744069414584321
+align.marb.direct_value :: Nat → Fin 18446744069414584321
+align.marb.composed_value :: Nat → Fin 18446744069414584321
+align.marb.value_16b :: Nat → Fin 18446744069414584321
+align.marb.value_8b :: Nat → Fin 18446744069414584321
+align.marb.byte_value :: Nat → Fin 18446744069414584321
+align.marb.addr_w :: Nat → Fin 18446744069414584321
+align.marb.step :: Nat → Fin 18446744069414584321
+align.ma.addr :: Nat → Fin 18446744069414584321
+align.ma.offset :: Nat → Fin 18446744069414584321
+align.ma.width :: Nat → Fin 18446744069414584321
+align.ma.wr :: Nat → Fin 18446744069414584321
+align.ma.pc :: Nat → Fin 18446744069414584321
+align.ma.reset :: Nat → Fin 18446744069414584321
+align.ma.sel_up_to_down :: Nat → Fin 18446744069414584321
+align.ma.sel_down_to_up :: Nat → Fin 18446744069414584321
+align.ma.reg_0 :: Nat → Fin 18446744069414584321
+align.ma.reg_1 :: Nat → Fin 18446744069414584321
+align.ma.reg_2 :: Nat → Fin 18446744069414584321
+align.ma.reg_3 :: Nat → Fin 18446744069414584321
+align.ma.reg_4 :: Nat → Fin 18446744069414584321
+align.ma.reg_5 :: Nat → Fin 18446744069414584321
+align.ma.reg_6 :: Nat → Fin 18446744069414584321
+align.ma.reg_7 :: Nat → Fin 18446744069414584321
+align.ma.sel_0 :: Nat → Fin 18446744069414584321
+align.ma.sel_1 :: Nat → Fin 18446744069414584321
+align.ma.sel_2 :: Nat → Fin 18446744069414584321
+align.ma.sel_3 :: Nat → Fin 18446744069414584321
+align.ma.sel_4 :: Nat → Fin 18446744069414584321
+align.ma.sel_5 :: Nat → Fin 18446744069414584321
+align.ma.sel_6 :: Nat → Fin 18446744069414584321
+align.ma.sel_7 :: Nat → Fin 18446744069414584321
+align.ma.step :: Nat → Fin 18446744069414584321
+align.ma.delta_addr :: Nat → Fin 18446744069414584321
+align.ma.sel_prove :: Nat → Fin 18446744069414584321
+align.ma.value_0 :: Nat → Fin 18446744069414584321
+align.ma.value_1 :: Nat → Fin 18446744069414584321
+align.ma.preL1 :: Nat → Fin 18446744069414584321
+align.mab_core :: ∀ (r : Nat), ZiskFv.Airs.MemAlignByte.core_every_row align.1 r
+align.marb_core :: ∀ (r : Nat), ZiskFv.Airs.MemAlignReadByte.core_every_row align.2 r
+align.mab_lookup :: (r : Nat) → ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness align.1 r
+align.marb_lookup :: (r : Nat) → ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness align.2 r
+align.provider.provider :: Or (Exists fun r => And (ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_byte_row_matches_load_entry align.1 r (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val) 1)) (Or (Exists fun r => And (ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_read_byte_row_matches_load_entry align.2 r (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val) 1)) (Exists fun r => And (ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry align.3 r (ZiskFv.Compliance.busLd trace binding i execRow).e1) (And (Eq (align.3.width r) ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val)) (And (Eq (align.3.value_1 r) 0) (And (Eq (align.3.width r) 1 → instLTNat.lt (align.3.value_0 r).val 256) (Eq (align.3.width r) 2 → instLTNat.lt (align.3.value_0 r).val 65536))))))
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 0
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_COPYB
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_width :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val) 2
+h_opcode_assumptions :: PureSpec.lhu_state_assumptions lhu_input (binding.stateAt i)
+h_addr1 :: Eq (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr1.toNat (instHAdd.hAdd lhu_input.r1_val.toNat (BitVec.signExtend 64 lhu_input.imm).toNat)
+h_addr2_zero_iff :: Iff (Eq (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2) 0) (Eq lhu_input.rd 0)
+h_addr2_idx :: Eq lhu_input.rd.toNat (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2).val
+h_risc_v_assumptions :: RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+h_exec_len :: Eq (ZiskFv.Compliance.busLd trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_LOADHU_pure lhu_input).nextPC
+h_memory_timeline.acceptedReplay.rows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.acceptedReplay.initialMemory :: Std.ExtHashMap Nat (BitVec 8)
+h_memory_timeline.acceptedReplay.prefixReadSound :: ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound h_memory_timeline.1.2 h_memory_timeline.1.1
+h_memory_timeline.priorRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.laterRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.traceSplit :: Eq h_memory_timeline.1.rows (instHAppendOfAppend.hAppend h_memory_timeline.2 (List.cons (ZiskFv.Compliance.busLd trace binding i execRow).e1 h_memory_timeline.3))
+h_memory_timeline.selectedRead :: Eq (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Option.some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read (ZiskFv.Compliance.busLd trace binding i execRow).e1))
+h_memory_timeline.stateBytesAtPrefix :: ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreementOnBytes (binding.stateAt i) (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows h_memory_timeline.1.initialMemory h_memory_timeline.2) (ZiskFv.Compliance.busLd trace binding i execRow).e1.ptr.toNat
+h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.busLd trace binding i execRow).e1 ((ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)).toEntry 1 2)
+h_mem_sel :: Eq (mem.sel r_mem) 1
+h_mem_wr :: Eq (mem.wr r_mem) 0
+
+# ZiskFv.Compliance.construction_lwu_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+lwu_input :: PureSpec.LwuInput
+regs.mstatus :: RegisterType Register.mstatus
+regs.pmaRegion :: PMA_Region
+regs.misa :: RegisterType Register.misa
+regs.mseccfg :: RegisterType Register.mseccfg
+mem.addr :: Nat → Fin 18446744069414584321
+mem.step :: Nat → Fin 18446744069414584321
+mem.sel :: Nat → Fin 18446744069414584321
+mem.addr_changes :: Nat → Fin 18446744069414584321
+mem.step_dual :: Nat → Fin 18446744069414584321
+mem.sel_dual :: Nat → Fin 18446744069414584321
+mem.value_0 :: Nat → Fin 18446744069414584321
+mem.value_1 :: Nat → Fin 18446744069414584321
+mem.wr :: Nat → Fin 18446744069414584321
+mem.previous_step :: Nat → Fin 18446744069414584321
+mem.increment_0 :: Nat → Fin 18446744069414584321
+mem.increment_1 :: Nat → Fin 18446744069414584321
+mem.read_same_addr :: Nat → Fin 18446744069414584321
+mem.gsum :: Nat → Fin 18446744069414584321
+mem.im_0 :: Nat → Fin 18446744069414584321
+mem.im_1 :: Nat → Fin 18446744069414584321
+r_mem :: Nat
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+align.mab.sel_high_4b :: Nat → Fin 18446744069414584321
+align.mab.sel_high_2b :: Nat → Fin 18446744069414584321
+align.mab.sel_high_b :: Nat → Fin 18446744069414584321
+align.mab.direct_value :: Nat → Fin 18446744069414584321
+align.mab.composed_value :: Nat → Fin 18446744069414584321
+align.mab.written_composed_value :: Nat → Fin 18446744069414584321
+align.mab.written_byte_value :: Nat → Fin 18446744069414584321
+align.mab.value_16b :: Nat → Fin 18446744069414584321
+align.mab.value_8b :: Nat → Fin 18446744069414584321
+align.mab.byte_value :: Nat → Fin 18446744069414584321
+align.mab.addr_w :: Nat → Fin 18446744069414584321
+align.mab.step :: Nat → Fin 18446744069414584321
+align.mab.is_write :: Nat → Fin 18446744069414584321
+align.mab.mem_write_values_0 :: Nat → Fin 18446744069414584321
+align.mab.mem_write_values_1 :: Nat → Fin 18446744069414584321
+align.mab.bus_byte :: Nat → Fin 18446744069414584321
+align.marb.sel_high_4b :: Nat → Fin 18446744069414584321
+align.marb.sel_high_2b :: Nat → Fin 18446744069414584321
+align.marb.sel_high_b :: Nat → Fin 18446744069414584321
+align.marb.direct_value :: Nat → Fin 18446744069414584321
+align.marb.composed_value :: Nat → Fin 18446744069414584321
+align.marb.value_16b :: Nat → Fin 18446744069414584321
+align.marb.value_8b :: Nat → Fin 18446744069414584321
+align.marb.byte_value :: Nat → Fin 18446744069414584321
+align.marb.addr_w :: Nat → Fin 18446744069414584321
+align.marb.step :: Nat → Fin 18446744069414584321
+align.ma.addr :: Nat → Fin 18446744069414584321
+align.ma.offset :: Nat → Fin 18446744069414584321
+align.ma.width :: Nat → Fin 18446744069414584321
+align.ma.wr :: Nat → Fin 18446744069414584321
+align.ma.pc :: Nat → Fin 18446744069414584321
+align.ma.reset :: Nat → Fin 18446744069414584321
+align.ma.sel_up_to_down :: Nat → Fin 18446744069414584321
+align.ma.sel_down_to_up :: Nat → Fin 18446744069414584321
+align.ma.reg_0 :: Nat → Fin 18446744069414584321
+align.ma.reg_1 :: Nat → Fin 18446744069414584321
+align.ma.reg_2 :: Nat → Fin 18446744069414584321
+align.ma.reg_3 :: Nat → Fin 18446744069414584321
+align.ma.reg_4 :: Nat → Fin 18446744069414584321
+align.ma.reg_5 :: Nat → Fin 18446744069414584321
+align.ma.reg_6 :: Nat → Fin 18446744069414584321
+align.ma.reg_7 :: Nat → Fin 18446744069414584321
+align.ma.sel_0 :: Nat → Fin 18446744069414584321
+align.ma.sel_1 :: Nat → Fin 18446744069414584321
+align.ma.sel_2 :: Nat → Fin 18446744069414584321
+align.ma.sel_3 :: Nat → Fin 18446744069414584321
+align.ma.sel_4 :: Nat → Fin 18446744069414584321
+align.ma.sel_5 :: Nat → Fin 18446744069414584321
+align.ma.sel_6 :: Nat → Fin 18446744069414584321
+align.ma.sel_7 :: Nat → Fin 18446744069414584321
+align.ma.step :: Nat → Fin 18446744069414584321
+align.ma.delta_addr :: Nat → Fin 18446744069414584321
+align.ma.sel_prove :: Nat → Fin 18446744069414584321
+align.ma.value_0 :: Nat → Fin 18446744069414584321
+align.ma.value_1 :: Nat → Fin 18446744069414584321
+align.ma.preL1 :: Nat → Fin 18446744069414584321
+align.mab_core :: ∀ (r : Nat), ZiskFv.Airs.MemAlignByte.core_every_row align.1 r
+align.marb_core :: ∀ (r : Nat), ZiskFv.Airs.MemAlignReadByte.core_every_row align.2 r
+align.mab_lookup :: (r : Nat) → ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness align.1 r
+align.marb_lookup :: (r : Nat) → ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness align.2 r
+align.provider.provider :: Or (Exists fun r => And (ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_byte_row_matches_load_entry align.1 r (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val) 1)) (Or (Exists fun r => And (ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_read_byte_row_matches_load_entry align.2 r (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val) 1)) (Exists fun r => And (ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry align.3 r (ZiskFv.Compliance.busLd trace binding i execRow).e1) (And (Eq (align.3.width r) ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val)) (And (Eq (align.3.value_1 r) 0) (And (Eq (align.3.width r) 1 → instLTNat.lt (align.3.value_0 r).val 256) (Eq (align.3.width r) 2 → instLTNat.lt (align.3.value_0 r).val 65536))))))
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 0
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_COPYB
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_width :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width i.val) 4
+h_opcode_assumptions :: PureSpec.lwu_state_assumptions lwu_input (binding.stateAt i)
+h_addr1 :: Eq (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr1.toNat (instHAdd.hAdd lwu_input.r1_val.toNat (BitVec.signExtend 64 lwu_input.imm).toNat)
+h_addr2_zero_iff :: Iff (Eq (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2) 0) (Eq lwu_input.rd 0)
+h_addr2_idx :: Eq lwu_input.rd.toNat (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2).val
+h_risc_v_assumptions :: RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+h_exec_len :: Eq (ZiskFv.Compliance.busLd trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_LOADWU_pure lwu_input).nextPC
+h_memory_timeline.acceptedReplay.rows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.acceptedReplay.initialMemory :: Std.ExtHashMap Nat (BitVec 8)
+h_memory_timeline.acceptedReplay.prefixReadSound :: ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound h_memory_timeline.1.2 h_memory_timeline.1.1
+h_memory_timeline.priorRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.laterRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.traceSplit :: Eq h_memory_timeline.1.rows (instHAppendOfAppend.hAppend h_memory_timeline.2 (List.cons (ZiskFv.Compliance.busLd trace binding i execRow).e1 h_memory_timeline.3))
+h_memory_timeline.selectedRead :: Eq (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Option.some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read (ZiskFv.Compliance.busLd trace binding i execRow).e1))
+h_memory_timeline.stateBytesAtPrefix :: ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreementOnBytes (binding.stateAt i) (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows h_memory_timeline.1.initialMemory h_memory_timeline.2) (ZiskFv.Compliance.busLd trace binding i execRow).e1.ptr.toNat
+h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.busLd trace binding i execRow).e1 ((ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)).toEntry 1 2)
+h_mem_sel :: Eq (mem.sel r_mem) 1
+h_mem_wr :: Eq (mem.wr r_mem) 0
+
+# ZiskFv.Compliance.construction_lb_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+lb_input :: PureSpec.LbInput
+regs.mstatus :: RegisterType Register.mstatus
+regs.pmaRegion :: PMA_Region
+regs.misa :: RegisterType Register.misa
+regs.mseccfg :: RegisterType Register.mseccfg
+mem.addr :: Nat → Fin 18446744069414584321
+mem.step :: Nat → Fin 18446744069414584321
+mem.sel :: Nat → Fin 18446744069414584321
+mem.addr_changes :: Nat → Fin 18446744069414584321
+mem.step_dual :: Nat → Fin 18446744069414584321
+mem.sel_dual :: Nat → Fin 18446744069414584321
+mem.value_0 :: Nat → Fin 18446744069414584321
+mem.value_1 :: Nat → Fin 18446744069414584321
+mem.wr :: Nat → Fin 18446744069414584321
+mem.previous_step :: Nat → Fin 18446744069414584321
+mem.increment_0 :: Nat → Fin 18446744069414584321
+mem.increment_1 :: Nat → Fin 18446744069414584321
+mem.read_same_addr :: Nat → Fin 18446744069414584321
+mem.gsum :: Nat → Fin 18446744069414584321
+mem.im_0 :: Nat → Fin 18446744069414584321
+mem.im_1 :: Nat → Fin 18446744069414584321
+r_mem :: Nat
+v.op :: Nat → Fin 18446744069414584321
+v.free_in_a_0 :: Nat → Fin 18446744069414584321
+v.free_in_a_1 :: Nat → Fin 18446744069414584321
+v.free_in_a_2 :: Nat → Fin 18446744069414584321
+v.free_in_a_3 :: Nat → Fin 18446744069414584321
+v.free_in_a_4 :: Nat → Fin 18446744069414584321
+v.free_in_a_5 :: Nat → Fin 18446744069414584321
+v.free_in_a_6 :: Nat → Fin 18446744069414584321
+v.free_in_a_7 :: Nat → Fin 18446744069414584321
+v.free_in_b :: Nat → Fin 18446744069414584321
+v.free_in_c_0 :: Nat → Fin 18446744069414584321
+v.free_in_c_1 :: Nat → Fin 18446744069414584321
+v.free_in_c_2 :: Nat → Fin 18446744069414584321
+v.free_in_c_3 :: Nat → Fin 18446744069414584321
+v.free_in_c_4 :: Nat → Fin 18446744069414584321
+v.free_in_c_5 :: Nat → Fin 18446744069414584321
+v.free_in_c_6 :: Nat → Fin 18446744069414584321
+v.free_in_c_7 :: Nat → Fin 18446744069414584321
+v.free_in_c_8 :: Nat → Fin 18446744069414584321
+v.free_in_c_9 :: Nat → Fin 18446744069414584321
+v.free_in_c_10 :: Nat → Fin 18446744069414584321
+v.free_in_c_11 :: Nat → Fin 18446744069414584321
+v.free_in_c_12 :: Nat → Fin 18446744069414584321
+v.free_in_c_13 :: Nat → Fin 18446744069414584321
+v.free_in_c_14 :: Nat → Fin 18446744069414584321
+v.free_in_c_15 :: Nat → Fin 18446744069414584321
+v.op_is_shift :: Nat → Fin 18446744069414584321
+v.b_0 :: Nat → Fin 18446744069414584321
+v.b_1 :: Nat → Fin 18446744069414584321
+v.gsum :: Nat → Fin 18446744069414584321
+v.im_0 :: Nat → Fin 18446744069414584321
+v.im_1 :: Nat → Fin 18446744069414584321
+v.im_2 :: Nat → Fin 18446744069414584321
+v.im_3 :: Nat → Fin 18446744069414584321
+v.im_high_degree_0 :: Nat → Fin 18446744069414584321
+r_binary :: Nat
+offset :: Nat
+env :: Environment (Fin 18446744069414584321)
+h_static :: ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+h_match :: ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val) (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SIGNEXTEND_B
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_opcode_assumptions :: PureSpec.lb_state_assumptions lb_input (binding.stateAt i)
+h_addr1 :: Eq (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr1.toNat (instHAdd.hAdd lb_input.r1_val.toNat (BitVec.signExtend 64 lb_input.imm).toNat)
+h_addr2_zero_iff :: Iff (Eq (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2) 0) (Eq lb_input.rd 0)
+h_addr2_idx :: Eq lb_input.rd.toNat (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2).val
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_risc_v_assumptions :: RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+h_exec_len :: Eq (ZiskFv.Compliance.busLd trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_LOADB_pure lb_input).nextPC
+h_memory_timeline.acceptedReplay.rows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.acceptedReplay.initialMemory :: Std.ExtHashMap Nat (BitVec 8)
+h_memory_timeline.acceptedReplay.prefixReadSound :: ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound h_memory_timeline.1.2 h_memory_timeline.1.1
+h_memory_timeline.priorRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.laterRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.traceSplit :: Eq h_memory_timeline.1.rows (instHAppendOfAppend.hAppend h_memory_timeline.2 (List.cons (ZiskFv.Compliance.busLd trace binding i execRow).e1 h_memory_timeline.3))
+h_memory_timeline.selectedRead :: Eq (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Option.some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read (ZiskFv.Compliance.busLd trace binding i execRow).e1))
+h_memory_timeline.stateBytesAtPrefix :: ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreementOnBytes (binding.stateAt i) (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows h_memory_timeline.1.initialMemory h_memory_timeline.2) (ZiskFv.Compliance.busLd trace binding i execRow).e1.ptr.toNat
+h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.busLd trace binding i execRow).e1 ((ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)).toEntry 1 2)
+h_mem_sel :: Eq (mem.sel r_mem) 1
+h_mem_wr :: Eq (mem.wr r_mem) 0
+
+# ZiskFv.Compliance.construction_lh_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+lh_input :: PureSpec.LhInput
+regs.mstatus :: RegisterType Register.mstatus
+regs.pmaRegion :: PMA_Region
+regs.misa :: RegisterType Register.misa
+regs.mseccfg :: RegisterType Register.mseccfg
+mem.addr :: Nat → Fin 18446744069414584321
+mem.step :: Nat → Fin 18446744069414584321
+mem.sel :: Nat → Fin 18446744069414584321
+mem.addr_changes :: Nat → Fin 18446744069414584321
+mem.step_dual :: Nat → Fin 18446744069414584321
+mem.sel_dual :: Nat → Fin 18446744069414584321
+mem.value_0 :: Nat → Fin 18446744069414584321
+mem.value_1 :: Nat → Fin 18446744069414584321
+mem.wr :: Nat → Fin 18446744069414584321
+mem.previous_step :: Nat → Fin 18446744069414584321
+mem.increment_0 :: Nat → Fin 18446744069414584321
+mem.increment_1 :: Nat → Fin 18446744069414584321
+mem.read_same_addr :: Nat → Fin 18446744069414584321
+mem.gsum :: Nat → Fin 18446744069414584321
+mem.im_0 :: Nat → Fin 18446744069414584321
+mem.im_1 :: Nat → Fin 18446744069414584321
+r_mem :: Nat
+v.op :: Nat → Fin 18446744069414584321
+v.free_in_a_0 :: Nat → Fin 18446744069414584321
+v.free_in_a_1 :: Nat → Fin 18446744069414584321
+v.free_in_a_2 :: Nat → Fin 18446744069414584321
+v.free_in_a_3 :: Nat → Fin 18446744069414584321
+v.free_in_a_4 :: Nat → Fin 18446744069414584321
+v.free_in_a_5 :: Nat → Fin 18446744069414584321
+v.free_in_a_6 :: Nat → Fin 18446744069414584321
+v.free_in_a_7 :: Nat → Fin 18446744069414584321
+v.free_in_b :: Nat → Fin 18446744069414584321
+v.free_in_c_0 :: Nat → Fin 18446744069414584321
+v.free_in_c_1 :: Nat → Fin 18446744069414584321
+v.free_in_c_2 :: Nat → Fin 18446744069414584321
+v.free_in_c_3 :: Nat → Fin 18446744069414584321
+v.free_in_c_4 :: Nat → Fin 18446744069414584321
+v.free_in_c_5 :: Nat → Fin 18446744069414584321
+v.free_in_c_6 :: Nat → Fin 18446744069414584321
+v.free_in_c_7 :: Nat → Fin 18446744069414584321
+v.free_in_c_8 :: Nat → Fin 18446744069414584321
+v.free_in_c_9 :: Nat → Fin 18446744069414584321
+v.free_in_c_10 :: Nat → Fin 18446744069414584321
+v.free_in_c_11 :: Nat → Fin 18446744069414584321
+v.free_in_c_12 :: Nat → Fin 18446744069414584321
+v.free_in_c_13 :: Nat → Fin 18446744069414584321
+v.free_in_c_14 :: Nat → Fin 18446744069414584321
+v.free_in_c_15 :: Nat → Fin 18446744069414584321
+v.op_is_shift :: Nat → Fin 18446744069414584321
+v.b_0 :: Nat → Fin 18446744069414584321
+v.b_1 :: Nat → Fin 18446744069414584321
+v.gsum :: Nat → Fin 18446744069414584321
+v.im_0 :: Nat → Fin 18446744069414584321
+v.im_1 :: Nat → Fin 18446744069414584321
+v.im_2 :: Nat → Fin 18446744069414584321
+v.im_3 :: Nat → Fin 18446744069414584321
+v.im_high_degree_0 :: Nat → Fin 18446744069414584321
+r_binary :: Nat
+offset :: Nat
+env :: Environment (Fin 18446744069414584321)
+h_static :: ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+h_match :: ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val) (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SIGNEXTEND_H
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_opcode_assumptions :: PureSpec.lh_state_assumptions lh_input (binding.stateAt i)
+h_addr1 :: Eq (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr1.toNat (instHAdd.hAdd lh_input.r1_val.toNat (BitVec.signExtend 64 lh_input.imm).toNat)
+h_addr2_zero_iff :: Iff (Eq (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2) 0) (Eq lh_input.rd 0)
+h_addr2_idx :: Eq lh_input.rd.toNat (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2).val
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_risc_v_assumptions :: RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+h_exec_len :: Eq (ZiskFv.Compliance.busLd trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_LOADH_pure lh_input).nextPC
+h_memory_timeline.acceptedReplay.rows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.acceptedReplay.initialMemory :: Std.ExtHashMap Nat (BitVec 8)
+h_memory_timeline.acceptedReplay.prefixReadSound :: ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound h_memory_timeline.1.2 h_memory_timeline.1.1
+h_memory_timeline.priorRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.laterRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.traceSplit :: Eq h_memory_timeline.1.rows (instHAppendOfAppend.hAppend h_memory_timeline.2 (List.cons (ZiskFv.Compliance.busLd trace binding i execRow).e1 h_memory_timeline.3))
+h_memory_timeline.selectedRead :: Eq (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Option.some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read (ZiskFv.Compliance.busLd trace binding i execRow).e1))
+h_memory_timeline.stateBytesAtPrefix :: ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreementOnBytes (binding.stateAt i) (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows h_memory_timeline.1.initialMemory h_memory_timeline.2) (ZiskFv.Compliance.busLd trace binding i execRow).e1.ptr.toNat
+h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.busLd trace binding i execRow).e1 ((ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)).toEntry 1 2)
+h_mem_sel :: Eq (mem.sel r_mem) 1
+h_mem_wr :: Eq (mem.wr r_mem) 0
+
+# ZiskFv.Compliance.construction_lw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+lw_input :: PureSpec.LwInput
+regs.mstatus :: RegisterType Register.mstatus
+regs.pmaRegion :: PMA_Region
+regs.misa :: RegisterType Register.misa
+regs.mseccfg :: RegisterType Register.mseccfg
+mem.addr :: Nat → Fin 18446744069414584321
+mem.step :: Nat → Fin 18446744069414584321
+mem.sel :: Nat → Fin 18446744069414584321
+mem.addr_changes :: Nat → Fin 18446744069414584321
+mem.step_dual :: Nat → Fin 18446744069414584321
+mem.sel_dual :: Nat → Fin 18446744069414584321
+mem.value_0 :: Nat → Fin 18446744069414584321
+mem.value_1 :: Nat → Fin 18446744069414584321
+mem.wr :: Nat → Fin 18446744069414584321
+mem.previous_step :: Nat → Fin 18446744069414584321
+mem.increment_0 :: Nat → Fin 18446744069414584321
+mem.increment_1 :: Nat → Fin 18446744069414584321
+mem.read_same_addr :: Nat → Fin 18446744069414584321
+mem.gsum :: Nat → Fin 18446744069414584321
+mem.im_0 :: Nat → Fin 18446744069414584321
+mem.im_1 :: Nat → Fin 18446744069414584321
+r_mem :: Nat
+v.op :: Nat → Fin 18446744069414584321
+v.free_in_a_0 :: Nat → Fin 18446744069414584321
+v.free_in_a_1 :: Nat → Fin 18446744069414584321
+v.free_in_a_2 :: Nat → Fin 18446744069414584321
+v.free_in_a_3 :: Nat → Fin 18446744069414584321
+v.free_in_a_4 :: Nat → Fin 18446744069414584321
+v.free_in_a_5 :: Nat → Fin 18446744069414584321
+v.free_in_a_6 :: Nat → Fin 18446744069414584321
+v.free_in_a_7 :: Nat → Fin 18446744069414584321
+v.free_in_b :: Nat → Fin 18446744069414584321
+v.free_in_c_0 :: Nat → Fin 18446744069414584321
+v.free_in_c_1 :: Nat → Fin 18446744069414584321
+v.free_in_c_2 :: Nat → Fin 18446744069414584321
+v.free_in_c_3 :: Nat → Fin 18446744069414584321
+v.free_in_c_4 :: Nat → Fin 18446744069414584321
+v.free_in_c_5 :: Nat → Fin 18446744069414584321
+v.free_in_c_6 :: Nat → Fin 18446744069414584321
+v.free_in_c_7 :: Nat → Fin 18446744069414584321
+v.free_in_c_8 :: Nat → Fin 18446744069414584321
+v.free_in_c_9 :: Nat → Fin 18446744069414584321
+v.free_in_c_10 :: Nat → Fin 18446744069414584321
+v.free_in_c_11 :: Nat → Fin 18446744069414584321
+v.free_in_c_12 :: Nat → Fin 18446744069414584321
+v.free_in_c_13 :: Nat → Fin 18446744069414584321
+v.free_in_c_14 :: Nat → Fin 18446744069414584321
+v.free_in_c_15 :: Nat → Fin 18446744069414584321
+v.op_is_shift :: Nat → Fin 18446744069414584321
+v.b_0 :: Nat → Fin 18446744069414584321
+v.b_1 :: Nat → Fin 18446744069414584321
+v.gsum :: Nat → Fin 18446744069414584321
+v.im_0 :: Nat → Fin 18446744069414584321
+v.im_1 :: Nat → Fin 18446744069414584321
+v.im_2 :: Nat → Fin 18446744069414584321
+v.im_3 :: Nat → Fin 18446744069414584321
+v.im_high_degree_0 :: Nat → Fin 18446744069414584321
+r_binary :: Nat
+offset :: Nat
+env :: Environment (Fin 18446744069414584321)
+h_static :: ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+h_match :: ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val) (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_SIGNEXTEND_W
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_opcode_assumptions :: PureSpec.lw_state_assumptions lw_input (binding.stateAt i)
+h_addr1 :: Eq (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr1.toNat (instHAdd.hAdd lw_input.r1_val.toNat (BitVec.signExtend 64 lw_input.imm).toNat)
+h_addr2_zero_iff :: Iff (Eq (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2) 0) (Eq lw_input.rd 0)
+h_addr2_idx :: Eq lw_input.rd.toNat (Transpiler.wrap_to_regidx (ZiskFv.Compliance.mainRowWithRomLd trace binding i).rom.addr2).val
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_risc_v_assumptions :: RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+h_exec_len :: Eq (ZiskFv.Compliance.busLd trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busLd trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_LOADW_pure lw_input).nextPC
+h_memory_timeline.acceptedReplay.rows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.acceptedReplay.initialMemory :: Std.ExtHashMap Nat (BitVec 8)
+h_memory_timeline.acceptedReplay.prefixReadSound :: ZiskFv.ZiskCircuit.MemTrace.MemoryBusRowsPrefixReadSound h_memory_timeline.1.2 h_memory_timeline.1.1
+h_memory_timeline.priorRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.laterRows :: List (Interaction.MemoryBusEntry (Fin 18446744069414584321))
+h_memory_timeline.traceSplit :: Eq h_memory_timeline.1.rows (instHAppendOfAppend.hAppend h_memory_timeline.2 (List.cons (ZiskFv.Compliance.busLd trace binding i execRow).e1 h_memory_timeline.3))
+h_memory_timeline.selectedRead :: Eq (ZiskFv.ZiskCircuit.MemTrace.memoryBusTraceEventOfRow (ZiskFv.Compliance.busLd trace binding i execRow).e1) (Option.some (ZiskFv.ZiskCircuit.MemTrace.MemoryBusTraceEvent.read (ZiskFv.Compliance.busLd trace binding i execRow).e1))
+h_memory_timeline.stateBytesAtPrefix :: ZiskFv.ZiskCircuit.MemTrace.ReplayMemoryAgreementOnBytes (binding.stateAt i) (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows h_memory_timeline.1.initialMemory h_memory_timeline.2) (ZiskFv.Compliance.busLd trace binding i execRow).e1.ptr.toNat
+h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.busLd trace binding i execRow).e1 ((ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)).toEntry 1 2)
+h_mem_sel :: Eq (mem.sel r_mem) 1
+h_mem_wr :: Eq (mem.wr r_mem) 0
