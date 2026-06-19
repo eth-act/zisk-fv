@@ -2785,6 +2785,25 @@ structure RowData_beq
   r2 : regidx
   misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
+  -- Decode pins (genuine trace residuals consumed by the BEQ `aeneasBridgeTrust`).
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_EQ
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_jmp_offset2 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+      i.val = 4
   h_input_imm : beq_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
     = EStateM.Result.ok beq_input.r1_val (binding.stateAt i)
@@ -2812,6 +2831,25 @@ structure RowData_bne
   r2 : regidx
   misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
+  -- Decode pins (genuine trace residuals consumed by the BNE `aeneasBridgeTrust`).
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_EQ
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_jmp_offset1 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset1
+      i.val = 4
   h_input_imm : bne_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
     = EStateM.Result.ok bne_input.r1_val (binding.stateAt i)
@@ -2839,6 +2877,25 @@ structure RowData_blt
   r2 : regidx
   misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
+  -- Decode pins (genuine trace residuals consumed by the BLT `aeneasBridgeTrust`).
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_LT
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_jmp_offset2 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+      i.val = 4
   h_input_imm : blt_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
     = EStateM.Result.ok blt_input.r1_val (binding.stateAt i)
@@ -2866,6 +2923,25 @@ structure RowData_bge
   r2 : regidx
   misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
+  -- Decode pins (genuine trace residuals consumed by the BGE `aeneasBridgeTrust`).
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_LT
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_jmp_offset1 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset1
+      i.val = 4
   h_input_imm : bge_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
     = EStateM.Result.ok bge_input.r1_val (binding.stateAt i)
@@ -2893,6 +2969,25 @@ structure RowData_bltu
   r2 : regidx
   misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
+  -- Decode pins (genuine trace residuals consumed by the BLTU `aeneasBridgeTrust`).
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_LTU
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_jmp_offset2 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+      i.val = 4
   h_input_imm : bltu_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
     = EStateM.Result.ok bltu_input.r1_val (binding.stateAt i)
@@ -2920,6 +3015,25 @@ structure RowData_bgeu
   r2 : regidx
   misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
+  -- Decode pins (genuine trace residuals consumed by the BGEU `aeneasBridgeTrust`).
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_LTU
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_jmp_offset1 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset1
+      i.val = 4
   h_input_imm : bgeu_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
     = EStateM.Result.ok bgeu_input.r1_val (binding.stateAt i)
@@ -6673,77 +6787,256 @@ inside each `RowData_<op>`; no `False.elim`, no contradictory binder; the
 conclusion is over the real `mainOfTable` row.  These are strictly stronger than
 the corresponding `bus_effect`-form arms (channel-balance form, same data). -/
 
-/-- Strengthened `beq` step (channel-balance form). -/
+/-- Strengthened `beq` step (channel-balance form), via the OpEnvelope route:
+    CONSTRUCT `OpEnvelope.beq` from the trace's `RowData_beq` (the same
+    `BranchInstrOperands` + `BranchPromises` `construction_beq_sound` builds) and
+    invoke `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_branch`
+    conjunct.  `aeneasBridgeTrust` is flat decode pins carried as `RowData_beq`
+    residuals; `NoKnownDefect` comes from the threaded `h_known_arm`. -/
 theorem stepStrong_beq
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_beq trace binding i) :
+    (d : RowData_beq trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .beq .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BEQ)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_beq_sound trace binding i d.beq_input d.imm d.r1 d.r2 d.misa_val
-    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
-    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
-    d.h_success
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let ops : ZiskFv.Compliance.BranchInstrOperands :=
+    ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
+  let promises : ZiskFv.EquivCore.Promises.BranchPromises
+      state d.beq_input.imm d.beq_input.r1_val d.beq_input.r2_val d.beq_input.PC
+      ops.misa_val
+      (PureSpec.execute_BEQ_pure d.beq_input).nextPC
+      (PureSpec.execute_BEQ_pure d.beq_input).throws
+      (PureSpec.execute_BEQ_pure d.beq_input).success
+      ops.imm ops.r1 ops.r2 ops.exec_row :=
+    { input_imm_eq := d.h_input_imm
+      input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_pc_eq := d.h_input_pc
+      input_misa_eq := d.h_input_misa
+      misa_c_zero := d.h_misa_c
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      not_throws := d.h_not_throws
+      success := d.h_success }
+  let env : OpEnvelope state m i.val := OpEnvelope.beq d.beq_input ops promises
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
-/-- Strengthened `bne` step (channel-balance form). -/
+/-- Strengthened `bne` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bne
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_bne trace binding i) :
+    (d : RowData_bne trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .bne .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BNE)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_bne_sound trace binding i d.bne_input d.imm d.r1 d.r2 d.misa_val
-    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
-    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
-    d.h_success
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let ops : ZiskFv.Compliance.BranchInstrOperands :=
+    ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
+  let promises : ZiskFv.EquivCore.Promises.BranchPromises
+      state d.bne_input.imm d.bne_input.r1_val d.bne_input.r2_val d.bne_input.PC
+      ops.misa_val
+      (PureSpec.execute_BNE_pure d.bne_input).nextPC
+      (PureSpec.execute_BNE_pure d.bne_input).throws
+      (PureSpec.execute_BNE_pure d.bne_input).success
+      ops.imm ops.r1 ops.r2 ops.exec_row :=
+    { input_imm_eq := d.h_input_imm
+      input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_pc_eq := d.h_input_pc
+      input_misa_eq := d.h_input_misa
+      misa_c_zero := d.h_misa_c
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      not_throws := d.h_not_throws
+      success := d.h_success }
+  let env : OpEnvelope state m i.val := OpEnvelope.bne d.bne_input ops promises
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc, d.h_jmp_offset1⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
-/-- Strengthened `blt` step (channel-balance form). -/
+/-- Strengthened `blt` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_blt
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_blt trace binding i) :
+    (d : RowData_blt trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .blt .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLT)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_blt_sound trace binding i d.blt_input d.imm d.r1 d.r2 d.misa_val
-    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
-    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
-    d.h_success
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let ops : ZiskFv.Compliance.BranchInstrOperands :=
+    ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
+  let promises : ZiskFv.EquivCore.Promises.BranchPromises
+      state d.blt_input.imm d.blt_input.r1_val d.blt_input.r2_val d.blt_input.PC
+      ops.misa_val
+      (PureSpec.execute_BLT_pure d.blt_input).nextPC
+      (PureSpec.execute_BLT_pure d.blt_input).throws
+      (PureSpec.execute_BLT_pure d.blt_input).success
+      ops.imm ops.r1 ops.r2 ops.exec_row :=
+    { input_imm_eq := d.h_input_imm
+      input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_pc_eq := d.h_input_pc
+      input_misa_eq := d.h_input_misa
+      misa_c_zero := d.h_misa_c
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      not_throws := d.h_not_throws
+      success := d.h_success }
+  let env : OpEnvelope state m i.val := OpEnvelope.blt d.blt_input ops promises
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
-/-- Strengthened `bge` step (channel-balance form). -/
+/-- Strengthened `bge` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bge
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_bge trace binding i) :
+    (d : RowData_bge trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .bge .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGE)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_bge_sound trace binding i d.bge_input d.imm d.r1 d.r2 d.misa_val
-    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
-    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
-    d.h_success
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let ops : ZiskFv.Compliance.BranchInstrOperands :=
+    ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
+  let promises : ZiskFv.EquivCore.Promises.BranchPromises
+      state d.bge_input.imm d.bge_input.r1_val d.bge_input.r2_val d.bge_input.PC
+      ops.misa_val
+      (PureSpec.execute_BGE_pure d.bge_input).nextPC
+      (PureSpec.execute_BGE_pure d.bge_input).throws
+      (PureSpec.execute_BGE_pure d.bge_input).success
+      ops.imm ops.r1 ops.r2 ops.exec_row :=
+    { input_imm_eq := d.h_input_imm
+      input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_pc_eq := d.h_input_pc
+      input_misa_eq := d.h_input_misa
+      misa_c_zero := d.h_misa_c
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      not_throws := d.h_not_throws
+      success := d.h_success }
+  let env : OpEnvelope state m i.val := OpEnvelope.bge d.bge_input ops promises
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc, d.h_jmp_offset1⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
-/-- Strengthened `bltu` step (channel-balance form). -/
+/-- Strengthened `bltu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bltu
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_bltu trace binding i) :
+    (d : RowData_bltu trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .bltu .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLTU)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_bltu_sound trace binding i d.bltu_input d.imm d.r1 d.r2 d.misa_val
-    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
-    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
-    d.h_success
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let ops : ZiskFv.Compliance.BranchInstrOperands :=
+    ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
+  let promises : ZiskFv.EquivCore.Promises.BranchPromises
+      state d.bltu_input.imm d.bltu_input.r1_val d.bltu_input.r2_val d.bltu_input.PC
+      ops.misa_val
+      (PureSpec.execute_BLTU_pure d.bltu_input).nextPC
+      (PureSpec.execute_BLTU_pure d.bltu_input).throws
+      (PureSpec.execute_BLTU_pure d.bltu_input).success
+      ops.imm ops.r1 ops.r2 ops.exec_row :=
+    { input_imm_eq := d.h_input_imm
+      input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_pc_eq := d.h_input_pc
+      input_misa_eq := d.h_input_misa
+      misa_c_zero := d.h_misa_c
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      not_throws := d.h_not_throws
+      success := d.h_success }
+  let env : OpEnvelope state m i.val := OpEnvelope.bltu d.bltu_input ops promises
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
-/-- Strengthened `bgeu` step (channel-balance form). -/
+/-- Strengthened `bgeu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bgeu
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_bgeu trace binding i) :
+    (d : RowData_bgeu trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .bgeu .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGEU)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_bgeu_sound trace binding i d.bgeu_input d.imm d.r1 d.r2 d.misa_val
-    d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
-    d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
-    d.h_success
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let ops : ZiskFv.Compliance.BranchInstrOperands :=
+    ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
+  let promises : ZiskFv.EquivCore.Promises.BranchPromises
+      state d.bgeu_input.imm d.bgeu_input.r1_val d.bgeu_input.r2_val d.bgeu_input.PC
+      ops.misa_val
+      (PureSpec.execute_BGEU_pure d.bgeu_input).nextPC
+      (PureSpec.execute_BGEU_pure d.bgeu_input).throws
+      (PureSpec.execute_BGEU_pure d.bgeu_input).success
+      ops.imm ops.r1 ops.r2 ops.exec_row :=
+    { input_imm_eq := d.h_input_imm
+      input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_pc_eq := d.h_input_pc
+      input_misa_eq := d.h_input_misa
+      misa_c_zero := d.h_misa_c
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      not_throws := d.h_not_throws
+      success := d.h_success }
+  let env : OpEnvelope state m i.val := OpEnvelope.bgeu d.bgeu_input ops promises
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc, d.h_jmp_offset1⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
 /-- Strengthened `lui` step (channel-balance form). -/
 theorem stepStrong_lui
@@ -6785,22 +7078,91 @@ theorem stepStrong_jal
     d.h_input_rd d.h_input_pc d.h_input_misa d.h_misa_c d.h_success d.h_nextPC_option
     d.h_rd_idx d.h_input_imm d.h_not_throws d.h_pc_bound d.h_pc_offset_lt_2_32
 
-/-- Strengthened `jalr` step (channel-balance form). -/
+/-- Strengthened `jalr` step (channel-balance form), via the OpEnvelope route:
+    CONSTRUCT `OpEnvelope.jalr` from the trace's `RowData_jalr` (mirroring
+    `construction_jalr_sound`'s internal `next_pc` / `e_rd` / `store_pc_mem` /
+    `pins` / `h_jalr_subset` / `promises` derivations) and invoke
+    `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_remaining`
+    conjunct.  The threaded `h_known_arm : EnvNoKnownDefectFor …` discharges
+    `NoKnownDefect`.  JALR's `aeneasBridgeTrust` is flat decode pins already in
+    `RowData_jalr` (no `MainRowProvenance`). -/
 theorem stepStrong_jalr
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_jalr trace binding i) :
+    (d : RowData_jalr trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .jalr .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.JALR (d.imm, d.rs1, d.rd))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_jalr_sound trace binding i d.jalr_input d.imm d.rs1 d.rd d.misa_val
-    d.mseccfg d.nextPC_val d.h_main_op d.h_main_active d.h_flag d.h_m32 d.h_set_pc
-    d.h_store_pc d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
-    d.h_input_rd d.h_input_pc d.h_input_misa d.h_misa_c d.h_success d.h_nextPC_option
-    d.h_rd_idx d.h_input_imm d.h_input_rs1 d.h_cur_privilege d.h_mseccfg d.h_link_bridge
-    d.h_pc_bound d.h_pc_offset_lt_2_32
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let e_rd := eRdLui trace binding i
+  -- (a) Main per-row Spec ⇒ the JALR Main constraint subset.
+  have h_spec := mainSpec_at trace binding i
+  have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
+    ZiskFv.AirsClean.Main.add_subset_holds_of_spec_rowAt m i.val h_spec
+  obtain ⟨_h_c0, _h_b0, _h_c1, _h_b1, _h_set_flag, _h_clear_flag, h_disjoint,
+      h_flag_bool, h_ext_bool⟩ := h_add_subset
+  -- (a) the handshake is definitional: pick `next_pc` as its RHS.
+  let next_pc : FGL :=
+    m.set_pc i.val * (m.c_0 i.val + m.jmp_offset1 i.val)
+      + (1 - m.set_pc i.val) * (m.pc i.val + m.jmp_offset2 i.val)
+      + m.flag i.val * (m.jmp_offset1 i.val - m.jmp_offset2 i.val)
+  have h_handshake :
+      ZiskFv.Airs.Main.pc_handshake_with_next_pc m i.val next_pc := rfl
+  have h_jalr_subset :
+      ZiskFv.Airs.Main.flag_boolean m i.val
+      ∧ ZiskFv.Airs.Main.is_external_op_boolean m i.val
+      ∧ ZiskFv.Airs.Main.flag_set_pc_disjoint m i.val
+      ∧ ZiskFv.Airs.Main.pc_handshake_with_next_pc m i.val next_pc :=
+    ⟨h_flag_bool, h_ext_bool, h_disjoint, h_handshake⟩
+  -- (a) `StorePcMemoryWitness` from the real Clean Main `c` message row.
+  have h_row_core :
+      (mainRowWithRomLui trace binding i).core =
+        ZiskFv.AirsClean.Main.rowAt m i.val := by
+    have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+    simpa [mainRowWithRomLui, m,
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+  let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
+    { row := mainRowWithRomLui trace binding i
+      row_eq := h_row_core
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  let promises : ZiskFv.EquivCore.Promises.JumpPromises
+      state d.jalr_input.PC d.jalr_input.rd d.misa_val
+      (PureSpec.execute_JALR_pure d.jalr_input).success
+      (PureSpec.execute_JALR_pure d.jalr_input).nextPC
+      d.rd d.execRow e_rd d.nextPC_val :=
+    { input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      input_misa_eq := d.h_input_misa
+      misa_c_zero := d.h_misa_c
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      rd_mult := by rfl
+      rd_as := by rfl
+      success := d.h_success
+      nextPC_option := d.h_nextPC_option
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.jalr d.jalr_input d.imm d.rs1 d.rd d.misa_val d.mseccfg d.execRow e_rd
+      d.nextPC_val next_pc store_pc_mem pins d.h_flag d.h_m32 d.h_set_pc d.h_store_pc
+      h_jalr_subset promises d.h_input_imm d.h_input_rs1 d.h_cur_privilege d.h_mseccfg
+      d.h_link_bridge d.h_pc_bound d.h_pc_offset_lt_2_32
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_flag, d.h_m32, d.h_set_pc, d.h_store_pc, d.h_link_bridge⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-! ## Strengthened store arms (SB/SH/SW/SD, channel-balance form)
 
@@ -7327,6 +7689,34 @@ def StepNoKnownDefect
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
       (r := i.val) (fun env => match env with | .addiw .. => True | _ => False)
+  | .jalr _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .jalr .. => True | _ => False)
+  | .beq _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .beq .. => True | _ => False)
+  | .bne _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .bne .. => True | _ => False)
+  | .blt _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .blt .. => True | _ => False)
+  | .bge _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .bge .. => True | _ => False)
+  | .bltu _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .bltu .. => True | _ => False)
+  | .bgeu _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .bgeu .. => True | _ => False)
   | _ => True
 
 /-- The strengthened per-step conclusion: the channel-balance
@@ -7741,16 +8131,16 @@ theorem stepComplianceStrong_of_rowData
   | divuw d => exact stepStrong_divuw trace binding i d
   | remu d => exact stepStrong_remu trace binding i d
   | remuw d => exact stepStrong_remuw trace binding i d
-  | beq d => exact stepStrong_beq trace binding i d
-  | bne d => exact stepStrong_bne trace binding i d
-  | blt d => exact stepStrong_blt trace binding i d
-  | bge d => exact stepStrong_bge trace binding i d
-  | bltu d => exact stepStrong_bltu trace binding i d
-  | bgeu d => exact stepStrong_bgeu trace binding i d
+  | beq d => exact stepStrong_beq trace binding i d h_known
+  | bne d => exact stepStrong_bne trace binding i d h_known
+  | blt d => exact stepStrong_blt trace binding i d h_known
+  | bge d => exact stepStrong_bge trace binding i d h_known
+  | bltu d => exact stepStrong_bltu trace binding i d h_known
+  | bgeu d => exact stepStrong_bgeu trace binding i d h_known
   | lui d => exact stepStrong_lui trace binding i d
   | auipc d => exact stepStrong_auipc trace binding i d
   | jal d => exact stepStrong_jal trace binding i d
-  | jalr d => exact stepStrong_jalr trace binding i d
+  | jalr d => exact stepStrong_jalr trace binding i d h_known
   | sb d => exact stepStrong_sb trace binding i d
   | sh d => exact stepStrong_sh trace binding i d
   | sw d => exact stepStrong_sw trace binding i d

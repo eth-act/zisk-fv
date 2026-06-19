@@ -31,6 +31,30 @@ FAITHFUL loose-bound (<983041) construction, NEVER the canonical equiv tight (<1
 Non-vacuous (execRow real ∀-binder; no False.elim). 0 new ZiskFv.* axioms. Full lake build GREEN.
 Gate V1 18/18 + V2 12/12. registered in StrongRowConstructionData/StepComplianceStrong/dispatcher.
 LEFT in bus_effect form (6): 6 defect/gap (7 signed-M minus unsigned overlap; FENCE). NOT committed.
+
+=== STEP (b1): OpEnvelope-route conversion — 22 → 29 (uncommitted, this run) ===
+Converted 7 of the 16 targeted direct-lift arms to the OpEnvelope route (construct envelope +
+call zisk_riscv_compliant_program_bus + thread h_known_arm): the 6 branches (beq/bne/blt/bge/
+bltu/bgeu, projecting exec_eq_branch) + JALR (projecting exec_eq_remaining). Each: build
+OpEnvelope.<op>, prove aeneasBridgeTrust (flat decode pins), memoryTimeline=trivial,
+NoKnownDefect=h_known_arm env trivial. StepNoKnownDefect now returns the real EnvNoKnownDefectFor
+for these 7 (non-vacuous: satisfiable for non-defect ops via envNoKnownDefectFor_of_nondefect —
+verified). Added 6 flat decode-pin fields to each RowData_b* (h_main_active/h_main_op/h_m32/
+h_set_pc/h_store_pc/h_jmp_offset1or2 — genuine trace residuals); JALR needed none (pins already
+present). Full lake build GREEN; 0 new ZiskFv.* axioms; gate V1 18/18 + V2 12/12. NOT committed.
+BLOCKED 9 (genuine walls, reported — NOT laundered/forced):
+- M-ext (6: mulw/mulhu/divu/divuw/remu/remuw): OpEnvelope arms require lookup-witness STRUCTURES
+  (ArithMul/DivTableWitness, *ChunkRangeWitness, *SignedCarryRangeWitness, ArithDivRemainderBound-
+  Witness = {offset, env : Environment FGL, holds : ConstraintsHold.Soundness …}). Balance yields
+  only Prop-level FullSpec; NO FullSpec→lookup-witness bridge exists (witness needs a Clean env for
+  the constant vOf*Row view). DIVU/MULHU additionally route through equiv_DIVU/MULHU whose internal
+  TIGHT <131072 carry bound is documented NOT balance-constructible (ConstructionDivu.lean:36-57).
+  The *_of_fullSpec wrappers exist precisely to AVOID this route.
+- LUI/AUIPC/JAL (3): OpEnvelope arms require MainRowProvenance + *RowMode (the Aeneas-extracted-row
+  record incl. ROM fields). NO constructor of MainRowProvenance from a trace exists anywhere
+  (it is the blocked-in-build aeneasBridgeTrust residual; 4.28 can't import 4.30 Aeneas world).
+  Constructions route through MainRowProvenance-free variants (equiv_LUI / equiv_JAL_of_main_pins).
+Stores (4) + loads (7) intentionally LEFT on direct-lift (next step).
 --- (prior note, now superseded by the line above) ---
 TraceLevelExport.lean: 43 `stepStrong_<op>` theorems via TWO sound routes, both yielding the
 OLD global theorem's per-arm conclusion (channel-balance `state_effect_via_channels`) —
