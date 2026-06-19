@@ -120,5 +120,32 @@ wrapper + ArithTableProjections divuw_mode_pins_of_row + MulDivRemUnsigned loose
 registered in ZiskFv.lean + bin/TrustGate/Main.lean; construction-binder baseline refreshed
 (purely additive +123). NOT committed (parent commits).
 
-NEXT after Stage 4: REMU/REMUW. Then P5 assembly over the 36 constructions,
+DONE (Stage 5 — construction_remu_sound, unsigned REMU op-185 SECONDARY d-lane, 35/63):
+mirrors DIVU but on the REMAINDER (secondary) lane. KEY LANE FINDING: REMU's result is
+the remainder in d[]; REMU consumes the SECONDARY Arith lane (main_div=0, main_mul=0, so
+secondary=1). At those mode pins the muxed primaryOpBusMessage c_lo lane collapses to
+d_0+d_1·2^16 and reduces to opBus_row_ArithDivSecondary (NOT opBus_row_ArithDiv that DIVU
+uses). So the DIVU-mode bridge was NOT reusable — built a REMU variant
+primaryOpBusMessage_toEntry_eq_opBus_row_ArithDivSecondary pinning main_div=0 (vs DIVU's
+main_div=1) targeting the secondary row; high half from bus_res1=d_2+d_3·2^16 via
+rem_bus_res1_eq_d_hi (already existed). Reused arith_div_secondary_op_eq /
+arith_div_secondary_projections (already existed) + vOfDivuRow. Arith witnesses
+(ArithTable/chunk/signed-carry/c46/carry-chain) ALL DERIVED from FullSpec via op-185
+remu_mode_pins_of_row (NEW). CARRY BOUND: same blocker — loose <983041 derived (local
+remu_chain_eqs/remu_carry_bounds copies, since DIVU's are private — same pattern as DIVUW) +
+NEW loose write-value path h_rd_val_mdru_remu_loose (in MulDivRemUnsigned; mirrors
+h_rd_val_mdru_divu_loose but extracts remainder via fgl_rem_unsigned_to_bv64) routed through
+custom equiv_REMU_of_fullSpec (NOT equiv_REMU). RESIDUALS = DIVU shape
+(decode/Sail/operand/exec/nextPC) + remainder_bound (the ArithDiv LTU self-edge, NOT
+balance-derivable). NO arith-witness binders. Full lake build GREEN (8696); 0 sorry;
+0 PROJECT ZiskFv.* axioms (closure carries Classical.choice + Quot.sound + Sail +
+Lean.ofReduceBool/trustCompiler native_decide INHERITED from canonical equiv_REMU path
+— NOT new; #75). V1 18/18 + V2 12/12 ALL PASS. Files: NEW Compliance/ConstructionRemu.lean;
++op-185/offset-169 exclusions (BinaryTable, BinaryExtensionTable, Binary/Bridge,
+BinaryExtension/StaticCircuit) + ArithBalance keep/refute (*_ne_arithRemuPrimary) +
+AcceptedTrace from_binding wrapper + ArithTableProjections remu_mode_pins_of_row +
+MulDivRemUnsigned loose remu path; registered in ZiskFv.lean + bin/TrustGate/Main.lean;
+construction-binder baseline refreshed (purely additive +120). NOT committed (parent commits).
+
+NEXT after Stage 5: REMUW. Then P5 assembly over the 36 constructions,
 carrying the non-extraction residuals.

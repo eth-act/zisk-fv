@@ -672,6 +672,12 @@ theorem static_table_op_val_ne_arith_divu_of_spec_facts
     row.flags.op.val ≠ 184 ∧ row.flags.op.val ≠ 168 := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_divu h_specs.1
 
+theorem static_table_op_val_ne_arith_remu_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 185 ∧ row.flags.op.val ≠ 169 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_remu h_specs.1
+
 theorem static_table_op_val_ne_arith_divuw_of_spec_facts
     (row : BinaryExtensionRow FGL)
     (h_specs : StaticBinaryExtensionTableSpecFacts row) :
@@ -802,6 +808,18 @@ theorem shiftStaticLookupComponent_op_val_ne_arith_divu_of_spec
       ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 168 := by
   rw [shiftStaticLookupComponent_spec] at h_spec
   exact static_table_op_val_ne_arith_divu_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith REMU bus opcode `185` (`OP_REMU`) nor the alternate
+    `m32 = 0` decomposition value `169`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_remu_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 185
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 169 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_remu_of_spec_facts
     (shiftStaticLookupComponent.rowInput env) h_spec.2.1
 
 /-- A row accepted by the shift-aware lookup BinaryExtension component cannot

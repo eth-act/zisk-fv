@@ -1054,6 +1054,102 @@ lemma h_rd_val_mdru_remu
     (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
+/-- **Loose-bound REMU rd-write reconstruction.** Mirror of
+    `h_rd_val_mdru_remu` with the balance-constructible carry bound
+    `< 983041` instead of `< 131072` (the genuine Euclidean-chain carries
+    exceed `2^17`, so the tight bound is not balance-derivable; same
+    situation as DIVU / MULHU).  Routes through the loose chunk identity
+    `fgl_div_unsigned_chunks_to_nat_identity_loose`, the public Euclidean
+    remainder extractor `fgl_rem_unsigned_to_bv64`, and the byte-sum bridge
+    `remu_bv64_of_byte_sum`.  The bus entry's bytes pack `d[]` chunks (the
+    remainder lanes). -/
+lemma h_rd_val_mdru_remu_loose
+    (op1 op2 : BitVec 64)
+    (e : MemoryBusEntry FGL)
+    (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
+    (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_c0 : c₀.val < 65536) (h_c1 : c₁.val < 65536)
+    (h_c2 : c₂.val < 65536) (h_c3 : c₃.val < 65536)
+    (h_d0 : d₀.val < 65536) (h_d1 : d₁.val < 65536)
+    (h_d2 : d₂.val < 65536) (h_d3 : d₃.val < 65536)
+    (h_cy0 : cy₀.val < 983041) (h_cy1 : cy₁.val < 983041)
+    (h_cy2 : cy₂.val < 983041) (h_cy3 : cy₃.val < 983041)
+    (h_cy4 : cy₄.val < 983041) (h_cy5 : cy₅.val < 983041)
+    (h_cy6 : cy₆.val < 983041)
+    (hC31 : a₀ * b₀ + d₀ = c₀ + cy₀ * 65536)
+    (hC32 : a₁ * b₀ + a₀ * b₁ + d₁ + cy₀ = c₁ + cy₁ * 65536)
+    (hC33 : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + d₂ + cy₁ = c₂ + cy₂ * 65536)
+    (hC34 : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + d₃ + cy₂
+              = c₃ + cy₃ * 65536)
+    (hC35 : a₃ * b₁ + a₂ * b₂ + a₁ * b₃ + cy₃ = cy₄ * 65536)
+    (hC36 : a₃ * b₂ + a₂ * b₃ + cy₄ = cy₅ * 65536)
+    (hC37 : a₃ * b₃ + cy₅ = cy₆ * 65536)
+    (hC38 : cy₆ = 0)
+    (h_byte_lo :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        = d₀.val + d₁.val * 65536)
+    (h_byte_hi :
+      (byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
+        = d₂.val + d₃.val * 65536)
+    (h_rs1_value : op1.toNat = packed4 c₀.val c₁.val c₂.val c₃.val)
+    (h_rs2_value : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val)
+    (h_op2_ne : op2.toNat ≠ 0)
+    (h_d_lt_b : packed4 d₀.val d₁.val d₂.val d₃.val < op2.toNat) :
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
+      = (execute_DIV_REM_pure op1 op2 .DRU).2 := by
+  have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
+        * packed4 b₀.val b₁.val b₂.val b₃.val
+        + packed4 d₀.val d₁.val d₂.val d₃.val
+      = packed4 c₀.val c₁.val c₂.val c₃.val :=
+    fgl_div_unsigned_chunks_to_nat_identity_loose
+      a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
+      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
+      h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
+      h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
+      h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
+      hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
+  rw [← h_rs1_value, ← h_rs2_value] at h_packed_nat
+  have h_rem_eq : op1.toNat % op2.toNat = packed4 d₀.val d₁.val d₂.val d₃.val :=
+    fgl_rem_unsigned_to_bv64 h_op2_ne h_d_lt_b h_packed_nat
+  have h_byte_eq_packed :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
+      = packed4 d₀.val d₁.val d₂.val d₃.val :=
+    byte_sum_eq_packed4 e d₀.val d₁.val d₂.val d₃.val h_byte_lo h_byte_hi
+  have h_r_eq : (execute_DIV_REM_pure op1 op2 .DRU).2.toNat
+      = op1.toNat % op2.toNat := by
+    have h_op2_int_ne : (op2.toNat : ℤ) ≠ 0 := by exact_mod_cast h_op2_ne
+    simp only [execute_DIV_REM_pure, execute_DIV_REM_pure_int]
+    rw [BitVec.toNat_ofNat]
+    have h_tmod : (Int.tmod (op1.toNat : ℤ) (op2.toNat : ℤ)).toNat
+        = op1.toNat % op2.toNat := rfl
+    rw [h_tmod]
+    have h_op2_pos : 0 < op2.toNat := Nat.pos_of_ne_zero h_op2_ne
+    have h_rem_lt : op1.toNat % op2.toNat < 2 ^ 64 := by
+      calc op1.toNat % op2.toNat
+          < op2.toNat := Nat.mod_lt _ h_op2_pos
+        _ < 2 ^ 64 := op2.isLt
+    exact Nat.mod_eq_of_lt h_rem_lt
+  have h_byte_sum :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
+      = (execute_DIV_REM_pure op1 op2 .DRU).2.toNat := by
+    rw [h_byte_eq_packed, ← h_rem_eq, h_r_eq]
+  exact remu_bv64_of_byte_sum op1 op2
+    (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
+    h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
+
 /-- **`h_rd_val` discharge for MULW (Tier 1).**
 
     MULW takes the low 32 bits of `op1` and `op2`, multiplies as signed,
