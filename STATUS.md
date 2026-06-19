@@ -70,5 +70,32 @@ StaticCircuit + Binary Bridge) + AcceptedTrace binding wrapper + ArithMul/Bridge
 MULHU-mode bridge + ArithTableProjections mulhu_mode_pins_of_row; registered in
 ZiskFv.lean + bin/TrustGate/Main.lean; construction-binder baseline appended.
 
-NEXT after Stage 2: div-family (DIVU/DIVUW/REMU/REMUW). Then P5 assembly over the
-36 constructions, carrying the non-extraction residuals.
+DONE (Stage 3 — construction_divu_sound, unsigned DIVU primary a-lane, 33/63):
+mirrors MULW/MULHU. Provider = SHARED ArithMul componentWithArithTable (ArithDiv
+emits NO op-bus in the ensemble: arithDiv_table_interactionsWith_opBus_nil →
+circuit.channels=[]). DIVU Main op-bus matches the muxed primaryOpBusMessage; new
+DIVU-mode bridge primaryOpBusMessage_toEntry_eq_opBus_row_ArithDiv reduces it (at
+div=1 ∧ main_div=1 ∧ main_mul=0) to opBus_row_ArithDiv. Arith witnesses
+(ArithTable/chunk/signed-carry/c46/carry-chain) ALL DERIVED from FullSpec.
+CARRY BOUND: same MULHU blocker — equiv_DIVU wants <131072 (2^17), balance only
+gives signed disjunction; genuine Euclidean carries >2^17 ⟹ loose <983041 derived
+(divu_carry_bounds via unsigned_carry_step_nat) + NEW loose write-value path
+h_rd_val_mdru_divu_loose (in MulDivRemUnsigned.lean) routed through a custom
+equiv_DIVU_of_fullSpec (NOT equiv_DIVU). REMAINDER BOUND = RESIDUAL (not
+balance-derivable): ArithDivRemainderBoundWitness is the arith.pil:274
+assumes_operation LTU consumer edge matched vs a Binary provider — a
+finished-channel SELF-EDGE absent from the ensemble (ArithDiv emits no op-bus), so
+it CANNOT come from balance. Carried as the ONE explicit residual binder, exactly
+as the canonical equiv_DIVU carries it. Full lake build GREEN (8694); 0 sorry;
+0 PROJECT ZiskFv.* axioms (closure carries Classical.choice + Quot.sound + Sail +
+Lean.ofReduceBool/trustCompiler native_decide INHERITED from canonical equiv_DIVU
+path — NOT new; #75). V1 18/18 + V2 12/12 ALL PASS. Files: NEW
+Compliance/ConstructionDivu.lean; +op-184/offset-168 exclusions (BinaryTable,
+BinaryExtensionTable, Binary/Bridge, BinaryExtension/StaticCircuit) + ArithBalance
+keep/refute + AcceptedTrace from_binding wrapper + ArithTableProjections
+divu_mode_pins_of_row + MulDivRemUnsigned loose divu path; registered in ZiskFv.lean
++ bin/TrustGate/Main.lean; construction-binder baseline refreshed. NOT committed
+(parent commits).
+
+NEXT after Stage 3: DIVUW/REMU/REMUW. Then P5 assembly over the 36 constructions,
+carrying the non-extraction residuals.

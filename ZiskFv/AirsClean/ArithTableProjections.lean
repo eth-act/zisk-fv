@@ -146,6 +146,33 @@ theorem mulhu_mode_pins_of_row
       have hval := congrArg Fin.val hop
       norm_num at hval
 
+/-- Bare-`ArithMulRow` DIVU mode pins (mirrors `mulw_mode_pins_of_row`).  Reads
+    the full unsigned-DIVU mode flags off the balance-selected provider
+    `ArithMulRow` (the DIVU provider is the SHARED ArithMul component) WITHOUT
+    routing through a `rowAt` view.  At op `184` (`OP_DIVU`) the shared
+    74-row ArithTable pins `na = nb = np = nr = sext = m32 = 0`, `div = 1`,
+    `main_div = 1`, `main_mul = 0`. -/
+theorem divu_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 184) :
+    row.flags.na = 0 ∧ row.flags.nb = 0 ∧ row.flags.np = 0 ∧ row.flags.nr = 0
+      ∧ row.flags.sext = 0 ∧ row.flags.m32 = 0 ∧ row.flags.div = 1
+      ∧ row.flags.main_div = 1 ∧ row.flags.main_mul = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, hm32, hdiv, hna, hnb, hnp, hnr, hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hna, hnb, hnp, hnr, hsext, hm32, hdiv, hmain_div, hmain_mul⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
 theorem mul_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec

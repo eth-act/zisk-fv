@@ -653,6 +653,306 @@ lemma h_rd_val_mdru_divu
     (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
+/-! ## DIV-mode per-chunk FGL→ℕ lifts — LOOSE carry bound (`< 983041`)
+
+Copies of the `fgl_div_chunk_lift_*` lemmas above with the carry bound
+relaxed from `< 131072` (`2^17`) to the balance-constructible `< 983041`.
+The genuine 4×4 unsigned-multiply carries of the Euclidean chain reach
+`~3·2^16 > 2^17`, so the tight bound is NOT satisfiable from real balance
+data (the same situation as MULHU; see `ConstructionMulhu.lean`).  The
+no-wrap argument is unaffected: each chunk equation's two sides stay below
+`GL_prime` (LHS ≤ `4·(2^16-1)^2 + (2^16-1) + 983040 < 2^36`; RHS `≤
+65535 + 983040·65536 < 2^36`). -/
+
+private lemma fgl_div_chunk_lift_1_loose
+    (a b d c cy : FGL)
+    (h_a : a.val < 65536) (h_b : b.val < 65536)
+    (h_d : d.val < 65536) (h_c : c.val < 65536) (h_cy : cy.val < 983041)
+    (h : a * b + d = c + cy * 65536) :
+    a.val * b.val + d.val = c.val + cy.val * 65536 := by
+  have h_lhs : a * b + d
+      = (((a.val * b.val + d.val : ℕ)) : FGL) := by push_cast; ring
+  have h_rhs : c + cy * 65536
+      = (((c.val + cy.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine ZiskFv.PackedBitVec.NoWrap.fgl_eq_to_nat_eq h ?_ ?_
+  · have : a.val * b.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+private lemma fgl_div_chunk_lift_2_loose
+    (a₁ a₀ b₀ b₁ d cy_in c cy_out : FGL)
+    (h_a1 : a₁.val < 65536) (h_a0 : a₀.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_d : d.val < 65536) (h_cy_in : cy_in.val < 983041)
+    (h_c : c.val < 65536) (h_cy_out : cy_out.val < 983041)
+    (h : a₁ * b₀ + a₀ * b₁ + d + cy_in = c + cy_out * 65536) :
+    a₁.val * b₀.val + a₀.val * b₁.val + d.val + cy_in.val
+      = c.val + cy_out.val * 65536 := by
+  have h_lhs : a₁ * b₀ + a₀ * b₁ + d + cy_in
+      = (((a₁.val * b₀.val + a₀.val * b₁.val + d.val + cy_in.val : ℕ)) : FGL) := by
+    push_cast; ring
+  have h_rhs : c + cy_out * 65536
+      = (((c.val + cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine ZiskFv.PackedBitVec.NoWrap.fgl_eq_to_nat_eq h ?_ ?_
+  · have h1 : a₁.val * b₀.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h2 : a₀.val * b₁.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+private lemma fgl_div_chunk_lift_3_loose
+    (a₂ a₁ a₀ b₀ b₁ b₂ d cy_in c cy_out : FGL)
+    (h_a2 : a₂.val < 65536) (h_a1 : a₁.val < 65536) (h_a0 : a₀.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536)
+    (h_d : d.val < 65536) (h_cy_in : cy_in.val < 983041)
+    (h_c : c.val < 65536) (h_cy_out : cy_out.val < 983041)
+    (h : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + d + cy_in = c + cy_out * 65536) :
+    a₂.val * b₀.val + a₁.val * b₁.val + a₀.val * b₂.val + d.val + cy_in.val
+      = c.val + cy_out.val * 65536 := by
+  have h_lhs : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + d + cy_in
+      = (((a₂.val * b₀.val + a₁.val * b₁.val + a₀.val * b₂.val + d.val + cy_in.val : ℕ))
+          : FGL) := by push_cast; ring
+  have h_rhs : c + cy_out * 65536
+      = (((c.val + cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine ZiskFv.PackedBitVec.NoWrap.fgl_eq_to_nat_eq h ?_ ?_
+  · have h1 : a₂.val * b₀.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h2 : a₁.val * b₁.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h3 : a₀.val * b₂.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+private lemma fgl_div_chunk_lift_4_loose
+    (a₃ a₂ a₁ a₀ b₀ b₁ b₂ b₃ d cy_in c cy_out : FGL)
+    (h_a3 : a₃.val < 65536) (h_a2 : a₂.val < 65536)
+    (h_a1 : a₁.val < 65536) (h_a0 : a₀.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_d : d.val < 65536) (h_cy_in : cy_in.val < 983041)
+    (h_c : c.val < 65536) (h_cy_out : cy_out.val < 983041)
+    (h : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + d + cy_in = c + cy_out * 65536) :
+    a₃.val * b₀.val + a₂.val * b₁.val + a₁.val * b₂.val + a₀.val * b₃.val
+        + d.val + cy_in.val
+      = c.val + cy_out.val * 65536 := by
+  have h_lhs : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + d + cy_in
+      = (((a₃.val * b₀.val + a₂.val * b₁.val + a₁.val * b₂.val + a₀.val * b₃.val
+            + d.val + cy_in.val : ℕ)) : FGL) := by push_cast; ring
+  have h_rhs : c + cy_out * 65536
+      = (((c.val + cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine ZiskFv.PackedBitVec.NoWrap.fgl_eq_to_nat_eq h ?_ ?_
+  · have h1 : a₃.val * b₀.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h2 : a₂.val * b₁.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h3 : a₁.val * b₂.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h4 : a₀.val * b₃.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+private lemma fgl_div_chunk_lift_high_3_loose
+    (a₃ a₂ a₁ b₁ b₂ b₃ cy_in cy_out : FGL)
+    (h_a3 : a₃.val < 65536) (h_a2 : a₂.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_cy_in : cy_in.val < 983041) (h_cy_out : cy_out.val < 983041)
+    (h : a₃ * b₁ + a₂ * b₂ + a₁ * b₃ + cy_in = cy_out * 65536) :
+    a₃.val * b₁.val + a₂.val * b₂.val + a₁.val * b₃.val + cy_in.val
+      = cy_out.val * 65536 := by
+  have h_lhs : a₃ * b₁ + a₂ * b₂ + a₁ * b₃ + cy_in
+      = (((a₃.val * b₁.val + a₂.val * b₂.val + a₁.val * b₃.val + cy_in.val : ℕ))
+          : FGL) := by push_cast; ring
+  have h_rhs : cy_out * 65536
+      = (((cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine ZiskFv.PackedBitVec.NoWrap.fgl_eq_to_nat_eq h ?_ ?_
+  · have h1 : a₃.val * b₁.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h2 : a₂.val * b₂.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h3 : a₁.val * b₃.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+private lemma fgl_div_chunk_lift_high_2_loose
+    (a₃ a₂ b₂ b₃ cy_in cy_out : FGL)
+    (h_a3 : a₃.val < 65536) (h_a2 : a₂.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_cy_in : cy_in.val < 983041) (h_cy_out : cy_out.val < 983041)
+    (h : a₃ * b₂ + a₂ * b₃ + cy_in = cy_out * 65536) :
+    a₃.val * b₂.val + a₂.val * b₃.val + cy_in.val = cy_out.val * 65536 := by
+  have h_lhs : a₃ * b₂ + a₂ * b₃ + cy_in
+      = (((a₃.val * b₂.val + a₂.val * b₃.val + cy_in.val : ℕ)) : FGL) := by push_cast; ring
+  have h_rhs : cy_out * 65536
+      = (((cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine ZiskFv.PackedBitVec.NoWrap.fgl_eq_to_nat_eq h ?_ ?_
+  · have h1 : a₃.val * b₂.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h2 : a₂.val * b₃.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+private lemma fgl_div_chunk_lift_high_1_loose
+    (a₃ b₃ cy_in cy_out : FGL)
+    (h_a3 : a₃.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_cy_in : cy_in.val < 983041) (h_cy_out : cy_out.val < 983041)
+    (h : a₃ * b₃ + cy_in = cy_out * 65536) :
+    a₃.val * b₃.val + cy_in.val = cy_out.val * 65536 := by
+  have h_lhs : a₃ * b₃ + cy_in
+      = (((a₃.val * b₃.val + cy_in.val : ℕ)) : FGL) := by push_cast; ring
+  have h_rhs : cy_out * 65536
+      = (((cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine ZiskFv.PackedBitVec.NoWrap.fgl_eq_to_nat_eq h ?_ ?_
+  · have h1 : a₃.val * b₃.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+/-- **DIV-unsigned: FGL chunks → packed Euclidean ℕ identity (LOOSE bound).**
+    Mirror of `fgl_div_unsigned_chunks_to_nat_identity` with the
+    balance-constructible carry bound `< 983041` instead of `< 131072`.
+    Composes the loose chunk lifts with the bound-free ℕ aggregator
+    `div_unsigned_packed_of_chunks`. -/
+theorem fgl_div_unsigned_chunks_to_nat_identity_loose
+    (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
+     cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_c0 : c₀.val < 65536) (h_c1 : c₁.val < 65536)
+    (h_c2 : c₂.val < 65536) (h_c3 : c₃.val < 65536)
+    (h_d0 : d₀.val < 65536) (h_d1 : d₁.val < 65536)
+    (h_d2 : d₂.val < 65536) (h_d3 : d₃.val < 65536)
+    (h_cy0 : cy₀.val < 983041) (h_cy1 : cy₁.val < 983041)
+    (h_cy2 : cy₂.val < 983041) (h_cy3 : cy₃.val < 983041)
+    (h_cy4 : cy₄.val < 983041) (h_cy5 : cy₅.val < 983041)
+    (h_cy6 : cy₆.val < 983041)
+    (hC31 : a₀ * b₀ + d₀ = c₀ + cy₀ * 65536)
+    (hC32 : a₁ * b₀ + a₀ * b₁ + d₁ + cy₀ = c₁ + cy₁ * 65536)
+    (hC33 : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + d₂ + cy₁ = c₂ + cy₂ * 65536)
+    (hC34 : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + d₃ + cy₂
+              = c₃ + cy₃ * 65536)
+    (hC35 : a₃ * b₁ + a₂ * b₂ + a₁ * b₃ + cy₃ = cy₄ * 65536)
+    (hC36 : a₃ * b₂ + a₂ * b₃ + cy₄ = cy₅ * 65536)
+    (hC37 : a₃ * b₃ + cy₅ = cy₆ * 65536)
+    (hC38 : cy₆ = 0) :
+    packed4 a₀.val a₁.val a₂.val a₃.val
+        * packed4 b₀.val b₁.val b₂.val b₃.val
+      + packed4 d₀.val d₁.val d₂.val d₃.val
+      = packed4 c₀.val c₁.val c₂.val c₃.val := by
+  refine div_unsigned_packed_of_chunks
+    a₀.val a₁.val a₂.val a₃.val b₀.val b₁.val b₂.val b₃.val
+    c₀.val c₁.val c₂.val c₃.val d₀.val d₁.val d₂.val d₃.val
+    cy₀.val cy₁.val cy₂.val cy₃.val cy₄.val cy₅.val cy₆.val
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · exact fgl_div_chunk_lift_1_loose a₀ b₀ d₀ c₀ cy₀
+      h_a0 h_b0 h_d0 h_c0 h_cy0 hC31
+  · exact fgl_div_chunk_lift_2_loose a₁ a₀ b₀ b₁ d₁ cy₀ c₁ cy₁
+      h_a1 h_a0 h_b0 h_b1 h_d1 h_cy0 h_c1 h_cy1 hC32
+  · exact fgl_div_chunk_lift_3_loose a₂ a₁ a₀ b₀ b₁ b₂ d₂ cy₁ c₂ cy₂
+      h_a2 h_a1 h_a0 h_b0 h_b1 h_b2 h_d2 h_cy1 h_c2 h_cy2 hC33
+  · exact fgl_div_chunk_lift_4_loose a₃ a₂ a₁ a₀ b₀ b₁ b₂ b₃ d₃ cy₂ c₃ cy₃
+      h_a3 h_a2 h_a1 h_a0 h_b0 h_b1 h_b2 h_b3 h_d3 h_cy2 h_c3 h_cy3 hC34
+  · exact fgl_div_chunk_lift_high_3_loose a₃ a₂ a₁ b₁ b₂ b₃ cy₃ cy₄
+      h_a3 h_a2 h_a1 h_b1 h_b2 h_b3 h_cy3 h_cy4 hC35
+  · exact fgl_div_chunk_lift_high_2_loose a₃ a₂ b₂ b₃ cy₄ cy₅
+      h_a3 h_a2 h_b2 h_b3 h_cy4 h_cy5 hC36
+  · exact fgl_div_chunk_lift_high_1_loose a₃ b₃ cy₅ cy₆
+      h_a3 h_b3 h_cy5 h_cy6 hC37
+  · exact fgl_div_chunk_lift_close cy₆ hC38
+
+/-- **Loose-bound DIVU rd-write reconstruction.** Mirror of
+    `h_rd_val_mdru_divu` with the balance-constructible carry bound
+    `< 983041` instead of `< 131072` (the genuine Euclidean-chain carries
+    exceed `2^17`, so the tight bound is not balance-derivable; same
+    situation as MULHU).  Routes through the loose chunk identity, the public
+    Euclidean quotient extractor `fgl_div_unsigned_to_bv64`, and the byte-sum
+    bridge `divu_bv64_of_byte_sum`. -/
+lemma h_rd_val_mdru_divu_loose
+    (op1 op2 : BitVec 64)
+    (e : MemoryBusEntry FGL)
+    (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
+    (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_c0 : c₀.val < 65536) (h_c1 : c₁.val < 65536)
+    (h_c2 : c₂.val < 65536) (h_c3 : c₃.val < 65536)
+    (h_d0 : d₀.val < 65536) (h_d1 : d₁.val < 65536)
+    (h_d2 : d₂.val < 65536) (h_d3 : d₃.val < 65536)
+    (h_cy0 : cy₀.val < 983041) (h_cy1 : cy₁.val < 983041)
+    (h_cy2 : cy₂.val < 983041) (h_cy3 : cy₃.val < 983041)
+    (h_cy4 : cy₄.val < 983041) (h_cy5 : cy₅.val < 983041)
+    (h_cy6 : cy₆.val < 983041)
+    (hC31 : a₀ * b₀ + d₀ = c₀ + cy₀ * 65536)
+    (hC32 : a₁ * b₀ + a₀ * b₁ + d₁ + cy₀ = c₁ + cy₁ * 65536)
+    (hC33 : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + d₂ + cy₁ = c₂ + cy₂ * 65536)
+    (hC34 : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + d₃ + cy₂
+              = c₃ + cy₃ * 65536)
+    (hC35 : a₃ * b₁ + a₂ * b₂ + a₁ * b₃ + cy₃ = cy₄ * 65536)
+    (hC36 : a₃ * b₂ + a₂ * b₃ + cy₄ = cy₅ * 65536)
+    (hC37 : a₃ * b₃ + cy₅ = cy₆ * 65536)
+    (hC38 : cy₆ = 0)
+    (h_byte_lo :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        = a₀.val + a₁.val * 65536)
+    (h_byte_hi :
+      (byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
+        = a₂.val + a₃.val * 65536)
+    (h_rs1_value : op1.toNat = packed4 c₀.val c₁.val c₂.val c₃.val)
+    (h_rs2_value : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val)
+    (h_op2_ne : op2.toNat ≠ 0)
+    (h_d_lt_b : packed4 d₀.val d₁.val d₂.val d₃.val < op2.toNat) :
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
+      = (execute_DIV_REM_pure op1 op2 .DRU).1 := by
+  have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
+        * packed4 b₀.val b₁.val b₂.val b₃.val
+        + packed4 d₀.val d₁.val d₂.val d₃.val
+      = packed4 c₀.val c₁.val c₂.val c₃.val :=
+    fgl_div_unsigned_chunks_to_nat_identity_loose
+      a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
+      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
+      h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
+      h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
+      h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
+      hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
+  rw [← h_rs1_value, ← h_rs2_value] at h_packed_nat
+  have h_quot_eq : op1.toNat / op2.toNat = packed4 a₀.val a₁.val a₂.val a₃.val :=
+    fgl_div_unsigned_to_bv64 h_op2_ne h_d_lt_b h_packed_nat
+  have h_byte_eq_packed :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
+      = packed4 a₀.val a₁.val a₂.val a₃.val :=
+    byte_sum_eq_packed4 e a₀.val a₁.val a₂.val a₃.val h_byte_lo h_byte_hi
+  have h_q_eq : (execute_DIV_REM_pure op1 op2 .DRU).1.toNat
+      = op1.toNat / op2.toNat := by
+    have h_op2_int_ne : (op2.toNat : ℤ) ≠ 0 := by exact_mod_cast h_op2_ne
+    simp only [execute_DIV_REM_pure, execute_DIV_REM_pure_int]
+    rw [if_neg h_op2_int_ne]
+    rw [BitVec.toNat_ofNat]
+    have h_tdiv : (Int.tdiv (op1.toNat : ℤ) (op2.toNat : ℤ)).toNat
+        = op1.toNat / op2.toNat := rfl
+    rw [h_tdiv]
+    have h_op1_lt : op1.toNat < 2 ^ 64 := op1.isLt
+    have h_quot_lt : op1.toNat / op2.toNat < 2 ^ 64 := by
+      calc op1.toNat / op2.toNat
+          ≤ op1.toNat := Nat.div_le_self _ _
+        _ < 2 ^ 64 := h_op1_lt
+    exact Nat.mod_eq_of_lt h_quot_lt
+  have h_byte_sum :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
+      = (execute_DIV_REM_pure op1 op2 .DRU).1.toNat := by
+    rw [h_byte_eq_packed, ← h_quot_eq, h_q_eq]
+  exact divu_bv64_of_byte_sum op1 op2
+    (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
+    h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
+
 /-- **`h_rd_val` discharge for REMU (Tier 1).** Same shape as DIVU but
     extracts the remainder via `fgl_rem_unsigned_to_bv64`. The bus
     entry's bytes pack `d[]` chunks (the remainder lanes). -/
