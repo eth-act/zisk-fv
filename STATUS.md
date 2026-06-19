@@ -32,6 +32,27 @@ Non-vacuous (execRow real ∀-binder; no False.elim). 0 new ZiskFv.* axioms. Ful
 Gate V1 18/18 + V2 12/12. registered in StrongRowConstructionData/StepComplianceStrong/dispatcher.
 LEFT in bus_effect form (6): 6 defect/gap (7 signed-M minus unsigned overlap; FENCE). NOT committed.
 
+=== STEP (b2-control): LUI/AUIPC/JAL OpEnvelope-route conversion — 35 → 38 (uncommitted, this run) ===
+All 3 converted from direct-lift to the OpEnvelope route via PATH 1 (trace-built provenance):
+- KEY FINDING: lui/auipc/jal_h_circuit_of_row_provenance consume ONLY the 5 mode equalities
+  (is_external_op/op/m32/set_pc/store_pc); paddr/jmp_offset*/ind_width/ROM-selectors are never read.
+  FGL = Fin GL_prime ⇒ natF/intF/boolF surjective (Fin.cast_val_eq_self) ⇒ the non-consumed
+  provenance fields are reverse-derived from the real row, all eqs TRUE (non-vacuous, no False.elim).
+- New helper mainRowProvenance_of_pins (TraceLevelExport.lean, after envNoKnownDefectFor_of_nondefect):
+  builds MainRowProvenance m r from the 5 pins; carries NO trust beyond them (repackaging only).
+- Each stepStrong_{lui,auipc,jal}: build OpEnvelope.<op> (provenance from pins + RowMode by rfl +
+  next_pc/store_pc_mem/subset/promises mirrored from construction_<op>_sound), call
+  zisk_riscv_compliant_program_bus, project (lui/auipc = .2.2.2.1 nomem; jal = 11x.2 remaining).
+  aeneasBridgeTrust = ⟨⟨provenance⟩, row_mode, <2 RowData decode residuals>⟩.
+- NO new RowData fields (the 5 pins already present). NOT PATH 3: MainRowProvenance is TRACE-BUILT,
+  not a carried aeneas residual, because the consumed slice reduces to the existing pins.
+- StepNoKnownDefect: real EnvNoKnownDefectFor arms added for lui/auipc/jal (satisfiable via
+  envNoKnownDefectFor_of_nondefect — non-defect, VERIFIED). Dispatcher threads h_known to the 3.
+- OpEnvelope.lean / Compliance.lean / canonical equiv_<OP> UNCHANGED. 0 new ZiskFv.* axioms
+  (mainRowProvenance_of_pins deps = propext/Classical.choice/Quot.sound; arms = Sail closure).
+  Full lake build GREEN. Gate V1 18/18 + V2 12/12. NOT committed.
+  Remaining direct-lift (11): 4 stores + 7 loads.
+
 === STEP (b2): M-ext OpEnvelope-route conversion — 29 → 35 (uncommitted, this run) ===
 All 6 M-ext arms (mulw/mulhu/divu/divuw/remu/remuw) converted from direct-lift to the
 OpEnvelope route via PATH 1 (trace-Environment): the lookup-witness STRUCTURES are now

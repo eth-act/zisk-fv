@@ -215,6 +215,80 @@ theorem envNoKnownDefectFor_of_nondefect
   | arithDivDynamicWitnessSoundness => exact h2
   | fenceIncomplete => simpa [Defects.Blocks] using h3
 
+/-- Build a `MainRowProvenance m r` from the FIVE Main-row mode/control pins
+    (`op`, `is_external_op`, `m32`, `set_pc`, `store_pc`) that the LUI/AUIPC/JAL
+    `OpEnvelope` arms — and ONLY those arms' consumers — actually use.
+
+    The U-type/JAL dispatch path (`lui_h_circuit_of_row_provenance` /
+    `auipc_h_circuit_of_row_provenance` / the JAL analogue) reads back EXACTLY the
+    five `*_eq` provenance fields built here from the supplied pins; it never reads
+    `paddr`, `jmp_offset*`, `ind_width`, or any ROM-selector field.  Those
+    non-consumed fields are filled with values **reverse-derived from the real row**
+    (`(m.pc r).val`, `(m.jmp_offset1 r).val`, …), so every provenance equality is a
+    TRUE statement about the committed row — the witness is genuinely non-vacuous,
+    not a `False.elim` and not a fabricated decode claim.  Because `FGL = Fin
+    GL_prime`, `natF`/`intF`/`boolF` are surjective (`Fin.cast_val_eq_self`), so the
+    reverse-derived equalities close; the ROM rows are chosen to make the selector
+    equations hold by `rfl`, and `mainRow.core := rowAt m r` makes `row_eq` `rfl`.
+
+    Trust note: this carries NO trust beyond the five supplied pins (the existing
+    honest `RowData_{lui,auipc,jal}` decode residuals).  It repackages the same five
+    facts into the shape the `OpEnvelope` constructor requires; it adds no axiom and
+    no new caller obligation. -/
+noncomputable def mainRowProvenance_of_pins
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r : ℕ)
+    (opc : ℕ) (isExt m32b setPcb storePcb : Bool)
+    (h_op : m.op r = ZiskFv.Compliance.natF opc)
+    (h_active : m.is_external_op r = ZiskFv.Compliance.boolF isExt)
+    (h_m32 : m.m32 r = ZiskFv.Compliance.boolF m32b)
+    (h_set_pc : m.set_pc r = ZiskFv.Compliance.boolF setPcb)
+    (h_store_pc : m.store_pc r = ZiskFv.Compliance.boolF storePcb) :
+    ZiskFv.Compliance.MainRowProvenance m r :=
+  let er : ZiskFv.Compliance.MainExtractedRow :=
+    { paddr := (m.pc r).val, op := opc
+      aSrc := 0, aUseSpImm1 := 0, aOffsetImm0 := 0
+      bSrc := 0, bUseSpImm1 := 0, bOffsetImm0 := 0
+      store := 0, storeOffset := 0, storePc := storePcb, setPc := setPcb
+      indWidth := (m.ind_width r).val, jmpOffset1 := (m.jmp_offset1 r).val
+      jmpOffset2 := (m.jmp_offset2 r).val, isExternalOp := isExt, m32 := m32b }
+  let rom : ZiskFv.AirsClean.Main.MainRomRow FGL :=
+    { a_offset_imm0 := ZiskFv.Compliance.natF er.aOffsetImm0
+      a_imm1 := ZiskFv.Compliance.natF er.aUseSpImm1
+      b_offset_imm0 := ZiskFv.Compliance.natF er.bOffsetImm0
+      b_imm1 := ZiskFv.Compliance.natF er.bUseSpImm1
+      store_offset := ZiskFv.Compliance.intF er.storeOffset
+      a_src_imm := ZiskFv.Compliance.selectorF er.aSrc ZiskFv.Compliance.ExtractedConst.srcImm
+      a_src_mem := ZiskFv.Compliance.selectorF er.aSrc ZiskFv.Compliance.ExtractedConst.srcMem
+      is_precompiled := 0
+      b_src_imm := ZiskFv.Compliance.selectorF er.bSrc ZiskFv.Compliance.ExtractedConst.srcImm
+      b_src_mem := ZiskFv.Compliance.selectorF er.bSrc ZiskFv.Compliance.ExtractedConst.srcMem
+      store_mem := ZiskFv.Compliance.selectorF er.store ZiskFv.Compliance.ExtractedConst.storeMem
+      store_ind := ZiskFv.Compliance.selectorF er.store ZiskFv.Compliance.ExtractedConst.storeInd
+      b_src_ind := ZiskFv.Compliance.selectorF er.bSrc ZiskFv.Compliance.ExtractedConst.srcInd
+      a_src_reg := ZiskFv.Compliance.selectorF er.aSrc ZiskFv.Compliance.ExtractedConst.srcReg
+      b_src_reg := ZiskFv.Compliance.selectorF er.bSrc ZiskFv.Compliance.ExtractedConst.srcReg
+      store_reg := ZiskFv.Compliance.selectorF er.store ZiskFv.Compliance.ExtractedConst.storeReg
+      addr0 := 0, addr1 := 0, addr2 := 0, main_step := 0 }
+  { mainRow := { core := ZiskFv.AirsClean.Main.rowAt m r, rom := rom }
+    extractedRow := er
+    row_eq := rfl
+    op_eq := by simpa [er, ZiskFv.Compliance.natF] using h_op
+    is_external_op_eq := by simpa [er] using h_active
+    m32_eq := by simpa [er] using h_m32
+    ind_width_eq := by
+      show m.ind_width r = ZiskFv.Compliance.natF _; simp [er, ZiskFv.Compliance.natF]
+    set_pc_eq := by simpa [er] using h_set_pc
+    store_pc_eq := by simpa [er] using h_store_pc
+    jmp_offset1_eq := by
+      show m.jmp_offset1 r = ZiskFv.Compliance.intF _; simp [er, ZiskFv.Compliance.intF]
+    jmp_offset2_eq := by
+      show m.jmp_offset2 r = ZiskFv.Compliance.intF _; simp [er, ZiskFv.Compliance.intF]
+    paddr_eq := by simp [er]
+    a_offset_imm0_eq := rfl, a_imm1_eq := rfl, b_offset_imm0_eq := rfl, b_imm1_eq := rfl
+    store_offset_eq := rfl, a_src_imm_eq := rfl, a_src_mem_eq := rfl, a_src_reg_eq := rfl
+    b_src_imm_eq := rfl, b_src_mem_eq := rfl, b_src_ind_eq := rfl, b_src_reg_eq := rfl
+    store_mem_eq := rfl, store_ind_eq := rfl, store_reg_eq := rfl }
+
 /-- Irreducible per-row residuals for the `sub` archetype — the binders of
     `construction_sub_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sub
@@ -7086,45 +7160,273 @@ theorem stepStrong_bgeu
     h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
-/-- Strengthened `lui` step (channel-balance form). -/
+/-- Strengthened `lui` step (channel-balance form), via the OpEnvelope route:
+    CONSTRUCT `OpEnvelope.lui` from the trace's `RowData_lui` and invoke
+    `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_nomem` conjunct.
+
+    The `OpEnvelope.lui` arm's `provenance`/`row_mode` are BUILT from the five
+    Main-row mode pins already carried as `RowData_lui` residuals
+    (`mainRowProvenance_of_pins` + `luiRowMode_of_extracted_shape`).  This is PATH
+    1 (trace-built): the consumed provenance fields reduce to exactly those five
+    honest decode residuals, so the conversion adds no trust over the prior
+    direct-lift arm.  `aeneasBridgeTrust` is the LUI tuple
+    `⟨⟨provenance⟩, row_mode, h_imm_lo_nat, h_imm_hi_nat⟩`; `memoryTimeline`
+    trivially; `NoKnownDefect` from the threaded `h_known_arm` (non-defect). -/
 theorem stepStrong_lui
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_lui trace binding i) :
+    (d : RowData_lui trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .lui .. => True | _ => False)) :
     execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.LUI)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_lui_sound trace binding i d.lui_input d.imm d.rd d.h_main_op
-    d.h_main_active d.h_m32 d.h_set_pc d.h_store_pc d.h_input_imm d.h_input_rd
-    d.h_input_pc d.h_imm_lo_nat d.h_imm_hi_nat d.execRow d.h_exec_len d.h_e0_mult
-    d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let e_rd := eRdLui trace binding i
+  -- (a) Main per-row Spec ⇒ the LUI Main constraint subset.
+  have h_spec := mainSpec_at trace binding i
+  have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
+    ZiskFv.AirsClean.Main.add_subset_holds_of_spec_rowAt m i.val h_spec
+  obtain ⟨_h_c0, h_b0, _h_c1, h_b1, _h_set_flag, h_clear_flag, h_disjoint,
+      h_flag_bool, h_ext_bool⟩ := h_add_subset
+  -- (a) the handshake is definitional: pick `next_pc` as its RHS.
+  let next_pc : FGL :=
+    m.set_pc i.val * (m.c_0 i.val + m.jmp_offset1 i.val)
+      + (1 - m.set_pc i.val) * (m.pc i.val + m.jmp_offset2 i.val)
+      + m.flag i.val * (m.jmp_offset1 i.val - m.jmp_offset2 i.val)
+  have h_handshake :
+      ZiskFv.Airs.Main.pc_handshake_with_next_pc m i.val next_pc := rfl
+  have h_lui_subset :
+      ZiskFv.Tactics.UTypeArchetype.lui_subset_holds m i.val next_pc :=
+    ⟨h_flag_bool, h_ext_bool, h_disjoint, h_b0, h_b1, h_clear_flag, h_handshake⟩
+  -- (b1) provenance + row_mode built from the five decode pins.
+  let provenance : ZiskFv.Compliance.MainRowProvenance m i.val :=
+    mainRowProvenance_of_pins m i.val ZiskFv.Compliance.ExtractedConst.opCopyB
+      false false false false
+      (by simpa [ZiskFv.Trusted.OP_COPYB, ZiskFv.Compliance.natF,
+        ZiskFv.Compliance.ExtractedConst.opCopyB] using d.h_main_op)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_main_active)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_m32)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_set_pc)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_store_pc)
+  let row_mode : ZiskFv.Compliance.MainRowProvenance.LuiRowMode provenance :=
+    { op_eq := rfl, internal_eq := rfl, m32_eq := rfl, set_pc_eq := rfl, store_pc_eq := rfl }
+  -- (a) `StorePcMemoryWitness` from the real Clean Main `c` message row.
+  have h_row_core :
+      (mainRowWithRomLui trace binding i).core =
+        ZiskFv.AirsClean.Main.rowAt m i.val := by
+    have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+    simpa [mainRowWithRomLui, m,
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+  let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
+    { row := mainRowWithRomLui trace binding i
+      row_eq := h_row_core
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  let promises : ZiskFv.EquivCore.Promises.UTypePromises
+      state d.lui_input.imm d.lui_input.rd d.lui_input.PC
+      (PureSpec.execute_LUI_pure d.lui_input).nextPC
+      d.imm d.rd d.execRow e_rd (d.lui_input.PC + 4#64) :=
+    { input_imm_eq := d.h_input_imm
+      input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      rd_mult := by rfl
+      rd_as := by rfl
+      nextPC_eq := rfl
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.lui d.lui_input d.imm d.rd next_pc d.execRow e_rd store_pc_mem
+      provenance row_mode h_lui_subset d.h_imm_lo_nat d.h_imm_hi_nat promises
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨⟨provenance⟩, row_mode, d.h_imm_lo_nat, d.h_imm_hi_nat⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.1
 
-/-- Strengthened `auipc` step (channel-balance form). -/
+/-- Strengthened `auipc` step (channel-balance form), via the OpEnvelope route:
+    CONSTRUCT `OpEnvelope.auipc` from the trace's `RowData_auipc` and invoke
+    `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_nomem` conjunct.
+
+    Same PATH-1 provenance construction as `stepStrong_lui`: the AUIPC
+    `provenance`/`row_mode` are BUILT from the five mode pins
+    (`mainRowProvenance_of_pins` + `auipcRowMode_of_extracted_shape`-shape record).
+    `aeneasBridgeTrust` is the AUIPC tuple
+    `⟨⟨provenance⟩, row_mode, h_offset_bridge, h_pc_bridge⟩`; `NoKnownDefect` from
+    the threaded `h_known_arm` (non-defect). -/
 theorem stepStrong_auipc
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_auipc trace binding i) :
+    (d : RowData_auipc trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .auipc .. => True | _ => False)) :
     execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.AUIPC)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_auipc_sound trace binding i d.auipc_input d.imm d.rd d.h_main_op
-    d.h_main_active d.h_m32 d.h_set_pc d.h_store_pc d.h_input_imm d.h_input_rd
-    d.h_input_pc d.h_offset_bridge d.h_pc_bridge d.execRow d.h_exec_len d.h_e0_mult
-    d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.h_no_wrap d.h_pc_offset_lt_2_32
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let e_rd := eRdLui trace binding i
+  -- (a) Main per-row Spec ⇒ the AUIPC Main constraint subset.
+  have h_spec := mainSpec_at trace binding i
+  have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
+    ZiskFv.AirsClean.Main.add_subset_holds_of_spec_rowAt m i.val h_spec
+  obtain ⟨h_c0, _h_b0, h_c1, _h_b1, h_set_flag, _h_clear_flag, h_disjoint,
+      h_flag_bool, h_ext_bool⟩ := h_add_subset
+  let next_pc : FGL :=
+    m.set_pc i.val * (m.c_0 i.val + m.jmp_offset1 i.val)
+      + (1 - m.set_pc i.val) * (m.pc i.val + m.jmp_offset2 i.val)
+      + m.flag i.val * (m.jmp_offset1 i.val - m.jmp_offset2 i.val)
+  have h_handshake :
+      ZiskFv.Airs.Main.pc_handshake_with_next_pc m i.val next_pc := rfl
+  have h_auipc_subset :
+      ZiskFv.Tactics.UTypeArchetype.auipc_subset_holds m i.val next_pc :=
+    ⟨h_flag_bool, h_ext_bool, h_disjoint, h_c0, h_c1, h_set_flag, h_handshake⟩
+  -- (b1) provenance + row_mode built from the five decode pins.
+  let provenance : ZiskFv.Compliance.MainRowProvenance m i.val :=
+    mainRowProvenance_of_pins m i.val ZiskFv.Compliance.ExtractedConst.opFlag
+      false false false true
+      (by simpa [ZiskFv.Trusted.OP_FLAG, ZiskFv.Compliance.natF,
+        ZiskFv.Compliance.ExtractedConst.opFlag] using d.h_main_op)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_main_active)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_m32)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_set_pc)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_store_pc)
+  let row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance :=
+    { op_eq := rfl, internal_eq := rfl, m32_eq := rfl, set_pc_eq := rfl, store_pc_eq := rfl }
+  have h_row_core :
+      (mainRowWithRomLui trace binding i).core =
+        ZiskFv.AirsClean.Main.rowAt m i.val := by
+    have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+    simpa [mainRowWithRomLui, m,
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+  let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
+    { row := mainRowWithRomLui trace binding i
+      row_eq := h_row_core
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  let promises : ZiskFv.EquivCore.Promises.UTypePromises
+      state d.auipc_input.imm d.auipc_input.rd d.auipc_input.PC
+      (PureSpec.execute_AUIPC_pure d.auipc_input).nextPC
+      d.imm d.rd d.execRow e_rd (PureSpec.execute_AUIPC_pure d.auipc_input).nextPC :=
+    { input_imm_eq := d.h_input_imm
+      input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      rd_mult := by rfl
+      rd_as := by rfl
+      nextPC_eq := rfl
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.auipc d.auipc_input d.imm d.rd d.execRow e_rd
+      (PureSpec.execute_AUIPC_pure d.auipc_input).nextPC next_pc store_pc_mem
+      provenance row_mode h_auipc_subset d.h_offset_bridge d.h_pc_bridge promises
+      d.h_no_wrap d.h_pc_offset_lt_2_32
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨⟨provenance⟩, row_mode, d.h_offset_bridge, d.h_pc_bridge⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.1
 
-/-- Strengthened `jal` step (channel-balance form). -/
+/-- Strengthened `jal` step (channel-balance form), via the OpEnvelope route:
+    CONSTRUCT `OpEnvelope.jal` from the trace's `RowData_jal` and invoke
+    `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_remaining`
+    conjunct.
+
+    Same PATH-1 provenance construction as `stepStrong_lui`/`stepStrong_auipc`:
+    the JAL `provenance`/`row_mode` are BUILT from the five mode pins
+    (`mainRowProvenance_of_pins`).  `aeneasBridgeTrust` is the JAL tuple
+    `⟨⟨provenance⟩, row_mode, h_jmp2, h_pc_bridge⟩`; `NoKnownDefect` from the
+    threaded `h_known_arm` (non-defect). -/
 theorem stepStrong_jal
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_jal trace binding i) :
+    (d : RowData_jal trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .jal .. => True | _ => False)) :
     execute_instruction (instruction.JAL (d.imm, d.rd)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_jal_sound trace binding i d.jal_input d.imm d.rd d.misa_val
-    d.nextPC_val d.h_main_op d.h_main_active d.h_m32 d.h_set_pc d.h_store_pc d.h_jmp2
-    d.h_pc_bridge d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
-    d.h_input_rd d.h_input_pc d.h_input_misa d.h_misa_c d.h_success d.h_nextPC_option
-    d.h_rd_idx d.h_input_imm d.h_not_throws d.h_pc_bound d.h_pc_offset_lt_2_32
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let e_rd := eRdLui trace binding i
+  -- (a) Main per-row Spec ⇒ the JAL Main constraint subset.
+  have h_spec := mainSpec_at trace binding i
+  have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
+    ZiskFv.AirsClean.Main.add_subset_holds_of_spec_rowAt m i.val h_spec
+  obtain ⟨h_c0, _h_b0, h_c1, _h_b1, h_set_flag, _h_clear_flag, h_disjoint,
+      h_flag_bool, h_ext_bool⟩ := h_add_subset
+  let next_pc : FGL :=
+    m.set_pc i.val * (m.c_0 i.val + m.jmp_offset1 i.val)
+      + (1 - m.set_pc i.val) * (m.pc i.val + m.jmp_offset2 i.val)
+      + m.flag i.val * (m.jmp_offset1 i.val - m.jmp_offset2 i.val)
+  have h_handshake :
+      ZiskFv.Airs.Main.pc_handshake_with_next_pc m i.val next_pc := rfl
+  have h_jal_subset :
+      ZiskFv.Airs.Main.jump_subset_holds m i.val next_pc :=
+    ⟨h_flag_bool, h_ext_bool, h_disjoint, h_c0, h_c1, h_set_flag, h_handshake⟩
+  -- (b1) provenance + row_mode built from the five decode pins.
+  let provenance : ZiskFv.Compliance.MainRowProvenance m i.val :=
+    mainRowProvenance_of_pins m i.val ZiskFv.Compliance.ExtractedConst.opFlag
+      false false false true
+      (by simpa [ZiskFv.Trusted.OP_FLAG, ZiskFv.Compliance.natF,
+        ZiskFv.Compliance.ExtractedConst.opFlag] using d.h_main_op)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_main_active)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_m32)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_set_pc)
+      (by simpa [ZiskFv.Compliance.boolF] using d.h_store_pc)
+  let row_mode : ZiskFv.Compliance.MainRowProvenance.JalRowMode provenance :=
+    { op_eq := rfl, internal_eq := rfl, m32_eq := rfl, set_pc_eq := rfl, store_pc_eq := rfl }
+  have h_row_core :
+      (mainRowWithRomLui trace binding i).core =
+        ZiskFv.AirsClean.Main.rowAt m i.val := by
+    have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+    simpa [mainRowWithRomLui, m,
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+  let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
+    { row := mainRowWithRomLui trace binding i
+      row_eq := h_row_core
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  let promises : ZiskFv.EquivCore.Promises.JumpPromises
+      state d.jal_input.PC d.jal_input.rd d.misa_val
+      (PureSpec.execute_JAL_pure d.jal_input).success
+      (PureSpec.execute_JAL_pure d.jal_input).nextPC
+      d.rd d.execRow e_rd d.nextPC_val :=
+    { input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      input_misa_eq := d.h_input_misa
+      misa_c_zero := d.h_misa_c
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      rd_mult := by rfl
+      rd_as := by rfl
+      success := d.h_success
+      nextPC_option := d.h_nextPC_option
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.jal d.jal_input d.imm d.rd d.misa_val next_pc d.execRow e_rd
+      d.nextPC_val store_pc_mem provenance row_mode h_jal_subset d.h_jmp2 d.h_pc_bridge
+      promises d.h_input_imm d.h_not_throws d.h_pc_bound d.h_pc_offset_lt_2_32
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨⟨provenance⟩, row_mode, d.h_jmp2, d.h_pc_bridge⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `jalr` step (channel-balance form), via the OpEnvelope route:
     CONSTRUCT `OpEnvelope.jalr` from the trace's `RowData_jalr` (mirroring
@@ -8313,6 +8615,18 @@ def StepNoKnownDefect
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
       (r := i.val) (fun env => match env with | .remuw .. => True | _ => False)
+  | .lui _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .lui .. => True | _ => False)
+  | .auipc _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .auipc .. => True | _ => False)
+  | .jal _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .jal .. => True | _ => False)
   | _ => True
 
 /-- The strengthened per-step conclusion: the channel-balance
@@ -8733,9 +9047,9 @@ theorem stepComplianceStrong_of_rowData
   | bge d => exact stepStrong_bge trace binding i d h_known
   | bltu d => exact stepStrong_bltu trace binding i d h_known
   | bgeu d => exact stepStrong_bgeu trace binding i d h_known
-  | lui d => exact stepStrong_lui trace binding i d
-  | auipc d => exact stepStrong_auipc trace binding i d
-  | jal d => exact stepStrong_jal trace binding i d
+  | lui d => exact stepStrong_lui trace binding i d h_known
+  | auipc d => exact stepStrong_auipc trace binding i d h_known
+  | jal d => exact stepStrong_jal trace binding i d h_known
   | jalr d => exact stepStrong_jalr trace binding i d h_known
   | sb d => exact stepStrong_sb trace binding i d
   | sh d => exact stepStrong_sh trace binding i d
