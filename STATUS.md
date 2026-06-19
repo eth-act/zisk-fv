@@ -1,6 +1,8 @@
 Stream: P4 M-ext constructions (p4-mext worktree, off origin/main). build/ symlinked,
 submodule populated, gate 18/18 (V1) + 12/12 (V2). Plan: docs/ai/plan/PLAN_ENDGAME_P4_MEXT.md.
 
+=== P4 SET NOW 55/63 (control flow added; see bottom) ===
+
 === UNSIGNED M-EXT COMPLETE: 36/63 ===
 All 6 unsigned RV64M construction_<op>_sound landed, full-fidelity (arith witnesses
 DERIVED from componentWithArithTable.FullSpec, not caller-supplied), green, 0 PROJECT
@@ -40,5 +42,26 @@ HONEST #76 RESIDUALS carried per load (genuinely irreducible, FLAGGED in header)
 - LB/LH/LW: + BinaryExtension op-bus provider (v, r_binary, offset, env, h_static,
   h_match) — no signextend balance wrapper exists.
 
-NEXT: either P5 assembly (compose the 47 constructions → env removal) or merge/PR.
+=== CONTROL FLOW COMPLETE (uncommitted): 47 → 55 ===
+All 8 control-flow construction_<op>_sound landed: 6 branches in NEW
+ZiskFv/Compliance/ConstructionBranch.lean (beq/bne/blt/bge/bltu/bgeu) + JAL/JALR
+in NEW ZiskFv/Compliance/ConstructionJump.lean. Green, 0 PROJECT ZiskFv.* axioms
+each (no native_decide; branches/JAL purely Sail-axiom + kernel; JALR + the
+documented Sail execute_JALR_pure_equiv axiom). Registered in ZiskFv.lean +
+bin/TrustGate/Main.lean; baseline-construction-theorem-binders.txt regenerated
+(2494→2774, strictly additive). Gate: V1 18/18 + V2 12/12. NOT committed.
+
+HONEST #100 RESIDUAL carried per control-flow op (genuinely irreducible, FLAGGED):
+- Branches: h_nextPC_matches = the #100 cross-row CONDITIONAL next-PC obligation
+  (exec-bus PC ↔ Sail execute_<BOP>_pure.nextPC, where Sail IS the
+  `if cmp then pc+imm else pc+4` term — NO separate taken/not-taken selector
+  needed; the conditional collapses into the one equation). Plus operand bridges
+  + misa[C]=0 profile + happy-path not_throws/success.
+- JAL/JALR: JumpPromises.nextPC_matches = the #100 next-PC obligation (JAL
+  unconditional pc+imm; JALR computed (rs1+imm)&~1). jump_subset/jalr_subset
+  DERIVED from per-row Spec; rd-write = Main row's own cMemMessage (eRdLui /
+  StorePcMemoryWitness, matches_memory_entry_refl). Intra-row h_pc_bridge /
+  h_link_bridge are bucket-(b) Sail bridges, NOT the cross-row term.
+
+NEXT: either P5 assembly (compose the 55 constructions → env removal) or merge/PR.
 Sibling threads: #76 (p76-memory) + Aeneas downgrade (aeneas-discharge).

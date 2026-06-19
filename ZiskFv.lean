@@ -150,6 +150,8 @@ import ZiskFv.Compliance.ConstructionRemu
 import ZiskFv.Compliance.ConstructionRemuw
 import ZiskFv.Compliance.ConstructionStore
 import ZiskFv.Compliance.ConstructionLoad
+import ZiskFv.Compliance.ConstructionBranch
+import ZiskFv.Compliance.ConstructionJump
 import ZiskFv.Compliance
 import ZiskFv.Completeness.Rv
 import ZiskFv.Completeness.Rv64im
