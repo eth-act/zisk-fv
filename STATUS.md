@@ -1,67 +1,35 @@
-Stream: P4 M-ext constructions (p4-mext worktree, off origin/main). build/ symlinked,
-submodule populated, gate 18/18 (V1) + 12/12 (V2). Plan: docs/ai/plan/PLAN_ENDGAME_P4_MEXT.md.
+Stream: P4 OpEnvelope constructions → P5 trace-level export (#61). Worktree p4-mext,
+branch p4-loads-stores (stacked on PR #110). build/ symlinked, submodule populated.
+Metaplan: docs/ai/plan/PLAN_ENDGAME.md (the home-stretch checklist). Gate V1 18/18 + V2 12/12.
 
-=== P4 SET NOW 55/63 (control flow added; see bottom) ===
+=== P4 SOUND CONSTRUCTIONS: 55/63 — and 55 is the HONEST CAP ===
+Committed construction_<op>_sound (derived from trace.balanced + honest residuals,
+0 PROJECT ZiskFv.* axioms each):
+- 30 ALU/shift/W-ALU/LUI/AUIPC (on main) + 6 unsigned M-ext (PR #110)
+- stores SB/SH/SW/SD (387c45e0) → 40   [sub-doubleword carry h_m* preservation = #76]
+- loads LB/LH/LW/LD/LBU/LHU/LWU (54a99076) → 47   [carry memoryTimelineEvidence = #76 + providers]
+- branches BEQ..BGEU + JAL/JALR (fb259f04) → 55   [carry h_nextPC_matches = #100]
 
-=== UNSIGNED M-EXT COMPLETE: 36/63 ===
-All 6 unsigned RV64M construction_<op>_sound landed, full-fidelity (arith witnesses
-DERIVED from componentWithArithTable.FullSpec, not caller-supplied), green, 0 PROJECT
-ZiskFv.* axioms each, committed:
-- MULW e86b7c05, MULHU 94b09482, DIVU 266e7a98, DIVUW a297ef86, REMU 8e2f084c, REMUW e7ffae17.
-Signed M-ext (MUL/MULH/MULHSU/DIV/DIVW/REM/REMW) stay defect-gated (NoKnownDefect /
-the codygunton/zisk#5 LT_ABS_NP bug). FENCE defect-gated.
+The remaining 8 are DEFECT/GAP-GATED — NOT soundly constructible (honest exclusions,
+carried by the global theorem's ∀-env NoKnownDefect / decode-gap):
+- signed-M MUL/MULH/MULHSU/DIV/DIVW/REM/REMW (7): PROVEN unconstructible (agent a71dfd4).
+  The circuit's signed mul/div is UNSOUND (carry-chain can't rule out the exceptional
+  product-shape; a malicious prover can forge — defects.md:48-51). NoKnownDefect is
+  intentionally contradictory for these envelopes ⇒ any concrete construction is vacuous.
+  A laundered vacuous attempt (carried h_env_defect) was rejected + STASHED (never commit).
+- FENCE (1): decode-incompleteness (FenceIncomplete — decoder rejects generic fm≠0 FENCE).
 
-EXTRACTION FOUNDATION (committed, the lever that unblocked full-fidelity M-ext):
-- c46 re-compose (cd26a331), chunk ranges (d9e59667), carry ranges (8660312f),
-  faithful op-bus mux (af16b990) → componentWithArithTable now faithfully constrains
-  carry-chain + ArithTable + c46 + chunk ranges + carry ranges + the muxed message
-  (all modes), all balance-derivable.
+=== NEXT: P5 trace-level export (the real #61 closure) over the 55 ===
+SCOPING in flight (agent aeaab17d): map OpEnvelope anatomy + the residual inventory +
+the decode→dispatch + the target theorem signature that derives the OpEnvelope from the
+trace (removing the OpEnvelope param), with the 8 gated covered by the existing NoKnownDefect.
 
-RESIDUALS carried per div/rem construction (honest, == canonical equiv): the ONE
-`remainder_bound` (LTU |d|<b self-edge — a finished-channel self-edge NOT in the
-ensemble; full-fidelity needs composing it, deferred) + W-mode bus-encoding residuals
-(h_b23/h_c23/h_sext_choice for the W ops) + operand bridges + decode/Sail/exec/nextPC.
+=== SIBLING THREADS ===
+- #111 (aeneasBridgeTrust discharge): BLOCKED — sound in-build discharge is NO-GO (numBits/
+  irreducibility wall; native_decide gate-forbidden). Needs a route decision (a: large
+  symbolic effort / b: native_decide trust-policy [advised against] / c: keep loose coupling).
+- #76 (h_memory_timeline): PR-76.5 step D landed on p76-memory (cross-segment seam, GO);
+  E/F/G + per-address timeline remain. Discharges loads' + stores' #76 residuals.
 
-=== LOADS COMPLETE (uncommitted): 40 → 47 ===
-All 7 RV64 load construction_l{b,h,w,d,bu,hu,wu}_sound landed in NEW
-ZiskFv/Compliance/ConstructionLoad.lean, green, 0 PROJECT ZiskFv.* axioms each
-(LHU/LWU inherit native_decide via the canonical MemAlign zero-pad path).
-Pattern mirrors ConstructionStore: bus.e1 (read) / bus.e2 (rd-write) rooted at
-the Main row's own b/c emissions ⇒ main_b_match/main_c_match = refl. Canonical
-equiv_<LOAD> reused (byte/sext/zext already proven there). Registered in
-ZiskFv.lean + bin/TrustGate/Main.lean; baseline-construction-theorem-binders.txt
-regenerated (1768→2494, purely additive). Gate: V1 18/18 + V2 12/12. NOT committed.
-
-HONEST #76 RESIDUALS carried per load (genuinely irreducible, FLAGGED in header):
-- h_memory_timeline : MemoryTimelineEvidence state bus.e1 (loaded bytes ↔ Sail mem,
-  cross-row replay timeline) — inside LoadPromises.memory_timeline.
-- Mem-AIR provider linkage (mem, r_mem, h_mem_match, h_mem_sel, h_mem_wr): the
-  Mem-channel balance leaves a 5-way provider disjunction (per ConstructionStore
-  note), so it is NOT balance-derivable here.
-- LBU/LHU/LWU: + align : MemAlignWitness (sub-doubleword high-byte-zero provider).
-- LB/LH/LW: + BinaryExtension op-bus provider (v, r_binary, offset, env, h_static,
-  h_match) — no signextend balance wrapper exists.
-
-=== CONTROL FLOW COMPLETE (uncommitted): 47 → 55 ===
-All 8 control-flow construction_<op>_sound landed: 6 branches in NEW
-ZiskFv/Compliance/ConstructionBranch.lean (beq/bne/blt/bge/bltu/bgeu) + JAL/JALR
-in NEW ZiskFv/Compliance/ConstructionJump.lean. Green, 0 PROJECT ZiskFv.* axioms
-each (no native_decide; branches/JAL purely Sail-axiom + kernel; JALR + the
-documented Sail execute_JALR_pure_equiv axiom). Registered in ZiskFv.lean +
-bin/TrustGate/Main.lean; baseline-construction-theorem-binders.txt regenerated
-(2494→2774, strictly additive). Gate: V1 18/18 + V2 12/12. NOT committed.
-
-HONEST #100 RESIDUAL carried per control-flow op (genuinely irreducible, FLAGGED):
-- Branches: h_nextPC_matches = the #100 cross-row CONDITIONAL next-PC obligation
-  (exec-bus PC ↔ Sail execute_<BOP>_pure.nextPC, where Sail IS the
-  `if cmp then pc+imm else pc+4` term — NO separate taken/not-taken selector
-  needed; the conditional collapses into the one equation). Plus operand bridges
-  + misa[C]=0 profile + happy-path not_throws/success.
-- JAL/JALR: JumpPromises.nextPC_matches = the #100 next-PC obligation (JAL
-  unconditional pc+imm; JALR computed (rs1+imm)&~1). jump_subset/jalr_subset
-  DERIVED from per-row Spec; rd-write = Main row's own cMemMessage (eRdLui /
-  StorePcMemoryWitness, matches_memory_entry_refl). Intra-row h_pc_bridge /
-  h_link_bridge are bucket-(b) Sail bridges, NOT the cross-row term.
-
-NEXT: either P5 assembly (compose the 55 constructions → env removal) or merge/PR.
-Sibling threads: #76 (p76-memory) + Aeneas downgrade (aeneas-discharge).
+GOAL NOTE: the /goal says "ALL 63" — unachievable (8 are defect/gap-gated). Re-scope to
+"the 55 constructible + 8 honestly excluded via NoKnownDefect; P5 over the 55."
