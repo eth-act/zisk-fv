@@ -250,6 +250,97 @@ theorem signed_carry_ranges_of_lookup_aware_const_soundness
     by simpa [rowAt, constVar] using h_cy5,
     by simpa [rowAt, constVar] using h_cy6⟩
 
+/-- Build an ArithDiv `SignedCarryRangeLookupWitness` from the row's carry-chain
+    `Spec` plus its seven signed-carry range facts.  Same constant-row / dummy-env
+    technique as the ArithMul / Mem family builders — non-vacuous: the substantive
+    content is the `FullSpec`-projected facts a P4 construction derives from
+    balance. -/
+def signedCarryRangeLookupWitness_of_spec
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (h_spec : Spec (rowAt v r))
+    (h_carry :
+      ((v.cy_0 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_0 r).val)
+      ∧ ((v.cy_1 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_1 r).val)
+      ∧ ((v.cy_2 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_2 r).val)
+      ∧ ((v.cy_3 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_3 r).val)
+      ∧ ((v.cy_4 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_4 r).val)
+      ∧ ((v.cy_5 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_5 r).val)
+      ∧ ((v.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_6 r).val)) :
+    SignedCarryRangeLookupWitness v r := by
+  refine ⟨0, ⟨fun _ => 0, fun _ _ => #[]⟩, ?_⟩
+  simp only [mainWithSignedCarryRanges, main, circuit_norm]
+  obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+  obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ := h_carry
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination hc6
+  · linear_combination hc7
+  · linear_combination hc8
+  · linear_combination hc31
+  · linear_combination hc32
+  · linear_combination hc33
+  · linear_combination hc34
+  · linear_combination hc35
+  · linear_combination hc36
+  · linear_combination hc37
+  · linear_combination hc38
+  · simpa [rowAt] using hr0
+  · simpa [rowAt] using hr1
+  · simpa [rowAt] using hr2
+  · simpa [rowAt] using hr3
+  · simpa [rowAt] using hr4
+  · simpa [rowAt] using hr5
+  · simpa [rowAt] using hr6
+
+/-- Build an ArithDiv `ChunkRangeLookupWitness` from the row's carry-chain `Spec`
+    plus its sixteen 16-bit chunk facts. -/
+def chunkRangeLookupWitness_of_spec
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (h_spec : Spec (rowAt v r))
+    (h_chunks :
+      (v.a_0 r).val < 65536 ∧ (v.a_1 r).val < 65536
+      ∧ (v.a_2 r).val < 65536 ∧ (v.a_3 r).val < 65536
+      ∧ (v.b_0 r).val < 65536 ∧ (v.b_1 r).val < 65536
+      ∧ (v.b_2 r).val < 65536 ∧ (v.b_3 r).val < 65536
+      ∧ (v.c_0 r).val < 65536 ∧ (v.c_1 r).val < 65536
+      ∧ (v.c_2 r).val < 65536 ∧ (v.c_3 r).val < 65536
+      ∧ (v.d_0 r).val < 65536 ∧ (v.d_1 r).val < 65536
+      ∧ (v.d_2 r).val < 65536 ∧ (v.d_3 r).val < 65536) :
+    ChunkRangeLookupWitness v r := by
+  refine ⟨0, ⟨fun _ => 0, fun _ _ => #[]⟩, ?_⟩
+  simp only [mainWithChunkRanges, main, circuit_norm]
+  obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+  obtain ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+          hcc0, hcc1, hcc2, hcc3, hd0, hd1, hd2, hd3⟩ := h_chunks
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination hc6
+  · linear_combination hc7
+  · linear_combination hc8
+  · linear_combination hc31
+  · linear_combination hc32
+  · linear_combination hc33
+  · linear_combination hc34
+  · linear_combination hc35
+  · linear_combination hc36
+  · linear_combination hc37
+  · linear_combination hc38
+  · simpa [rowAt] using ha0
+  · simpa [rowAt] using ha1
+  · simpa [rowAt] using ha2
+  · simpa [rowAt] using ha3
+  · simpa [rowAt] using hb0
+  · simpa [rowAt] using hb1
+  · simpa [rowAt] using hb2
+  · simpa [rowAt] using hb3
+  · simpa [rowAt] using hcc0
+  · simpa [rowAt] using hcc1
+  · simpa [rowAt] using hcc2
+  · simpa [rowAt] using hcc3
+  · simpa [rowAt] using hd0
+  · simpa [rowAt] using hd1
+  · simpa [rowAt] using hd2
+  · simpa [rowAt] using hd3
+
 /-- Concrete primary DIV/DIVU op-bus message for a Clean ArithDiv row. -/
 @[reducible]
 def primaryOpBusMessage (row : ArithDivRow FGL) : OpBusMessage FGL :=

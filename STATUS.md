@@ -32,7 +32,28 @@ Non-vacuous (execRow real ∀-binder; no False.elim). 0 new ZiskFv.* axioms. Ful
 Gate V1 18/18 + V2 12/12. registered in StrongRowConstructionData/StepComplianceStrong/dispatcher.
 LEFT in bus_effect form (6): 6 defect/gap (7 signed-M minus unsigned overlap; FENCE). NOT committed.
 
-=== STEP (b1): OpEnvelope-route conversion — 22 → 29 (uncommitted, this run) ===
+=== STEP (b2): M-ext OpEnvelope-route conversion — 29 → 35 (uncommitted, this run) ===
+All 6 M-ext arms (mulw/mulhu/divu/divuw/remu/remuw) converted from direct-lift to the
+OpEnvelope route via PATH 1 (trace-Environment): the lookup-witness STRUCTURES are now
+BUILT from the SHARED-ArithMul provider's balance-derived FullSpec, NOT carried.
+- New witness builders (Mem `rowRangeLookupWitness_of_range_facts` dummy-env technique,
+  non-vacuous: substance = real FullSpec projections): `arithMulTableWitness_of_fullSpec`
+  + `arithDivTableWitness_of_fullSpec` (SharedBundles.lean); `chunkRangeLookupWitness_of_spec`
+  + `signedCarryRangeLookupWitness_of_spec` (ArithMul/Bridge.lean + ArithDiv/Bridge.lean).
+- ArithMul→ArithDiv view bridge (Div arms): `arithDiv_fullSpec_of_arithMul_fullSpec` +
+  `divu_row_constraints_of_arithMul_fullSpec` (ConstructionDivu.lean) — Div canonical equiv
+  needs ArithDiv witnesses; provider is SHARED ArithMul; bridge re-views the same facts.
+  `remainder_bound` stays the explicit RowData residual.
+- Each arm: construct OpEnvelope.<op> from the trace's *Arow FullSpec/match + decode pins
+  (added h_m32/h_set_pc/h_jmp_offset1/h_jmp_offset2 to all 6 RowData), call
+  zisk_riscv_compliant_program_bus, thread h_known_arm (real EnvNoKnownDefectFor, M-ext
+  cases added to StepNoKnownDefect; satisfiable via envNoKnownDefectFor_of_nondefect).
+  DIVU projects exec_eq_divu (.2.2.2.2.2.2.2.2.2.1); the other 5 project exec_eq_remaining.
+- OpEnvelope.lean / Compliance.lean / zisk_riscv_compliant_program_bus / canonical equiv_<OP>
+  UNCHANGED (Attempt 1, no arm-redefinition). 0 new ZiskFv.* axioms. Full lake build GREEN.
+  Gate V1 18/18 + V2 12/12. NOT committed.
+
+=== STEP (b1): OpEnvelope-route conversion — 22 → 29 (uncommitted, prior run) ===
 Converted 7 of the 16 targeted direct-lift arms to the OpEnvelope route (construct envelope +
 call zisk_riscv_compliant_program_bus + thread h_known_arm): the 6 branches (beq/bne/blt/bge/
 bltu/bgeu, projecting exec_eq_branch) + JALR (projecting exec_eq_remaining). Each: build

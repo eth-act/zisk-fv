@@ -135,6 +135,66 @@ def vOfDivuRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
   range_ab := fun _ => arow.flags.range_ab
   range_cd := fun _ => arow.flags.range_cd
 
+/-- The ArithDiv-view `FullSpec` of a provider `ArithMulRow`, derived from the
+    SHARED-ArithMul-provider `FullSpec arow`.  The ArithDiv `Spec` is the same
+    11-clause carry-chain algebra as the ArithMul `Spec` (reading the
+    `vOfDivuRow` view's fields, which are `arow`'s fields), and the ArithDiv
+    `ArithTableSpec` is the same 15-tuple ROM membership.  No new trust:
+    this is a pure algebraic/defeq re-view of the same balance-derived facts. -/
+theorem arithDiv_fullSpec_of_arithMul_fullSpec
+    (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h : ZiskFv.AirsClean.ArithMul.FullSpec arow) :
+    ZiskFv.AirsClean.ArithDiv.FullSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt (vOfDivuRow arow) 0) := by
+  obtain ⟨h_spec, h_table, _h_c46, _h_chunks, _h_carry⟩ := h
+  refine ⟨?_, ?_⟩
+  · obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · linear_combination hc6
+    · linear_combination hc7
+    · linear_combination hc8
+    · linear_combination hc31
+    · linear_combination hc32
+    · linear_combination hc33
+    · linear_combination hc34
+    · linear_combination hc35
+    · linear_combination hc36
+    · linear_combination hc37
+    · linear_combination hc38
+  · simpa [ZiskFv.AirsClean.ArithDiv.ArithTableSpec,
+      ZiskFv.AirsClean.ArithDiv.arithTableRow,
+      ZiskFv.AirsClean.ArithDiv.rowAt, vOfDivuRow,
+      ZiskFv.AirsClean.ArithMul.ArithTableSpec,
+      ZiskFv.AirsClean.ArithMul.arithTableRow] using h_table
+
+/-- The ArithDiv-view `div_row_constraints_with_c46` of a provider `ArithMulRow`,
+    derived from the SHARED-ArithMul-provider `FullSpec arow`.  The 11-clause
+    `div_carry_chain_holds` is the same algebra as the ArithMul `Spec` (carry
+    chain), and `bus_res1_eq_div` is the same C46 equation as the ArithMul
+    `C46Spec`.  Pure algebraic re-view — no new trust. -/
+theorem divu_row_constraints_of_arithMul_fullSpec
+    (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h : ZiskFv.AirsClean.ArithMul.FullSpec arow) :
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 (vOfDivuRow arow) 0 := by
+  obtain ⟨h_spec, _h_table, h_c46, _h_chunks, _h_carry⟩ := h
+  obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, vOfDivuRow]; linear_combination hc6
+  · simp only [ZiskFv.Airs.ArithDiv.na_fb_eq_div, vOfDivuRow]; linear_combination hc7
+  · simp only [ZiskFv.Airs.ArithDiv.nb_fa_eq_div, vOfDivuRow]; linear_combination hc8
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_0_div, vOfDivuRow]; linear_combination hc31
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_1_div, vOfDivuRow]; linear_combination hc32
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_2_div, vOfDivuRow]; linear_combination hc33
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_3_div, vOfDivuRow]; linear_combination hc34
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_4_div, vOfDivuRow]; linear_combination hc35
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_5_div, vOfDivuRow]; linear_combination hc36
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_6_div, vOfDivuRow]; linear_combination hc37
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_7_div, vOfDivuRow]; linear_combination hc38
+  · simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div, vOfDivuRow,
+      ZiskFv.AirsClean.ArithMul.C46Spec,
+      ZiskFv.Airs.ArithMul.mul_constraint_46_named] at h_c46 ⊢
+    linear_combination h_c46
+
 /-- DIVU-mode op-bus bridge: the FAITHFUL muxed ArithMul primary message
     reduces to the div quotient-lane `opBus_row_ArithDiv` entry exactly at the
     DIVU mode pins (`div = 1`, `main_div = 1`, `main_mul = 0`).

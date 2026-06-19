@@ -1880,6 +1880,14 @@ structure RowData_mulw
     (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok mulw_input.r1_val (binding.stateAt i)
@@ -1945,6 +1953,14 @@ structure RowData_mulhu
     (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok mulhu_input.r1_val (binding.stateAt i)
@@ -1992,6 +2008,14 @@ structure RowData_divu
     (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok divu_input.r1_val (binding.stateAt i)
@@ -2042,6 +2066,14 @@ structure RowData_divuw
     (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok divuw_input.r1_val (binding.stateAt i)
@@ -2107,6 +2139,14 @@ structure RowData_remu
     (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok remu_input.r1_val (binding.stateAt i)
@@ -2157,6 +2197,14 @@ structure RowData_remuw
     (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok remuw_input.r1_val (binding.stateAt i)
@@ -7416,10 +7464,21 @@ Non-vacuity: `execRow` remains a genuine `∀`-binder inside each
 the real `busSub` row.  These are strictly stronger than the corresponding
 `bus_effect`-form M-ext arms (channel-balance form, same data). -/
 
-/-- Strengthened `mulw` step (channel-balance form). -/
+/-- Strengthened `mulw` step (channel-balance form), via the OpEnvelope route:
+    CONSTRUCT `OpEnvelope.mulw` from the trace's `RowData_mulw` (the SHARED-ArithMul
+    provider row + balance-derived `FullSpec` selected via `mulwArow`) and invoke
+    `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_remaining`
+    conjunct.  The lookup-witness structures are BUILT from `mulwArow_fullSpec` via
+    the `*_of_fullSpec` / `*_of_spec` builders; `aeneasBridgeTrust` is flat decode
+    pins carried as `RowData_mulw` residuals (`m32 = 1` for W-mode); `NoKnownDefect`
+    comes from the threaded `h_known_arm`.  Non-vacuous (real provider FullSpec). -/
 theorem stepStrong_mulw
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_mulw trace binding i) :
+    (d : RowData_mulw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .mulw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.MULW (d.r2, d.r1, d.rd))) (binding.stateAt i)
@@ -7428,16 +7487,104 @@ theorem stepStrong_mulw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_mulw_sound trace binding i d.mulw_input d.r1 d.r2 d.rd d.h_main_op
-    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
-    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.h_a23
-    d.h_b23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  set v := vOfMulwRow (mulwArow trace binding i d.h_main_active d.h_main_op) with hv
+  have h_full : ZiskFv.AirsClean.ArithMul.FullSpec (ZiskFv.AirsClean.ArithMul.rowAt v 0) :=
+    mulwArow_fullSpec trace binding i d.h_main_active d.h_main_op
+  have h_match_primary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
+        (ZiskFv.Airs.ArithMul.opBus_row_Arith v 0) :=
+    mulwArow_match trace binding i d.h_main_active d.h_main_op
+  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩ := h_full
+  let arith_table : ZiskFv.Compliance.ArithMulTableWitness v 0 :=
+    arithMulTableWitness_of_fullSpec ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩
+  let arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithMul.chunkRangeLookupWitness_of_spec h_spec h_chunk_spec
+  let arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithMul.signedCarryRangeLookupWitness_of_spec h_spec h_carry_spec
+  have h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v 0 := ⟨h_spec, h_c46⟩
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_MUL_W :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let arith_mem :
+      ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
+        (busSub trace binding i d.execRow).e2 :=
+    { row := mainRowWithRomSub trace binding i
+      row_eq := by
+        have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        simpa [mainRowWithRomSub, m,
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      store_pc_zero := h_core_store_pc
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  let promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state d.mulw_input.r1_val d.mulw_input.r2_val d.mulw_input.rd d.mulw_input.PC
+      (PureSpec.execute_MULW_pure d.mulw_input).nextPC
+      d.r1 d.r2 d.rd (busSub trace binding i d.execRow).exec_row
+      (busSub trace binding i d.execRow).e0
+      (busSub trace binding i d.execRow).e1 (busSub trace binding i d.execRow).e2 :=
+    { input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.mulw d.mulw_input d.r1 d.r2 d.rd (busSub trace binding i d.execRow) v 0
+      pins h_match_primary promises arith_mem h_row_constraints
+      arith_table arith_chunk_ranges arith_carry_ranges
+      d.h_a23 d.h_b23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+  have h_bridge : env.aeneasBridgeTrust := by
+    refine ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
-/-- Strengthened `mulhu` step (channel-balance form). -/
+/-- Strengthened `mulhu` step (channel-balance form), via the OpEnvelope route:
+    CONSTRUCT `OpEnvelope.mulhu` from the trace's `RowData_mulhu` (the same
+    SHARED-ArithMul provider row + balance-derived `FullSpec` the construction
+    selects via `mulhuArow`) and invoke `zisk_riscv_compliant_program_bus`,
+    projecting the `exec_eq_remaining` conjunct.  The three lookup-witness
+    structures (`ArithMulTableWitness`, `ArithMulChunkRangeWitness`,
+    `ArithMulSignedCarryRangeWitness`) are BUILT from the trace's `FullSpec`
+    (`mulhuArow_fullSpec`) via the `*_of_fullSpec` / `*_of_spec` builders;
+    `aeneasBridgeTrust` is flat decode pins carried as `RowData_mulhu` residuals;
+    `NoKnownDefect` comes from the threaded `h_known_arm`.
+
+    Non-vacuous: the envelope's witnesses are the REAL provider row's FullSpec
+    projections derived from `trace.balanced` / `trace.spec`, not a fabricated
+    environment; `execRow` remains a genuine ∀-binder. -/
 theorem stepStrong_mulhu
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_mulhu trace binding i) :
+    (d : RowData_mulhu trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .mulhu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
@@ -7451,16 +7598,105 @@ theorem stepStrong_mulhu
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_mulhu_sound trace binding i d.mulhu_input d.r1 d.r2 d.rd d.h_main_op
-    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
-    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
-    d.h_rs1_value d.h_rs2_value
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  -- Balance-selected SHARED-ArithMul provider row + its FullSpec (ArithMul view).
+  set v := vOfMulwRow (mulhuArow trace binding i d.h_main_active d.h_main_op) with hv
+  have h_full : ZiskFv.AirsClean.ArithMul.FullSpec (ZiskFv.AirsClean.ArithMul.rowAt v 0) :=
+    mulhuArow_fullSpec trace binding i d.h_main_active d.h_main_op
+  have h_match_secondary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
+        (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v 0) :=
+    mulhuArow_match trace binding i d.h_main_active d.h_main_op
+  -- The three lookup-witnesses, BUILT from FullSpec.
+  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩ := h_full
+  let arith_table : ZiskFv.Compliance.ArithMulTableWitness v 0 :=
+    arithMulTableWitness_of_fullSpec ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩
+  let arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithMul.chunkRangeLookupWitness_of_spec h_spec h_chunk_spec
+  let arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithMul.signedCarryRangeLookupWitness_of_spec h_spec h_carry_spec
+  have h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v 0 := ⟨h_spec, h_c46⟩
+  -- Decode pins bundle.
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_MULUH :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  -- Main rd-write memory witness, from `store_pc = 0`.
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let arith_mem :
+      ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
+        (busSub trace binding i d.execRow).e2 :=
+    { row := mainRowWithRomSub trace binding i
+      row_eq := by
+        have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        simpa [mainRowWithRomSub, m,
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      store_pc_zero := h_core_store_pc
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  -- Promises bundle: Sail reads + exec artifacts as binders; MemBus shape by rfl.
+  let promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state d.mulhu_input.r1_val d.mulhu_input.r2_val d.mulhu_input.rd d.mulhu_input.PC
+      (PureSpec.execute_MULH_mulhu_pure d.mulhu_input).nextPC
+      d.r1 d.r2 d.rd (busSub trace binding i d.execRow).exec_row
+      (busSub trace binding i d.execRow).e0
+      (busSub trace binding i d.execRow).e1 (busSub trace binding i d.execRow).e2 :=
+    { input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.mulhu d.mulhu_input d.r1 d.r2 d.rd (busSub trace binding i d.execRow) v 0
+      pins h_match_secondary promises arith_mem d.bounds h_row_constraints
+      arith_table arith_chunk_ranges arith_carry_ranges d.h_rs1_value d.h_rs2_value
+  have h_bridge : env.aeneasBridgeTrust := by
+    refine ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
-/-- Strengthened `divu` step (channel-balance form). -/
+/-- Strengthened `divu` step (channel-balance form), via the OpEnvelope route:
+    CONSTRUCT `OpEnvelope.divu` from the trace's `RowData_divu` (the SHARED-ArithMul
+    provider row, VIEWED as ArithDiv via `vOfDivuRow`) and invoke
+    `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_remaining`
+    conjunct.  The four ArithDiv lookup-witness structures are BUILT from the
+    SHARED-ArithMul provider `FullSpec` (`divuArow_fullSpec_row`) via the
+    `arithDiv_fullSpec_of_arithMul_fullSpec` view bridge + the ArithDiv
+    `*_of_fullSpec` / `*_of_spec` builders; `remainder_bound` is the explicit
+    residual carried by `RowData_divu`; `aeneasBridgeTrust` is flat decode pins;
+    `NoKnownDefect` comes from the threaded `h_known_arm`.  Non-vacuous (real
+    provider FullSpec; the witnesses' substance is the balance-derived facts). -/
 theorem stepStrong_divu
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_divu trace binding i) :
+    (d : RowData_divu trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .divu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
@@ -7469,16 +7705,106 @@ theorem stepStrong_divu
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_divu_sound trace binding i d.divu_input d.r1 d.r2 d.rd d.h_main_op
-    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
-    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
-    d.remainder_bound d.h_rs1_value d.h_rs2_value
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  set arow := divuArow trace binding i d.h_main_active d.h_main_op with harow
+  set v := vOfDivuRow arow with hv
+  -- SHARED-ArithMul provider FullSpec of the selected row.
+  have h_full_mul : ZiskFv.AirsClean.ArithMul.FullSpec arow :=
+    divuArow_fullSpec_row trace binding i d.h_main_active d.h_main_op
+  have h_match_primary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
+        (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v 0) :=
+    divuArow_match trace binding i d.h_main_active d.h_main_op
+  -- ArithDiv-view FullSpec + the four lookup-witnesses, BUILT from it.
+  have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
+    arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
+  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩ := h_full_mul
+  let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
+    arithDivTableWitness_of_fullSpec h_full_div
+  let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithDiv.chunkRangeLookupWitness_of_spec h_full_div.1 h_mul_chunks
+  let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithDiv.signedCarryRangeLookupWitness_of_spec h_full_div.1 h_mul_carry
+  have h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
+    divu_row_constraints_of_arithMul_fullSpec arow
+      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
+  -- Decode pins bundle.
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_DIVU :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  -- Main rd-write memory witness, from `store_pc = 0`.
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let arith_mem :
+      ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
+        (busSub trace binding i d.execRow).e2 :=
+    { row := mainRowWithRomSub trace binding i
+      row_eq := by
+        have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        simpa [mainRowWithRomSub, m,
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      store_pc_zero := h_core_store_pc
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  let promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state d.divu_input.r1_val d.divu_input.r2_val d.divu_input.rd d.divu_input.PC
+      (PureSpec.execute_DIVREM_divu_pure d.divu_input).nextPC
+      d.r1 d.r2 d.rd (busSub trace binding i d.execRow).exec_row
+      (busSub trace binding i d.execRow).e0
+      (busSub trace binding i d.execRow).e1 (busSub trace binding i d.execRow).e2 :=
+    { input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.divu d.divu_input d.r1 d.r2 d.rd (busSub trace binding i d.execRow) v 0
+      pins h_match_primary promises arith_mem d.bounds h_row_constraints
+      arith_table arith_chunk_ranges arith_carry_ranges d.remainder_bound
+      d.h_rs1_value d.h_rs2_value
+  have h_bridge : env.aeneasBridgeTrust := by
+    refine ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  -- DIVU is the dedicated `exec_eq_divu` conjunct (10th), not `exec_eq_remaining`.
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.1
 
-/-- Strengthened `divuw` step (channel-balance form). -/
+/-- Strengthened `divuw` step (channel-balance form), via the OpEnvelope route:
+    same SHARED-ArithMul-provider → ArithDiv-view pattern as `stepStrong_divu`
+    (`m32 = 1` for W-mode), routing to the `exec_eq_remaining` conjunct
+    (`equiv_DIVUW`).  Adds the W-mode residuals `h_b23`/`h_c23`/`h_sext_choice`
+    carried by `RowData_divuw`.  Non-vacuous (real provider FullSpec). -/
 theorem stepStrong_divuw
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_divuw trace binding i) :
+    (d : RowData_divuw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .divuw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
@@ -7487,16 +7813,101 @@ theorem stepStrong_divuw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_divuw_sound trace binding i d.divuw_input d.r1 d.r2 d.rd d.h_main_op
-    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
-    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
-    d.remainder_bound d.h_b23 d.h_c23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  set arow := divuwArow trace binding i d.h_main_active d.h_main_op with harow
+  set v := vOfDivuRow arow with hv
+  have h_full_mul : ZiskFv.AirsClean.ArithMul.FullSpec arow :=
+    divuwArow_fullSpec_row trace binding i d.h_main_active d.h_main_op
+  have h_match_primary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
+        (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v 0) :=
+    divuwArow_match trace binding i d.h_main_active d.h_main_op
+  have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
+    arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
+  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩ := h_full_mul
+  let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
+    arithDivTableWitness_of_fullSpec h_full_div
+  let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithDiv.chunkRangeLookupWitness_of_spec h_full_div.1 h_mul_chunks
+  let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithDiv.signedCarryRangeLookupWitness_of_spec h_full_div.1 h_mul_carry
+  have h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
+    divu_row_constraints_of_arithMul_fullSpec arow
+      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_DIVU_W :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let arith_mem :
+      ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
+        (busSub trace binding i d.execRow).e2 :=
+    { row := mainRowWithRomSub trace binding i
+      row_eq := by
+        have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        simpa [mainRowWithRomSub, m,
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      store_pc_zero := h_core_store_pc
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  let promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state d.divuw_input.r1_val d.divuw_input.r2_val d.divuw_input.rd d.divuw_input.PC
+      (PureSpec.execute_DIVREM_divuw_pure d.divuw_input).nextPC
+      d.r1 d.r2 d.rd (busSub trace binding i d.execRow).exec_row
+      (busSub trace binding i d.execRow).e0
+      (busSub trace binding i d.execRow).e1 (busSub trace binding i d.execRow).e2 :=
+    { input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.divuw d.divuw_input d.r1 d.r2 d.rd (busSub trace binding i d.execRow) v 0
+      pins h_match_primary promises arith_mem d.bounds h_row_constraints
+      arith_table arith_chunk_ranges arith_carry_ranges d.remainder_bound
+      d.h_b23 d.h_c23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+  have h_bridge : env.aeneasBridgeTrust := by
+    refine ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
-/-- Strengthened `remu` step (channel-balance form). -/
+/-- Strengthened `remu` step (channel-balance form), via the OpEnvelope route:
+    same SHARED-ArithMul-provider → ArithDiv-view pattern as `stepStrong_divu`,
+    routing to the `exec_eq_remaining` conjunct (`equiv_REMU`).  The match is the
+    secondary d-lane (`opBus_row_ArithDivSecondary`, REMU mode `main_div = 0`).
+    Non-vacuous (real provider FullSpec; witnesses' substance is balance-derived). -/
 theorem stepStrong_remu
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_remu trace binding i) :
+    (d : RowData_remu trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .remu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
@@ -7505,16 +7916,100 @@ theorem stepStrong_remu
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_remu_sound trace binding i d.remu_input d.r1 d.r2 d.rd d.h_main_op
-    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
-    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
-    d.remainder_bound d.h_rs1_value d.h_rs2_value
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  set arow := remuArow trace binding i d.h_main_active d.h_main_op with harow
+  set v := vOfDivuRow arow with hv
+  have h_full_mul : ZiskFv.AirsClean.ArithMul.FullSpec arow :=
+    remuArow_fullSpec_row trace binding i d.h_main_active d.h_main_op
+  have h_match_secondary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
+        (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v 0) :=
+    remuArow_match trace binding i d.h_main_active d.h_main_op
+  have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
+    arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
+  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩ := h_full_mul
+  let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
+    arithDivTableWitness_of_fullSpec h_full_div
+  let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithDiv.chunkRangeLookupWitness_of_spec h_full_div.1 h_mul_chunks
+  let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithDiv.signedCarryRangeLookupWitness_of_spec h_full_div.1 h_mul_carry
+  have h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
+    divu_row_constraints_of_arithMul_fullSpec arow
+      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_REMU :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let arith_mem :
+      ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
+        (busSub trace binding i d.execRow).e2 :=
+    { row := mainRowWithRomSub trace binding i
+      row_eq := by
+        have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        simpa [mainRowWithRomSub, m,
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      store_pc_zero := h_core_store_pc
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  let promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state d.remu_input.r1_val d.remu_input.r2_val d.remu_input.rd d.remu_input.PC
+      (PureSpec.execute_DIVREM_remu_pure d.remu_input).nextPC
+      d.r1 d.r2 d.rd (busSub trace binding i d.execRow).exec_row
+      (busSub trace binding i d.execRow).e0
+      (busSub trace binding i d.execRow).e1 (busSub trace binding i d.execRow).e2 :=
+    { input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.remu d.remu_input d.r1 d.r2 d.rd (busSub trace binding i d.execRow) v 0
+      pins h_match_secondary promises arith_mem d.bounds h_row_constraints
+      arith_table arith_chunk_ranges arith_carry_ranges d.remainder_bound
+      d.h_rs1_value d.h_rs2_value
+  have h_bridge : env.aeneasBridgeTrust := by
+    refine ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
-/-- Strengthened `remuw` step (channel-balance form). -/
+/-- Strengthened `remuw` step (channel-balance form), via the OpEnvelope route:
+    same SHARED-ArithMul-provider → ArithDiv-view pattern as `stepStrong_divuw`
+    (`m32 = 1`), secondary d-lane match (`opBus_row_ArithDivSecondary`), routing
+    to the `exec_eq_remaining` conjunct (`equiv_REMUW`).  Non-vacuous. -/
 theorem stepStrong_remuw
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_remuw trace binding i) :
+    (d : RowData_remuw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .remuw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
@@ -7523,11 +8018,88 @@ theorem stepStrong_remuw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_remuw_sound trace binding i d.remuw_input d.r1 d.r2 d.rd d.h_main_op
-    d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
-    d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
-    d.remainder_bound d.h_b23 d.h_c23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  set arow := remuwArow trace binding i d.h_main_active d.h_main_op with harow
+  set v := vOfDivuRow arow with hv
+  have h_full_mul : ZiskFv.AirsClean.ArithMul.FullSpec arow :=
+    remuwArow_fullSpec_row trace binding i d.h_main_active d.h_main_op
+  have h_match_secondary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
+        (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v 0) :=
+    remuwArow_match trace binding i d.h_main_active d.h_main_op
+  have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
+    arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
+  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩ := h_full_mul
+  let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
+    arithDivTableWitness_of_fullSpec h_full_div
+  let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithDiv.chunkRangeLookupWitness_of_spec h_full_div.1 h_mul_chunks
+  let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
+    ZiskFv.AirsClean.ArithDiv.signedCarryRangeLookupWitness_of_spec h_full_div.1 h_mul_carry
+  have h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
+    divu_row_constraints_of_arithMul_fullSpec arow
+      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_REMU_W :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let arith_mem :
+      ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
+        (busSub trace binding i d.execRow).e2 :=
+    { row := mainRowWithRomSub trace binding i
+      row_eq := by
+        have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        simpa [mainRowWithRomSub, m,
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      store_pc_zero := h_core_store_pc
+      rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+  let promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state d.remuw_input.r1_val d.remuw_input.r2_val d.remuw_input.rd d.remuw_input.PC
+      (PureSpec.execute_DIVREM_remuw_pure d.remuw_input).nextPC
+      d.r1 d.r2 d.rd (busSub trace binding i d.execRow).exec_row
+      (busSub trace binding i d.execRow).e0
+      (busSub trace binding i d.execRow).e1 (busSub trace binding i d.execRow).e2 :=
+    { input_r1_eq := d.h_input_r1
+      input_r2_eq := d.h_input_r2
+      input_rd_eq := d.h_input_rd
+      input_pc_eq := d.h_input_pc
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl
+      rd_idx := d.h_rd_idx }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.remuw d.remuw_input d.r1 d.r2 d.rd (busSub trace binding i d.execRow) v 0
+      pins h_match_secondary promises arith_mem d.bounds h_row_constraints
+      arith_table arith_chunk_ranges arith_carry_ranges d.remainder_bound
+      d.h_b23 d.h_c23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+  have h_bridge : env.aeneasBridgeTrust := by
+    refine ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-! ## Strong sum + dispatcher + top-level strengthened export -/
 
@@ -7717,6 +8289,30 @@ def StepNoKnownDefect
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
       (r := i.val) (fun env => match env with | .bgeu .. => True | _ => False)
+  | .mulw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .mulw .. => True | _ => False)
+  | .mulhu _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .mulhu .. => True | _ => False)
+  | .divu _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .divu .. => True | _ => False)
+  | .divuw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .divuw .. => True | _ => False)
+  | .remu _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .remu .. => True | _ => False)
+  | .remuw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .remuw .. => True | _ => False)
   | _ => True
 
 /-- The strengthened per-step conclusion: the channel-balance
@@ -8125,12 +8721,12 @@ theorem stepComplianceStrong_of_rowData
   | subw d => exact stepStrong_subw trace binding i d h_known
   | addw d => exact stepStrong_addw trace binding i d h_known
   | addiw d => exact stepStrong_addiw trace binding i d h_known
-  | mulw d => exact stepStrong_mulw trace binding i d
-  | mulhu d => exact stepStrong_mulhu trace binding i d
-  | divu d => exact stepStrong_divu trace binding i d
-  | divuw d => exact stepStrong_divuw trace binding i d
-  | remu d => exact stepStrong_remu trace binding i d
-  | remuw d => exact stepStrong_remuw trace binding i d
+  | mulw d => exact stepStrong_mulw trace binding i d h_known
+  | mulhu d => exact stepStrong_mulhu trace binding i d h_known
+  | divu d => exact stepStrong_divu trace binding i d h_known
+  | divuw d => exact stepStrong_divuw trace binding i d h_known
+  | remu d => exact stepStrong_remu trace binding i d h_known
+  | remuw d => exact stepStrong_remuw trace binding i d h_known
   | beq d => exact stepStrong_beq trace binding i d h_known
   | bne d => exact stepStrong_bne trace binding i d h_known
   | blt d => exact stepStrong_blt trace binding i d h_known
