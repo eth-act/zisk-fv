@@ -1091,3 +1091,44 @@ h_b23 :: And (Eq ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trac
 h_sext_choice :: Or (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 0) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 0) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 0) (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 0)))) (instLTNat.lt (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).c_0 0).val (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).c_1 0).val 65536)) 2147483648)) (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 255) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 255) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 255) (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 255)))) (GE.ge (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).c_0 0).val (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).c_1 0).val 65536)) 2147483648))
 h_rs1_value :: Eq (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt (instHSub.hSub (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).a_0 0).val.cast (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).a_1 0).val.cast 65536)) (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).na 0).val.cast (instHPow.hPow 2 32)))
 h_rs2_value :: Eq (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt (instHSub.hSub (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_0 0).val.cast (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_1 0).val.cast 65536)) (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).nb 0).val.cast (instHPow.hPow 2 32)))
+
+# ZiskFv.Compliance.construction_mulhu_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+mulhu_input :: PureSpec.MulhuInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_MULUH
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok mulhu_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok mulhu_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some mulhu_input.PC)
+h_input_rd :: Eq mulhu_input.rd (regidx_to_fin rd)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
+h_rd_idx :: Eq mulhu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+bounds.x0_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 0).val 256
+bounds.x1_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 1).val 256
+bounds.x2_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 2).val 256
+bounds.x3_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 3).val 256
+bounds.x4_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 256
+bounds.x5_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 256
+bounds.x6_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 256
+bounds.x7_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 256
+h_rs1_value :: Eq mulhu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_0 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_1 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_2 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_3 0).val)
+h_rs2_value :: Eq mulhu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_0 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_1 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_2 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_3 0).val)

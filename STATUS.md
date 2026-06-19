@@ -50,6 +50,25 @@ Ripples to the core op-bus enumeration (Balance.lean) + the per-mode bridge
 (opBus_row_ArithMul at MULW mode) + MULW re-derivation. Anti-laundering positive
 (faithful mux replaces unfaithful hardcoding; no new trust).
 
-NEXT after Stage 1: construction_mulhu_sound (d-lane via mode pins), then the
-div-family (DIVU/DIVUW/REMU/REMUW — ArithDiv view + the remainder-bound self-edge).
-Then P5 assembly over the 36 constructions, carrying the non-extraction residuals.
+DONE (Stage 2 — construction_mulhu_sound, d-lane secondary, 32/63): mirrors MULW.
+KEY BLOCKER FOUND + RESOLVED: EquivCore.MulHU.equiv_MULHU wants carry ranges < 131072
+(2^17) but balance (FullSpec.CarryRangeSpec) only gives the SIGNED disjunction
+(< 983041 ∨ ≥ p-983040). Genuine 4×4 unsigned-mul carries reach ~3·2^16 > 2^17, so
+< 131072 is UNSATISFIABLE from real balance data (the shared MulNoWrap < 131072 bound
+is documented-conservative). Resolution: derive < 983041 from balance
+(unsigned_carry_step_nat = signed disjunction + chain step + chunk ranges ⟹ < 983041)
+and route construction_mulhu_sound through a NEW equiv_MULHU_of_fullSpec that
+reconstructs rd via a LOOSE-bound (< 983041) chunk→ℕ→high-half write-value path in
+ConstructionMulhu.lean (NOT modifying shared MulNoWrap / equiv_MULHU). Arith witnesses
+all DERIVED from FullSpec; 0 PROJECT ZiskFv.* axioms. Closure carries
+Lean.ofReduceBool/trustCompiler (native_decide) INHERITED from the canonical
+equiv_MULHU path (already has it; NOT new — MULW is native_decide-free); tracked by #75.
+Full lake build GREEN (8693). V1 17/18 + V2 ALL PASS (only the pre-existing
+zisk-submodule-absent Aeneas 16/18 fails). Files: NEW Compliance/ConstructionMulhu.lean;
++op-177 keep/refute in ArithBalance + table-exclusions (Binary/BinaryExtension Table +
+StaticCircuit + Binary Bridge) + AcceptedTrace binding wrapper + ArithMul/Bridge
+MULHU-mode bridge + ArithTableProjections mulhu_mode_pins_of_row; registered in
+ZiskFv.lean + bin/TrustGate/Main.lean; construction-binder baseline appended.
+
+NEXT after Stage 2: div-family (DIVU/DIVUW/REMU/REMUW). Then P5 assembly over the
+36 constructions, carrying the non-extraction residuals.

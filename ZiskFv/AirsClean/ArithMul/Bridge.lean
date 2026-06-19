@@ -437,6 +437,27 @@ theorem secondaryOpBusMessage_toEntry_rowAt_eq_opBus_row
       ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r := by
   rfl
 
+/-- Mode-conditional MULHU bridge: the FAITHFUL muxed primary message reduces
+    to the secondary high-half `opBus_row_ArithMulSecondary` entry (the d-lane
+    message) exactly at the MULHU secondary mode pins (`div = 0`,
+    `main_mul = 0`, `main_div = 0`).
+
+    At these pins the muxed `a_lo`/`a_hi` lanes (`div·c + (1-div)·a`) collapse to
+    the `a`-chunks, and the muxed `c_lo` lane
+    (`(1-main_mul-main_div)·d + main_mul·c + main_div·a`) collapses to the
+    `d`-chunks — i.e. the muxed primary message at MULHU mode IS the secondary
+    d-lane message.  The mode pins are discharged by the caller (e.g.
+    `construction_mulhu_sound`) from the provider row's `ArithTableSpec` +
+    opcode pin. -/
+theorem primaryOpBusMessage_toEntry_rowAt_eq_opBus_row_secondary
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_div : v.div r = 0) (h_main_mul : v.main_mul r = 0) (h_main_div : v.main_div r = 0) :
+    OpBusMessage.toEntry (primaryOpBusMessage (rowAt v r)) (v.multiplicity r) =
+      ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r := by
+  simp only [OpBusMessage.toEntry, primaryOpBusMessage,
+    ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary, h_div, h_main_mul, h_main_div]
+  ring
+
 /-- The Clean Component `Spec` projected at a `Valid_ArithMul` row,
     derived **through the Clean Component**. From the AIR's MUL-mode
     carry-chain constraints (`mul_carry_chain_holds v r` = named-form

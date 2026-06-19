@@ -341,6 +341,32 @@ theorem spec_op_val_ne_W_add_sub {t : BinaryExtensionTableMessage FGL}
 
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- BinaryExtensionTable rows cover shift and sign-extension opcodes only;
+    they cannot be the Arith MULHU bus opcode `177` (`OP_MULUH`) nor the
+    alternate `m32 = 1` decomposition value `161` (`= 177 - 16`). -/
+theorem spec_op_val_ne_arith_mul_uh {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    t.op.val ≠ 177 ∧ t.op.val ≠ 161 := by
+  rcases h with ⟨i, rfl⟩
+  change (opOfIndex i.val : FGL).val ≠ 177
+    ∧ (opOfIndex i.val : FGL).val ≠ 161
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  unfold opOfIndex
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block
+  all_goals
+    constructor
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- BinaryExtensionTable rows cover shift and sign-extension opcodes only;
     they cannot be the Arith MULW bus opcode `182` (`OP_MUL_W`) nor the
     alternate `m32 = 0` decomposition value `166` (`= 182 - 16`). -/
 theorem spec_op_val_ne_arith_mul_w {t : BinaryExtensionTableMessage FGL}
