@@ -289,6 +289,53 @@ noncomputable def mainRowProvenance_of_pins
     b_src_imm_eq := rfl, b_src_mem_eq := rfl, b_src_ind_eq := rfl, b_src_reg_eq := rfl
     store_mem_eq := rfl, store_ind_eq := rfl, store_reg_eq := rfl }
 
+/-- Constant `Var` for a concrete `MainRowWithRom` row: every leaf field is a
+    `.const` expression carrying the concrete value, so for ANY environment
+    `eval env (mainConstVar row) = row` definitionally (see
+    `eval_mainConstVar`).  This lets the store `OpEnvelope` arms supply the
+    `{mainRowVar}`/`{mainEnv}` implicit binders the constructor requires while
+    keeping the `eval mainEnv mainRowVar`-shaped hypotheses equal to the concrete
+    trace row `mainRowWithRomSt trace binding i` — the same facts
+    `construction_<store>_sound` proves.  Repackaging only: carries no trust. -/
+@[reducible]
+noncomputable def mainConstVar (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    Var ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
+  { core :=
+      { a_0 := .const row.core.a_0, a_1 := .const row.core.a_1
+        b_0 := .const row.core.b_0, b_1 := .const row.core.b_1
+        c_0 := .const row.core.c_0, c_1 := .const row.core.c_1
+        flag := .const row.core.flag, pc := .const row.core.pc
+        is_external_op := .const row.core.is_external_op, op := .const row.core.op
+        m32 := .const row.core.m32, ind_width := .const row.core.ind_width
+        set_pc := .const row.core.set_pc, jmp_offset1 := .const row.core.jmp_offset1
+        jmp_offset2 := .const row.core.jmp_offset2, store_pc := .const row.core.store_pc
+        im_high_degree_2 := .const row.core.im_high_degree_2
+        segment_l1 := .const row.core.segment_l1 }
+    rom :=
+      { a_offset_imm0 := .const row.rom.a_offset_imm0, a_imm1 := .const row.rom.a_imm1
+        b_offset_imm0 := .const row.rom.b_offset_imm0, b_imm1 := .const row.rom.b_imm1
+        store_offset := .const row.rom.store_offset, a_src_imm := .const row.rom.a_src_imm
+        a_src_mem := .const row.rom.a_src_mem, is_precompiled := .const row.rom.is_precompiled
+        b_src_imm := .const row.rom.b_src_imm, b_src_mem := .const row.rom.b_src_mem
+        store_mem := .const row.rom.store_mem, store_ind := .const row.rom.store_ind
+        b_src_ind := .const row.rom.b_src_ind, a_src_reg := .const row.rom.a_src_reg
+        b_src_reg := .const row.rom.b_src_reg, store_reg := .const row.rom.store_reg
+        addr0 := .const row.rom.addr0, addr1 := .const row.rom.addr1
+        addr2 := .const row.rom.addr2, main_step := .const row.rom.main_step } }
+
+/-- `eval env (mainConstVar row) = row` for any `env`: every leaf is a `.const`,
+    so `eval` distributes to the carried concrete value. -/
+@[simp]
+theorem eval_mainConstVar (env : Environment FGL)
+    (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    eval env (mainConstVar row) = row := by
+  simp only [mainConstVar, ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  cases row with
+  | mk core rom => cases core; cases rom; rfl
+
 /-- Irreducible per-row residuals for the `sub` archetype — the binders of
     `construction_sub_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sub
@@ -6581,6 +6628,595 @@ theorem stepStrong_addiw
     h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
+/-! ## Strengthened W-shift arms (SLLW/SRLW/SRAW/SLLIW/SRLIW/SRAIW, channel-balance form)
+
+OpEnvelope route, mirroring the base-shift arms (`stepStrong_sll` etc.) but on the
+m32 = 1 register/immediate W-shift route.  Each arm builds `OpEnvelope.<op>` from
+the trace's BinaryExtension shift provider row (derived from `trace.balanced`),
+invokes `zisk_riscv_compliant_program_bus`, and projects `exec_eq_remaining` (the
+12th conjunct).  The promise/provider plumbing is the m32 = 1 variant of the base
+shift (`shift_m32_1_*_of_facts`); the conclusion is the `RTYPEW`/`SHIFTIWOP`
+W-shift form.  Non-vacuous: `execRow` is a genuine ∀-binder; the provider row is a
+real BinaryExtension Spec row from the committed trace. -/
+
+/-- Strengthened `sllw` step: channel-balance via constructed `OpEnvelope.sllw`
+    + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sllw`. -/
+theorem stepStrong_sllw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_sllw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sllw .. => True | _ => False)) :
+    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSub trace binding i d.execRow
+  obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
+      h_component, h_table_spec, h_match⟩ :=
+    exists_binaryExtension_provider_row_matches_shift_from_binding
+      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op))))
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  have h_lane_rd :
+      ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
+    have h :=
+      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+        (mainRowWithRomSub trace binding i) h_core_store_pc
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row] at h
+    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
+      ZiskFv.AirsClean.Main.rowAt] using h
+  let promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state d.sllw_input.r1_val d.sllw_input.r2_val d.sllw_input.rd d.sllw_input.PC
+      (PureSpec.execute_RTYPE_sllw_pure d.sllw_input).nextPC
+      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.h_input_r1,
+      input_r2_eq := d.h_input_r2,
+      input_rd_eq := d.h_input_rd,
+      input_pc_eq := d.h_input_pc,
+      exec_len := d.h_exec_len,
+      e0_mult := d.h_e0_mult,
+      e1_mult := d.h_e1_mult,
+      nextPC_matches := d.h_nextPC_matches,
+      m0_mult := by rfl,
+      m0_as := by rfl,
+      m1_mult := by rfl,
+      m1_as := by rfl,
+      m2_mult := by rfl,
+      m2_as := by rfl,
+      rd_idx := d.h_rd_idx }
+  have h_shift_facts :=
+    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_m32_one : m.m32 i.val = 1 := d.h_m32
+  have h_op_is_shift :=
+    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+      (Or.inr (Or.inr (Or.inr (Or.inl
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op])))))
+  have h_input_r1_row :=
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.sllw_input.r1_val
+      h_m32_one d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+  have h_shift_pin_row :=
+    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.r2) d.sllw_input.r2_val
+      d.h_b_lo_t d.h_b_hi_t d.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_op_is_shift
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.sllw d.sllw_input d.r1 d.r2 d.rd providerTable providerRow bus
+      d.h_input_r1 d.h_input_r2 d.h_input_rd d.h_input_pc d.h_exec_len d.h_e0_mult
+      d.h_e1_mult d.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+      (by rfl) d.h_rd_idx pins h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
+  have h_bridge : env.aeneasBridgeTrust := by
+    show _ ∧ _
+    exact ⟨h_input_r1_row, h_shift_pin_row⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
+/-- Strengthened `srlw` step: channel-balance via constructed `OpEnvelope.srlw`
+    + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srlw`. -/
+theorem stepStrong_srlw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_srlw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srlw .. => True | _ => False)) :
+    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSub trace binding i d.execRow
+  obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
+      h_component, h_table_spec, h_match⟩ :=
+    exists_binaryExtension_provider_row_matches_shift_from_binding
+      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op)))))
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  have h_lane_rd :
+      ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
+    have h :=
+      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+        (mainRowWithRomSub trace binding i) h_core_store_pc
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row] at h
+    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
+      ZiskFv.AirsClean.Main.rowAt] using h
+  let promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state d.srlw_input.r1_val d.srlw_input.r2_val d.srlw_input.rd d.srlw_input.PC
+      (PureSpec.execute_RTYPE_srlw_pure d.srlw_input).nextPC
+      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.h_input_r1,
+      input_r2_eq := d.h_input_r2,
+      input_rd_eq := d.h_input_rd,
+      input_pc_eq := d.h_input_pc,
+      exec_len := d.h_exec_len,
+      e0_mult := d.h_e0_mult,
+      e1_mult := d.h_e1_mult,
+      nextPC_matches := d.h_nextPC_matches,
+      m0_mult := by rfl,
+      m0_as := by rfl,
+      m1_mult := by rfl,
+      m1_as := by rfl,
+      m2_mult := by rfl,
+      m2_as := by rfl,
+      rd_idx := d.h_rd_idx }
+  have h_shift_facts :=
+    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_m32_one : m.m32 i.val = 1 := d.h_m32
+  have h_op_is_shift :=
+    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))))))
+  have h_input_r1_row :=
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.srlw_input.r1_val
+      h_m32_one d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+  have h_shift_pin_row :=
+    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.r2) d.srlw_input.r2_val
+      d.h_b_lo_t d.h_b_hi_t d.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_op_is_shift
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.srlw d.srlw_input d.r1 d.r2 d.rd providerTable providerRow bus
+      d.h_input_r1 d.h_input_r2 d.h_input_rd d.h_input_pc d.h_exec_len d.h_e0_mult
+      d.h_e1_mult d.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+      (by rfl) d.h_rd_idx pins h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
+  have h_bridge : env.aeneasBridgeTrust := by
+    show _ ∧ _
+    exact ⟨h_input_r1_row, h_shift_pin_row⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
+/-- Strengthened `sraw` step: channel-balance via constructed `OpEnvelope.sraw`
+    + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sraw`. -/
+theorem stepStrong_sraw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_sraw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sraw .. => True | _ => False)) :
+    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSub trace binding i d.execRow
+  obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
+      h_component, h_table_spec, h_match⟩ :=
+    exists_binaryExtension_provider_row_matches_shift_from_binding
+      trace binding i d.h_main_active
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.h_main_op)))))
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  have h_lane_rd :
+      ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
+    have h :=
+      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+        (mainRowWithRomSub trace binding i) h_core_store_pc
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row] at h
+    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
+      ZiskFv.AirsClean.Main.rowAt] using h
+  let promises : ZiskFv.EquivCore.Promises.RTypePromises
+      state d.sraw_input.r1_val d.sraw_input.r2_val d.sraw_input.rd d.sraw_input.PC
+      (PureSpec.execute_RTYPE_sraw_pure d.sraw_input).nextPC
+      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.h_input_r1,
+      input_r2_eq := d.h_input_r2,
+      input_rd_eq := d.h_input_rd,
+      input_pc_eq := d.h_input_pc,
+      exec_len := d.h_exec_len,
+      e0_mult := d.h_e0_mult,
+      e1_mult := d.h_e1_mult,
+      nextPC_matches := d.h_nextPC_matches,
+      m0_mult := by rfl,
+      m0_as := by rfl,
+      m1_mult := by rfl,
+      m1_as := by rfl,
+      m2_mult := by rfl,
+      m2_as := by rfl,
+      rd_idx := d.h_rd_idx }
+  have h_shift_facts :=
+    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_m32_one : m.m32 i.val = 1 := d.h_m32
+  have h_op_is_shift :=
+    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))))))
+  have h_input_r1_row :=
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.sraw_input.r1_val
+      h_m32_one d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+  have h_shift_pin_row :=
+    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.r2) d.sraw_input.r2_val
+      d.h_b_lo_t d.h_b_hi_t d.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_op_is_shift
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.sraw d.sraw_input d.r1 d.r2 d.rd providerTable providerRow bus
+      d.h_input_r1 d.h_input_r2 d.h_input_rd d.h_input_pc d.h_exec_len d.h_e0_mult
+      d.h_e1_mult d.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+      (by rfl) d.h_rd_idx pins h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
+  have h_bridge : env.aeneasBridgeTrust := by
+    show _ ∧ _
+    exact ⟨h_input_r1_row, h_shift_pin_row⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
+/-- Strengthened `slliw` step: channel-balance via constructed `OpEnvelope.slliw`
+    + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.slliw`. -/
+theorem stepStrong_slliw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_slliw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .slliw .. => True | _ => False)) :
+    execute_instruction
+      (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSub trace binding i d.execRow
+  obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
+      h_component, h_table_spec, h_match⟩ :=
+    exists_binaryExtension_provider_row_matches_shift_from_binding
+      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op))))
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  have h_lane_rd :
+      ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
+    have h :=
+      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+        (mainRowWithRomSub trace binding i) h_core_store_pc
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row] at h
+    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
+      ZiskFv.AirsClean.Main.rowAt] using h
+  let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
+      state d.slliw_input.r1_val d.slliw_input.rd d.slliw_input.PC
+      (PureSpec.execute_SHIFTIWOP_slliw_pure d.slliw_input).nextPC
+      d.r1 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.h_input_r1,
+      input_rd_eq := d.h_input_rd,
+      input_pc_eq := d.h_input_pc,
+      exec_len := d.h_exec_len,
+      e0_mult := d.h_e0_mult,
+      e1_mult := d.h_e1_mult,
+      nextPC_matches := d.h_nextPC_matches,
+      m0_mult := by rfl,
+      m0_as := by rfl,
+      m1_mult := by rfl,
+      m1_as := by rfl,
+      m2_mult := by rfl,
+      m2_as := by rfl,
+      rd_idx := d.h_rd_idx }
+  have h_shift_facts :=
+    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_op_is_shift :=
+    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+      (Or.inr (Or.inr (Or.inr (Or.inl
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op])))))
+  have h_input_r1_row :=
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.slliw_input.r1_val
+      d.h_m32 d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+  have h_shift_pin_row :=
+    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.slliw_input.shamt
+      d.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.slliw d.slliw_input d.r1 d.rd providerTable providerRow bus
+      promises pins h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
+  have h_bridge : env.aeneasBridgeTrust := by
+    show _ ∧ _
+    exact ⟨h_input_r1_row, h_shift_pin_row⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
+/-- Strengthened `srliw` step: channel-balance via constructed `OpEnvelope.srliw`
+    + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srliw`. -/
+theorem stepStrong_srliw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_srliw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srliw .. => True | _ => False)) :
+    execute_instruction
+      (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSub trace binding i d.execRow
+  obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
+      h_component, h_table_spec, h_match⟩ :=
+    exists_binaryExtension_provider_row_matches_shift_from_binding
+      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op)))))
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  have h_lane_rd :
+      ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
+    have h :=
+      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+        (mainRowWithRomSub trace binding i) h_core_store_pc
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row] at h
+    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
+      ZiskFv.AirsClean.Main.rowAt] using h
+  let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
+      state d.srliw_input.r1_val d.srliw_input.rd d.srliw_input.PC
+      (PureSpec.execute_SHIFTIWOP_srliw_pure d.srliw_input).nextPC
+      d.r1 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.h_input_r1,
+      input_rd_eq := d.h_input_rd,
+      input_pc_eq := d.h_input_pc,
+      exec_len := d.h_exec_len,
+      e0_mult := d.h_e0_mult,
+      e1_mult := d.h_e1_mult,
+      nextPC_matches := d.h_nextPC_matches,
+      m0_mult := by rfl,
+      m0_as := by rfl,
+      m1_mult := by rfl,
+      m1_as := by rfl,
+      m2_mult := by rfl,
+      m2_as := by rfl,
+      rd_idx := d.h_rd_idx }
+  have h_shift_facts :=
+    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_op_is_shift :=
+    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))))))
+  have h_input_r1_row :=
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.srliw_input.r1_val
+      d.h_m32 d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+  have h_shift_pin_row :=
+    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.srliw_input.shamt
+      d.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.srliw d.srliw_input d.r1 d.rd providerTable providerRow bus
+      promises pins h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
+  have h_bridge : env.aeneasBridgeTrust := by
+    show _ ∧ _
+    exact ⟨h_input_r1_row, h_shift_pin_row⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
+/-- Strengthened `sraiw` step: channel-balance via constructed `OpEnvelope.sraiw`
+    + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sraiw`. -/
+theorem stepStrong_sraiw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_sraiw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sraiw .. => True | _ => False)) :
+    execute_instruction
+      (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [ (busSub trace binding i d.execRow).e0
+           , (busSub trace binding i d.execRow).e1
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSub trace binding i d.execRow
+  obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
+      h_component, h_table_spec, h_match⟩ :=
+    exists_binaryExtension_provider_row_matches_shift_from_binding
+      trace binding i d.h_main_active
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.h_main_op)))))
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_core_store_pc :
+      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row]
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  have h_lane_rd :
+      ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
+    have h :=
+      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+        (mainRowWithRomSub trace binding i) h_core_store_pc
+    have h_row :
+        (mainRowWithRomSub trace binding i).core =
+          ZiskFv.AirsClean.Main.rowAt m i.val := by
+      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      simpa [mainRowWithRomSub, m,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    rw [h_row] at h
+    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
+      ZiskFv.AirsClean.Main.rowAt] using h
+  let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
+      state d.sraiw_input.r1_val d.sraiw_input.rd d.sraiw_input.PC
+      (PureSpec.execute_SHIFTIWOP_sraiw_pure d.sraiw_input).nextPC
+      d.r1 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.h_input_r1,
+      input_rd_eq := d.h_input_rd,
+      input_pc_eq := d.h_input_pc,
+      exec_len := d.h_exec_len,
+      e0_mult := d.h_e0_mult,
+      e1_mult := d.h_e1_mult,
+      nextPC_matches := d.h_nextPC_matches,
+      m0_mult := by rfl,
+      m0_as := by rfl,
+      m1_mult := by rfl,
+      m1_as := by rfl,
+      m2_mult := by rfl,
+      m2_as := by rfl,
+      rd_idx := d.h_rd_idx }
+  have h_shift_facts :=
+    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_op_is_shift :=
+    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))))))
+  have h_input_r1_row :=
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.sraiw_input.r1_val
+      d.h_m32 d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+  have h_shift_pin_row :=
+    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.sraiw_input.shamt
+      d.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.sraiw d.sraiw_input d.r1 d.rd providerTable providerRow bus
+      promises pins h_component h_table_spec h_provider_row h_match
+      h_input_r1_row h_shift_pin_row h_lane_rd
+  have h_bridge : env.aeneasBridgeTrust := by
+    show _ ∧ _
+    exact ⟨h_input_r1_row, h_shift_pin_row⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
 
 
 /-- Strengthened `add` step: channel-balance via a constructed `OpEnvelope` arm
@@ -7514,21 +8150,44 @@ theorem stepStrong_jalr
     h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
-/-! ## Strengthened store arms (SB/SH/SW/SD, channel-balance form)
+/-! ## Strengthened store arms (SB/SH/SW/SD, channel-balance form) — OpEnvelope route
 
-Same direct-lift route as the control-flow arms: `construction_<op>_sound` proves
-the `bus_effect`-form per-step conclusion (3-entry memory list `[e0, e1, e2]` over
-the real `busSt` row), and `state_effect_via_channels` is `@[reducible]`-defeq to
-`bus_effect.2`.  The previously-reported whnf BLOWUP was specific to the
-`OpEnvelope`/`zisk_riscv_compliant_program_bus` route (the `Eq.mpr` cast over the
-`MainRowWithRom` motive); this route never constructs that envelope, so the kernel
-never whnf's the cast.  Non-vacuous: `execRow` is a genuine ∀-binder; the memory
-list is the real 3-entry store emission. -/
+CONVERTED from the direct-lift route to the OpEnvelope route: each arm CONSTRUCTS
+`OpEnvelope.<store>` from the trace's committed Main row and invokes
+`zisk_riscv_compliant_program_bus`, projecting `exec_eq_remaining` (the 12th
+conjunct).
 
-/-- Strengthened `sb` step (channel-balance form). -/
+The store `OpEnvelope.<store>` constructor carries `{mainRowVar : Var
+MainRowWithRom}` / `{mainEnv : Environment}` implicit binders whose `eval mainEnv
+mainRowVar` appears in five hypotheses (`h_main_row`/`h_main_spec`/`h_store_pc`/
+`h_main_c_match`/`h_addr2`).  We instantiate `mainRowVar := mainConstVar
+(mainRowWithRomSt …)` and `mainEnv := emptyEnv`; by `eval_mainConstVar` this
+`eval` reduces to the concrete trace row `mainRowWithRomSt trace binding i`, so the
+five hypotheses become exactly the facts `construction_<store>_sound` already
+proves (Spec at the row, `store_pc = 0`, the self-referential `c`-emission match,
+the `addr2` bridge).  This `mainConstVar`-of-the-real-row pattern is the analogue
+of the M-ext/control "placeholder-env + real row" build and sidesteps the prior
+whnf BLOWUP (the `Eq.mpr` cast over a free `MainRowWithRom` motive) because the row
+is a `.const` literal of the committed trace row, not an opaque eval-binder.
+
+Non-vacuous: `execRow` is a genuine ∀-binder; the `c`-emission match is
+`matches_memory_entry_refl` over the real `busSt` row; the high-byte RMW residuals
+(`h_m*`, the #76 sub-doubleword preservation reads) are carried verbatim as
+`RowData_<store>` binders, NOT laundered. -/
+
+/-- Empty environment used only to instantiate the store `OpEnvelope` arms'
+    `{mainEnv}` implicit binder; `eval_mainConstVar` makes the choice irrelevant. -/
+private def emptyMainEnv : Environment FGL :=
+  { get := fun _ => 0, data := fun _ _ => #[] }
+
+/-- Strengthened `sb` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sb
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_sb trace binding i) :
+    (d : RowData_sb trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sb .. => True | _ => False)) :
     execute_instruction (instruction.STORE
         (d.sb_input.imm, regidx.Regidx d.sb_input.r2, regidx.Regidx d.sb_input.r1, 1))
         (binding.stateAt i)
@@ -7537,16 +8196,64 @@ theorem stepStrong_sb
            [ (busSt trace binding i d.execRow).e0
            , (busSt trace binding i d.execRow).e1
            , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_sb_sound trace binding i d.sb_input d.regs d.h_main_active d.h_main_op
-    d.h_store_pc d.h_main_ind_width d.h_opcode_assumptions d.h_addr2 d.h_b0_value d.h_b1_value
-    d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
-    d.h_m1 d.h_m2 d.h_m3 d.h_m4 d.h_m5 d.h_m6 d.h_m7
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSt trace binding i d.execRow
+  have h_core : (mainRowWithRomSt trace binding i).core =
+      ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomSt_core trace binding i
+  have h_main_spec :
+      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace binding i).core := by
+    rw [h_core]; exact mainSpec_at trace binding i
+  have h_core_store_pc : (mainRowWithRomSt trace binding i).core.store_pc = 0 := by
+    rw [h_core]; simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 0 OP_COPYB :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2) :=
+    ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
+  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.sb_input.r2_val := d.h_b0_value
+  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.sb_input.r2_val := d.h_b1_value
+  let promises : ZiskFv.EquivCore.Promises.StorePromises
+      state d.regs.mstatus d.regs.pmaRegion d.regs.misa d.regs.mseccfg
+      (PureSpec.sb_state_assumptions d.sb_input state)
+      (PureSpec.execute_STOREB_pure d.sb_input).nextPC
+      bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { risc_v_assumptions := d.h_risc_v_assumptions
+      opcode_assumptions_ := d.h_opcode_assumptions
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.sb d.sb_input d.regs bus pins d.h_main_ind_width d.h_opcode_assumptions promises
+      (mainRowVar := mainConstVar (mainRowWithRomSt trace binding i)) (mainEnv := emptyMainEnv)
+      (by simpa only [eval_mainConstVar] using h_core)
+      (by simpa only [eval_mainConstVar] using h_main_spec)
+      (by simpa only [eval_mainConstVar] using h_core_store_pc)
+      (by simpa only [eval_mainConstVar] using h_main_c_match)
+      (by simpa only [eval_mainConstVar] using d.h_addr2)
+      h_b0' h_b1' d.h_m1 d.h_m2 d.h_m3 d.h_m4 d.h_m5 d.h_m6 d.h_m7
+  have h_bridge : env.aeneasBridgeTrust := ⟨d.h_main_ind_width, h_b0', h_b1'⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
-/-- Strengthened `sh` step (channel-balance form). -/
+/-- Strengthened `sh` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sh
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_sh trace binding i) :
+    (d : RowData_sh trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sh .. => True | _ => False)) :
     execute_instruction (instruction.STORE
         (d.sh_input.imm, regidx.Regidx d.sh_input.r2, regidx.Regidx d.sh_input.r1, 2))
         (binding.stateAt i)
@@ -7555,16 +8262,64 @@ theorem stepStrong_sh
            [ (busSt trace binding i d.execRow).e0
            , (busSt trace binding i d.execRow).e1
            , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_sh_sound trace binding i d.sh_input d.regs d.h_main_active d.h_main_op
-    d.h_store_pc d.h_main_ind_width d.h_opcode_assumptions d.h_addr2 d.h_b0_value d.h_b1_value
-    d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
-    d.h_m2 d.h_m3 d.h_m4 d.h_m5 d.h_m6 d.h_m7
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSt trace binding i d.execRow
+  have h_core : (mainRowWithRomSt trace binding i).core =
+      ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomSt_core trace binding i
+  have h_main_spec :
+      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace binding i).core := by
+    rw [h_core]; exact mainSpec_at trace binding i
+  have h_core_store_pc : (mainRowWithRomSt trace binding i).core.store_pc = 0 := by
+    rw [h_core]; simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 0 OP_COPYB :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2) :=
+    ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
+  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.sh_input.r2_val := d.h_b0_value
+  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.sh_input.r2_val := d.h_b1_value
+  let promises : ZiskFv.EquivCore.Promises.StorePromises
+      state d.regs.mstatus d.regs.pmaRegion d.regs.misa d.regs.mseccfg
+      (PureSpec.sh_state_assumptions d.sh_input state)
+      (PureSpec.execute_STOREH_pure d.sh_input).nextPC
+      bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { risc_v_assumptions := d.h_risc_v_assumptions
+      opcode_assumptions_ := d.h_opcode_assumptions
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.sh d.sh_input d.regs bus pins d.h_main_ind_width d.h_opcode_assumptions promises
+      (mainRowVar := mainConstVar (mainRowWithRomSt trace binding i)) (mainEnv := emptyMainEnv)
+      (by simpa only [eval_mainConstVar] using h_core)
+      (by simpa only [eval_mainConstVar] using h_main_spec)
+      (by simpa only [eval_mainConstVar] using h_core_store_pc)
+      (by simpa only [eval_mainConstVar] using h_main_c_match)
+      (by simpa only [eval_mainConstVar] using d.h_addr2)
+      h_b0' h_b1' d.h_m2 d.h_m3 d.h_m4 d.h_m5 d.h_m6 d.h_m7
+  have h_bridge : env.aeneasBridgeTrust := ⟨d.h_main_ind_width, h_b0', h_b1'⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
-/-- Strengthened `sw` step (channel-balance form). -/
+/-- Strengthened `sw` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sw
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_sw trace binding i) :
+    (d : RowData_sw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sw .. => True | _ => False)) :
     execute_instruction (instruction.STORE
         (d.sw_input.imm, regidx.Regidx d.sw_input.r2, regidx.Regidx d.sw_input.r1, 4))
         (binding.stateAt i)
@@ -7573,16 +8328,64 @@ theorem stepStrong_sw
            [ (busSt trace binding i d.execRow).e0
            , (busSt trace binding i d.execRow).e1
            , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_sw_sound trace binding i d.sw_input d.regs d.h_main_active d.h_main_op
-    d.h_store_pc d.h_main_ind_width d.h_opcode_assumptions d.h_addr2 d.h_b0_value d.h_b1_value
-    d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
-    d.h_m4 d.h_m5 d.h_m6 d.h_m7
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSt trace binding i d.execRow
+  have h_core : (mainRowWithRomSt trace binding i).core =
+      ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomSt_core trace binding i
+  have h_main_spec :
+      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace binding i).core := by
+    rw [h_core]; exact mainSpec_at trace binding i
+  have h_core_store_pc : (mainRowWithRomSt trace binding i).core.store_pc = 0 := by
+    rw [h_core]; simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 0 OP_COPYB :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2) :=
+    ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
+  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.sw_input.r2_val := d.h_b0_value
+  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.sw_input.r2_val := d.h_b1_value
+  let promises : ZiskFv.EquivCore.Promises.StorePromises
+      state d.regs.mstatus d.regs.pmaRegion d.regs.misa d.regs.mseccfg
+      (PureSpec.sw_state_assumptions d.sw_input state)
+      (PureSpec.execute_STOREW_pure d.sw_input).nextPC
+      bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { risc_v_assumptions := d.h_risc_v_assumptions
+      opcode_assumptions_ := d.h_opcode_assumptions
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.sw d.sw_input d.regs bus pins d.h_main_ind_width d.h_opcode_assumptions promises
+      (mainRowVar := mainConstVar (mainRowWithRomSt trace binding i)) (mainEnv := emptyMainEnv)
+      (by simpa only [eval_mainConstVar] using h_core)
+      (by simpa only [eval_mainConstVar] using h_main_spec)
+      (by simpa only [eval_mainConstVar] using h_core_store_pc)
+      (by simpa only [eval_mainConstVar] using h_main_c_match)
+      (by simpa only [eval_mainConstVar] using d.h_addr2)
+      h_b0' h_b1' d.h_m4 d.h_m5 d.h_m6 d.h_m7
+  have h_bridge : env.aeneasBridgeTrust := ⟨d.h_main_ind_width, h_b0', h_b1'⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
-/-- Strengthened `sd` step (channel-balance form). -/
+/-- Strengthened `sd` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sd
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_sd trace binding i) :
+    (d : RowData_sd trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sd .. => True | _ => False)) :
     execute_instruction (instruction.STORE
         (d.sd_input.imm, regidx.Regidx d.sd_input.r2, regidx.Regidx d.sd_input.r1, 8))
         (binding.stateAt i)
@@ -7591,10 +8394,55 @@ theorem stepStrong_sd
            [ (busSt trace binding i d.execRow).e0
            , (busSt trace binding i d.execRow).e1
            , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact construction_sd_sound trace binding i d.sd_input d.regs d.h_main_active d.h_main_op
-    d.h_store_pc d.h_opcode_assumptions d.h_addr2 d.h_b0_value d.h_b1_value
-    d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let bus := busSt trace binding i d.execRow
+  have h_core : (mainRowWithRomSt trace binding i).core =
+      ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomSt_core trace binding i
+  have h_main_spec :
+      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace binding i).core := by
+    rw [h_core]; exact mainSpec_at trace binding i
+  have h_core_store_pc : (mainRowWithRomSt trace binding i).core.store_pc = 0 := by
+    rw [h_core]; simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 0 OP_COPYB :=
+    ⟨d.h_main_active, d.h_main_op⟩
+  have h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2) :=
+    ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
+  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.sd_input.r2_val := d.h_b0_value
+  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.sd_input.r2_val := d.h_b1_value
+  let promises : ZiskFv.EquivCore.Promises.StorePromises
+      state d.regs.mstatus d.regs.pmaRegion d.regs.misa d.regs.mseccfg
+      (PureSpec.sd_state_assumptions d.sd_input state)
+      (PureSpec.execute_STORED_pure d.sd_input).nextPC
+      bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { risc_v_assumptions := d.h_risc_v_assumptions
+      opcode_assumptions_ := d.h_opcode_assumptions
+      exec_len := d.h_exec_len
+      e0_mult := d.h_e0_mult
+      e1_mult := d.h_e1_mult
+      nextPC_matches := d.h_nextPC_matches
+      m0_mult := by rfl
+      m0_as := by rfl
+      m1_mult := by rfl
+      m1_as := by rfl
+      m2_mult := by rfl
+      m2_as := by rfl }
+  let env : OpEnvelope state m i.val :=
+    OpEnvelope.sd d.sd_input d.regs bus pins d.h_opcode_assumptions promises
+      (mainRowVar := mainConstVar (mainRowWithRomSt trace binding i)) (mainEnv := emptyMainEnv)
+      (by simpa only [eval_mainConstVar] using h_core)
+      (by simpa only [eval_mainConstVar] using h_main_spec)
+      (by simpa only [eval_mainConstVar] using h_core_store_pc)
+      (by simpa only [eval_mainConstVar] using h_main_c_match)
+      (by simpa only [eval_mainConstVar] using d.h_addr2)
+      h_b0' h_b1'
+  have h_bridge : env.aeneasBridgeTrust := ⟨h_b0', h_b1'⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.1
 
 /-! ## Strengthened load arms (LB/LH/LW/LD/LBU/LHU/LWU, channel-balance form)
 
@@ -8436,6 +9284,12 @@ inductive StrongRowConstructionData
   | subw (d : RowData_subw trace binding i) : StrongRowConstructionData trace binding i
   | addw (d : RowData_addw trace binding i) : StrongRowConstructionData trace binding i
   | addiw (d : RowData_addiw trace binding i) : StrongRowConstructionData trace binding i
+  | sllw (d : RowData_sllw trace binding i) : StrongRowConstructionData trace binding i
+  | srlw (d : RowData_srlw trace binding i) : StrongRowConstructionData trace binding i
+  | sraw (d : RowData_sraw trace binding i) : StrongRowConstructionData trace binding i
+  | slliw (d : RowData_slliw trace binding i) : StrongRowConstructionData trace binding i
+  | srliw (d : RowData_srliw trace binding i) : StrongRowConstructionData trace binding i
+  | sraiw (d : RowData_sraiw trace binding i) : StrongRowConstructionData trace binding i
   | mulw (d : RowData_mulw trace binding i) : StrongRowConstructionData trace binding i
   | mulhu (d : RowData_mulhu trace binding i) : StrongRowConstructionData trace binding i
   | divu (d : RowData_divu trace binding i) : StrongRowConstructionData trace binding i
@@ -8563,6 +9417,30 @@ def StepNoKnownDefect
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
       (r := i.val) (fun env => match env with | .addiw .. => True | _ => False)
+  | .sllw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sllw .. => True | _ => False)
+  | .srlw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srlw .. => True | _ => False)
+  | .sraw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sraw .. => True | _ => False)
+  | .slliw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .slliw .. => True | _ => False)
+  | .srliw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srliw .. => True | _ => False)
+  | .sraiw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sraiw .. => True | _ => False)
   | .jalr _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
@@ -8627,6 +9505,22 @@ def StepNoKnownDefect
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
       (r := i.val) (fun env => match env with | .jal .. => True | _ => False)
+  | .sb _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sb .. => True | _ => False)
+  | .sh _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sh .. => True | _ => False)
+  | .sw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sw .. => True | _ => False)
+  | .sd _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sd .. => True | _ => False)
   | _ => True
 
 /-- The strengthened per-step conclusion: the channel-balance
@@ -8811,6 +9705,45 @@ def StepComplianceStrong
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.ADDIW (d.imm, d.r1, d.rd))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .sllw d =>
+      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .srlw d =>
+      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .sraw d =>
+      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .slliw d =>
+      execute_instruction
+        (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .srliw d =>
+      execute_instruction
+        (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨(busSub trace binding i d.execRow).exec_row,
+           [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
+            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .sraiw d =>
+      execute_instruction
+        (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
@@ -9035,6 +9968,12 @@ theorem stepComplianceStrong_of_rowData
   | subw d => exact stepStrong_subw trace binding i d h_known
   | addw d => exact stepStrong_addw trace binding i d h_known
   | addiw d => exact stepStrong_addiw trace binding i d h_known
+  | sllw d => exact stepStrong_sllw trace binding i d h_known
+  | srlw d => exact stepStrong_srlw trace binding i d h_known
+  | sraw d => exact stepStrong_sraw trace binding i d h_known
+  | slliw d => exact stepStrong_slliw trace binding i d h_known
+  | srliw d => exact stepStrong_srliw trace binding i d h_known
+  | sraiw d => exact stepStrong_sraiw trace binding i d h_known
   | mulw d => exact stepStrong_mulw trace binding i d h_known
   | mulhu d => exact stepStrong_mulhu trace binding i d h_known
   | divu d => exact stepStrong_divu trace binding i d h_known
@@ -9051,10 +9990,10 @@ theorem stepComplianceStrong_of_rowData
   | auipc d => exact stepStrong_auipc trace binding i d h_known
   | jal d => exact stepStrong_jal trace binding i d h_known
   | jalr d => exact stepStrong_jalr trace binding i d h_known
-  | sb d => exact stepStrong_sb trace binding i d
-  | sh d => exact stepStrong_sh trace binding i d
-  | sw d => exact stepStrong_sw trace binding i d
-  | sd d => exact stepStrong_sd trace binding i d
+  | sb d => exact stepStrong_sb trace binding i d h_known
+  | sh d => exact stepStrong_sh trace binding i d h_known
+  | sw d => exact stepStrong_sw trace binding i d h_known
+  | sd d => exact stepStrong_sd trace binding i d h_known
   | ld d => exact stepStrong_ld trace binding i d
   | lbu d => exact stepStrong_lbu trace binding i d
   | lhu d => exact stepStrong_lhu trace binding i d

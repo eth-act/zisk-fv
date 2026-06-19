@@ -32,6 +32,27 @@ Non-vacuous (execRow real ∀-binder; no False.elim). 0 new ZiskFv.* axioms. Ful
 Gate V1 18/18 + V2 12/12. registered in StrongRowConstructionData/StepComplianceStrong/dispatcher.
 LEFT in bus_effect form (6): 6 defect/gap (7 signed-M minus unsigned overlap; FENCE). NOT committed.
 
+=== STEP (b3): W-shifts (+6) + stores converted (+4) — 38 → 48 (uncommitted, this run) ===
++6 W-shift arms (sllw/srlw/sraw/slliw/srliw/sraiw) ADDED to StrongRowConstructionData/
+StepComplianceStrong/StepNoKnownDefect/dispatcher: each builds OpEnvelope.<wshift> from the
+trace's BinaryExtension shift provider (m32=1 route, shift_m32_1_*_of_facts), calls
+zisk_riscv_compliant_program_bus, projects exec_eq_remaining; real EnvNoKnownDefectFor arms
+(satisfiable via envNoKnownDefectFor_of_nondefect). Mirror of the W-ALU/base-shift arms.
+Stores SB/SH/SW/SD CONVERTED from inline direct-lift to OpEnvelope route. KEY: new helpers
+mainConstVar (a `.const`-leaf Var of the real `mainRowWithRomSt` row) + eval_mainConstVar
+(eval env (mainConstVar row) = row, deps = propext/Classical.choice/Quot.sound only) + a
+private emptyMainEnv instantiate the OpEnvelope.<store> {mainRowVar}/{mainEnv} implicit binders;
+by eval_mainConstVar the five eval-shaped hyps reduce to the concrete-row facts
+construction_<store>_sound proves (Spec/store_pc/c-match/addr2). This `.const`-literal-of-the-
+real-row pattern SIDESTEPPED the prior whnf BLOWUP (Eq.mpr cast over a free MainRowWithRom
+motive). NoKnownDefect threaded via EnvNoKnownDefectFor (the simp_all-on-concrete-env route DID
+blow up; the threaded route does not). SB/SH/SW project exec_eq_remaining (.2x11); SD projects
+exec_eq_ldsd (.2x8.1). #76 sub-doubleword RMW residuals (h_m*) carried verbatim as RowData
+binders. NON-VACUOUS (execRow real ∀-binder; matches_memory_entry_refl over the real busSt row;
+no False.elim/sorry). 0 new ZiskFv.* axioms (closure = Sail FFI + kernel postulates, same as the
+constructions). Full lake build GREEN. Gate V1 18/18 + V2 12/12. Remaining direct-lift (7): loads.
+NOT committed.
+
 === STEP (b2-control): LUI/AUIPC/JAL OpEnvelope-route conversion — 35 → 38 (uncommitted, this run) ===
 All 3 converted from direct-lift to the OpEnvelope route via PATH 1 (trace-built provenance):
 - KEY FINDING: lui/auipc/jal_h_circuit_of_row_provenance consume ONLY the 5 mode equalities
