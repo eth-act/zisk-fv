@@ -1,0 +1,3777 @@
+import ZiskFv.Compliance.ConstructionSub
+import ZiskFv.Compliance.ConstructionAnd
+import ZiskFv.Compliance.ConstructionLogic
+import ZiskFv.Compliance.ConstructionCompare
+import ZiskFv.Compliance.ConstructionIType
+import ZiskFv.Compliance.ConstructionShift
+import ZiskFv.Compliance.ConstructionAdd
+import ZiskFv.Compliance.ConstructionWAlu
+import ZiskFv.Compliance.ConstructionLui
+import ZiskFv.Compliance.ConstructionAuipc
+import ZiskFv.Compliance.ConstructionMulw
+import ZiskFv.Compliance.ConstructionMulhu
+import ZiskFv.Compliance.ConstructionDivu
+import ZiskFv.Compliance.ConstructionDivuw
+import ZiskFv.Compliance.ConstructionRemu
+import ZiskFv.Compliance.ConstructionRemuw
+import ZiskFv.Compliance.ConstructionStore
+import ZiskFv.Compliance.ConstructionLoad
+import ZiskFv.Compliance.ConstructionBranch
+import ZiskFv.Compliance.ConstructionJump
+
+/-!
+# TraceLevelExport.lean — P5 trace-level export over the 55 sound constructions
+
+This is the achievable closure of #61.  It exports the per-opcode
+`construction_<op>_sound` theorems to a single trace-level statement: given an
+accepted full-ensemble trace, a program binding, and a per-row CLASSIFICATION
+(`rowData : ∀ i, RowConstructionData …`), EVERY row of the trace satisfies the
+canonical per-step `bus_effect`-form compliance conclusion — with NO
+caller-supplied `OpEnvelope`.  The envelope for each row is dispatched INSIDE,
+per row, from `rowData i` to the matching `construction_<op>_sound`.
+
+## What `RowConstructionData` is (and is NOT)
+
+`RowConstructionData trace binding i` is a 55-arm sum type — one arm per sound
+construction archetype.  Each arm carries a single `RowData_<op>` payload that
+packages EXACTLY that construction's genuinely-irreducible residual binders
+(decode pins, Sail reads, operand/lane bridges, the `execRow` ∀-binder + exec
+facts, `h_nextPC_matches`; for loads also `MemoryTimelineEvidence` + the Mem-AIR
+provider linkage).  It does NOT package the bucket-(a) op-bus provider-match
+evidence: that is derived INSIDE each construction from `trace.balanced` (via the
+`exists_*_from_binding` Layer-A wrappers).  The `RowData_<op>` fields are verbatim
+copies of each `construction_<op>_sound`'s binders after `(i : Fin trace.length)`,
+so the dispatch is a positional `exact construction_<op>_sound trace binding i …`.
+
+## Coverage (stated explicitly — NOT hidden)
+
+This theorem covers ONLY traces whose every row is one of the **55 classifiable,
+non-defect RV64IM opcodes**.  The `∀ i, RowConstructionData trace binding i`
+premise is exactly this coverage obligation made visible in the type: a witness
+per row that the row IS one of the 55 archetypes.  The **8 defect/decode-gap
+opcodes** — the 7 signed-M ops (`MUL`, `MULH`, `MULHSU`, `DIV`, `DIVW`, `REM`,
+`REMW`) and `FENCE` — have **NO arm** in `RowConstructionData` and are therefore
+**out of scope** for this theorem.  Those 8 are covered ONLY by the global
+theorem's ∀-env `NoKnownDefect` / decode-gap exclusion
+(`zisk_riscv_compliant_program_bus`), which is intentionally contradictory for
+the unsound signed-M envelopes and records the FENCE decode gap.  This theorem
+makes no claim about them.
+
+## Non-vacuity
+
+The hypotheses are SATISFIABLE for a real trace.  `trace : AcceptedTrace` is the
+committed full-ensemble witness; each `rowData i` carries TRUE facts of the real
+row `mainOfTable trace.program binding.mainTable` at index `i` (decode pins, lane
+bridges, Sail reads of `binding.stateAt i`), and `execRow` is a genuine
+top-level ∀-binder inside each arm (the real execution-bus row).  No arm contains
+a contradictory hypothesis pair — each arm is exactly the binder list of a
+construction theorem that is itself proved (not vacuously) against the committed
+trace.  The conclusion's buses (`busSub`/`busSt`/`busLd …`) are the real Main
+memory-bus emissions, never free junk chosen to trivialize the goal.
+
+## Residual roll-up
+
+The irreducible residuals carried per arm bottom out in the existing project
+residuals — none introduces a new `ZiskFv.*` axiom:
+* loads/stores `h_memory_timeline` / RMW-preservation reads → **#76** (memory
+  timeline), plus the Mem-AIR `h_mem_*` provider linkage;
+* branches + JAL/JALR `h_nextPC_matches` (conditional next-PC) → **#100**
+  (cross-row control flow);
+* the signed loads (`lb`/`lh`/`lw`) carry `h_static` + `h_match` — the
+  sign-extension `BinaryExtension` op-bus lookup linkage that
+  `construction_{lb,lh,lw}_sound` themselves take as residual binders (these
+  constructions, unlike the ALU ops, do NOT derive their op-bus match internally
+  from `trace.balanced`; the `aeneasBridgeTrust` / `SextLoadBridge` coupling is
+  the residual).  This is verbatim residual, not bucket-(a) provider-match
+  smuggling — the ALU/W/shift arms carry NO op-bus match field (it is derived
+  inside their constructions via the `exists_*_from_binding` wrappers).
+
+This file introduces **0 new `ZiskFv.*` axioms**: its trust closure is the union
+of the 55 constructions' closures.
+-/
+
+namespace ZiskFv.Compliance
+
+open ZiskFv.Trusted
+open ZiskFv.Airs.Main
+open ZiskFv.Airs.Mem (Valid_Mem)
+open ZiskFv.EquivCore.Promises
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
+open ZiskFv.AirsClean.FullEnsemble (mainOfTable)
+open ZiskFv.Tactics.ALUITypeArchetype (itype_imm_subset_holds_main)
+open Interaction
+
+-- The M-extension row-computing defs are reducible/semireducible; structure-field
+-- elaboration would otherwise whnf-reduce the full per-row ArithMul/ArithDiv
+-- computation (a runaway). `seal` blocks that locally without touching the
+-- committed construction proofs (which keep the defs as-is in their oleans).
+seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
+
+set_option maxHeartbeats 8000000
+
+/-- Irreducible per-row residuals for the `sub` archetype — the binders of
+    `construction_sub_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sub
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sub_input : PureSpec.SubInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SUB
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok sub_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok sub_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sub_input.PC
+  h_input_rd : sub_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
+  h_rd_idx :
+    sub_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `and` archetype — the binders of
+    `construction_and_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_and
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  and_input : PureSpec.AndInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_AND
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok and_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok and_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some and_input.PC
+  h_input_rd : and_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_and_pure and_input).nextPC
+  h_rd_idx :
+    and_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `or` archetype — the binders of
+    `construction_or_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_or
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  or_input : PureSpec.OrInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_OR
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok or_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok or_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some or_input.PC
+  h_input_rd : or_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_or_pure or_input).nextPC
+  h_rd_idx :
+    or_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `xor` archetype — the binders of
+    `construction_xor_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_xor
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  xor_input : PureSpec.XorInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_XOR
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok xor_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok xor_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some xor_input.PC
+  h_input_rd : xor_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC
+  h_rd_idx :
+    xor_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `slt` archetype — the binders of
+    `construction_slt_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_slt
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  slt_input : PureSpec.SltInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_LT
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok slt_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok slt_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slt_input.PC
+  h_input_rd : slt_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC
+  h_rd_idx :
+    slt_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `sltu` archetype — the binders of
+    `construction_sltu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sltu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sltu_input : PureSpec.SltuInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_LTU
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok sltu_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok sltu_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sltu_input.PC
+  h_input_rd : sltu_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
+  h_rd_idx :
+    sltu_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `andi` archetype — the binders of
+    `construction_andi_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_andi
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  andi_input : PureSpec.AndiInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_AND
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok andi_input.r1_val (binding.stateAt i)
+  h_input_imm : andi_input.imm = imm
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some andi_input.PC
+  h_input_rd : andi_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_andi_subset : itype_imm_subset_holds_main
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val andi_input.imm
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
+  h_rd_idx :
+    andi_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `ori` archetype — the binders of
+    `construction_ori_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_ori
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  ori_input : PureSpec.OriInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_OR
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok ori_input.r1_val (binding.stateAt i)
+  h_input_imm : ori_input.imm = imm
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some ori_input.PC
+  h_input_rd : ori_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_ori_subset : itype_imm_subset_holds_main
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val ori_input.imm
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
+  h_rd_idx :
+    ori_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `xori` archetype — the binders of
+    `construction_xori_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_xori
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  xori_input : PureSpec.XoriInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_XOR
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok xori_input.r1_val (binding.stateAt i)
+  h_input_imm : xori_input.imm = imm
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some xori_input.PC
+  h_input_rd : xori_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_xori_subset : itype_imm_subset_holds_main
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val xori_input.imm
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
+  h_rd_idx :
+    xori_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `slti` archetype — the binders of
+    `construction_slti_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_slti
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  slti_input : PureSpec.SltiInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_LT
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok slti_input.r1_val (binding.stateAt i)
+  h_input_imm : slti_input.imm = imm
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slti_input.PC
+  h_input_rd : slti_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_slti_subset : itype_imm_subset_holds_main
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val slti_input.imm
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
+  h_rd_idx :
+    slti_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `sltiu` archetype — the binders of
+    `construction_sltiu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sltiu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sltiu_input : PureSpec.SltiuInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_LTU
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok sltiu_input.r1_val (binding.stateAt i)
+  h_input_imm : sltiu_input.imm = imm
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sltiu_input.PC
+  h_input_rd : sltiu_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_sltiu_subset : itype_imm_subset_holds_main
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val sltiu_input.imm
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC
+  h_rd_idx :
+    sltiu_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `sll` archetype — the binders of
+    `construction_sll_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sll
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sll_input : PureSpec.SllInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SLL
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok sll_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok sll_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sll_input.PC
+  h_input_rd : sll_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
+  h_rd_idx :
+    sll_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `srl` archetype — the binders of
+    `construction_srl_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_srl
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  srl_input : PureSpec.SrlInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SRL
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok srl_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok srl_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srl_input.PC
+  h_input_rd : srl_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_srl_pure srl_input).nextPC
+  h_rd_idx :
+    srl_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `sra` archetype — the binders of
+    `construction_sra_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sra
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sra_input : PureSpec.SraInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SRA
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok sra_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok sra_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sra_input.PC
+  h_input_rd : sra_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
+  h_rd_idx :
+    sra_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `slli` archetype — the binders of
+    `construction_slli_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_slli
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  slli_input : PureSpec.SlliInput
+  r1 : regidx
+  rd : regidx
+  shamt : BitVec 6
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SLL
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok slli_input.r1_val (binding.stateAt i)
+  h_input_shamt : slli_input.shamt = shamt
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slli_input.PC
+  h_input_rd : slli_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      shamt_b_lo shamt
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
+  h_rd_idx :
+    slli_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `srli` archetype — the binders of
+    `construction_srli_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_srli
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  srli_input : PureSpec.SrliInput
+  r1 : regidx
+  rd : regidx
+  shamt : BitVec 6
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SRL
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok srli_input.r1_val (binding.stateAt i)
+  h_input_shamt : srli_input.shamt = shamt
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srli_input.PC
+  h_input_rd : srli_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      shamt_b_lo shamt
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC
+  h_rd_idx :
+    srli_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `srai` archetype — the binders of
+    `construction_srai_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_srai
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  srai_input : PureSpec.SraiInput
+  r1 : regidx
+  rd : regidx
+  shamt : BitVec 6
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SRA
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok srai_input.r1_val (binding.stateAt i)
+  h_input_shamt : srai_input.shamt = shamt
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srai_input.PC
+  h_input_rd : srai_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      shamt_b_lo shamt
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC
+  h_rd_idx :
+    srai_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `sllw` archetype — the binders of
+    `construction_sllw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sllw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sllw_input : PureSpec.SllwInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SLL_W
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok sllw_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok sllw_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sllw_input.PC
+  h_input_rd : sllw_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_sllw_pure sllw_input).nextPC
+  h_rd_idx :
+    sllw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `srlw` archetype — the binders of
+    `construction_srlw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_srlw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  srlw_input : PureSpec.SrlwInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SRL_W
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok srlw_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok srlw_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srlw_input.PC
+  h_input_rd : srlw_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_srlw_pure srlw_input).nextPC
+  h_rd_idx :
+    srlw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `sraw` archetype — the binders of
+    `construction_sraw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sraw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sraw_input : PureSpec.SrawInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SRA_W
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok sraw_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok sraw_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sraw_input.PC
+  h_input_rd : sraw_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_sraw_pure sraw_input).nextPC
+  h_rd_idx :
+    sraw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `slliw` archetype — the binders of
+    `construction_slliw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_slliw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  slliw_input : PureSpec.SlliwInput
+  r1 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SLL_W
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok slliw_input.r1_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slliw_input.PC
+  h_input_rd : slliw_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      shamt_w_b_lo slliw_input.shamt
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC
+  h_rd_idx :
+    slliw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `srliw` archetype — the binders of
+    `construction_srliw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_srliw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  srliw_input : PureSpec.SrliwInput
+  r1 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SRL_W
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok srliw_input.r1_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srliw_input.PC
+  h_input_rd : srliw_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      shamt_w_b_lo srliw_input.shamt
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC
+  h_rd_idx :
+    srliw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `sraiw` archetype — the binders of
+    `construction_sraiw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sraiw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sraiw_input : PureSpec.SraiwInput
+  r1 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SRA_W
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok sraiw_input.r1_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sraiw_input.PC
+  h_input_rd : sraiw_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      shamt_w_b_lo sraiw_input.shamt
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC
+  h_rd_idx :
+    sraiw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `add` archetype — the binders of
+    `construction_add_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_add
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  add_input : PureSpec.AddInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_ADD
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok add_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok add_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some add_input.PC
+  h_input_rd : add_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+  h_rd_idx :
+    add_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `addi` archetype — the binders of
+    `construction_addi_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_addi
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  addi_input : PureSpec.AddiInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_ADD
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok addi_input.r1_val (binding.stateAt i)
+  h_input_imm : addi_input.imm = imm
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some addi_input.PC
+  h_input_rd : addi_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_addi_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val addi_input.imm
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
+  h_rd_idx :
+    addi_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `subw` archetype — the binders of
+    `construction_subw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_subw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  subw_input : PureSpec.SubwInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SUB_W
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok subw_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok subw_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some subw_input.PC
+  h_input_rd : subw_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
+  h_rd_idx :
+    subw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `addw` archetype — the binders of
+    `construction_addw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_addw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  addw_input : PureSpec.AddwInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_ADD_W
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok addw_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok addw_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some addw_input.PC
+  h_input_rd : addw_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r2))
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC
+  h_rd_idx :
+    addw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `addiw` archetype — the binders of
+    `construction_addiw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_addiw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  addiw_input : PureSpec.AddiwInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_ADD_W
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok addiw_input.r1_val (binding.stateAt i)
+  h_input_imm : addiw_input.imm = imm
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some addiw_input.PC
+  h_input_rd : addiw_input.rd = regidx_to_fin rd
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          (regidx_to_fin r1))
+  h_addiw_subset : itype_imm_subset_holds_main
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val addiw_input.imm
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
+  h_rd_idx :
+    addiw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+
+/-- Irreducible per-row residuals for the `lui` archetype — the binders of
+    `construction_lui_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_lui
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  lui_input : PureSpec.LuiInput
+  imm : BitVec 20
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_COPYB
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_input_imm : lui_input.imm = imm
+  h_input_rd : lui_input.rd = regidx_to_fin rd
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some lui_input.PC
+  h_imm_lo_nat :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val).val
+      = (imm ++ (0 : BitVec 12)).toNat
+  h_imm_hi_nat :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val).val
+      = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 4294967296
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_LUI_pure lui_input).nextPC
+  h_rd_idx :
+    lui_input.rd =
+      Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
+
+/-- Irreducible per-row residuals for the `auipc` archetype — the binders of
+    `construction_auipc_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_auipc
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  auipc_input : PureSpec.AuipcInput
+  imm : BitVec 20
+  rd : regidx
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_FLAG
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 1
+  h_input_imm : auipc_input.imm = imm
+  h_input_rd : auipc_input.rd = regidx_to_fin rd
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some auipc_input.PC
+  h_offset_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+        i.val).val
+      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).pc i.val).val
+      = auipc_input.PC.toNat
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = (PureSpec.execute_AUIPC_pure auipc_input).nextPC
+  h_rd_idx :
+    auipc_input.rd =
+      Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
+  h_no_wrap : auipc_input.PC.toNat
+    + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+      < GL_prime
+  h_pc_offset_lt_2_32 :
+    (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+      < 4294967296
+
+/-- Irreducible per-row residuals for the `mulw` archetype — the binders of
+    `construction_mulw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_mulw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  mulw_input : PureSpec.MulwInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok mulw_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok mulw_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some mulw_input.PC
+  h_input_rd : mulw_input.rd = regidx_to_fin rd
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_MULW_pure mulw_input).nextPC
+  h_rd_idx :
+    mulw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+  h_a23 :
+    ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_2 0).val = 0
+      ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_3 0).val = 0
+  h_b23 :
+    ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_2 0).val = 0
+      ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_3 0).val = 0
+  h_sext_choice :
+    ((((byteAt (busSub trace binding i execRow).e2 4).val = 0
+          ∧ (byteAt (busSub trace binding i execRow).e2 5).val = 0
+          ∧ (byteAt (busSub trace binding i execRow).e2 6).val = 0
+          ∧ (byteAt (busSub trace binding i execRow).e2 7).val = 0)
+        ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_0 0).val
+            + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_1 0).val * 65536
+              < 2147483648)
+      ∨ (((byteAt (busSub trace binding i execRow).e2 4).val = 255
+          ∧ (byteAt (busSub trace binding i execRow).e2 5).val = 255
+          ∧ (byteAt (busSub trace binding i execRow).e2 6).val = 255
+          ∧ (byteAt (busSub trace binding i execRow).e2 7).val = 255)
+        ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_0 0).val
+            + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_1 0).val * 65536
+              ≥ 2147483648))
+  h_rs1_value :
+    (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
+      = (((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_0 0).val
+            + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_1 0).val * 65536 : ℤ)
+          - ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).na 0).val * (2:ℤ)^32
+  h_rs2_value :
+    (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
+      = (((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_0 0).val
+            + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_1 0).val * 65536 : ℤ)
+          - ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).nb 0).val * (2:ℤ)^32
+
+/-- Irreducible per-row residuals for the `mulhu` archetype — the binders of
+    `construction_mulhu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_mulhu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  mulhu_input : PureSpec.MulhuInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok mulhu_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok mulhu_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some mulhu_input.PC
+  h_input_rd : mulhu_input.rd = regidx_to_fin rd
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
+  h_rd_idx :
+    mulhu_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i execRow).e2
+  h_rs1_value : mulhu_input.r1_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4
+        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).a_0 0).val
+        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).a_1 0).val
+        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).a_2 0).val
+        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).a_3 0).val
+  h_rs2_value : mulhu_input.r2_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4
+        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).b_0 0).val
+        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).b_1 0).val
+        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).b_2 0).val
+        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).b_3 0).val
+
+/-- Irreducible per-row residuals for the `divu` archetype — the binders of
+    `construction_divu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_divu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  divu_input : PureSpec.DivuInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok divu_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok divu_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some divu_input.PC
+  h_input_rd : divu_input.rd = regidx_to_fin rd
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
+  h_rd_idx :
+    divu_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i execRow).e2
+  remainder_bound :
+    ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
+      (vOfDivuRow (divuArow trace binding i h_main_active h_main_op)) 0
+  h_rs1_value : divu_input.r1_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4
+        ((divuArow trace binding i h_main_active h_main_op).chunks.c_0).val
+        ((divuArow trace binding i h_main_active h_main_op).chunks.c_1).val
+        ((divuArow trace binding i h_main_active h_main_op).chunks.c_2).val
+        ((divuArow trace binding i h_main_active h_main_op).chunks.c_3).val
+  h_rs2_value : divu_input.r2_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4
+        ((divuArow trace binding i h_main_active h_main_op).chunks.b_0).val
+        ((divuArow trace binding i h_main_active h_main_op).chunks.b_1).val
+        ((divuArow trace binding i h_main_active h_main_op).chunks.b_2).val
+        ((divuArow trace binding i h_main_active h_main_op).chunks.b_3).val
+
+/-- Irreducible per-row residuals for the `divuw` archetype — the binders of
+    `construction_divuw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_divuw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  divuw_input : PureSpec.DivuwInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok divuw_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok divuw_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some divuw_input.PC
+  h_input_rd : divuw_input.rd = regidx_to_fin rd
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
+  h_rd_idx :
+    divuw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i execRow).e2
+  remainder_bound :
+    ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
+      (vOfDivuRow (divuwArow trace binding i h_main_active h_main_op)) 0
+  h_b23 :
+    ((divuwArow trace binding i h_main_active h_main_op).chunks.b_2).val = 0
+      ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.b_3).val = 0
+  h_c23 :
+    ((divuwArow trace binding i h_main_active h_main_op).chunks.c_2).val = 0
+      ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.c_3).val = 0
+  h_sext_choice :
+    ((((byteAt (busSub trace binding i execRow).e2 4).val = 0
+          ∧ (byteAt (busSub trace binding i execRow).e2 5).val = 0
+          ∧ (byteAt (busSub trace binding i execRow).e2 6).val = 0
+          ∧ (byteAt (busSub trace binding i execRow).e2 7).val = 0)
+        ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.a_0).val
+            + ((divuwArow trace binding i h_main_active h_main_op).chunks.a_1).val * 65536
+              < 2147483648)
+      ∨ (((byteAt (busSub trace binding i execRow).e2 4).val = 255
+          ∧ (byteAt (busSub trace binding i execRow).e2 5).val = 255
+          ∧ (byteAt (busSub trace binding i execRow).e2 6).val = 255
+          ∧ (byteAt (busSub trace binding i execRow).e2 7).val = 255)
+        ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.a_0).val
+            + ((divuwArow trace binding i h_main_active h_main_op).chunks.a_1).val * 65536
+              ≥ 2147483648))
+  h_rs1_value : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
+    = ((divuwArow trace binding i h_main_active h_main_op).chunks.c_0).val
+        + ((divuwArow trace binding i h_main_active h_main_op).chunks.c_1).val * 65536
+  h_rs2_value : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
+    = ((divuwArow trace binding i h_main_active h_main_op).chunks.b_0).val
+        + ((divuwArow trace binding i h_main_active h_main_op).chunks.b_1).val * 65536
+
+/-- Irreducible per-row residuals for the `remu` archetype — the binders of
+    `construction_remu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_remu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  remu_input : PureSpec.RemuInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok remu_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok remu_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some remu_input.PC
+  h_input_rd : remu_input.rd = regidx_to_fin rd
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
+  h_rd_idx :
+    remu_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i execRow).e2
+  remainder_bound :
+    ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
+      (vOfDivuRow (remuArow trace binding i h_main_active h_main_op)) 0
+  h_rs1_value : remu_input.r1_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4
+        ((remuArow trace binding i h_main_active h_main_op).chunks.c_0).val
+        ((remuArow trace binding i h_main_active h_main_op).chunks.c_1).val
+        ((remuArow trace binding i h_main_active h_main_op).chunks.c_2).val
+        ((remuArow trace binding i h_main_active h_main_op).chunks.c_3).val
+  h_rs2_value : remu_input.r2_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4
+        ((remuArow trace binding i h_main_active h_main_op).chunks.b_0).val
+        ((remuArow trace binding i h_main_active h_main_op).chunks.b_1).val
+        ((remuArow trace binding i h_main_active h_main_op).chunks.b_2).val
+        ((remuArow trace binding i h_main_active h_main_op).chunks.b_3).val
+
+/-- Irreducible per-row residuals for the `remuw` archetype — the binders of
+    `construction_remuw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_remuw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  remuw_input : PureSpec.RemuwInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_input_r1 :
+    read_xreg (regidx_to_fin r1) (binding.stateAt i)
+      = EStateM.Result.ok remuw_input.r1_val (binding.stateAt i)
+  h_input_r2 :
+    read_xreg (regidx_to_fin r2) (binding.stateAt i)
+      = EStateM.Result.ok remuw_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some remuw_input.PC
+  h_input_rd : remuw_input.rd = regidx_to_fin rd
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
+  h_rd_idx :
+    remuw_input.rd =
+      Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i execRow).e2
+  remainder_bound :
+    ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
+      (vOfDivuRow (remuwArow trace binding i h_main_active h_main_op)) 0
+  h_b23 :
+    ((remuwArow trace binding i h_main_active h_main_op).chunks.b_2).val = 0
+      ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.b_3).val = 0
+  h_c23 :
+    ((remuwArow trace binding i h_main_active h_main_op).chunks.c_2).val = 0
+      ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.c_3).val = 0
+  h_sext_choice :
+    ((((byteAt (busSub trace binding i execRow).e2 4).val = 0
+          ∧ (byteAt (busSub trace binding i execRow).e2 5).val = 0
+          ∧ (byteAt (busSub trace binding i execRow).e2 6).val = 0
+          ∧ (byteAt (busSub trace binding i execRow).e2 7).val = 0)
+        ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.d_0).val
+            + ((remuwArow trace binding i h_main_active h_main_op).chunks.d_1).val * 65536
+              < 2147483648)
+      ∨ (((byteAt (busSub trace binding i execRow).e2 4).val = 255
+          ∧ (byteAt (busSub trace binding i execRow).e2 5).val = 255
+          ∧ (byteAt (busSub trace binding i execRow).e2 6).val = 255
+          ∧ (byteAt (busSub trace binding i execRow).e2 7).val = 255)
+        ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.d_0).val
+            + ((remuwArow trace binding i h_main_active h_main_op).chunks.d_1).val * 65536
+              ≥ 2147483648))
+  h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
+    = ((remuwArow trace binding i h_main_active h_main_op).chunks.c_0).val
+        + ((remuwArow trace binding i h_main_active h_main_op).chunks.c_1).val * 65536
+  h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
+    = ((remuwArow trace binding i h_main_active h_main_op).chunks.b_0).val
+        + ((remuwArow trace binding i h_main_active h_main_op).chunks.b_1).val * 65536
+
+/-- Irreducible per-row residuals for the `sb` archetype — the binders of
+    `construction_sb_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sb
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sb_input : PureSpec.SbInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_COPYB
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_main_ind_width :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+      i.val = 1
+  h_opcode_assumptions : PureSpec.sb_state_assumptions sb_input (binding.stateAt i)
+  h_addr2 :
+    (mainRowWithRomSt trace binding i).rom.addr2.toNat =
+      (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat
+  h_b0_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo sb_input.r2_val
+  h_b1_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi sb_input.r2_val
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busSt trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSt trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSt trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSt trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_STOREB_pure sb_input).nextPC
+  h_m1 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 1]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 1 : BitVec 8)
+  h_m2 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 2]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 2 : BitVec 8)
+  h_m3 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 3]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 3 : BitVec 8)
+  h_m4 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 4]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 4 : BitVec 8)
+  h_m5 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 5]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 5 : BitVec 8)
+  h_m6 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 6]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 6 : BitVec 8)
+  h_m7 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 7]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 7 : BitVec 8)
+
+/-- Irreducible per-row residuals for the `sh` archetype — the binders of
+    `construction_sh_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sh
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sh_input : PureSpec.ShInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_COPYB
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_main_ind_width :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+      i.val = 2
+  h_opcode_assumptions : PureSpec.sh_state_assumptions sh_input (binding.stateAt i)
+  h_addr2 :
+    (mainRowWithRomSt trace binding i).rom.addr2.toNat =
+      (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat
+  h_b0_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo sh_input.r2_val
+  h_b1_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi sh_input.r2_val
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busSt trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSt trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSt trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSt trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_STOREH_pure sh_input).nextPC
+  h_m2 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 2]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 2 : BitVec 8)
+  h_m3 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 3]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 3 : BitVec 8)
+  h_m4 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 4]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 4 : BitVec 8)
+  h_m5 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 5]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 5 : BitVec 8)
+  h_m6 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 6]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 6 : BitVec 8)
+  h_m7 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 7]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 7 : BitVec 8)
+
+/-- Irreducible per-row residuals for the `sw` archetype — the binders of
+    `construction_sw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sw_input : PureSpec.SwInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_COPYB
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_main_ind_width :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+      i.val = 4
+  h_opcode_assumptions : PureSpec.sw_state_assumptions sw_input (binding.stateAt i)
+  h_addr2 :
+    (mainRowWithRomSt trace binding i).rom.addr2.toNat =
+      (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat
+  h_b0_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo sw_input.r2_val
+  h_b1_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi sw_input.r2_val
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busSt trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSt trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSt trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSt trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_STOREW_pure sw_input).nextPC
+  h_m4 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 4]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 4 : BitVec 8)
+  h_m5 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 5]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 5 : BitVec 8)
+  h_m6 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 6]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 6 : BitVec 8)
+  h_m7 : (binding.stateAt i).mem[(busSt trace binding i execRow).e2.ptr.toNat + 7]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i execRow).e2 7 : BitVec 8)
+
+/-- Irreducible per-row residuals for the `sd` archetype — the binders of
+    `construction_sd_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_sd
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  sd_input : PureSpec.SdInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_COPYB
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input (binding.stateAt i)
+  h_addr2 :
+    (mainRowWithRomSt trace binding i).rom.addr2.toNat =
+      (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat
+  h_b0_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo sd_input.r2_val
+  h_b1_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi sd_input.r2_val
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busSt trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busSt trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSt trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busSt trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_STORED_pure sd_input).nextPC
+
+/-- Irreducible per-row residuals for the `ld` archetype — the binders of
+    `construction_ld_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_ld
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  ld_input : PureSpec.LdInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  mem : Valid_Mem FGL FGL
+  r_mem : ℕ
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_COPYB
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_opcode_assumptions : PureSpec.ld_state_assumptions ld_input (binding.stateAt i)
+  h_addr1 :
+    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+      ld_input.r1_val.toNat + (BitVec.signExtend 64 ld_input.imm).toNat
+  h_addr2_zero_iff :
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+      ld_input.rd = 0
+  h_addr2_idx :
+    ld_input.rd.toNat =
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busLd trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_LOADD_pure ld_input).nextPC
+  h_memory_timeline :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      (busLd trace binding i execRow).e1
+  h_mem_match :
+    ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)) 1 2)
+  h_mem_sel : mem.sel r_mem = 1
+  h_mem_wr : mem.wr r_mem = 0
+
+/-- Irreducible per-row residuals for the `lbu` archetype — the binders of
+    `construction_lbu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_lbu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  lbu_input : PureSpec.LbuInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  mem : Valid_Mem FGL FGL
+  r_mem : ℕ
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  align : ZiskFv.Compliance.MemAlignWitness
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val (busLd trace binding i execRow).e1
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_COPYB
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_width :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+      i.val = (1 : FGL)
+  h_opcode_assumptions : PureSpec.lbu_state_assumptions lbu_input (binding.stateAt i)
+  h_addr1 :
+    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+      lbu_input.r1_val.toNat + (BitVec.signExtend 64 lbu_input.imm).toNat
+  h_addr2_zero_iff :
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+      lbu_input.rd = 0
+  h_addr2_idx :
+    lbu_input.rd.toNat =
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busLd trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_LOADBU_pure lbu_input).nextPC
+  h_memory_timeline :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      (busLd trace binding i execRow).e1
+  h_mem_match :
+    ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)) 1 2)
+  h_mem_sel : mem.sel r_mem = 1
+  h_mem_wr : mem.wr r_mem = 0
+
+/-- Irreducible per-row residuals for the `lhu` archetype — the binders of
+    `construction_lhu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_lhu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  lhu_input : PureSpec.LhuInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  mem : Valid_Mem FGL FGL
+  r_mem : ℕ
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  align : ZiskFv.Compliance.MemAlignWitness
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val (busLd trace binding i execRow).e1
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_COPYB
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_width :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+      i.val = (2 : FGL)
+  h_opcode_assumptions : PureSpec.lhu_state_assumptions lhu_input (binding.stateAt i)
+  h_addr1 :
+    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+      lhu_input.r1_val.toNat + (BitVec.signExtend 64 lhu_input.imm).toNat
+  h_addr2_zero_iff :
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+      lhu_input.rd = 0
+  h_addr2_idx :
+    lhu_input.rd.toNat =
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busLd trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_LOADHU_pure lhu_input).nextPC
+  h_memory_timeline :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      (busLd trace binding i execRow).e1
+  h_mem_match :
+    ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)) 1 2)
+  h_mem_sel : mem.sel r_mem = 1
+  h_mem_wr : mem.wr r_mem = 0
+
+/-- Irreducible per-row residuals for the `lwu` archetype — the binders of
+    `construction_lwu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_lwu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  lwu_input : PureSpec.LwuInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  mem : Valid_Mem FGL FGL
+  r_mem : ℕ
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  align : ZiskFv.Compliance.MemAlignWitness
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    i.val (busLd trace binding i execRow).e1
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_COPYB
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_width :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+      i.val = (4 : FGL)
+  h_opcode_assumptions : PureSpec.lwu_state_assumptions lwu_input (binding.stateAt i)
+  h_addr1 :
+    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+      lwu_input.r1_val.toNat + (BitVec.signExtend 64 lwu_input.imm).toNat
+  h_addr2_zero_iff :
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+      lwu_input.rd = 0
+  h_addr2_idx :
+    lwu_input.rd.toNat =
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busLd trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_LOADWU_pure lwu_input).nextPC
+  h_memory_timeline :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      (busLd trace binding i execRow).e1
+  h_mem_match :
+    ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)) 1 2)
+  h_mem_sel : mem.sel r_mem = 1
+  h_mem_wr : mem.wr r_mem = 0
+
+/-- Irreducible per-row residuals for the `lb` archetype — the binders of
+    `construction_lb_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_lb
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  lb_input : PureSpec.LbInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  mem : Valid_Mem FGL FGL
+  r_mem : ℕ
+  v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+  r_binary : ℕ
+  offset : ℕ
+  env : Environment FGL
+  h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  h_match :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val)
+      (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SIGNEXTEND_B
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_opcode_assumptions : PureSpec.lb_state_assumptions lb_input (binding.stateAt i)
+  h_addr1 :
+    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+      lb_input.r1_val.toNat + (BitVec.signExtend 64 lb_input.imm).toNat
+  h_addr2_zero_iff :
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+      lb_input.rd = 0
+  h_addr2_idx :
+    lb_input.rd.toNat =
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busLd trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_LOADB_pure lb_input).nextPC
+  h_memory_timeline :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      (busLd trace binding i execRow).e1
+  h_mem_match :
+    ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)) 1 2)
+  h_mem_sel : mem.sel r_mem = 1
+  h_mem_wr : mem.wr r_mem = 0
+
+/-- Irreducible per-row residuals for the `lh` archetype — the binders of
+    `construction_lh_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_lh
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  lh_input : PureSpec.LhInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  mem : Valid_Mem FGL FGL
+  r_mem : ℕ
+  v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+  r_binary : ℕ
+  offset : ℕ
+  env : Environment FGL
+  h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  h_match :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val)
+      (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SIGNEXTEND_H
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_opcode_assumptions : PureSpec.lh_state_assumptions lh_input (binding.stateAt i)
+  h_addr1 :
+    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+      lh_input.r1_val.toNat + (BitVec.signExtend 64 lh_input.imm).toNat
+  h_addr2_zero_iff :
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+      lh_input.rd = 0
+  h_addr2_idx :
+    lh_input.rd.toNat =
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busLd trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_LOADH_pure lh_input).nextPC
+  h_memory_timeline :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      (busLd trace binding i execRow).e1
+  h_mem_match :
+    ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)) 1 2)
+  h_mem_sel : mem.sel r_mem = 1
+  h_mem_wr : mem.wr r_mem = 0
+
+/-- Irreducible per-row residuals for the `lw` archetype — the binders of
+    `construction_lw_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_lw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  lw_input : PureSpec.LwInput
+  regs : ZiskFv.Compliance.ModeRegsFull
+  mem : Valid_Mem FGL FGL
+  r_mem : ℕ
+  v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+  r_binary : ℕ
+  offset : ℕ
+  env : Environment FGL
+  h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  h_match :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        i.val)
+      (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_SIGNEXTEND_W
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 0
+  h_opcode_assumptions : PureSpec.lw_state_assumptions lw_input (binding.stateAt i)
+  h_addr1 :
+    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+      lw_input.r1_val.toNat + (BitVec.signExtend 64 lw_input.imm).toNat
+  h_addr2_zero_iff :
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+      lw_input.rd = 0
+  h_addr2_idx :
+    lw_input.rd.toNat =
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_risc_v_assumptions :
+    RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+  h_exec_len : (busLd trace binding i execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
+      = (PureSpec.execute_LOADW_pure lw_input).nextPC
+  h_memory_timeline :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      (busLd trace binding i execRow).e1
+  h_mem_match :
+    ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage (ZiskFv.AirsClean.Mem.rowAt mem r_mem)) 1 2)
+  h_mem_sel : mem.sel r_mem = 1
+  h_mem_wr : mem.wr r_mem = 0
+
+/-- Irreducible per-row residuals for the `beq` archetype — the binders of
+    `construction_beq_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_beq
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  beq_input : PureSpec.BeqInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misa_val : RegisterType Register.misa
+  exec_row : List (Interaction.ExecutionBusEntry FGL)
+  h_input_imm : beq_input.imm = imm
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
+    = EStateM.Result.ok beq_input.r1_val (binding.stateAt i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
+    = EStateM.Result.ok beq_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some beq_input.PC
+  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+  h_exec_len : exec_row.length = 2
+  h_e0_mult : exec_row[0]!.multiplicity = -1
+  h_e1_mult : exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+      = (PureSpec.execute_BEQ_pure beq_input).nextPC
+  h_not_throws : (PureSpec.execute_BEQ_pure beq_input).throws = false
+  h_success : (PureSpec.execute_BEQ_pure beq_input).success = true
+
+/-- Irreducible per-row residuals for the `bne` archetype — the binders of
+    `construction_bne_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_bne
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  bne_input : PureSpec.BneInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misa_val : RegisterType Register.misa
+  exec_row : List (Interaction.ExecutionBusEntry FGL)
+  h_input_imm : bne_input.imm = imm
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
+    = EStateM.Result.ok bne_input.r1_val (binding.stateAt i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
+    = EStateM.Result.ok bne_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bne_input.PC
+  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+  h_exec_len : exec_row.length = 2
+  h_e0_mult : exec_row[0]!.multiplicity = -1
+  h_e1_mult : exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+      = (PureSpec.execute_BNE_pure bne_input).nextPC
+  h_not_throws : (PureSpec.execute_BNE_pure bne_input).throws = false
+  h_success : (PureSpec.execute_BNE_pure bne_input).success = true
+
+/-- Irreducible per-row residuals for the `blt` archetype — the binders of
+    `construction_blt_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_blt
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  blt_input : PureSpec.BltInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misa_val : RegisterType Register.misa
+  exec_row : List (Interaction.ExecutionBusEntry FGL)
+  h_input_imm : blt_input.imm = imm
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
+    = EStateM.Result.ok blt_input.r1_val (binding.stateAt i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
+    = EStateM.Result.ok blt_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some blt_input.PC
+  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+  h_exec_len : exec_row.length = 2
+  h_e0_mult : exec_row[0]!.multiplicity = -1
+  h_e1_mult : exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+      = (PureSpec.execute_BLT_pure blt_input).nextPC
+  h_not_throws : (PureSpec.execute_BLT_pure blt_input).throws = false
+  h_success : (PureSpec.execute_BLT_pure blt_input).success = true
+
+/-- Irreducible per-row residuals for the `bge` archetype — the binders of
+    `construction_bge_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_bge
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  bge_input : PureSpec.BgeInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misa_val : RegisterType Register.misa
+  exec_row : List (Interaction.ExecutionBusEntry FGL)
+  h_input_imm : bge_input.imm = imm
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
+    = EStateM.Result.ok bge_input.r1_val (binding.stateAt i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
+    = EStateM.Result.ok bge_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bge_input.PC
+  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+  h_exec_len : exec_row.length = 2
+  h_e0_mult : exec_row[0]!.multiplicity = -1
+  h_e1_mult : exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+      = (PureSpec.execute_BGE_pure bge_input).nextPC
+  h_not_throws : (PureSpec.execute_BGE_pure bge_input).throws = false
+  h_success : (PureSpec.execute_BGE_pure bge_input).success = true
+
+/-- Irreducible per-row residuals for the `bltu` archetype — the binders of
+    `construction_bltu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_bltu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  bltu_input : PureSpec.BltuInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misa_val : RegisterType Register.misa
+  exec_row : List (Interaction.ExecutionBusEntry FGL)
+  h_input_imm : bltu_input.imm = imm
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
+    = EStateM.Result.ok bltu_input.r1_val (binding.stateAt i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
+    = EStateM.Result.ok bltu_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bltu_input.PC
+  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+  h_exec_len : exec_row.length = 2
+  h_e0_mult : exec_row[0]!.multiplicity = -1
+  h_e1_mult : exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+      = (PureSpec.execute_BLTU_pure bltu_input).nextPC
+  h_not_throws : (PureSpec.execute_BLTU_pure bltu_input).throws = false
+  h_success : (PureSpec.execute_BLTU_pure bltu_input).success = true
+
+/-- Irreducible per-row residuals for the `bgeu` archetype — the binders of
+    `construction_bgeu_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_bgeu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  bgeu_input : PureSpec.BgeuInput
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misa_val : RegisterType Register.misa
+  exec_row : List (Interaction.ExecutionBusEntry FGL)
+  h_input_imm : bgeu_input.imm = imm
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
+    = EStateM.Result.ok bgeu_input.r1_val (binding.stateAt i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
+    = EStateM.Result.ok bgeu_input.r2_val (binding.stateAt i)
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bgeu_input.PC
+  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+  h_exec_len : exec_row.length = 2
+  h_e0_mult : exec_row[0]!.multiplicity = -1
+  h_e1_mult : exec_row[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+      = (PureSpec.execute_BGEU_pure bgeu_input).nextPC
+  h_not_throws : (PureSpec.execute_BGEU_pure bgeu_input).throws = false
+  h_success : (PureSpec.execute_BGEU_pure bgeu_input).success = true
+
+/-- Irreducible per-row residuals for the `jal` archetype — the binders of
+    `construction_jal_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_jal
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  jal_input : PureSpec.JalInput
+  imm : BitVec 21
+  rd : regidx
+  misa_val : RegisterType Register.misa
+  nextPC_val : BitVec 64
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_FLAG
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 0
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 0
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 1
+  h_jmp2 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+      i.val = 4
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).pc i.val).val
+      = jal_input.PC.toNat
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = nextPC_val
+  h_input_rd : jal_input.rd = regidx_to_fin rd
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some jal_input.PC
+  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+  h_success : (PureSpec.execute_JAL_pure jal_input).success = true
+  h_nextPC_option : (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
+  h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
+  h_input_imm : jal_input.imm = imm
+  h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false
+  h_pc_bound : jal_input.PC.toNat < GL_prime - 4
+  h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296
+
+/-- Irreducible per-row residuals for the `jalr` archetype — the binders of
+    `construction_jalr_sound` after `(trace) (binding) (i)`, verbatim. -/
+structure RowData_jalr
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  jalr_input : PureSpec.JalrInput
+  imm : BitVec 12
+  rs1 : regidx
+  rd : regidx
+  misa_val : RegisterType Register.misa
+  mseccfg : RegisterType Register.mseccfg
+  nextPC_val : BitVec 64
+  h_main_op :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      i.val = ZiskFv.Trusted.OP_AND
+  h_main_active :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      i.val = 1
+  h_flag :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).flag
+      i.val = 0
+  h_m32 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      i.val = 0
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      i.val = 1
+  h_store_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      i.val = 1
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+  h_exec_len : execRow.length = 2
+  h_e0_mult : execRow[0]!.multiplicity = -1
+  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_nextPC_matches :
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+      = nextPC_val
+  h_input_rd : jalr_input.rd = regidx_to_fin rd
+  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some jalr_input.PC
+  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+  h_success : (PureSpec.execute_JALR_pure jalr_input).success = true
+  h_nextPC_option : (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
+  h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
+  h_input_imm : jalr_input.imm = imm
+  h_input_rs1 : read_xreg (regidx_to_fin rs1) (binding.stateAt i)
+    = EStateM.Result.ok jalr_input.rs1_val (binding.stateAt i)
+  h_cur_privilege : Sail.readReg Register.cur_privilege (binding.stateAt i)
+    = EStateM.Result.ok Privilege.Machine (binding.stateAt i)
+  h_mseccfg : Sail.readReg Register.mseccfg (binding.stateAt i)
+    = EStateM.Result.ok mseccfg (binding.stateAt i)
+  h_link_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).pc i.val
+      + (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+          i.val).val
+      = (jalr_input.PC + 4#64).toNat
+  h_pc_bound : jalr_input.PC.toNat < GL_prime - 4
+  h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296
+
+/-- Per-row construction data: one arm per sound construction archetype (55).
+    Each arm carries a single `RowData_<op>` payload (its irreducible residuals).
+    The 8 defect/decode-gap opcodes (7 signed-M + FENCE) have NO arm. -/
+inductive RowConstructionData
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  | sub (d : RowData_sub trace binding i) : RowConstructionData trace binding i
+  | and (d : RowData_and trace binding i) : RowConstructionData trace binding i
+  | or (d : RowData_or trace binding i) : RowConstructionData trace binding i
+  | xor (d : RowData_xor trace binding i) : RowConstructionData trace binding i
+  | slt (d : RowData_slt trace binding i) : RowConstructionData trace binding i
+  | sltu (d : RowData_sltu trace binding i) : RowConstructionData trace binding i
+  | andi (d : RowData_andi trace binding i) : RowConstructionData trace binding i
+  | ori (d : RowData_ori trace binding i) : RowConstructionData trace binding i
+  | xori (d : RowData_xori trace binding i) : RowConstructionData trace binding i
+  | slti (d : RowData_slti trace binding i) : RowConstructionData trace binding i
+  | sltiu (d : RowData_sltiu trace binding i) : RowConstructionData trace binding i
+  | sll (d : RowData_sll trace binding i) : RowConstructionData trace binding i
+  | srl (d : RowData_srl trace binding i) : RowConstructionData trace binding i
+  | sra (d : RowData_sra trace binding i) : RowConstructionData trace binding i
+  | slli (d : RowData_slli trace binding i) : RowConstructionData trace binding i
+  | srli (d : RowData_srli trace binding i) : RowConstructionData trace binding i
+  | srai (d : RowData_srai trace binding i) : RowConstructionData trace binding i
+  | sllw (d : RowData_sllw trace binding i) : RowConstructionData trace binding i
+  | srlw (d : RowData_srlw trace binding i) : RowConstructionData trace binding i
+  | sraw (d : RowData_sraw trace binding i) : RowConstructionData trace binding i
+  | slliw (d : RowData_slliw trace binding i) : RowConstructionData trace binding i
+  | srliw (d : RowData_srliw trace binding i) : RowConstructionData trace binding i
+  | sraiw (d : RowData_sraiw trace binding i) : RowConstructionData trace binding i
+  | add (d : RowData_add trace binding i) : RowConstructionData trace binding i
+  | addi (d : RowData_addi trace binding i) : RowConstructionData trace binding i
+  | subw (d : RowData_subw trace binding i) : RowConstructionData trace binding i
+  | addw (d : RowData_addw trace binding i) : RowConstructionData trace binding i
+  | addiw (d : RowData_addiw trace binding i) : RowConstructionData trace binding i
+  | lui (d : RowData_lui trace binding i) : RowConstructionData trace binding i
+  | auipc (d : RowData_auipc trace binding i) : RowConstructionData trace binding i
+  | mulw (d : RowData_mulw trace binding i) : RowConstructionData trace binding i
+  | mulhu (d : RowData_mulhu trace binding i) : RowConstructionData trace binding i
+  | divu (d : RowData_divu trace binding i) : RowConstructionData trace binding i
+  | divuw (d : RowData_divuw trace binding i) : RowConstructionData trace binding i
+  | remu (d : RowData_remu trace binding i) : RowConstructionData trace binding i
+  | remuw (d : RowData_remuw trace binding i) : RowConstructionData trace binding i
+  | sb (d : RowData_sb trace binding i) : RowConstructionData trace binding i
+  | sh (d : RowData_sh trace binding i) : RowConstructionData trace binding i
+  | sw (d : RowData_sw trace binding i) : RowConstructionData trace binding i
+  | sd (d : RowData_sd trace binding i) : RowConstructionData trace binding i
+  | ld (d : RowData_ld trace binding i) : RowConstructionData trace binding i
+  | lbu (d : RowData_lbu trace binding i) : RowConstructionData trace binding i
+  | lhu (d : RowData_lhu trace binding i) : RowConstructionData trace binding i
+  | lwu (d : RowData_lwu trace binding i) : RowConstructionData trace binding i
+  | lb (d : RowData_lb trace binding i) : RowConstructionData trace binding i
+  | lh (d : RowData_lh trace binding i) : RowConstructionData trace binding i
+  | lw (d : RowData_lw trace binding i) : RowConstructionData trace binding i
+  | beq (d : RowData_beq trace binding i) : RowConstructionData trace binding i
+  | bne (d : RowData_bne trace binding i) : RowConstructionData trace binding i
+  | blt (d : RowData_blt trace binding i) : RowConstructionData trace binding i
+  | bge (d : RowData_bge trace binding i) : RowConstructionData trace binding i
+  | bltu (d : RowData_bltu trace binding i) : RowConstructionData trace binding i
+  | bgeu (d : RowData_bgeu trace binding i) : RowConstructionData trace binding i
+  | jal (d : RowData_jal trace binding i) : RowConstructionData trace binding i
+  | jalr (d : RowData_jalr trace binding i) : RowConstructionData trace binding i
+
+/-- The canonical per-step compliance conclusion for one row, keyed on trace
+    data. Dispatches on the row archetype to the matching
+    `construction_<op>_sound` conclusion (the `bus_effect`-form). -/
+def StepCompliance
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    RowConstructionData trace binding i → Prop
+  | .sub d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SUB))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .and d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.AND))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .or d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.OR))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .xor d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.XOR))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .slt d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLT))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sltu d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLTU))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .andi d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ANDI))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .ori d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ORI))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .xori d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.XORI))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .slti d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTI))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sltiu d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTIU))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sll d =>
+      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLL)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .srl d =>
+      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRL)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sra d =>
+      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRA)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .slli d =>
+      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SLLI)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .srli d =>
+      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRLI)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .srai d =>
+      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRAI)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sllw d =>
+      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .srlw d =>
+      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sraw d =>
+      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .slliw d =>
+      execute_instruction
+      (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .srliw d =>
+      execute_instruction
+      (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sraiw d =>
+      execute_instruction
+      (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .add d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.ADD))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .addi d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ADDI))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .subw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SUBW))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .addw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.ADDW))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .addiw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ADDIW (d.imm, d.r1, d.rd))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .lui d =>
+      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.LUI)) (binding.stateAt i)
+      = (bus_effect d.execRow [eRdLui trace binding i] (binding.stateAt i)).2
+  | .auipc d =>
+      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.AUIPC)) (binding.stateAt i)
+      = (bus_effect d.execRow [eRdLui trace binding i] (binding.stateAt i)).2
+  | .mulw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MULW (d.r2, d.r1, d.rd))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .mulhu d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (d.r2, d.r1, d.rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Unsigned
+             signed_rs2 := .Unsigned }))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .divu d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .divuw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .remu d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .remuw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      = (bus_effect (busSub trace binding i d.execRow).exec_row
+          [ (busSub trace binding i d.execRow).e0
+          , (busSub trace binding i d.execRow).e1
+          , (busSub trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sb d =>
+      execute_instruction (instruction.STORE (
+        d.sb_input.imm,
+        regidx.Regidx d.sb_input.r2,
+        regidx.Regidx d.sb_input.r1,
+        1
+      )) (binding.stateAt i)
+        = (bus_effect (busSt trace binding i d.execRow).exec_row
+            [ (busSt trace binding i d.execRow).e0
+            , (busSt trace binding i d.execRow).e1
+            , (busSt trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sh d =>
+      execute_instruction (instruction.STORE (
+        d.sh_input.imm,
+        regidx.Regidx d.sh_input.r2,
+        regidx.Regidx d.sh_input.r1,
+        2
+      )) (binding.stateAt i)
+        = (bus_effect (busSt trace binding i d.execRow).exec_row
+            [ (busSt trace binding i d.execRow).e0
+            , (busSt trace binding i d.execRow).e1
+            , (busSt trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sw d =>
+      execute_instruction (instruction.STORE (
+        d.sw_input.imm,
+        regidx.Regidx d.sw_input.r2,
+        regidx.Regidx d.sw_input.r1,
+        4
+      )) (binding.stateAt i)
+        = (bus_effect (busSt trace binding i d.execRow).exec_row
+            [ (busSt trace binding i d.execRow).e0
+            , (busSt trace binding i d.execRow).e1
+            , (busSt trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .sd d =>
+      execute_instruction (instruction.STORE (
+        d.sd_input.imm,
+        regidx.Regidx d.sd_input.r2,
+        regidx.Regidx d.sd_input.r1,
+        8
+      )) (binding.stateAt i)
+        = (bus_effect (busSt trace binding i d.execRow).exec_row
+            [ (busSt trace binding i d.execRow).e0
+            , (busSt trace binding i d.execRow).e1
+            , (busSt trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .ld d =>
+      execute_instruction (instruction.LOAD (
+        d.ld_input.imm,
+        regidx.Regidx d.ld_input.r1,
+        regidx.Regidx d.ld_input.rd,
+        false,
+        8
+      )) (binding.stateAt i)
+        = (bus_effect (busLd trace binding i d.execRow).exec_row
+            [ (busLd trace binding i d.execRow).e0
+            , (busLd trace binding i d.execRow).e1
+            , (busLd trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .lbu d =>
+      execute_instruction (instruction.LOAD (
+        d.lbu_input.imm,
+        regidx.Regidx d.lbu_input.r1,
+        regidx.Regidx d.lbu_input.rd,
+        true,
+        1
+      )) (binding.stateAt i)
+        = (bus_effect (busLd trace binding i d.execRow).exec_row
+            [ (busLd trace binding i d.execRow).e0
+            , (busLd trace binding i d.execRow).e1
+            , (busLd trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .lhu d =>
+      execute_instruction (instruction.LOAD (
+        d.lhu_input.imm,
+        regidx.Regidx d.lhu_input.r1,
+        regidx.Regidx d.lhu_input.rd,
+        true,
+        2
+      )) (binding.stateAt i)
+        = (bus_effect (busLd trace binding i d.execRow).exec_row
+            [ (busLd trace binding i d.execRow).e0
+            , (busLd trace binding i d.execRow).e1
+            , (busLd trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .lwu d =>
+      execute_instruction (instruction.LOAD (
+        d.lwu_input.imm,
+        regidx.Regidx d.lwu_input.r1,
+        regidx.Regidx d.lwu_input.rd,
+        true,
+        4
+      )) (binding.stateAt i)
+        = (bus_effect (busLd trace binding i d.execRow).exec_row
+            [ (busLd trace binding i d.execRow).e0
+            , (busLd trace binding i d.execRow).e1
+            , (busLd trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .lb d =>
+      execute_instruction (instruction.LOAD (
+        d.lb_input.imm,
+        regidx.Regidx d.lb_input.r1,
+        regidx.Regidx d.lb_input.rd,
+        false,
+        1
+      )) (binding.stateAt i)
+        = (bus_effect (busLd trace binding i d.execRow).exec_row
+            [ (busLd trace binding i d.execRow).e0
+            , (busLd trace binding i d.execRow).e1
+            , (busLd trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .lh d =>
+      execute_instruction (instruction.LOAD (
+        d.lh_input.imm,
+        regidx.Regidx d.lh_input.r1,
+        regidx.Regidx d.lh_input.rd,
+        false,
+        2
+      )) (binding.stateAt i)
+        = (bus_effect (busLd trace binding i d.execRow).exec_row
+            [ (busLd trace binding i d.execRow).e0
+            , (busLd trace binding i d.execRow).e1
+            , (busLd trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .lw d =>
+      execute_instruction (instruction.LOAD (
+        d.lw_input.imm,
+        regidx.Regidx d.lw_input.r1,
+        regidx.Regidx d.lw_input.rd,
+        false,
+        4
+      )) (binding.stateAt i)
+        = (bus_effect (busLd trace binding i d.execRow).exec_row
+            [ (busLd trace binding i d.execRow).e0
+            , (busLd trace binding i d.execRow).e1
+            , (busLd trace binding i d.execRow).e2 ] (binding.stateAt i)).2
+  | .beq d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BEQ)) (binding.stateAt i)
+      = (bus_effect d.exec_row [] (binding.stateAt i)).2
+  | .bne d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BNE)) (binding.stateAt i)
+      = (bus_effect d.exec_row [] (binding.stateAt i)).2
+  | .blt d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLT)) (binding.stateAt i)
+      = (bus_effect d.exec_row [] (binding.stateAt i)).2
+  | .bge d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGE)) (binding.stateAt i)
+      = (bus_effect d.exec_row [] (binding.stateAt i)).2
+  | .bltu d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLTU)) (binding.stateAt i)
+      = (bus_effect d.exec_row [] (binding.stateAt i)).2
+  | .bgeu d =>
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGEU)) (binding.stateAt i)
+      = (bus_effect d.exec_row [] (binding.stateAt i)).2
+  | .jal d =>
+      execute_instruction (instruction.JAL (d.imm, d.rd)) (binding.stateAt i)
+      = (bus_effect d.execRow [eRdLui trace binding i] (binding.stateAt i)).2
+  | .jalr d =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (d.imm, d.rs1, d.rd))) (binding.stateAt i)
+      = (bus_effect d.execRow [eRdLui trace binding i] (binding.stateAt i)).2
+
+/-- Per-row dispatch: each archetype's residual bundle discharges its
+    `StepCompliance` via the matching `construction_<op>_sound`. -/
+theorem stepCompliance_of_rowData
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowConstructionData trace binding i) :
+    StepCompliance trace binding i d := by
+  cases d with
+  | sub d =>
+      exact construction_sub_sound trace binding i d.sub_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | and d =>
+      exact construction_and_sound trace binding i d.and_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | or d =>
+      exact construction_or_sound trace binding i d.or_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | xor d =>
+      exact construction_xor_sound trace binding i d.xor_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | slt d =>
+      exact construction_slt_sound trace binding i d.slt_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | sltu d =>
+      exact construction_sltu_sound trace binding i d.sltu_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | andi d =>
+      exact construction_andi_sound trace binding i d.andi_input d.r1 d.rd d.imm d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_imm d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_andi_subset d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | ori d =>
+      exact construction_ori_sound trace binding i d.ori_input d.r1 d.rd d.imm d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_imm d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_ori_subset d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | xori d =>
+      exact construction_xori_sound trace binding i d.xori_input d.r1 d.rd d.imm d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_imm d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_xori_subset d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | slti d =>
+      exact construction_slti_sound trace binding i d.slti_input d.r1 d.rd d.imm d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_imm d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_slti_subset d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | sltiu d =>
+      exact construction_sltiu_sound trace binding i d.sltiu_input d.r1 d.rd d.imm d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_imm d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_sltiu_subset d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | sll d =>
+      exact construction_sll_sound trace binding i d.sll_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | srl d =>
+      exact construction_srl_sound trace binding i d.srl_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | sra d =>
+      exact construction_sra_sound trace binding i d.sra_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | slli d =>
+      exact construction_slli_sound trace binding i d.slli_input d.r1 d.rd d.shamt d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_shamt d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | srli d =>
+      exact construction_srli_sound trace binding i d.srli_input d.r1 d.rd d.shamt d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_shamt d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | srai d =>
+      exact construction_srai_sound trace binding i d.srai_input d.r1 d.rd d.shamt d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_shamt d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | sllw d =>
+      exact construction_sllw_sound trace binding i d.sllw_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | srlw d =>
+      exact construction_srlw_sound trace binding i d.srlw_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | sraw d =>
+      exact construction_sraw_sound trace binding i d.sraw_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | slliw d =>
+      exact construction_slliw_sound trace binding i d.slliw_input d.r1 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_pc d.h_input_rd d.h_a_lo_t
+        d.h_a_hi_t d.h_b_lo_t d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+        d.h_rd_idx
+  | srliw d =>
+      exact construction_srliw_sound trace binding i d.srliw_input d.r1 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_pc d.h_input_rd d.h_a_lo_t
+        d.h_a_hi_t d.h_b_lo_t d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+        d.h_rd_idx
+  | sraiw d =>
+      exact construction_sraiw_sound trace binding i d.sraiw_input d.r1 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_pc d.h_input_rd d.h_a_lo_t
+        d.h_a_hi_t d.h_b_lo_t d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+        d.h_rd_idx
+  | add d =>
+      exact construction_add_sound trace binding i d.add_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | addi d =>
+      exact construction_addi_sound trace binding i d.addi_input d.r1 d.rd d.imm d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_set_pc d.h_input_r1 d.h_input_imm d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_addi_subset d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | subw d =>
+      exact construction_subw_sound trace binding i d.subw_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | addw d =>
+      exact construction_addw_sound trace binding i d.addw_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | addiw d =>
+      exact construction_addiw_sound trace binding i d.addiw_input d.r1 d.rd d.imm d.h_main_op
+        d.h_main_active d.h_m32 d.h_store_pc d.h_input_r1 d.h_input_imm d.h_input_pc
+        d.h_input_rd d.h_a_lo_t d.h_a_hi_t d.h_addiw_subset d.execRow d.h_exec_len d.h_e0_mult
+        d.h_e1_mult d.h_nextPC_matches d.h_rd_idx
+  | lui d =>
+      exact construction_lui_sound trace binding i d.lui_input d.imm d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_set_pc d.h_store_pc d.h_input_imm d.h_input_rd d.h_input_pc
+        d.h_imm_lo_nat d.h_imm_hi_nat d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult
+        d.h_nextPC_matches d.h_rd_idx
+  | auipc d =>
+      exact construction_auipc_sound trace binding i d.auipc_input d.imm d.rd d.h_main_op
+        d.h_main_active d.h_m32 d.h_set_pc d.h_store_pc d.h_input_imm d.h_input_rd d.h_input_pc
+        d.h_offset_bridge d.h_pc_bridge d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult
+        d.h_nextPC_matches d.h_rd_idx d.h_no_wrap d.h_pc_offset_lt_2_32
+  | mulw d =>
+      exact construction_mulw_sound trace binding i d.mulw_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.h_a23
+        d.h_b23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+  | mulhu d =>
+      exact construction_mulhu_sound trace binding i d.mulhu_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+        d.h_rs1_value d.h_rs2_value
+  | divu d =>
+      exact construction_divu_sound trace binding i d.divu_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+        d.remainder_bound d.h_rs1_value d.h_rs2_value
+  | divuw d =>
+      exact construction_divuw_sound trace binding i d.divuw_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+        d.remainder_bound d.h_b23 d.h_c23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+  | remu d =>
+      exact construction_remu_sound trace binding i d.remu_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+        d.remainder_bound d.h_rs1_value d.h_rs2_value
+  | remuw d =>
+      exact construction_remuw_sound trace binding i d.remuw_input d.r1 d.r2 d.rd d.h_main_op
+        d.h_main_active d.h_store_pc d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_rd
+        d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_rd_idx d.bounds
+        d.remainder_bound d.h_b23 d.h_c23 d.h_sext_choice d.h_rs1_value d.h_rs2_value
+  | sb d =>
+      exact construction_sb_sound trace binding i d.sb_input d.regs d.h_main_active d.h_main_op
+        d.h_store_pc d.h_main_ind_width d.h_opcode_assumptions d.h_addr2 d.h_b0_value
+        d.h_b1_value d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult
+        d.h_nextPC_matches d.h_m1 d.h_m2 d.h_m3 d.h_m4 d.h_m5 d.h_m6 d.h_m7
+  | sh d =>
+      exact construction_sh_sound trace binding i d.sh_input d.regs d.h_main_active d.h_main_op
+        d.h_store_pc d.h_main_ind_width d.h_opcode_assumptions d.h_addr2 d.h_b0_value
+        d.h_b1_value d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult
+        d.h_nextPC_matches d.h_m2 d.h_m3 d.h_m4 d.h_m5 d.h_m6 d.h_m7
+  | sw d =>
+      exact construction_sw_sound trace binding i d.sw_input d.regs d.h_main_active d.h_main_op
+        d.h_store_pc d.h_main_ind_width d.h_opcode_assumptions d.h_addr2 d.h_b0_value
+        d.h_b1_value d.execRow d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult
+        d.h_nextPC_matches d.h_m4 d.h_m5 d.h_m6 d.h_m7
+  | sd d =>
+      exact construction_sd_sound trace binding i d.sd_input d.regs d.h_main_active d.h_main_op
+        d.h_store_pc d.h_opcode_assumptions d.h_addr2 d.h_b0_value d.h_b1_value d.execRow
+        d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+  | ld d =>
+      exact construction_ld_sound trace binding i d.ld_input d.regs d.mem d.r_mem
+        d.h_main_active d.h_main_op d.h_store_pc d.h_opcode_assumptions d.h_addr1
+        d.h_addr2_zero_iff d.h_addr2_idx d.execRow d.h_risc_v_assumptions d.h_exec_len
+        d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_memory_timeline d.h_mem_match d.h_mem_sel
+        d.h_mem_wr
+  | lbu d =>
+      exact construction_lbu_sound trace binding i d.lbu_input d.regs d.mem d.r_mem d.execRow
+        d.align d.h_main_active d.h_main_op d.h_store_pc d.h_width d.h_opcode_assumptions
+        d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.h_risc_v_assumptions d.h_exec_len
+        d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_memory_timeline d.h_mem_match d.h_mem_sel
+        d.h_mem_wr
+  | lhu d =>
+      exact construction_lhu_sound trace binding i d.lhu_input d.regs d.mem d.r_mem d.execRow
+        d.align d.h_main_active d.h_main_op d.h_store_pc d.h_width d.h_opcode_assumptions
+        d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.h_risc_v_assumptions d.h_exec_len
+        d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_memory_timeline d.h_mem_match d.h_mem_sel
+        d.h_mem_wr
+  | lwu d =>
+      exact construction_lwu_sound trace binding i d.lwu_input d.regs d.mem d.r_mem d.execRow
+        d.align d.h_main_active d.h_main_op d.h_store_pc d.h_width d.h_opcode_assumptions
+        d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.h_risc_v_assumptions d.h_exec_len
+        d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_memory_timeline d.h_mem_match d.h_mem_sel
+        d.h_mem_wr
+  | lb d =>
+      exact construction_lb_sound trace binding i d.lb_input d.regs d.mem d.r_mem d.v d.r_binary
+        d.offset d.env d.h_static d.h_match d.h_main_active d.h_main_op d.h_store_pc
+        d.h_opcode_assumptions d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.execRow
+        d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+        d.h_memory_timeline d.h_mem_match d.h_mem_sel d.h_mem_wr
+  | lh d =>
+      exact construction_lh_sound trace binding i d.lh_input d.regs d.mem d.r_mem d.v d.r_binary
+        d.offset d.env d.h_static d.h_match d.h_main_active d.h_main_op d.h_store_pc
+        d.h_opcode_assumptions d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.execRow
+        d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+        d.h_memory_timeline d.h_mem_match d.h_mem_sel d.h_mem_wr
+  | lw d =>
+      exact construction_lw_sound trace binding i d.lw_input d.regs d.mem d.r_mem d.v d.r_binary
+        d.offset d.env d.h_static d.h_match d.h_main_active d.h_main_op d.h_store_pc
+        d.h_opcode_assumptions d.h_addr1 d.h_addr2_zero_iff d.h_addr2_idx d.execRow
+        d.h_risc_v_assumptions d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+        d.h_memory_timeline d.h_mem_match d.h_mem_sel d.h_mem_wr
+  | beq d =>
+      exact construction_beq_sound trace binding i d.beq_input d.imm d.r1 d.r2 d.misa_val
+        d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+        d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+        d.h_success
+  | bne d =>
+      exact construction_bne_sound trace binding i d.bne_input d.imm d.r1 d.r2 d.misa_val
+        d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+        d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+        d.h_success
+  | blt d =>
+      exact construction_blt_sound trace binding i d.blt_input d.imm d.r1 d.r2 d.misa_val
+        d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+        d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+        d.h_success
+  | bge d =>
+      exact construction_bge_sound trace binding i d.bge_input d.imm d.r1 d.r2 d.misa_val
+        d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+        d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+        d.h_success
+  | bltu d =>
+      exact construction_bltu_sound trace binding i d.bltu_input d.imm d.r1 d.r2 d.misa_val
+        d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+        d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+        d.h_success
+  | bgeu d =>
+      exact construction_bgeu_sound trace binding i d.bgeu_input d.imm d.r1 d.r2 d.misa_val
+        d.exec_row d.h_input_imm d.h_input_r1 d.h_input_r2 d.h_input_pc d.h_input_misa
+        d.h_misa_c d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches d.h_not_throws
+        d.h_success
+  | jal d =>
+      exact construction_jal_sound trace binding i d.jal_input d.imm d.rd d.misa_val
+        d.nextPC_val d.h_main_op d.h_main_active d.h_m32 d.h_set_pc d.h_store_pc d.h_jmp2
+        d.h_pc_bridge d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+        d.h_input_rd d.h_input_pc d.h_input_misa d.h_misa_c d.h_success d.h_nextPC_option
+        d.h_rd_idx d.h_input_imm d.h_not_throws d.h_pc_bound d.h_pc_offset_lt_2_32
+  | jalr d =>
+      exact construction_jalr_sound trace binding i d.jalr_input d.imm d.rs1 d.rd d.misa_val
+        d.mseccfg d.nextPC_val d.h_main_op d.h_main_active d.h_flag d.h_m32 d.h_set_pc
+        d.h_store_pc d.execRow d.h_exec_len d.h_e0_mult d.h_e1_mult d.h_nextPC_matches
+        d.h_input_rd d.h_input_pc d.h_input_misa d.h_misa_c d.h_success d.h_nextPC_option
+        d.h_rd_idx d.h_input_imm d.h_input_rs1 d.h_cur_privilege d.h_mseccfg d.h_link_bridge
+        d.h_pc_bound d.h_pc_offset_lt_2_32
+
+/-- **Target P5 theorem (#61 closure over the 55 sound constructions).**
+
+    From an accepted full-ensemble trace, a program binding, and a per-row
+    classification (`rowData : ∀ i, RowConstructionData …` packaging each row's
+    genuinely-irreducible residuals), EVERY row satisfies the canonical per-step
+    compliance conclusion — with NO caller-supplied `OpEnvelope`. The envelope
+    for each row is constructed inside via `stepCompliance_of_rowData`.
+
+    COVERAGE: the `∀ i, RowConstructionData trace binding i` premise IS the
+    explicit coverage obligation — a witness per row that the row is one of the
+    55 classifiable, non-defect RV64IM opcodes. The 8 defect/decode-gap ops (7
+    signed-M + FENCE) have no `RowConstructionData` arm and are out of scope;
+    they are covered solely by the global theorem's ∀-env `NoKnownDefect` /
+    decode-gap exclusion. -/
+theorem zisk_compliant_of_accepted_trace
+    (trace : AcceptedTrace)
+    (binding : ProgramBinding trace)
+    (rowData : ∀ i : Fin trace.length, RowConstructionData trace binding i) :
+    ∀ i : Fin trace.length, StepCompliance trace binding i (rowData i) :=
+  fun i => stepCompliance_of_rowData trace binding i (rowData i)
+
+end ZiskFv.Compliance

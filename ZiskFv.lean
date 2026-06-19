@@ -152,6 +152,7 @@ import ZiskFv.Compliance.ConstructionStore
 import ZiskFv.Compliance.ConstructionLoad
 import ZiskFv.Compliance.ConstructionBranch
 import ZiskFv.Compliance.ConstructionJump
+import ZiskFv.Compliance.TraceLevelExport
 import ZiskFv.Compliance
 import ZiskFv.Completeness.Rv
 import ZiskFv.Completeness.Rv64im

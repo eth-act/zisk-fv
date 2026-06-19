@@ -9,6 +9,11 @@
 # Group 1: the global compliance theorem.
 ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 #
+# Group 1b: the P5 trace-level export theorem (#61 closure over the 55
+# sound constructions). Reaches RowConstructionData / RowData_<op> /
+# StepCompliance / stepCompliance_of_rowData.
+ZiskFv.Compliance.zisk_compliant_of_accepted_trace
+#
 # Group 2: the 63 canonical `equiv_<OP>` theorems (one per RV64IM
 # opcode). These are the per-opcode public claims polished by the
 # trust gate (`baseline-equiv-axiom-deps.txt`).

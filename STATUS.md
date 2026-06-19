@@ -19,10 +19,19 @@ carried by the global theorem's ∀-env NoKnownDefect / decode-gap):
   A laundered vacuous attempt (carried h_env_defect) was rejected + STASHED (never commit).
 - FENCE (1): decode-incompleteness (FenceIncomplete — decoder rejects generic fm≠0 FENCE).
 
-=== NEXT: P5 trace-level export (the real #61 closure) over the 55 ===
-SCOPING in flight (agent aeaab17d): map OpEnvelope anatomy + the residual inventory +
-the decode→dispatch + the target theorem signature that derives the OpEnvelope from the
-trace (removing the OpEnvelope param), with the 8 gated covered by the existing NoKnownDefect.
+=== P5 trace-level export (the real #61 closure) over the 55 — IMPLEMENTED (uncommitted) ===
+ZiskFv/Compliance/TraceLevelExport.lean: 55 `RowData_<op>` structures (verbatim residual
+binders of each construction_<op>_sound after trace/binding/i) + 55-arm `RowConstructionData`
+sum + `StepCompliance` (per-arm bus_effect conclusion) + `stepCompliance_of_rowData`
+(cases→positional construction_<op>_sound) + `zisk_compliant_of_accepted_trace`
+(∀ i, StepCompliance … (rowData i); NO OpEnvelope param). 0 sorry; 0 new ZiskFv.* axioms
+(#print axioms = standard kernel + Sail platform only); full lake build green; gate V1 18/18
++ V2 12/12. Structure-split + `seal mulw/mulhu/divu/divuw/remu/remuwArow` tames the M-ext
+field-elab whnf runaway. The 8 defect/gap ops have NO arm (explicit coverage premise =
+∀ i, RowConstructionData; covered only by global NoKnownDefect). Registered: ZiskFv.lean
+import + dead-code-entry-points.txt. NOT committed (per instructions).
+Residual roll-up: loads/stores h_memory_timeline+RMW→#76; branches+JAL/JALR h_nextPC_matches
+→#100; signed-load h_static/h_match (SextLoadBridge/aeneasBridgeTrust) verbatim residual.
 
 === SIBLING THREADS ===
 - #111 (aeneasBridgeTrust discharge): BLOCKED — sound in-build discharge is NO-GO (numBits/
