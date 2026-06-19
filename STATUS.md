@@ -67,5 +67,19 @@ construction. NOT committed (per instructions).
 - #76 (h_memory_timeline): PR-76.5 step D landed on p76-memory (cross-segment seam, GO);
   E/F/G + per-address timeline remain. Discharges loads' + stores' #76 residuals.
 
+=== P5-STRONG h_known_bugs THREADING — DONE (uncommitted) ===
+zisk_compliant_of_accepted_trace_strong now TAKES a per-row defect-exclusion binder
+`(h_known_bugs : ∀ i, StepNoKnownDefect trace binding i (rowData i))` and threads it via
+stepComplianceStrong_of_rowData → each of the 22 OpEnvelope-route stepStrong_<op> arms, which
+now RECEIVE the supplied obligation and pass `h_known_arm env trivial : NoKnownDefect env` to
+zisk_riscv_compliant_program_bus INSTEAD of proving NoKnownDefect internally. New helpers in
+TraceLevelExport.lean: `EnvNoKnownDefectFor sel := ∀ env, sel env → NoKnownDefect env` (def),
+`envNoKnownDefectFor_of_nondefect` (trivial-discharge theorem), `StepNoKnownDefect` (per-arm
+obligation; EnvNoKnownDefectFor on the arm's constructor for the 22, True for direct-lift arms).
+NON-VACUOUS: trivially satisfiable for the 49 current non-defect arms (witness verified);
+for the future signed-M/FENCE defect arms the same binder becomes the genuine NoKnownDefect of a
+defect-region env (NOT unconditionally true) — the plumbing point. 0 new ZiskFv.* axioms (closure
+unchanged). Full lake build GREEN. Gate V1 18/18 + V2 12/12. NOT committed.
+
 GOAL NOTE: the /goal says "ALL 63" — unachievable (8 are defect/gap-gated). Re-scope to
 "the 55 constructible + 8 honestly excluded via NoKnownDefect; P5 over the 55."

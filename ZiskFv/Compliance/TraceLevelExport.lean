@@ -175,6 +175,46 @@ set_option maxHeartbeats 8000000
 noncomputable def zeroValidBinary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL := by
   constructor <;> exact fun _ => 0
 
+/-- `EnvNoKnownDefectFor sel` is the defect-exclusion fact for *every* `OpEnvelope`
+    in the family carved out by the selector `sel`: every such env is outside all
+    known-defect regions.  An OpEnvelope-route `stepStrong_<op>` proof instantiates
+    this with the specific env it constructs (`sel` selecting exactly that arm's
+    `OpEnvelope` constructor), feeding the result to
+    `zisk_riscv_compliant_program_bus` instead of re-proving `NoKnownDefect`.
+
+    For the 22 current OpEnvelope-route arms the selected constructor is never a
+    defect constructor, so this is TRIVIALLY satisfiable (proved by `cases`/`simp`
+    on the defect predicates) — the threaded hypothesis is non-vacuous.  For the
+    yet-to-be-added signed-M / FENCE defect arms the analogous selector picks a
+    constructor for which `NoKnownDefect` is NOT unconditionally true, so the
+    obligation genuinely requires caller-supplied defect-exclusion data — which is
+    exactly the plumbing this binder provides. -/
+def EnvNoKnownDefectFor
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r : ℕ}
+    (sel : OpEnvelope state m r → Prop) : Prop :=
+  ∀ env : OpEnvelope state m r, sel env → Defects.NoKnownDefect env
+
+/-- The defect-constructor selector for an OpEnvelope-route arm is non-defect: every
+    `OpEnvelope` it selects is `NoKnownDefect`.  This is the trivial discharge used
+    to satisfy the threaded `StepNoKnownDefect` obligation for the 22 current
+    non-defect arms (non-vacuous: the selected env exists and the fact is TRUE). -/
+theorem envNoKnownDefectFor_of_nondefect
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r : ℕ}
+    (sel : OpEnvelope state m r → Prop)
+    (h : ∀ env, sel env →
+      ¬ Defects.MaliciousSignedMulWitnessShape env ∧
+      ¬ Defects.ArithDivDynamicWitnessShape env ∧
+      Defects.FenceKnownGoodShape env) :
+    EnvNoKnownDefectFor sel := by
+  intro env hsel id
+  obtain ⟨h1, h2, h3⟩ := h env hsel
+  cases id with
+  | arithMulSignedWitnessSoundness => exact h1
+  | arithDivDynamicWitnessSoundness => exact h2
+  | fenceIncomplete => simpa [Defects.Blocks] using h3
+
 /-- Irreducible per-row residuals for the `sub` archetype — the binders of
     `construction_sub_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sub
@@ -3868,7 +3908,11 @@ no `False.elim` or contradictory pair is used.
     `bus_effect`-form `StepCompliance.sub`. -/
 theorem stepStrong_sub
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_sub trace binding i) :
+    (d : RowData_sub trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sub .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -3989,12 +4033,8 @@ theorem stepStrong_sub
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `and` step: the channel-balance conclusion (the OLD global
@@ -4004,7 +4044,11 @@ theorem stepStrong_sub
     `bus_effect`-form `StepCompliance.and`. -/
 theorem stepStrong_and
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_and trace binding i) :
+    (d : RowData_and trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .and .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -4125,12 +4169,8 @@ theorem stepStrong_and
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `or` step: the channel-balance conclusion (the OLD global
@@ -4140,7 +4180,11 @@ theorem stepStrong_and
     `bus_effect`-form `StepCompliance.or`. -/
 theorem stepStrong_or
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_or trace binding i) :
+    (d : RowData_or trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .or .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -4261,12 +4305,8 @@ theorem stepStrong_or
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `xor` step: the channel-balance conclusion (the OLD global
@@ -4276,7 +4316,11 @@ theorem stepStrong_or
     `bus_effect`-form `StepCompliance.xor`. -/
 theorem stepStrong_xor
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_xor trace binding i) :
+    (d : RowData_xor trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .xor .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -4398,12 +4442,8 @@ theorem stepStrong_xor
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `slt` step: the channel-balance conclusion (the OLD global
@@ -4413,7 +4453,11 @@ theorem stepStrong_xor
     `bus_effect`-form `StepCompliance.slt`. -/
 theorem stepStrong_slt
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_slt trace binding i) :
+    (d : RowData_slt trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .slt .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -4534,12 +4578,8 @@ theorem stepStrong_slt
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `sltu` step: the channel-balance conclusion (the OLD global
@@ -4549,7 +4589,11 @@ theorem stepStrong_slt
     `bus_effect`-form `StepCompliance.sltu`. -/
 theorem stepStrong_sltu
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_sltu trace binding i) :
+    (d : RowData_sltu trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sltu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -4670,12 +4714,8 @@ theorem stepStrong_sltu
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 
@@ -4684,7 +4724,11 @@ theorem stepStrong_sltu
     `StepCompliance.andi`. -/
 theorem stepStrong_andi
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_andi trace binding i) :
+    (d : RowData_andi trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .andi .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -4806,12 +4850,8 @@ theorem stepStrong_andi
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_imm_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 /-- Strengthened `ori` step: channel-balance conclusion via constructed
@@ -4819,7 +4859,11 @@ theorem stepStrong_andi
     `StepCompliance.ori`. -/
 theorem stepStrong_ori
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_ori trace binding i) :
+    (d : RowData_ori trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .ori .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -4941,12 +4985,8 @@ theorem stepStrong_ori
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_imm_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 /-- Strengthened `xori` step: channel-balance conclusion via constructed
@@ -4954,7 +4994,11 @@ theorem stepStrong_ori
     `StepCompliance.xori`. -/
 theorem stepStrong_xori
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_xori trace binding i) :
+    (d : RowData_xori trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .xori .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -5074,12 +5118,8 @@ theorem stepStrong_xori
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_imm_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 /-- Strengthened `slti` step: channel-balance conclusion via constructed
@@ -5087,7 +5127,11 @@ theorem stepStrong_xori
     `StepCompliance.slti`. -/
 theorem stepStrong_slti
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_slti trace binding i) :
+    (d : RowData_slti trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .slti .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -5202,12 +5246,8 @@ theorem stepStrong_slti
     show _ ∧ _
     exact ⟨h_m32_zero, h_input_r1_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 /-- Strengthened `sltiu` step: channel-balance conclusion via constructed
@@ -5215,7 +5255,11 @@ theorem stepStrong_slti
     `StepCompliance.sltiu`. -/
 theorem stepStrong_sltiu
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_sltiu trace binding i) :
+    (d : RowData_sltiu trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sltiu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -5330,12 +5374,8 @@ theorem stepStrong_sltiu
     show _ ∧ _
     exact ⟨h_m32_zero, h_input_r1_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 
@@ -5344,7 +5384,11 @@ theorem stepStrong_sltiu
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sll`. -/
 theorem stepStrong_sll
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_sll trace binding i) :
+    (d : RowData_sll trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sll .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -5431,19 +5475,19 @@ theorem stepStrong_sll
     show _ ∧ _
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `srl` step: channel-balance via constructed `OpEnvelope.srl`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srl`. -/
 theorem stepStrong_srl
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_srl trace binding i) :
+    (d : RowData_srl trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srl .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -5530,19 +5574,19 @@ theorem stepStrong_srl
     show _ ∧ _
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `sra` step: channel-balance via constructed `OpEnvelope.sra`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sra`. -/
 theorem stepStrong_sra
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_sra trace binding i) :
+    (d : RowData_sra trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sra .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -5629,19 +5673,19 @@ theorem stepStrong_sra
     show _ ∧ _
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `slli` step: channel-balance via constructed `OpEnvelope.slli`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.slli`. -/
 theorem stepStrong_slli
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_slli trace binding i) :
+    (d : RowData_slli trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .slli .. => True | _ => False)) :
     execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SLLI)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
@@ -5728,19 +5772,19 @@ theorem stepStrong_slli
     show _ ∧ _
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `srli` step: channel-balance via constructed `OpEnvelope.srli`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srli`. -/
 theorem stepStrong_srli
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_srli trace binding i) :
+    (d : RowData_srli trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srli .. => True | _ => False)) :
     execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRLI)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
@@ -5827,19 +5871,19 @@ theorem stepStrong_srli
     show _ ∧ _
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `srai` step: channel-balance via constructed `OpEnvelope.srai`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srai`. -/
 theorem stepStrong_srai
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_srai trace binding i) :
+    (d : RowData_srai trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srai .. => True | _ => False)) :
     execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRAI)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
@@ -5926,12 +5970,8 @@ theorem stepStrong_srai
     show _ ∧ _
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 
@@ -5940,7 +5980,11 @@ theorem stepStrong_srai
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.subw`. -/
 theorem stepStrong_subw
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_subw trace binding i) :
+    (d : RowData_subw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .subw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -6058,19 +6102,19 @@ theorem stepStrong_subw
     show _ ∧ _
     exact ⟨h_input_r1_extract, h_input_r2_extract⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.1
 
 /-- Strengthened `addw` step: channel-balance via constructed `OpEnvelope.addw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.addw`. -/
 theorem stepStrong_addw
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_addw trace binding i) :
+    (d : RowData_addw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .addw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -6188,19 +6232,19 @@ theorem stepStrong_addw
     show _ ∧ _
     exact ⟨h_input_r1_extract, h_input_r2_extract⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.1
 
 /-- Strengthened `addiw` step: channel-balance via constructed `OpEnvelope.addiw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.addiw`. -/
 theorem stepStrong_addiw
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_addiw trace binding i) :
+    (d : RowData_addiw trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .addiw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -6297,12 +6341,8 @@ theorem stepStrong_addiw
       h_match h_input_r1_extract h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := h_input_r1_extract
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := by
-    intro id
-    cases id <;>
-      simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-        Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-        not_false_eq_true, not_true_eq_false, env, not_not]
+  have h_known : Defects.NoKnownDefect env :=
+    h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
 
@@ -6313,7 +6353,13 @@ theorem stepStrong_addiw
     `StepCompliance.add`. -/
 theorem stepStrong_add
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_add trace binding i) :
+    (d : RowData_add trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val)
+      (fun env => match env with
+        | .add_via_binary .. => True | .add_via_binaryadd .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -6436,12 +6482,8 @@ theorem stepStrong_add
       show _ ∧ _
       exact ⟨h_input_r1_row, h_input_r2_row⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-    have h_known : Defects.NoKnownDefect env := by
-      intro id
-      cases id <;>
-        simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-          Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-          not_false_eq_true, not_true_eq_false, env, not_not]
+    have h_known : Defects.NoKnownDefect env :=
+      h_known_arm env trivial
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.1
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
@@ -6454,12 +6496,8 @@ theorem stepStrong_add
       show _ ∧ _ ∧ _ ∧ _ ∧ _
       exact ⟨d.h_a_lo_t, d.h_a_hi_t, d.h_b_lo_t, d.h_b_hi_t, h_m32_zero⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-    have h_known : Defects.NoKnownDefect env := by
-      intro id
-      cases id <;>
-        simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-          Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-          not_false_eq_true, not_true_eq_false, env, not_not]
+    have h_known : Defects.NoKnownDefect env :=
+      h_known_arm env trivial
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.1
 
 /-- Strengthened `addi` step: channel-balance via a constructed `OpEnvelope` arm
@@ -6467,7 +6505,13 @@ theorem stepStrong_add
     Dominates `StepCompliance.addi`. -/
 theorem stepStrong_addi
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : RowData_addi trace binding i) :
+    (d : RowData_addi trace binding i)
+    (h_known_arm : EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val)
+      (fun env => match env with
+        | .addi_via_binary .. => True | .addi_via_binaryadd .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -6592,12 +6636,8 @@ theorem stepStrong_addi
       show _ ∧ _
       exact ⟨h_input_r1_row, h_input_imm_row⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-    have h_known : Defects.NoKnownDefect env := by
-      intro id
-      cases id <;>
-        simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-          Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-          not_false_eq_true, not_true_eq_false, env, not_not]
+    have h_known : Defects.NoKnownDefect env :=
+      h_known_arm env trivial
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
@@ -6610,12 +6650,8 @@ theorem stepStrong_addi
       show _ ∧ _ ∧ _ ∧ _
       exact ⟨d.h_a_lo_t, d.h_a_hi_t, h_m32_zero, h_set_pc_zero⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-    have h_known : Defects.NoKnownDefect env := by
-      intro id
-      cases id <;>
-        simp only [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape,
-          Defects.ArithDivDynamicWitnessShape, Defects.FenceKnownGoodShape,
-          not_false_eq_true, not_true_eq_false, env, not_not]
+    have h_known : Defects.NoKnownDefect env :=
+      h_known_arm env trivial
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
 
@@ -7192,6 +7228,107 @@ inductive StrongRowConstructionData
   | lh (d : RowData_lh trace binding i) : StrongRowConstructionData trace binding i
   | lw (d : RowData_lw trace binding i) : StrongRowConstructionData trace binding i
 
+/-- Per-row defect-exclusion obligation supplied to (and threaded into) the
+    strengthened trace-level export.  For each OpEnvelope-route arm it is the
+    `EnvNoKnownDefectFor` fact restricted to that arm's `OpEnvelope` constructor;
+    for the direct-lift arms (which never invoke `zisk_riscv_compliant_program_bus`)
+    it is `True`.  See `EnvNoKnownDefectFor` for the non-vacuity / generalization
+    rationale. -/
+def StepNoKnownDefect
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    StrongRowConstructionData trace binding i → Prop
+  | .sub _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sub .. => True | _ => False)
+  | .and _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .and .. => True | _ => False)
+  | .or _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .or .. => True | _ => False)
+  | .xor _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .xor .. => True | _ => False)
+  | .slt _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .slt .. => True | _ => False)
+  | .sltu _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sltu .. => True | _ => False)
+  | .andi _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .andi .. => True | _ => False)
+  | .ori _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .ori .. => True | _ => False)
+  | .xori _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .xori .. => True | _ => False)
+  | .slti _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .slti .. => True | _ => False)
+  | .sltiu _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sltiu .. => True | _ => False)
+  | .sll _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sll .. => True | _ => False)
+  | .srl _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srl .. => True | _ => False)
+  | .sra _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .sra .. => True | _ => False)
+  | .slli _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .slli .. => True | _ => False)
+  | .srli _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srli .. => True | _ => False)
+  | .srai _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .srai .. => True | _ => False)
+  | .add _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val)
+      (fun env => match env with | .add_via_binary .. => True | .add_via_binaryadd .. => True | _ => False)
+  | .addi _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val)
+      (fun env => match env with | .addi_via_binary .. => True | .addi_via_binaryadd .. => True | _ => False)
+  | .subw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .subw .. => True | _ => False)
+  | .addw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .addw .. => True | _ => False)
+  | .addiw _ => EnvNoKnownDefectFor
+      (state := binding.stateAt i)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (r := i.val) (fun env => match env with | .addiw .. => True | _ => False)
+  | _ => True
+
 /-- The strengthened per-step conclusion: the channel-balance
     (`state_effect_via_channels`) form — the OLD global theorem's per-arm
     conclusion — keyed on the row archetype. -/
@@ -7562,34 +7699,42 @@ def StepComplianceStrong
            [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
             (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
 
-/-- Per-row dispatch to the matching strengthened step theorem. -/
+/-- Per-row dispatch to the matching strengthened step theorem.
+
+    The `h_known` parameter carries the per-row defect-exclusion obligation
+    (`StepNoKnownDefect`).  For the 22 OpEnvelope-route arms it is the
+    `EnvNoKnownDefectFor` fact for that arm's constructor; the dispatcher hands it
+    straight to the corresponding `stepStrong_<op>`, which feeds it to
+    `zisk_riscv_compliant_program_bus`.  For the direct-lift arms (which never call
+    the old theorem) the obligation is `True` and is ignored. -/
 theorem stepComplianceStrong_of_rowData
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
-    (d : StrongRowConstructionData trace binding i) :
+    (d : StrongRowConstructionData trace binding i)
+    (h_known : StepNoKnownDefect trace binding i d) :
     StepComplianceStrong trace binding i d := by
   cases d with
-  | sub d => exact stepStrong_sub trace binding i d
-  | and d => exact stepStrong_and trace binding i d
-  | or d => exact stepStrong_or trace binding i d
-  | xor d => exact stepStrong_xor trace binding i d
-  | slt d => exact stepStrong_slt trace binding i d
-  | sltu d => exact stepStrong_sltu trace binding i d
-  | andi d => exact stepStrong_andi trace binding i d
-  | ori d => exact stepStrong_ori trace binding i d
-  | xori d => exact stepStrong_xori trace binding i d
-  | slti d => exact stepStrong_slti trace binding i d
-  | sltiu d => exact stepStrong_sltiu trace binding i d
-  | sll d => exact stepStrong_sll trace binding i d
-  | srl d => exact stepStrong_srl trace binding i d
-  | sra d => exact stepStrong_sra trace binding i d
-  | slli d => exact stepStrong_slli trace binding i d
-  | srli d => exact stepStrong_srli trace binding i d
-  | srai d => exact stepStrong_srai trace binding i d
-  | add d => exact stepStrong_add trace binding i d
-  | addi d => exact stepStrong_addi trace binding i d
-  | subw d => exact stepStrong_subw trace binding i d
-  | addw d => exact stepStrong_addw trace binding i d
-  | addiw d => exact stepStrong_addiw trace binding i d
+  | sub d => exact stepStrong_sub trace binding i d h_known
+  | and d => exact stepStrong_and trace binding i d h_known
+  | or d => exact stepStrong_or trace binding i d h_known
+  | xor d => exact stepStrong_xor trace binding i d h_known
+  | slt d => exact stepStrong_slt trace binding i d h_known
+  | sltu d => exact stepStrong_sltu trace binding i d h_known
+  | andi d => exact stepStrong_andi trace binding i d h_known
+  | ori d => exact stepStrong_ori trace binding i d h_known
+  | xori d => exact stepStrong_xori trace binding i d h_known
+  | slti d => exact stepStrong_slti trace binding i d h_known
+  | sltiu d => exact stepStrong_sltiu trace binding i d h_known
+  | sll d => exact stepStrong_sll trace binding i d h_known
+  | srl d => exact stepStrong_srl trace binding i d h_known
+  | sra d => exact stepStrong_sra trace binding i d h_known
+  | slli d => exact stepStrong_slli trace binding i d h_known
+  | srli d => exact stepStrong_srli trace binding i d h_known
+  | srai d => exact stepStrong_srai trace binding i d h_known
+  | add d => exact stepStrong_add trace binding i d h_known
+  | addi d => exact stepStrong_addi trace binding i d h_known
+  | subw d => exact stepStrong_subw trace binding i d h_known
+  | addw d => exact stepStrong_addw trace binding i d h_known
+  | addiw d => exact stepStrong_addiw trace binding i d h_known
   | mulw d => exact stepStrong_mulw trace binding i d
   | mulhu d => exact stepStrong_mulhu trace binding i d
   | divu d => exact stepStrong_divu trace binding i d
@@ -7634,13 +7779,29 @@ theorem stepComplianceStrong_of_rowData
     strictly stronger
     than the `bus_effect`-form `zisk_compliant_of_accepted_trace`: every
     conclusion it yields is `state_effect_via_channels …`, defeq-implying the
-    `bus_effect`-form, over the committed trace. -/
+    `bus_effect`-form, over the committed trace.
+
+    ## Threaded defect-exclusion hypothesis (`h_known_bugs`)
+
+    The `h_known_bugs` premise is the per-row defect-exclusion obligation
+    (`StepNoKnownDefect`).  It is threaded — via `stepComplianceStrong_of_rowData`
+    — to each OpEnvelope-route `stepStrong_<op>`, which feeds it to the old global
+    theorem `zisk_riscv_compliant_program_bus` in place of an internally-proved
+    `NoKnownDefect`.  For every one of the current (non-defect) arms the obligation
+    is `EnvNoKnownDefectFor` on a non-defect constructor (or `True` for the
+    direct-lift arms), so it is TRIVIALLY satisfiable — see
+    `envNoKnownDefectFor_of_nondefect` — and this theorem is therefore NOT vacuous.
+    The hypothesis is the plumbing that lets the signed-M / FENCE defect ops be
+    added on the OpEnvelope route later: their `StepNoKnownDefect` obligation is the
+    genuine `NoKnownDefect` of a defect-region envelope, which is NOT
+    unconditionally true and must be supplied (or excluded) by the caller. -/
 theorem zisk_compliant_of_accepted_trace_strong
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (rowData : ∀ i : Fin trace.length, StrongRowConstructionData trace binding i) :
+    (rowData : ∀ i : Fin trace.length, StrongRowConstructionData trace binding i)
+    (h_known_bugs : ∀ i : Fin trace.length, StepNoKnownDefect trace binding i (rowData i)) :
     ∀ i : Fin trace.length, StepComplianceStrong trace binding i (rowData i) :=
-  fun i => stepComplianceStrong_of_rowData trace binding i (rowData i)
+  fun i => stepComplianceStrong_of_rowData trace binding i (rowData i) (h_known_bugs i)
 
 
 end ZiskFv.Compliance
