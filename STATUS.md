@@ -20,16 +20,30 @@ carried by the global theorem's ∀-env NoKnownDefect / decode-gap):
 - FENCE (1): decode-incompleteness (FenceIncomplete — decoder rejects generic fm≠0 FENCE).
 
 === P5 trace-level export (the real #61 closure) over the 55 — IMPLEMENTED (uncommitted) ===
-ZiskFv/Compliance/TraceLevelExport.lean: 55 `RowData_<op>` structures (verbatim residual
-binders of each construction_<op>_sound after trace/binding/i) + 55-arm `RowConstructionData`
-sum + `StepCompliance` (per-arm bus_effect conclusion) + `stepCompliance_of_rowData`
-(cases→positional construction_<op>_sound) + `zisk_compliant_of_accepted_trace`
-(∀ i, StepCompliance … (rowData i); NO OpEnvelope param). 0 sorry; 0 new ZiskFv.* axioms
-(#print axioms = standard kernel + Sail platform only); full lake build green; gate V1 18/18
-+ V2 12/12. Structure-split + `seal mulw/mulhu/divu/divuw/remu/remuwArow` tames the M-ext
-field-elab whnf runaway. The 8 defect/gap ops have NO arm (explicit coverage premise =
-∀ i, RowConstructionData; covered only by global NoKnownDefect). Registered: ZiskFv.lean
-import + dead-code-entry-points.txt. NOT committed (per instructions).
+ZiskFv/Compliance/TraceLevelExport.lean: 55 `RowData_<op>` structures + 55-arm
+`RowConstructionData` sum + `StepCompliance` (per-arm bus_effect) + `stepCompliance_of_rowData`
++ `zisk_compliant_of_accepted_trace` (∀ i, StepCompliance …; NO OpEnvelope param). 0 sorry.
+
+=== P5-STRONG: env-constructed channel-balance export (NEW, uncommitted) ===
+ADDED to TraceLevelExport.lean: 22 `stepStrong_<op>` theorems (RTYPE sub/and/or/xor/slt/sltu;
+ITYPE andi/ori/xori/slti/sltiu; shifts sll/srl/sra/slli/srli/srai; ADD/ADDI; W-ALU
+subw/addw/addiw) that CONSTRUCT the matching `OpEnvelope.<op>` per row from accepted-trace
+data (reusing each construction's `*_from_binding` + input-packing derivations) and invoke
+`zisk_riscv_compliant_program_bus`, yielding the OLD global theorem's per-arm conclusion
+(channel-balance `state_effect_via_channels`) — STRICTLY STRONGER than the bus_effect form,
+env-constructed-from-trace. + `StrongRowConstructionData` (22-arm sum) + `StepComplianceStrong`
++ `stepComplianceStrong_of_rowData` + `zisk_compliant_of_accepted_trace_strong` (∀ i, …; NO
+OpEnvelope param). 3 hyps discharged in place: aeneasBridgeTrust (derived row facts),
+memoryTimeline (trivial non-load), NoKnownDefect (trivially TRUE — non-defect ops, non-vacuous).
+0 sorry; 0 new ZiskFv.* axioms (closure = constructions' + global theorem's); full lake build
+green; gate V1 18/18 + V2 12/12. Registered: zisk_compliant_of_accepted_trace_strong in
+dead-code-entry-points.txt (group 1c). NOT committed (per instructions).
+BLOCKED arms (honest, structural — NOT soundness gaps; left in bus_effect export): 7 loads +
+4 stores (OpEnvelope arms need Var/Environment interaction-eval provenance the witness-based
+constructions bypass; stores embeddable via const but whnf-blows-up), 6 M-ext-unsigned
+(OpEnvelope Arith arms need strong carry/range witnesses; constructions route through looser
+_of_fullSpec), branches+JAL/JALR+LUI/AUIPC (need MainRowProvenance / decode-pin bridge
+conjuncts not in RowData). 8 defect/gap ops excluded entirely (as before).
 Residual roll-up: loads/stores h_memory_timeline+RMW→#76; branches+JAL/JALR h_nextPC_matches
 →#100; signed-load h_static/h_match (SextLoadBridge/aeneasBridgeTrust) verbatim residual.
 
