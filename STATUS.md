@@ -1,7 +1,27 @@
-Active plan: docs/ai/plan/PLAN_ENDGAME_P4_103.md (#103 cross-segment memory seam, route (b)).
-Branch: p4-103-landing. Worktree: .worktrees/xcap-seam-tag.
+Active plan: docs/ai/plan/PLAN_ENDGAME_P4_MEMORY.md (#76 PR-76.5) +
+docs/ai/research/RESEARCH_XCAP.md §3 (#103 deep refactor B→A→C→D…).
+Branch: p76-memory. Worktree: .worktrees/p76-memory.
 
-## Current focus: L5 STEP 1 (the "tie", step B) — DONE, GREEN.
+## Current focus: PR-76.5 STEP D (seg_last-gated REAL Mem AIR) — DONE, GREEN. GO.
+
+STEP D landed the `seg_last` (SEGMENT_LAST) selector into the REAL `MemRow`,
+gated the `memWithDualMemBus` seam emission by it (one live pull/push per
+segment + k-1 dead rows), rippled the new column through the full
+componentWithDualMemBus/MemRow/rowAt/memOfTable blast radius, and re-proved a
+k≥2 (2-rows-per-segment) cross-segment seam from balance on a REAL multi-row
+`mkTable` witness. Whole project GREEN (8692). 0 PROJECT axioms (kernel-only).
+V2 semantic gate ALL PASS; V1 substantive all pass (only pre-existing check-13
+"spike"-wording hit on the parent's committed Spike file remains, untouched).
+
+GO/NO-GO: **GO**. (a) the seg_last-gated REAL Mem AIR compiles across the full
+blast radius (no #103-L4.5 dispatch break); (b) the k≥2 cross-segment seam
+(`multiRow_seam_value_equality` / `good_multiRow_seam_holds`) is derived from
+balance on a real 4-row Mem trace (2 segments × [dead, live]), dead rows
+balance-inert. Remaining for E/F/G: airval↔column bridge
+(MemTimeline/Construction/Linkage), SegmentLastRowTie from the segment Spec (not
+h_tie), and the #76 `initialAgreement` wiring.
+
+## (Superseded) Prior focus: #103 L5 STEP 1 (the "tie", step B) — DONE, GREEN.
 
 The seam boundary columns are now TIED to real Mem-row state. The L1 seam forced
 seg_{i+1}.previous_segment_* = seg_i.segment_last_* on the CHANNEL/emission

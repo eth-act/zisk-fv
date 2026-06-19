@@ -100,6 +100,11 @@ structure Valid_Mem (F ExtF : Type) [Field F] [Field ExtF] where
   segment_last_addr : ℕ → F := fun _ => 0
   segment_last_step : ℕ → F := fun _ => 0
   is_last_segment : ℕ → F := fun _ => 0
+  /-- SEGMENT_LAST gating column (XCAP #103 deep refactor, step B). `1` exactly on
+      a segment's last row (`mem.pil:87` `SEGMENT_LAST = SEGMENT_L1'`). Gates the
+      cross-segment seam emission so a multi-row segment emits one live pull/push
+      and `k - 1` dead emissions. Defaults to `0`. -/
+  seg_last : ℕ → F := fun _ => 0
 
 variable {F ExtF : Type} [Field F] [Field ExtF]
 

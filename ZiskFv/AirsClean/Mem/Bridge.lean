@@ -61,6 +61,7 @@ def rowAt (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : MemRow FGL where
   segment_last_addr := v.segment_last_addr r
   segment_last_step := v.segment_last_step r
   is_last_segment := v.is_last_segment r
+  seg_last := v.seg_last r
 
 @[reducible]
 def constVar (row : MemRow FGL) : Var MemRow FGL where
@@ -87,6 +88,7 @@ def constVar (row : MemRow FGL) : Var MemRow FGL where
   segment_last_addr := .const row.segment_last_addr
   segment_last_step := .const row.segment_last_step
   is_last_segment := .const row.is_last_segment
+  seg_last := .const row.seg_last
 
 @[reducible]
 def validOfRow (row : MemRow FGL) :

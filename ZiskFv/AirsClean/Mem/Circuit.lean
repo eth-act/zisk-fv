@@ -71,7 +71,8 @@ def memRowOf (sel selDual wr addrChanges : Bool)
     segment_last_value_1 := 0
     segment_last_addr := 0
     segment_last_step := 0
-    is_last_segment := 0 }
+    is_last_segment := 0
+    seg_last := 0 }
 
 lemma memRowOf_constraintsHold (sel selDual wr addrChanges : Bool)
     (addr step stepDual previousStep increment_0 increment_1 value_0 value_1 : FGL)
@@ -269,15 +270,17 @@ theorem componentWithDualMemBus_interactionsWith_memBus :
     contribution through this lemma. -/
 theorem componentWithDualMemBus_interactionsWith_seam :
     componentWithDualMemBus.operations.interactionsWith SeamContChannel.toRaw =
-      [ ((SeamContChannel.emitted (-1)
+      [ ((SeamContChannel.emitted (-componentWithDualMemBus.rowInputVar.seg_last)
             (prevSeamMessageExpr componentWithDualMemBus.rowInputVar)).toRaw)
-        , ((SeamContChannel.emitted (1 - componentWithDualMemBus.rowInputVar.is_last_segment)
+        , ((SeamContChannel.emitted (componentWithDualMemBus.rowInputVar.seg_last *
+              (1 - componentWithDualMemBus.rowInputVar.is_last_segment))
             (lastSeamMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ] := by
   apply Component.interactionsWith_of_exposedChannels
   change ⟨SeamContChannel.toRaw,
-      [ ((SeamContChannel.emitted (-1)
+      [ ((SeamContChannel.emitted (-componentWithDualMemBus.rowInputVar.seg_last)
             (prevSeamMessageExpr componentWithDualMemBus.rowInputVar)).toRaw)
-        , ((SeamContChannel.emitted (1 - componentWithDualMemBus.rowInputVar.is_last_segment)
+        , ((SeamContChannel.emitted (componentWithDualMemBus.rowInputVar.seg_last *
+              (1 - componentWithDualMemBus.rowInputVar.is_last_segment))
             (lastSeamMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ]⟩ ∈
     componentWithDualMemBus.exposedChannels
   simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusElaborated,
@@ -457,7 +460,8 @@ theorem spec_via_component (row : MemRow FGL)
       segment_last_value_1 := .const row.segment_last_value_1
       segment_last_addr := .const row.segment_last_addr
       segment_last_step := .const row.segment_last_step
-      is_last_segment := .const row.is_last_segment }
+      is_last_segment := .const row.is_last_segment
+      seg_last := .const row.seg_last }
     row ?_ ?_
   · rfl
   · simpa only [Spec, sub_eq_add_neg] using h_constraints

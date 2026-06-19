@@ -4453,6 +4453,7 @@ def zeroMemRow : ZiskFv.AirsClean.Mem.MemRow FGL where
   segment_last_addr := 0
   segment_last_step := 0
   is_last_segment := 0
+  seg_last := 0
 
 /-- Project row `row` of a concrete Clean Mem table to the Mem row input.
     Out-of-range rows use `zeroMemRow` only to make the named-column view total. -/
@@ -4505,6 +4506,7 @@ def memOfTable
   segment_last_addr := fun row => (memTableRowAtOrZero table row).segment_last_addr
   segment_last_step := fun row => (memTableRowAtOrZero table row).segment_last_step
   is_last_segment := fun row => (memTableRowAtOrZero table row).is_last_segment
+  seg_last := fun row => (memTableRowAtOrZero table row).seg_last
 
 /-- In-range concrete table projection agrees with `List.get`. -/
 theorem memTableRowAtOrZero_get
@@ -4552,7 +4554,8 @@ theorem rowAt_memOfTable
       segment_last_value_1 := row.segment_last_value_1
       segment_last_addr := row.segment_last_addr
       segment_last_step := row.segment_last_step
-      is_last_segment := row.is_last_segment } = row
+      is_last_segment := row.is_last_segment
+      seg_last := row.seg_last } = row
   cases row
   rfl
 

@@ -263,16 +263,24 @@ def memWithMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
     into `channelsWithRequirements` (`assumeGuarantees = false`), keeping the
     seam OUT of `channelsWithGuarantees` (PLAN §4 gotcha — a `pull` would land in
     guarantees, which `SoundEnsemble.subset_finished` drags into `finished`).
-    The incoming boundary is pulled (mult `-1`, tag `segment_id`); the outgoing
-    boundary is pushed gated by `(1 - is_last_segment)` (tag `segment_id + 1`,
-    `mem.pil:198/235/241`). -/
+    The incoming boundary is pulled (mult `-seg_last`, tag `segment_id`); the
+    outgoing boundary is pushed gated by `seg_last * (1 - is_last_segment)`
+    (tag `segment_id + 1`, `mem.pil:198/235/241`).
+
+    XCAP #103 deep refactor (steps B/A): BOTH seam emissions are now gated by
+    `seg_last` (`SEGMENT_LAST`, `mem.pil:87`). A multi-row segment therefore emits
+    exactly ONE live pull + ONE live push (its `seg_last = 1` last row) and `k - 1`
+    DEAD (multiplicity-0) emissions — making the cross-segment continuation
+    faithful to a real multi-row Mem trace (the ungated per-row emission only
+    balanced at k = 1). The dead rows are balance-inert (`balanceOf` of a
+    multiplicity-0 interaction is `0`), so global balance is unaffected by them. -/
 @[circuit_norm]
 def memWithDualMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
   main row
   MemBusChannel.emit row.sel (memBusMessageExpr row)
   MemBusChannel.emit row.sel_dual (memBusDualMessageExpr row)
-  SeamContChannel.emit (-1) (prevSeamMessageExpr row)
-  SeamContChannel.emit (1 - row.is_last_segment) (lastSeamMessageExpr row)
+  SeamContChannel.emit (-row.seg_last) (prevSeamMessageExpr row)
+  SeamContChannel.emit (row.seg_last * (1 - row.is_last_segment)) (lastSeamMessageExpr row)
 
 /-- Elaborated `memWithMemBus` circuit, ready for use in Clean
     memory-bus component assembly. -/
@@ -307,8 +315,9 @@ def memWithDualMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
       [ MemBusChannel.emitted row.sel (memBusMessageExpr row)
         , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ]
     ++ expose SeamContChannel
-      [ SeamContChannel.emitted (-1) (prevSeamMessageExpr row),
-        SeamContChannel.emitted (1 - row.is_last_segment) (lastSeamMessageExpr row) ]
+      [ SeamContChannel.emitted (-row.seg_last) (prevSeamMessageExpr row),
+        SeamContChannel.emitted (row.seg_last * (1 - row.is_last_segment))
+          (lastSeamMessageExpr row) ]
   channelsLawful := by
     simp [circuit_norm, memWithDualMemBus, main, memBusMessageExpr,
       memBusDualMessageExpr, prevSeamMessageExpr, lastSeamMessageExpr,

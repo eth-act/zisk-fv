@@ -162,6 +162,7 @@ theorem cross_segment_real_memory_continuity
     (vb : BootRow FGL) (v0 v1 : MemRow FGL)
     (publicInput : unit FGL) (data : ProverData FGL)
     (h0 : v0.is_last_segment = 0) (h1 : v1.is_last_segment = 1)
+    (hl0 : v0.seg_last = 1) (hl1 : v1.seg_last = 1)
     (hseam : Air.Flat.EnsembleWitness.BalancedChannel
       (mkFullWitness (length := length) (program := program) vb v0 v1 publicInput data)
       ZiskFv.Channels.SegmentContinuation.SeamContChannel.toRaw)
@@ -173,7 +174,7 @@ theorem cross_segment_real_memory_continuity
             (v0.segment_id + 1) := by
   obtain ⟨ht0, ht1, hseamEq⟩ :=
     seam_value_equality (length := length) (program := program)
-      vb v0 v1 publicInput data h0 h1 hseam
+      vb v0 v1 publicInput data h0 h1 hl0 hl1 hseam
   refine ⟨ht0, ht1, ?_⟩
   -- `hseamEq : seg1.previous = seg0.segment_last_*` (the SEAM, channel columns)
   -- `tie    : seg0.segment_last_* = seg0's real last state` (the TIE)
@@ -212,7 +213,7 @@ theorem good_cross_segment_continuity
     seam5 1 0 100 5 1 = seam5 1 0 100 5 (0 + 1) := by
   obtain ⟨_, _, hcont⟩ :=
     cross_segment_real_memory_continuity (length := length) (program := program)
-      goodBoot goodSeg0 goodSeg1 publicInput data (by rfl) (by rfl)
+      goodBoot goodSeg0 goodSeg1 publicInput data (by rfl) (by rfl) (by rfl) (by rfl)
       (good_seam_balancedChannel (length := length) (program := program)
         publicInput data)
       good_seg0_tie

@@ -176,11 +176,23 @@ theorem bootTable_interactionsWith (v : BootRow FGL) (data : ProverData FGL) :
     eval_emittedSeam, eval_bootPushMsg]
   simp only [Expression.eval, Variable.index, mul_one]
 
-/-- A single Mem row's evaluated seam contribution: prev pull (tag `segment_id`,
-    mult -1) + last push (tag `segment_id + 1`, gated mult `1 - is_last_segment`). -/
+/-- A single Mem row's evaluated seam contribution (XCAP #103 deep refactor,
+    `seg_last`-gated): prev pull (tag `segment_id`, mult `-seg_last`) + last push
+    (tag `segment_id + 1`, mult `seg_last * (1 - is_last_segment)`). A non-last
+    row of a segment (`seg_last = 0`) contributes TWO multiplicity-0 (DEAD)
+    interactions; the segment's last row (`seg_last = 1`) carries the live pull +
+    gated push. -/
 @[reducible] def memRowSeamContribution (v : MemRow FGL) : List (Interaction FGL) :=
-  [ emittedSeamValue (-1) (segPrevVal v),
-    emittedSeamValue (1 - v.is_last_segment) (segLastVal v) ]
+  [ emittedSeamValue (-v.seg_last) (segPrevVal v),
+    emittedSeamValue (v.seg_last * (1 - v.is_last_segment)) (segLastVal v) ]
+
+/-- Evaluate the `seg_last` column of a `toElements` row. -/
+theorem eval_seg_last (v : MemRow FGL) (data : ProverData FGL) :
+    (Environment.fromArray (toElements v).toArray data)
+        (varFromOffset MemRow 0 |>.seg_last) = v.seg_last := by
+  simp only [eval, explicit_provable_type, circuit_norm,
+    eval_varFromOffset_valueFromOffset, valueFromOffset_fromArray]
+  rfl
 
 /-- The Mem component's per-row seam contribution evaluated at a `toElements`
     row equals `memRowSeamContribution`. -/
@@ -192,14 +204,21 @@ theorem memRow_interactionValuesWith (v : MemRow FGL) (data : ProverData FGL) :
     ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_seam,
     List.map_cons, List.map_nil, memRowSeamContribution]
   have h_prevmult : (Environment.fromArray (toElements v).toArray data)
-      (-1 : Expression FGL) = (-1 : FGL) := by
-    simp only [Expression.eval, Variable.index, mul_one]
+      (-(varFromOffset MemRow 0).seg_last) = -v.seg_last := by
+    show (-1 : FGL) * ((Environment.fromArray (toElements v).toArray data)
+        ((varFromOffset MemRow 0).seg_last)) = -v.seg_last
+    rw [eval_seg_last]; ring
   have h_lastmult : (Environment.fromArray (toElements v).toArray data)
-      (1 - (varFromOffset MemRow 0).is_last_segment) = 1 - v.is_last_segment := by
-    show (1 : FGL) + (-1 : FGL) *
-        ((Environment.fromArray (toElements v).toArray data)
-          ((varFromOffset MemRow 0).is_last_segment)) = 1 - v.is_last_segment
-    rw [eval_is_last]; ring
+      ((varFromOffset MemRow 0).seg_last *
+        (1 - (varFromOffset MemRow 0).is_last_segment))
+      = v.seg_last * (1 - v.is_last_segment) := by
+    show ((Environment.fromArray (toElements v).toArray data)
+          ((varFromOffset MemRow 0).seg_last)) *
+        ((1 : FGL) + (-1 : FGL) *
+          ((Environment.fromArray (toElements v).toArray data)
+            ((varFromOffset MemRow 0).is_last_segment)))
+      = v.seg_last * (1 - v.is_last_segment)
+    rw [eval_seg_last, eval_is_last]; ring
   rw [show componentWithDualMemBus.rowInputVar = varFromOffset MemRow 0 from rfl,
     eval_emittedSeam, eval_emittedSeam, eval_segPrevMsg, eval_segLastMsg,
     h_prevmult, h_lastmult]
@@ -213,13 +232,14 @@ theorem memTable_interactionsWith (rows : List (MemRow FGL)) (data : ProverData 
   intro v _
   exact memRow_interactionValuesWith v data
 
-/-- A 2-row Mem table's seam interactions = the two rows' contributions. -/
+/-- A 2-row Mem table's seam interactions = the two rows' (`seg_last`-gated)
+    contributions. -/
 theorem memTable_two_interactionsWith (v0 v1 : MemRow FGL) (data : ProverData FGL) :
     (mkTable componentWithDualMemBus [v0, v1] data).interactionsWith SeamContChannel.toRaw
-      = [ emittedSeamValue (-1) (segPrevVal v0),
-          emittedSeamValue (1 - v0.is_last_segment) (segLastVal v0),
-          emittedSeamValue (-1) (segPrevVal v1),
-          emittedSeamValue (1 - v1.is_last_segment) (segLastVal v1) ] := by
+      = [ emittedSeamValue (-v0.seg_last) (segPrevVal v0),
+          emittedSeamValue (v0.seg_last * (1 - v0.is_last_segment)) (segLastVal v0),
+          emittedSeamValue (-v1.seg_last) (segPrevVal v1),
+          emittedSeamValue (v1.seg_last * (1 - v1.is_last_segment)) (segLastVal v1) ] := by
   rw [memTable_interactionsWith]
   simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil,
     memRowSeamContribution, List.cons_append, List.nil_append]
@@ -272,10 +292,10 @@ theorem mkFullWitness_interactionsWith (vb : BootRow FGL) (v0 v1 : MemRow FGL)
     (mkFullWitness (length := length) (program := program) vb v0 v1 publicInput data).interactionsWith
         SeamContChannel.toRaw
       = [ emittedSeamValue 1 (bootPushVal vb),
-          emittedSeamValue (-1) (segPrevVal v0),
-          emittedSeamValue (1 - v0.is_last_segment) (segLastVal v0),
-          emittedSeamValue (-1) (segPrevVal v1),
-          emittedSeamValue (1 - v1.is_last_segment) (segLastVal v1) ] := by
+          emittedSeamValue (-v0.seg_last) (segPrevVal v0),
+          emittedSeamValue (v0.seg_last * (1 - v0.is_last_segment)) (segLastVal v0),
+          emittedSeamValue (-v1.seg_last) (segPrevVal v1),
+          emittedSeamValue (v1.seg_last * (1 - v1.is_last_segment)) (segLastVal v1) ] := by
   rw [EnsembleWitness.interactionsWith_of_verifier_empty (by rfl)]
   simp only [mkFullWitness, List.flatMap_cons, List.flatMap_nil, List.append_nil,
     mkTable_nil_interactionsWith, bootTable_interactionsWith, memTable_two_interactionsWith,
@@ -329,20 +349,24 @@ theorem toElements_seamMessage (a b c d e : FGL) :
     v1.segment_last_value_0 v1.segment_last_value_1 v1.segment_last_addr v1.segment_last_step
     (1 - v1.is_last_segment)
 
-/-- The full seam list projects onto `asBootList2` PROVIDED seg0 is non-last
-    (`is_last_segment = 0`, so its push multiplicity is `1 - 0 = 1`, matching
-    `bootList2`'s `pushMsg5`). seg1's gate stays free (= `1 - v1.is_last`). -/
+/-- The full (`seg_last`-gated) seam list projects onto `asBootList2` PROVIDED
+    each segment's row is its OWN last row (`seg_last = 1`, so the gated pull mult
+    `-seg_last = -1` and the gated push mult `seg_last * (1 - is_last) =
+    1 - is_last`), and seg0 is non-last (`is_last_segment = 0`, push mult `1`,
+    matching `bootList2`'s `pushMsg5`). seg1's gate stays free (= `1 - v1.is_last`).
+    This is the k = 1 (one row per segment) reduction; the k ≥ 2 reduction lives in
+    `memTable_multiRow_*` below and drops the `seg_last = 0` dead rows. -/
 theorem proj_eq (vb : BootRow FGL) (v0 v1 : MemRow FGL)
-    (h0 : v0.is_last_segment = 0) :
+    (h0 : v0.is_last_segment = 0) (hl0 : v0.seg_last = 1) (hl1 : v1.seg_last = 1) :
     ([ emittedSeamValue 1 (bootPushVal vb),
-       emittedSeamValue (-1) (segPrevVal v0),
-       emittedSeamValue (1 - v0.is_last_segment) (segLastVal v0),
-       emittedSeamValue (-1) (segPrevVal v1),
-       emittedSeamValue (1 - v1.is_last_segment) (segLastVal v1) ]
+       emittedSeamValue (-v0.seg_last) (segPrevVal v0),
+       emittedSeamValue (v0.seg_last * (1 - v0.is_last_segment)) (segLastVal v0),
+       emittedSeamValue (-v1.seg_last) (segPrevVal v1),
+       emittedSeamValue (v1.seg_last * (1 - v1.is_last_segment)) (segLastVal v1) ]
         : List (Interaction FGL)).map (fun i => (i.mult, i.msg))
       = (asBootList2 vb v0 v1).map (fun i => (i.mult, i.msg)) := by
   simp only [asBootList2, bootList2, List.map_cons, List.map_nil,
-    pushMsg5, pullMsg5, gatedMsg5, emittedSeamValue, h0, sub_zero,
+    pushMsg5, pullMsg5, gatedMsg5, emittedSeamValue, h0, hl0, hl1, sub_zero, one_mul,
     bootPushVal, segPrevVal, segLastVal, toElements_seamMessage]
 
 /-! ## EXTRACTION: ensemble `BalancedChannels` → `bootList2` balance. -/
@@ -354,14 +378,14 @@ theorem proj_eq (vb : BootRow FGL) (v0 v1 : MemRow FGL)
     channel's. -/
 theorem asBootList2_balanced_of_seamBalance (vb : BootRow FGL) (v0 v1 : MemRow FGL)
     (publicInput : unit FGL) (data : ProverData FGL)
-    (h0 : v0.is_last_segment = 0)
+    (h0 : v0.is_last_segment = 0) (hl0 : v0.seg_last = 1) (hl1 : v1.seg_last = 1)
     (hseam : EnsembleWitness.BalancedChannel
       (mkFullWitness (length := length) (program := program) vb v0 v1 publicInput data)
       SeamContChannel.toRaw) :
     BalancedInteractions (asBootList2 vb v0 v1) := by
   rw [EnsembleWitness.BalancedChannel, EnsembleWitness.interactionsWith_allTablesWitness,
     mkFullWitness_interactionsWith] at hseam
-  exact balancedInteractions_of_proj (proj_eq vb v0 v1 h0) hseam
+  exact balancedInteractions_of_proj (proj_eq vb v0 v1 h0 hl0 hl1) hseam
 
 /-! ## THE SEAM VALUE-EQUALITY, derived end-to-end from real-ensemble balance. -/
 
@@ -373,6 +397,7 @@ theorem asBootList2_balanced_of_seamBalance (vb : BootRow FGL) (v0 v1 : MemRow F
 theorem seam_value_equality (vb : BootRow FGL) (v0 v1 : MemRow FGL)
     (publicInput : unit FGL) (data : ProverData FGL)
     (h0 : v0.is_last_segment = 0) (h1 : v1.is_last_segment = 1)
+    (hl0 : v0.seg_last = 1) (hl1 : v1.seg_last = 1)
     (hseam : EnsembleWitness.BalancedChannel
       (mkFullWitness (length := length) (program := program) vb v0 v1 publicInput data)
       SeamContChannel.toRaw) :
@@ -382,7 +407,7 @@ theorem seam_value_equality (vb : BootRow FGL) (v0 v1 : MemRow FGL)
         = seam5 v0.segment_last_value_0 v0.segment_last_value_1
           v0.segment_last_addr v0.segment_last_step (v0.segment_id + 1) := by
   have hbalanced := asBootList2_balanced_of_seamBalance (length := length)
-    (program := program) vb v0 v1 publicInput data h0 hseam
+    (program := program) vb v0 v1 publicInput data h0 hl0 hl1 hseam
   rw [asBootList2, h1] at hbalanced
   simp only [show (1 : FGL) - 1 = 0 from by ring] at hbalanced
   obtain ⟨ht0, ht1, _hseam0, hseam⟩ := boot_chain_derived
@@ -422,7 +447,7 @@ balance, transported from `SeamTagChain.goodBootList2_balanced`. -/
     previous_segment_addr := 335544320, previous_segment_step := 0,
     segment_last_value_0 := 1, segment_last_value_1 := 0,
     segment_last_addr := 100, segment_last_step := 5,
-    is_last_segment := 0 }
+    is_last_segment := 0, seg_last := 1 }
 
 /-- seg1 (`MemRow`): segment 1, the LAST segment (`is_last_segment = 1`, its push
     gated off). prev = seg0.last `(1,0,100,5)` (THE SEAM); would-be last
@@ -436,7 +461,7 @@ balance, transported from `SeamTagChain.goodBootList2_balanced`. -/
     previous_segment_addr := 100, previous_segment_step := 5,
     segment_last_value_0 := 2, segment_last_value_1 := 0,
     segment_last_addr := 200, segment_last_step := 9,
-    is_last_segment := 1 }
+    is_last_segment := 1, seg_last := 1 }
 
 /-- The intended chain's `asBootList2` is exactly `SeamTagChain.goodBootList2`. -/
 theorem asBootList2_good : asBootList2 goodBoot goodSeg0 goodSeg1 = goodBootList2 := by
@@ -455,7 +480,7 @@ theorem good_seam_balancedChannel (publicInput : unit FGL) (data : ProverData FG
     mkFullWitness_interactionsWith]
   refine balancedInteractions_of_proj (as := goodBootList2) ?_ goodBootList2_balanced
   rw [← asBootList2_good]
-  exact (proj_eq goodBoot goodSeg0 goodSeg1 (by rfl)).symm
+  exact (proj_eq goodBoot goodSeg0 goodSeg1 (by rfl) (by rfl) (by rfl)).symm
 
 /-- NON-VACUOUS instantiation: running `seam_value_equality` on the concrete
     balanced 2-nonzero-segment witness lands the tags at `(0,1)` and the SEAM
@@ -468,8 +493,345 @@ theorem good_seam_holds (length : ℕ) (program : Program length)
     (publicInput : unit FGL) (data : ProverData FGL) :
     seam5 1 0 100 5 1 = seam5 1 0 100 5 (0 + 1) := by
   obtain ⟨_, _, hseam⟩ := seam_value_equality (length := length) (program := program)
-    goodBoot goodSeg0 goodSeg1 publicInput data (by rfl) (by rfl)
+    goodBoot goodSeg0 goodSeg1 publicInput data (by rfl) (by rfl) (by rfl) (by rfl)
     (good_seam_balancedChannel (length := length) (program := program) publicInput data)
+  simpa using hseam
+
+/-! ## k ≥ 2 NON-VACUITY: the cross-segment seam on a REAL MULTI-ROW Mem table
+    (XCAP #103 deep refactor, step C — the acceptance bar).
+
+The witness above (`mkFullWitness [v0, v1]`) puts ONE row per segment. The
+`seg_last`-gated emission (Phase A/B) makes the seam faithful to a MULTI-ROW
+segment: a segment's non-last rows carry `seg_last = 0` (their pull/push
+multiplicities vanish — DEAD, balance-inert), and only its last row
+(`seg_last = 1`) carries the live pull + gated push. We now witness the seam on a
+REAL 4-row `mkTable componentWithDualMemBus` table modelling 2 segments × 2 rows
+(one dead leading row + one live last row each), proving the dead rows drop out of
+`balanceOf` so the multi-row trace balances exactly as the engine's `bootList2`. -/
+
+/-- A `seg_last = 0` (DEAD) Mem row's seam contribution is balance-inert: both its
+    interactions carry multiplicity `0`, so `balanceOf` over them is `0` for every
+    message. The production analogue of the channel-level dead-row drop lemma. -/
+theorem balanceOf_memRowSeamContribution_dead (v : MemRow FGL) (hd : v.seg_last = 0)
+    (msg : Array FGL) : balanceOf (memRowSeamContribution v) msg = 0 := by
+  simp only [memRowSeamContribution, hd, neg_zero, zero_mul, balanceOf,
+    List.filter_cons, emittedSeamValue]
+  split <;> split <;> simp
+
+/-- A `seg_last = 1` (LIVE) Mem row, with `is_last_segment = g`, has the same
+    per-message `balanceOf` as the engine's `[pull (mult -1), gated push (mult
+    1 - g)]` pair. (For a live row the gated mults are `-1` and `1 - g`.) -/
+theorem balanceOf_memRowSeamContribution_live (v : MemRow FGL) (hl : v.seg_last = 1)
+    (msg : Array FGL) :
+    balanceOf (memRowSeamContribution v) msg
+      = balanceOf [ emittedSeamValue (-1) (segPrevVal v),
+          emittedSeamValue (1 - v.is_last_segment) (segLastVal v) ] msg := by
+  simp only [memRowSeamContribution, hl, neg_one_mul, one_mul, mul_one, neg_neg]
+
+/-- **THE k ≥ 2 CORE REDUCTION (production, step C).** A 4-row Mem table modelling
+    2 segments × 2 rows — a DEAD leading row (`seg_last = 0`, arbitrary junk
+    boundary) then a LIVE last row (`seg_last = 1`, the segment's genuine boundary)
+    per segment — has the SAME `balanceOf` (every message) as the one-row-per-
+    segment witness's seam list. The two DEAD rows drop out (multiplicity 0); the
+    two LIVE rows collapse to the engine's pull + gated push. -/
+theorem memTable_multiRow_balanceOf
+    (d0 v0 d1 v1 : MemRow FGL) (data : ProverData FGL)
+    (hd0 : d0.seg_last = 0) (hl0 : v0.seg_last = 1)
+    (hd1 : d1.seg_last = 0) (hl1 : v1.seg_last = 1)
+    (msg : Array FGL) :
+    balanceOf ((mkTable componentWithDualMemBus [d0, v0, d1, v1] data).interactionsWith
+        SeamContChannel.toRaw) msg
+      = balanceOf [ emittedSeamValue (-1) (segPrevVal v0),
+          emittedSeamValue (1 - v0.is_last_segment) (segLastVal v0),
+          emittedSeamValue (-1) (segPrevVal v1),
+          emittedSeamValue (1 - v1.is_last_segment) (segLastVal v1) ] msg := by
+  rw [memTable_interactionsWith]
+  -- flatMap over [d0, v0, d1, v1] = d0 ++ v0 ++ d1 ++ v1 contributions
+  rw [show [d0, v0, d1, v1].flatMap memRowSeamContribution
+      = memRowSeamContribution d0 ++ memRowSeamContribution v0
+        ++ memRowSeamContribution d1 ++ memRowSeamContribution v1
+      from by simp [List.flatMap_cons, List.flatMap_nil, List.append_assoc]]
+  rw [balanceOf_append, balanceOf_append, balanceOf_append,
+    balanceOf_memRowSeamContribution_dead d0 hd0,
+    balanceOf_memRowSeamContribution_dead d1 hd1,
+    balanceOf_memRowSeamContribution_live v0 hl0,
+    balanceOf_memRowSeamContribution_live v1 hl1]
+  -- LHS now: 0 + (live0 balance) + 0 + (live1 balance); RHS: live0 ++ live1.
+  rw [show ([ emittedSeamValue (-1) (segPrevVal v0),
+        emittedSeamValue (1 - v0.is_last_segment) (segLastVal v0),
+        emittedSeamValue (-1) (segPrevVal v1),
+        emittedSeamValue (1 - v1.is_last_segment) (segLastVal v1) ] : List (Interaction FGL))
+      = [ emittedSeamValue (-1) (segPrevVal v0),
+          emittedSeamValue (1 - v0.is_last_segment) (segLastVal v0) ]
+        ++ [ emittedSeamValue (-1) (segPrevVal v1),
+          emittedSeamValue (1 - v1.is_last_segment) (segLastVal v1) ] from rfl,
+    balanceOf_append]
+  ring
+
+/-! ## The concrete k ≥ 2 (2-rows-per-segment) real-ensemble witness. -/
+
+/-- The full multi-row witness over the REAL `fullRv64imEnsemble`: identical to
+    `mkFullWitness` except the Mem table now carries FOUR rows (2 segments ×
+    [dead, live]). Every non-Mem, non-boot table stays empty. -/
+def mkFullWitnessMultiRow (vb : BootRow FGL) (d0 v0 d1 v1 : MemRow FGL)
+    (publicInput : unit FGL) (data : ProverData FGL) :
+    EnsembleWitness (fullRv64imEnsemble length program).ensemble where
+  tables :=
+    [ mkTable ZiskFv.AirsClean.MemAlignReadByte.component [] data
+    , mkTable ZiskFv.AirsClean.MemAlignByte.component [] data
+    , mkTable ZiskFv.AirsClean.MemAlign.component [] data
+    , mkTable bootComp [vb] data
+    , mkTable componentWithDualMemBus [d0, v0, d1, v1] data
+    , mkTable ZiskFv.AirsClean.ArithDiv.component [] data
+    , mkTable ZiskFv.AirsClean.ArithMul.componentWithArithTable [] data
+    , mkTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent [] data
+    , mkTable ZiskFv.AirsClean.Binary.staticLookupComponent [] data
+    , mkTable ZiskFv.AirsClean.BinaryAdd.component [] data
+    , mkTable (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program) [] data ]
+  data := data
+  publicInput := publicInput
+  same_length := by
+    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, SoundEnsemble.addTable_tables,
+      SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addChannel_tables,
+      SoundEnsemble.empty_tables]
+  same_circuits := by
+    intro i hi
+    simp only [fullRv64imEnsemble, SoundEnsemble.toFormal, SoundEnsemble.addTable_tables,
+      SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addChannel_tables,
+      SoundEnsemble.empty_tables, List.length_cons, List.length_nil] at hi ⊢
+    interval_cases i <;> rfl
+  same_data := by
+    intro table htable
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at htable
+    rcases htable with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+
+/-- The multi-row witness's seam interactions = boot push + the 4 Mem rows'
+    contributions (dead rows included; they are balance-inert). -/
+theorem mkFullWitnessMultiRow_interactionsWith (vb : BootRow FGL) (d0 v0 d1 v1 : MemRow FGL)
+    (publicInput : unit FGL) (data : ProverData FGL) :
+    (mkFullWitnessMultiRow (length := length) (program := program)
+        vb d0 v0 d1 v1 publicInput data).interactionsWith SeamContChannel.toRaw
+      = emittedSeamValue 1 (bootPushVal vb) ::
+        (mkTable componentWithDualMemBus [d0, v0, d1, v1] data).interactionsWith
+          SeamContChannel.toRaw := by
+  rw [EnsembleWitness.interactionsWith_of_verifier_empty (by rfl)]
+  simp only [mkFullWitnessMultiRow, List.flatMap_cons, List.flatMap_nil, List.append_nil,
+    mkTable_nil_interactionsWith, bootTable_interactionsWith,
+    List.nil_append, List.cons_append, List.singleton_append]
+
+/-- **k ≥ 2 BALANCE TRANSPORT.** The multi-row (2-rows-per-segment) seam channel
+    balance reduces to `asBootList2`'s balance: the boot push is shared, and the
+    4 Mem-row contributions collapse (dead rows drop, live rows project) onto the
+    one-row-per-segment list. Requires the live rows be the segments' last rows
+    (`seg_last = 1`) and the dead rows be non-last (`seg_last = 0`), with seg0
+    non-last so its live push mult is `1`. -/
+theorem asBootList2_balanced_of_multiRow_seamBalance
+    (vb : BootRow FGL) (d0 v0 d1 v1 : MemRow FGL)
+    (publicInput : unit FGL) (data : ProverData FGL)
+    (hd0 : d0.seg_last = 0) (hl0 : v0.seg_last = 1)
+    (hd1 : d1.seg_last = 0) (hl1 : v1.seg_last = 1)
+    (h0 : v0.is_last_segment = 0)
+    (hseam : EnsembleWitness.BalancedChannel
+      (mkFullWitnessMultiRow (length := length) (program := program)
+        vb d0 v0 d1 v1 publicInput data) SeamContChannel.toRaw) :
+    BalancedInteractions (asBootList2 vb v0 v1) := by
+  rw [EnsembleWitness.BalancedChannel, EnsembleWitness.interactionsWith_allTablesWitness,
+    mkFullWitnessMultiRow_interactionsWith] at hseam
+  refine ⟨?_, ?_⟩
+  · -- `asBootList2` has 5 interactions, well under `ringChar FGL`.
+    left
+    have : (5 : ℕ) < ringChar FGL := by
+      haveI hc : CharP FGL GL_prime := inferInstanceAs (CharP (Fin GL_prime) GL_prime)
+      rw [ringChar.eq FGL GL_prime]; norm_num
+    simpa [asBootList2, bootList2] using this
+  · intro msg
+    -- Transport: the multi-row balance (boot :: 4-row table) equals `asBootList2`'s.
+    have hbal := hseam.2 msg
+    rw [show emittedSeamValue 1 (bootPushVal vb) ::
+          (mkTable componentWithDualMemBus [d0, v0, d1, v1] data).interactionsWith
+            SeamContChannel.toRaw
+        = [emittedSeamValue 1 (bootPushVal vb)]
+          ++ (mkTable componentWithDualMemBus [d0, v0, d1, v1] data).interactionsWith
+            SeamContChannel.toRaw from rfl,
+      balanceOf_append,
+      memTable_multiRow_balanceOf d0 v0 d1 v1 data hd0 hl0 hd1 hl1] at hbal
+    -- `asBootList2`'s balance equals the boot + live shape's balance, because
+    -- `balanceOf` depends only on the `(mult, msg)` projection (`balanceOf_proj`),
+    -- and that projection matches via `proj_eq` (seg0 non-last; both rows live).
+    rw [balanceOf_proj (asBootList2 vb v0 v1), ← proj_eq vb v0 v1 h0 hl0 hl1,
+      ← balanceOf_proj]
+    rw [show ([ emittedSeamValue 1 (bootPushVal vb),
+          emittedSeamValue (-v0.seg_last) (segPrevVal v0),
+          emittedSeamValue (v0.seg_last * (1 - v0.is_last_segment)) (segLastVal v0),
+          emittedSeamValue (-v1.seg_last) (segPrevVal v1),
+          emittedSeamValue (v1.seg_last * (1 - v1.is_last_segment)) (segLastVal v1) ]
+          : List (Interaction FGL))
+        = [emittedSeamValue 1 (bootPushVal vb)]
+          ++ [ emittedSeamValue (-v0.seg_last) (segPrevVal v0),
+            emittedSeamValue (v0.seg_last * (1 - v0.is_last_segment)) (segLastVal v0),
+            emittedSeamValue (-v1.seg_last) (segPrevVal v1),
+            emittedSeamValue (v1.seg_last * (1 - v1.is_last_segment)) (segLastVal v1) ]
+        from rfl,
+      balanceOf_append]
+    -- The live4 list reduces to the `-1`/`1 - is_last` shape via `seg_last = 1`.
+    simp only [hl0, hl1, neg_one_mul, one_mul, mul_one, neg_neg] at hbal ⊢
+    exact hbal
+
+/-! ## THE k ≥ 2 SEAM VALUE-EQUALITY (the deep deliverable). -/
+
+/-- **THE k ≥ 2 CROSS-SEGMENT SEAM, from REAL MULTI-ROW balance.** For a real
+    `fullRv64imEnsemble` accepted trace whose Mem table spans TWO segments × TWO
+    rows (a DEAD leading row + a LIVE last row each), with seg0 non-last and seg1
+    the last segment, the `seg_last`-gated seam channel balance FORCES the
+    cross-segment VALUE seam `seg1.previous_segment_* = seg0.segment_last_*`. The
+    DEAD rows (`d0`/`d1`, `seg_last = 0`) carry GENUINELY FREE boundary columns and
+    play NO role — balance does not depend on them. This is the k ≥ 2 (multi-row
+    per segment) instance the one-row-per-segment witness could not state. -/
+theorem multiRow_seam_value_equality
+    (vb : BootRow FGL) (d0 v0 d1 v1 : MemRow FGL)
+    (publicInput : unit FGL) (data : ProverData FGL)
+    (hd0 : d0.seg_last = 0) (hl0 : v0.seg_last = 1)
+    (hd1 : d1.seg_last = 0) (hl1 : v1.seg_last = 1)
+    (h0 : v0.is_last_segment = 0) (h1 : v1.is_last_segment = 1)
+    (hseam : EnsembleWitness.BalancedChannel
+      (mkFullWitnessMultiRow (length := length) (program := program)
+        vb d0 v0 d1 v1 publicInput data) SeamContChannel.toRaw) :
+    v0.segment_id = 0 ∧ v1.segment_id = 1
+      ∧ seam5 v1.previous_segment_value_0 v1.previous_segment_value_1
+          v1.previous_segment_addr v1.previous_segment_step v1.segment_id
+        = seam5 v0.segment_last_value_0 v0.segment_last_value_1
+          v0.segment_last_addr v0.segment_last_step (v0.segment_id + 1) := by
+  have hbalanced := asBootList2_balanced_of_multiRow_seamBalance (length := length)
+    (program := program) vb d0 v0 d1 v1 publicInput data hd0 hl0 hd1 hl1 h0 hseam
+  rw [asBootList2, h1] at hbalanced
+  simp only [show (1 : FGL) - 1 = 0 from by ring] at hbalanced
+  obtain ⟨ht0, ht1, _hseam0, hseam'⟩ := boot_chain_derived
+    vb.boot_value_0 vb.boot_value_1 vb.boot_addr vb.boot_step
+    v0.previous_segment_value_0 v0.previous_segment_value_1 v0.previous_segment_addr
+    v0.previous_segment_step v0.segment_id
+    v0.segment_last_value_0 v0.segment_last_value_1 v0.segment_last_addr v0.segment_last_step
+    v1.previous_segment_value_0 v1.previous_segment_value_1 v1.previous_segment_addr
+    v1.previous_segment_step v1.segment_id
+    v1.segment_last_value_0 v1.segment_last_value_1 v1.segment_last_addr v1.segment_last_step
+    hbalanced
+  exact ⟨ht0, ht1, hseam'⟩
+
+/-! ## k ≥ 2 NON-VACUITY: a concrete balanced 2-segment × 2-row witness. -/
+
+/-- seg0 DEAD leading row: `seg_last = 0`, carrying GENUINELY DISTINCT junk
+    boundary columns (`7`s/`8`s) — a real non-`SEGMENT_LAST` row's
+    `segment_last_*`/`previous_segment_*` columns ARE unconstrained, so this junk is
+    exactly what a real dead row looks like. Its emission is suppressed by the
+    gate. -/
+@[reducible] def goodDead0 : MemRow FGL :=
+  { addr := 7, step := 7, sel := 1, addr_changes := 1, step_dual := 0, sel_dual := 0,
+    value_0 := 7, value_1 := 7, wr := 1, previous_step := 0, increment_0 := 0,
+    increment_1 := 0, read_same_addr := 0,
+    segment_id := 0,
+    previous_segment_value_0 := 7, previous_segment_value_1 := 7,
+    previous_segment_addr := 7, previous_segment_step := 7,
+    segment_last_value_0 := 8, segment_last_value_1 := 8,
+    segment_last_addr := 8, segment_last_step := 8,
+    is_last_segment := 0, seg_last := 0 }
+
+/-- seg1 DEAD leading row: `seg_last = 0`, distinct junk (`9`s/`11`s). -/
+@[reducible] def goodDead1 : MemRow FGL :=
+  { addr := 9, step := 9, sel := 1, addr_changes := 1, step_dual := 0, sel_dual := 0,
+    value_0 := 9, value_1 := 9, wr := 1, previous_step := 0, increment_0 := 0,
+    increment_1 := 0, read_same_addr := 0,
+    segment_id := 1,
+    previous_segment_value_0 := 9, previous_segment_value_1 := 9,
+    previous_segment_addr := 9, previous_segment_step := 9,
+    segment_last_value_0 := 11, segment_last_value_1 := 11,
+    segment_last_addr := 11, segment_last_step := 11,
+    is_last_segment := 1, seg_last := 0 }
+
+/-- Sanity: the DEAD rows' boundary columns are genuinely distinct from the LIVE
+    boundaries — so the witness is NOT the degenerate "all rows identical" shape
+    and the gating truly suppresses unconstrained junk. -/
+theorem goodMultiRow_dead_distinct :
+    goodDead0.previous_segment_value_0 ≠ goodSeg0.previous_segment_value_0
+    ∧ goodDead0.segment_last_addr ≠ goodSeg0.segment_last_addr
+    ∧ goodDead1.previous_segment_value_0 ≠ goodSeg1.previous_segment_value_0
+    ∧ goodDead1.segment_last_addr ≠ goodSeg1.segment_last_addr := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;>
+    simp only [goodDead0, goodDead1, goodSeg0, goodSeg1] <;> decide
+
+/-- **THE k ≥ 2 SATISFIABILITY WITNESS.** The concrete 2-segment × 2-row chain
+    (`[goodDead0, goodSeg0, goodDead1, goodSeg1]`, each segment a dead leading row
+    + a live last row) BALANCES on the REAL `fullRv64imEnsemble`. The 2 DEAD rows'
+    8 boundary columns are arbitrary junk; the dead rows drop out of `balanceOf`,
+    leaving the live boot chain `goodBootList2`. -/
+theorem good_multiRow_seam_balancedChannel (publicInput : unit FGL) (data : ProverData FGL) :
+    EnsembleWitness.BalancedChannel
+      (mkFullWitnessMultiRow (length := length) (program := program)
+        goodBoot goodDead0 goodSeg0 goodDead1 goodSeg1 publicInput data)
+      SeamContChannel.toRaw := by
+  rw [EnsembleWitness.BalancedChannel, EnsembleWitness.interactionsWith_allTablesWitness,
+    mkFullWitnessMultiRow_interactionsWith]
+  refine ⟨?_, ?_⟩
+  · left
+    have : (1 + 8 : ℕ) < ringChar FGL := by
+      haveI hc : CharP FGL GL_prime := inferInstanceAs (CharP (Fin GL_prime) GL_prime)
+      rw [ringChar.eq FGL GL_prime]; norm_num
+    -- boot :: 4 rows × 2 emissions = 1 + 8 = 9 interactions.
+    have hlen : (emittedSeamValue 1 (bootPushVal goodBoot) ::
+        (mkTable componentWithDualMemBus [goodDead0, goodSeg0, goodDead1, goodSeg1]
+          data).interactionsWith SeamContChannel.toRaw).length = 9 := by
+      rw [memTable_interactionsWith]
+      simp [memRowSeamContribution, List.flatMap_cons, List.flatMap_nil]
+    rw [hlen]; simpa using this
+  · intro msg
+    rw [show emittedSeamValue 1 (bootPushVal goodBoot) ::
+          (mkTable componentWithDualMemBus [goodDead0, goodSeg0, goodDead1, goodSeg1]
+            data).interactionsWith SeamContChannel.toRaw
+        = [emittedSeamValue 1 (bootPushVal goodBoot)]
+          ++ (mkTable componentWithDualMemBus [goodDead0, goodSeg0, goodDead1, goodSeg1]
+            data).interactionsWith SeamContChannel.toRaw from rfl,
+      balanceOf_append,
+      memTable_multiRow_balanceOf goodDead0 goodSeg0 goodDead1 goodSeg1 data
+        (by rfl) (by rfl) (by rfl) (by rfl)]
+    -- the boot + 2 live rows IS `goodBootList2`'s `(mult,msg)` shape; balanced.
+    -- `goodBootList2 = asBootList2 goodBoot goodSeg0 goodSeg1` (`asBootList2_good`),
+    -- and `proj_eq` matches its projection to the boot ++ live4 list, so balances
+    -- transport via `balanceOf_proj`.
+    have hgood := goodBootList2_balanced.2 msg
+    rw [← asBootList2_good, balanceOf_proj (asBootList2 goodBoot goodSeg0 goodSeg1),
+      ← proj_eq goodBoot goodSeg0 goodSeg1 (by rfl) (by rfl) (by rfl), ← balanceOf_proj,
+      show ([ emittedSeamValue 1 (bootPushVal goodBoot),
+          emittedSeamValue (-goodSeg0.seg_last) (segPrevVal goodSeg0),
+          emittedSeamValue (goodSeg0.seg_last * (1 - goodSeg0.is_last_segment))
+            (segLastVal goodSeg0),
+          emittedSeamValue (-goodSeg1.seg_last) (segPrevVal goodSeg1),
+          emittedSeamValue (goodSeg1.seg_last * (1 - goodSeg1.is_last_segment))
+            (segLastVal goodSeg1) ] : List (Interaction FGL))
+        = [emittedSeamValue 1 (bootPushVal goodBoot)]
+          ++ [ emittedSeamValue (-goodSeg0.seg_last) (segPrevVal goodSeg0),
+            emittedSeamValue (goodSeg0.seg_last * (1 - goodSeg0.is_last_segment))
+              (segLastVal goodSeg0),
+            emittedSeamValue (-goodSeg1.seg_last) (segPrevVal goodSeg1),
+            emittedSeamValue (goodSeg1.seg_last * (1 - goodSeg1.is_last_segment))
+              (segLastVal goodSeg1) ] from rfl,
+      balanceOf_append] at hgood
+    simp only [goodSeg0, goodSeg1, neg_one_mul, one_mul, mul_one, neg_neg] at hgood ⊢
+    exact hgood
+
+/-- **k ≥ 2 NON-VACUITY END-TO-END.** Running `multiRow_seam_value_equality` on the
+    concrete balanced 2-segment × 2-row witness (each segment a dead row + a live
+    row) lands the tags at `(0,1)` and the SEAM holds:
+    `seg1.previous_segment_* (1,0,100,5) = seg0.segment_last_* (1,0,100,5)`. This
+    certifies the k ≥ 2 cross-segment seam from balance is NON-VACUOUS on the REAL
+    `fullRv64imEnsemble` — satisfiable on a genuine MULTI-ROW (≥ 2 rows per
+    segment) Mem trace with dead rows distinct from live, NOT just the one-row
+    floor. -/
+theorem good_multiRow_seam_holds (length : ℕ) (program : Program length)
+    (publicInput : unit FGL) (data : ProverData FGL) :
+    seam5 1 0 100 5 1 = seam5 1 0 100 5 (0 + 1) := by
+  obtain ⟨_, _, hseam⟩ := multiRow_seam_value_equality (length := length) (program := program)
+    goodBoot goodDead0 goodSeg0 goodDead1 goodSeg1 publicInput data
+    (by rfl) (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+    (good_multiRow_seam_balancedChannel (length := length) (program := program)
+      publicInput data)
   simpa using hseam
 
 end ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity
@@ -484,3 +846,8 @@ kernel-only, NON-VACUOUSLY satisfied by a concrete 2-nonzero-segment witness. -/
 #print axioms ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.seam_value_equality
 #print axioms ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.good_seam_balancedChannel
 #print axioms ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.good_seam_holds
+-- k ≥ 2 (multi-row per segment) deliverables (XCAP #103 deep refactor, step C):
+#print axioms ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.memTable_multiRow_balanceOf
+#print axioms ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.multiRow_seam_value_equality
+#print axioms ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.good_multiRow_seam_balancedChannel
+#print axioms ZiskFv.AirsClean.FullEnsemble.SeamNonVacuity.good_multiRow_seam_holds

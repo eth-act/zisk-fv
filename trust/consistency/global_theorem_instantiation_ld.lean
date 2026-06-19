@@ -192,7 +192,8 @@ private def ldMemRow : ZiskFv.AirsClean.Mem.MemRow FGL :=
     segment_last_value_1 := 0
     segment_last_addr := 0
     segment_last_step := 0
-    is_last_segment := 0 }
+    is_last_segment := 0
+    seg_last := 0 }
 
 private def ldMem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL :=
   ZiskFv.AirsClean.Mem.validOfRow ldMemRow

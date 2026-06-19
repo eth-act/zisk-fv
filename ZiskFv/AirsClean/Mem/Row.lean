@@ -54,6 +54,13 @@ structure MemRow (F : Type) where
   -- multiplied by `(1 - is_last_segment)` so the final segment emits NO push
   -- (`mem.pil:241` `direct_gsum_1` gated `* (1 - is_last_segment)`).
   is_last_segment : F
+  -- SEGMENT_LAST gating column (XCAP #103 deep refactor, step B). `1` exactly on
+  -- the LAST row of a segment (`mem.pil:87` `SEGMENT_LAST = SEGMENT_L1'`), `0`
+  -- elsewhere. The seam emission is gated by it so a k-row segment emits exactly
+  -- ONE live pull + ONE live push (the `seg_last = 1` row) and `k - 1` DEAD
+  -- (multiplicity-0) emissions — making the per-segment continuation faithful to
+  -- a multi-row Mem trace (the ungated per-row emission only balanced at k = 1).
+  seg_last : F
 deriving ProvableStruct
 
 end ZiskFv.AirsClean.Mem
