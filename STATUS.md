@@ -32,7 +32,29 @@ Non-vacuous (execRow real ∀-binder; no False.elim). 0 new ZiskFv.* axioms. Ful
 Gate V1 18/18 + V2 12/12. registered in StrongRowConstructionData/StepComplianceStrong/dispatcher.
 LEFT in bus_effect form (6): 6 defect/gap (7 signed-M minus unsigned overlap; FENCE). NOT committed.
 
-=== STEP (b3): W-shifts (+6) + stores converted (+4) — 38 → 48 (uncommitted, this run) ===
+=== STEP (b4): 7 loads converted (LB/LH/LW/LD/LBU/LHU/LWU) — 48 → 55 (uncommitted, this run) ===
+ALL non-defect ops now on the OpEnvelope route (55/55). Each stepStrong_<load> builds
+OpEnvelope.<load> from the real committed trace row, calls zisk_riscv_compliant_program_bus,
+projects (LD → exec_eq_ldsd .2x8.1; LBU/LHU/LWU → exec_eq_remaining .2x11; LB/LH/LW →
+exec_eq_misc .2x10.1). KEY: new memConstVar/eval_memConstVar (Mem analogue of mainConstVar) +
+loadEvalEnv + loadMainMsg/loadMemMsg solve the prior Var/Environment eval-provenance wall
+(mainConstVar/memConstVar make h_mainEval/h_providerEval/h_main_row/h_mem_row/spec/b-match/c-match
+rfl-able). Each RowData_<load> now carries: h_memory_timeline as LoadMemoryTimelineConstruction-
+Evidence (#76 construction-evidence form), h_msg : loadMemMsg(rowAt mem r_mem)=loadMainMsg(mainRow)
+(the Mem-provider same-message #76 residual; replaces the old payload-only h_mem_match), mem/r_mem/
+sel/wr, + h_width decode pin (LD=8/LB=1/LH=2/LW=4), + for signed loads v/r_binary/offset/env/
+h_static/h_match (the SextLoad/aeneasBridgeTrust held decode residuals). aeneasBridgeTrust=d.h_width.
+StepNoKnownDefect: real EnvNoKnownDefectFor arms for the 7 (satisfiable via envNoKnownDefectFor_of_
+nondefect — loads are non-defect). Dispatcher threads h_known to the 7. The bus_effect-form (weak)
+export's 7 load arms re-derive construction args from the new RowData via two new helpers
+(loadMemMatchOfMsg: payload from h_msg+balance bridge; loadTimelineEvidenceOfConstruction:
+MemoryTimelineEvidence from construction-evidence via Classical.choice). OpEnvelope.lean/
+Compliance.lean/canonical equiv_<OP>/global theorem UNCHANGED. NON-VACUOUS (execRow real ∀-binder;
+envelope built from real row; #76 + SextLoad residuals are SATISFIABLE held binders, no False.elim).
+0 new ZiskFv.* axioms (closure = Sail FFI + kernel postulates). Full lake build GREEN (8702 jobs).
+Gate V1 18/18 + V2 12/12 (incl. V2 11/12 "global LD theorem instantiation"). NOT committed.
+
+=== STEP (b3): W-shifts (+6) + stores converted (+4) — 38 → 48 (uncommitted, prior run) ===
 +6 W-shift arms (sllw/srlw/sraw/slliw/srliw/sraiw) ADDED to StrongRowConstructionData/
 StepComplianceStrong/StepNoKnownDefect/dispatcher: each builds OpEnvelope.<wshift> from the
 trace's BinaryExtension shift provider (m32=1 route, shift_m32_1_*_of_facts), calls
