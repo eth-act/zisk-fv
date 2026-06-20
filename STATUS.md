@@ -36,7 +36,31 @@ witness-conditional defects, gated on the extraction-fidelity work + the upstrea
 NEXT (user's call): land 57/63 (recommended — the soundly-verifiable frontier); or pursue the deep
 extraction-fidelity (MULH/MULHSU) / old-theorem memory change (d). DIV/REM = upstream fix.
 
-=== ACTIVE: MULH/MULHSU retirement 57→59 (sign-range residual route) ===
+=== RESULT: DIV/REM retired 59→61/63; DIVW/REMW WALL on missing W discharge infra ===
+DONE (uncommitted): canonical equiv_DIV/equiv_REM now REAL (no False.elim), non-vacuous.
+Defect ArithDivDynamicWitnessShape .div/.rem narrowed True→exact |r|=|d| forge
+((signedRemainderInt v r_a).natAbs = op2.toInt.natAbs). Strict |r|<|d| DERIVED at canonical
+layer from WEAK residual h_r_le + narrowed-defect via lt_of_le_of_ne (load-bearing).
+Anti-vacuity: honest_{div,rem}_witness_not_forge. Full lake build green; gate V1 18/18 + V2 12/12
+(baselines refreshed: hypothesis-count, caller-burden canonical+wrapper; axiom-deps diff EMPTY =
+0 new ZiskFv.* axioms). DIVW/REMW kept opcode-wide gated (.divw/.remw => True) — they need
+div_w_chain_witnesses + h_rd_val_mdrs_{divw,remw}_chunked + real EquivCore (currently False.elim);
+low-level W bridges exist, mid-level glue does not. Ledger updated (defects.md + trusted-base.md).
+TODO if continuing: trace-level export arms for signed DIV/REM (additive coverage, not gate-blocking).
+
+=== PRIOR ACTIVE: DIV/DIVW/REM/REMW retirement (signed remainder-bound residual route) ===
+Findings: EquivCore.Div/Rem are REAL & complete (via h_rd_val_mdrs_{div,rem}_chunked); only
+wrapper+canonical are False.elim. EquivCore.Divw/Remw are False.elim AND lack
+h_rd_val_mdrs_{divw,remw}_chunked (deeper). Wall: no arith_div_remainder_bound_signed lemma —
+the LT_ABS_NP byte chain proves only WEAK |r|≤|d|; the false positive is exactly at |r|=|d|.
+Design (sound, non-laundering): (1) narrow ArithDivDynamicWitnessShape to EXACT |r|=|d| forge;
+(2) carry the WEAK bound |r|≤|d| as a caller residual binder (extraction-fidelity, like MULH na=MSB)
+PLUS sign-range operand bridges + h_r_sign + h_nr_pin; (3) DERIVE strict h_r_abs = |r|<|d| from
+weak + ¬(|r|=|d|) via Nat.lt_of_le_of_ne — making the defect narrowing LOAD-BEARING; (4) call the
+ready EquivCore.{Div,Rem}.equiv_{DIV,REM}. W-mode needs EquivCore + W discharge lemmas (deep;
+land non-W first, report W gap if it walls).
+
+=== PRIOR: MULH/MULHSU retirement 57→59 (sign-range residual route) ===
 Plan: narrow Defects MaliciousSignedMulWitnessShape .mulh/.mulhsu True→exact forge; add sign-range
 residual binders (na=MSB op1, nb=MSB op2) to canonical equiv_MULH/MULHSU + wrappers; build real
 high-half signed proof via fgl_mul_signed_to_bv64_hi + mul_signed_chain_witnesses +

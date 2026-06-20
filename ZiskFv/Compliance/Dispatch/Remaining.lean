@@ -491,28 +491,34 @@ theorem zisk_riscv_compliant_program_bus_remaining
   -- Div / Rem
   | div div_input r1 r2 rd bus v r_a
         pins h_match_primary
-        promises arith_mem h_op2_ne h_no_overflow
-        h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+        promises arith_mem bounds h_op2_ne h_no_overflow
+        h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+        h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Div.equiv_DIV state div_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem h_op2_ne h_no_overflow
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_known_bugs
+      pins h_match_primary promises arith_mem bounds h_op2_ne h_no_overflow
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+      h_r_le h_r_sign h_known_bugs
   | rem rem_input r1 r2 rd bus v r_a
         pins h_match_secondary
-        promises arith_mem h_op2_ne h_no_overflow
-        h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+        promises arith_mem bounds h_op2_ne h_no_overflow
+        h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+        h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Rem.equiv_REM state rem_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem h_op2_ne h_no_overflow
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_known_bugs
+      pins h_match_secondary promises arith_mem bounds h_op2_ne h_no_overflow
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+      h_r_le h_r_sign h_known_bugs
   | remu remu_input r1 r2 rd bus v r_a
          pins h_match_secondary promises arith_mem
       bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
@@ -898,28 +904,34 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value
   | div div_input r1 r2 rd bus v r_a
         pins h_match_primary
-        promises arith_mem h_op2_ne h_no_overflow
-        h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+        promises arith_mem bounds h_op2_ne h_no_overflow
+        h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+        h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Div.equiv_DIV state div_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem h_op2_ne h_no_overflow
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_known_bugs
+      pins h_match_primary promises arith_mem bounds h_op2_ne h_no_overflow
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+      h_r_le h_r_sign h_known_bugs
   | rem rem_input r1 r2 rd bus v r_a
         pins h_match_secondary
-        promises arith_mem h_op2_ne h_no_overflow
-        h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+        promises arith_mem bounds h_op2_ne h_no_overflow
+        h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+        h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Rem.equiv_REM state rem_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem h_op2_ne h_no_overflow
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_known_bugs
+      pins h_match_secondary promises arith_mem bounds h_op2_ne h_no_overflow
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+      h_r_le h_r_sign h_known_bugs
   | remu remu_input r1 r2 rd bus v r_a
          pins h_match_secondary promises arith_mem
       bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges

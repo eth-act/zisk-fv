@@ -16,6 +16,7 @@ namespace ZiskFv.Compliance.Defects
 
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
+open ZiskFv.PackedBitVec.SignedChunkLift (toIntZ)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
@@ -80,19 +81,55 @@ def MaliciousSignedMulWitnessShape
       ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)
   | _ => False
 
-/-- Conservative marker for remaining dynamic DIV/REM witness facts.
+/-- The signed `DIV`/`REM` remainder integer value reconstructed from the
+    circuit's `d[]` remainder chunks and the `nr` sign witness:
+    `r = packed4(d) - nr·2^64`. -/
+def signedRemainderInt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=
+  (ZiskFv.PackedBitVec.MulNoWrap.packed4
+      (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+    - (v.nr r_a).val * (2:ℤ)^64
 
-The retired `arith_table_op_*` and `arith_div_*` assumptions were not pure
-finite-table projections: they connected row selectors to concrete operand
-chunks, sign witnesses, and remainder bounds. The unsigned `DIVU`/`REMU` and
-`DIVUW`/`REMUW` paths now derive these facts from row/range/operation-bus
-evidence; the remaining signed arms stay excluded until their extra sign and
-overflow/div-by-zero facts are proved. -/
+/-- W-mode (`DIVW`/`REMW`) signed remainder integer value, reconstructed from
+    the low 32-bit remainder chunks and the `nr` sign witness:
+    `r₃₂ = (d_0 + d_1·2^16) - nr·2^32`. -/
+def signedRemainderIntW (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=
+  ((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ) - (v.nr r_a).val * (2:ℤ)^32
+
+/-- **Narrowed marker for the signed DIV/REM remainder-bound false positive.**
+
+The retired `arith_table_op_*` and `arith_div_*` assumptions connected row
+selectors to concrete operand chunks, sign witnesses, and remainder bounds.
+The unsigned `DIVU`/`REMU` and `DIVUW`/`REMUW` paths derive these facts from
+row/range/operation-bus evidence.
+
+For the SIGNED arms the only residual unsoundness is the documented
+`LT_ABS_NP` byte-chain false positive (`trust/defects.md`,
+`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`, witnessed by
+`ZiskFv.Airs.Binary.ltAbsNpByteChain_falsePositive_eqAbs256`): the per-byte
+absolute-compare chain accepts a remainder whose magnitude *equals* the
+divisor magnitude (`|r| = |op2|`) as though `|r| < |op2|`.  An HONEST signed
+division ALWAYS has `|r| < |op2|` strictly (e.g. `x/x` has remainder `0`), so
+this forge shape is never produced by a real trace.
+
+The narrowed predicate is therefore EXACTLY the false-positive equality
+`|remainder| = |divisor|`.  Excluding it (via `NoKnownDefect`) upgrades the
+in-model WEAK bound `|r| ≤ |op2|` (the most the `LT_ABS_NP`/`LT_ABS_PN` chain
+can soundly witness) to the STRICT bound `|r| < |op2|` that Sail DIV/REM
+requires — making the narrowing load-bearing rather than cosmetic.  Honest
+rows are NOT in this shape (anti-vacuity guards
+`honest_{div,rem,divw,remw}_witness_not_forge`). -/
 def ArithDivDynamicWitnessShape
     : OpEnvelope state m r_main → Prop
-  | .div .. => True
+  | .div div_input _ _ _ _ v r_a .. =>
+      (signedRemainderInt v r_a).natAbs = div_input.r2_val.toInt.natAbs
+  | .rem rem_input _ _ _ _ v r_a .. =>
+      (signedRemainderInt v r_a).natAbs = rem_input.r2_val.toInt.natAbs
+  -- W-mode (`DIVW`/`REMW`) remains FULLY defect-gated (opcode-wide `True`):
+  -- their EquivCore signed-W discharge (`h_rd_val_mdrs_{divw,remw}_chunked`) is
+  -- not yet built, so the honest W case is not yet provable.  Narrowing these
+  -- to the `|r₃₂| = |op2₃₂|` false-positive shape is the follow-up; the
+  -- `signedRemainderIntW` helper is in place for it.
   | .divw .. => True
-  | .rem .. => True
   | .remw .. => True
   | _ => False
 
@@ -270,5 +307,135 @@ theorem honest_mulhsu_witness_not_malicious
   rintro (⟨ha1, _, _⟩ | ⟨_, hb1, _⟩)
   · rw [ha] at ha1; exact absurd ha1 (by decide)
   · rw [hb] at hb1; exact absurd hb1 (by decide)
+
+/-- **Non-vacuity / constructibility witness for the narrowed DIV exclusion.**
+
+An HONEST signed division always has a remainder STRICTLY smaller in magnitude
+than the divisor (`|r| < |op2|`), e.g. `7 / 2 = 3 rem 1` with `|1| < |2|`, or any
+`x / x` whose remainder is `0`.  Such a row has
+`(signedRemainderInt v r_a).natAbs < div_input.r2_val.toInt.natAbs`, hence
+`(signedRemainderInt v r_a).natAbs ≠ div_input.r2_val.toInt.natAbs`, so it is NOT
+in `ArithDivDynamicWitnessShape`.  Therefore `NoKnownDefect` is satisfiable for an
+honest DIV envelope — the narrowed defect excludes ONLY the malicious `|r| = |op2|`
+false-positive forge, never an honest division.  This is the Lean-checked
+anti-vacuity guard for the `DIV` arm of
+`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`. -/
+theorem honest_div_witness_not_forge
+    {div_input : PureSpec.DivInput} {r1 r2 rd : regidx}
+    {bus : ZiskFv.Compliance.BusRows}
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r_a : ℕ}
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_DIV)
+    (h_match_primary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
+        (PureSpec.execute_DIVREM_div_pure div_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
+    (h_op2_ne : div_input.r2_val.toInt ≠ 0)
+    (h_no_overflow :
+      ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
+    (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ (toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
+          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_rs1_value :
+      div_input.r1_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64)
+    (h_rs2_value :
+      div_input.r2_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    (h_r_le :
+      (signedRemainderInt v r_a).natAbs ≤ div_input.r2_val.toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (signedRemainderInt v r_a) * div_input.r1_val.toInt)
+    (h_honest_strict :
+      (signedRemainderInt v r_a).natAbs < div_input.r2_val.toInt.natAbs) :
+    ¬ ArithDivDynamicWitnessShape
+        (OpEnvelope.div div_input r1 r2 rd bus v r_a pins h_match_primary promises
+          arith_mem bounds h_op2_ne h_no_overflow h_row_constraints arith_table
+          arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor
+          h_nr_pin h_rs1_value h_rs2_value h_r_le h_r_sign) := by
+  simpa [ArithDivDynamicWitnessShape, signedRemainderInt] using Nat.ne_of_lt h_honest_strict
+
+/-- **Non-vacuity / constructibility witness for the narrowed REM exclusion.**
+    Companion of `honest_div_witness_not_forge` for the remainder lane. -/
+theorem honest_rem_witness_not_forge
+    {rem_input : PureSpec.RemInput} {r1 r2 rd : regidx}
+    {bus : ZiskFv.Compliance.BusRows}
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r_a : ℕ}
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_REM)
+    (h_match_secondary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
+        (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
+    (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
+    (h_no_overflow :
+      ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
+    (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ (toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
+          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_rs1_value :
+      rem_input.r1_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64)
+    (h_rs2_value :
+      rem_input.r2_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    (h_r_le :
+      (signedRemainderInt v r_a).natAbs ≤ rem_input.r2_val.toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (signedRemainderInt v r_a) * rem_input.r1_val.toInt)
+    (h_honest_strict :
+      (signedRemainderInt v r_a).natAbs < rem_input.r2_val.toInt.natAbs) :
+    ¬ ArithDivDynamicWitnessShape
+        (OpEnvelope.rem rem_input r1 r2 rd bus v r_a pins h_match_secondary promises
+          arith_mem bounds h_op2_ne h_no_overflow h_row_constraints arith_table
+          arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor
+          h_nr_pin h_rs1_value h_rs2_value h_r_le h_r_sign) := by
+  simpa [ArithDivDynamicWitnessShape, signedRemainderInt] using Nat.ne_of_lt h_honest_strict
 
 end ZiskFv.Compliance.Defects

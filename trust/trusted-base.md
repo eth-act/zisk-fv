@@ -283,8 +283,33 @@ Active conclusions:
   witness defect by deriving unsigned range, W high-chunk, nonzero-divisor,
   quotient high-zero, and remainder-bound facts from Clean ArithDiv/Binary
   evidence plus the unsigned Euclidean identity.
-- Signed `DIV`, `DIVW`, `REM`, and `REMW` remain defect-gated because the
-  signed remainder-bound route exposes an `LT_ABS_NP` byte-chain mismatch.
+- Signed full-64 `DIV` and `REM` are now **narrowed and non-vacuously proved**:
+  the `Defects.ArithDivDynamicWitnessShape` `.div`/`.rem` exclusion is the EXACT
+  `|r| = |op2|` false-positive shape (`(signedRemainderInt v r_a).natAbs =
+  op2.toInt.natAbs`), not the opcode-wide `True`. The canonical `equiv_DIV` /
+  `equiv_REM` are real (no `False.elim`); they carry the WEAK signed remainder
+  bound `h_r_le : |r| ≤ |op2|` plus the signed operand bridges / `h_nr_pin` /
+  `h_r_sign` as caller residuals and DERIVE the STRICT `|r| < |op2|` from the
+  narrowed-defect exclusion (`lt_of_le_of_ne`). Anti-vacuity is gate-checked by
+  `Defects.honest_{div,rem}_witness_not_forge`. 0 `ZiskFv.*` axioms (the
+  per-theorem `collectAxioms` closure is unchanged).
+- Signed W-mode `DIVW` and `REMW` remain opcode-wide defect-gated: their
+  EquivCore signed-W discharge (`h_rd_val_mdrs_{divw,remw}_chunked`,
+  `div_w_chain_witnesses`) is not yet built (the low-level W bridges
+  `fgl_{div,rem}_w_signed_to_bv64`, `abs_euclidean_to_signed_euclidean_div_rem_w`,
+  `signed_tmod_unique` exist; the mid-level glue does not).
+- **Signed remainder-bound residual (DIV/REM only).** The WEAK bound
+  `h_r_le : |r| ≤ |op2|`, the signed operand bridges (`na = MSB`-form
+  `r.toInt = packed4 - sign·2^64`), and the sign-correctness witness `h_r_sign`
+  are caller hypotheses, NOT axioms — same EXTRACTION-FIDELITY residual class as
+  the MULH/MULHSU sign-range residual below. The real ZisK ArithDiv circuit
+  enforces the weak bound via the `LT_ABS_NP`/`LT_ABS_PN` byte-chain comparison
+  (`arith.pil:274`), but the FV model cannot derive it in-model without exposing
+  the `LT_ABS_NP` false positive (`ltAbsNpByteChain_falsePositive_eqAbs256`); the
+  narrowed `|r| = |op2|` defect exclusion upgrades the carried weak bound to the
+  strict bound Sail requires. Visible in the canonical/wrapper caller-burden
+  ledgers; details in [`defects.md`](defects.md)
+  (`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`).
 - Signed `MUL`, `MULH`, and `MULHSU` have their malicious-witness defect
   **narrowed** to the exact exceptional product-sign forge shape (`(na=1,nb=0,
   np=0)` / `(na=0,nb=1,np=0)`); the honest cases are proved non-vacuously
@@ -322,9 +347,11 @@ into shared global-theorem evidence.
 
 Current caller-burden summary:
 
-- Canonical total rows: 1082 (was 1062; +20 from the MULH/MULHSU vacuous→real
-  binders incl. the sign-range residual, see `defects.md`).
-- Wrapper total rows: 1130 (was 1117; +13 from the same MULH/MULHSU change).
+- Canonical total rows: 1100 (was 1082; +18 from the DIV/REM vacuous→real
+  signed-remainder-bound residual binders, see `defects.md`; the prior +20 was
+  the MULH/MULHSU sign-range residual).
+- Wrapper total rows: 1135 (was 1130; +5 net from the DIV/REM real-discharge
+  wrappers replacing the `False` binder with structural residuals).
 - `bridge`: 122 in both ledgers.
 - `row_shape`: 18 canonical, 22 wrapper.
 - `bus_shape`: 0 in both ledgers.
