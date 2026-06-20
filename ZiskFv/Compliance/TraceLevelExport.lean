@@ -3262,7 +3262,7 @@ structure RowData_ld
         (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADD_pure ld_input).nextPC
   h_memory_timeline :
-    LoadMemoryTimelineConstructionEvidence (binding.stateAt i)
+    LoadMemoryTimelineCoherenceEvidence (binding.stateAt i)
       (busLd trace binding i execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
@@ -3314,7 +3314,7 @@ structure RowData_lbu
         (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADBU_pure lbu_input).nextPC
   h_memory_timeline :
-    LoadMemoryTimelineConstructionEvidence (binding.stateAt i)
+    LoadMemoryTimelineCoherenceEvidence (binding.stateAt i)
       (busLd trace binding i execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
@@ -3366,7 +3366,7 @@ structure RowData_lhu
         (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADHU_pure lhu_input).nextPC
   h_memory_timeline :
-    LoadMemoryTimelineConstructionEvidence (binding.stateAt i)
+    LoadMemoryTimelineCoherenceEvidence (binding.stateAt i)
       (busLd trace binding i execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
@@ -3418,7 +3418,7 @@ structure RowData_lwu
         (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADWU_pure lwu_input).nextPC
   h_memory_timeline :
-    LoadMemoryTimelineConstructionEvidence (binding.stateAt i)
+    LoadMemoryTimelineCoherenceEvidence (binding.stateAt i)
       (busLd trace binding i execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
@@ -3478,7 +3478,7 @@ structure RowData_lb
         (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADB_pure lb_input).nextPC
   h_memory_timeline :
-    LoadMemoryTimelineConstructionEvidence (binding.stateAt i)
+    LoadMemoryTimelineCoherenceEvidence (binding.stateAt i)
       (busLd trace binding i execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
@@ -3538,7 +3538,7 @@ structure RowData_lh
         (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADH_pure lh_input).nextPC
   h_memory_timeline :
-    LoadMemoryTimelineConstructionEvidence (binding.stateAt i)
+    LoadMemoryTimelineCoherenceEvidence (binding.stateAt i)
       (busLd trace binding i execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
@@ -3598,7 +3598,7 @@ structure RowData_lw
         (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADW_pure lw_input).nextPC
   h_memory_timeline :
-    LoadMemoryTimelineConstructionEvidence (binding.stateAt i)
+    LoadMemoryTimelineCoherenceEvidence (binding.stateAt i)
       (busLd trace binding i execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =

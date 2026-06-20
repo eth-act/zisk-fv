@@ -7,6 +7,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.MemTrace
 import ZiskFv.ZiskCircuit.MemTimeline.Construction
+import ZiskFv.ZiskCircuit.MemTimeline.Spike
 import ZiskFv.Compliance.Wrappers.Lui
 import ZiskFv.Compliance.Wrappers.Auipc
 import ZiskFv.Compliance.Wrappers.Jal
@@ -2482,14 +2483,19 @@ def OpEnvelope.memoryTimelineEvidence
         (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | _ => True
 
-/-- Construction-shaped residual needed to build timeline evidence for one load
-    read entry.
+/-- **RETIRED** (kept for the audit diff against `LoadMemoryTimelineCoherenceEvidence`).
 
-    This names the remaining P4 boundary explicitly: a generated replay trace
-    contains the selected read row, and the load Sail state is the state obtained
-    by replaying the selected chronological prefix from the trace's initial
-    state. It deliberately does not mention `MemoryTimelineEvidence`, so callers
-    cannot satisfy it by repackaging the old residual boundary. -/
+    Construction-shaped residual that pinned the **whole** load Sail `state` to a
+    closed-form replay of the chronological prefix
+    (`MemoryPrefixStateAlignment initialState state priorRows`, i.e.
+    `state = stateAfterMemoryBusRows initialState priorRows`). This freezes every
+    field of `state` — regs, choiceState, mem, tags, cycleCount, sailOutput.
+
+    As of the #76 Fold-B reduction it is **no longer in the live closure of**
+    `zisk_riscv_compliant_program_bus`: the `OpEnvelope` load arm and all load
+    `RowData_<op>` now carry the strictly weaker, memory-map-only
+    `LoadMemoryTimelineCoherenceEvidence`. This def remains only so a reviewer can
+    diff the two residual shapes side by side; nothing references it. -/
 @[reducible]
 def LoadMemoryTimelineConstructionEvidence
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -2525,6 +2531,82 @@ theorem loadMemoryTimelineEvidence_of_constructionEvidence
     ⟨ZiskFv.ZiskCircuit.MemTimeline.memoryTimelineEvidence_of_load_structural_promises
       facts promises priorRows laterRows h_traceSplit h_alignment⟩
 
+/-- **Memory-only trace-coherence residual** for one load read entry (the #76
+    Fold-B reduction of `LoadMemoryTimelineConstructionEvidence`).
+
+    Where `LoadMemoryTimelineConstructionEvidence` pins the load Sail `state` to a
+    closed-form whole-`SailState` replay of the prefix
+    (`MemoryPrefixStateAlignment`, i.e. `state = stateAfterMemoryBusRows …`,
+    freezing regs / PC / cycleCount / tags / sailOutput), this residual asks only
+    for the **memory map** to chain through the prefix: an opaque cursor-indexed
+    state assignment `stateAt` whose empty-prefix value is the segment initial
+    state, that places the load at `stateAt priorRows`, and that satisfies the
+    `RowTraceCoherence` chain (per-row `.mem` agreement; regs / PC free).
+
+    The byte-local agreement the load consumer actually needs is then *derived*
+    via the store-driven Fold-B (`stateBytesAtPrefix_of_rowTraceCoherence`); see
+    `loadMemoryTimelineEvidence_of_coherenceEvidence`. This is strictly weaker
+    than the whole-state identity — the non-degeneracy witness
+    `ZiskFv.ZiskCircuit.MemTimeline.Spike.witness_nondegenerate` exhibits a model
+    whose load state's regs **and** cycleCount differ from the initial state. -/
+@[reducible]
+def LoadMemoryTimelineCoherenceEvidence
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+  ∃ (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (_facts : ZiskFv.AirsClean.Mem.GeneratedMemReplayFacts initialState rows)
+    (stateAt : List (Interaction.MemoryBusEntry FGL) →
+      ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL)),
+      rows = priorRows ++ entry :: laterRows
+        ∧ stateAt [] = initialState
+        ∧ stateAt priorRows = state
+        ∧ ZiskFv.ZiskCircuit.MemTimeline.Spike.RowTraceCoherence stateAt [] priorRows
+
+/-- The memory-only trace-coherence residual produces the legacy timeline
+    evidence needed by existing load equivalence cores — the byte-local
+    `stateBytesAtPrefix` field is *derived* via the store-driven Fold-B
+    (`stateBytesAtPrefix_of_rowTraceCoherence`), not read off a whole-state
+    identity. -/
+theorem loadMemoryTimelineEvidence_of_coherenceEvidence
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {mstatus : RegisterType Register.mstatus}
+    {pmaRegion : PMA_Region}
+    {misa : RegisterType Register.misa}
+    {mseccfg : RegisterType Register.mseccfg}
+    {opcode_assumptions : Prop}
+    {pure_nextPC : BitVec 64}
+    {exec_row : List (Interaction.ExecutionBusEntry FGL)}
+    {e0 e1 e2 : Interaction.MemoryBusEntry FGL}
+    (promises :
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises state mstatus pmaRegion
+        misa mseccfg opcode_assumptions pure_nextPC exec_row e0 e1 e2)
+    (h_coherence : LoadMemoryTimelineCoherenceEvidence state e1) :
+    Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state e1) := by
+  obtain ⟨initialState, rows, facts, stateAt, priorRows, laterRows,
+    h_traceSplit, h_seed, h_loadState, h_coherence⟩ := h_coherence
+  refine ⟨{
+    acceptedReplay :=
+      ZiskFv.ZiskCircuit.MemTimeline.acceptedMemoryReplayEvidenceOfGeneratedReplayFacts
+        facts
+    priorRows := priorRows
+    laterRows := laterRows
+    traceSplit := by
+      simpa [ZiskFv.ZiskCircuit.MemTimeline.acceptedMemoryReplayEvidenceOfGeneratedReplayFacts]
+        using h_traceSplit
+    selectedRead :=
+      ZiskFv.ZiskCircuit.MemTimeline.selectedRead_of_load_structural_promises promises
+    stateBytesAtPrefix := ?_ }⟩
+  -- Derive the byte-local agreement from the Fold-B at the load state
+  -- `stateAt priorRows = state`, using the seed and the trace-coherence chain.
+  have h_bytes :=
+    ZiskFv.ZiskCircuit.MemTimeline.Spike.stateBytesAtPrefix_of_rowTraceCoherence
+      (entry := e1) facts stateAt priorRows h_seed h_coherence
+  rw [h_loadState] at h_bytes
+  simpa [ZiskFv.ZiskCircuit.MemTimeline.acceptedMemoryReplayEvidenceOfGeneratedReplayFacts]
+    using h_bytes
+
 /-- Single global construction boundary for memory-timeline evidence. Load arms
     require construction data for `state` and `bus.e1`; non-load arms impose no
     obligation. -/
@@ -2535,19 +2617,19 @@ def OpEnvelope.memoryTimelineConstructionEvidence
     {r_main : ℕ} :
     OpEnvelope state m r_main → Prop
   | .ld _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lbu _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lhu _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lwu _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | _ => True
 
 /-- The construction boundary is the only public residual; this adapter is
@@ -2563,43 +2645,43 @@ theorem OpEnvelope.memoryTimelineEvidence_of_constructionEvidence
   | ld ld_input regs mem bus pins promises r_mem h_mainEval h_providerEval
       h_msg h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
       h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lbu lbu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lhu lhu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lwu lwu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lb_via_static_match lb_input regs mem v r_binary offset env h_static h_match
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lh_via_static_match lh_input regs mem v r_binary offset env h_static h_match
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lw_via_static_match lw_input regs mem v r_binary offset env h_static h_match
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | _ => trivial
 

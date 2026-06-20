@@ -40,7 +40,7 @@ Lean axiom ledger:
 | Class                         | Declarations | In global closure | Removability                                                                                             |
 | ---                           | ---:         | ---:              | ---                                                                                                      |
 | Aeneas row-lowering condition | 0            | 0                 | Discharge `env.aeneasBridgeTrust` by importing generated Aeneas Lean into main Lake.                      |
-| Sail memory timeline          | 0            | 0                 | Discharge `env.memoryTimelineEvidence` by proving whole-execution memory replay/timeline induction.       |
+| Sail memory timeline          | 0            | 0                 | Load arm reduced to the memory-only `RowTraceCoherence` trace-coherence floor (#76 Fold-B; see below). Discharge by the #100 whole-execution memory replay/timeline induction. |
 | Clean completeness            | 0            | 0                 | Retired from source trust; false/circular fields are visible non-claims.                                  |
 
 
@@ -240,6 +240,77 @@ no longer a bare global-boundary assumption. The semantic trust gate includes a
 two-address witness with an addr-sorted/time-reversed prefix (write at byte
 address 0 with later timestamp, selected read at byte address 8 with earlier
 timestamp) so the old whole-state boundary shape cannot return silently.
+
+### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
+
+The load-arm memory residual of the global theorem
+`zisk_riscv_compliant_program_bus` has been reduced from a **whole-`SailState`**
+identity to a **memory-map-only** trace-coherence floor.
+
+* **Before (retired):** `LoadMemoryTimelineConstructionEvidence` carried
+  `MemoryPrefixStateAlignment initialState state priorRows`, i.e.
+  `state = stateAfterMemoryBusRows initialState priorRows` — a closed-form
+  identity that pins **every** field of the load Sail `state` (regs,
+  choiceState, mem, tags, cycleCount, sailOutput) to a replay of the prefix.
+  This def is kept in `ZiskFv/Compliance/OpEnvelope.lean` marked **RETIRED**
+  for the audit diff only; nothing in the live closure references it.
+* **After (live):** `LoadMemoryTimelineCoherenceEvidence` carries an opaque
+  cursor-indexed state assignment `stateAt`, the segment seed
+  `stateAt [] = initialState`, the load-state pin `stateAt priorRows = state`,
+  and the chain
+  `RowTraceCoherence stateAt [] priorRows`
+  (`ZiskFv/ZiskCircuit/MemTimeline/Spike.lean`). Each `RowTraceCoherence`
+  conjunct constrains **only the `.mem` field** at one consumed prefix row:
+  the row's memory transition takes any replay map agreeing with the current
+  cursor's Sail memory to one agreeing with the next cursor's Sail memory
+  (stores via `writeMemoryOfEntry`; reads / inactive / non-memory rows leave
+  it unchanged). `regs` / PC / `cycleCount` / `tags` / `sailOutput` are
+  **free**.
+
+**Trust class.** `RowTraceCoherence` is the *trace-coherence* premise — at each
+consumed prefix row the Sail state at the next execution cursor is the memory
+transition of the Sail state at the current cursor. `ProgramBinding.stateAt`
+carries no field for it, so it stands as **external trust, the same class as
+channel-balance**: a per-step chaining fact about the execution timeline that
+the row-local equivalence layer does not establish. It is dischargeable in
+principle by the #100 whole-trace / execution-bus induction (which proves the
+Sail successor relation across the trace). It is **not** an axiom — it is a
+named binder carried on the load `OpEnvelope` residual and the load
+`RowData_<op>` of the strong export; the global theorem's closure contains **no
+new `ZiskFv.*` axiom** (kernel axioms only).
+
+**What is DERIVED, not assumed.** The byte-local agreement the load consumer
+actually needs — `stateBytesAtPrefix` of `MemoryTimelineEvidence`, i.e.
+`ReplayMemoryAgreementOnBytes state (replayMemoryAfterBusRows … priorRows)
+entry.ptr.toNat` — is **folded out** of the per-store steps via the store-driven
+Fold-B (`replayAgreement_of_rowTraceCoherence` →
+`stateBytesAtPrefix_of_rowTraceCoherence`), combined with the circuit-side
+`prefixReadSound` (`memoryTraceAgreement_of_rowTraceCoherence`). The replay
+engine only *transports* the seed agreement through the memory transitions; it
+never manufactures agreement. See `loadMemoryTimelineEvidence_of_coherenceEvidence`
+in `OpEnvelope.lean` for the live discharge bridge from the coherence residual
+to the legacy `MemoryTimelineEvidence` API.
+
+**Strict shrink (non-degeneracy proof).** The reduction is real, not a rename:
+`RowTraceCoherence` never constrains `regs` / `cycleCount` / `choiceState` /
+`sailOutput`, so it admits load states the old whole-state identity forbids.
+`ZiskFv.ZiskCircuit.MemTimeline.Spike.witness_nondegenerate` exhibits a
+store-then-read model whose load state's `regs` **and** `cycleCount` differ from
+the initial state's, with the full selected-load `MemoryTraceAgreement` still
+derived end-to-end (`witness_memoryTraceAgreement`) — impossible under the
+frozen `MemoryPrefixStateAlignment` route. Both witnesses depend on kernel
+axioms only.
+
+**Scope note (stores).** The sub-doubleword store RMW byte residuals
+(`h_m1..h_m7` of `RowData_sb/sh/sw`) are byte-local facts of the *same* class
+and reduce by the *same* `memoryTraceAgreement_of_rowTraceCoherence` +
+`byte_facts_of_event_agreement` machinery, but they are positional fields of the
+`OpEnvelope.sb/sh/sw` **constructors** (not a keyed `@[reducible] def` consumed
+only inside dispatchers, as the load residual is). Reducing them requires an
+`OpEnvelope` inductive refactor of the store arms and re-derivation inside the
+store cores, which touches the caller-burden / hypothesis-count baselines for
+the store opcodes. They are therefore **deferred** to a follow-up; only the load
+residual is reduced here.
 
 ## Platform Profile
 

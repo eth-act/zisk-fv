@@ -195,7 +195,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
         lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -216,7 +216,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
         lhu_input.imm, regidx.Regidx lhu_input.r1, regidx.Regidx lhu_input.rd, true, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -237,7 +237,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -637,7 +637,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -655,7 +655,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         lhu_input.imm, regidx.Regidx lhu_input.r1, regidx.Regidx lhu_input.rd, true, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -673,7 +673,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence

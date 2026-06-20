@@ -42,6 +42,12 @@ ee4f29ff DIV/REM canonical · 9f4bae1d DIVW/REMW canonical (all 63 canonical non
 === Deferred (non-blocking, orthogonal) ===
 - div-by-zero/overflow discharge (#114 cat A): extract arith.pil:64-95 → drop h_op2_ne/h_no_overflow.
 - na=MSB discharge (#114 cat D): compose ArithRangeTable → drop the sign-range residual.
-- (d) memory reduction: STASHED (Fold-B reduces loads' h_memory_timeline → RowTraceCoherence but
-  reverts loads to direct-lift; needs old-theorem memoryTimelineConstructionEvidence change).
+- (d) memory reduction: DONE (loads). Fold-B (Spike.lean ported) reduces the 7 loads'
+  h_memory_timeline from whole-SailState MemoryPrefixStateAlignment → memory-only
+  LoadMemoryTimelineCoherenceEvidence (RowTraceCoherence + seed + load-state pin) in the LIVE
+  old theorem; byte-local agreement DERIVED via stateBytesAtPrefix_of_rowTraceCoherence. All 63
+  build, 0 new ZiskFv.* axioms, gate V1 18/18 + V2 12/12, LD non-vacuity instantiation rebuilt to
+  coherence shape. Strict shrink proven by Spike.witness_nondegenerate (regs+cycleCount differ).
+  Stores DEFERRED: h_m1..h_m7 are positional OpEnvelope.sb/sh/sw constructor fields (not a keyed
+  reducible def) → reducing needs an OpEnvelope inductive refactor of the store arms. NOT committed.
 - aeneas (#111): held.

@@ -55,7 +55,7 @@ theorem zisk_riscv_compliant_program_bus_ldsd
       h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
     simp only [OpEnvelope.exec_eq_ldsd]
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence

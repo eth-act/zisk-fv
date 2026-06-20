@@ -440,7 +440,12 @@ private def ldReplayFacts :
 
 private theorem ldMemoryConstruction :
     ldEnv.memoryTimelineConstructionEvidence := by
-  exact ⟨ldState, [ldMemRead], ldReplayFacts, [], [], rfl, rfl⟩
+  -- #76 Fold-B: the load residual is now the memory-only `RowTraceCoherence`
+  -- form.  With `priorRows = []` the coherence chain is `True`, the seed and
+  -- the load-state pin are both `rfl`, and the constant assignment
+  -- `fun _ => ldState` witnesses the opaque cursor-indexed state.
+  exact ⟨ldState, [ldMemRead], ldReplayFacts, fun _ => ldState, [], [],
+    rfl, rfl, rfl, trivial⟩
 
 private theorem ldNoKnownDefect :
     ZiskFv.Compliance.Defects.NoKnownDefect ldEnv := by
