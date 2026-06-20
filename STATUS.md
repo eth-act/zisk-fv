@@ -2,7 +2,38 @@ Stream: P4 OpEnvelope constructions → P5 trace-level export (#61). Worktree p4
 branch p4-loads-stores (stacked on PR #110). build/ symlinked, submodule populated.
 Metaplan: docs/ai/plan/PLAN_ENDGAME.md (the home-stretch checklist). Gate V1 18/18 + V2 12/12.
 
-=== SIGNED-M RETIREMENT FEASIBILITY PROBE: MUL — GO (uncommitted, this run) ===
+=== SIGNED-MULTIPLY FAMILY ON OpEnvelope ROUTE (this run, uncommitted) ===
+PART 1 (MUL trace-arm) — GO, LANDED: 56 → 57/63. Added to TraceLevelExport.lean:
+`RowData_mul` (carries the `OpEnvelope.mul` ingredients as honest residual binders,
+FENCE-style — MUL has NO construction_mul_sound / no op-180 balance selector — plus
+the honest `¬forge` shape `h_not_forge`), `mulEnvOf` (builds the specific
+OpEnvelope.mul), `mul_noKnownDefect_of_rowData` (gate-checked NON-VACUITY: discharges
+NoKnownDefect (mulEnvOf …) from h_not_forge), `stepStrong_mul` (invokes
+zisk_riscv_compliant_program_bus, projects exec_eq_remaining `.2`×11). Wired `.mul`
+into StrongRowConstructionData / StepNoKnownDefect (specific-env obligation =
+NoKnownDefect (mulEnvOf …), SATISFIABLE for honest rows, NOT selector-∀, NOT False) /
+StepComplianceStrong / dispatcher. Full lake build GREEN (8702). Gate V1 18/18 + V2
+12/12 (NO baseline refresh needed — canonical equiv surface untouched). 0 new ZiskFv.*
+axioms (stepStrong_mul closure = Sail FFI + kernel only).
+
+PART 2 (MULH/MULHSU retirement) — NO-GO. The na=MSB high-half sign-range bridge is
+GENUINELY INTRACTABLE in the current FV model. EXACT GAP: the high-64 signed product
+needs `na = MSB(op1)`, `nb = MSB(op2)` (the sign witness must equal the operand sign).
+The extracted `Valid_ArithMul` constraints only pin `na,nb ∈ {0,1}` + `np = na XOR nb`
++ the carry chain over the chunks (tied to op.toNat UNSIGNED bits via h_rs1_value).
+The na=MSB linkage lives in ZisK's range_ab/range_cd magnitude lookups, which
+`Airs/Arith/Mul.lean:47-51` documents as STRUCTURAL-ONLY (not value-pinning) in the
+extraction. So a malicious na=nb=np=0 on negative operands PASSES ¬forge yet yields
+the wrong UNSIGNED high product → honest high half NOT derivable. The math bridge
+exists (`SignedNoWrap.signed_mul_int_quadrant_identity`,
+`SailStateBridge.signed_packed_toInt_eq_of_read_xreg`) but ALL take `na = MSB`
+(h_sign_eq_msb) as a HYPOTHESIS. Closing it needs either a new range-lookup trust
+axiom (FORBIDDEN by guardrails) or a new OpEnvelope.mulh binder (FORBIDDEN: undischarged
+promise = laundering; also "do not redefine OpEnvelope arms"). MULH/MULHSU stay
+opcode-wide True / False.elim — UNCHANGED. (Same root cause as the extraction-fidelity
+scope note: range/table AIRs not value-pin-modeled.)
+
+=== SIGNED-M RETIREMENT FEASIBILITY PROBE: MUL — GO (uncommitted, prior run) ===
 Narrowed `Defects.MaliciousSignedMulWitnessShape (.mul ..)` from opcode-wide `True` to the
 EXACT forge: `(na=1∧nb=0∧np=0) ∨ (na=0∧nb=1∧np=0)` (the exceptional branch of
 `mul_np_xor_or_zero_product_shape`, op 180). Canonical `equiv_MUL` + wrapper binder changed

@@ -2117,6 +2117,83 @@ structure RowData_mulw
             + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_1 0).val * 65536 : ℤ)
           - ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).nb 0).val * (2:ℤ)^32
 
+/-- Irreducible per-row residuals for the `mul` archetype — the signed low-half
+    MUL (op `180`).
+
+    Unlike `mulw`/`mulhu`, signed `MUL` has NO `construction_mul_sound` and NO
+    op-180 ArithMul balance selector (it was one of the seven signed-M ops with
+    no sound construction).  It is therefore routed on the OpEnvelope route in the
+    FENCE style: the `OpEnvelope.mul` ingredients (the `Valid_ArithMul` provider
+    view `v` at row `r_a`, the primary op-bus match, the `RTypePromises`, the Arith
+    rd-write memory witness, the byte bounds, the row-constraint set, and the three
+    ArithMul lookup-witness structures plus the operand byte-pack equations) are
+    carried as honest residual binders — exactly the facts a real honest MUL trace
+    row supplies.  One extra ingredient, mirroring `RowData_fence`'s honest-shape
+    facts: `h_not_forge`, the honest product-sign shape (`np = na XOR nb`, i.e. NOT
+    one of the two exceptional `(na,nb,np)` shapes the shared ArithTable admits for
+    op 180).  This makes the threaded `StepNoKnownDefect` obligation — the GENUINE
+    `NoKnownDefect (mulEnvOf …)` of the SPECIFIC env this row constructs —
+    SATISFIABLE (see `stepStrong_mul`): for an honest MUL row `¬ forge` holds and
+    so `NoKnownDefect` is TRUE.  This is NOT the (false) selector-∀ shape and NOT a
+    contradictory `False`-binder.  Non-vacuous: a real trace with an honest signed
+    MUL row supplies all binders. -/
+structure RowData_mul
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  mul_input : PureSpec.MulInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  srs1 : Signedness
+  srs2 : Signedness
+  bus : ZiskFv.Compliance.BusRows
+  v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL
+  r_a : ℕ
+  -- Decode pins (the two facts the FENCE-style `aeneasBridgeTrust` consumes), plus
+  -- the four Main-row mode pins the ArithMul `aeneasBridgeTrust` reads.
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+  -- `OpEnvelope.mul` ingredients, carried as honest residual binders.
+  h_match_primary :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program binding.mainTable) i.val)
+      (ZiskFv.Airs.ArithMul.opBus_row_Arith v r_a)
+  promises : ZiskFv.EquivCore.Promises.RTypePromises
+      (binding.stateAt i) mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
+      (PureSpec.execute_MULH_mul_pure mul_input).nextPC
+      r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
+  arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
+      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+  bounds : ZiskFv.Compliance.ByteBounds bus.e2
+  h_row_constraints :
+    ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+  arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a
+  arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a
+  arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a
+  h_rs1_value : mul_input.r1_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+        (v.a_2 r_a).val (v.a_3 r_a).val
+  h_rs2_value : mul_input.r2_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+        (v.b_2 r_a).val (v.b_3 r_a).val
+  -- Honest product-sign shape: NOT the exceptional forge the ArithTable admits
+  -- for op 180.  Makes the threaded `NoKnownDefect` obligation SATISFIABLE.
+  h_not_forge :
+    ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+      ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
+
 /-- Irreducible per-row residuals for the `mulhu` archetype — the binders of
     `construction_mulhu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_mulhu
@@ -3453,6 +3530,46 @@ noncomputable def fenceEnvOf
       e0_mult := d.h_e0_mult
       e1_mult := d.h_e1_mult
       nextPC_matches := d.h_nextPC_matches }
+
+/-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Both the
+    `StepNoKnownDefect` mul obligation AND `stepStrong_mul` reference THIS env, so
+    the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
+    exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
+    `fenceEnvOf`: a specific-env obligation, SATISFIABLE for an honest row.) -/
+noncomputable def mulEnvOf
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mul trace binding i) :
+    OpEnvelope (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+  OpEnvelope.mul d.mul_input d.r1 d.r2 d.rd d.srs1 d.srs2 d.bus d.v d.r_a
+    ⟨d.h_main_active, d.h_main_op⟩
+    d.h_match_primary d.promises d.arith_mem d.bounds d.h_row_constraints
+    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges d.h_rs1_value d.h_rs2_value
+
+/-- **Satisfiability / non-vacuity witness for the threaded MUL obligation.**
+
+    The `StepNoKnownDefect (.mul d)` obligation — `Defects.NoKnownDefect (mulEnvOf
+    …)` — is DISCHARGED from `RowData_mul.h_not_forge` (the honest product-sign
+    shape).  Concretely: for the `.mul` env, the arith-div defect predicate is
+    `False` and the FENCE defect predicate's negation is `True`, while the
+    arith-mul defect predicate is exactly the two exceptional product-sign shapes
+    that `h_not_forge` rules out.  Hence the threaded obligation is SATISFIABLE for
+    every honest MUL row, so the `.mul` arm of `zisk_compliant_of_accepted_trace_strong`
+    is NON-VACUOUS (it is not discharged by a contradictory binder).  This lemma is
+    the Lean-checked anti-vacuity guard for the strong-export MUL arm. -/
+theorem mul_noKnownDefect_of_rowData
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mul trace binding i) :
+    Defects.NoKnownDefect (mulEnvOf trace binding i d) := by
+  intro id
+  cases id with
+  | arithMulSignedWitnessSoundness =>
+      simpa [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, mulEnvOf]
+        using d.h_not_forge
+  | arithDivDynamicWitnessSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulEnvOf]
+  | fenceIncomplete =>
+      simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulEnvOf]
 
 /-- Per-row construction data: one arm per sound construction archetype (55).
     Each arm carries a single `RowData_<op>` payload (its irreducible residuals).
@@ -9948,6 +10065,48 @@ theorem stepStrong_remuw
     h_known_arm env trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
+/-- Strengthened `mul` step (channel-balance form), via the OpEnvelope route.
+
+    MUL is the signed low-half multiply (op `180`), a former defect-gated op now
+    landed on the OpEnvelope route.  CONSTRUCT `OpEnvelope.mul` (= the shared
+    `mulEnvOf`) from the trace's `RowData_mul` and invoke
+    `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_remaining` conjunct.
+    `aeneasBridgeTrust` is the 7-tuple of Main decode pins; the memory-timeline
+    obligation is trivial (the rd-write is the unified-memory rd lane already
+    witnessed by `arith_mem`).
+
+    The `NoKnownDefect` obligation is supplied DIRECTLY by the caller as
+    `h_known : Defects.NoKnownDefect (mulEnvOf …)` (= `StepNoKnownDefect`'s mul
+    arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
+    global theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
+    SATISFIABLE: for an honest MUL row (`RowData_mul.h_not_forge`, i.e.
+    `np = na XOR nb`) the row is outside the forge shape, so `NoKnownDefect` is TRUE
+    and the caller proves it.  Non-vacuous: the narrowed MUL exclusion is exactly
+    the two exceptional product-sign shapes the ArithTable admits for op 180, so an
+    honest signed MUL row supplies all binders. -/
+theorem stepStrong_mul
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mul trace binding i)
+    (h_known : Defects.NoKnownDefect (mulEnvOf trace binding i d)) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (d.r2, d.r1, d.rd,
+           { result_part := VectorHalf.Low
+             signed_rs1 := d.srs1
+             signed_rs2 := d.srs2 }))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let env : OpEnvelope state m i.val := mulEnvOf trace binding i d
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
 /-- Strengthened `fence` step (channel-balance form), via the OpEnvelope route.
 
     FENCE is the FENCE-decode-gap opcode.  CONSTRUCT `OpEnvelope.fence` (= the
@@ -10016,6 +10175,7 @@ inductive StrongRowConstructionData
   | slliw (d : RowData_slliw trace binding i) : StrongRowConstructionData trace binding i
   | srliw (d : RowData_srliw trace binding i) : StrongRowConstructionData trace binding i
   | sraiw (d : RowData_sraiw trace binding i) : StrongRowConstructionData trace binding i
+  | mul (d : RowData_mul trace binding i) : StrongRowConstructionData trace binding i
   | mulw (d : RowData_mulw trace binding i) : StrongRowConstructionData trace binding i
   | mulhu (d : RowData_mulhu trace binding i) : StrongRowConstructionData trace binding i
   | divu (d : RowData_divu trace binding i) : StrongRowConstructionData trace binding i
@@ -10204,6 +10364,7 @@ def StepNoKnownDefect
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
       (r := i.val) (fun env => match env with | .bgeu .. => True | _ => False)
+  | .mul d => Defects.NoKnownDefect (mulEnvOf trace binding i d)
   | .mulw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
@@ -10516,6 +10677,18 @@ def StepComplianceStrong
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
             (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+  | .mul d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (d.r2, d.r1, d.rd,
+           { result_part := VectorHalf.Low
+             signed_rs1 := d.srs1
+             signed_rs2 := d.srs2 }))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
   | .mulw d =>
       (do
       Sail.writeReg Register.nextPC
@@ -10745,6 +10918,7 @@ theorem stepComplianceStrong_of_rowData
   | slliw d => exact stepStrong_slliw trace binding i d h_known
   | srliw d => exact stepStrong_srliw trace binding i d h_known
   | sraiw d => exact stepStrong_sraiw trace binding i d h_known
+  | mul d => exact stepStrong_mul trace binding i d h_known
   | mulw d => exact stepStrong_mulw trace binding i d h_known
   | mulhu d => exact stepStrong_mulhu trace binding i d h_known
   | divu d => exact stepStrong_divu trace binding i d h_known
