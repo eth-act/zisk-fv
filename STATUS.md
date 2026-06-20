@@ -2,102 +2,46 @@ Stream: Uniform-63 OpEnvelope-route export (#61 endgame). Worktree p4-mext,
 branch p4-loads-stores (PR #112, stacked on PR #110). Metaplan: docs/ai/plan/PLAN_ENDGAME.md.
 Gate V1 18/18 + V2 12/12 throughout. 0 new ZiskFv.* axioms.
 
-=== RESULT: 57/63 on the OpEnvelope-route — the honest proof-layer cap (head 03fb00ea) ===
-zisk_compliant_of_accepted_trace_strong: for 57 opcodes, construct OpEnvelope.<op> from the
-trace + invoke zisk_riscv_compliant_program_bus + thread h_known_bugs. NO OpEnvelope input
-(takes rowData). Non-vacuous, NO main-theorem refactor (canonical/OpEnvelope/old-theorem intact).
-Built from the trace via mainConstVar/memConstVar (eval-provenance) + the trace-Environment
-lookup-witness pattern. 57 = 49 non-defect (ALU/shifts/W-ALU/W-shifts/branches/JAL-JALR/LUI/AUIPC/
-unsigned-M/stores/loads) + FENCE + MUL.
+=== DONE: 63/63 on the OpEnvelope-route ===
+zisk_compliant_of_accepted_trace_strong: for ALL 63 RV64IM opcodes, construct OpEnvelope.<op>
+from the trace + invoke zisk_riscv_compliant_program_bus + thread h_known_bugs. NO OpEnvelope
+input (takes rowData), NO direct-lift. Non-vacuous (63 stepStrong arms, no False.elim, execRow real
+∀-binder). NO main-theorem refactor (canonical/OpEnvelope/old-theorem intact — every arm built from
+the trace via mainConstVar/memConstVar + trace-Environment lookup-witness pattern). All 63 canonical
+equiv_<OP> are non-vacuous (all 7 signed-M retired this session).
 
-Commits (10, on top of e3a71967): ba8b61d1 thread h_known_bugs · debd3bd7 (a) M-ext de-vacuity
-(tight <131072→faithful <983041; SOUNDNESS FIX) · 141b44fe branches+JALR · 7cf4c280 6 M-ext ·
-55cbc02e LUI/AUIPC/JAL · 009123ee W-shifts+stores · e8264ff3 7 loads · 8b763d61 FENCE ·
-8b541c46 (iii) MUL defect retired opcode-wide→exact forge (SOUNDNESS FIX) · 03fb00ea MUL trace-arm.
+h_known_bugs carries ONLY the exact witness-conditional defects (NOT opcode-wide):
+- MUL/MULH/MULHSU: the np-forge shape (np=0 ∧ na⊕nb=1) — the genuine malicious forge.
+- DIV/REM/DIVW/REMW: the |r|=|d| LT_ABS_NP false-positive shape (codygunton/zisk#5) — malicious-only
+  (honest division always has |r|<|d|).
+Honest inputs are NEVER excluded; honest_<op>_witness_not_forge witnesses confirm satisfiability.
 
-=== 6 signed-M genuinely blocked (NOT proof laziness — documented boundaries) ===
-- MULH/MULHSU (2): EXTRACTION-FIDELITY gap. The REAL circuit IS sound — it pins na=MSB
-  (arith.pil:286/289/303 indexed range lookup POS/NEG on a[3]); honest na: arith_operation.rs:487.
-  But the FV model collapses the indexed lookup to FULL rangeTable16 (<2^16) and doesn't compose
-  ArithRangeTable into balance, so na=MSB is unprovable in-model. Corrects defects.md's "genuinely
-  unsound" framing — it's an extraction-scope gap, not unsoundness. Unblock = deep extraction work.
-- DIV/DIVW/REM/REMW (4): GENUINE circuit bug LT_ABS_NP |a|=|b| (codygunton/zisk#5). Compliance is
-  FALSE for |a|=|b|, not just unproven. Needs upstream circuit fix. (Witness-conditional retirement
-  excluding |a|=|b| would also need the signed-range extraction, same scope as MULH/MULHSU.)
-Literal "all 63 for all inputs" is impossible (the DIV/REM bug). Ceiling = all-63-ARMS with
-witness-conditional defects, gated on the extraction-fidelity work + the upstream fix.
+Documented residuals (all honest, named, dischargeable):
+- na=MSB sign-range residual (MULH/MULHSU/DIV/REM/DIVW/REMW): the real circuit enforces it
+  (arith.pil:286/289/303 indexed range lookup); FV model collapsed to FULL. Dischargeable by
+  composing ArithRangeTable (issue #114 category D).
+- h_op2_ne (div-by-zero) + h_no_overflow (INT_MIN/-1) on DIV/REM/DIVW/REMW: circuit computes these
+  CORRECTLY (investigation a50efb5f, all 15 cases match Sail); dischargeable in-model by extracting
+  arith.pil:54,64-95 (issue #114 category A — the Main/Arith --only curation omits them).
+- aeneasBridgeTrust decode residuals (#111): held, carried in rowData.
 
-=== Deferred ===
-- (d) memory reduction: STASHED (git stash). Fold-B port reduced loads' h_memory_timeline →
-  RowTraceCoherence but reverted loads to direct-lift (old theorem wants whole-state evidence).
-  Proper (d) needs the old-theorem memoryTimelineConstructionEvidence change (soundness-sensitive).
-- aeneas (h_aeneas, #111): on hold — decode residuals carried in rowData.
+=== Two real ZisK findings surfaced by this goal ===
+- eth-act/zisk-fv#114: Main/Arith extracted with hand-curated --only subsets → silently omit F-clean
+  circuit constraints (e.g. div-by-zero/overflow). Asks: audit all AIRs + completeness gate.
+- codygunton/zisk#7: DIVW INT_MIN/-1 overflow — emulator op_div_w returns 0x0000_0000_8000_0000
+  (zero-ext) vs Arith SM's correct sext 0xFFFF_FFFF_8000_0000 → completeness bug (program unprovable),
+  NOT soundness. Masked by ZisK's own unit test. Second FV-found bug after #5.
 
-NEXT (user's call): land 57/63 (recommended — the soundly-verifiable frontier); or pursue the deep
-extraction-fidelity (MULH/MULHSU) / old-theorem memory change (d). DIV/REM = upstream fix.
+=== Commits (on top of e3a71967) ===
+ba8b61d1 thread h_known_bugs · debd3bd7 (a) M-ext de-vacuity · 141b44fe branches+JALR ·
+7cf4c280 6 M-ext · 55cbc02e LUI/AUIPC/JAL · 009123ee W-shifts+stores · e8264ff3 7 loads ·
+8b763d61 FENCE · 8b541c46 MUL defect-retire · 03fb00ea MUL trace-arm · b90b3bb0 MULH/MULHSU ·
+ee4f29ff DIV/REM canonical · 9f4bae1d DIVW/REMW canonical (all 63 canonical non-vacuous) ·
+<this> DIV/REM/DIVW/REMW trace-arms → 63/63 arms.
 
-=== RESULT (uncommitted): DIVW/REMW retired 61→63/63 (vacuous -> REAL, non-vacuous) ===
-DONE: equiv_DIVW/equiv_REMW now REAL (no False.elim). Built the missing mid-level W infra:
-div_w_chain_witnesses (Bridge/Arith, m32=1 signed-W carry chain) + h_rd_val_mdrs_{divw,remw}_chunked
-(MulDivRemSigned, composing chain-W -> abs_euclidean_..._div_rem_w -> signed_t{div,mod}_unique ->
-fgl_{div,rem}_w_signed_to_bv64 -> w_sext_close_{pos,neg}_sig). Defect ArithDivDynamicWitnessShape
-.divw/.remw narrowed True -> EXACT |r32|=|op2_32| ((signedRemainderIntW v r_a).natAbs =
-(extractLsb op2 31 0).toInt.natAbs). Strict |r32|<|op2_32| DERIVED at canonical from WEAK h_r_le +
-narrowed-defect via lt_of_le_of_ne (load-bearing). Anti-vacuity: honest_{divw,remw}_witness_not_forge
-(7/2 32-bit rem 1, |1|≠|2|). Full lake build green (8710); gate V1 18/18 + V2 12/12 (baselines refreshed:
-hypothesis-count DIVW/REMW 26->41 12->22, caller-burden canonical+wrapper; axiom-deps diff EMPTY =
-0 new ZiskFv.* axioms; per the sanctioned DIV/REM structural-unpacking exception). Ledger updated
-(defects.md + trusted-base.md). NOT committed. TODO if continuing: trace-level export arms for DIVW/REMW
-(additive coverage, not gate-blocking); div-by-zero/overflow discharge (separate, needs sign-off).
-
-=== PRIOR ACTIVE: DIVW/REMW retirement (mirror DIV/REM); building missing mid-level W infra ===
-Plan: (1) div_w_chain_witnesses in Bridge/Arith (signed-W, mirrors mul_w_chain_witnesses + div_w_packed_of_chunks_int);
-(2) h_rd_val_mdrs_{divw,remw}_chunked in MulDivRemSigned (compose chain-W -> abs-euclid-W ->
-fgl_{div,rem}_w_signed_to_bv64 -> sext byte closers); (3) EquivCore.Divw/Remw real (drop False.elim, add
-h_r_abs/h_r_sign W binders); (4) Defects .divw/.remw True -> exact |r32|=|op2_32| via signedRemainderIntW +
-honest_{divw,remw}_witness_not_forge; (5) OpEnvelope .divw/.remw add h_r_le/h_r_sign W; wrappers; canonical
-(derive strict from weak + ¬forge); (6) Dispatch/Remaining + AeneasBridgeTrust *OfExtractedShape; (7) baselines+build+gate.
-
-=== RESULT: DIV/REM retired 59→61/63; DIVW/REMW WALL on missing W discharge infra ===
-DONE (uncommitted): canonical equiv_DIV/equiv_REM now REAL (no False.elim), non-vacuous.
-Defect ArithDivDynamicWitnessShape .div/.rem narrowed True→exact |r|=|d| forge
-((signedRemainderInt v r_a).natAbs = op2.toInt.natAbs). Strict |r|<|d| DERIVED at canonical
-layer from WEAK residual h_r_le + narrowed-defect via lt_of_le_of_ne (load-bearing).
-Anti-vacuity: honest_{div,rem}_witness_not_forge. Full lake build green; gate V1 18/18 + V2 12/12
-(baselines refreshed: hypothesis-count, caller-burden canonical+wrapper; axiom-deps diff EMPTY =
-0 new ZiskFv.* axioms). DIVW/REMW kept opcode-wide gated (.divw/.remw => True) — they need
-div_w_chain_witnesses + h_rd_val_mdrs_{divw,remw}_chunked + real EquivCore (currently False.elim);
-low-level W bridges exist, mid-level glue does not. Ledger updated (defects.md + trusted-base.md).
-TODO if continuing: trace-level export arms for signed DIV/REM (additive coverage, not gate-blocking).
-
-=== PRIOR ACTIVE: DIV/DIVW/REM/REMW retirement (signed remainder-bound residual route) ===
-Findings: EquivCore.Div/Rem are REAL & complete (via h_rd_val_mdrs_{div,rem}_chunked); only
-wrapper+canonical are False.elim. EquivCore.Divw/Remw are False.elim AND lack
-h_rd_val_mdrs_{divw,remw}_chunked (deeper). Wall: no arith_div_remainder_bound_signed lemma —
-the LT_ABS_NP byte chain proves only WEAK |r|≤|d|; the false positive is exactly at |r|=|d|.
-Design (sound, non-laundering): (1) narrow ArithDivDynamicWitnessShape to EXACT |r|=|d| forge;
-(2) carry the WEAK bound |r|≤|d| as a caller residual binder (extraction-fidelity, like MULH na=MSB)
-PLUS sign-range operand bridges + h_r_sign + h_nr_pin; (3) DERIVE strict h_r_abs = |r|<|d| from
-weak + ¬(|r|=|d|) via Nat.lt_of_le_of_ne — making the defect narrowing LOAD-BEARING; (4) call the
-ready EquivCore.{Div,Rem}.equiv_{DIV,REM}. W-mode needs EquivCore + W discharge lemmas (deep;
-land non-W first, report W gap if it walls).
-
-=== PRIOR: MULH/MULHSU retirement 57→59 (sign-range residual route) ===
-Plan: narrow Defects MaliciousSignedMulWitnessShape .mulh/.mulhsu True→exact forge; add sign-range
-residual binders (na=MSB op1, nb=MSB op2) to canonical equiv_MULH/MULHSU + wrappers; build real
-high-half signed proof via fgl_mul_signed_to_bv64_hi + mul_signed_chain_witnesses +
-signed_packed_toInt_eq_of_read_xreg; extend OpEnvelope .mulh/.mulhsu + dispatch; add trace-arms
-(mulhEnvOf/mulhsuEnvOf/RowData_*/stepStrong_*) to strong theorem; document sign-range residual in
-trust ledger (arith.pil:286/289/303); refresh caller-burden + hypothesis-count + axiom-deps baselines
-(GROW, justified+surfaced). 0 new ZiskFv.* axioms (na=MSB is a binder, not an axiom).
-Phases: 1 core rd-value lemma · 2 EquivCore · 3 wrappers · 4 canonical equivs · 5 defects+nonvac
-· 6 OpEnvelope+dispatch+trace-arms · 7 ledger+baselines+full build+gate.
-
-=== DONE (uncommitted): MULH/MULHSU retired 57→59/63 ===
-Full lake build green. Gate V1 18/18 + V2 12/12 pass (baselines refreshed: hypothesis-count,
-caller-burden canonical+wrapper; axiom-deps UNCHANGED = 0 ZiskFv.* axioms). Sign-range residual
-(na=MSB/nb=MSB) carried as h_sign_a/h_sign_b binders on equiv_MULH/MULHSU — documented in
-trust/defects.md + trust/trusted-base.md as extraction-fidelity residual (arith.pil:286/289/303).
-New: EquivCore/{MulH,MulHSU}.lean, mdrs_mulh_core_data + h_rd_val_mdrs_{mulh,mulhsu}_chunked,
-{mulh,mulhsu}_np_xor_or_zero_product_shape projections, RowData_{mulh,mulhsu}/{mulh,mulhsu}EnvOf/
-stepStrong_{mulh,mulhsu} trace-arms. Defects .mulh/.mulhsu narrowed True→exact forge. NOT committed.
+=== Deferred (non-blocking, orthogonal) ===
+- div-by-zero/overflow discharge (#114 cat A): extract arith.pil:64-95 → drop h_op2_ne/h_no_overflow.
+- na=MSB discharge (#114 cat D): compose ArithRangeTable → drop the sign-range residual.
+- (d) memory reduction: STASHED (Fold-B reduces loads' h_memory_timeline → RowTraceCoherence but
+  reverts loads to direct-lift; needs old-theorem memoryTimelineConstructionEvidence change).
+- aeneas (#111): held.

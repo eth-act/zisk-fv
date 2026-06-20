@@ -2318,6 +2318,427 @@ structure RowData_mulhsu
     = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
         (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0
 
+/-- Irreducible per-row residuals for the `div` archetype — the signed 64-bit
+    division (op `184`, primary ArithDiv lane).
+
+    DIV is the signed division opcode (a former defect-gated op now landed on the
+    OpEnvelope route in the FENCE/MUL style).  Like signed MUL it has NO sound
+    construction (the `LT_ABS_NP` byte chain is a genuine circuit bug at `|r|=|op2|`,
+    codygunton/zisk#5), so the `OpEnvelope.div` ingredients (the `Valid_ArithDiv`
+    provider view `v` at row `r_a`, the primary op-bus match, the `RTypePromises`,
+    the Arith rd-write memory witness, the byte bounds, the div-by-zero / overflow
+    pins, the row-constraint set, the three ArithDiv lookup-witness structures, the
+    sign-bit booleans, the `np`/`nr` pins, the operand packing equations, and the
+    WEAK signed remainder bound `|r| ≤ |op2|` + sign) are carried as honest residual
+    binders — exactly the facts a real honest signed DIV trace row supplies.  One
+    extra ingredient, mirroring `RowData_mul`'s honest-shape fact: `h_not_forge`,
+    the narrowed honest shape `|r| ≠ |op2|` (NOT the exact `|r| = |op2|` false
+    positive the `LT_ABS_NP` chain admits).  This makes the threaded
+    `StepNoKnownDefect` obligation — the GENUINE `NoKnownDefect (divEnvOf …)` of the
+    SPECIFIC env this row constructs — SATISFIABLE (see `stepStrong_div`): for an
+    honest signed DIV row `|r| < |op2|` strictly (e.g. `7 / 2` rem `1`, `|1| ≠ |2|`),
+    so `NoKnownDefect` is TRUE.  This is NOT the false selector-∀ and NOT a
+    contradictory `False`-binder.  Div-by-zero / overflow remain carried as residuals
+    (`h_op2_ne`/`h_no_overflow`, separate #114 work, NOT discharged here).
+    Non-vacuous: a real trace with an honest signed DIV row supplies all binders
+    (anti-vacuity witness `honest_div_witness_not_forge`). -/
+structure RowData_div
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  div_input : PureSpec.DivInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  bus : ZiskFv.Compliance.BusRows
+  v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
+  r_a : ℕ
+  -- Decode pins (the FENCE-style `aeneasBridgeTrust` 7-tuple).
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_DIV
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+  -- `OpEnvelope.div` ingredients, carried as honest residual binders.
+  pins : ZiskFv.Compliance.MainRowPins
+    (mainOfTable trace.program binding.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV
+  h_match_primary :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program binding.mainTable) i.val)
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a)
+  promises : ZiskFv.EquivCore.Promises.RTypePromises
+      (binding.stateAt i) div_input.r1_val div_input.r2_val div_input.rd div_input.PC
+      (PureSpec.execute_DIVREM_div_pure div_input).nextPC
+      r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
+  arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
+      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+  bounds : ZiskFv.Compliance.ByteBounds bus.e2
+  -- Div-by-zero / overflow residuals (separate #114 work; carried, NOT discharged).
+  h_op2_ne : div_input.r2_val.toInt ≠ 0
+  h_no_overflow :
+    ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1)
+  h_row_constraints :
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+  arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
+  arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+  arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
+  h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1
+  h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1
+  h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1
+  h_np_xor :
+    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+      = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+          - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+              * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+  h_nr_pin :
+    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+      ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_0 r_a)
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_1 r_a) * 65536
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_2 r_a) * (65536 * 65536)
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_3 r_a)
+              * (65536 * 65536 * 65536)) * 0 = 0
+        ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+        ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
+  h_rs1_value :
+    div_input.r1_val.toInt
+      = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+          - (v.np r_a).val * (2:ℤ)^64
+  h_rs2_value :
+    div_input.r2_val.toInt
+      = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+          - (v.nb r_a).val * (2:ℤ)^64
+  -- WEAK signed remainder bound `|r| ≤ |op2|` (extraction-fidelity residual;
+  -- the STRICT bound is recovered at the canonical layer from the narrowed
+  -- `h_not_forge` `|r| ≠ |op2|`).
+  h_r_le :
+    ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+        (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+      - (v.nr r_a).val * (2:ℤ)^64).natAbs ≤ div_input.r2_val.toInt.natAbs
+  h_r_sign :
+    0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+          - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt
+  -- Narrowed honest shape: NOT the `|r| = |op2|` false positive.  Makes the
+  -- threaded `NoKnownDefect` obligation SATISFIABLE for honest DIV rows.
+  h_not_forge :
+    ¬ ((ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
+        = div_input.r2_val.toInt.natAbs)
+
+/-- Irreducible per-row residuals for the `rem` archetype — the signed 64-bit
+    remainder (op `185`, secondary ArithDiv lane).  Mirror of `RowData_div` for the
+    remainder lane (`opBus_row_ArithDivSecondary`).  Carries the narrowed honest
+    shape `|r| ≠ |op2|`; the div-by-zero / overflow residuals stay carried. -/
+structure RowData_rem
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  rem_input : PureSpec.RemInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  bus : ZiskFv.Compliance.BusRows
+  v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
+  r_a : ℕ
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REM
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+  pins : ZiskFv.Compliance.MainRowPins
+    (mainOfTable trace.program binding.mainTable) i.val 1 ZiskFv.Trusted.OP_REM
+  h_match_secondary :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program binding.mainTable) i.val)
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a)
+  promises : ZiskFv.EquivCore.Promises.RTypePromises
+      (binding.stateAt i) rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
+      (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
+      r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
+  arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
+      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+  bounds : ZiskFv.Compliance.ByteBounds bus.e2
+  h_op2_ne : rem_input.r2_val.toInt ≠ 0
+  h_no_overflow :
+    ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1)
+  h_row_constraints :
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+  arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
+  arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+  arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
+  h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1
+  h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1
+  h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1
+  h_np_xor :
+    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+      = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+          - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+              * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+  h_nr_pin :
+    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+      ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_0 r_a)
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_1 r_a) * 65536
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_2 r_a) * (65536 * 65536)
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_3 r_a)
+              * (65536 * 65536 * 65536)) * 0 = 0
+        ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+        ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
+  h_rs1_value :
+    rem_input.r1_val.toInt
+      = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+          - (v.np r_a).val * (2:ℤ)^64
+  h_rs2_value :
+    rem_input.r2_val.toInt
+      = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+          - (v.nb r_a).val * (2:ℤ)^64
+  h_r_le :
+    ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+        (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+      - (v.nr r_a).val * (2:ℤ)^64).natAbs ≤ rem_input.r2_val.toInt.natAbs
+  h_r_sign :
+    0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+          - (v.nr r_a).val * (2:ℤ)^64) * rem_input.r1_val.toInt
+  h_not_forge :
+    ¬ ((ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
+        = rem_input.r2_val.toInt.natAbs)
+
+/-- Irreducible per-row residuals for the `divw` archetype — the signed 32-bit
+    division (op `188`, `m32 = 1`, primary ArithDiv lane).  W-mode analogue of
+    `RowData_div`: carries the W-mode chunk-zero pins (`h_a23`/`h_b23`/`h_d23`/
+    `h_c23`), the sign-extension choice, the W-mode packing equations, and the
+    narrowed W honest shape `|r₃₂| ≠ |op2₃₂|`. -/
+structure RowData_divw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  divw_input : PureSpec.DivwInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  bus : ZiskFv.Compliance.BusRows
+  v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
+  r_a : ℕ
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_DIV_W
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+  pins : ZiskFv.Compliance.MainRowPins
+    (mainOfTable trace.program binding.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV_W
+  h_match_primary :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program binding.mainTable) i.val)
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a)
+  promises : ZiskFv.EquivCore.Promises.RTypePromises
+      (binding.stateAt i) divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
+      (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
+      r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
+  arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
+      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+  bounds : ZiskFv.Compliance.ByteBounds bus.e2
+  h_row_constraints :
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+  arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
+  arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+  arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
+  h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1
+  h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1
+  h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1
+  h_np_xor :
+    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+      = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+          - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+              * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+  h_nr_pin :
+    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+      ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0)
+  h_m32_v : v.m32 r_a = 1
+  h_div_v : v.div r_a = 1
+  h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0
+  h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0
+  h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
+  h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0
+  h_byte_lo :
+    (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 0).val
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1).val * 256
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2).val * 65536
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3).val * 16777216
+      = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536
+  h_sext_choice :
+    (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7).val = 0)
+      ∧ (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648)
+    ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7).val = 255)
+      ∧ (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648)
+  h_rs1_value :
+    (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
+      = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
+          - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a) * (2:ℤ)^32
+  h_rs2_value :
+    (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
+      = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+          - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32
+  h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
+  h_no_overflow :
+    ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
+        ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32)
+  -- WEAK signed-W remainder bound `|r₃₂| ≤ |op2₃₂|` (extraction-fidelity residual).
+  h_r_le :
+    (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+      - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+        ≤ (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs
+  h_r_sign :
+    0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+          - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
+        * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
+  h_not_forge :
+    ¬ ((ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+        = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs)
+
+/-- Irreducible per-row residuals for the `remw` archetype — the signed 32-bit
+    remainder (op `189`, `m32 = 1`, secondary ArithDiv lane).  W-mode analogue of
+    `RowData_rem`; mirror of `RowData_divw` on the secondary (remainder) lane. -/
+structure RowData_remw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  remw_input : PureSpec.RemwInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  bus : ZiskFv.Compliance.BusRows
+  v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
+  r_a : ℕ
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REM_W
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+  pins : ZiskFv.Compliance.MainRowPins
+    (mainOfTable trace.program binding.mainTable) i.val 1 ZiskFv.Trusted.OP_REM_W
+  h_match_secondary :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program binding.mainTable) i.val)
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a)
+  promises : ZiskFv.EquivCore.Promises.RTypePromises
+      (binding.stateAt i) remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
+      (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
+      r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
+  arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
+      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+  bounds : ZiskFv.Compliance.ByteBounds bus.e2
+  h_row_constraints :
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+  arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
+  arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+  arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
+  h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1
+  h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1
+  h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1
+  h_np_xor :
+    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+      = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+          - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+              * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+  h_nr_pin :
+    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+      ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0)
+  h_m32_v : v.m32 r_a = 1
+  h_div_v : v.div r_a = 1
+  h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0
+  h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0
+  h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
+  h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0
+  h_byte_lo :
+    (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 0).val
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1).val * 256
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2).val * 65536
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3).val * 16777216
+      = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536
+  h_sext_choice :
+    (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7).val = 0)
+      ∧ (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648)
+    ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7).val = 255)
+      ∧ (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648)
+  h_rs1_value :
+    (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
+      = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
+          - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a) * (2:ℤ)^32
+  h_rs2_value :
+    (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
+      = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+          - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32
+  h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
+  h_no_overflow_w :
+    ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
+        ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32)
+  h_r_le :
+    (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+      - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+      ≤ (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs
+  h_r_sign :
+    0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+          - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
+        * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
+  h_not_forge :
+    ¬ ((ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+        = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+
 /-- Irreducible per-row residuals for the `mulhu` archetype — the binders of
     `construction_mulhu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_mulhu
@@ -3755,6 +4176,135 @@ theorem mulhsu_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulhsuEnvOf]
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhsuEnvOf]
+
+/-- The `OpEnvelope.div` env CONSTRUCTED from a `RowData_div`.  Both the
+    `StepNoKnownDefect` div obligation AND `stepStrong_div` reference THIS env, so
+    the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
+    exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
+    `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed DIV
+    row whose `|r| ≠ |op2|`.) -/
+noncomputable def divEnvOf
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_div trace binding i) :
+    OpEnvelope (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+  OpEnvelope.div d.div_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
+    d.h_match_primary d.promises d.arith_mem d.bounds d.h_op2_ne d.h_no_overflow
+    d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
+    d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin
+    d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
+
+/-- The `OpEnvelope.rem` env CONSTRUCTED from a `RowData_rem` (secondary lane). -/
+noncomputable def remEnvOf
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_rem trace binding i) :
+    OpEnvelope (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+  OpEnvelope.rem d.rem_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
+    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_op2_ne d.h_no_overflow
+    d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
+    d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin
+    d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
+
+/-- The `OpEnvelope.divw` env CONSTRUCTED from a `RowData_divw` (W-mode primary). -/
+noncomputable def divwEnvOf
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_divw trace binding i) :
+    OpEnvelope (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+  OpEnvelope.divw d.divw_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
+    d.h_match_primary d.promises d.arith_mem d.bounds
+    d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
+    d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin d.h_m32_v d.h_div_v
+    d.h_a23 d.h_b23 d.h_d23 d.h_c23 d.h_byte_lo d.h_sext_choice
+    d.h_rs1_value d.h_rs2_value d.h_op2_ne d.h_no_overflow d.h_r_le d.h_r_sign
+
+/-- The `OpEnvelope.remw` env CONSTRUCTED from a `RowData_remw` (W-mode secondary). -/
+noncomputable def remwEnvOf
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_remw trace binding i) :
+    OpEnvelope (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+  OpEnvelope.remw d.remw_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
+    d.h_match_secondary d.promises d.arith_mem d.bounds
+    d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
+    d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin d.h_m32_v d.h_div_v
+    d.h_a23 d.h_b23 d.h_d23 d.h_c23 d.h_byte_lo d.h_sext_choice
+    d.h_rs1_value d.h_rs2_value d.h_op2_ne d.h_no_overflow_w d.h_r_le d.h_r_sign
+
+/-- **Non-vacuity / satisfiability witness for the threaded DIV obligation.**
+
+    The `StepNoKnownDefect (.div d)` obligation — `Defects.NoKnownDefect (divEnvOf
+    …)` — is DISCHARGED from `RowData_div.h_not_forge` (the narrowed honest shape
+    `|r| ≠ |op2|`).  Concretely: for the `.div` env the arith-MUL defect predicate
+    is `False` (not a mul env) and the FENCE defect predicate's negation is `True`,
+    while the arith-DIV defect predicate is exactly the `|r| = |op2|` false-positive
+    forge that `h_not_forge` rules out.  Hence the threaded obligation is SATISFIABLE
+    for every honest signed DIV row (`|r| < |op2|` strictly, so `|r| ≠ |op2|`), so
+    the `.div` arm of `zisk_compliant_of_accepted_trace_strong` is NON-VACUOUS — see
+    the matching anti-vacuity witness `Defects.honest_div_witness_not_forge`.  This
+    is the Lean-checked anti-vacuity guard for the strong-export DIV arm. -/
+theorem div_noKnownDefect_of_rowData
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_div trace binding i) :
+    Defects.NoKnownDefect (divEnvOf trace binding i d) := by
+  intro id
+  cases id with
+  | arithMulSignedWitnessSoundness =>
+      simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, divEnvOf]
+  | arithDivDynamicWitnessSoundness =>
+      simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
+        Defects.signedRemainderInt, divEnvOf] using d.h_not_forge
+  | fenceIncomplete =>
+      simp [Defects.Blocks, Defects.FenceKnownGoodShape, divEnvOf]
+
+/-- Satisfiability witness for the threaded REM obligation (companion of
+    `div_noKnownDefect_of_rowData`; secondary remainder lane). -/
+theorem rem_noKnownDefect_of_rowData
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_rem trace binding i) :
+    Defects.NoKnownDefect (remEnvOf trace binding i d) := by
+  intro id
+  cases id with
+  | arithMulSignedWitnessSoundness =>
+      simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, remEnvOf]
+  | arithDivDynamicWitnessSoundness =>
+      simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
+        Defects.signedRemainderInt, remEnvOf] using d.h_not_forge
+  | fenceIncomplete =>
+      simp [Defects.Blocks, Defects.FenceKnownGoodShape, remEnvOf]
+
+/-- Satisfiability witness for the threaded DIVW obligation (W-mode analogue of
+    `div_noKnownDefect_of_rowData`; narrowed shape `|r₃₂| ≠ |op2₃₂|`). -/
+theorem divw_noKnownDefect_of_rowData
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_divw trace binding i) :
+    Defects.NoKnownDefect (divwEnvOf trace binding i d) := by
+  intro id
+  cases id with
+  | arithMulSignedWitnessSoundness =>
+      simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, divwEnvOf]
+  | arithDivDynamicWitnessSoundness =>
+      simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
+        Defects.signedRemainderIntW, divwEnvOf] using d.h_not_forge
+  | fenceIncomplete =>
+      simp [Defects.Blocks, Defects.FenceKnownGoodShape, divwEnvOf]
+
+/-- Satisfiability witness for the threaded REMW obligation (companion of
+    `divw_noKnownDefect_of_rowData`; W-mode secondary remainder lane). -/
+theorem remw_noKnownDefect_of_rowData
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_remw trace binding i) :
+    Defects.NoKnownDefect (remwEnvOf trace binding i d) := by
+  intro id
+  cases id with
+  | arithMulSignedWitnessSoundness =>
+      simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, remwEnvOf]
+  | arithDivDynamicWitnessSoundness =>
+      simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
+        Defects.signedRemainderIntW, remwEnvOf] using d.h_not_forge
+  | fenceIncomplete =>
+      simp [Defects.Blocks, Defects.FenceKnownGoodShape, remwEnvOf]
 
 /-- Per-row construction data: one arm per sound construction archetype (55).
     Each arm carries a single `RowData_<op>` payload (its irreducible residuals).
@@ -10351,6 +10901,112 @@ theorem stepStrong_mulhsu
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
+/-- Strengthened `div` step (channel-balance form), via the OpEnvelope route.
+
+    DIV is the signed 64-bit division (op `184`), a former defect-gated op now
+    landed on the OpEnvelope route.  CONSTRUCT `OpEnvelope.div` (= the shared
+    `divEnvOf`) from the trace's `RowData_div` and invoke
+    `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_remaining` conjunct.
+    `aeneasBridgeTrust` is the 7-tuple of Main decode pins; the memory-timeline
+    obligation is trivial (the rd-write is the unified-memory rd lane already
+    witnessed by `arith_mem`).
+
+    The `NoKnownDefect` obligation is supplied DIRECTLY by the caller as
+    `h_known : Defects.NoKnownDefect (divEnvOf …)` (= `StepNoKnownDefect`'s div
+    arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
+    global theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
+    SATISFIABLE: for an honest signed DIV row (`RowData_div.h_not_forge`, i.e.
+    `|r| ≠ |op2|`) the row is outside the `|r| = |op2|` `LT_ABS_NP` false-positive,
+    so `NoKnownDefect` is TRUE and the caller proves it.  Non-vacuous: the narrowed
+    DIV exclusion is exactly the genuine circuit-bug forge (codygunton/zisk#5), so
+    an honest signed DIV row supplies all binders.  Div-by-zero / overflow remain
+    carried as residuals (`h_op2_ne`/`h_no_overflow`, separate #114 work). -/
+theorem stepStrong_div
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_div trace binding i)
+    (h_known : Defects.NoKnownDefect (divEnvOf trace binding i d)) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let env : OpEnvelope state m i.val := divEnvOf trace binding i d
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
+/-- Strengthened `rem` step (channel-balance form), via the OpEnvelope route.
+    Companion of `stepStrong_div` for the signed 64-bit remainder (op `185`,
+    secondary ArithDiv lane).  Same OpEnvelope-route pattern; the caller-supplied
+    `h_known` is the GENUINE `NoKnownDefect (remEnvOf …)`, SATISFIABLE for an honest
+    signed REM row (`RowData_rem.h_not_forge`).  Non-vacuous. -/
+theorem stepStrong_rem
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_rem trace binding i)
+    (h_known : Defects.NoKnownDefect (remEnvOf trace binding i d)) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let env : OpEnvelope state m i.val := remEnvOf trace binding i d
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
+/-- Strengthened `divw` step (channel-balance form), via the OpEnvelope route.
+    W-mode analogue of `stepStrong_div` (signed 32-bit division, op `188`,
+    `m32 = 1`).  Carries the W-mode chunk-zero pins + sign-extension choice via
+    `RowData_divw`; the caller-supplied `h_known` is the GENUINE
+    `NoKnownDefect (divwEnvOf …)`, SATISFIABLE for an honest signed DIVW row
+    (`RowData_divw.h_not_forge`, `|r₃₂| ≠ |op2₃₂|`).  Non-vacuous. -/
+theorem stepStrong_divw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_divw trace binding i)
+    (h_known : Defects.NoKnownDefect (divwEnvOf trace binding i d)) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let env : OpEnvelope state m i.val := divwEnvOf trace binding i d
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
+/-- Strengthened `remw` step (channel-balance form), via the OpEnvelope route.
+    W-mode analogue of `stepStrong_rem` (signed 32-bit remainder, op `189`,
+    `m32 = 1`, secondary lane).  Non-vacuous (`RowData_remw.h_not_forge`). -/
+theorem stepStrong_remw
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_remw trace binding i)
+    (h_known : Defects.NoKnownDefect (remwEnvOf trace binding i d)) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let env : OpEnvelope state m i.val := remwEnvOf trace binding i d
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
 /-- Strengthened `fence` step (channel-balance form), via the OpEnvelope route.
 
     FENCE is the FENCE-decode-gap opcode.  CONSTRUCT `OpEnvelope.fence` (= the
@@ -10424,6 +11080,10 @@ inductive StrongRowConstructionData
   | mulhsu (d : RowData_mulhsu trace binding i) : StrongRowConstructionData trace binding i
   | mulw (d : RowData_mulw trace binding i) : StrongRowConstructionData trace binding i
   | mulhu (d : RowData_mulhu trace binding i) : StrongRowConstructionData trace binding i
+  | div (d : RowData_div trace binding i) : StrongRowConstructionData trace binding i
+  | rem (d : RowData_rem trace binding i) : StrongRowConstructionData trace binding i
+  | divw (d : RowData_divw trace binding i) : StrongRowConstructionData trace binding i
+  | remw (d : RowData_remw trace binding i) : StrongRowConstructionData trace binding i
   | divu (d : RowData_divu trace binding i) : StrongRowConstructionData trace binding i
   | divuw (d : RowData_divuw trace binding i) : StrongRowConstructionData trace binding i
   | remu (d : RowData_remu trace binding i) : StrongRowConstructionData trace binding i
@@ -10613,6 +11273,13 @@ def StepNoKnownDefect
   | .mul d => Defects.NoKnownDefect (mulEnvOf trace binding i d)
   | .mulh d => Defects.NoKnownDefect (mulhEnvOf trace binding i d)
   | .mulhsu d => Defects.NoKnownDefect (mulhsuEnvOf trace binding i d)
+  -- Signed DIV/REM/DIVW/REMW: the GENUINE `NoKnownDefect` of the SPECIFIC env,
+  -- NOT the (false) selector-∀ shape.  Satisfiable for an honest signed row
+  -- (`|r| ≠ |op2|`); see `RowData_div` / `stepStrong_div`.
+  | .div d => Defects.NoKnownDefect (divEnvOf trace binding i d)
+  | .rem d => Defects.NoKnownDefect (remEnvOf trace binding i d)
+  | .divw d => Defects.NoKnownDefect (divwEnvOf trace binding i d)
+  | .remw d => Defects.NoKnownDefect (remwEnvOf trace binding i d)
   | .mulw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
@@ -10961,6 +11628,34 @@ def StepComplianceStrong
              signed_rs2 := .Unsigned }))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+  | .div d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+  | .rem d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+  | .divw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+  | .remw d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
   | .mulw d =>
       (do
       Sail.writeReg Register.nextPC
@@ -11193,6 +11888,10 @@ theorem stepComplianceStrong_of_rowData
   | mul d => exact stepStrong_mul trace binding i d h_known
   | mulh d => exact stepStrong_mulh trace binding i d h_known
   | mulhsu d => exact stepStrong_mulhsu trace binding i d h_known
+  | div d => exact stepStrong_div trace binding i d h_known
+  | rem d => exact stepStrong_rem trace binding i d h_known
+  | divw d => exact stepStrong_divw trace binding i d h_known
+  | remw d => exact stepStrong_remw trace binding i d h_known
   | mulw d => exact stepStrong_mulw trace binding i d h_known
   | mulhu d => exact stepStrong_mulhu trace binding i d h_known
   | divu d => exact stepStrong_divu trace binding i d h_known
