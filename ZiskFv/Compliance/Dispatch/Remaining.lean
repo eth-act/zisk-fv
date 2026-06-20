@@ -422,12 +422,18 @@ theorem zisk_riscv_compliant_program_bus_remaining
         LeanRV64D.Functions.execute
           (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.Low, signed_rs1 := srs1, signed_rs2 := srs2 }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    have h_no_signed_mul_witness_defect : False :=
-      Defects.no_malicious_signed_mul_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
+    -- NARROWED MUL exclusion: derive `¬ (exceptional product-sign shape)` directly
+    -- from `NoKnownDefect`. `no_malicious_signed_mul_witness_of_no_known_defect`
+    -- yields `¬ MaliciousSignedMulWitnessShape (.mul …)`, which is DEFEQ to the
+    -- unfolded disjunction `equiv_MUL` consumes. This is a genuine forge-exclusion,
+    -- not a vacuous `False` (the honest case is reachable and proved).
+    have h_not_forge :
+        ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+          ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)) :=
+      Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.Mul.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
       pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_no_signed_mul_witness_defect
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem h_row_constraints arith_table =>
     change (do
@@ -818,12 +824,18 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         LeanRV64D.Functions.execute
           (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.Low, signed_rs1 := srs1, signed_rs2 := srs2 }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    have h_no_signed_mul_witness_defect : False :=
-      Defects.no_malicious_signed_mul_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
+    -- NARROWED MUL exclusion: derive `¬ (exceptional product-sign shape)` directly
+    -- from `NoKnownDefect`. `no_malicious_signed_mul_witness_of_no_known_defect`
+    -- yields `¬ MaliciousSignedMulWitnessShape (.mul …)`, which is DEFEQ to the
+    -- unfolded disjunction `equiv_MUL` consumes. This is a genuine forge-exclusion,
+    -- not a vacuous `False` (the honest case is reachable and proved).
+    have h_not_forge :
+        ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+          ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)) :=
+      Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.Mul.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
       pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_no_signed_mul_witness_defect
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem h_row_constraints arith_table =>
     change (do

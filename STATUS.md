@@ -2,6 +2,22 @@ Stream: P4 OpEnvelope constructions → P5 trace-level export (#61). Worktree p4
 branch p4-loads-stores (stacked on PR #110). build/ symlinked, submodule populated.
 Metaplan: docs/ai/plan/PLAN_ENDGAME.md (the home-stretch checklist). Gate V1 18/18 + V2 12/12.
 
+=== SIGNED-M RETIREMENT FEASIBILITY PROBE: MUL — GO (uncommitted, this run) ===
+Narrowed `Defects.MaliciousSignedMulWitnessShape (.mul ..)` from opcode-wide `True` to the
+EXACT forge: `(na=1∧nb=0∧np=0) ∨ (na=0∧nb=1∧np=0)` (the exceptional branch of
+`mul_np_xor_or_zero_product_shape`, op 180). Canonical `equiv_MUL` + wrapper binder changed
+`False` → `¬forge`; honest branch (np=na XOR nb) was ALREADY a real low-64 carry-chain proof
+(EquivCore.Mul.equiv_MUL), now NON-VACUOUS. Exceptional branch = `absurd h_exception h_not_forge`
+(genuine impossibility, no False.elim). Dispatcher derives `h_not_forge` from `NoKnownDefect`
+via no_malicious_signed_mul_witness_of_no_known_defect (DEFEQ). Constructibility:
+`Defects.honest_mul_witness_not_malicious` (na=nb=np=0 honest row, gate-checked). 0 new ZiskFv.*
+axioms (equiv_MUL + global closure UNCHANGED: Sail FFI + kernel only). hyp-count HOLDS
+(total=24 hyp=5, no growth); caller-burden = 1 line narrowed (False→¬forge). Full lake build
+GREEN; gate V1 18/18 + V2 12/12; baselines refreshed (caller-burden + wrapper-caller-burden +
+defects.md; axiom baselines UNCHANGED). MULH/MULHSU + signed-DIV/REM stay opcode-wide (need the
+high-half / signed-remainder-bound dynamic proofs — next steps; DIV/REM blocked by the
+LT_ABS_NP false-positive, defects.md). NOT committed.
+
 === P4 SOUND CONSTRUCTIONS: 55/63 — and 55 is the HONEST CAP ===
 Committed construction_<op>_sound (derived from trace.balanced + honest residuals,
 0 PROJECT ZiskFv.* axioms each):

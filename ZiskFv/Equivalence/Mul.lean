@@ -54,7 +54,15 @@ theorem equiv_MUL
     (h_rs2_value : mul_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
           (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_no_signed_mul_witness_defect : False)
+    -- NARROWED defect exclusion for `ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`
+    -- MUL arm: the row is NOT in the exceptional product-sign shape the shared
+    -- ArithTable admits for op 180 -- the genuine malicious-witness forge. This is
+    -- the unfolded `¬ Defects.MaliciousSignedMulWitnessShape` for the `.mul` arm;
+    -- the global theorem supplies it from `NoKnownDefect`. An honest MUL row, where
+    -- `np = na XOR nb`, satisfies it, so this canonical theorem is NON-VACUOUS.
+    (h_not_forge :
+      ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+        ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)))
     : (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -68,6 +76,6 @@ theorem equiv_MUL
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_MUL_of_table state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_no_signed_mul_witness_defect
+    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
 
 end ZiskFv.Equivalence.Mul

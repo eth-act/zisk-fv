@@ -448,7 +448,7 @@ ZiskFv.Equivalence.Mul.equiv_MUL 019 arith_chunk_ranges [other] ZiskFv.Complianc
 ZiskFv.Equivalence.Mul.equiv_MUL 020 arith_carry_ranges [other] ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a
 ZiskFv.Equivalence.Mul.equiv_MUL 021 h_rs1_value [bridge] mul_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (
 ZiskFv.Equivalence.Mul.equiv_MUL 022 h_rs2_value [bridge] mul_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (
-ZiskFv.Equivalence.Mul.equiv_MUL 023 h_no_signed_mul_witness_defect [other] False
+ZiskFv.Equivalence.Mul.equiv_MUL 023 h_not_forge [other] ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0) ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧
 ZiskFv.Equivalence.MulH.equiv_MULH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.MulH.equiv_MULH 001 mulh_input [other] PureSpec.MulhInput
 ZiskFv.Equivalence.MulH.equiv_MULH 002 r1 [other] regidx
