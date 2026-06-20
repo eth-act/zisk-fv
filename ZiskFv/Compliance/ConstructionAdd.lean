@@ -99,7 +99,7 @@ set_option maxHeartbeats 2000000
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder. -/
-theorem construction_add_sound
+theorem construction_add_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -307,7 +307,7 @@ theorem construction_add_sound
 
     Residual budget = ADD's, minus the 2 r2 lane bridges (`h_b_lo_t`/`h_b_hi_t`)
     and `h_input_r2`, plus `imm`, `h_input_imm`, `h_addi_subset`, `h_set_pc`. -/
-theorem construction_addi_sound
+theorem construction_addi_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

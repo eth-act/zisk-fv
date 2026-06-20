@@ -1,4 +1,4 @@
-# ZiskFv.Compliance.construction_sub_sound
+# ZiskFv.Compliance.construction_sub_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -34,7 +34,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
 h_rd_idx :: Eq sub_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_and_sound
+# ZiskFv.Compliance.construction_and_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -70,7 +70,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_and_pure and_input).nextPC
 h_rd_idx :: Eq and_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_or_sound
+# ZiskFv.Compliance.construction_or_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -106,7 +106,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_or_pure or_input).nextPC
 h_rd_idx :: Eq or_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_xor_sound
+# ZiskFv.Compliance.construction_xor_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -142,7 +142,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC
 h_rd_idx :: Eq xor_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_slt_sound
+# ZiskFv.Compliance.construction_slt_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -178,7 +178,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC
 h_rd_idx :: Eq slt_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_sltu_sound
+# ZiskFv.Compliance.construction_sltu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -214,7 +214,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
 h_rd_idx :: Eq sltu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_andi_sound
+# ZiskFv.Compliance.construction_andi_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -249,7 +249,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
 h_rd_idx :: Eq andi_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_ori_sound
+# ZiskFv.Compliance.construction_ori_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -284,7 +284,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
 h_rd_idx :: Eq ori_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_xori_sound
+# ZiskFv.Compliance.construction_xori_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -319,7 +319,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
 h_rd_idx :: Eq xori_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_slti_sound
+# ZiskFv.Compliance.construction_slti_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -354,7 +354,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
 h_rd_idx :: Eq slti_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_sltiu_sound
+# ZiskFv.Compliance.construction_sltiu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -389,7 +389,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC
 h_rd_idx :: Eq sltiu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_sll_sound
+# ZiskFv.Compliance.construction_sll_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -425,7 +425,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
 h_rd_idx :: Eq sll_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_srl_sound
+# ZiskFv.Compliance.construction_srl_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -461,7 +461,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_srl_pure srl_input).nextPC
 h_rd_idx :: Eq srl_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_sra_sound
+# ZiskFv.Compliance.construction_sra_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -497,7 +497,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
 h_rd_idx :: Eq sra_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_slli_sound
+# ZiskFv.Compliance.construction_slli_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -532,7 +532,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
 h_rd_idx :: Eq slli_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_srli_sound
+# ZiskFv.Compliance.construction_srli_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -567,7 +567,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC
 h_rd_idx :: Eq srli_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_srai_sound
+# ZiskFv.Compliance.construction_srai_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -602,7 +602,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC
 h_rd_idx :: Eq srai_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_sllw_sound
+# ZiskFv.Compliance.construction_sllw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -638,7 +638,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sllw_pure sllw_input).nextPC
 h_rd_idx :: Eq sllw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_srlw_sound
+# ZiskFv.Compliance.construction_srlw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -674,7 +674,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_srlw_pure srlw_input).nextPC
 h_rd_idx :: Eq srlw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_sraw_sound
+# ZiskFv.Compliance.construction_sraw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -710,7 +710,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_sraw_pure sraw_input).nextPC
 h_rd_idx :: Eq sraw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_slliw_sound
+# ZiskFv.Compliance.construction_slliw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -743,7 +743,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC
 h_rd_idx :: Eq slliw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_srliw_sound
+# ZiskFv.Compliance.construction_srliw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -776,7 +776,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC
 h_rd_idx :: Eq srliw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_sraiw_sound
+# ZiskFv.Compliance.construction_sraiw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -809,7 +809,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC
 h_rd_idx :: Eq sraiw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_add_sound
+# ZiskFv.Compliance.construction_add_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -845,7 +845,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_add_pure add_input).nextPC
 h_rd_idx :: Eq add_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_addi_sound
+# ZiskFv.Compliance.construction_addi_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -881,7 +881,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
 h_rd_idx :: Eq addi_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_subw_sound
+# ZiskFv.Compliance.construction_subw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -917,7 +917,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
 h_rd_idx :: Eq subw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_addw_sound
+# ZiskFv.Compliance.construction_addw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -953,7 +953,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC
 h_rd_idx :: Eq addw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_addiw_sound
+# ZiskFv.Compliance.construction_addiw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -988,7 +988,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
 h_rd_idx :: Eq addiw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
-# ZiskFv.Compliance.construction_lui_sound
+# ZiskFv.Compliance.construction_lui_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1021,7 +1021,7 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! execRow 1).multiplicity 1
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! execRow 1).pc.val) register_type_pc_equiv) (PureSpec.execute_LUI_pure lui_input).nextPC
 h_rd_idx :: Eq lui_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.eRdLui trace binding i).ptr)
 
-# ZiskFv.Compliance.construction_auipc_sound
+# ZiskFv.Compliance.construction_auipc_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1056,7 +1056,7 @@ h_rd_idx :: Eq auipc_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.eRdL
 h_no_wrap :: instLTNat.lt (instHAdd.hAdd auipc_input.PC.toNat (BitVec.signExtend 64 (BitVec.instHAppendHAddNat.hAppend auipc_input.imm 0)).toNat) 18446744069414584321
 h_pc_offset_lt_2_32 :: instLTNat.lt (instHAdd.hAdd auipc_input.PC (BitVec.signExtend 64 (BitVec.instHAppendHAddNat.hAppend auipc_input.imm 0))).toNat 4294967296
 
-# ZiskFv.Compliance.construction_mulw_sound
+# ZiskFv.Compliance.construction_mulw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1092,7 +1092,7 @@ h_sext_choice :: Or (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv
 h_rs1_value :: Eq (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt (instHSub.hSub (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).a_0 0).val.cast (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).a_1 0).val.cast 65536)) (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).na 0).val.cast (instHPow.hPow 2 32)))
 h_rs2_value :: Eq (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt (instHSub.hSub (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_0 0).val.cast (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_1 0).val.cast 65536)) (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).nb 0).val.cast (instHPow.hPow 2 32)))
 
-# ZiskFv.Compliance.construction_mulhu_sound
+# ZiskFv.Compliance.construction_mulhu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1133,7 +1133,7 @@ bounds.x7_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Comp
 h_rs1_value :: Eq mulhu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_0 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_1 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_2 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_3 0).val)
 h_rs2_value :: Eq mulhu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_0 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_1 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_2 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_3 0).val)
 
-# ZiskFv.Compliance.construction_divu_sound
+# ZiskFv.Compliance.construction_divu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1253,7 +1253,7 @@ remainder_bound.remainder_bound_match :: ZiskFv.Airs.OperationBus.matches_entry 
 h_rs1_value :: Eq divu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.c_0.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.c_1.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.c_2.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.c_3.val)
 h_rs2_value :: Eq divu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_0.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_1.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_2.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_3.val)
 
-# ZiskFv.Compliance.construction_divuw_sound
+# ZiskFv.Compliance.construction_divuw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1376,7 +1376,7 @@ h_sext_choice :: Or (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv
 h_rs1_value :: Eq (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.c_0.val (instHMul.hMul (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.c_1.val 65536))
 h_rs2_value :: Eq (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.b_0.val (instHMul.hMul (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.b_1.val 65536))
 
-# ZiskFv.Compliance.construction_remu_sound
+# ZiskFv.Compliance.construction_remu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1496,7 +1496,7 @@ remainder_bound.remainder_bound_match :: ZiskFv.Airs.OperationBus.matches_entry 
 h_rs1_value :: Eq remu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.c_0.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.c_1.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.c_2.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.c_3.val)
 h_rs2_value :: Eq remu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_0.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_1.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_2.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_3.val)
 
-# ZiskFv.Compliance.construction_remuw_sound
+# ZiskFv.Compliance.construction_remuw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1619,7 +1619,7 @@ h_sext_choice :: Or (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv
 h_rs1_value :: Eq (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.c_0.val (instHMul.hMul (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.c_1.val 65536))
 h_rs2_value :: Eq (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.b_0.val (instHMul.hMul (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.b_1.val 65536))
 
-# ZiskFv.Compliance.construction_sb_sound
+# ZiskFv.Compliance.construction_sb_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1659,7 +1659,7 @@ h_m5 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (ins
 h_m6 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (instHAdd.hAdd (ZiskFv.Compliance.busSt trace binding i execRow).e2.ptr.toNat 6)) (Option.some { toFin := ⟨instHMod.hMod (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSt trace binding i execRow).e2 6).val 256, ⋯⟩ })
 h_m7 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (instHAdd.hAdd (ZiskFv.Compliance.busSt trace binding i execRow).e2.ptr.toNat 7)) (Option.some { toFin := ⟨instHMod.hMod (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSt trace binding i execRow).e2 7).val 256, ⋯⟩ })
 
-# ZiskFv.Compliance.construction_sh_sound
+# ZiskFv.Compliance.construction_sh_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1698,7 +1698,7 @@ h_m5 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (ins
 h_m6 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (instHAdd.hAdd (ZiskFv.Compliance.busSt trace binding i execRow).e2.ptr.toNat 6)) (Option.some { toFin := ⟨instHMod.hMod (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSt trace binding i execRow).e2 6).val 256, ⋯⟩ })
 h_m7 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (instHAdd.hAdd (ZiskFv.Compliance.busSt trace binding i execRow).e2.ptr.toNat 7)) (Option.some { toFin := ⟨instHMod.hMod (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSt trace binding i execRow).e2 7).val 256, ⋯⟩ })
 
-# ZiskFv.Compliance.construction_sw_sound
+# ZiskFv.Compliance.construction_sw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1735,7 +1735,7 @@ h_m5 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (ins
 h_m6 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (instHAdd.hAdd (ZiskFv.Compliance.busSt trace binding i execRow).e2.ptr.toNat 6)) (Option.some { toFin := ⟨instHMod.hMod (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSt trace binding i execRow).e2 6).val 256, ⋯⟩ })
 h_m7 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (instHAdd.hAdd (ZiskFv.Compliance.busSt trace binding i execRow).e2.ptr.toNat 7)) (Option.some { toFin := ⟨instHMod.hMod (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSt trace binding i execRow).e2 7).val 256, ⋯⟩ })
 
-# ZiskFv.Compliance.construction_sd_sound
+# ZiskFv.Compliance.construction_sd_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1767,7 +1767,7 @@ h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSt 
 h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSt trace binding i execRow).exec_row 1).multiplicity 1
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSt trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_STORED_pure sd_input).nextPC
 
-# ZiskFv.Compliance.construction_ld_sound
+# ZiskFv.Compliance.construction_ld_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1827,7 +1827,7 @@ h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.b
 h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
-# ZiskFv.Compliance.construction_lbu_sound
+# ZiskFv.Compliance.construction_lbu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -1949,7 +1949,7 @@ h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.b
 h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
-# ZiskFv.Compliance.construction_lhu_sound
+# ZiskFv.Compliance.construction_lhu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2071,7 +2071,7 @@ h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.b
 h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
-# ZiskFv.Compliance.construction_lwu_sound
+# ZiskFv.Compliance.construction_lwu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2193,7 +2193,7 @@ h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.b
 h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
-# ZiskFv.Compliance.construction_lb_sound
+# ZiskFv.Compliance.construction_lb_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2293,7 +2293,7 @@ h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.b
 h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
-# ZiskFv.Compliance.construction_lh_sound
+# ZiskFv.Compliance.construction_lh_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2393,7 +2393,7 @@ h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.b
 h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
-# ZiskFv.Compliance.construction_lw_sound
+# ZiskFv.Compliance.construction_lw_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2493,7 +2493,7 @@ h_mem_match :: ZiskFv.Airs.MemoryBus.matches_memory_payload (ZiskFv.Compliance.b
 h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
-# ZiskFv.Compliance.construction_beq_sound
+# ZiskFv.Compliance.construction_beq_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2525,7 +2525,7 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_not_throws :: Eq (PureSpec.execute_BEQ_pure beq_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BEQ_pure beq_input).success Bool.true
 
-# ZiskFv.Compliance.construction_bne_sound
+# ZiskFv.Compliance.construction_bne_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2557,7 +2557,7 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_not_throws :: Eq (PureSpec.execute_BNE_pure bne_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BNE_pure bne_input).success Bool.true
 
-# ZiskFv.Compliance.construction_blt_sound
+# ZiskFv.Compliance.construction_blt_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2589,7 +2589,7 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_not_throws :: Eq (PureSpec.execute_BLT_pure blt_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BLT_pure blt_input).success Bool.true
 
-# ZiskFv.Compliance.construction_bge_sound
+# ZiskFv.Compliance.construction_bge_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2621,7 +2621,7 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_not_throws :: Eq (PureSpec.execute_BGE_pure bge_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BGE_pure bge_input).success Bool.true
 
-# ZiskFv.Compliance.construction_bltu_sound
+# ZiskFv.Compliance.construction_bltu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2653,7 +2653,7 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_not_throws :: Eq (PureSpec.execute_BLTU_pure bltu_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BLTU_pure bltu_input).success Bool.true
 
-# ZiskFv.Compliance.construction_bgeu_sound
+# ZiskFv.Compliance.construction_bgeu_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2685,7 +2685,7 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_not_throws :: Eq (PureSpec.execute_BGEU_pure bgeu_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BGEU_pure bgeu_input).success Bool.true
 
-# ZiskFv.Compliance.construction_jal_sound
+# ZiskFv.Compliance.construction_jal_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
@@ -2727,7 +2727,7 @@ h_not_throws :: Eq (PureSpec.execute_JAL_pure jal_input).throws Bool.false
 h_pc_bound :: instLTNat.lt jal_input.PC.toNat (instHSub.hSub 18446744069414584321 4)
 h_pc_offset_lt_2_32 :: instLTNat.lt (instHAdd.hAdd jal_input.PC (BitVec.ofNat 64 4)).toNat 4294967296
 
-# ZiskFv.Compliance.construction_jalr_sound
+# ZiskFv.Compliance.construction_jalr_sound_claimed_dead
 trace.length :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble

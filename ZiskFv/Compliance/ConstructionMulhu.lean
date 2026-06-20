@@ -66,7 +66,7 @@ set_option maxRecDepth 8000
     The huge branch of the signed disjunction is refuted: a carry near `GL_prime`
     would force `(c + cy·2^16) % GL_prime ≥ GL_prime - 983040·2^16`, contradicting
     the small `N`.  The small branch is the conclusion verbatim. -/
-theorem unsigned_carry_step_nat
+theorem unsigned_carry_step_nat_claimed_dead
     (N : ℕ) (c cy : FGL)
     (h_eq : ((N : ℕ) : FGL) = c + cy * 65536)
     (hc : c.val < 65536)
@@ -85,7 +85,7 @@ no-wrap argument is unchanged: every chunk equation's two sides stay below
 `GL_prime` (LHS ≤ `4·(2^16-1)^2 + 983040 < 2^35`; RHS `≤ 2^16 + 983040·2^16 <
 2^36`).  Each lift discharges via the additive `NoWrap.fgl_eq_to_nat_eq`. -/
 
-private lemma loose_chunk_lift_1
+private lemma loose_chunk_lift_1_claimed_dead
     (a b c cy : FGL)
     (h_a : a.val < 65536) (h_b : b.val < 65536)
     (h_c : c.val < 65536) (h_cy : cy.val < 983041)
@@ -99,7 +99,7 @@ private lemma loose_chunk_lift_1
     omega
   · omega
 
-private lemma loose_chunk_lift_1'
+private lemma loose_chunk_lift_1'_claimed_dead
     (a b cy_in c cy_out : FGL)
     (h_a : a.val < 65536) (h_b : b.val < 65536)
     (h_cy_in : cy_in.val < 983041)
@@ -114,7 +114,7 @@ private lemma loose_chunk_lift_1'
     omega
   · omega
 
-private lemma loose_chunk_lift_2
+private lemma loose_chunk_lift_2_claimed_dead
     (a₁ a₀ b₀ b₁ cy_in c cy_out : FGL)
     (h_a1 : a₁.val < 65536) (h_a0 : a₀.val < 65536)
     (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
@@ -132,7 +132,7 @@ private lemma loose_chunk_lift_2
     omega
   · omega
 
-private lemma loose_chunk_lift_3
+private lemma loose_chunk_lift_3_claimed_dead
     (a₂ a₁ a₀ b₀ b₁ b₂ cy_in c cy_out : FGL)
     (h_a2 : a₂.val < 65536) (h_a1 : a₁.val < 65536) (h_a0 : a₀.val < 65536)
     (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536)
@@ -153,7 +153,7 @@ private lemma loose_chunk_lift_3
     omega
   · omega
 
-private lemma loose_chunk_lift_4
+private lemma loose_chunk_lift_4_claimed_dead
     (a₃ a₂ a₁ a₀ b₀ b₁ b₂ b₃ cy_in c cy_out : FGL)
     (h_a3 : a₃.val < 65536) (h_a2 : a₂.val < 65536)
     (h_a1 : a₁.val < 65536) (h_a0 : a₀.val < 65536)
@@ -182,7 +182,7 @@ private lemma loose_chunk_lift_4
     with the balance-constructible carry bound `< 983041` instead of `< 131072`.
     Composes the loose chunk lifts with the bound-free ℕ aggregator
     `mul_unsigned_packed_of_chunks`. -/
-private lemma loose_mul_unsigned_chunks_to_nat_identity
+private lemma loose_mul_unsigned_chunks_to_nat_identity_claimed_dead
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
@@ -214,18 +214,18 @@ private lemma loose_mul_unsigned_chunks_to_nat_identity
     a₀.val a₁.val a₂.val a₃.val b₀.val b₁.val b₂.val b₃.val
     c₀.val c₁.val c₂.val c₃.val d₀.val d₁.val d₂.val d₃.val
     cy₀.val cy₁.val cy₂.val cy₃.val cy₄.val cy₅.val cy₆.val
-    (loose_chunk_lift_1 a₀ b₀ c₀ cy₀ h_a0 h_b0 h_c0 h_cy0 hC31)
-    (loose_chunk_lift_2 a₁ a₀ b₀ b₁ cy₀ c₁ cy₁
+    (loose_chunk_lift_1_claimed_dead a₀ b₀ c₀ cy₀ h_a0 h_b0 h_c0 h_cy0 hC31)
+    (loose_chunk_lift_2_claimed_dead a₁ a₀ b₀ b₁ cy₀ c₁ cy₁
         h_a1 h_a0 h_b0 h_b1 h_cy0 h_c1 h_cy1 hC32)
-    (loose_chunk_lift_3 a₂ a₁ a₀ b₀ b₁ b₂ cy₁ c₂ cy₂
+    (loose_chunk_lift_3_claimed_dead a₂ a₁ a₀ b₀ b₁ b₂ cy₁ c₂ cy₂
         h_a2 h_a1 h_a0 h_b0 h_b1 h_b2 h_cy1 h_c2 h_cy2 hC33)
-    (loose_chunk_lift_4 a₃ a₂ a₁ a₀ b₀ b₁ b₂ b₃ cy₂ c₃ cy₃
+    (loose_chunk_lift_4_claimed_dead a₃ a₂ a₁ a₀ b₀ b₁ b₂ b₃ cy₂ c₃ cy₃
         h_a3 h_a2 h_a1 h_a0 h_b0 h_b1 h_b2 h_b3 h_cy2 h_c3 h_cy3 hC34)
-    (loose_chunk_lift_3 a₃ a₂ a₁ b₁ b₂ b₃ cy₃ d₀ cy₄
+    (loose_chunk_lift_3_claimed_dead a₃ a₂ a₁ b₁ b₂ b₃ cy₃ d₀ cy₄
         h_a3 h_a2 h_a1 h_b1 h_b2 h_b3 h_cy3 h_d0 h_cy4 hC35)
-    (loose_chunk_lift_2 a₃ a₂ b₂ b₃ cy₄ d₁ cy₅
+    (loose_chunk_lift_2_claimed_dead a₃ a₂ b₂ b₃ cy₄ d₁ cy₅
         h_a3 h_a2 h_b2 h_b3 h_cy4 h_d1 h_cy5 hC36)
-    (loose_chunk_lift_1' a₃ b₃ cy₅ d₂ cy₆
+    (loose_chunk_lift_1'_claimed_dead a₃ b₃ cy₅ d₂ cy₆
         h_a3 h_b3 h_cy5 h_d2 h_cy6 hC37)
     (ZiskFv.PackedBitVec.MulNoWrap.fgl_chunk_lift_close cy₆ d₃ hC38)
 
@@ -235,7 +235,7 @@ open ZiskFv.Airs.ArithMul in
     (`na = nb = np = nr = sext = m32 = div = 0`, hence `fab = 1`,
     `na_fb = nb_fa = 0`), yielding the eight clean unsigned-multiply chunk
     equations `hC31..hC38`.  No carry bounds are needed (or produced) here. -/
-private lemma mulhu_chain_eqs
+private lemma mulhu_chain_eqs_claimed_dead
     (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (h_chain : mul_carry_chain_holds v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
@@ -285,7 +285,7 @@ open ZiskFv.Airs.ArithMul in
     *unsigned-side* carry bounds `cy_i.val < 983041` by sequentially applying
     `unsigned_carry_step_nat` up the chain (each step's accumulated column value
     stays below `983040·2^16`, using the previous carry's bound). -/
-private lemma mulhu_carry_bounds
+private lemma mulhu_carry_bounds_claimed_dead
     (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (h_chunks : ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
     (h_csgn : ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
@@ -312,12 +312,12 @@ private lemma mulhu_carry_bounds
   obtain ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6⟩ := h_csgn
   obtain ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, _hC38⟩ := heqs
   have b0 : (v.cy_0 r_a).val < 983041 := by
-    refine unsigned_carry_step_nat ((v.a_0 r_a).val * (v.b_0 r_a).val) _ _ ?_ hc0 ?_ hs0
+    refine unsigned_carry_step_nat_claimed_dead ((v.a_0 r_a).val * (v.b_0 r_a).val) _ _ ?_ hc0 ?_ hs0
     · push_cast; linear_combination hC31
     · have : (v.a_0 r_a).val * (v.b_0 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
       omega
   have b1 : (v.cy_1 r_a).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((v.a_1 r_a).val * (v.b_0 r_a).val + (v.a_0 r_a).val * (v.b_1 r_a).val + (v.cy_0 r_a).val)
       _ _ ?_ hc1 ?_ hs1
     · push_cast; linear_combination hC32
@@ -325,7 +325,7 @@ private lemma mulhu_carry_bounds
       have h2 : (v.a_0 r_a).val * (v.b_1 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
       omega
   have b2 : (v.cy_2 r_a).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((v.a_2 r_a).val * (v.b_0 r_a).val + (v.a_1 r_a).val * (v.b_1 r_a).val
         + (v.a_0 r_a).val * (v.b_2 r_a).val + (v.cy_1 r_a).val) _ _ ?_ hc2 ?_ hs2
     · push_cast; linear_combination hC33
@@ -334,7 +334,7 @@ private lemma mulhu_carry_bounds
       have h3 : (v.a_0 r_a).val * (v.b_2 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
       omega
   have b3 : (v.cy_3 r_a).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((v.a_3 r_a).val * (v.b_0 r_a).val + (v.a_2 r_a).val * (v.b_1 r_a).val
         + (v.a_1 r_a).val * (v.b_2 r_a).val + (v.a_0 r_a).val * (v.b_3 r_a).val
         + (v.cy_2 r_a).val) _ _ ?_ hc3 ?_ hs3
@@ -345,7 +345,7 @@ private lemma mulhu_carry_bounds
       have h4 : (v.a_0 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
       omega
   have b4 : (v.cy_4 r_a).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((v.a_3 r_a).val * (v.b_1 r_a).val + (v.a_2 r_a).val * (v.b_2 r_a).val
         + (v.a_1 r_a).val * (v.b_3 r_a).val + (v.cy_3 r_a).val) _ _ ?_ hd0 ?_ hs4
     · push_cast; linear_combination hC35
@@ -354,7 +354,7 @@ private lemma mulhu_carry_bounds
       have h3 : (v.a_1 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
       omega
   have b5 : (v.cy_5 r_a).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((v.a_3 r_a).val * (v.b_2 r_a).val + (v.a_2 r_a).val * (v.b_3 r_a).val
         + (v.cy_4 r_a).val) _ _ ?_ hd1 ?_ hs5
     · push_cast; linear_combination hC36
@@ -362,7 +362,7 @@ private lemma mulhu_carry_bounds
       have h2 : (v.a_2 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
       omega
   have b6 : (v.cy_6 r_a).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((v.a_3 r_a).val * (v.b_3 r_a).val + (v.cy_5 r_a).val) _ _ ?_ hd2 ?_ hs6
     · push_cast; linear_combination hC37
     · have h1 : (v.a_3 r_a).val * (v.b_3 r_a).val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
@@ -376,7 +376,7 @@ open ZiskFv.PackedBitVec.Extensions in
     The no-wrap argument is unaffected; this routes through the loose chunk
     identity, then the public high-half extractor `fgl_mul_unsigned_to_bv64_hi`
     and the public byte-sum bridge `mul_hi_bv64_of_byte_sum`. -/
-private lemma mulhu_h_rd_val_of_loose
+private lemma mulhu_h_rd_val_of_loose_claimed_dead
     (op1 op2 : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
@@ -421,7 +421,7 @@ private lemma mulhu_h_rd_val_of_loose
         * ZiskFv.PackedBitVec.MulNoWrap.packed4 b₀.val b₁.val b₂.val b₃.val
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 c₀.val c₁.val c₂.val c₃.val
         + ZiskFv.PackedBitVec.MulNoWrap.packed4 d₀.val d₁.val d₂.val d₃.val * 18446744073709551616 :=
-    loose_mul_unsigned_chunks_to_nat_identity
+    loose_mul_unsigned_chunks_to_nat_identity_claimed_dead
       a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
       cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
       h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
@@ -472,7 +472,7 @@ open ZiskFv.EquivCore.Promises in
     bound `< 983041` (via `mulhu_carry_bounds`) and reconstructs the rd write
     value through the loose-bound write-value path `mulhu_h_rd_val_of_loose`,
     replicating `equiv_MULHU`'s sail + `bus_effect` tail. -/
-lemma equiv_MULHU_of_fullSpec
+lemma equiv_MULHU_of_fullSpec_claimed_dead
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)
@@ -541,10 +541,10 @@ lemma equiv_MULHU_of_fullSpec
           h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt,
           h_d0_lt, h_d1_lt, h_d2_lt, h_d3_lt⟩ := h_chunk_ranges
   -- ============ Mode-pinned chunk equations (from chain) ============
-  have heqs := mulhu_chain_eqs v r_a h_chain h_na h_nb h_np h_nr h_m32 h_div
+  have heqs := mulhu_chain_eqs_claimed_dead v r_a h_chain h_na h_nb h_np h_nr h_m32 h_div
   -- ============ DERIVE the balance-constructible unsigned carry bounds ============
   obtain ⟨hcy0, hcy1, hcy2, hcy3, hcy4, hcy5, hcy6⟩ :=
-    mulhu_carry_bounds v r_a h_chunk_ranges_spec h_carry_ranges_signed heqs
+    mulhu_carry_bounds_claimed_dead v r_a h_chunk_ranges_spec h_carry_ranges_signed heqs
   obtain ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ := heqs
   -- ============ Unpack matches_entry lane projections ============
   obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
@@ -579,7 +579,7 @@ lemma equiv_MULHU_of_fullSpec
     ZiskFv.EquivCore.Promises.arith_byte_lane_eq_of_match h_byte_hi_to_c1 h_c1_eq_FGL' h_d2_lt h_d3_lt
   -- ============ DISCHARGE rd-write value via the loose-bound path ============
   have h_rd_val :=
-    mulhu_h_rd_val_of_loose
+    mulhu_h_rd_val_of_loose_claimed_dead
       mulhu_input.r1_val mulhu_input.r2_val e2
       (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
       (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
@@ -746,7 +746,7 @@ theorem mulhuArow_match
     carry ranges, c46, carry-chain) are DERIVED inside the body from
     `trace.balanced` / `trace.spec` via the provider's lookup-aware
     `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
-theorem construction_mulhu_sound
+theorem construction_mulhu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -871,7 +871,7 @@ theorem construction_mulhu_sound
       m2_as := by rfl
       rd_idx := h_rd_idx }
   -- Delegate to the F4 fullSpec bridge.
-  exact equiv_MULHU_of_fullSpec
+  exact equiv_MULHU_of_fullSpec_claimed_dead
     (binding.stateAt i) mulhu_input r1 r2 rd (busSub trace binding i execRow)
     (mainOfTable trace.program binding.mainTable) i.val
     (vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)) 0

@@ -117,7 +117,7 @@ open ZiskFv.Airs.ArithMul in
 /-- **Mode-pinned DIVUW Euclidean chunk equations.** Identical to DIVU's
     `divu_chain_eqs` — the carry-chain constraints 31–38 are `m32`-independent,
     so the W-mode (`m32 = 1`) chain is the same low-32 Euclidean form. -/
-private lemma divuw_chain_eqs
+private lemma divuw_chain_eqs_claimed_dead
     (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
     (h_chain : mul_carry_chain_holds (vOfMulwRow arow) 0)
     (h_na : arow.flags.na = 0) (h_nb : arow.flags.nb = 0)
@@ -172,7 +172,7 @@ private lemma divuw_chain_eqs
     (all from `FullSpec`), derive the looser *unsigned-side* carry bounds
     `cy_i.val < 983041` via `unsigned_carry_step_nat` (reused from
     `ConstructionMulhu`). -/
-private lemma divuw_carry_bounds
+private lemma divuw_carry_bounds_claimed_dead
     (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
     (h_chunks : ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt (vOfDivuRow arow) 0)
     (h_csgn : ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt (vOfDivuRow arow) 0)
@@ -208,7 +208,7 @@ private lemma divuw_carry_bounds
   simp only [vOfDivuRow] at ha0 ha1 ha2 ha3 hb0 hb1 hb2 hb3 hc0 hc1 hc2 hc3 hd0 hd1 hd2 hd3
   simp only [vOfDivuRow] at hs0 hs1 hs2 hs3 hs4 hs5 hs6
   have b0 : (arow.carries.carry_0).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_0).val * (arow.chunks.b_0).val + (arow.chunks.d_0).val)
       _ _ ?_ hc0 ?_ hs0
     · push_cast; linear_combination hC31
@@ -216,7 +216,7 @@ private lemma divuw_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b1 : (arow.carries.carry_1).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_1).val * (arow.chunks.b_0).val
         + (arow.chunks.a_0).val * (arow.chunks.b_1).val
         + (arow.chunks.d_1).val + (arow.carries.carry_0).val) _ _ ?_ hc1 ?_ hs1
@@ -227,7 +227,7 @@ private lemma divuw_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b2 : (arow.carries.carry_2).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_2).val * (arow.chunks.b_0).val
         + (arow.chunks.a_1).val * (arow.chunks.b_1).val
         + (arow.chunks.a_0).val * (arow.chunks.b_2).val
@@ -241,7 +241,7 @@ private lemma divuw_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b3 : (arow.carries.carry_3).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_0).val
         + (arow.chunks.a_2).val * (arow.chunks.b_1).val
         + (arow.chunks.a_1).val * (arow.chunks.b_2).val
@@ -258,7 +258,7 @@ private lemma divuw_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b4 : (arow.carries.carry_4).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_1).val
         + (arow.chunks.a_2).val * (arow.chunks.b_2).val
         + (arow.chunks.a_1).val * (arow.chunks.b_3).val
@@ -272,7 +272,7 @@ private lemma divuw_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b5 : (arow.carries.carry_5).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_2).val
         + (arow.chunks.a_2).val * (arow.chunks.b_3).val
         + (arow.carries.carry_4).val) 0 _ ?_ (by omega) ?_ hs5
@@ -283,7 +283,7 @@ private lemma divuw_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b6 : (arow.carries.carry_6).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_3).val + (arow.carries.carry_5).val)
       0 _ ?_ (by omega) ?_ hs6
     · push_cast; linear_combination hC37
@@ -419,7 +419,7 @@ open ZiskFv.EquivCore.Promises in
     exactly the W-mode route/provenance obligations the canonical `equiv_DIVUW`
     carries (the `m32` flag is not an op-bus field, so the high-lane zeros are
     not balance-derivable here; they mirror the canonical's `h_b23` / `h_c23`). -/
-lemma equiv_DIVUW_of_fullSpec
+lemma equiv_DIVUW_of_fullSpec_claimed_dead
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput)
     (r1 r2 rd : regidx)
@@ -499,12 +499,12 @@ lemma equiv_DIVUW_of_fullSpec
           h_c0_eq_FGL, _h_c1_eq_FGL⟩ :=
     arith_div_primary_projections h_match_primary
   -- ============ Mode-pinned div-Euclidean chunk equations (W-mode) ===========
-  have heqs := divuw_chain_eqs arow h_spec h_na_arow h_nb_arow h_np_arow h_nr_arow
+  have heqs := divuw_chain_eqs_claimed_dead arow h_spec h_na_arow h_nb_arow h_np_arow h_nr_arow
     h_div_arow
   obtain ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ := heqs
   -- ============ Balance-constructible LOOSE unsigned carry bounds ============
   obtain ⟨hcy0, hcy1, hcy2, hcy3, hcy4, hcy5, hcy6⟩ :=
-    divuw_carry_bounds arow h_chunk_ranges_spec h_carry_ranges_signed
+    divuw_carry_bounds_claimed_dead arow h_chunk_ranges_spec h_carry_ranges_signed
       ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩
   -- ============ Remainder bound (RESIDUAL): d < b in low-32 chunk form =======
   obtain ⟨h_d23, h_d_lt_b_arith⟩ :=
@@ -633,7 +633,7 @@ lemma equiv_DIVUW_of_fullSpec
     `arith.pil:274`, absent from the ensemble) and `h_sext_choice` (the W-mode
     SEXT_00/SEXT_FF bus encoding on bytes 4..7, class #4 — the same residuals
     the canonical `equiv_DIVUW` carries). -/
-theorem construction_divuw_sound
+theorem construction_divuw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -778,7 +778,7 @@ theorem construction_divuw_sound
       m2_as := by rfl
       rd_idx := h_rd_idx }
   -- Delegate to the F4 fullSpec bridge.
-  exact equiv_DIVUW_of_fullSpec
+  exact equiv_DIVUW_of_fullSpec_claimed_dead
     (binding.stateAt i) divuw_input r1 r2 rd (busSub trace binding i execRow)
     (mainOfTable trace.program binding.mainTable) i.val
     (divuwArow trace binding i h_main_active h_main_op)

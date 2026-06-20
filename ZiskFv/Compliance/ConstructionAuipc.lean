@@ -76,7 +76,7 @@ set_option maxHeartbeats 2000000
     Derived inside the body (NOT binders): the Main per-row `Spec` and the full
     AUIPC constraint subset, the `StorePcMemoryWitness`, the rd-write MemBus
     shape, the pure-spec `nextPC_eq`, and the circuit-internal rd arithmetic. -/
-theorem construction_auipc_sound
+theorem construction_auipc_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

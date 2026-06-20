@@ -78,7 +78,7 @@ set_option maxHeartbeats 2000000
     * (b) JAL-specific (2): `h_input_imm`, `h_not_throws`
     * (b) RANGE pins (2): `h_pc_bound`, `h_pc_offset_lt_2_32`
     * (c) exec artifacts: the `execRow` ∀-binder + its shape fields. -/
-theorem construction_jal_sound
+theorem construction_jal_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -208,7 +208,7 @@ theorem construction_jal_sound
       next-PC `nextPC_matches` + rd alignment) carried in the bundle
     * (b) RANGE pins (2): `h_pc_bound`, `h_pc_offset_lt_2_32`
     * (c) exec artifacts: the `execRow` ∀-binder + its shape fields. -/
-theorem construction_jalr_sound
+theorem construction_jalr_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

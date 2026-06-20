@@ -154,7 +154,7 @@ theorem mainRowWithRomSt_core
     `matches_memory_entry_refl` (derived, NOT a balance/provider fact). The
     high-byte RMW preservation reads `m1..m7` are the genuinely-irreducible
     memory-side residual (named binders). -/
-theorem construction_sb_sound
+theorem construction_sb_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -288,7 +288,7 @@ theorem construction_sb_sound
 /-- Sound SH construction. DELTA from `construction_sb_sound`: `ind_width = 2`;
     `SbInput → ShInput`; `STOREB → STOREH`; the high-byte RMW residual drops the
     written low half-word — `m2..m7` instead of `m1..m7`; width literal `2`. -/
-theorem construction_sh_sound
+theorem construction_sh_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -411,7 +411,7 @@ theorem construction_sh_sound
 /-- Sound SW construction. DELTA from `construction_sh_sound`: `ind_width = 4`;
     `ShInput → SwInput`; `STOREH → STOREW`; the high-byte RMW residual drops the
     written low word — `m4..m7` instead of `m2..m7`; width literal `4`. -/
-theorem construction_sw_sound
+theorem construction_sw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -529,7 +529,7 @@ theorem construction_sw_sound
     writes all 8 bytes, so there is NO high-byte RMW residual (`m*` dropped) and
     NO `ind_width` pin; the `SdCleanWitness` is `state`-free. `STOREB → STORED`;
     width literal `8`. -/
-theorem construction_sd_sound
+theorem construction_sd_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

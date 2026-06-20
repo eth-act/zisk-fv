@@ -151,7 +151,7 @@ theorem mainRowWithRomLd_core
     * `mem`, `r_mem`, `h_mem_match`, `h_mem_sel`, `h_mem_wr` — the Mem-AIR
       provider row backing the read. Not balance-derivable here (the
       Mem-channel balance leaves a 5-way provider disjunction). -/
-theorem construction_ld_sound
+theorem construction_ld_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -295,7 +295,7 @@ theorem construction_ld_sound
     * `align : MemAlignWitness` — the sub-doubleword MemAlign provider bundle
       backing the narrow read (3 MemAlign validators + core/lookup + the
       `SubdoublewordLoadProviderWitness`). Not balance-derivable here. -/
-theorem construction_lbu_sound
+theorem construction_lbu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -429,7 +429,7 @@ theorem construction_lbu_sound
 /-- Sound LHU construction (unsigned half-word load). DELTA from
     `construction_lbu_sound`: width literal `2`; `h_width = 2`; `LbuInput →
     LhuInput`; `LOADBU → LOADHU`. Same #76 residual budget. -/
-theorem construction_lhu_sound
+theorem construction_lhu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -555,7 +555,7 @@ theorem construction_lhu_sound
 /-- Sound LWU construction (unsigned word load). DELTA from
     `construction_lhu_sound`: width literal `4`; `h_width = 4`; `LhuInput →
     LwuInput`; `LOADHU → LOADWU`. Same #76 residual budget. -/
-theorem construction_lwu_sound
+theorem construction_lwu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -692,7 +692,7 @@ theorem construction_lwu_sound
     **BinaryExtension op-bus provider residuals (no signextend balance wrapper
     exists; not derivable at this layer — FLAGGED):**
     * `v`, `r_binary`, `offset`, `env`, `h_static`, `h_match`. -/
-theorem construction_lb_sound
+theorem construction_lb_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -830,7 +830,7 @@ theorem construction_lb_sound
 /-- Sound LH construction (signed half-word load). DELTA from
     `construction_lb_sound`: `OP_SIGNEXTEND_H`; `LbInput → LhInput`; width
     literal `2`; `LOADB → LOADH`. Same residual budget. -/
-theorem construction_lh_sound
+theorem construction_lh_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -960,7 +960,7 @@ theorem construction_lh_sound
 /-- Sound LW construction (signed word load). DELTA from `construction_lh_sound`:
     `OP_SIGNEXTEND_W`; `LhInput → LwInput`; width literal `4`; `LOADH → LOADW`.
     Same residual budget. -/
-theorem construction_lw_sound
+theorem construction_lw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

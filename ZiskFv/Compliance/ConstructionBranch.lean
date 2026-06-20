@@ -105,7 +105,7 @@ set_option maxHeartbeats 2000000
     * (b) branch-outcome (2): `h_not_throws`, `h_success`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `exec_row` ∀-binder (with `misa_val`). -/
-theorem construction_beq_sound
+theorem construction_beq_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -166,7 +166,7 @@ theorem construction_beq_sound
     semantics live entirely inside `execute_BNE_pure` / canonical `equiv_BNE`.
     The conditional next-PC residual `h_nextPC_matches` is the #100 cross-row
     obligation. -/
-theorem construction_bne_sound
+theorem construction_bne_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -218,7 +218,7 @@ theorem construction_bne_sound
   exact ZiskFv.Compliance.equiv_BNE state bne_input ops promises
 
 /-- Sound BLT construction (signed less-than). See `construction_beq_sound`. -/
-theorem construction_blt_sound
+theorem construction_blt_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -270,7 +270,7 @@ theorem construction_blt_sound
   exact ZiskFv.Compliance.equiv_BLT state blt_input ops promises
 
 /-- Sound BGE construction (signed greater-or-equal). See `construction_beq_sound`. -/
-theorem construction_bge_sound
+theorem construction_bge_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -322,7 +322,7 @@ theorem construction_bge_sound
   exact ZiskFv.Compliance.equiv_BGE state bge_input ops promises
 
 /-- Sound BLTU construction (unsigned less-than). See `construction_beq_sound`. -/
-theorem construction_bltu_sound
+theorem construction_bltu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -374,7 +374,7 @@ theorem construction_bltu_sound
   exact ZiskFv.Compliance.equiv_BLTU state bltu_input ops promises
 
 /-- Sound BGEU construction (unsigned greater-or-equal). See `construction_beq_sound`. -/
-theorem construction_bgeu_sound
+theorem construction_bgeu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

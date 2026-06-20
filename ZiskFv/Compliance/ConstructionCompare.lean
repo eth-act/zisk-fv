@@ -79,7 +79,7 @@ set_option maxHeartbeats 2000000
     `trace.balanced`, via the salvaged compare wrapper), row shape, circuit-internal
     rd arithmetic (incl. the signed-compare polarity, inside `equiv_SLT`), the
     MemBus `m0..m2` shape, `h_lane_rd`, and the lane→Sail binding facts. -/
-theorem construction_slt_sound
+theorem construction_slt_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -274,7 +274,7 @@ theorem construction_slt_sound
     `execute_RTYPE_slt_pure → execute_RTYPE_sltu_pure`. `OP_LTU = 6 < 16`, so the
     same `_op_lt_16` + `_64` route applies; the unsigned-compare polarity lives
     inside `equiv_SLTU`. -/
-theorem construction_sltu_sound
+theorem construction_sltu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

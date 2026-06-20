@@ -247,7 +247,7 @@ open ZiskFv.Airs.ArithMul in
     `divu_chain_eqs` — the carry-chain constraints 31–38 are
     `main_div`/`main_mul`-independent, so the REMU secondary-lane chain is the
     same low Euclidean form. -/
-private lemma remu_chain_eqs
+private lemma remu_chain_eqs_claimed_dead
     (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
     (h_chain : mul_carry_chain_holds (vOfMulwRow arow) 0)
     (h_na : arow.flags.na = 0) (h_nb : arow.flags.nb = 0)
@@ -300,7 +300,7 @@ private lemma remu_chain_eqs
     `divu_carry_bounds`: derive the looser unsigned-side carry bounds
     `cy_i.val < 983041` via `unsigned_carry_step_nat` (reused from
     `ConstructionMulhu`). -/
-private lemma remu_carry_bounds
+private lemma remu_carry_bounds_claimed_dead
     (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
     (h_chunks : ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt (vOfDivuRow arow) 0)
     (h_csgn : ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt (vOfDivuRow arow) 0)
@@ -336,7 +336,7 @@ private lemma remu_carry_bounds
   simp only [vOfDivuRow] at ha0 ha1 ha2 ha3 hb0 hb1 hb2 hb3 hc0 hc1 hc2 hc3 hd0 hd1 hd2 hd3
   simp only [vOfDivuRow] at hs0 hs1 hs2 hs3 hs4 hs5 hs6
   have b0 : (arow.carries.carry_0).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_0).val * (arow.chunks.b_0).val + (arow.chunks.d_0).val)
       _ _ ?_ hc0 ?_ hs0
     · push_cast; linear_combination hC31
@@ -344,7 +344,7 @@ private lemma remu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b1 : (arow.carries.carry_1).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_1).val * (arow.chunks.b_0).val
         + (arow.chunks.a_0).val * (arow.chunks.b_1).val
         + (arow.chunks.d_1).val + (arow.carries.carry_0).val) _ _ ?_ hc1 ?_ hs1
@@ -355,7 +355,7 @@ private lemma remu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b2 : (arow.carries.carry_2).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_2).val * (arow.chunks.b_0).val
         + (arow.chunks.a_1).val * (arow.chunks.b_1).val
         + (arow.chunks.a_0).val * (arow.chunks.b_2).val
@@ -369,7 +369,7 @@ private lemma remu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b3 : (arow.carries.carry_3).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_0).val
         + (arow.chunks.a_2).val * (arow.chunks.b_1).val
         + (arow.chunks.a_1).val * (arow.chunks.b_2).val
@@ -386,7 +386,7 @@ private lemma remu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b4 : (arow.carries.carry_4).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_1).val
         + (arow.chunks.a_2).val * (arow.chunks.b_2).val
         + (arow.chunks.a_1).val * (arow.chunks.b_3).val
@@ -400,7 +400,7 @@ private lemma remu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b5 : (arow.carries.carry_5).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_2).val
         + (arow.chunks.a_2).val * (arow.chunks.b_3).val
         + (arow.carries.carry_4).val) 0 _ ?_ (by omega) ?_ hs5
@@ -411,7 +411,7 @@ private lemma remu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b6 : (arow.carries.carry_6).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_3).val + (arow.carries.carry_5).val)
       0 _ ?_ (by omega) ?_ hs6
     · push_cast; linear_combination hC37
@@ -439,7 +439,7 @@ open ZiskFv.EquivCore.Promises in
     ONE explicit residual binder (NOT balance-derived): the ArithDiv op-bus
     consumer `assumes_operation` edge is a finished-channel self-edge absent
     from the full ensemble (see module header). -/
-lemma equiv_REMU_of_fullSpec
+lemma equiv_REMU_of_fullSpec_claimed_dead
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput)
     (r1 r2 rd : regidx)
@@ -508,11 +508,11 @@ lemma equiv_REMU_of_fullSpec
           h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt,
           h_d0_lt, h_d1_lt, h_d2_lt, h_d3_lt⟩ := h_chunk_ranges
   -- ============ Mode-pinned div-Euclidean chunk equations ============
-  have heqs := remu_chain_eqs arow h_spec h_na_arow h_nb_arow h_np_arow h_nr_arow
+  have heqs := remu_chain_eqs_claimed_dead arow h_spec h_na_arow h_nb_arow h_np_arow h_nr_arow
     h_m32_arow h_div_arow
   -- ============ Balance-constructible LOOSE unsigned carry bounds ============
   obtain ⟨hcy0, hcy1, hcy2, hcy3, hcy4, hcy5, hcy6⟩ :=
-    remu_carry_bounds arow h_chunk_ranges_spec h_carry_ranges_signed heqs
+    remu_carry_bounds_claimed_dead arow h_chunk_ranges_spec h_carry_ranges_signed heqs
   obtain ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ := heqs
   -- ============ Remainder bound (RESIDUAL): d < b in chunk form ============
   have h_d_lt_b_arith :=
@@ -615,7 +615,7 @@ lemma equiv_REMU_of_fullSpec
     ensemble (`ArithDiv.component` emits no op-bus —
     `arithDiv_table_interactionsWith_opBus_nil`), so it is carried explicitly,
     exactly as the canonical `equiv_REMU` carries it. -/
-theorem construction_remu_sound
+theorem construction_remu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -741,7 +741,7 @@ theorem construction_remu_sound
       m2_as := by rfl
       rd_idx := h_rd_idx }
   -- Delegate to the F4 fullSpec bridge.
-  exact equiv_REMU_of_fullSpec
+  exact equiv_REMU_of_fullSpec_claimed_dead
     (binding.stateAt i) remu_input r1 r2 rd (busSub trace binding i execRow)
     (mainOfTable trace.program binding.mainTable) i.val
     (remuArow trace binding i h_main_active h_main_op)
