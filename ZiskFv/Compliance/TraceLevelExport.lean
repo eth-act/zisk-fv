@@ -2194,6 +2194,130 @@ structure RowData_mul
     ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
       ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
 
+/-- Irreducible per-row residuals for the `mulh` archetype (signed × signed
+    high half, op 181) — an OpEnvelope-route arm in the FENCE/MUL style.  Carries
+    the `OpEnvelope.mulh` ingredients as honest residual binders, plus the honest
+    `h_not_forge` shape AND the **SIGN-RANGE RESIDUAL** `h_sign_a`/`h_sign_b`
+    (`na = MSB(op1)`, `nb = MSB(op2)`).  The latter stands in for the real ZisK
+    indexed `range_ab` POS/NEG lookup (`arith.pil:286/289/303`) that the FV
+    extraction collapses to the full `rangeTable16`; it is CARRIED, not derived.
+    Non-vacuous: a real trace with an honest signed MULH row supplies all
+    binders (`h_not_forge` holds, `h_sign_*` are the true operand MSBs). -/
+structure RowData_mulh
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  mulh_input : PureSpec.MulhInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  bus : ZiskFv.Compliance.BusRows
+  v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL
+  r_a : ℕ
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MULH
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+  h_match_secondary :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program binding.mainTable) i.val)
+      (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r_a)
+  promises : ZiskFv.EquivCore.Promises.RTypePromises
+      (binding.stateAt i) mulh_input.r1_val mulh_input.r2_val mulh_input.rd mulh_input.PC
+      (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
+      r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
+  arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
+      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+  bounds : ZiskFv.Compliance.ByteBounds bus.e2
+  h_row_constraints :
+    ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+  arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a
+  arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a
+  arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a
+  h_rs1_value : mulh_input.r1_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+        (v.a_2 r_a).val (v.a_3 r_a).val
+  h_rs2_value : mulh_input.r2_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+        (v.b_2 r_a).val (v.b_3 r_a).val
+  -- Honest product-sign shape (forge excluded) ⇒ threaded `NoKnownDefect` SAT.
+  h_not_forge :
+    ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+      ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
+  -- SIGN-RANGE RESIDUAL (carried, not derived).
+  h_sign_a : (v.na r_a).val
+    = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+        (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0
+  h_sign_b : (v.nb r_a).val
+    = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+        (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0
+
+/-- Irreducible per-row residuals for the `mulhsu` archetype (signed × unsigned
+    high half, op 179).  Mirror of `RowData_mulh` but the table pins `nb = 0`
+    (op2 unsigned), so only ONE sign-range residual `h_sign_a` is carried. -/
+structure RowData_mulhsu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+  mulhsu_input : PureSpec.MulhsuInput
+  r1 : regidx
+  r2 : regidx
+  rd : regidx
+  bus : ZiskFv.Compliance.BusRows
+  v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL
+  r_a : ℕ
+  h_main_op :
+    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MULSUH
+  h_main_active :
+    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+  h_store_pc :
+    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+  h_m32 :
+    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+  h_set_pc :
+    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+  h_jmp_offset1 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+  h_jmp_offset2 :
+    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+  h_match_secondary :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program binding.mainTable) i.val)
+      (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r_a)
+  promises : ZiskFv.EquivCore.Promises.RTypePromises
+      (binding.stateAt i) mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
+      (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
+      r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
+  arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
+      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+  bounds : ZiskFv.Compliance.ByteBounds bus.e2
+  h_row_constraints :
+    ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+  arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a
+  arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a
+  arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a
+  h_rs1_value : mulhsu_input.r1_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+        (v.a_2 r_a).val (v.a_3 r_a).val
+  h_rs2_value : mulhsu_input.r2_val.toNat
+    = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+        (v.b_2 r_a).val (v.b_3 r_a).val
+  h_not_forge :
+    ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+      ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
+  -- SIGN-RANGE RESIDUAL on op1 only (op2 unsigned, table pins `nb = 0`).
+  h_sign_a : (v.na r_a).val
+    = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+        (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0
+
 /-- Irreducible per-row residuals for the `mulhu` archetype — the binders of
     `construction_mulhu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_mulhu
@@ -3570,6 +3694,67 @@ theorem mul_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulEnvOf]
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulEnvOf]
+
+/-- The `OpEnvelope.mulh` env CONSTRUCTED from a `RowData_mulh`.  Mirrors
+    `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed MULH
+    row.  Carries the SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b`. -/
+noncomputable def mulhEnvOf
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mulh trace binding i) :
+    OpEnvelope (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+  OpEnvelope.mulh d.mulh_input d.r1 d.r2 d.rd d.bus d.v d.r_a
+    ⟨d.h_main_active, d.h_main_op⟩
+    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_row_constraints
+    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges d.h_rs1_value d.h_rs2_value
+    d.h_sign_a d.h_sign_b
+
+/-- The `OpEnvelope.mulhsu` env CONSTRUCTED from a `RowData_mulhsu`.  Only ONE
+    sign-range residual `h_sign_a` (op2 unsigned, table-pinned `nb = 0`). -/
+noncomputable def mulhsuEnvOf
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mulhsu trace binding i) :
+    OpEnvelope (binding.stateAt i)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+  OpEnvelope.mulhsu d.mulhsu_input d.r1 d.r2 d.rd d.bus d.v d.r_a
+    ⟨d.h_main_active, d.h_main_op⟩
+    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_row_constraints
+    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges d.h_rs1_value d.h_rs2_value
+    d.h_sign_a
+
+/-- **Non-vacuity / satisfiability witness for the threaded MULH obligation.**
+    For an honest MULH row, `h_not_forge` rules out the two exceptional shapes the
+    narrowed `MaliciousSignedMulWitnessShape` admits for op 181, so
+    `NoKnownDefect (mulhEnvOf …)` is TRUE — the `.mulh` strong arm is NON-VACUOUS. -/
+theorem mulh_noKnownDefect_of_rowData
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mulh trace binding i) :
+    Defects.NoKnownDefect (mulhEnvOf trace binding i d) := by
+  intro id
+  cases id with
+  | arithMulSignedWitnessSoundness =>
+      simpa [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, mulhEnvOf]
+        using d.h_not_forge
+  | arithDivDynamicWitnessSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulhEnvOf]
+  | fenceIncomplete =>
+      simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhEnvOf]
+
+/-- Satisfiability witness for the threaded MULHSU obligation (companion of
+    `mulh_noKnownDefect_of_rowData`). -/
+theorem mulhsu_noKnownDefect_of_rowData
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mulhsu trace binding i) :
+    Defects.NoKnownDefect (mulhsuEnvOf trace binding i d) := by
+  intro id
+  cases id with
+  | arithMulSignedWitnessSoundness =>
+      simpa [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, mulhsuEnvOf]
+        using d.h_not_forge
+  | arithDivDynamicWitnessSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulhsuEnvOf]
+  | fenceIncomplete =>
+      simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhsuEnvOf]
 
 /-- Per-row construction data: one arm per sound construction archetype (55).
     Each arm carries a single `RowData_<op>` payload (its irreducible residuals).
@@ -10107,6 +10292,65 @@ theorem stepStrong_mul
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
+/-- Strengthened `mulh` step (channel-balance form), via the OpEnvelope route.
+
+    MULH is the signed × signed high multiply (op 181), a former defect-gated op
+    now landed on the OpEnvelope route.  CONSTRUCT `OpEnvelope.mulh` (= `mulhEnvOf`)
+    from the trace's `RowData_mulh` and invoke `zisk_riscv_compliant_program_bus`,
+    projecting the `exec_eq_remaining` conjunct.  The `NoKnownDefect` obligation is
+    the GENUINE `NoKnownDefect (mulhEnvOf …)` of the SPECIFIC env, SATISFIABLE for
+    an honest MULH row (`RowData_mulh.h_not_forge`).  The high-half compliance also
+    consumes the documented SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b` carried by
+    `RowData_mulh`.  Non-vacuous. -/
+theorem stepStrong_mulh
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mulh trace binding i)
+    (h_known : Defects.NoKnownDefect (mulhEnvOf trace binding i d)) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (d.r2, d.r1, d.rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Signed
+             signed_rs2 := .Signed }))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let env : OpEnvelope state m i.val := mulhEnvOf trace binding i d
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
+/-- Strengthened `mulhsu` step (channel-balance form), via the OpEnvelope route.
+    Companion of `stepStrong_mulh` for the signed × unsigned high multiply
+    (op 179).  Carries ONE sign-range residual `h_sign_a` (op2 unsigned). -/
+theorem stepStrong_mulhsu
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (d : RowData_mulhsu trace binding i)
+    (h_known : Defects.NoKnownDefect (mulhsuEnvOf trace binding i d)) :
+    (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (d.r2, d.r1, d.rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Signed
+             signed_rs2 := .Unsigned }))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set state := binding.stateAt i with hstate
+  let env : OpEnvelope state m i.val := mulhsuEnvOf trace binding i d
+  have h_bridge : env.aeneasBridgeTrust :=
+    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
+      d.h_jmp_offset1, d.h_jmp_offset2⟩
+  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+
 /-- Strengthened `fence` step (channel-balance form), via the OpEnvelope route.
 
     FENCE is the FENCE-decode-gap opcode.  CONSTRUCT `OpEnvelope.fence` (= the
@@ -10176,6 +10420,8 @@ inductive StrongRowConstructionData
   | srliw (d : RowData_srliw trace binding i) : StrongRowConstructionData trace binding i
   | sraiw (d : RowData_sraiw trace binding i) : StrongRowConstructionData trace binding i
   | mul (d : RowData_mul trace binding i) : StrongRowConstructionData trace binding i
+  | mulh (d : RowData_mulh trace binding i) : StrongRowConstructionData trace binding i
+  | mulhsu (d : RowData_mulhsu trace binding i) : StrongRowConstructionData trace binding i
   | mulw (d : RowData_mulw trace binding i) : StrongRowConstructionData trace binding i
   | mulhu (d : RowData_mulhu trace binding i) : StrongRowConstructionData trace binding i
   | divu (d : RowData_divu trace binding i) : StrongRowConstructionData trace binding i
@@ -10365,6 +10611,8 @@ def StepNoKnownDefect
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
       (r := i.val) (fun env => match env with | .bgeu .. => True | _ => False)
   | .mul d => Defects.NoKnownDefect (mulEnvOf trace binding i d)
+  | .mulh d => Defects.NoKnownDefect (mulhEnvOf trace binding i d)
+  | .mulhsu d => Defects.NoKnownDefect (mulhsuEnvOf trace binding i d)
   | .mulw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
@@ -10689,6 +10937,30 @@ def StepComplianceStrong
              signed_rs2 := d.srs2 }))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+  | .mulh d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (d.r2, d.r1, d.rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Signed
+             signed_rs2 := .Signed }))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+  | .mulhsu d =>
+      (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (d.r2, d.r1, d.rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Signed
+             signed_rs2 := .Unsigned }))) (binding.stateAt i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
   | .mulw d =>
       (do
       Sail.writeReg Register.nextPC
@@ -10919,6 +11191,8 @@ theorem stepComplianceStrong_of_rowData
   | srliw d => exact stepStrong_srliw trace binding i d h_known
   | sraiw d => exact stepStrong_sraiw trace binding i d h_known
   | mul d => exact stepStrong_mul trace binding i d h_known
+  | mulh d => exact stepStrong_mulh trace binding i d h_known
+  | mulhsu d => exact stepStrong_mulhsu trace binding i d h_known
   | mulw d => exact stepStrong_mulw trace binding i d h_known
   | mulhu d => exact stepStrong_mulhu trace binding i d h_known
   | divu d => exact stepStrong_divu trace binding i d h_known

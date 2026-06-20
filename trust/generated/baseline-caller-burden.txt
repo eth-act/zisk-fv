@@ -12,11 +12,11 @@
 #             bus_shape | row_shape | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1062
-# Category bridge: 122
+# Total rows: 1082
+# Category bridge: 126
 # Category entry: 5
 # Category match: 7
-# Category other: 705
+# Category other: 721
 # Category range: 1
 # Category row: 60
 # Category row_shape: 18
@@ -463,9 +463,20 @@ ZiskFv.Equivalence.MulH.equiv_MULH 010 pins [other] ZiskFv.Compliance.MainRowPin
 ZiskFv.Equivalence.MulH.equiv_MULH 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
 ZiskFv.Equivalence.MulH.equiv_MULH 012 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state mulh_input.r1_val mulh_input.r2_va
 ZiskFv.Equivalence.MulH.equiv_MULH 013 arith_mem [other] ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2
-ZiskFv.Equivalence.MulH.equiv_MULH 014 arith_table [other] ZiskFv.Compliance.ArithMulTableWitness v r_a
+ZiskFv.Equivalence.MulH.equiv_MULH 014 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
 ZiskFv.Equivalence.MulH.equiv_MULH 015 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
-ZiskFv.Equivalence.MulH.equiv_MULH 016 h_no_signed_mul_witness_defect [other] False
+ZiskFv.Equivalence.MulH.equiv_MULH 016 arith_table [other] ZiskFv.Compliance.ArithMulTableWitness v r_a
+ZiskFv.Equivalence.MulH.equiv_MULH 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a
+ZiskFv.Equivalence.MulH.equiv_MULH 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a
+ZiskFv.Equivalence.MulH.equiv_MULH 019 h_rs1_value [bridge] mulh_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val
+ZiskFv.Equivalence.MulH.equiv_MULH 020 h_rs2_value [bridge] mulh_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val
+ZiskFv.Equivalence.MulH.equiv_MULH 021 _ [other] MULH arm
+ZiskFv.Equivalence.MulH.equiv_MULH 022 _ [other] `np = na XOR nb`
+ZiskFv.Equivalence.MulH.equiv_MULH 023 h_not_forge [other] ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0) ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧
+ZiskFv.Equivalence.MulH.equiv_MULH 024 _ [other] `na = MSB(op1)`, `nb = MSB(op2)`
+ZiskFv.Equivalence.MulH.equiv_MULH 025 `arith.pil [other] 286/289/303`
+ZiskFv.Equivalence.MulH.equiv_MULH 026 h_sign_a [other] (v.na r_a).val = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).v
+ZiskFv.Equivalence.MulH.equiv_MULH 027 h_sign_b [other] (v.nb r_a).val = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).v
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 001 mulhsu_input [other] PureSpec.MulhsuInput
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 002 r1 [other] regidx
@@ -480,9 +491,18 @@ ZiskFv.Equivalence.MulHSU.equiv_MULHSU 010 pins [other] ZiskFv.Compliance.MainRo
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 012 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state mulhsu_input.r1_val mulhsu_input.r
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 013 arith_mem [other] ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2
-ZiskFv.Equivalence.MulHSU.equiv_MULHSU 014 arith_table [other] ZiskFv.Compliance.ArithMulTableWitness v r_a
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 014 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 015 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
-ZiskFv.Equivalence.MulHSU.equiv_MULHSU 016 h_no_signed_mul_witness_defect [other] False
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 016 arith_table [other] ZiskFv.Compliance.ArithMulTableWitness v r_a
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 019 h_rs1_value [bridge] mulhsu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).va
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 020 h_rs2_value [bridge] mulhsu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).va
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 021 _ [other] MULHSU arm
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 022 h_not_forge [other] ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0) ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 023 _ [other] op2 unsigned, `nb = 0` table-pinned
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 024 `arith.pil [other] 286/289/303`
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 025 h_sign_a [other] (v.na r_a).val = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).v
 ZiskFv.Equivalence.MulHU.equiv_MULHU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.MulHU.equiv_MULHU 001 mulhu_input [other] PureSpec.MulhuInput
 ZiskFv.Equivalence.MulHU.equiv_MULHU 002 r1 [other] regidx

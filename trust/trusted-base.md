@@ -285,8 +285,24 @@ Active conclusions:
   evidence plus the unsigned Euclidean identity.
 - Signed `DIV`, `DIVW`, `REM`, and `REMW` remain defect-gated because the
   signed remainder-bound route exposes an `LT_ABS_NP` byte-chain mismatch.
-- Signed `MUL`, `MULH`, and `MULHSU` remain defect-gated for signed witness
-  soundness under malicious witness construction.
+- Signed `MUL`, `MULH`, and `MULHSU` have their malicious-witness defect
+  **narrowed** to the exact exceptional product-sign forge shape (`(na=1,nb=0,
+  np=0)` / `(na=0,nb=1,np=0)`); the honest cases are proved non-vacuously
+  (`equiv_MUL` / `equiv_MULH` / `equiv_MULHSU`, gate-checked by the
+  `Defects.honest_{mul,mulh,mulhsu}_witness_not_malicious` anti-vacuity guards).
+- **Sign-range residual (MULH/MULHSU only).** The high-half signed proof carries
+  `na = MSB(op1)` / `nb = MSB(op2)` as explicit caller hypotheses (`h_sign_a` /
+  `h_sign_b`), NOT axioms — the per-theorem `Lean.collectAxioms` closure of
+  `equiv_MULH`/`equiv_MULHSU` is unchanged (0 `ZiskFv.*` axioms). The real ZisK
+  ArithMul circuit enforces these via the indexed `range_ab` POS/NEG range lookup
+  on `a[3]` (`zisk/state-machines/arith/pil/arith.pil:286/289/303`), but the FV
+  extraction collapses that indexed lookup to the full `rangeTable16`, so the
+  facts are unprovable in-model and are carried. This is an EXTRACTION-FIDELITY
+  residual of the same class as the Aeneas row-lowering and Sail memory-timeline
+  residuals above: satisfiable for every real trace, dischargeable-in-principle
+  by composing the indexed `ArithRangeTable` lookup into balance. The new binders
+  are visible in the canonical and wrapper caller-burden ledgers; details in
+  [`defects.md`](defects.md) (`ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`).
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
@@ -306,8 +322,9 @@ into shared global-theorem evidence.
 
 Current caller-burden summary:
 
-- Canonical total rows: 1062.
-- Wrapper total rows: 1117.
+- Canonical total rows: 1082 (was 1062; +20 from the MULH/MULHSU vacuous→real
+  binders incl. the sign-range residual, see `defects.md`).
+- Wrapper total rows: 1130 (was 1117; +13 from the same MULH/MULHSU change).
 - `bridge`: 122 in both ledgers.
 - `row_shape`: 18 canonical, 22 wrapper.
 - `bus_shape`: 0 in both ledgers.

@@ -2714,13 +2714,30 @@ def OpEnvelope.mulhOfExtractedShape
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulh_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulh_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
+    (h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
+    (h_sign_b : (v.nb r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0) :
     OpEnvelope state m r_main :=
   OpEnvelope.mulh mulh_input r1 r2 rd bus v r_a
     (MainRowProvenance.mulHPins_of_extracted_shape provenance h_op h_external)
-    h_match_secondary promises arith_mem h_row_constraints arith_table
+    h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a h_sign_b
 
 /-- The MULH bridge predicate is derivable from extracted row-shape equalities
 and the remaining dynamic ArithMul facts. -/
@@ -2745,13 +2762,30 @@ theorem OpEnvelope.aeneasBridgeTrust_mulhOfExtractedShape
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulh_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulh_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
+    (h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
+    (h_sign_b : (v.nb r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0) :
     (OpEnvelope.mulhOfExtractedShape
       mulh_input r1 r2 rd bus v r_a provenance h_op h_external h_m32
       h_set_pc h_store_pc h_jmp_offset1 h_jmp_offset2 h_match_secondary
-      promises arith_mem h_row_constraints arith_table).aeneasBridgeTrust := by
+      promises arith_mem bounds h_row_constraints arith_table arith_chunk_ranges
+      arith_carry_ranges h_rs1_value h_rs2_value h_sign_a h_sign_b).aeneasBridgeTrust := by
   unfold OpEnvelope.mulhOfExtractedShape OpEnvelope.aeneasBridgeTrust
   let pins := MainRowProvenance.mulHPins_of_extracted_shape provenance h_op h_external
   let controls :=
@@ -2874,13 +2908,27 @@ def OpEnvelope.mulhsuOfExtractedShape
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulhsu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulhsu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
+    (h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0) :
     OpEnvelope state m r_main :=
   OpEnvelope.mulhsu mulhsu_input r1 r2 rd bus v r_a
     (MainRowProvenance.mulSUHPins_of_extracted_shape provenance h_op h_external)
-    h_match_secondary promises arith_mem h_row_constraints arith_table
+    h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a
 
 /-- The MULHSU bridge predicate is derivable from extracted row-shape
 equalities and the remaining dynamic ArithMul facts. -/
@@ -2905,13 +2953,27 @@ theorem OpEnvelope.aeneasBridgeTrust_mulhsuOfExtractedShape
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulhsu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulhsu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
+    (h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0) :
     (OpEnvelope.mulhsuOfExtractedShape
       mulhsu_input r1 r2 rd bus v r_a provenance h_op h_external h_m32
       h_set_pc h_store_pc h_jmp_offset1 h_jmp_offset2 h_match_secondary
-      promises arith_mem h_row_constraints arith_table).aeneasBridgeTrust := by
+      promises arith_mem bounds h_row_constraints arith_table arith_chunk_ranges
+      arith_carry_ranges h_rs1_value h_rs2_value h_sign_a).aeneasBridgeTrust := by
   unfold OpEnvelope.mulhsuOfExtractedShape OpEnvelope.aeneasBridgeTrust
   let pins := MainRowProvenance.mulSUHPins_of_extracted_shape provenance h_op h_external
   let controls :=

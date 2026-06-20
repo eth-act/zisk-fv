@@ -35,3 +35,23 @@ witness-conditional defects, gated on the extraction-fidelity work + the upstrea
 
 NEXT (user's call): land 57/63 (recommended — the soundly-verifiable frontier); or pursue the deep
 extraction-fidelity (MULH/MULHSU) / old-theorem memory change (d). DIV/REM = upstream fix.
+
+=== ACTIVE: MULH/MULHSU retirement 57→59 (sign-range residual route) ===
+Plan: narrow Defects MaliciousSignedMulWitnessShape .mulh/.mulhsu True→exact forge; add sign-range
+residual binders (na=MSB op1, nb=MSB op2) to canonical equiv_MULH/MULHSU + wrappers; build real
+high-half signed proof via fgl_mul_signed_to_bv64_hi + mul_signed_chain_witnesses +
+signed_packed_toInt_eq_of_read_xreg; extend OpEnvelope .mulh/.mulhsu + dispatch; add trace-arms
+(mulhEnvOf/mulhsuEnvOf/RowData_*/stepStrong_*) to strong theorem; document sign-range residual in
+trust ledger (arith.pil:286/289/303); refresh caller-burden + hypothesis-count + axiom-deps baselines
+(GROW, justified+surfaced). 0 new ZiskFv.* axioms (na=MSB is a binder, not an axiom).
+Phases: 1 core rd-value lemma · 2 EquivCore · 3 wrappers · 4 canonical equivs · 5 defects+nonvac
+· 6 OpEnvelope+dispatch+trace-arms · 7 ledger+baselines+full build+gate.
+
+=== DONE (uncommitted): MULH/MULHSU retired 57→59/63 ===
+Full lake build green. Gate V1 18/18 + V2 12/12 pass (baselines refreshed: hypothesis-count,
+caller-burden canonical+wrapper; axiom-deps UNCHANGED = 0 ZiskFv.* axioms). Sign-range residual
+(na=MSB/nb=MSB) carried as h_sign_a/h_sign_b binders on equiv_MULH/MULHSU — documented in
+trust/defects.md + trust/trusted-base.md as extraction-fidelity residual (arith.pil:286/289/303).
+New: EquivCore/{MulH,MulHSU}.lean, mdrs_mulh_core_data + h_rd_val_mdrs_{mulh,mulhsu}_chunked,
+{mulh,mulhsu}_np_xor_or_zero_product_shape projections, RowData_{mulh,mulhsu}/{mulh,mulhsu}EnvOf/
+stepStrong_{mulh,mulhsu} trace-arms. Defects .mulh/.mulhsu narrowed True→exact forge. NOT committed.

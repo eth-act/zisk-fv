@@ -1940,9 +1940,28 @@ inductive OpEnvelope
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulh_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulh_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
+    -- SIGN-RANGE RESIDUAL: `na = MSB(op1)`, `nb = MSB(op2)`.  Carried, not
+    -- derived (the real circuit pins it via `arith.pil:286/289/303`; the FV
+    -- extraction collapses the indexed lookup to the full `rangeTable16`).
+    (h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
+    (h_sign_b : (v.nb r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0) :
     OpEnvelope state m r_main
   -- ============================ MULHU ===================================
   | mulhu
@@ -1988,9 +2007,23 @@ inductive OpEnvelope
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulhsu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulhsu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
+    -- SIGN-RANGE RESIDUAL on op1 only (op2 unsigned, table pins `nb = 0`).
+    (h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0) :
     OpEnvelope state m r_main
   -- ============================ MULW ====================================
   | mulw
