@@ -1,241 +1,37 @@
-Stream: P4 OpEnvelope constructions → P5 trace-level export (#61). Worktree p4-mext,
-branch p4-loads-stores (stacked on PR #110). build/ symlinked, submodule populated.
-Metaplan: docs/ai/plan/PLAN_ENDGAME.md (the home-stretch checklist). Gate V1 18/18 + V2 12/12.
+Stream: Uniform-63 OpEnvelope-route export (#61 endgame). Worktree p4-mext,
+branch p4-loads-stores (PR #112, stacked on PR #110). Metaplan: docs/ai/plan/PLAN_ENDGAME.md.
+Gate V1 18/18 + V2 12/12 throughout. 0 new ZiskFv.* axioms.
 
-=== SIGNED-MULTIPLY FAMILY ON OpEnvelope ROUTE (this run, uncommitted) ===
-PART 1 (MUL trace-arm) — GO, LANDED: 56 → 57/63. Added to TraceLevelExport.lean:
-`RowData_mul` (carries the `OpEnvelope.mul` ingredients as honest residual binders,
-FENCE-style — MUL has NO construction_mul_sound / no op-180 balance selector — plus
-the honest `¬forge` shape `h_not_forge`), `mulEnvOf` (builds the specific
-OpEnvelope.mul), `mul_noKnownDefect_of_rowData` (gate-checked NON-VACUITY: discharges
-NoKnownDefect (mulEnvOf …) from h_not_forge), `stepStrong_mul` (invokes
-zisk_riscv_compliant_program_bus, projects exec_eq_remaining `.2`×11). Wired `.mul`
-into StrongRowConstructionData / StepNoKnownDefect (specific-env obligation =
-NoKnownDefect (mulEnvOf …), SATISFIABLE for honest rows, NOT selector-∀, NOT False) /
-StepComplianceStrong / dispatcher. Full lake build GREEN (8702). Gate V1 18/18 + V2
-12/12 (NO baseline refresh needed — canonical equiv surface untouched). 0 new ZiskFv.*
-axioms (stepStrong_mul closure = Sail FFI + kernel only).
+=== RESULT: 57/63 on the OpEnvelope-route — the honest proof-layer cap (head 03fb00ea) ===
+zisk_compliant_of_accepted_trace_strong: for 57 opcodes, construct OpEnvelope.<op> from the
+trace + invoke zisk_riscv_compliant_program_bus + thread h_known_bugs. NO OpEnvelope input
+(takes rowData). Non-vacuous, NO main-theorem refactor (canonical/OpEnvelope/old-theorem intact).
+Built from the trace via mainConstVar/memConstVar (eval-provenance) + the trace-Environment
+lookup-witness pattern. 57 = 49 non-defect (ALU/shifts/W-ALU/W-shifts/branches/JAL-JALR/LUI/AUIPC/
+unsigned-M/stores/loads) + FENCE + MUL.
 
-PART 2 (MULH/MULHSU retirement) — NO-GO. The na=MSB high-half sign-range bridge is
-GENUINELY INTRACTABLE in the current FV model. EXACT GAP: the high-64 signed product
-needs `na = MSB(op1)`, `nb = MSB(op2)` (the sign witness must equal the operand sign).
-The extracted `Valid_ArithMul` constraints only pin `na,nb ∈ {0,1}` + `np = na XOR nb`
-+ the carry chain over the chunks (tied to op.toNat UNSIGNED bits via h_rs1_value).
-The na=MSB linkage lives in ZisK's range_ab/range_cd magnitude lookups, which
-`Airs/Arith/Mul.lean:47-51` documents as STRUCTURAL-ONLY (not value-pinning) in the
-extraction. So a malicious na=nb=np=0 on negative operands PASSES ¬forge yet yields
-the wrong UNSIGNED high product → honest high half NOT derivable. The math bridge
-exists (`SignedNoWrap.signed_mul_int_quadrant_identity`,
-`SailStateBridge.signed_packed_toInt_eq_of_read_xreg`) but ALL take `na = MSB`
-(h_sign_eq_msb) as a HYPOTHESIS. Closing it needs either a new range-lookup trust
-axiom (FORBIDDEN by guardrails) or a new OpEnvelope.mulh binder (FORBIDDEN: undischarged
-promise = laundering; also "do not redefine OpEnvelope arms"). MULH/MULHSU stay
-opcode-wide True / False.elim — UNCHANGED. (Same root cause as the extraction-fidelity
-scope note: range/table AIRs not value-pin-modeled.)
+Commits (10, on top of e3a71967): ba8b61d1 thread h_known_bugs · debd3bd7 (a) M-ext de-vacuity
+(tight <131072→faithful <983041; SOUNDNESS FIX) · 141b44fe branches+JALR · 7cf4c280 6 M-ext ·
+55cbc02e LUI/AUIPC/JAL · 009123ee W-shifts+stores · e8264ff3 7 loads · 8b763d61 FENCE ·
+8b541c46 (iii) MUL defect retired opcode-wide→exact forge (SOUNDNESS FIX) · 03fb00ea MUL trace-arm.
 
-=== SIGNED-M RETIREMENT FEASIBILITY PROBE: MUL — GO (uncommitted, prior run) ===
-Narrowed `Defects.MaliciousSignedMulWitnessShape (.mul ..)` from opcode-wide `True` to the
-EXACT forge: `(na=1∧nb=0∧np=0) ∨ (na=0∧nb=1∧np=0)` (the exceptional branch of
-`mul_np_xor_or_zero_product_shape`, op 180). Canonical `equiv_MUL` + wrapper binder changed
-`False` → `¬forge`; honest branch (np=na XOR nb) was ALREADY a real low-64 carry-chain proof
-(EquivCore.Mul.equiv_MUL), now NON-VACUOUS. Exceptional branch = `absurd h_exception h_not_forge`
-(genuine impossibility, no False.elim). Dispatcher derives `h_not_forge` from `NoKnownDefect`
-via no_malicious_signed_mul_witness_of_no_known_defect (DEFEQ). Constructibility:
-`Defects.honest_mul_witness_not_malicious` (na=nb=np=0 honest row, gate-checked). 0 new ZiskFv.*
-axioms (equiv_MUL + global closure UNCHANGED: Sail FFI + kernel only). hyp-count HOLDS
-(total=24 hyp=5, no growth); caller-burden = 1 line narrowed (False→¬forge). Full lake build
-GREEN; gate V1 18/18 + V2 12/12; baselines refreshed (caller-burden + wrapper-caller-burden +
-defects.md; axiom baselines UNCHANGED). MULH/MULHSU + signed-DIV/REM stay opcode-wide (need the
-high-half / signed-remainder-bound dynamic proofs — next steps; DIV/REM blocked by the
-LT_ABS_NP false-positive, defects.md). NOT committed.
+=== 6 signed-M genuinely blocked (NOT proof laziness — documented boundaries) ===
+- MULH/MULHSU (2): EXTRACTION-FIDELITY gap. The REAL circuit IS sound — it pins na=MSB
+  (arith.pil:286/289/303 indexed range lookup POS/NEG on a[3]); honest na: arith_operation.rs:487.
+  But the FV model collapses the indexed lookup to FULL rangeTable16 (<2^16) and doesn't compose
+  ArithRangeTable into balance, so na=MSB is unprovable in-model. Corrects defects.md's "genuinely
+  unsound" framing — it's an extraction-scope gap, not unsoundness. Unblock = deep extraction work.
+- DIV/DIVW/REM/REMW (4): GENUINE circuit bug LT_ABS_NP |a|=|b| (codygunton/zisk#5). Compliance is
+  FALSE for |a|=|b|, not just unproven. Needs upstream circuit fix. (Witness-conditional retirement
+  excluding |a|=|b| would also need the signed-range extraction, same scope as MULH/MULHSU.)
+Literal "all 63 for all inputs" is impossible (the DIV/REM bug). Ceiling = all-63-ARMS with
+witness-conditional defects, gated on the extraction-fidelity work + the upstream fix.
 
-=== P4 SOUND CONSTRUCTIONS: 55/63 — and 55 is the HONEST CAP ===
-Committed construction_<op>_sound (derived from trace.balanced + honest residuals,
-0 PROJECT ZiskFv.* axioms each):
-- 30 ALU/shift/W-ALU/LUI/AUIPC (on main) + 6 unsigned M-ext (PR #110)
-- stores SB/SH/SW/SD (387c45e0) → 40   [sub-doubleword carry h_m* preservation = #76]
-- loads LB/LH/LW/LD/LBU/LHU/LWU (54a99076) → 47   [carry memoryTimelineEvidence = #76 + providers]
-- branches BEQ..BGEU + JAL/JALR (fb259f04) → 55   [carry h_nextPC_matches = #100]
+=== Deferred ===
+- (d) memory reduction: STASHED (git stash). Fold-B port reduced loads' h_memory_timeline →
+  RowTraceCoherence but reverted loads to direct-lift (old theorem wants whole-state evidence).
+  Proper (d) needs the old-theorem memoryTimelineConstructionEvidence change (soundness-sensitive).
+- aeneas (h_aeneas, #111): on hold — decode residuals carried in rowData.
 
-The remaining 8 are DEFECT/GAP-GATED — NOT soundly constructible (honest exclusions,
-carried by the global theorem's ∀-env NoKnownDefect / decode-gap):
-- signed-M MUL/MULH/MULHSU/DIV/DIVW/REM/REMW (7): PROVEN unconstructible (agent a71dfd4).
-  The circuit's signed mul/div is UNSOUND (carry-chain can't rule out the exceptional
-  product-shape; a malicious prover can forge — defects.md:48-51). NoKnownDefect is
-  intentionally contradictory for these envelopes ⇒ any concrete construction is vacuous.
-  A laundered vacuous attempt (carried h_env_defect) was rejected + STASHED (never commit).
-- FENCE (1): decode-incompleteness (FenceIncomplete — decoder rejects generic fm≠0 FENCE).
-
-=== P5 trace-level export (the real #61 closure) over the 55 — IMPLEMENTED (uncommitted) ===
-ZiskFv/Compliance/TraceLevelExport.lean: 55 `RowData_<op>` structures + 55-arm
-`RowConstructionData` sum + `StepCompliance` (per-arm bus_effect) + `stepCompliance_of_rowData`
-+ `zisk_compliant_of_accepted_trace` (∀ i, StepCompliance …; NO OpEnvelope param). 0 sorry.
-
-=== P5-STRONG: channel-balance export — 49/55 (uncommitted) ===
-[UPDATE] +6 M-ext-unsigned arms (mulw/mulhu/divu/divuw/remu/remuw) added via DIRECT-LIFT:
-rw [state_effect_via_channels_eq_bus_effect_2]; exact construction_<op>_sound … — lifts the
-FAITHFUL loose-bound (<983041) construction, NEVER the canonical equiv tight (<131072) bound.
-Non-vacuous (execRow real ∀-binder; no False.elim). 0 new ZiskFv.* axioms. Full lake build GREEN.
-Gate V1 18/18 + V2 12/12. registered in StrongRowConstructionData/StepComplianceStrong/dispatcher.
-LEFT in bus_effect form (6): 6 defect/gap (7 signed-M minus unsigned overlap; FENCE). NOT committed.
-
-=== STEP (b4): 7 loads converted (LB/LH/LW/LD/LBU/LHU/LWU) — 48 → 55 (uncommitted, this run) ===
-ALL non-defect ops now on the OpEnvelope route (55/55). Each stepStrong_<load> builds
-OpEnvelope.<load> from the real committed trace row, calls zisk_riscv_compliant_program_bus,
-projects (LD → exec_eq_ldsd .2x8.1; LBU/LHU/LWU → exec_eq_remaining .2x11; LB/LH/LW →
-exec_eq_misc .2x10.1). KEY: new memConstVar/eval_memConstVar (Mem analogue of mainConstVar) +
-loadEvalEnv + loadMainMsg/loadMemMsg solve the prior Var/Environment eval-provenance wall
-(mainConstVar/memConstVar make h_mainEval/h_providerEval/h_main_row/h_mem_row/spec/b-match/c-match
-rfl-able). Each RowData_<load> now carries: h_memory_timeline as LoadMemoryTimelineConstruction-
-Evidence (#76 construction-evidence form), h_msg : loadMemMsg(rowAt mem r_mem)=loadMainMsg(mainRow)
-(the Mem-provider same-message #76 residual; replaces the old payload-only h_mem_match), mem/r_mem/
-sel/wr, + h_width decode pin (LD=8/LB=1/LH=2/LW=4), + for signed loads v/r_binary/offset/env/
-h_static/h_match (the SextLoad/aeneasBridgeTrust held decode residuals). aeneasBridgeTrust=d.h_width.
-StepNoKnownDefect: real EnvNoKnownDefectFor arms for the 7 (satisfiable via envNoKnownDefectFor_of_
-nondefect — loads are non-defect). Dispatcher threads h_known to the 7. The bus_effect-form (weak)
-export's 7 load arms re-derive construction args from the new RowData via two new helpers
-(loadMemMatchOfMsg: payload from h_msg+balance bridge; loadTimelineEvidenceOfConstruction:
-MemoryTimelineEvidence from construction-evidence via Classical.choice). OpEnvelope.lean/
-Compliance.lean/canonical equiv_<OP>/global theorem UNCHANGED. NON-VACUOUS (execRow real ∀-binder;
-envelope built from real row; #76 + SextLoad residuals are SATISFIABLE held binders, no False.elim).
-0 new ZiskFv.* axioms (closure = Sail FFI + kernel postulates). Full lake build GREEN (8702 jobs).
-Gate V1 18/18 + V2 12/12 (incl. V2 11/12 "global LD theorem instantiation"). NOT committed.
-
-=== STEP (b3): W-shifts (+6) + stores converted (+4) — 38 → 48 (uncommitted, prior run) ===
-+6 W-shift arms (sllw/srlw/sraw/slliw/srliw/sraiw) ADDED to StrongRowConstructionData/
-StepComplianceStrong/StepNoKnownDefect/dispatcher: each builds OpEnvelope.<wshift> from the
-trace's BinaryExtension shift provider (m32=1 route, shift_m32_1_*_of_facts), calls
-zisk_riscv_compliant_program_bus, projects exec_eq_remaining; real EnvNoKnownDefectFor arms
-(satisfiable via envNoKnownDefectFor_of_nondefect). Mirror of the W-ALU/base-shift arms.
-Stores SB/SH/SW/SD CONVERTED from inline direct-lift to OpEnvelope route. KEY: new helpers
-mainConstVar (a `.const`-leaf Var of the real `mainRowWithRomSt` row) + eval_mainConstVar
-(eval env (mainConstVar row) = row, deps = propext/Classical.choice/Quot.sound only) + a
-private emptyMainEnv instantiate the OpEnvelope.<store> {mainRowVar}/{mainEnv} implicit binders;
-by eval_mainConstVar the five eval-shaped hyps reduce to the concrete-row facts
-construction_<store>_sound proves (Spec/store_pc/c-match/addr2). This `.const`-literal-of-the-
-real-row pattern SIDESTEPPED the prior whnf BLOWUP (Eq.mpr cast over a free MainRowWithRom
-motive). NoKnownDefect threaded via EnvNoKnownDefectFor (the simp_all-on-concrete-env route DID
-blow up; the threaded route does not). SB/SH/SW project exec_eq_remaining (.2x11); SD projects
-exec_eq_ldsd (.2x8.1). #76 sub-doubleword RMW residuals (h_m*) carried verbatim as RowData
-binders. NON-VACUOUS (execRow real ∀-binder; matches_memory_entry_refl over the real busSt row;
-no False.elim/sorry). 0 new ZiskFv.* axioms (closure = Sail FFI + kernel postulates, same as the
-constructions). Full lake build GREEN. Gate V1 18/18 + V2 12/12. Remaining direct-lift (7): loads.
-NOT committed.
-
-=== STEP (b2-control): LUI/AUIPC/JAL OpEnvelope-route conversion — 35 → 38 (uncommitted, this run) ===
-All 3 converted from direct-lift to the OpEnvelope route via PATH 1 (trace-built provenance):
-- KEY FINDING: lui/auipc/jal_h_circuit_of_row_provenance consume ONLY the 5 mode equalities
-  (is_external_op/op/m32/set_pc/store_pc); paddr/jmp_offset*/ind_width/ROM-selectors are never read.
-  FGL = Fin GL_prime ⇒ natF/intF/boolF surjective (Fin.cast_val_eq_self) ⇒ the non-consumed
-  provenance fields are reverse-derived from the real row, all eqs TRUE (non-vacuous, no False.elim).
-- New helper mainRowProvenance_of_pins (TraceLevelExport.lean, after envNoKnownDefectFor_of_nondefect):
-  builds MainRowProvenance m r from the 5 pins; carries NO trust beyond them (repackaging only).
-- Each stepStrong_{lui,auipc,jal}: build OpEnvelope.<op> (provenance from pins + RowMode by rfl +
-  next_pc/store_pc_mem/subset/promises mirrored from construction_<op>_sound), call
-  zisk_riscv_compliant_program_bus, project (lui/auipc = .2.2.2.1 nomem; jal = 11x.2 remaining).
-  aeneasBridgeTrust = ⟨⟨provenance⟩, row_mode, <2 RowData decode residuals>⟩.
-- NO new RowData fields (the 5 pins already present). NOT PATH 3: MainRowProvenance is TRACE-BUILT,
-  not a carried aeneas residual, because the consumed slice reduces to the existing pins.
-- StepNoKnownDefect: real EnvNoKnownDefectFor arms added for lui/auipc/jal (satisfiable via
-  envNoKnownDefectFor_of_nondefect — non-defect, VERIFIED). Dispatcher threads h_known to the 3.
-- OpEnvelope.lean / Compliance.lean / canonical equiv_<OP> UNCHANGED. 0 new ZiskFv.* axioms
-  (mainRowProvenance_of_pins deps = propext/Classical.choice/Quot.sound; arms = Sail closure).
-  Full lake build GREEN. Gate V1 18/18 + V2 12/12. NOT committed.
-  Remaining direct-lift (11): 4 stores + 7 loads.
-
-=== STEP (b2): M-ext OpEnvelope-route conversion — 29 → 35 (uncommitted, this run) ===
-All 6 M-ext arms (mulw/mulhu/divu/divuw/remu/remuw) converted from direct-lift to the
-OpEnvelope route via PATH 1 (trace-Environment): the lookup-witness STRUCTURES are now
-BUILT from the SHARED-ArithMul provider's balance-derived FullSpec, NOT carried.
-- New witness builders (Mem `rowRangeLookupWitness_of_range_facts` dummy-env technique,
-  non-vacuous: substance = real FullSpec projections): `arithMulTableWitness_of_fullSpec`
-  + `arithDivTableWitness_of_fullSpec` (SharedBundles.lean); `chunkRangeLookupWitness_of_spec`
-  + `signedCarryRangeLookupWitness_of_spec` (ArithMul/Bridge.lean + ArithDiv/Bridge.lean).
-- ArithMul→ArithDiv view bridge (Div arms): `arithDiv_fullSpec_of_arithMul_fullSpec` +
-  `divu_row_constraints_of_arithMul_fullSpec` (ConstructionDivu.lean) — Div canonical equiv
-  needs ArithDiv witnesses; provider is SHARED ArithMul; bridge re-views the same facts.
-  `remainder_bound` stays the explicit RowData residual.
-- Each arm: construct OpEnvelope.<op> from the trace's *Arow FullSpec/match + decode pins
-  (added h_m32/h_set_pc/h_jmp_offset1/h_jmp_offset2 to all 6 RowData), call
-  zisk_riscv_compliant_program_bus, thread h_known_arm (real EnvNoKnownDefectFor, M-ext
-  cases added to StepNoKnownDefect; satisfiable via envNoKnownDefectFor_of_nondefect).
-  DIVU projects exec_eq_divu (.2.2.2.2.2.2.2.2.2.1); the other 5 project exec_eq_remaining.
-- OpEnvelope.lean / Compliance.lean / zisk_riscv_compliant_program_bus / canonical equiv_<OP>
-  UNCHANGED (Attempt 1, no arm-redefinition). 0 new ZiskFv.* axioms. Full lake build GREEN.
-  Gate V1 18/18 + V2 12/12. NOT committed.
-
-=== STEP (b1): OpEnvelope-route conversion — 22 → 29 (uncommitted, prior run) ===
-Converted 7 of the 16 targeted direct-lift arms to the OpEnvelope route (construct envelope +
-call zisk_riscv_compliant_program_bus + thread h_known_arm): the 6 branches (beq/bne/blt/bge/
-bltu/bgeu, projecting exec_eq_branch) + JALR (projecting exec_eq_remaining). Each: build
-OpEnvelope.<op>, prove aeneasBridgeTrust (flat decode pins), memoryTimeline=trivial,
-NoKnownDefect=h_known_arm env trivial. StepNoKnownDefect now returns the real EnvNoKnownDefectFor
-for these 7 (non-vacuous: satisfiable for non-defect ops via envNoKnownDefectFor_of_nondefect —
-verified). Added 6 flat decode-pin fields to each RowData_b* (h_main_active/h_main_op/h_m32/
-h_set_pc/h_store_pc/h_jmp_offset1or2 — genuine trace residuals); JALR needed none (pins already
-present). Full lake build GREEN; 0 new ZiskFv.* axioms; gate V1 18/18 + V2 12/12. NOT committed.
-BLOCKED 9 (genuine walls, reported — NOT laundered/forced):
-- M-ext (6: mulw/mulhu/divu/divuw/remu/remuw): OpEnvelope arms require lookup-witness STRUCTURES
-  (ArithMul/DivTableWitness, *ChunkRangeWitness, *SignedCarryRangeWitness, ArithDivRemainderBound-
-  Witness = {offset, env : Environment FGL, holds : ConstraintsHold.Soundness …}). Balance yields
-  only Prop-level FullSpec; NO FullSpec→lookup-witness bridge exists (witness needs a Clean env for
-  the constant vOf*Row view). DIVU/MULHU additionally route through equiv_DIVU/MULHU whose internal
-  TIGHT <131072 carry bound is documented NOT balance-constructible (ConstructionDivu.lean:36-57).
-  The *_of_fullSpec wrappers exist precisely to AVOID this route.
-- LUI/AUIPC/JAL (3): OpEnvelope arms require MainRowProvenance + *RowMode (the Aeneas-extracted-row
-  record incl. ROM fields). NO constructor of MainRowProvenance from a trace exists anywhere
-  (it is the blocked-in-build aeneasBridgeTrust residual; 4.28 can't import 4.30 Aeneas world).
-  Constructions route through MainRowProvenance-free variants (equiv_LUI / equiv_JAL_of_main_pins).
-Stores (4) + loads (7) intentionally LEFT on direct-lift (next step).
---- (prior note, now superseded by the line above) ---
-TraceLevelExport.lean: 43 `stepStrong_<op>` theorems via TWO sound routes, both yielding the
-OLD global theorem's per-arm conclusion (channel-balance `state_effect_via_channels`) —
-STRICTLY STRONGER than the bus_effect form. + `StrongRowConstructionData` (43-arm sum) +
-`StepComplianceStrong` + `stepComplianceStrong_of_rowData` + `zisk_compliant_of_accepted_trace_strong`
-(∀ i, …; NO OpEnvelope param).
-- ENV-CONSTRUCTED route (22 op-bus ALU): RTYPE sub/and/or/xor/slt/sltu; ITYPE
-  andi/ori/xori/slti/sltiu; shifts sll/srl/sra/slli/srli/srai; ADD/ADDI; W-ALU subw/addw/addiw.
-  CONSTRUCT OpEnvelope.<op> per row, invoke zisk_riscv_compliant_program_bus; 3 hyps discharged
-  in place (aeneasBridgeTrust/memoryTimeline/NoKnownDefect-trivially-TRUE).
-- DIRECT-LIFT route (21 NEW this run): branches beq/bne/blt/bge/bltu/bgeu; LUI/AUIPC; JAL/JALR;
-  stores sb/sh/sw/sd; loads lb/lh/lw/ld/lbu/lhu/lwu. Each construction_<op>_sound proves the
-  bus_effect form over the real trace row; state_effect_via_channels is @[reducible]-defeq to
-  bus_effect.2, so `rw [state_effect_via_channels_eq_bus_effect_2]; exact construction_<op>_sound …`
-  yields the IDENTICAL channel-balance proposition the global theorem produces. For branches this
-  IS the Equivalence.<B>.equiv_<B> the global dispatcher dispatches to. This route NEVER builds an
-  OpEnvelope / invokes zisk_riscv_compliant_program_bus, so it sidesteps the stores' whnf BLOWUP
-  (Eq.mpr cast over MainRowWithRom) and the loads' Var/Environment eval-provenance obstacle.
-NON-VACUOUS: no False.elim / contradictory binder anywhere; execRow stays a real ∀-binder;
-conclusion over the real mainOfTable row; #76/SextLoadBridge residuals carried verbatim as
-RowData binders. 0 sorry; 0 new ZiskFv.* PROJECT axioms (only ZiskFv-prefixed name in closure is
-the theorem itself; deps = Sail-translation + Lean-kernel postulates, = constructions' closure).
-Full lake build GREEN; gate V1 18/18 + V2 12/12.
-LEFT in bus_effect form (12): 6 M-ext-unsigned (mulw/mulhu/divu/divuw/remu/remuw — direct-lift
-available BUT bus_effect is CORRECT: channel-balance equiv needs the TIGHT <131072 carry bound,
-known-suspect / not row-locally constructible; faithful <983041 is right — do NOT force) + 6
-defect/gap (7 signed-M minus the unsigned overlap counts as the M-ext set; FENCE) with no sound
-construction. NOT committed (per instructions).
-
-=== SIBLING THREADS ===
-- #111 (aeneasBridgeTrust discharge): BLOCKED — sound in-build discharge is NO-GO (numBits/
-  irreducibility wall; native_decide gate-forbidden). Needs a route decision (a: large
-  symbolic effort / b: native_decide trust-policy [advised against] / c: keep loose coupling).
-- #76 (h_memory_timeline): PR-76.5 step D landed on p76-memory (cross-segment seam, GO);
-  E/F/G + per-address timeline remain. Discharges loads' + stores' #76 residuals.
-
-=== P5-STRONG h_known_bugs THREADING — DONE (uncommitted) ===
-zisk_compliant_of_accepted_trace_strong now TAKES a per-row defect-exclusion binder
-`(h_known_bugs : ∀ i, StepNoKnownDefect trace binding i (rowData i))` and threads it via
-stepComplianceStrong_of_rowData → each of the 22 OpEnvelope-route stepStrong_<op> arms, which
-now RECEIVE the supplied obligation and pass `h_known_arm env trivial : NoKnownDefect env` to
-zisk_riscv_compliant_program_bus INSTEAD of proving NoKnownDefect internally. New helpers in
-TraceLevelExport.lean: `EnvNoKnownDefectFor sel := ∀ env, sel env → NoKnownDefect env` (def),
-`envNoKnownDefectFor_of_nondefect` (trivial-discharge theorem), `StepNoKnownDefect` (per-arm
-obligation; EnvNoKnownDefectFor on the arm's constructor for the 22, True for direct-lift arms).
-NON-VACUOUS: trivially satisfiable for the 49 current non-defect arms (witness verified);
-for the future signed-M/FENCE defect arms the same binder becomes the genuine NoKnownDefect of a
-defect-region env (NOT unconditionally true) — the plumbing point. 0 new ZiskFv.* axioms (closure
-unchanged). Full lake build GREEN. Gate V1 18/18 + V2 12/12. NOT committed.
-
-GOAL NOTE: the /goal says "ALL 63" — unachievable (8 are defect/gap-gated). Re-scope to
-"the 55 constructible + 8 honestly excluded via NoKnownDefect; P5 over the 55."
+NEXT (user's call): land 57/63 (recommended — the soundly-verifiable frontier); or pursue the deep
+extraction-fidelity (MULH/MULHSU) / old-theorem memory change (d). DIV/REM = upstream fix.
