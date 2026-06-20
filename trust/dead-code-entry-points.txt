@@ -9,14 +9,10 @@
 # Group 1: the global compliance theorem.
 ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 #
-# Group 1b: the P5 trace-level export theorem (#61 closure over the 55
-# sound constructions). Reaches RowConstructionData / RowData_<op> /
-# StepCompliance / stepCompliance_of_rowData.
-ZiskFv.Compliance.zisk_compliant_of_accepted_trace
-# Group 1c: the STRENGTHENED env-constructed channel-balance export over the
-# 22 op-bus ALU arms (#61, strictly stronger than 1b). Reaches
-# StrongRowConstructionData / StepComplianceStrong / stepComplianceStrong_of_rowData
-# / stepStrong_<op> / zeroValidBinary.
+# Group 1b: the P5 trace-level export theorem (#61). The env-constructed
+# channel-balance export over the 56 strengthened archetypes. Reaches
+# StrongRowConstructionData / RowData_<op> / StepComplianceStrong /
+# stepComplianceStrong_of_rowData / stepStrong_<op> / zeroValidBinary.
 ZiskFv.Compliance.zisk_compliant_of_accepted_trace_strong
 #
 # Group 2: the 63 canonical `equiv_<OP>` theorems (one per RV64IM
