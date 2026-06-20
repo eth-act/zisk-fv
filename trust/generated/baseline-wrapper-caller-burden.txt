@@ -12,12 +12,12 @@
 #             bus_shape | row_shape | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1135
+# Total rows: 1157
 # Total wrappers: 63
-# Category bridge: 134
+# Category bridge: 138
 # Category entry: 9
 # Category match: 7
-# Category other: 756
+# Category other: 774
 # Category range: 3
 # Category row: 60
 # Category row_shape: 22
@@ -275,19 +275,30 @@ ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 010 pins [other] ZiskFv.Compliance.Ma
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 012 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state divw_input.r1_val divw_input.r2_va
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 013 arith_mem [other] ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 014 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 015 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 016 _ [other] CIRCUIT-CONSTRAINT — caller-supplied
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 017 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 018 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 019 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 020 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 021 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 022 h_rs1_value [bridge] (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt = ((v.c_0 r_a).val + (v.c_
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 023 h_rs2_value [bridge] (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 024 h_op2_ne [bridge] Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 025 h_no_overflow [bridge] ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31) ∧ Sail
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 026 h_no_arith_div_dynamic_defect [other] False
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 014 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 016 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 019 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 020 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 021 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 022 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 023 h_nr_pin [other] toIntZ (v.nr r_a) = toIntZ (v.np r_a) ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val =
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 024 h_m32 [other] v.m32 r_a = 1
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 025 h_div [other] v.div r_a = 1
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 026 h_a23 [other] (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 027 h_b23 [other] (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 028 h_d23 [other] (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 029 h_c23 [other] (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 030 h_byte_lo [other] (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 031 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 032 h_rs1_value [bridge] (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt = ((v.c_0 r_a).val + (v.c_
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 033 h_rs2_value [bridge] (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 034 h_op2_ne [bridge] Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 035 h_no_overflow [bridge] ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31) ∧ Sail
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 036 h_r_abs [bridge] (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ) - toIntZ (v.nr r_a) * (2:ℤ)^32)
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 037 h_r_sign [bridge] 0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ) - toIntZ (v.nr r_a) * (2:ℤ)
 ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 001 fence_input [other] PureSpec.FenceInput
 ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 002 fm [other] BitVec 4
@@ -713,19 +724,30 @@ ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 010 pins [other] ZiskFv.Compliance.Ma
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 012 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state remw_input.r1_val remw_input.r2_va
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 013 arith_mem [other] ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 014 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 015 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 016 _ [other] CIRCUIT-CONSTRAINT — caller-supplied
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 017 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 018 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 019 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 020 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 021 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 022 h_rs1_value [bridge] (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt = ((v.c_0 r_a).val + (v.c_
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 023 h_rs2_value [bridge] (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 024 h_op2_ne [bridge] Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 025 h_no_overflow_w [bridge] ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31)) ∧ Sa
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 026 h_no_arith_div_dynamic_defect [other] False
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 014 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 016 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 017 arith_chunk_ranges [other] ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 018 arith_carry_ranges [other] ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 019 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 020 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 021 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 022 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 023 h_nr_pin [other] toIntZ (v.nr r_a) = toIntZ (v.np r_a) ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val =
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 024 h_m32 [other] v.m32 r_a = 1
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 025 h_div [other] v.div r_a = 1
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 026 h_a23 [other] (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 027 h_b23 [other] (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 028 h_d23 [other] (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 029 h_c23 [other] (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 030 h_byte_lo [other] (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 031 h_sext_choice [other] (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 032 h_rs1_value [bridge] (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt = ((v.c_0 r_a).val + (v.c_
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 033 h_rs2_value [bridge] (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 034 h_op2_ne [bridge] Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 035 h_no_overflow_w [bridge] ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31)) ∧ Sa
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 036 h_r_abs [bridge] (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ) - toIntZ (v.nr r_a) * (2:ℤ)^32)
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 037 h_r_sign [bridge] 0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ) - toIntZ (v.nr r_a) * (2:ℤ)
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 001 sb_input [other] PureSpec.SbInput
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 002 regs [other] ZiskFv.Compliance.ModeRegsFull

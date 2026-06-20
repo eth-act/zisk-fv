@@ -3381,9 +3381,12 @@ def OpEnvelope.divwOfExtractedShape
         (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -3393,6 +3396,21 @@ def OpEnvelope.divwOfExtractedShape
             + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
             - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
               * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
+    (h_nr_pin :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0))
+    (h_m32_pin : v.m32 r_a = 1) (h_div_pin : v.div r_a = 1)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
+    (h_byte_lo :
+      (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 0).val
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1).val * 256
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2).val * 65536
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3).val * 16777216
+        = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
     (h_sext_choice :
       (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 0 ∧
           (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 0 ∧
@@ -3415,13 +3433,22 @@ def OpEnvelope.divwOfExtractedShape
     (h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
-          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
+    (h_r_le :
+      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+        - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+          ≤ (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+            - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
+          * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt) :
     OpEnvelope state m r_main :=
   OpEnvelope.divw divw_input r1 r2 rd bus v r_a
     (MainRowProvenance.divWPins_of_extracted_shape provenance h_op h_external)
-    h_match_primary promises arith_mem h_row_constraints arith_table h_na_bool
-    h_nb_bool h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value h_op2_ne
-    h_no_overflow
+    h_match_primary promises arith_mem bounds h_row_constraints arith_table
+    arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+    h_m32_pin h_div_pin h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
+    h_rs1_value h_rs2_value h_op2_ne h_no_overflow h_r_le h_r_sign
 
 /-- The DIVW bridge predicate is derivable from extracted row-shape
 equalities and the remaining dynamic ArithDiv facts. -/
@@ -3446,9 +3473,12 @@ theorem OpEnvelope.aeneasBridgeTrust_divwOfExtractedShape
         (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -3458,6 +3488,21 @@ theorem OpEnvelope.aeneasBridgeTrust_divwOfExtractedShape
             + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
             - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
               * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
+    (h_nr_pin :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0))
+    (h_m32_pin : v.m32 r_a = 1) (h_div_pin : v.div r_a = 1)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
+    (h_byte_lo :
+      (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 0).val
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1).val * 256
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2).val * 65536
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3).val * 16777216
+        = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
     (h_sext_choice :
       (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 0 ∧
           (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 0 ∧
@@ -3480,13 +3525,22 @@ theorem OpEnvelope.aeneasBridgeTrust_divwOfExtractedShape
     (h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
-          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
+    (h_r_le :
+      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+        - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+          ≤ (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+            - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
+          * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt) :
     (OpEnvelope.divwOfExtractedShape
       divw_input r1 r2 rd bus v r_a provenance h_op h_external h_m32
       h_set_pc h_store_pc h_jmp_offset1 h_jmp_offset2 h_match_primary
-      promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool
-      h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value h_op2_ne
-      h_no_overflow).aeneasBridgeTrust := by
+      promises arith_mem bounds h_row_constraints arith_table arith_chunk_ranges
+      arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+      h_m32_pin h_div_pin h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
+      h_rs1_value h_rs2_value h_op2_ne h_no_overflow h_r_le h_r_sign).aeneasBridgeTrust := by
   unfold OpEnvelope.divwOfExtractedShape OpEnvelope.aeneasBridgeTrust
   let pins := MainRowProvenance.divWPins_of_extracted_shape provenance h_op h_external
   let controls :=
@@ -3893,9 +3947,12 @@ def OpEnvelope.remwOfExtractedShape
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -3905,6 +3962,21 @@ def OpEnvelope.remwOfExtractedShape
             + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
             - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
               * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
+    (h_nr_pin :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0))
+    (h_m32_pin : v.m32 r_a = 1) (h_div_pin : v.div r_a = 1)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
+    (h_byte_lo :
+      (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 0).val
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1).val * 256
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2).val * 65536
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3).val * 16777216
+        = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
     (h_sext_choice :
       (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 0 ∧
           (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 0 ∧
@@ -3919,21 +3991,30 @@ def OpEnvelope.remwOfExtractedShape
     (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
-            - (v.np r_a).val * (2:ℤ)^32)
+            - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a) * (2:ℤ)^32)
     (h_rs2_value :
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
-            - (v.nb r_a).val * (2:ℤ)^32)
+            - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
     (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow_w :
       ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
+    (h_r_le :
+      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+        - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+        ≤ (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+            - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
+          * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt) :
     OpEnvelope state m r_main :=
   OpEnvelope.remw remw_input r1 r2 rd bus v r_a
     (MainRowProvenance.remWPins_of_extracted_shape provenance h_op h_external)
-    h_match_secondary promises arith_mem h_row_constraints arith_table h_na_bool
-    h_nb_bool h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value h_op2_ne
-    h_no_overflow_w
+    h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+    arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+    h_m32_pin h_div_pin h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
+    h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w h_r_le h_r_sign
 
 /-- The REMW bridge predicate is derivable from extracted row-shape
 equalities and the remaining dynamic ArithDiv facts. -/
@@ -3958,9 +4039,12 @@ theorem OpEnvelope.aeneasBridgeTrust_remwOfExtractedShape
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -3970,6 +4054,21 @@ theorem OpEnvelope.aeneasBridgeTrust_remwOfExtractedShape
             + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
             - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
               * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
+    (h_nr_pin :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0))
+    (h_m32_pin : v.m32 r_a = 1) (h_div_pin : v.div r_a = 1)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
+    (h_byte_lo :
+      (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 0).val
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1).val * 256
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2).val * 65536
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3).val * 16777216
+        = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
     (h_sext_choice :
       (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 0 ∧
           (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 0 ∧
@@ -3984,21 +4083,30 @@ theorem OpEnvelope.aeneasBridgeTrust_remwOfExtractedShape
     (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
-            - (v.np r_a).val * (2:ℤ)^32)
+            - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a) * (2:ℤ)^32)
     (h_rs2_value :
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
-            - (v.nb r_a).val * (2:ℤ)^32)
+            - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
     (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow_w :
       ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
+    (h_r_le :
+      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+        - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+        ≤ (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+            - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
+          * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt) :
     (OpEnvelope.remwOfExtractedShape
       remw_input r1 r2 rd bus v r_a provenance h_op h_external h_m32
       h_set_pc h_store_pc h_jmp_offset1 h_jmp_offset2 h_match_secondary
-      promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool
-      h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value h_op2_ne
-      h_no_overflow_w).aeneasBridgeTrust := by
+      promises arith_mem bounds h_row_constraints arith_table arith_chunk_ranges
+      arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+      h_m32_pin h_div_pin h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
+      h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w h_r_le h_r_sign).aeneasBridgeTrust := by
   unfold OpEnvelope.remwOfExtractedShape OpEnvelope.aeneasBridgeTrust
   let pins := MainRowProvenance.remWPins_of_extracted_shape provenance h_op h_external
   let controls :=

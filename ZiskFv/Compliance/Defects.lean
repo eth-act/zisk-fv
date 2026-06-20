@@ -124,13 +124,20 @@ def ArithDivDynamicWitnessShape
       (signedRemainderInt v r_a).natAbs = div_input.r2_val.toInt.natAbs
   | .rem rem_input _ _ _ _ v r_a .. =>
       (signedRemainderInt v r_a).natAbs = rem_input.r2_val.toInt.natAbs
-  -- W-mode (`DIVW`/`REMW`) remains FULLY defect-gated (opcode-wide `True`):
-  -- their EquivCore signed-W discharge (`h_rd_val_mdrs_{divw,remw}_chunked`) is
-  -- not yet built, so the honest W case is not yet provable.  Narrowing these
-  -- to the `|r₃₂| = |op2₃₂|` false-positive shape is the follow-up; the
-  -- `signedRemainderIntW` helper is in place for it.
-  | .divw .. => True
-  | .remw .. => True
+  -- W-mode (`DIVW`/`REMW`): narrowed to the EXACT `|r₃₂| = |op2₃₂|`
+  -- false-positive shape, the W analogue of the `.div`/`.rem` narrowing.
+  -- The `LT_ABS_NP`/`LT_ABS_PN` byte chain at 32-bit width accepts a
+  -- remainder whose 32-bit magnitude EQUALS the divisor's 32-bit magnitude;
+  -- excluding it upgrades the WEAK in-model bound `|r₃₂| ≤ |op2₃₂|` to the
+  -- STRICT bound that Sail DIVW/REMW require.  Honest W rows have
+  -- `|r₃₂| < |op2₃₂|` strictly, so are never in this shape (anti-vacuity
+  -- guards `honest_{divw,remw}_witness_not_forge`).
+  | .divw divw_input _ _ _ _ v r_a .. =>
+      (signedRemainderIntW v r_a).natAbs
+        = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs
+  | .remw remw_input _ _ _ _ v r_a .. =>
+      (signedRemainderIntW v r_a).natAbs
+        = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs
   | _ => False
 
 /-- `Blocks id env` means defect `id` excludes this envelope from the
@@ -437,5 +444,163 @@ theorem honest_rem_witness_not_forge
           arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor
           h_nr_pin h_rs1_value h_rs2_value h_r_le h_r_sign) := by
   simpa [ArithDivDynamicWitnessShape, signedRemainderInt] using Nat.ne_of_lt h_honest_strict
+
+/-- **Non-vacuity / constructibility witness for the narrowed DIVW exclusion.**
+
+An HONEST 32-bit signed division always has a remainder STRICTLY smaller in
+magnitude than the divisor (`|r₃₂| < |op2₃₂|`), e.g. `7 / 2 = 3 rem 1` in 32-bit
+with `|1| < |2|`.  Such a row has
+`(signedRemainderIntW v r_a).natAbs < (extractLsb op2 31 0).toInt.natAbs`, hence
+`≠`, so it is NOT in `ArithDivDynamicWitnessShape`.  The narrowed defect excludes
+ONLY the malicious `|r₃₂| = |op2₃₂|` false-positive forge, never an honest DIVW.
+Lean-checked anti-vacuity guard for the `DIVW` arm of
+`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`. -/
+theorem honest_divw_witness_not_forge
+    {divw_input : PureSpec.DivwInput} {r1 r2 rd : regidx}
+    {bus : ZiskFv.Compliance.BusRows}
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r_a : ℕ}
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_DIV_W)
+    (h_match_primary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
+        (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
+    (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0))
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
+    (h_byte_lo :
+      (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 0).val
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1).val * 256
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2).val * 65536
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3).val * 16777216
+        = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
+    (h_sext_choice :
+      (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 0 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 0 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6).val = 0 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7).val = 0) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
+      (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 255 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 255 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6).val = 255 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7).val = 255) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
+    (h_rs1_value :
+      (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
+        = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ) - toIntZ (v.np r_a) * (2:ℤ)^32)
+    (h_rs2_value :
+      (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ) - toIntZ (v.nb r_a) * (2:ℤ)^32)
+    (h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32)
+    (h_no_overflow :
+      ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
+          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
+    (h_r_le :
+      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+        - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+          ≤ (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.nr r_a) * (2:ℤ)^32)
+          * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt)
+    (h_honest_strict :
+      (signedRemainderIntW v r_a).natAbs
+        < (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs) :
+    ¬ ArithDivDynamicWitnessShape
+        (OpEnvelope.divw divw_input r1 r2 rd bus v r_a pins h_match_primary promises
+          arith_mem bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+          h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
+          h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+          h_op2_ne h_no_overflow h_r_le h_r_sign) := by
+  simpa [ArithDivDynamicWitnessShape] using Nat.ne_of_lt h_honest_strict
+
+/-- **Non-vacuity / constructibility witness for the narrowed REMW exclusion.**
+    Companion of `honest_divw_witness_not_forge` for the W remainder lane. -/
+theorem honest_remw_witness_not_forge
+    {remw_input : PureSpec.RemwInput} {r1 r2 rd : regidx}
+    {bus : ZiskFv.Compliance.BusRows}
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r_a : ℕ}
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_REM_W)
+    (h_match_secondary :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
+        (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
+    (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0))
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
+    (h_byte_lo :
+      (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 0).val
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1).val * 256
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2).val * 65536
+          + (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3).val * 16777216
+        = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
+    (h_sext_choice :
+      (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 0 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 0 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6).val = 0 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7).val = 0) ∧
+        (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
+      (((ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4).val = 255 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5).val = 255 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6).val = 255 ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7).val = 255) ∧
+        (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
+    (h_rs1_value :
+      (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
+        = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ) - toIntZ (v.np r_a) * (2:ℤ)^32)
+    (h_rs2_value :
+      (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ) - toIntZ (v.nb r_a) * (2:ℤ)^32)
+    (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
+    (h_no_overflow_w :
+      ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
+          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
+    (h_r_le :
+      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+        - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+        ≤ (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.nr r_a) * (2:ℤ)^32)
+          * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt)
+    (h_honest_strict :
+      (signedRemainderIntW v r_a).natAbs
+        < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs) :
+    ¬ ArithDivDynamicWitnessShape
+        (OpEnvelope.remw remw_input r1 r2 rd bus v r_a pins h_match_secondary promises
+          arith_mem bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+          h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
+          h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+          h_op2_ne h_no_overflow_w h_r_le h_r_sign) := by
+  simpa [ArithDivDynamicWitnessShape] using Nat.ne_of_lt h_honest_strict
 
 end ZiskFv.Compliance.Defects

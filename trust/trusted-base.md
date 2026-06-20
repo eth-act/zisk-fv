@@ -293,11 +293,22 @@ Active conclusions:
   narrowed-defect exclusion (`lt_of_le_of_ne`). Anti-vacuity is gate-checked by
   `Defects.honest_{div,rem}_witness_not_forge`. 0 `ZiskFv.*` axioms (the
   per-theorem `collectAxioms` closure is unchanged).
-- Signed W-mode `DIVW` and `REMW` remain opcode-wide defect-gated: their
-  EquivCore signed-W discharge (`h_rd_val_mdrs_{divw,remw}_chunked`,
-  `div_w_chain_witnesses`) is not yet built (the low-level W bridges
-  `fgl_{div,rem}_w_signed_to_bv64`, `abs_euclidean_to_signed_euclidean_div_rem_w`,
-  `signed_tmod_unique` exist; the mid-level glue does not).
+- Signed W-mode `DIVW` and `REMW` are now **narrowed and non-vacuously proved**
+  (2026-06-20): the `Defects.ArithDivDynamicWitnessShape` `.divw`/`.remw`
+  exclusion is the EXACT W false-positive shape
+  (`(signedRemainderIntW v r_a).natAbs = (extractLsb op2 31 0).toInt.natAbs`),
+  not the opcode-wide `True`. The missing mid-level W discharge infrastructure
+  was built: `div_w_chain_witnesses` (the m32=1 W carry chain) +
+  `h_rd_val_mdrs_{divw,remw}_chunked` (composing it with the existing low-level
+  W bridges `abs_euclidean_to_signed_euclidean_div_rem_w`,
+  `fgl_{div,rem}_w_signed_to_bv64`, `signed_t{div,mod}_unique`). The canonical
+  `equiv_DIVW` / `equiv_REMW` are real (no `False.elim`); they carry the WEAK W
+  bound `h_r_le : |r₃₂| ≤ |op2₃₂|` plus the W operand pins
+  (`a_2=a_3=b_2=b_3=d_2=d_3=0`, `c_2=c_3=0`) / `h_nr_pin` / `h_r_sign` as caller
+  residuals and DERIVE the STRICT `|r₃₂| < |op2₃₂|` from the narrowed-defect
+  exclusion (`lt_of_le_of_ne`). Anti-vacuity is gate-checked by
+  `Defects.honest_{divw,remw}_witness_not_forge`. 0 `ZiskFv.*` axioms (the
+  per-theorem `collectAxioms` closure is unchanged).
 - **Signed remainder-bound residual (DIV/REM only).** The WEAK bound
   `h_r_le : |r| ≤ |op2|`, the signed operand bridges (`na = MSB`-form
   `r.toInt = packed4 - sign·2^64`), and the sign-correctness witness `h_r_sign`

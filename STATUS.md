@@ -36,6 +36,28 @@ witness-conditional defects, gated on the extraction-fidelity work + the upstrea
 NEXT (user's call): land 57/63 (recommended — the soundly-verifiable frontier); or pursue the deep
 extraction-fidelity (MULH/MULHSU) / old-theorem memory change (d). DIV/REM = upstream fix.
 
+=== RESULT (uncommitted): DIVW/REMW retired 61→63/63 (vacuous -> REAL, non-vacuous) ===
+DONE: equiv_DIVW/equiv_REMW now REAL (no False.elim). Built the missing mid-level W infra:
+div_w_chain_witnesses (Bridge/Arith, m32=1 signed-W carry chain) + h_rd_val_mdrs_{divw,remw}_chunked
+(MulDivRemSigned, composing chain-W -> abs_euclidean_..._div_rem_w -> signed_t{div,mod}_unique ->
+fgl_{div,rem}_w_signed_to_bv64 -> w_sext_close_{pos,neg}_sig). Defect ArithDivDynamicWitnessShape
+.divw/.remw narrowed True -> EXACT |r32|=|op2_32| ((signedRemainderIntW v r_a).natAbs =
+(extractLsb op2 31 0).toInt.natAbs). Strict |r32|<|op2_32| DERIVED at canonical from WEAK h_r_le +
+narrowed-defect via lt_of_le_of_ne (load-bearing). Anti-vacuity: honest_{divw,remw}_witness_not_forge
+(7/2 32-bit rem 1, |1|≠|2|). Full lake build green (8710); gate V1 18/18 + V2 12/12 (baselines refreshed:
+hypothesis-count DIVW/REMW 26->41 12->22, caller-burden canonical+wrapper; axiom-deps diff EMPTY =
+0 new ZiskFv.* axioms; per the sanctioned DIV/REM structural-unpacking exception). Ledger updated
+(defects.md + trusted-base.md). NOT committed. TODO if continuing: trace-level export arms for DIVW/REMW
+(additive coverage, not gate-blocking); div-by-zero/overflow discharge (separate, needs sign-off).
+
+=== PRIOR ACTIVE: DIVW/REMW retirement (mirror DIV/REM); building missing mid-level W infra ===
+Plan: (1) div_w_chain_witnesses in Bridge/Arith (signed-W, mirrors mul_w_chain_witnesses + div_w_packed_of_chunks_int);
+(2) h_rd_val_mdrs_{divw,remw}_chunked in MulDivRemSigned (compose chain-W -> abs-euclid-W ->
+fgl_{div,rem}_w_signed_to_bv64 -> sext byte closers); (3) EquivCore.Divw/Remw real (drop False.elim, add
+h_r_abs/h_r_sign W binders); (4) Defects .divw/.remw True -> exact |r32|=|op2_32| via signedRemainderIntW +
+honest_{divw,remw}_witness_not_forge; (5) OpEnvelope .divw/.remw add h_r_le/h_r_sign W; wrappers; canonical
+(derive strict from weak + ¬forge); (6) Dispatch/Remaining + AeneasBridgeTrust *OfExtractedShape; (7) baselines+build+gate.
+
 === RESULT: DIV/REM retired 59→61/63; DIVW/REMW WALL on missing W discharge infra ===
 DONE (uncommitted): canonical equiv_DIV/equiv_REM now REAL (no False.elim), non-vacuous.
 Defect ArithDivDynamicWitnessShape .div/.rem narrowed True→exact |r|=|d| forge
