@@ -93,11 +93,11 @@ lemma equiv_REMW_of_table
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nb r_a) * (2:ℤ)^32)
-    (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
-    (h_r_abs :
-      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
-        - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
-        < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_abs_of_ne :
+      Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32 →
+        (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+          - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+          < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
     (h_r_sign :
       0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nr r_a) * (2:ℤ)^32)
@@ -114,7 +114,7 @@ lemma equiv_REMW_of_table
     h_chain arith_chunk_ranges arith_carry_ranges h_m32 h_div
     h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-    h_rs1_value h_rs2_value h_op2_ne h_r_abs h_r_sign
+    h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
 
 /-- Compatibility wrapper preserving the canonical Compliance theorem name. -/
 lemma equiv_REMW
@@ -171,11 +171,11 @@ lemma equiv_REMW
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nb r_a) * (2:ℤ)^32)
-    (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
-    (h_r_abs :
-      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
-        - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
-        < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_abs_of_ne :
+      Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32 →
+        (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+          - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+          < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
     (h_r_sign :
       0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nr r_a) * (2:ℤ)^32)
@@ -189,7 +189,7 @@ lemma equiv_REMW
     promises arith_mem bounds h_row_constraints arith_table
     arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_m32 h_div h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-    h_rs1_value h_rs2_value h_op2_ne h_r_abs h_r_sign
+    h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
 
 
 end ZiskFv.Compliance

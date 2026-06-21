@@ -2390,7 +2390,6 @@ inductive OpEnvelope
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nb r_a) * (2:ℤ)^32)
-    (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
     -- WEAK signed-W remainder bound `|r₃₂| ≤ |op2₃₂|` (extraction-fidelity residual).
     (h_r_le :
       (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)

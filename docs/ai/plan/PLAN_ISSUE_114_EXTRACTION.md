@@ -8,7 +8,7 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
 - [x] Inspect current div/rem proof surface and locate the two residual hypotheses.
 - [x] Replace `Main`/`Arith` `--only` extraction with explicit unsupported-stub extraction.
 - [x] Regenerate or inspect extractor output to confirm skipped constraints are now named stubs rather than silently omitted.
-- [ ] Discharge the div-by-zero and signed-overflow residuals using existing Arith/AirsClean idioms.
+- [x] Discharge the div-by-zero and signed-overflow residuals using existing Arith/AirsClean idioms.
   - [x] Add named ArithDiv forms for supported div-by-zero / overflow local constraints.
   - [x] Thread the new `inv_sum_all_bs` witness through the concrete `Valid_ArithDiv` constructor.
   - [x] Add reusable field-level projections from active div-by-zero / overflow flags.
@@ -21,7 +21,7 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
   - [x] Add and verify a boundary-aware EquivCore DIVW theorem.
   - [x] Thread `div_boundary_constraints` through signed DIVW wrappers,
     envelopes, dispatch, and trace export.
-  - [ ] Add wrapper-level boundary lemmas for signed overflow.
+  - [x] Add wrapper-level boundary lemmas for signed overflow.
     - [x] Add W-mode overflow field projections in `Airs.Arith.Div`.
     - [x] Run a focused `ZiskFv.Airs.Arith.Div` build for the projection chunk.
     - [x] Commit the signed-overflow projection chunk.
@@ -36,13 +36,13 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
     - [x] Run focused builds for the non-W signed-overflow public-surface chunk.
     - [x] Remove signed-overflow premises from W-mode DIVW/REMW public callers.
     - [x] Run focused builds for the W-mode signed-overflow public-surface chunk.
-  - [ ] Remove signed REM/W divisor-zero premises from callers.
+  - [x] Remove signed REM/W divisor-zero premises from callers.
     - [x] Inspect signed REM/REMW divisor-zero proof obligations and available
       ArithDiv boundary facts.
     - [x] Add and verify a signed REM divisor-zero write-value lemma.
     - [x] Thread the signed REM zero-divisor split through core/public callers.
-    - [ ] Add and verify a signed REMW divisor-zero write-value lemma.
-    - [ ] Thread the signed REMW zero-divisor split through core/public callers.
+    - [x] Add and verify a signed REMW divisor-zero write-value lemma.
+    - [x] Thread the signed REMW zero-divisor split through core/public callers.
 - [x] Run focused Lean checks and the appropriate final gate.
 - [x] Commit the completed chunk.
 - [x] Run focused Lean checks for the non-W signed DIV plumbing chunk.
@@ -215,3 +215,22 @@ store a global REM `h_op2_ne`. Focused gates passed for
 `ZiskFv.Compliance.OpEnvelope`, `ZiskFv.Compliance.Defects`,
 `ZiskFv.Compliance.AeneasBridgeTrust`, `ZiskFv.Compliance.Dispatch.Remaining`,
 and `ZiskFv.Compliance.TraceLevelExport`.
+
+Checkpoint commit `5b8d925` records the non-W signed REM divisor-zero cleanup.
+The remaining source proof work is the W-mode analogue for REMW, where the
+zero-divisor branch should prove that the sign-extended low-32 remainder output
+equals the sign-extended low-32 dividend.
+
+The signed REMW divisor-zero split is applied and verified. New lemma
+`h_rd_val_mdrs_remw_by_zero_chunked` proves the zero-divisor write value from
+the W carry-chain and sign-extension constraints, and `EquivCore.Remw.equiv_REMW`
+now splits internally on the low-32 divisor being zero; wrappers,
+`Equivalence.Remw`, `OpEnvelope.remw`, defect witnesses, extracted-shape trust
+helpers, dispatch, and trace export no longer require or store a global REMW
+`h_op2_ne`. Focused gates passed for `ZiskFv.EquivCore.Remw`,
+`ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned`,
+`ZiskFv.Compliance.Wrappers.Remw`, `ZiskFv.Equivalence.Remw`,
+`ZiskFv.Compliance.OpEnvelope`, `ZiskFv.Compliance.Defects`,
+`ZiskFv.Compliance.AeneasBridgeTrust`, `ZiskFv.Compliance.Dispatch.Remaining`,
+and `ZiskFv.Compliance.TraceLevelExport`; a focused residual search finds only
+local nonzero branches, unsigned paths, or legacy strict core lemmas.

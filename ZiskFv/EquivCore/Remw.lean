@@ -150,14 +150,13 @@ lemma equiv_REMW
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
-    -- Nonzero-divisor path (CIRCUIT-CONSTRAINT).
-    (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
     -- Magnitude bound + sign-correctness (CIRCUIT-CONSTRAINT — strict bound
     -- recovered at the canonical layer from WEAK bound + narrowed defect).
-    (h_r_abs :
-      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
-        - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
-        < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_abs_of_ne :
+      Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32 →
+        (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+          - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+          < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
     (h_r_sign :
       0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
             - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
@@ -178,14 +177,35 @@ lemma equiv_REMW
   have h_carry_ranges :=
     ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
       v r_a carry_ranges
-  have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_chunked
-      remw_input.r1_val remw_input.r2_val e2 v r_a
-      h0 h1 h2 h3 h4 h5 h6 h7
-      h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
-      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
-      h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-      h_rs1_value h_rs2_value h_op2_ne h_r_abs h_r_sign
+  have h_rd_val :
+      U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                  ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8), ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
+        = (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb remw_input.r1_val 31 0
+           let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb remw_input.r2_val 31 0
+           let q32 : BitVec 32 :=
+             if r2_lo32 = 0#32
+               then r1_lo32
+               else if r1_lo32 = (BitVec.ofNat 32 (2^31)) ∧ r2_lo32 = BitVec.allOnes 32
+                 then 0#32
+                 else BitVec.ofInt 32 (Int.tmod r1_lo32.toInt r2_lo32.toInt)
+           BitVec.signExtend 64 q32) := by
+    by_cases h_r2_zero : Sail.BitVec.extractLsb remw_input.r2_val 31 0 = 0#32
+    · exact
+        ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_by_zero_chunked
+          remw_input.r1_val remw_input.r2_val e2 v r_a
+          h0 h1 h2 h3 h4 h5 h6 h7
+          h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
+          h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+          h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
+          h_rs1_value h_rs2_value h_r2_zero
+    · exact
+        ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_chunked
+          remw_input.r1_val remw_input.r2_val e2 v r_a
+          h0 h1 h2 h3 h4 h5 h6 h7
+          h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
+          h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+          h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
+          h_rs1_value h_rs2_value h_r2_zero (h_r_abs_of_ne h_r2_zero) h_r_sign
   rw [equiv_REMW_sail state remw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
