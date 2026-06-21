@@ -234,6 +234,99 @@ def cmdPrintGlobalBinders (env : Environment) (theoremName : Name) : IO UInt32 :
     IO.println s!"{r.binderIdx} :: {r.binderName} :: {normalizeWhitespace r.binderType}"
   return 0
 
+/-- The strengthened trace-level export theorem (#61, channel-balance form).
+Audited by the strong-export closure + binder gates exactly as
+`zisk_riscv_compliant_program_bus` is audited by `check-closure-vs-baseline` /
+`check-global-theorem-binders`. -/
+def strongExportTheorem : Name :=
+  `ZiskFv.Compliance.zisk_compliant_of_accepted_trace_strong
+
+/-- Subcommand: check that the `ZiskFv.*` project-axiom closure of the strong
+trace-level export theorem exactly matches the fully-qualified Names committed in
+`trust/generated/baseline-strong-export-closure.txt`. This mirrors
+`check-closure-vs-baseline` for the new public theorem: any silent change to its
+project-trust footprint (additions OR removals) fails the gate. The expectation
+is an EMPTY closure (0 `ZiskFv.*` axioms), identical to the old global theorem. -/
+def cmdCheckStrongExportClosure (env : Environment) (path : String) : IO UInt32 := do
+  if (env.find? strongExportTheorem).isNone then
+    IO.eprintln s!"trust-gate: unknown const {strongExportTheorem}"
+    return 1
+  -- Live closure (fully-qualified ZiskFv.* axiom Names, sorted).
+  let live := AxiomClosure.axiomDepsForTheorem env strongExportTheorem
+  let liveStrs := live.map (·.toString)
+  -- Committed baseline: one fully-qualified Name per non-comment line.
+  let content ← IO.FS.readFile path
+  let mut baseline : Array String := #[]
+  for raw in content.splitOn "\n" do
+    let line := raw.trim
+    if line.isEmpty || line.startsWith "#" then continue
+    baseline := baseline.push line
+  let baselineSorted := baseline.qsort (· < ·)
+  if liveStrs == baselineSorted then
+    IO.println s!"trust-gate (V2): strong-export axiom closure matches baseline ({liveStrs.size} ZiskFv.* axiom(s))."
+    return 0
+  IO.eprintln "trust-gate (V2): strong-export axiom closure DIVERGES from baseline."
+  IO.eprintln s!"  Theorem:  {strongExportTheorem}"
+  IO.eprintln s!"  Baseline: {path}"
+  IO.eprintln s!"  Live:     {liveStrs.size} ZiskFv.* axiom(s); Baseline: {baselineSorted.size}"
+  let liveSet : Std.HashSet String := liveStrs.foldl (·.insert ·) {}
+  let baseSet : Std.HashSet String := baselineSorted.foldl (·.insert ·) {}
+  for n in liveStrs do
+    if !baseSet.contains n then IO.eprintln s!"    + {n}  (in closure, NOT in baseline)"
+  for n in baselineSorted do
+    if !liveSet.contains n then IO.eprintln s!"    - {n}  (in baseline, NOT in closure)"
+  IO.eprintln ""
+  IO.eprintln "  After confirming the diff is intentional, regenerate the baseline:"
+  IO.eprintln "    trust/scripts/regenerate.sh"
+  return 1
+
+/-- Subcommand: check the strong export theorem's binder list against its committed
+baseline AND walk every binder type for forbidden Names. This mirrors
+`check-global-theorem-binders` + the canonical `check-no-output-eq-v2` walk, but
+targets the new public theorem so its `rowData` / `h_known_bugs` premise surface is
+a visible, drift-protected audit surface. The first arg is the binder baseline; the
+second is the forbidden-Names file (reused from the canonical gate). -/
+def cmdCheckStrongExportBinders (env : Environment) (baselinePath : String)
+    (forbiddenPath : String) : IO UInt32 := do
+  if (env.find? strongExportTheorem).isNone then
+    IO.eprintln s!"trust-gate: unknown const {strongExportTheorem}"
+    return 1
+  -- 1. Binder baseline drift.
+  let rows ← runMeta env (TypeWalk.renderTheoremBinders strongExportTheorem)
+  let regen := String.intercalate "\n"
+    (rows.map (fun r => s!"{r.binderIdx} :: {r.binderName} :: {normalizeWhitespace r.binderType}")).toList
+    ++ "\n"
+  let committed ← IO.FS.readFile baselinePath
+  let mut rc : UInt32 := 0
+  if regen == committed then
+    IO.println "trust-gate (V2): strong-export binder baseline matches."
+  else
+    IO.eprintln "trust-gate (V2): strong-export binder baseline DIFFERS."
+    IO.eprintln s!"  Run: lake exe trust-gate print-strong-export-binders > {baselinePath}"
+    IO.eprintln "  and review the diff before committing."
+    let r := regen.splitOn "\n"
+    let c := committed.splitOn "\n"
+    let total := max r.length c.length
+    for i in [0:total] do
+      let rl := r[i]?.getD ""
+      let cl := c[i]?.getD ""
+      if rl != cl then
+        if !cl.isEmpty then IO.eprintln s!"-{cl}"
+        if !rl.isEmpty then IO.eprintln s!"+{rl}"
+    rc := 1
+  -- 2. Forbidden-type walk over the strong export theorem's binders.
+  let forbidden ← loadForbiddenTypes forbiddenPath
+  let viols ← runMeta env (TypeWalk.checkTheorem forbidden strongExportTheorem)
+  if viols.isEmpty then
+    IO.println s!"trust-gate (V2): no forbidden types in {strongExportTheorem} binders."
+  else
+    for v in viols do
+      let hits := String.intercalate ", " (v.hits.map (·.toString)).toList
+      IO.eprintln s!"  {strongExportTheorem} binder #{v.binderIdx} :: forbidden Name(s): {hits}"
+      IO.eprintln s!"    type: {v.binderType}"
+    rc := 1
+  return rc
+
 /-- The list of sound P4 construction theorems whose DEEP binder render is
 audited by the recursive (Option X) gate. Adding a sound family = append its
 `construction_<fam>_sound` here and regenerate
@@ -243,42 +336,61 @@ grow by EXACTLY that family's honest top-level binders (no `*RowBinding` /
 `# <theoremName>` header line so the per-family audit surface stays separable in
 the diff. -/
 def soundConstructionTheorems : List Name :=
-  [ `ZiskFv.Compliance.construction_sub_sound
-  , `ZiskFv.Compliance.construction_and_sound
-  , `ZiskFv.Compliance.construction_or_sound
-  , `ZiskFv.Compliance.construction_xor_sound
-  , `ZiskFv.Compliance.construction_slt_sound
-  , `ZiskFv.Compliance.construction_sltu_sound
-  , `ZiskFv.Compliance.construction_andi_sound
-  , `ZiskFv.Compliance.construction_ori_sound
-  , `ZiskFv.Compliance.construction_xori_sound
-  , `ZiskFv.Compliance.construction_slti_sound
-  , `ZiskFv.Compliance.construction_sltiu_sound
-  , `ZiskFv.Compliance.construction_sll_sound
-  , `ZiskFv.Compliance.construction_srl_sound
-  , `ZiskFv.Compliance.construction_sra_sound
-  , `ZiskFv.Compliance.construction_slli_sound
-  , `ZiskFv.Compliance.construction_srli_sound
-  , `ZiskFv.Compliance.construction_srai_sound
-  , `ZiskFv.Compliance.construction_sllw_sound
-  , `ZiskFv.Compliance.construction_srlw_sound
-  , `ZiskFv.Compliance.construction_sraw_sound
-  , `ZiskFv.Compliance.construction_slliw_sound
-  , `ZiskFv.Compliance.construction_srliw_sound
-  , `ZiskFv.Compliance.construction_sraiw_sound
-  , `ZiskFv.Compliance.construction_add_sound
-  , `ZiskFv.Compliance.construction_addi_sound
-  , `ZiskFv.Compliance.construction_subw_sound
-  , `ZiskFv.Compliance.construction_addw_sound
-  , `ZiskFv.Compliance.construction_addiw_sound
-  , `ZiskFv.Compliance.construction_lui_sound
-  , `ZiskFv.Compliance.construction_auipc_sound
-  , `ZiskFv.Compliance.construction_mulw_sound
-  , `ZiskFv.Compliance.construction_mulhu_sound
-  , `ZiskFv.Compliance.construction_divu_sound
-  , `ZiskFv.Compliance.construction_divuw_sound
-  , `ZiskFv.Compliance.construction_remu_sound
-  , `ZiskFv.Compliance.construction_remuw_sound ]
+  [ `ZiskFv.Compliance.construction_sub_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_and_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_or_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_xor_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_slt_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sltu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_andi_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_ori_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_xori_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_slti_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sltiu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sll_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_srl_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sra_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_slli_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_srli_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_srai_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sllw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_srlw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sraw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_slliw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_srliw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sraiw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_add_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_addi_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_subw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_addw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_addiw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_lui_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_auipc_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_mulw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_mulhu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_divu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_divuw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_remu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_remuw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sb_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sh_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_sd_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_ld_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_lbu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_lhu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_lwu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_lb_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_lh_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_lw_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_beq_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_bne_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_blt_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_bge_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_bltu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_bgeu_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_jal_sound_claimed_dead
+  , `ZiskFv.Compliance.construction_jalr_sound_claimed_dead ]
 
 /-- Subcommand: render the DEEP (recursive) construction-theorem binder list,
 for EVERY sound construction theorem in `soundConstructionTheorems`.
@@ -373,6 +485,10 @@ def usage : IO Unit := do
   IO.println "  find-unused PATH               enumerate ZiskFv.* consts not reachable from PATH entry points"
   IO.println "  check-closure-vs-baseline PATH check zisk_riscv_compliant_program_bus axiom closure == generated/baseline-axioms.txt"
   IO.println "  print-global-binders           print zisk_riscv_compliant_program_bus binder baseline rows"
+  IO.println "  print-strong-export-closure    print strong export theorem ZiskFv.* axiom closure"
+  IO.println "  print-strong-export-binders    print strong export theorem binder baseline rows"
+  IO.println "  check-strong-export-closure PATH  check strong export theorem ZiskFv.* axiom closure == PATH"
+  IO.println "  check-strong-export-binders BASELINE FORBIDDEN  check strong export binder baseline + forbidden-type walk"
   IO.println "  print-construction-binders-deep  print DEEP (recursive) binder leaf rows for every sound construction theorem"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
 
@@ -404,6 +520,18 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   | ["print-global-binders"] =>
     cmdPrintGlobalBinders env
       `ZiskFv.Compliance.zisk_riscv_compliant_program_bus
+  | ["print-strong-export-closure"] =>
+    -- Print the strong export theorem's ZiskFv.* axiom closure (the audit body
+    -- of trust/generated/baseline-strong-export-closure.txt).
+    let deps := AxiomClosure.axiomDepsForTheorem env strongExportTheorem
+    for d in deps do IO.println d.toString
+    return 0
+  | ["print-strong-export-binders"] =>
+    cmdPrintGlobalBinders env strongExportTheorem
+  | ["check-strong-export-closure", path] =>
+    cmdCheckStrongExportClosure env path
+  | ["check-strong-export-binders", baselinePath, forbiddenPath] =>
+    cmdCheckStrongExportBinders env baselinePath forbiddenPath
   | ["print-construction-binders-deep"] =>
     cmdPrintConstructionBindersDeep env soundConstructionTheorems
   | ["all"] =>

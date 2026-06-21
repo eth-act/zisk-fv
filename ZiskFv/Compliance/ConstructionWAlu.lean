@@ -77,7 +77,7 @@ set_option maxHeartbeats 2000000
 
 /-- Sound SUBW construction (m32 = 1 word ALU). Unique opcode `OP_SUB_W`
     (`Or.inr` of the shared W Layer-A wrapper). -/
-theorem construction_subw_sound
+theorem construction_subw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -257,7 +257,7 @@ theorem construction_subw_sound
 /-- Sound ADDW construction (m32 = 1 word ALU). DELTA from
     `construction_subw_sound`: op pin `OP_ADD_W` (`Or.inl` of the shared W
     Layer-A wrapper), `ropw.ADDW`, `execute_RTYPE_addw_pure`, `equiv_ADDW`. -/
-theorem construction_addw_sound
+theorem construction_addw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -436,7 +436,7 @@ theorem construction_addw_sound
     `instruction.ADDIW`). Shares `OP_ADD_W` with ADDW (`Or.inl`); the wrapper
     derives the immediate byte decomposition internally from `h_addiw_subset` +
     `h_match`, so the construction supplies only the r1 lane extract. -/
-theorem construction_addiw_sound
+theorem construction_addiw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

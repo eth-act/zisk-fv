@@ -99,7 +99,7 @@ lemma equiv_REMU
     -- mode pins, discharged via `Bridge.Arith.div_unsigned_chain_witnesses`.
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     (chunk_ranges : ZiskFv.AirsClean.ArithDiv.ChunkRangeLookupWitness v r_a)
-    (carry_ranges : ZiskFv.AirsClean.ArithDiv.UnsignedCarryRangeLookupWitness v r_a)
+    (carry_ranges : ZiskFv.AirsClean.ArithDiv.SignedCarryRangeLookupWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
@@ -135,7 +135,7 @@ lemma equiv_REMU
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges
   have h_carry_ranges :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_unsigned_carry_ranges_at_holds
+    ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
       v r_a carry_ranges
   have h_d_lt_b_arith :=
     ZiskFv.EquivCore.Bridge.Arith.arith_div_remainder_bound_unsigned
@@ -156,10 +156,12 @@ lemma equiv_REMU
   obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
           h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
           hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.div_unsigned_chain_witnesses_of_carry_ranges
-      v r_a h_chain h_na h_nb h_np h_nr h_div h_carry_ranges
+    ZiskFv.EquivCore.Bridge.Arith.div_unsigned_chain_witnesses_of_signed_carry_ranges
+      v r_a h_chain h_na h_nb h_np h_nr h_div
+      (ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges)
+      h_carry_ranges
   have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_remu
+    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_remu_loose
       remu_input.r1_val remu_input.r2_val e2
       (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
       (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)

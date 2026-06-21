@@ -105,7 +105,7 @@ set_option maxHeartbeats 2000000
     `trace.balanced`, via the salvaged logic wrapper), row shape,
     circuit-internal rd arithmetic, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the lane→Sail binding facts. -/
-theorem construction_and_sound
+theorem construction_and_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

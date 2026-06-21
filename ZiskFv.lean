@@ -130,6 +130,7 @@ import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.FullEnsemble.Balance
 import ZiskFv.ZiskCircuit.MemTimeline.Construction
 import ZiskFv.ZiskCircuit.MemTimeline.Linkage
+import ZiskFv.ZiskCircuit.MemTimeline.Spike
 import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance.AcceptedTrace
 import ZiskFv.Compliance.ConstructionSub
@@ -148,6 +149,11 @@ import ZiskFv.Compliance.ConstructionDivu
 import ZiskFv.Compliance.ConstructionDivuw
 import ZiskFv.Compliance.ConstructionRemu
 import ZiskFv.Compliance.ConstructionRemuw
+import ZiskFv.Compliance.ConstructionStore
+import ZiskFv.Compliance.ConstructionLoad
+import ZiskFv.Compliance.ConstructionBranch
+import ZiskFv.Compliance.ConstructionJump
+import ZiskFv.Compliance.TraceLevelExport
 import ZiskFv.Compliance
 import ZiskFv.Completeness.Rv
 import ZiskFv.Completeness.Rv64im

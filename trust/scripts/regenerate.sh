@@ -45,6 +45,10 @@ if [ -d .lake/build ]; then
   lake exe trust-gate print-global-binders > trust/generated/baseline-global-theorem-binders.txt
   echo "  → trust/generated/baseline-global-theorem-binders.txt"
 
+  echo "Refreshing strong-export theorem binder baseline..."
+  lake exe trust-gate print-strong-export-binders > trust/generated/baseline-strong-export-binders.txt
+  echo "  → trust/generated/baseline-strong-export-binders.txt"
+
   echo "Refreshing DEEP construction theorem binder baseline..."
   lake exe trust-gate print-construction-binders-deep > trust/generated/baseline-construction-theorem-binders.txt
   echo "  → trust/generated/baseline-construction-theorem-binders.txt"
@@ -94,6 +98,49 @@ if [ -d .lake/build ]; then
     fi
   } > trust/generated/baseline-zisk-riscv-compliant.txt
   echo "  → trust/generated/baseline-zisk-riscv-compliant.txt"
+
+  echo "Refreshing strong-export theorem axiom-closure baseline..."
+  {
+    echo "# trust/generated/baseline-strong-export-closure.txt"
+    echo "#"
+    echo "# The ZiskFv.* project-axiom closure (transitive ZiskFv.* axioms only — Lean"
+    echo "# kernel axioms and Sail-translated module axioms excluded) of the"
+    echo "# strengthened trace-level export theorem"
+    echo "#"
+    echo "#   ZiskFv.Compliance.zisk_compliant_of_accepted_trace_strong"
+    echo "#"
+    echo "# This is the #61 channel-balance trace-level export (63/63 RV64IM arms on"
+    echo "# the OpEnvelope route). Its project-trust footprint is audited here exactly"
+    echo "# as zisk_riscv_compliant_program_bus is audited by"
+    echo "# baseline-zisk-riscv-compliant.txt: the V2 gate's check-strong-export-closure"
+    echo "# subcommand asserts the live closure equals this file (additions OR removals"
+    echo "# fail the gate)."
+    echo "#"
+    echo "# The closure is EMPTY: this theorem depends on ZERO ZiskFv.* project axioms"
+    echo "# (its raw axiom closure is identical to zisk_riscv_compliant_program_bus's —"
+    echo "# Lean kernel axioms + Sail-translation axioms only, no sorryAx)."
+    echo "#"
+    echo "# How this file was generated:"
+    echo "#"
+    echo "#   lake exe trust-gate print-strong-export-closure \\"
+    echo "#     > trust/generated/baseline-strong-export-closure.txt  (body, below the header)"
+    echo "#"
+    echo "# Refresh via \`trust/scripts/regenerate.sh\` (requires \`lake build\`"
+    echo "# artefacts under \`.lake/build/\`). Last regenerated: $(date +%Y-%m-%d)."
+    echo "#"
+    body=$(lake exe trust-gate print-strong-export-closure)
+    if [ -n "$body" ]; then
+      n=$(printf '%s\n' "$body" | grep -c .)
+    else
+      n=0
+    fi
+    echo "# Total ZiskFv.* axiom entries: $n"
+    echo "#"
+    if [ -n "$body" ]; then
+      printf '%s\n' "$body"
+    fi
+  } > trust/generated/baseline-strong-export-closure.txt
+  echo "  → trust/generated/baseline-strong-export-closure.txt"
 else
   echo "Skipping V2 axiom-dep regeneration (no .lake/build/ — run \`lake build\` first)."
   echo "Skipping global theorem binder baseline (no .lake/build/ — run \`lake build\` first)."

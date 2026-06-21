@@ -135,6 +135,66 @@ def vOfDivuRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
   range_ab := fun _ => arow.flags.range_ab
   range_cd := fun _ => arow.flags.range_cd
 
+/-- The ArithDiv-view `FullSpec` of a provider `ArithMulRow`, derived from the
+    SHARED-ArithMul-provider `FullSpec arow`.  The ArithDiv `Spec` is the same
+    11-clause carry-chain algebra as the ArithMul `Spec` (reading the
+    `vOfDivuRow` view's fields, which are `arow`'s fields), and the ArithDiv
+    `ArithTableSpec` is the same 15-tuple ROM membership.  No new trust:
+    this is a pure algebraic/defeq re-view of the same balance-derived facts. -/
+theorem arithDiv_fullSpec_of_arithMul_fullSpec
+    (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h : ZiskFv.AirsClean.ArithMul.FullSpec arow) :
+    ZiskFv.AirsClean.ArithDiv.FullSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt (vOfDivuRow arow) 0) := by
+  obtain ⟨h_spec, h_table, _h_c46, _h_chunks, _h_carry⟩ := h
+  refine ⟨?_, ?_⟩
+  · obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · linear_combination hc6
+    · linear_combination hc7
+    · linear_combination hc8
+    · linear_combination hc31
+    · linear_combination hc32
+    · linear_combination hc33
+    · linear_combination hc34
+    · linear_combination hc35
+    · linear_combination hc36
+    · linear_combination hc37
+    · linear_combination hc38
+  · simpa [ZiskFv.AirsClean.ArithDiv.ArithTableSpec,
+      ZiskFv.AirsClean.ArithDiv.arithTableRow,
+      ZiskFv.AirsClean.ArithDiv.rowAt, vOfDivuRow,
+      ZiskFv.AirsClean.ArithMul.ArithTableSpec,
+      ZiskFv.AirsClean.ArithMul.arithTableRow] using h_table
+
+/-- The ArithDiv-view `div_row_constraints_with_c46` of a provider `ArithMulRow`,
+    derived from the SHARED-ArithMul-provider `FullSpec arow`.  The 11-clause
+    `div_carry_chain_holds` is the same algebra as the ArithMul `Spec` (carry
+    chain), and `bus_res1_eq_div` is the same C46 equation as the ArithMul
+    `C46Spec`.  Pure algebraic re-view — no new trust. -/
+theorem divu_row_constraints_of_arithMul_fullSpec
+    (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h : ZiskFv.AirsClean.ArithMul.FullSpec arow) :
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 (vOfDivuRow arow) 0 := by
+  obtain ⟨h_spec, _h_table, h_c46, _h_chunks, _h_carry⟩ := h
+  obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, vOfDivuRow]; linear_combination hc6
+  · simp only [ZiskFv.Airs.ArithDiv.na_fb_eq_div, vOfDivuRow]; linear_combination hc7
+  · simp only [ZiskFv.Airs.ArithDiv.nb_fa_eq_div, vOfDivuRow]; linear_combination hc8
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_0_div, vOfDivuRow]; linear_combination hc31
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_1_div, vOfDivuRow]; linear_combination hc32
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_2_div, vOfDivuRow]; linear_combination hc33
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_3_div, vOfDivuRow]; linear_combination hc34
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_4_div, vOfDivuRow]; linear_combination hc35
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_5_div, vOfDivuRow]; linear_combination hc36
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_6_div, vOfDivuRow]; linear_combination hc37
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_7_div, vOfDivuRow]; linear_combination hc38
+  · simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div, vOfDivuRow,
+      ZiskFv.AirsClean.ArithMul.C46Spec,
+      ZiskFv.Airs.ArithMul.mul_constraint_46_named] at h_c46 ⊢
+    linear_combination h_c46
+
 /-- DIVU-mode op-bus bridge: the FAITHFUL muxed ArithMul primary message
     reduces to the div quotient-lane `opBus_row_ArithDiv` entry exactly at the
     DIVU mode pins (`div = 1`, `main_div = 1`, `main_mul = 0`).
@@ -185,7 +245,7 @@ open ZiskFv.Airs.ArithMul in
     `na_fb = nb_fa = 0`), yielding the eight div-Euclidean chunk equations
     (`a·b + d = c` form on the low four, high-half carry-only on the top).
     The mode flags are read off the BARE provider `ArithMulRow`. -/
-private lemma divu_chain_eqs
+private lemma divu_chain_eqs_claimed_dead
     (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
     (h_chain : mul_carry_chain_holds (vOfMulwRow arow) 0)
     (h_na : arow.flags.na = 0) (h_nb : arow.flags.nb = 0)
@@ -241,7 +301,7 @@ private lemma divu_chain_eqs
     applying `unsigned_carry_step_nat` up the chain (each step's accumulated
     column value stays below `983040·2^16`).  Reuses the generic
     `unsigned_carry_step_nat` from `ConstructionMulhu`. -/
-private lemma divu_carry_bounds
+private lemma divu_carry_bounds_claimed_dead
     (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
     (h_chunks : ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt (vOfDivuRow arow) 0)
     (h_csgn : ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt (vOfDivuRow arow) 0)
@@ -283,7 +343,7 @@ private lemma divu_carry_bounds
   -- apply `unsigned_carry_step_nat`.  Chunk `.val`s are `< 65536` and `d`-lanes
   -- add at most one more `< 65536` term; the carry-in is `< 983041` by induction.
   have b0 : (arow.carries.carry_0).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_0).val * (arow.chunks.b_0).val + (arow.chunks.d_0).val)
       _ _ ?_ hc0 ?_ hs0
     · push_cast; linear_combination hC31
@@ -291,7 +351,7 @@ private lemma divu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b1 : (arow.carries.carry_1).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_1).val * (arow.chunks.b_0).val
         + (arow.chunks.a_0).val * (arow.chunks.b_1).val
         + (arow.chunks.d_1).val + (arow.carries.carry_0).val) _ _ ?_ hc1 ?_ hs1
@@ -302,7 +362,7 @@ private lemma divu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b2 : (arow.carries.carry_2).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_2).val * (arow.chunks.b_0).val
         + (arow.chunks.a_1).val * (arow.chunks.b_1).val
         + (arow.chunks.a_0).val * (arow.chunks.b_2).val
@@ -316,7 +376,7 @@ private lemma divu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b3 : (arow.carries.carry_3).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_0).val
         + (arow.chunks.a_2).val * (arow.chunks.b_1).val
         + (arow.chunks.a_1).val * (arow.chunks.b_2).val
@@ -333,7 +393,7 @@ private lemma divu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b4 : (arow.carries.carry_4).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_1).val
         + (arow.chunks.a_2).val * (arow.chunks.b_2).val
         + (arow.chunks.a_1).val * (arow.chunks.b_3).val
@@ -347,7 +407,7 @@ private lemma divu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b5 : (arow.carries.carry_5).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_2).val
         + (arow.chunks.a_2).val * (arow.chunks.b_3).val
         + (arow.carries.carry_4).val) 0 _ ?_ (by omega) ?_ hs5
@@ -358,7 +418,7 @@ private lemma divu_carry_bounds
         Nat.mul_le_mul (by omega) (by omega)
       omega
   have b6 : (arow.carries.carry_6).val < 983041 := by
-    refine unsigned_carry_step_nat
+    refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_3).val * (arow.chunks.b_3).val + (arow.carries.carry_5).val)
       0 _ ?_ (by omega) ?_ hs6
     · push_cast; linear_combination hC37
@@ -493,7 +553,7 @@ open ZiskFv.EquivCore.Promises in
     ONE explicit residual binder (NOT balance-derived): the ArithDiv op-bus
     consumer `assumes_operation` edge is a finished-channel self-edge absent
     from the full ensemble (see module header). -/
-lemma equiv_DIVU_of_fullSpec
+lemma equiv_DIVU_of_fullSpec_claimed_dead
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)
@@ -563,11 +623,11 @@ lemma equiv_DIVU_of_fullSpec
           h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt,
           h_d0_lt, h_d1_lt, h_d2_lt, h_d3_lt⟩ := h_chunk_ranges
   -- ============ Mode-pinned div-Euclidean chunk equations ============
-  have heqs := divu_chain_eqs arow h_spec h_na_arow h_nb_arow h_np_arow h_nr_arow
+  have heqs := divu_chain_eqs_claimed_dead arow h_spec h_na_arow h_nb_arow h_np_arow h_nr_arow
     h_m32_arow h_div_arow
   -- ============ Balance-constructible LOOSE unsigned carry bounds ============
   obtain ⟨hcy0, hcy1, hcy2, hcy3, hcy4, hcy5, hcy6⟩ :=
-    divu_carry_bounds arow h_chunk_ranges_spec h_carry_ranges_signed heqs
+    divu_carry_bounds_claimed_dead arow h_chunk_ranges_spec h_carry_ranges_signed heqs
   obtain ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ := heqs
   -- ============ Remainder bound (RESIDUAL): d < b in chunk form ============
   have h_d_lt_b_arith :=
@@ -670,7 +730,7 @@ lemma equiv_DIVU_of_fullSpec
     ensemble (`ArithDiv.component` emits no op-bus —
     `arithDiv_table_interactionsWith_opBus_nil`), so it is carried explicitly,
     exactly as the canonical `equiv_DIVU` carries it. -/
-theorem construction_divu_sound
+theorem construction_divu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -796,7 +856,7 @@ theorem construction_divu_sound
       m2_as := by rfl
       rd_idx := h_rd_idx }
   -- Delegate to the F4 fullSpec bridge.
-  exact equiv_DIVU_of_fullSpec
+  exact equiv_DIVU_of_fullSpec_claimed_dead
     (binding.stateAt i) divu_input r1 r2 rd (busSub trace binding i execRow)
     (mainOfTable trace.program binding.mainTable) i.val
     (divuArow trace binding i h_main_active h_main_op)

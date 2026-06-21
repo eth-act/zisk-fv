@@ -33,17 +33,49 @@ open Lean
 
 namespace TrustGate.ConstantClosure
 
-/-- Collect every Name appearing as `Expr.const` in `e`. -/
-partial def gatherConsts (e : Expr) (acc : NameSet) : NameSet :=
+/-- Collect every Name appearing as `Expr.const` in `e`.
+
+PERF: a Lean `Expr` is a DAG with heavy structural SHARING (after
+`ring`/`simp`/`omega` a single proof term can have thousands of shared
+sub-terms). A naive tree recursion re-walks every shared sub-term once
+per incoming edge — exponential on real proof values, which is the
+root cause of the multi-minute dead-code scan. We memoize the set of
+ALREADY-VISITED sub-`Expr`s in a `Std.HashSet Expr` (keyed on Lean's
+cached structural hash + `BEq`), so each distinct node is walked once.
+This is purely an efficiency change: the set of const Names found is
+identical to the naive walk. -/
+partial def gatherConstsAux (e : Expr) (acc : NameSet) (seen : Std.HashSet Expr)
+    : NameSet × Std.HashSet Expr :=
+  -- Atoms with no sub-`Expr`s are not worth memoizing (no sharing payoff).
   match e with
-  | .const n _       => acc.insert n
-  | .app f a         => gatherConsts a (gatherConsts f acc)
-  | .lam _ t b _     => gatherConsts b (gatherConsts t acc)
-  | .forallE _ t b _ => gatherConsts b (gatherConsts t acc)
-  | .letE _ t v b _  => gatherConsts b (gatherConsts v (gatherConsts t acc))
-  | .mdata _ b       => gatherConsts b acc
-  | .proj _ _ b      => gatherConsts b acc
-  | _                => acc
+  | .const n _       => (acc.insert n, seen)
+  | .bvar _ | .fvar _ | .mvar _ | .sort _ | .lit _ => (acc, seen)
+  | _ =>
+    if seen.contains e then (acc, seen)
+    else
+      let seen := seen.insert e
+      match e with
+      | .app f a         =>
+        let (acc, seen) := gatherConstsAux f acc seen
+        gatherConstsAux a acc seen
+      | .lam _ t b _     =>
+        let (acc, seen) := gatherConstsAux t acc seen
+        gatherConstsAux b acc seen
+      | .forallE _ t b _ =>
+        let (acc, seen) := gatherConstsAux t acc seen
+        gatherConstsAux b acc seen
+      | .letE _ t v b _  =>
+        let (acc, seen) := gatherConstsAux t acc seen
+        let (acc, seen) := gatherConstsAux v acc seen
+        gatherConstsAux b acc seen
+      | .mdata _ b       => gatherConstsAux b acc seen
+      | .proj _ _ b      => gatherConstsAux b acc seen
+      | _                => (acc, seen)
+
+/-- Collect every Name appearing as `Expr.const` in `e` (memoized over
+shared sub-terms — see `gatherConstsAux`). -/
+def gatherConsts (e : Expr) (acc : NameSet) : NameSet :=
+  (gatherConstsAux e acc {}).1
 
 /-- All constants referenced syntactically by `ci`'s type and (when
 present) value. -/
@@ -55,7 +87,18 @@ def referencedByCI (ci : ConstantInfo) : NameSet :=
 
 /-- BFS from `seeds`: union the syntactic-const closure under the
 environment. Stops at constants without a definition (axioms, opaques)
-after recording their type's references. -/
+after recording their type's references.
+
+PERF (audit-only optimization, result-preserving for the `ZiskFv.*`
+reachable set): we do NOT expand the body/type of a NON-project
+constant. A mathlib / Lean-core / Sail const cannot reference any
+`ZiskFv.*` const (the project depends on those libraries, not the
+reverse — there is no dependency edge from an external const back into
+the project namespace). So pruning external expansion removes the
+dominant cost (walking the giant Sail/mathlib proof terms) without
+dropping a single reachable `ZiskFv.*` name. External names are still
+recorded in `acc` (so callers that inspect non-project reachability
+keep seeing them as reached leaves); they are simply not re-expanded. -/
 partial def transitiveClosure (env : Environment) (seeds : List Name) : NameSet :=
   go (seeds.foldl (·.insert ·) ({} : NameSet)) seeds
 where
@@ -63,6 +106,10 @@ where
     match todo with
     | [] => acc
     | n :: rest =>
+      -- Do not expand external constants: their closure adds no `ZiskFv.*`
+      -- names and is the source of the multi-minute blowup.
+      if n.getRoot != `ZiskFv then go acc rest
+      else
       match env.find? n with
       | none => go acc rest
       | some ci =>

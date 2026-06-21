@@ -40,7 +40,7 @@ Lean axiom ledger:
 | Class                         | Declarations | In global closure | Removability                                                                                             |
 | ---                           | ---:         | ---:              | ---                                                                                                      |
 | Aeneas row-lowering condition | 0            | 0                 | Discharge `env.aeneasBridgeTrust` by importing generated Aeneas Lean into main Lake.                      |
-| Sail memory timeline          | 0            | 0                 | Discharge `env.memoryTimelineEvidence` by proving whole-execution memory replay/timeline induction.       |
+| Sail memory timeline          | 0            | 0                 | Load arm reduced to the memory-only `RowTraceCoherence` trace-coherence floor (#76 Fold-B; see below). Discharge by the #100 whole-execution memory replay/timeline induction. |
 | Clean completeness            | 0            | 0                 | Retired from source trust; false/circular fields are visible non-claims.                                  |
 
 
@@ -241,6 +241,77 @@ two-address witness with an addr-sorted/time-reversed prefix (write at byte
 address 0 with later timestamp, selected read at byte address 8 with earlier
 timestamp) so the old whole-state boundary shape cannot return silently.
 
+### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
+
+The load-arm memory residual of the global theorem
+`zisk_riscv_compliant_program_bus` has been reduced from a **whole-`SailState`**
+identity to a **memory-map-only** trace-coherence floor.
+
+* **Before (retired):** `LoadMemoryTimelineConstructionEvidence` carried
+  `MemoryPrefixStateAlignment initialState state priorRows`, i.e.
+  `state = stateAfterMemoryBusRows initialState priorRows` — a closed-form
+  identity that pins **every** field of the load Sail `state` (regs,
+  choiceState, mem, tags, cycleCount, sailOutput) to a replay of the prefix.
+  This def is kept in `ZiskFv/Compliance/OpEnvelope.lean` marked **RETIRED**
+  for the audit diff only; nothing in the live closure references it.
+* **After (live):** `LoadMemoryTimelineCoherenceEvidence` carries an opaque
+  cursor-indexed state assignment `stateAt`, the segment seed
+  `stateAt [] = initialState`, the load-state pin `stateAt priorRows = state`,
+  and the chain
+  `RowTraceCoherence stateAt [] priorRows`
+  (`ZiskFv/ZiskCircuit/MemTimeline/Spike.lean`). Each `RowTraceCoherence`
+  conjunct constrains **only the `.mem` field** at one consumed prefix row:
+  the row's memory transition takes any replay map agreeing with the current
+  cursor's Sail memory to one agreeing with the next cursor's Sail memory
+  (stores via `writeMemoryOfEntry`; reads / inactive / non-memory rows leave
+  it unchanged). `regs` / PC / `cycleCount` / `tags` / `sailOutput` are
+  **free**.
+
+**Trust class.** `RowTraceCoherence` is the *trace-coherence* premise — at each
+consumed prefix row the Sail state at the next execution cursor is the memory
+transition of the Sail state at the current cursor. `ProgramBinding.stateAt`
+carries no field for it, so it stands as **external trust, the same class as
+channel-balance**: a per-step chaining fact about the execution timeline that
+the row-local equivalence layer does not establish. It is dischargeable in
+principle by the #100 whole-trace / execution-bus induction (which proves the
+Sail successor relation across the trace). It is **not** an axiom — it is a
+named binder carried on the load `OpEnvelope` residual and the load
+`RowData_<op>` of the strong export; the global theorem's closure contains **no
+new `ZiskFv.*` axiom** (kernel axioms only).
+
+**What is DERIVED, not assumed.** The byte-local agreement the load consumer
+actually needs — `stateBytesAtPrefix` of `MemoryTimelineEvidence`, i.e.
+`ReplayMemoryAgreementOnBytes state (replayMemoryAfterBusRows … priorRows)
+entry.ptr.toNat` — is **folded out** of the per-store steps via the store-driven
+Fold-B (`replayAgreement_of_rowTraceCoherence` →
+`stateBytesAtPrefix_of_rowTraceCoherence`), combined with the circuit-side
+`prefixReadSound` (`memoryTraceAgreement_of_rowTraceCoherence`). The replay
+engine only *transports* the seed agreement through the memory transitions; it
+never manufactures agreement. See `loadMemoryTimelineEvidence_of_coherenceEvidence`
+in `OpEnvelope.lean` for the live discharge bridge from the coherence residual
+to the legacy `MemoryTimelineEvidence` API.
+
+**Strict shrink (non-degeneracy proof).** The reduction is real, not a rename:
+`RowTraceCoherence` never constrains `regs` / `cycleCount` / `choiceState` /
+`sailOutput`, so it admits load states the old whole-state identity forbids.
+`ZiskFv.ZiskCircuit.MemTimeline.Spike.witness_nondegenerate` exhibits a
+store-then-read model whose load state's `regs` **and** `cycleCount` differ from
+the initial state's, with the full selected-load `MemoryTraceAgreement` still
+derived end-to-end (`witness_memoryTraceAgreement`) — impossible under the
+frozen `MemoryPrefixStateAlignment` route. Both witnesses depend on kernel
+axioms only.
+
+**Scope note (stores).** The sub-doubleword store RMW byte residuals
+(`h_m1..h_m7` of `RowData_sb/sh/sw`) are byte-local facts of the *same* class
+and reduce by the *same* `memoryTraceAgreement_of_rowTraceCoherence` +
+`byte_facts_of_event_agreement` machinery, but they are positional fields of the
+`OpEnvelope.sb/sh/sw` **constructors** (not a keyed `@[reducible] def` consumed
+only inside dispatchers, as the load residual is). Reducing them requires an
+`OpEnvelope` inductive refactor of the store arms and re-derivation inside the
+store cores, which touches the caller-burden / hypothesis-count baselines for
+the store opcodes. They are therefore **deferred** to a follow-up; only the load
+residual is reduced here.
+
 ## Platform Profile
 
 There are no project axioms for the current platform profile. PMP, PMA,
@@ -283,10 +354,62 @@ Active conclusions:
   witness defect by deriving unsigned range, W high-chunk, nonzero-divisor,
   quotient high-zero, and remainder-bound facts from Clean ArithDiv/Binary
   evidence plus the unsigned Euclidean identity.
-- Signed `DIV`, `DIVW`, `REM`, and `REMW` remain defect-gated because the
-  signed remainder-bound route exposes an `LT_ABS_NP` byte-chain mismatch.
-- Signed `MUL`, `MULH`, and `MULHSU` remain defect-gated for signed witness
-  soundness under malicious witness construction.
+- Signed full-64 `DIV` and `REM` are now **narrowed and non-vacuously proved**:
+  the `Defects.ArithDivDynamicWitnessShape` `.div`/`.rem` exclusion is the EXACT
+  `|r| = |op2|` false-positive shape (`(signedRemainderInt v r_a).natAbs =
+  op2.toInt.natAbs`), not the opcode-wide `True`. The canonical `equiv_DIV` /
+  `equiv_REM` are real (no `False.elim`); they carry the WEAK signed remainder
+  bound `h_r_le : |r| ≤ |op2|` plus the signed operand bridges / `h_nr_pin` /
+  `h_r_sign` as caller residuals and DERIVE the STRICT `|r| < |op2|` from the
+  narrowed-defect exclusion (`lt_of_le_of_ne`). Anti-vacuity is gate-checked by
+  `Defects.honest_{div,rem}_witness_not_forge`. 0 `ZiskFv.*` axioms (the
+  per-theorem `collectAxioms` closure is unchanged).
+- Signed W-mode `DIVW` and `REMW` are now **narrowed and non-vacuously proved**
+  (2026-06-20): the `Defects.ArithDivDynamicWitnessShape` `.divw`/`.remw`
+  exclusion is the EXACT W false-positive shape
+  (`(signedRemainderIntW v r_a).natAbs = (extractLsb op2 31 0).toInt.natAbs`),
+  not the opcode-wide `True`. The missing mid-level W discharge infrastructure
+  was built: `div_w_chain_witnesses` (the m32=1 W carry chain) +
+  `h_rd_val_mdrs_{divw,remw}_chunked` (composing it with the existing low-level
+  W bridges `abs_euclidean_to_signed_euclidean_div_rem_w`,
+  `fgl_{div,rem}_w_signed_to_bv64`, `signed_t{div,mod}_unique`). The canonical
+  `equiv_DIVW` / `equiv_REMW` are real (no `False.elim`); they carry the WEAK W
+  bound `h_r_le : |r₃₂| ≤ |op2₃₂|` plus the W operand pins
+  (`a_2=a_3=b_2=b_3=d_2=d_3=0`, `c_2=c_3=0`) / `h_nr_pin` / `h_r_sign` as caller
+  residuals and DERIVE the STRICT `|r₃₂| < |op2₃₂|` from the narrowed-defect
+  exclusion (`lt_of_le_of_ne`). Anti-vacuity is gate-checked by
+  `Defects.honest_{divw,remw}_witness_not_forge`. 0 `ZiskFv.*` axioms (the
+  per-theorem `collectAxioms` closure is unchanged).
+- **Signed remainder-bound residual (DIV/REM only).** The WEAK bound
+  `h_r_le : |r| ≤ |op2|`, the signed operand bridges (`na = MSB`-form
+  `r.toInt = packed4 - sign·2^64`), and the sign-correctness witness `h_r_sign`
+  are caller hypotheses, NOT axioms — same EXTRACTION-FIDELITY residual class as
+  the MULH/MULHSU sign-range residual below. The real ZisK ArithDiv circuit
+  enforces the weak bound via the `LT_ABS_NP`/`LT_ABS_PN` byte-chain comparison
+  (`arith.pil:274`), but the FV model cannot derive it in-model without exposing
+  the `LT_ABS_NP` false positive (`ltAbsNpByteChain_falsePositive_eqAbs256`); the
+  narrowed `|r| = |op2|` defect exclusion upgrades the carried weak bound to the
+  strict bound Sail requires. Visible in the canonical/wrapper caller-burden
+  ledgers; details in [`defects.md`](defects.md)
+  (`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`).
+- Signed `MUL`, `MULH`, and `MULHSU` have their malicious-witness defect
+  **narrowed** to the exact exceptional product-sign forge shape (`(na=1,nb=0,
+  np=0)` / `(na=0,nb=1,np=0)`); the honest cases are proved non-vacuously
+  (`equiv_MUL` / `equiv_MULH` / `equiv_MULHSU`, gate-checked by the
+  `Defects.honest_{mul,mulh,mulhsu}_witness_not_malicious` anti-vacuity guards).
+- **Sign-range residual (MULH/MULHSU only).** The high-half signed proof carries
+  `na = MSB(op1)` / `nb = MSB(op2)` as explicit caller hypotheses (`h_sign_a` /
+  `h_sign_b`), NOT axioms — the per-theorem `Lean.collectAxioms` closure of
+  `equiv_MULH`/`equiv_MULHSU` is unchanged (0 `ZiskFv.*` axioms). The real ZisK
+  ArithMul circuit enforces these via the indexed `range_ab` POS/NEG range lookup
+  on `a[3]` (`zisk/state-machines/arith/pil/arith.pil:286/289/303`), but the FV
+  extraction collapses that indexed lookup to the full `rangeTable16`, so the
+  facts are unprovable in-model and are carried. This is an EXTRACTION-FIDELITY
+  residual of the same class as the Aeneas row-lowering and Sail memory-timeline
+  residuals above: satisfiable for every real trace, dischargeable-in-principle
+  by composing the indexed `ArithRangeTable` lookup into balance. The new binders
+  are visible in the canonical and wrapper caller-burden ledgers; details in
+  [`defects.md`](defects.md) (`ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`).
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
@@ -306,8 +429,11 @@ into shared global-theorem evidence.
 
 Current caller-burden summary:
 
-- Canonical total rows: 1062.
-- Wrapper total rows: 1117.
+- Canonical total rows: 1100 (was 1082; +18 from the DIV/REM vacuous→real
+  signed-remainder-bound residual binders, see `defects.md`; the prior +20 was
+  the MULH/MULHSU sign-range residual).
+- Wrapper total rows: 1135 (was 1130; +5 net from the DIV/REM real-discharge
+  wrappers replacing the `False` binder with structural residuals).
 - `bridge`: 122 in both ledgers.
 - `row_shape`: 18 canonical, 22 wrapper.
 - `bus_shape`: 0 in both ledgers.

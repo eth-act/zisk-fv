@@ -311,7 +311,7 @@ theorem shift_imm_shift_pin_row_of_facts
     `trace.balanced`, via the salvaged shift Layer-A wrapper), the BinaryExtension
     wf/byte facts, `op_is_shift = 1`, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the lane→Sail bindings `h_input_r1_row` / `h_shift_pin_row` (m32 = 0 route). -/
-theorem construction_sll_sound
+theorem construction_sll_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -477,7 +477,7 @@ theorem construction_sll_sound
     `trace.balanced`, via the salvaged shift Layer-A wrapper), the BinaryExtension
     wf/byte facts, `op_is_shift = 1`, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the lane→Sail bindings `h_input_r1_row` / `h_shift_pin_row` (m32 = 0 route). -/
-theorem construction_srl_sound
+theorem construction_srl_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -643,7 +643,7 @@ theorem construction_srl_sound
     `trace.balanced`, via the salvaged shift Layer-A wrapper), the BinaryExtension
     wf/byte facts, `op_is_shift = 1`, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the lane→Sail bindings `h_input_r1_row` / `h_shift_pin_row` (m32 = 0 route). -/
-theorem construction_sra_sound
+theorem construction_sra_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -805,7 +805,7 @@ theorem construction_sra_sound
     Residual budget: 16 hyp binders + `shamt` + `execRow` (vs the register
     variant's 17 + execRow): drop `h_input_r2`/`h_b_hi_t`, add `shamt` +
     `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo_t`. -/
-theorem construction_slli_sound
+theorem construction_slli_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -951,7 +951,7 @@ theorem construction_slli_sound
     Residual budget: 16 hyp binders + `shamt` + `execRow` (vs the register
     variant's 17 + execRow): drop `h_input_r2`/`h_b_hi_t`, add `shamt` +
     `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo_t`. -/
-theorem construction_srli_sound
+theorem construction_srli_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -1097,7 +1097,7 @@ theorem construction_srli_sound
     Residual budget: 16 hyp binders + `shamt` + `execRow` (vs the register
     variant's 17 + execRow): drop `h_input_r2`/`h_b_hi_t`, add `shamt` +
     `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo_t`. -/
-theorem construction_srai_sound
+theorem construction_srai_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -1411,7 +1411,7 @@ theorem shift_m32_1_imm_shift_pin_row_of_facts
     same 17 named residuals + `execRow` as `construction_sll_sound`, with the
     op pin pinned to `OP_SLL_W`, `h_m32` pinned to 1, and the next-PC against
     `execute_RTYPE_sllw_pure`. -/
-theorem construction_sllw_sound
+theorem construction_sllw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -1565,7 +1565,7 @@ theorem construction_sllw_sound
     from `construction_sllw_sound`: op pin `OP_SRL_W` (5th disjunct of the
     shared Layer-A wrapper), `ropw.SRLW`, `execute_RTYPE_srlw_pure`. Same
     m32 = 1 lane (`ring`) + `% 32` register shift-pin route. -/
-theorem construction_srlw_sound
+theorem construction_srlw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -1705,7 +1705,7 @@ theorem construction_srlw_sound
     DELTA from `construction_sllw_sound`: op pin `OP_SRA_W` (6th disjunct of
     the shared Layer-A wrapper), `ropw.SRAW`, `execute_RTYPE_sraw_pure`. Same
     m32 = 1 lane (`ring`) + `% 32` register shift-pin route. -/
-theorem construction_sraw_sound
+theorem construction_sraw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -1856,7 +1856,7 @@ theorem construction_sraw_sound
     17 + execRow): drop `h_input_r2`/`h_b_hi_t`; the `b_0` decode pin against
     `slliw_input.shamt` replaces the register `h_b_lo_t`. The 5-bit immediate
     rides inside `slliw_input`, so it is NOT a separate top-level binder. -/
-theorem construction_slliw_sound
+theorem construction_slliw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -1987,7 +1987,7 @@ theorem construction_slliw_sound
 /-- Sound SRLIW construction (m32 = 1 W immediate-shift; literal swap of
     SLLIW). DELTA: op pin `OP_SRL_W` (5th disjunct), `sopw.SRLIW`,
     `execute_SHIFTIWOP_srliw_pure`. -/
-theorem construction_srliw_sound
+theorem construction_srliw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -2114,7 +2114,7 @@ theorem construction_srliw_sound
 /-- Sound SRAIW construction (m32 = 1 W signed immediate-shift; literal swap
     of SLLIW). DELTA: op pin `OP_SRA_W` (6th disjunct), `sopw.SRAIW`,
     `execute_SHIFTIWOP_sraiw_pure`. -/
-theorem construction_sraiw_sound
+theorem construction_sraiw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

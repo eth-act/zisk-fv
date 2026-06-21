@@ -8,12 +8,18 @@ Post-Phase-6 canonical per-opcode theorem for MULH. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_MULH`.
 
-The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/EquivCore/MulH.lean`.
+The real Sail↔circuit proof lives at `ZiskFv/EquivCore/MulH.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_MULH`'s closure exactly.
+No new axioms.  This theorem is NON-VACUOUS: the former `False` defect binder
+is replaced by (1) the NARROWED forge-exclusion `h_not_forge` (honest rows
+satisfy it) and (2) the **SIGN-RANGE RESIDUAL** `h_sign_a`/`h_sign_b`
+(`na = MSB(op1)`, `nb = MSB(op2)`).  The latter is a caller-supplied hypothesis,
+NOT an axiom: the real ZisK ArithMul circuit enforces it (`arith.pil:286/289/`
+`303`), but the FV extraction collapses the indexed range lookup to the full
+`rangeTable16`, so it is carried (assumed) rather than derived in-model.  See
+`trust/trusted-base.md` (sign-range residual) and `trust/defects.md`.
 -/
 
 open ZiskFv.Channels
@@ -41,9 +47,32 @@ theorem equiv_MULH
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (h_no_signed_mul_witness_defect : False)
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulh_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulh_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
+    -- NARROWED forge-exclusion (MULH arm): the row is NOT one of the two
+    -- exceptional product-sign shapes the shared ArithTable admits for op 181.
+    -- Honest rows (`np = na XOR nb`) satisfy it, so this theorem is NON-VACUOUS.
+    (h_not_forge :
+      ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+        ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)))
+    -- SIGN-RANGE RESIDUAL (`na = MSB(op1)`, `nb = MSB(op2)`): caller-supplied
+    -- hypothesis, NOT an axiom; the real circuit enforces it via the indexed
+    -- range lookup (`arith.pil:286/289/303`), the FV extraction can't derive it.
+    (h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
+    (h_sign_b : (v.nb r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0)
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
@@ -51,6 +80,7 @@ theorem equiv_MULH
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_MULH_of_table state mulh_input r1 r2 rd bus m r_main v r_a
-    pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
+    pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a h_sign_b
 
 end ZiskFv.Equivalence.MulH

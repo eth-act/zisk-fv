@@ -87,7 +87,7 @@ set_option maxHeartbeats 2000000
     `trace.balanced`, via the salvaged logic wrapper), row shape, circuit-internal
     rd arithmetic, the MemBus `m0..m2` shape, `h_lane_rd`, and the lane→Sail
     binding facts. -/
-theorem construction_or_sound
+theorem construction_or_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)
@@ -282,7 +282,7 @@ theorem construction_or_sound
     mode-pin lemma `static_table_logic_mode_pins_of_emit` + the `_logic` byte-chain
     `byte_chain_discharge_logic_of_static_row` (mirroring `EquivCore/Xor.lean`),
     NOT the `_op_lt_16` + `_64` pair. -/
-theorem construction_xor_sound
+theorem construction_xor_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

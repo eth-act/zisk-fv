@@ -49,7 +49,7 @@ theorem equiv_REMUW
     (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)

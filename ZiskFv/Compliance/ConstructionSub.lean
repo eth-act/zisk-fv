@@ -157,7 +157,7 @@ def busSub
     Derived inside the body (NOT binders): op-bus provider match (from
     `trace.balanced`), row shape, circuit-internal rd arithmetic, the MemBus
     `m0..m2` shape, `h_lane_rd`, and the lane→Sail binding facts. -/
-theorem construction_sub_sound
+theorem construction_sub_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

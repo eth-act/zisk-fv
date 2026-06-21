@@ -87,7 +87,7 @@ theorem zisk_riscv_compliant_program_bus_misc
           ))) state
           = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -113,7 +113,7 @@ theorem zisk_riscv_compliant_program_bus_misc
           ))) state
           = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -139,7 +139,7 @@ theorem zisk_riscv_compliant_program_bus_misc
           ))) state
           = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence

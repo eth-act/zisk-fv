@@ -121,11 +121,14 @@ lemma equiv_MULHU
     ∧ (v.c_2 r_a).val < 65536 ∧ (v.c_3 r_a).val < 65536
     ∧ (v.d_0 r_a).val < 65536 ∧ (v.d_1 r_a).val < 65536
     ∧ (v.d_2 r_a).val < 65536 ∧ (v.d_3 r_a).val < 65536)
+    -- FAITHFUL, balance-constructible carry-range hypothesis: the signed-carry
+    -- disjunction (`< 983041 ∨ GL_prime - 983040 ≤ ·`) that ZisK's real
+    -- `signedCarryRangeTable` lookups supply.  The suspect TIGHT `< 131072`
+    -- (2^17) bound was UNSATISFIABLE for genuine 4×4 unsigned-multiply carries
+    -- (~3·2^16 ≈ 196608); the loose `< 983041` unsigned-side bound is derived
+    -- internally from this disjunction via `mul_unsigned_carry_bounds_of_signed`.
     (h_carry_ranges :
-      (v.cy_0 r_a).val < 131072 ∧ (v.cy_1 r_a).val < 131072
-    ∧ (v.cy_2 r_a).val < 131072 ∧ (v.cy_3 r_a).val < 131072
-    ∧ (v.cy_4 r_a).val < 131072 ∧ (v.cy_5 r_a).val < 131072
-    ∧ (v.cy_6 r_a).val < 131072)
+      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
     (h_rs1_value : mulhu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
           (v.a_2 r_a).val (v.a_3 r_a).val)
@@ -148,18 +151,23 @@ lemma equiv_MULHU
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
           h_rd_idx⟩ := promises
+  have h_chunk_ranges_bundled :
+      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a := h_chunk_ranges
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     h_chunk_ranges
+  -- Derive the looser, balance-constructible unsigned carry witnesses
+  -- (`< 983041`) from the FAITHFUL signed disjunction.
   obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
           h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
           hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.mul_unsigned_chain_witnesses_of_carry_ranges
-      v r_a h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div h_carry_ranges
+    ZiskFv.EquivCore.Bridge.Arith.mul_unsigned_chain_witnesses_of_signed_carry_ranges
+      v r_a h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
+      h_chunk_ranges_bundled h_carry_ranges
   have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_mulhu
+    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_mulhu_loose
       mulhu_input.r1_val mulhu_input.r2_val e2
       (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
       (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)

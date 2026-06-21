@@ -86,9 +86,12 @@ lemma equiv_DIVW_sail
     `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_divw_chunked`
     discharge lemma.
 
-    Structural-unpacking refactor with 18 ADDED binders (DIV
-    signed-shape 16 + `h_sext_choice` for W-mode sign-extension +
-    `h_c23` for bus W-encoding). -/
+    Structural-unpacking refactor with the explicit Tier-3 binders
+    mirroring DIV-signed but specialized for W-mode (`m32 = 1`,
+    operand pins `a_2 = a_3 = b_2 = b_3 = d_2 = d_3 = 0`, bus W-pin
+    `c_2 = c_3 = 0`, and `h_sext_choice` for the BV32→BV64
+    sign-extension on bytes 4..7).  No longer vacuous: the rd value is
+    DERIVED via `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_divw_chunked`. -/
 lemma equiv_DIVW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput)
@@ -99,9 +102,12 @@ lemma equiv_DIVW
         state divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
         (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    -- Structural-unpacking ADDED binders (18 total) mirroring DIV-signed
-    -- plus h_sext_choice for W-mode sign-extension + h_c23 for bus W-pin.
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
+    -- Structural-unpacking ADDED binders mirroring DIV-signed
+    -- plus h_sext_choice for W-mode sign-extension + W operand pins.
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
+    (chunk_ranges : ZiskFv.AirsClean.ArithDiv.ChunkRangeLookupWitness v r_a)
+    (carry_ranges : ZiskFv.AirsClean.ArithDiv.SignedCarryRangeLookupWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -111,11 +117,15 @@ lemma equiv_DIVW
             + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
             - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
                 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
+    (h_nr_pin :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0))
     (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
-    -- Op-pin (TRANSPILE-PIN): DIVW is in {188, 189, 190, 191}
-    -- (W-DIV family). For the signed sign-pin axiom (op ∈ {190, 191}).
-    (h_op : v.op r_a = 188 ∨ v.op r_a = 189 ∨ v.op r_a = 190 ∨ v.op r_a = 191)
-    (h_op_signed : v.op r_a = 190 ∨ v.op r_a = 191)
+    -- W operand pins (TRANSPILE-PIN): the W operation truncates to low 32 bits.
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
     -- Bus c-chunk W-pin (CIRCUIT-CONSTRAINT): dividend in W-mode is the
     -- sign-extended r1_lo32, but the c-chunk packing only consumes the
     -- low 32 bits; the np column carries the sign witness so c_2 = c_3 = 0.
@@ -142,7 +152,8 @@ lemma equiv_DIVW
     (h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
           ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
-    -- Magnitude + sign-correctness (CIRCUIT-CONSTRAINT).
+    -- Magnitude + sign-correctness (CIRCUIT-CONSTRAINT — strict bound recovered
+    -- at the canonical layer from the WEAK bound + the narrowed |r| = |op2| defect).
     (h_r_abs :
       (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
         - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
@@ -150,14 +161,44 @@ lemma equiv_DIVW
     (h_r_sign :
       0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
             - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
-          * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt)
-    (h_no_arith_div_dynamic_defect : False) :
+          * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  exact False.elim h_no_arith_div_dynamic_defect
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
+  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
+  have h_chunk_ranges :=
+    ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges
+  have h_carry_ranges :=
+    ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
+      v r_a carry_ranges
+  have h_rd_val :=
+    ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_divw_chunked
+      divw_input.r1_val divw_input.r2_val e2 v r_a
+      h0 h1 h2 h3 h4 h5 h6 h7
+      h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+      h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
+      h_rs1_value h_rs2_value h_op2_ne h_no_overflow h_r_abs h_r_sign
+  rw [equiv_DIVW_sail state divw_input r1 r2 rd
+        h_input_r1 h_input_r2 h_input_rd h_input_pc]
+  symm
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  simp only [PureSpec.execute_DIVREM_divw_pure, h_rd_idx]
+  rw [← h_rd_val]
+  split_ifs with h_rd_zero
+  · simp only [bind, pure, EStateM.bind, EStateM.pure]
+  · simp only [bind, pure, EStateM.bind, EStateM.pure]
 
 
 end ZiskFv.EquivCore.Divw

@@ -79,7 +79,7 @@ lemma equiv_MULHU_of_table
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
     (h_rs1_value : mulhu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
           (v.a_2 r_a).val (v.a_3 r_a).val)
@@ -200,7 +200,7 @@ lemma equiv_MULHU
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
     (h_rs1_value : mulhu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
           (v.a_2 r_a).val (v.a_3 r_a).val)

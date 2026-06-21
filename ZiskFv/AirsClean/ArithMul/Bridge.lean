@@ -257,6 +257,50 @@ theorem chunk_ranges_of_lookup_aware_const_soundness
     by simpa [rowAt, constVar] using h_d2,
     by simpa [rowAt, constVar] using h_d3⟩
 
+/-- Build a `ChunkRangeLookupWitness` for a row from the row's carry-chain
+    `Spec` plus its `ChunkRangeSpec`.  Same dummy-env / constant-row technique
+    as `signedCarryRangeLookupWitness_of_spec`; the substantive content is the
+    sixteen `FullSpec`-projected 16-bit chunk bounds.  Non-vacuous. -/
+def chunkRangeLookupWitness_of_spec
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (h_spec : Spec (rowAt v r))
+    (h_chunks : ChunkRangeSpec (rowAt v r)) :
+    ChunkRangeLookupWitness v r := by
+  refine ⟨0, ⟨fun _ => 0, fun _ _ => #[]⟩, ?_⟩
+  simp only [mainWithChunkRanges, main, circuit_norm]
+  obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+  obtain ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+          hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩ := h_chunks
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination hc6
+  · linear_combination hc7
+  · linear_combination hc8
+  · linear_combination hc31
+  · linear_combination hc32
+  · linear_combination hc33
+  · linear_combination hc34
+  · linear_combination hc35
+  · linear_combination hc36
+  · linear_combination hc37
+  · linear_combination hc38
+  · simpa [rowAt] using ha0
+  · simpa [rowAt] using ha1
+  · simpa [rowAt] using ha2
+  · simpa [rowAt] using ha3
+  · simpa [rowAt] using hb0
+  · simpa [rowAt] using hb1
+  · simpa [rowAt] using hb2
+  · simpa [rowAt] using hb3
+  · simpa [rowAt] using hc0
+  · simpa [rowAt] using hc1
+  · simpa [rowAt] using hc2
+  · simpa [rowAt] using hc3
+  · simpa [rowAt] using hd0
+  · simpa [rowAt] using hd1
+  · simpa [rowAt] using hd2
+  · simpa [rowAt] using hd3
+
 /-- Lookup-aware Clean witness for the seven `bits(17)` unsigned carry
     lookups in a selected ArithMul row. This is structural evidence for
     `mainWithUnsignedCarryRanges`, not a replacement range axiom. -/
@@ -321,6 +365,43 @@ theorem signed_carry_ranges_of_lookup_aware_const_soundness
     by simpa [rowAt, constVar] using h_cy4,
     by simpa [rowAt, constVar] using h_cy5,
     by simpa [rowAt, constVar] using h_cy6⟩
+
+/-- Build a `SignedCarryRangeLookupWitness` for a row from the row's carry-chain
+    `Spec` plus its `CarryRangeSpec`.  Mirror of the Mem family's
+    `rowRangeLookupWitness_of_range_facts`: the lookup circuit is constant over
+    `rowAt v r`, so the environment/offset are bookkeeping and the substantive
+    content is exactly the carry-chain algebra + the seven signed-carry range
+    facts the caller supplies (both of which a P4 construction derives from
+    balance via `FullSpec`).  Non-vacuous: the membership facts are the real
+    `FullSpec` projections, not a fabricated environment. -/
+def signedCarryRangeLookupWitness_of_spec
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (h_spec : Spec (rowAt v r))
+    (h_carry : CarryRangeSpec (rowAt v r)) :
+    SignedCarryRangeLookupWitness v r := by
+  refine ⟨0, ⟨fun _ => 0, fun _ _ => #[]⟩, ?_⟩
+  simp only [mainWithSignedCarryRanges, main, circuit_norm]
+  obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+  obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ := h_carry
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination hc6
+  · linear_combination hc7
+  · linear_combination hc8
+  · linear_combination hc31
+  · linear_combination hc32
+  · linear_combination hc33
+  · linear_combination hc34
+  · linear_combination hc35
+  · linear_combination hc36
+  · linear_combination hc37
+  · linear_combination hc38
+  · simpa [rowAt] using hr0
+  · simpa [rowAt] using hr1
+  · simpa [rowAt] using hr2
+  · simpa [rowAt] using hr3
+  · simpa [rowAt] using hr4
+  · simpa [rowAt] using hr5
+  · simpa [rowAt] using hr6
 
 /-- Concrete ArithMul op-bus message for a Clean ArithMul row — the
     field-valued image of `primaryOpBusMessageExpr`, carrying the same real

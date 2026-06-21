@@ -7,6 +7,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.MemTrace
 import ZiskFv.ZiskCircuit.MemTimeline.Construction
+import ZiskFv.ZiskCircuit.MemTimeline.Spike
 import ZiskFv.Compliance.Wrappers.Lui
 import ZiskFv.Compliance.Wrappers.Auipc
 import ZiskFv.Compliance.Wrappers.Jal
@@ -1940,9 +1941,28 @@ inductive OpEnvelope
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulh_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulh_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
+    -- SIGN-RANGE RESIDUAL: `na = MSB(op1)`, `nb = MSB(op2)`.  Carried, not
+    -- derived (the real circuit pins it via `arith.pil:286/289/303`; the FV
+    -- extraction collapses the indexed lookup to the full `rangeTable16`).
+    (h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
+    (h_sign_b : (v.nb r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0) :
     OpEnvelope state m r_main
   -- ============================ MULHU ===================================
   | mulhu
@@ -1963,8 +1983,10 @@ inductive OpEnvelope
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    -- FAITHFUL signed-carry witness (`< 983041 ∨ ·`): balance-constructible,
+    -- replaces the vacuous tight `< 2^17` UnsignedCarryRangeWitness.
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
     (h_rs1_value : mulhu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
           (v.a_2 r_a).val (v.a_3 r_a).val)
@@ -1986,9 +2008,23 @@ inductive OpEnvelope
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
+    (h_rs1_value : mulhsu_input.r1_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value : mulhsu_input.r2_val.toNat
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
+    -- SIGN-RANGE RESIDUAL on op1 only (op2 unsigned, table pins `nb = 0`).
+    (h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0) :
     OpEnvelope state m r_main
   -- ============================ MULW ====================================
   | mulw
@@ -2040,19 +2076,52 @@ inductive OpEnvelope
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_op2_ne : div_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
     (h_np_xor :
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ (toIntZ (v.a_0 r_a)
+            + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
+          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_rs1_value :
+      div_input.r1_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64)
+    (h_rs2_value :
+      div_input.r2_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    -- WEAK signed remainder bound `|r| ≤ |op2|` (extraction-fidelity residual:
+    -- the most the LT_ABS_NP/PN byte chain can soundly witness; the STRICT bound
+    -- is recovered by the narrowed `|r| = |op2|` defect exclusion).
+    (h_r_le :
+      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+        - (v.nr r_a).val * (2:ℤ)^64).natAbs ≤ div_input.r2_val.toInt.natAbs)
+    (h_r_sign :
+      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+            - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt) :
     OpEnvelope state m r_main
   -- ============================ DIVU ====================================
   | divu
@@ -2074,7 +2143,7 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : divu_input.r1_val.toNat
@@ -2098,9 +2167,13 @@ inductive OpEnvelope
         (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -2108,6 +2181,17 @@ inductive OpEnvelope
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0))
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
+    (h_byte_lo :
+      (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65536 + (byteAt bus.e2 3).val * 16777216
+        = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
@@ -2124,7 +2208,18 @@ inductive OpEnvelope
     (h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
-          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
+    -- WEAK signed-W remainder bound `|r₃₂| ≤ |op2₃₂|` (extraction-fidelity
+    -- residual; the STRICT bound is recovered from the narrowed `|r₃₂| = |op2₃₂|`
+    -- defect exclusion at the canonical layer).
+    (h_r_le :
+      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+        - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+          ≤ (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.nr r_a) * (2:ℤ)^32)
+          * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt) :
     OpEnvelope state m r_main
   -- ============================ DIVUW ===================================
   | divuw
@@ -2146,7 +2241,7 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
@@ -2175,19 +2270,49 @@ inductive OpEnvelope
         (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
     (h_np_xor :
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ (toIntZ (v.a_0 r_a)
+            + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
+          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_rs1_value :
+      rem_input.r1_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64)
+    (h_rs2_value :
+      rem_input.r2_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    (h_r_le :
+      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+        - (v.nr r_a).val * (2:ℤ)^64).natAbs ≤ rem_input.r2_val.toInt.natAbs)
+    (h_r_sign :
+      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+            - (v.nr r_a).val * (2:ℤ)^64) * rem_input.r1_val.toInt) :
     OpEnvelope state m r_main
   -- ============================ REMU ====================================
   | remu
@@ -2209,7 +2334,7 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : remu_input.r1_val.toNat
@@ -2233,9 +2358,13 @@ inductive OpEnvelope
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -2243,6 +2372,17 @@ inductive OpEnvelope
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0))
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
+    (h_byte_lo :
+      (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65536 + (byteAt bus.e2 3).val * 16777216
+        = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
@@ -2251,15 +2391,24 @@ inductive OpEnvelope
     (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
-            - (v.np r_a).val * (2:ℤ)^32)
+            - toIntZ (v.np r_a) * (2:ℤ)^32)
     (h_rs2_value :
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
-            - (v.nb r_a).val * (2:ℤ)^32)
+            - toIntZ (v.nb r_a) * (2:ℤ)^32)
     (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow_w :
       ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
+    -- WEAK signed-W remainder bound `|r₃₂| ≤ |op2₃₂|` (extraction-fidelity residual).
+    (h_r_le :
+      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+        - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+        ≤ (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+    (h_r_sign :
+      0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.nr r_a) * (2:ℤ)^32)
+          * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt) :
     OpEnvelope state m r_main
   -- ============================ REMUW ===================================
   | remuw
@@ -2281,7 +2430,7 @@ inductive OpEnvelope
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
-      ZiskFv.Compliance.ArithDivUnsignedCarryRangeWitness v r_a)
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
@@ -2334,14 +2483,19 @@ def OpEnvelope.memoryTimelineEvidence
         (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state bus.e1)
   | _ => True
 
-/-- Construction-shaped residual needed to build timeline evidence for one load
-    read entry.
+/-- **RETIRED** (kept for the audit diff against `LoadMemoryTimelineCoherenceEvidence`).
 
-    This names the remaining P4 boundary explicitly: a generated replay trace
-    contains the selected read row, and the load Sail state is the state obtained
-    by replaying the selected chronological prefix from the trace's initial
-    state. It deliberately does not mention `MemoryTimelineEvidence`, so callers
-    cannot satisfy it by repackaging the old residual boundary. -/
+    Construction-shaped residual that pinned the **whole** load Sail `state` to a
+    closed-form replay of the chronological prefix
+    (`MemoryPrefixStateAlignment initialState state priorRows`, i.e.
+    `state = stateAfterMemoryBusRows initialState priorRows`). This freezes every
+    field of `state` — regs, choiceState, mem, tags, cycleCount, sailOutput.
+
+    As of the #76 Fold-B reduction it is **no longer in the live closure of**
+    `zisk_riscv_compliant_program_bus`: the `OpEnvelope` load arm and all load
+    `RowData_<op>` now carry the strictly weaker, memory-map-only
+    `LoadMemoryTimelineCoherenceEvidence`. This def remains only so a reviewer can
+    diff the two residual shapes side by side; nothing references it. -/
 @[reducible]
 def LoadMemoryTimelineConstructionEvidence
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -2377,6 +2531,82 @@ theorem loadMemoryTimelineEvidence_of_constructionEvidence
     ⟨ZiskFv.ZiskCircuit.MemTimeline.memoryTimelineEvidence_of_load_structural_promises
       facts promises priorRows laterRows h_traceSplit h_alignment⟩
 
+/-- **Memory-only trace-coherence residual** for one load read entry (the #76
+    Fold-B reduction of `LoadMemoryTimelineConstructionEvidence`).
+
+    Where `LoadMemoryTimelineConstructionEvidence` pins the load Sail `state` to a
+    closed-form whole-`SailState` replay of the prefix
+    (`MemoryPrefixStateAlignment`, i.e. `state = stateAfterMemoryBusRows …`,
+    freezing regs / PC / cycleCount / tags / sailOutput), this residual asks only
+    for the **memory map** to chain through the prefix: an opaque cursor-indexed
+    state assignment `stateAt` whose empty-prefix value is the segment initial
+    state, that places the load at `stateAt priorRows`, and that satisfies the
+    `RowTraceCoherence` chain (per-row `.mem` agreement; regs / PC free).
+
+    The byte-local agreement the load consumer actually needs is then *derived*
+    via the store-driven Fold-B (`stateBytesAtPrefix_of_rowTraceCoherence`); see
+    `loadMemoryTimelineEvidence_of_coherenceEvidence`. This is strictly weaker
+    than the whole-state identity — the non-degeneracy witness
+    `ZiskFv.ZiskCircuit.MemTimeline.Spike.witness_nondegenerate` exhibits a model
+    whose load state's regs **and** cycleCount differ from the initial state. -/
+@[reducible]
+def LoadMemoryTimelineCoherenceEvidence
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+  ∃ (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (_facts : ZiskFv.AirsClean.Mem.GeneratedMemReplayFacts initialState rows)
+    (stateAt : List (Interaction.MemoryBusEntry FGL) →
+      ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL)),
+      rows = priorRows ++ entry :: laterRows
+        ∧ stateAt [] = initialState
+        ∧ stateAt priorRows = state
+        ∧ ZiskFv.ZiskCircuit.MemTimeline.Spike.RowTraceCoherence stateAt [] priorRows
+
+/-- The memory-only trace-coherence residual produces the legacy timeline
+    evidence needed by existing load equivalence cores — the byte-local
+    `stateBytesAtPrefix` field is *derived* via the store-driven Fold-B
+    (`stateBytesAtPrefix_of_rowTraceCoherence`), not read off a whole-state
+    identity. -/
+theorem loadMemoryTimelineEvidence_of_coherenceEvidence
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {mstatus : RegisterType Register.mstatus}
+    {pmaRegion : PMA_Region}
+    {misa : RegisterType Register.misa}
+    {mseccfg : RegisterType Register.mseccfg}
+    {opcode_assumptions : Prop}
+    {pure_nextPC : BitVec 64}
+    {exec_row : List (Interaction.ExecutionBusEntry FGL)}
+    {e0 e1 e2 : Interaction.MemoryBusEntry FGL}
+    (promises :
+      ZiskFv.EquivCore.Promises.LoadStructuralPromises state mstatus pmaRegion
+        misa mseccfg opcode_assumptions pure_nextPC exec_row e0 e1 e2)
+    (h_coherence : LoadMemoryTimelineCoherenceEvidence state e1) :
+    Nonempty (ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence state e1) := by
+  obtain ⟨initialState, rows, facts, stateAt, priorRows, laterRows,
+    h_traceSplit, h_seed, h_loadState, h_coherence⟩ := h_coherence
+  refine ⟨{
+    acceptedReplay :=
+      ZiskFv.ZiskCircuit.MemTimeline.acceptedMemoryReplayEvidenceOfGeneratedReplayFacts
+        facts
+    priorRows := priorRows
+    laterRows := laterRows
+    traceSplit := by
+      simpa [ZiskFv.ZiskCircuit.MemTimeline.acceptedMemoryReplayEvidenceOfGeneratedReplayFacts]
+        using h_traceSplit
+    selectedRead :=
+      ZiskFv.ZiskCircuit.MemTimeline.selectedRead_of_load_structural_promises promises
+    stateBytesAtPrefix := ?_ }⟩
+  -- Derive the byte-local agreement from the Fold-B at the load state
+  -- `stateAt priorRows = state`, using the seed and the trace-coherence chain.
+  have h_bytes :=
+    ZiskFv.ZiskCircuit.MemTimeline.Spike.stateBytesAtPrefix_of_rowTraceCoherence
+      (entry := e1) facts stateAt priorRows h_seed h_coherence
+  rw [h_loadState] at h_bytes
+  simpa [ZiskFv.ZiskCircuit.MemTimeline.acceptedMemoryReplayEvidenceOfGeneratedReplayFacts]
+    using h_bytes
+
 /-- Single global construction boundary for memory-timeline evidence. Load arms
     require construction data for `state` and `bus.e1`; non-load arms impose no
     obligation. -/
@@ -2387,19 +2617,19 @@ def OpEnvelope.memoryTimelineConstructionEvidence
     {r_main : ℕ} :
     OpEnvelope state m r_main → Prop
   | .ld _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lbu _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lhu _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lwu _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lb_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lh_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | .lw_via_static_match _ _ _ _ _ _ _ _ _ bus .. =>
-      LoadMemoryTimelineConstructionEvidence state bus.e1
+      LoadMemoryTimelineCoherenceEvidence state bus.e1
   | _ => True
 
 /-- The construction boundary is the only public residual; this adapter is
@@ -2415,43 +2645,43 @@ theorem OpEnvelope.memoryTimelineEvidence_of_constructionEvidence
   | ld ld_input regs mem bus pins promises r_mem h_mainEval h_providerEval
       h_msg h_main_row h_mem_row h_main_spec h_store_pc h_main_b_match
       h_main_c_match h_addr1 h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lbu lbu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lhu lhu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lwu lwu_input regs mem bus align pins h_width promises r_mem
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lb_via_static_match lb_input regs mem v r_binary offset env h_static h_match
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lh_via_static_match lh_input regs mem v r_binary offset env h_static h_match
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | lw_via_static_match lw_input regs mem v r_binary offset env h_static h_match
       bus pins promises r_mem h_mainEval h_providerEval h_msg h_main_row
       h_mem_row h_main_spec h_store_pc h_main_b_match h_main_c_match h_addr1
       h_addr2_zero_iff h_addr2_idx h_mem_sel h_mem_wr =>
-      exact loadMemoryTimelineEvidence_of_constructionEvidence
+      exact loadMemoryTimelineEvidence_of_coherenceEvidence
         promises h_construction
   | _ => trivial
 

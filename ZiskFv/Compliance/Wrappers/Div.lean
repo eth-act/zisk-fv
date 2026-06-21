@@ -5,14 +5,33 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.AirsClean.ArithTableProjections
+import ZiskFv.EquivCore.Div
 import ZiskFv.EquivCore.Promises.RType
+import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Compliance.SharedBundles
 
 /-!
-# `equiv_DIV` trust-discharge wrapper
+# `equiv_DIV` Compliance wrapper (signed, non-W)
+
+> **Status:** No longer `False.elim`.  Mirrors `Wrappers/Divu.lean` (mode pins,
+> selector pin, byte-lane match on the primary `a[]` quotient lane via
+> `div_bus_res1_eq_a_hi`) but delegates to the SIGNED `EquivCore.Div.equiv_DIV`.
+>
+> The remaining caller obligations are the structural-unpacking signed residual
+> binders documented in `trust/structural-unpacking-exceptions.txt`
+> (`equiv_DIV` entry): chunk/carry ranges, the signed operand bridges
+> (`h_rs1_value`/`h_rs2_value`), the remainder-sign pin (`h_nr_pin`), and the
+> magnitude + sign witnesses (`h_r_abs`, `h_r_sign`).  `h_r_abs` is the STRICT
+> signed remainder bound `|r| < |op2|`; the canonical `Equivalence.Div.equiv_DIV`
+> derives it from the in-model WEAK bound plus the narrowed `|r| = |op2|` defect
+> exclusion (`NoKnownDefect`).  See `trust/defects.md`
+> (`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`, narrowed to the exact
+> false-positive shape).
 -/
 
 namespace ZiskFv.Compliance
@@ -83,42 +102,27 @@ lemma equiv_DIV_of_table
     (div_input : PureSpec.DivInput)
     (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    -- ============ DISCHARGE INPUTS ============
-    -- AIR validators + row indices. Compliance.lean shares (m, v)
-    -- across opcodes; per-opcode caller supplies the row indices.
     (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
-    -- Activation / opcode pin on Main.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)
-    -- Cross-AIR row selection: the OpBus permutation gives an
-    -- existential `r_a`; we accept it explicitly here so the bridge
-    -- shape stays simple (Compliance.lean will obtain `r_a` via
-    -- `op_bus_perm_sound_ArithDiv` and pass it in). The matching
-    -- predicate carries `m.op r_main = v.op r_a`.
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    -- ============ STRUCTURAL PROMISE BUNDLE (15 fields) ============
-    -- Subsumes the prior inline structural bus / exec shape +
-    -- Sail-side state predicate binders.
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_op2_ne : div_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
-    -- ============ UNIVERSAL-PER-ROW VALIDITY (constructibility) ============
-    -- Per-row Arith-AIR constraints, EXTENDED bundle: the standard
-    -- carry-chain (constraints 6-8 + 31-38) PLUS constraint 46
-    -- (`bus_res1` normalization at `arith.pil:263`, required for
-    -- the  hi-lane discharge via `div_bus_res1_eq_a_hi`).
-    -- Compliance.lean collapses this into the universal
-    -- `∀ r, arith_div_row_well_formed v r` parameter.
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -126,14 +130,101 @@ lemma equiv_DIV_of_table
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    (h_no_arith_div_dynamic_defect : False)
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ (toIntZ (v.a_0 r_a)
+            + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
+          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    -- SIGNED operand bridges (sign-range residual form): `r.toInt = packed4 - sign·2^64`.
+    (h_rs1_value :
+      div_input.r1_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64)
+    (h_rs2_value :
+      div_input.r2_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    -- STRICT signed remainder magnitude `|r| < |op2|` (derived at the canonical
+    -- layer from the WEAK bound + the narrowed `|r| = |op2|` defect exclusion).
+    (h_r_abs :
+      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+        - (v.nr r_a).val * (2:ℤ)^64).natAbs < div_input.r2_val.toInt.natAbs)
+    (h_r_sign :
+      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+            - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt)
     :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  exact False.elim h_no_arith_div_dynamic_defect
+  have h_arith_table := arith_table.spec
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
+  obtain ⟨_h_main_active, h_main_op_div⟩ := pins
+  have h_op_eq := arith_div_primary_op_eq h_match_primary
+  have h_op_arith_div : v.op r_a = 186 := by
+    rw [h_op_eq, h_main_op_div]; simp [OP_DIV]
+  obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
+          h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
+    arith_div_primary_projections h_match_primary
+  have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
+    ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
+  have h_c46 : ZiskFv.Airs.ArithDiv.bus_res1_eq_div v r_a :=
+    ZiskFv.Airs.ArithDiv.bus_res1_eq_div_of_extended v r_a h_row_constraints
+  -- Signed DIV mode pins (sext = 0, m32 = 0, div = 1) from the ArithTable.
+  obtain ⟨h_sext, h_m32, h_div⟩ :=
+    ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_signed_mode_pin
+      v r_a h_arith_table (Or.inl h_op_arith_div)
+  obtain ⟨h_div_selector, _h_rem_selector⟩ :=
+    ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_main_selector_pin
+      v r_a h_arith_table (Or.inl h_op_arith_div)
+  obtain ⟨h_main_div_one, h_main_mul_zero⟩ := h_div_selector h_op_arith_div
+  have h_bundle := arith_mem.c_lane_vals
+  have h_arith_chunk_ranges := arith_chunk_ranges.ranges
+  obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt,
+          _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
+          _h_c0_lt, _h_c1_lt, _h_c2_lt, _h_c3_lt, _, _, _, _⟩ :=
+    h_arith_chunk_ranges
+  have h_bus_res1_eq : v.bus_res1 r_a = v.a_2 r_a + v.a_3 r_a * 65536 :=
+    ZiskFv.Airs.ArithBusRes1.div_bus_res1_eq_a_hi v r_a h_c46
+      h_sext h_m32 h_main_mul_zero h_main_div_one
+  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      = (m.c_0 r_main).val := by
+    have h_e2_lo_bound : e2.value_0.val < 4294967296 := by
+      rw [← h_bundle.1, h_c0_eq_FGL]
+      rw [arith_h_pair_lift _ _ h_a0_lt h_a1_lt]
+      omega
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_e2_lo_bound, h_bundle.1]
+  have h_byte_hi_to_c1 : (byteAt e2 4).val + (byteAt e2 5).val * 256
+      + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
+      = (m.c_1 r_main).val := by
+    have h_e2_hi_bound : e2.value_1.val < 4294967296 := by
+      rw [← h_bundle.2, h_c1_eq_FGL, h_bus_res1_eq]
+      rw [arith_h_pair_lift _ _ h_a2_lt h_a3_lt]
+      omega
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_hi_val_sum_eq e2 h_e2_hi_bound, h_bundle.2]
+  have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_a0_lt h_a1_lt
+  have h_c1_eq_FGL' : m.c_1 r_main = v.a_2 r_a + v.a_3 r_a * 65536 := by
+    rw [h_c1_eq_FGL, h_bus_res1_eq]
+  have h_byte_hi := arith_byte_lane_eq_of_match h_byte_hi_to_c1 h_c1_eq_FGL' h_a2_lt h_a3_lt
+  exact ZiskFv.EquivCore.Div.equiv_DIV
+    state div_input r1 r2 rd
+    ⟨exec_row, e0, e1, e2⟩
+    promises
+    ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+    v r_a h_chain arith_chunk_ranges arith_carry_ranges
+    h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+    h_sext h_m32 h_div h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+    h_op2_ne h_no_overflow h_r_abs h_r_sign
 
 /-- Compatibility wrapper preserving the canonical Compliance theorem name. -/
 lemma equiv_DIV
@@ -141,42 +232,27 @@ lemma equiv_DIV
     (div_input : PureSpec.DivInput)
     (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    -- ============ DISCHARGE INPUTS ============
-    -- AIR validators + row indices. Compliance.lean shares (m, v)
-    -- across opcodes; per-opcode caller supplies the row indices.
     (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
-    -- Activation / opcode pin on Main.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)
-    -- Cross-AIR row selection: the OpBus permutation gives an
-    -- existential `r_a`; we accept it explicitly here so the bridge
-    -- shape stays simple (Compliance.lean will obtain `r_a` via
-    -- `op_bus_perm_sound_ArithDiv` and pass it in). The matching
-    -- predicate carries `m.op r_main = v.op r_a`.
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    -- ============ STRUCTURAL PROMISE BUNDLE (15 fields) ============
-    -- Subsumes the prior inline structural bus / exec shape +
-    -- Sail-side state predicate binders.
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_op2_ne : div_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
-    -- ============ UNIVERSAL-PER-ROW VALIDITY (constructibility) ============
-    -- Per-row Arith-AIR constraints, EXTENDED bundle: the standard
-    -- carry-chain (constraints 6-8 + 31-38) PLUS constraint 46
-    -- (`bus_res1` normalization at `arith.pil:263`, required for
-    -- the  hi-lane discharge via `div_bus_res1_eq_a_hi`).
-    -- Compliance.lean collapses this into the universal
-    -- `∀ r, arith_div_row_well_formed v r` parameter.
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -184,14 +260,42 @@ lemma equiv_DIV
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    (h_no_arith_div_dynamic_defect : False)
+    (h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ (toIntZ (v.a_0 r_a)
+            + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
+          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_rs1_value :
+      div_input.r1_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64)
+    (h_rs2_value :
+      div_input.r2_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    (h_r_abs :
+      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+        - (v.nr r_a).val * (2:ℤ)^64).natAbs < div_input.r2_val.toInt.natAbs)
+    (h_r_sign :
+      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+            - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt)
     :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
-      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  exact False.elim h_no_arith_div_dynamic_defect
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
+  equiv_DIV_of_table state div_input r1 r2 rd bus m r_main v r_a pins h_match_primary
+    promises arith_mem bounds h_op2_ne h_no_overflow h_row_constraints arith_table
+    arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+    h_rs1_value h_rs2_value h_r_abs h_r_sign
 
 
 end ZiskFv.Compliance

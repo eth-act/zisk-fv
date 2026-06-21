@@ -111,7 +111,15 @@ lemma equiv_MUL_of_table
     (h_rs2_value : mul_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
           (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_no_signed_mul_witness_defect : False)
+    -- NARROWED defect exclusion (`ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`,
+    -- MUL arm): the row is NOT in the exceptional product-sign shape that the
+    -- shared ArithTable admits for op 180. This is the unfolded form of
+    -- `¬ Defects.MaliciousSignedMulWitnessShape (.mul …)` — kept unfolded here
+    -- to avoid the `Defects`/wrapper module cycle. An honest MUL row (where
+    -- `np = na XOR nb`) satisfies it, so this theorem is non-vacuous.
+    (h_not_forge :
+      ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+        ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)))
     :
     (do
       Sail.writeReg Register.nextPC
@@ -147,9 +155,10 @@ lemma equiv_MUL_of_table
     ZiskFv.Airs.ArithMul.mul_constraint_46_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins ============
   -- The true ROM projection supplies the mode pins and sign-witness
-  -- booleanity. The remaining low-MUL repair is to remove the old axiom's
-  -- overstrong `na = nb = np = 0` use by proving the low-half product
-  -- sign-agnostically.
+  -- booleanity. Low MUL is proved sign-agnostically (modulo 2^64) on the
+  -- honest XOR branch; the exceptional product-sign branch is the EXACT
+  -- genuine forge, now excluded by the narrowed `h_not_forge` hypothesis
+  -- rather than the old opcode-wide `False`.
   obtain ⟨h_nr, h_sext, h_m32, h_div, h_na_bool, h_nb_bool, h_np_bool⟩ :=
     ZiskFv.AirsClean.ArithTableProjections.Mul.mul_basic_mode_pin
       v r_a h_arith_table h_op_arith_mul
@@ -218,11 +227,11 @@ lemma equiv_MUL_of_table
       h_arith_chunk_ranges_arg h_arith_carry_ranges
       h_nr h_sext h_m32 h_div
       h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-  · have h_exception_impossible : False := by
-      -- Known-defect exclusion: low MUL exceptional product-shape rows need
-      -- a dynamic zero-product proof or an upstream circuit fix.
-      exact False.elim h_no_signed_mul_witness_defect
-    exact False.elim h_exception_impossible
+  · -- Exceptional product-shape branch: ruled out by the NARROWED defect
+    -- exclusion `h_not_forge`. `h_exception` is exactly the forge shape, so
+    -- this branch is genuinely impossible for a non-forged row (NOT a vacuous
+    -- `False` discharge). An honest MUL row never reaches here.
+    exact absurd h_exception h_not_forge
 
 /-- Compatibility wrapper preserving the canonical `equiv_MUL` surface.
     The `_of_table` theorem is the T5 row-native entry point. -/
@@ -256,7 +265,9 @@ lemma equiv_MUL
     (h_rs2_value : mul_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
           (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_no_signed_mul_witness_defect : False)
+    (h_not_forge :
+      ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+        ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)))
     :
     (do
       Sail.writeReg Register.nextPC
@@ -271,6 +282,6 @@ lemma equiv_MUL
   equiv_MUL_of_table state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds h_row_constraints
     arith_table arith_chunk_ranges arith_carry_ranges
-    h_rs1_value h_rs2_value h_no_signed_mul_witness_defect
+    h_rs1_value h_rs2_value h_not_forge
 
 end ZiskFv.Compliance

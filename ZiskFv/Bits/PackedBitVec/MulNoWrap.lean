@@ -539,6 +539,163 @@ lemma fgl_mul_unsigned_chunks_to_nat_identity
         h_a3 h_b3 h_cy5 h_d2 h_cy6 hC37)
     (fgl_chunk_lift_close cy₆ d₃ hC38)
 
+/-! ## Loose-bound (`< 983041`) MUL-unsigned chunk lifts + identity
+
+The genuine 4×4 unsigned-multiply carries can reach `~3·2^16 > 2^17`, so the
+tight `< 131072` carry bound above is **not** satisfiable by real ZisK rows;
+only the balance-constructible `< 983041` (`signedCarryRangeTable`) bound is.
+
+These lift lemmas are exact copies of `fgl_chunk_lift_*` with the carry bound
+relaxed to `< 983041`.  The no-wrap argument is unchanged: each chunk equation's
+two sides stay below `GL_prime` (LHS ≤ `4·(2^16-1)^2 + 983040 < 2^35`; RHS `≤
+2^16 + 983040·2^16 < 2^36`).  Each lift discharges via `fgl_eq_to_nat_eq`. -/
+
+/-- Loose-bound (`< 983041`) version of `fgl_chunk_lift_1`. -/
+lemma fgl_chunk_lift_1_loose
+    (a b c cy : FGL)
+    (h_a : a.val < 65536) (h_b : b.val < 65536)
+    (h_c : c.val < 65536) (h_cy : cy.val < 983041)
+    (h : a * b = c + cy * 65536) :
+    a.val * b.val = c.val + cy.val * 65536 := by
+  have h_lhs : a * b = (((a.val * b.val : ℕ)) : FGL) := by push_cast; ring
+  have h_rhs : c + cy * 65536 = (((c.val + cy.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine fgl_eq_to_nat_eq h ?_ ?_
+  · have : a.val * b.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+/-- Loose-bound (`< 983041`) version of `fgl_chunk_lift_1'`. -/
+lemma fgl_chunk_lift_1'_loose
+    (a b cy_in c cy_out : FGL)
+    (h_a : a.val < 65536) (h_b : b.val < 65536)
+    (h_cy_in : cy_in.val < 983041)
+    (h_c : c.val < 65536) (h_cy_out : cy_out.val < 983041)
+    (h : a * b + cy_in = c + cy_out * 65536) :
+    a.val * b.val + cy_in.val = c.val + cy_out.val * 65536 := by
+  have h_lhs : a * b + cy_in = (((a.val * b.val + cy_in.val : ℕ)) : FGL) := by push_cast; ring
+  have h_rhs : c + cy_out * 65536 = (((c.val + cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine fgl_eq_to_nat_eq h ?_ ?_
+  · have : a.val * b.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+/-- Loose-bound (`< 983041`) version of `fgl_chunk_lift_2`. -/
+lemma fgl_chunk_lift_2_loose
+    (a₁ a₀ b₀ b₁ cy_in c cy_out : FGL)
+    (h_a1 : a₁.val < 65536) (h_a0 : a₀.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_cy_in : cy_in.val < 983041)
+    (h_c : c.val < 65536) (h_cy_out : cy_out.val < 983041)
+    (h : a₁ * b₀ + a₀ * b₁ + cy_in = c + cy_out * 65536) :
+    a₁.val * b₀.val + a₀.val * b₁.val + cy_in.val = c.val + cy_out.val * 65536 := by
+  have h_lhs : a₁ * b₀ + a₀ * b₁ + cy_in
+      = (((a₁.val * b₀.val + a₀.val * b₁.val + cy_in.val : ℕ)) : FGL) := by push_cast; ring
+  have h_rhs : c + cy_out * 65536 = (((c.val + cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine fgl_eq_to_nat_eq h ?_ ?_
+  · have h1 : a₁.val * b₀.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h2 : a₀.val * b₁.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+/-- Loose-bound (`< 983041`) version of `fgl_chunk_lift_3`. -/
+lemma fgl_chunk_lift_3_loose
+    (a₂ a₁ a₀ b₀ b₁ b₂ cy_in c cy_out : FGL)
+    (h_a2 : a₂.val < 65536) (h_a1 : a₁.val < 65536) (h_a0 : a₀.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536)
+    (h_cy_in : cy_in.val < 983041)
+    (h_c : c.val < 65536) (h_cy_out : cy_out.val < 983041)
+    (h : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + cy_in = c + cy_out * 65536) :
+    a₂.val * b₀.val + a₁.val * b₁.val + a₀.val * b₂.val + cy_in.val
+      = c.val + cy_out.val * 65536 := by
+  have h_lhs : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + cy_in
+      = (((a₂.val * b₀.val + a₁.val * b₁.val + a₀.val * b₂.val + cy_in.val : ℕ)) : FGL) := by
+    push_cast; ring
+  have h_rhs : c + cy_out * 65536 = (((c.val + cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine fgl_eq_to_nat_eq h ?_ ?_
+  · have h1 : a₂.val * b₀.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h2 : a₁.val * b₁.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h3 : a₀.val * b₂.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+/-- Loose-bound (`< 983041`) version of `fgl_chunk_lift_4`. -/
+lemma fgl_chunk_lift_4_loose
+    (a₃ a₂ a₁ a₀ b₀ b₁ b₂ b₃ cy_in c cy_out : FGL)
+    (h_a3 : a₃.val < 65536) (h_a2 : a₂.val < 65536)
+    (h_a1 : a₁.val < 65536) (h_a0 : a₀.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_cy_in : cy_in.val < 983041)
+    (h_c : c.val < 65536) (h_cy_out : cy_out.val < 983041)
+    (h : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + cy_in = c + cy_out * 65536) :
+    a₃.val * b₀.val + a₂.val * b₁.val + a₁.val * b₂.val + a₀.val * b₃.val + cy_in.val
+      = c.val + cy_out.val * 65536 := by
+  have h_lhs : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + cy_in
+      = (((a₃.val * b₀.val + a₂.val * b₁.val + a₁.val * b₂.val + a₀.val * b₃.val
+            + cy_in.val : ℕ)) : FGL) := by push_cast; ring
+  have h_rhs : c + cy_out * 65536 = (((c.val + cy_out.val * 65536 : ℕ)) : FGL) := by push_cast; ring
+  rw [h_lhs, h_rhs] at h
+  refine fgl_eq_to_nat_eq h ?_ ?_
+  · have h1 : a₃.val * b₀.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h2 : a₂.val * b₁.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h3 : a₁.val * b₂.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    have h4 : a₀.val * b₃.val ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+
+/-- **Loose-bound MUL-unsigned: FGL chunks → packed ℕ identity.**  Mirror of
+    `fgl_mul_unsigned_chunks_to_nat_identity` with the carry bound relaxed from
+    `< 131072` to the balance-constructible `< 983041`. -/
+lemma fgl_mul_unsigned_chunks_to_nat_identity_loose
+    (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
+     cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_c0 : c₀.val < 65536) (h_c1 : c₁.val < 65536)
+    (h_c2 : c₂.val < 65536) (h_c3 : c₃.val < 65536)
+    (h_d0 : d₀.val < 65536) (h_d1 : d₁.val < 65536)
+    (h_d2 : d₂.val < 65536) (_h_d3 : d₃.val < 65536)
+    (h_cy0 : cy₀.val < 983041) (h_cy1 : cy₁.val < 983041)
+    (h_cy2 : cy₂.val < 983041) (h_cy3 : cy₃.val < 983041)
+    (h_cy4 : cy₄.val < 983041) (h_cy5 : cy₅.val < 983041)
+    (h_cy6 : cy₆.val < 983041)
+    (hC31 : a₀ * b₀ = c₀ + cy₀ * 65536)
+    (hC32 : a₁ * b₀ + a₀ * b₁ + cy₀ = c₁ + cy₁ * 65536)
+    (hC33 : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + cy₁ = c₂ + cy₂ * 65536)
+    (hC34 : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + cy₂ = c₃ + cy₃ * 65536)
+    (hC35 : a₃ * b₁ + a₂ * b₂ + a₁ * b₃ + cy₃ = d₀ + cy₄ * 65536)
+    (hC36 : a₃ * b₂ + a₂ * b₃ + cy₄ = d₁ + cy₅ * 65536)
+    (hC37 : a₃ * b₃ + cy₅ = d₂ + cy₆ * 65536)
+    (hC38 : cy₆ = d₃) :
+    packed4 a₀.val a₁.val a₂.val a₃.val
+        * packed4 b₀.val b₁.val b₂.val b₃.val
+      = packed4 c₀.val c₁.val c₂.val c₃.val
+        + packed4 d₀.val d₁.val d₂.val d₃.val * 18446744073709551616 :=
+  mul_unsigned_packed_of_chunks
+    a₀.val a₁.val a₂.val a₃.val b₀.val b₁.val b₂.val b₃.val
+    c₀.val c₁.val c₂.val c₃.val d₀.val d₁.val d₂.val d₃.val
+    cy₀.val cy₁.val cy₂.val cy₃.val cy₄.val cy₅.val cy₆.val
+    (fgl_chunk_lift_1_loose a₀ b₀ c₀ cy₀ h_a0 h_b0 h_c0 h_cy0 hC31)
+    (fgl_chunk_lift_2_loose a₁ a₀ b₀ b₁ cy₀ c₁ cy₁
+        h_a1 h_a0 h_b0 h_b1 h_cy0 h_c1 h_cy1 hC32)
+    (fgl_chunk_lift_3_loose a₂ a₁ a₀ b₀ b₁ b₂ cy₁ c₂ cy₂
+        h_a2 h_a1 h_a0 h_b0 h_b1 h_b2 h_cy1 h_c2 h_cy2 hC33)
+    (fgl_chunk_lift_4_loose a₃ a₂ a₁ a₀ b₀ b₁ b₂ b₃ cy₂ c₃ cy₃
+        h_a3 h_a2 h_a1 h_a0 h_b0 h_b1 h_b2 h_b3 h_cy2 h_c3 h_cy3 hC34)
+    (fgl_chunk_lift_3_loose a₃ a₂ a₁ b₁ b₂ b₃ cy₃ d₀ cy₄
+        h_a3 h_a2 h_a1 h_b1 h_b2 h_b3 h_cy3 h_d0 h_cy4 hC35)
+    (fgl_chunk_lift_2_loose a₃ a₂ b₂ b₃ cy₄ d₁ cy₅
+        h_a3 h_a2 h_b2 h_b3 h_cy4 h_d1 h_cy5 hC36)
+    (fgl_chunk_lift_1'_loose a₃ b₃ cy₅ d₂ cy₆
+        h_a3 h_b3 h_cy5 h_d2 h_cy6 hC37)
+    (fgl_chunk_lift_close cy₆ d₃ hC38)
+
 /-! ## Worked example — TDD test that the toolkit composes
 
 The body below is a small smoke test that the pure-ℕ aggregator

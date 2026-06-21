@@ -522,6 +522,77 @@ theorem mulhsu_basic_mode_pin
       have hval := congrArg Fin.val hop
       norm_num at hval
 
+/-- **MULH product-sign shape (op 181).** Mirror of
+    `mul_np_xor_or_zero_product_shape`: every lookup-aware MULH row has the
+    honest signed product sign `np = na XOR nb`, OR one of the two exceptional
+    product-sign shapes the shared 74-row ArithTable also admits for op 181
+    (see `Counterexamples.mulh_np_xor_not_static`, row 12: `na=1, nb=0, np=0`).
+    Those exceptional shapes are exactly the malicious signed-MUL witness forge;
+    they are excluded by the `h_not_forge` hypothesis the canonical theorem
+    consumes, leaving the honest XOR branch for the high-half proof. -/
+theorem mulh_np_xor_or_zero_product_shape
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_op : v.op r = 181) :
+    v.np r = v.na r + v.nb r - 2 * v.na r * v.nb r
+      ∨ (v.na r = 1 ∧ v.nb r = 0 ∧ v.np r = 0)
+      ∨ (v.na r = 0 ∧ v.nb r = 1 ∧ v.np r = 0) := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, hna, hnb, hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, _hmain_mul, _hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    rw [hop] at h_op
+    have hval := congrArg Fin.val h_op
+    norm_num at hval
+  all_goals
+    first
+    | right; left
+      exact ⟨hna, hnb, hnp⟩
+    | right; right
+      exact ⟨hna, hnb, hnp⟩
+    | left
+      rw [hna, hnb, hnp]
+      norm_num
+
+/-- **MULHSU product-sign shape (op 179).** Companion of
+    `mulh_np_xor_or_zero_product_shape` for the signed × unsigned high half.
+    The table pins `nb = 0` (the unsigned operand), so the honest branch reads
+    `np = na` (`= na XOR 0`); the exceptional shapes are the same forge shapes
+    the table admits (`Counterexamples.mulhsu_np_xor_not_static`, row 3). -/
+theorem mulhsu_np_xor_or_zero_product_shape
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_op : v.op r = 179) :
+    v.np r = v.na r + v.nb r - 2 * v.na r * v.nb r
+      ∨ (v.na r = 1 ∧ v.nb r = 0 ∧ v.np r = 0)
+      ∨ (v.na r = 0 ∧ v.nb r = 1 ∧ v.np r = 0) := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, hna, hnb, hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, _hmain_mul, _hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    rw [hop] at h_op
+    have hval := congrArg Fin.val h_op
+    norm_num at hval
+  all_goals
+    first
+    | right; left
+      exact ⟨hna, hnb, hnp⟩
+    | right; right
+      exact ⟨hna, hnb, hnp⟩
+    | left
+      rw [hna, hnb, hnp]
+      norm_num
+
 theorem mulw_basic_mode_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec

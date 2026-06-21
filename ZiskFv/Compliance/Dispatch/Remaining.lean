@@ -195,7 +195,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
         lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -216,7 +216,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
         lhu_input.imm, regidx.Regidx lhu_input.r1, regidx.Regidx lhu_input.rd, true, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -237,7 +237,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -422,24 +422,35 @@ theorem zisk_riscv_compliant_program_bus_remaining
         LeanRV64D.Functions.execute
           (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.Low, signed_rs1 := srs1, signed_rs2 := srs2 }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    have h_no_signed_mul_witness_defect : False :=
-      Defects.no_malicious_signed_mul_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
+    -- NARROWED MUL exclusion: derive `¬ (exceptional product-sign shape)` directly
+    -- from `NoKnownDefect`. `no_malicious_signed_mul_witness_of_no_known_defect`
+    -- yields `¬ MaliciousSignedMulWitnessShape (.mul …)`, which is DEFEQ to the
+    -- unfolded disjunction `equiv_MUL` consumes. This is a genuine forge-exclusion,
+    -- not a vacuous `False` (the honest case is reachable and proved).
+    have h_not_forge :
+        ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+          ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)) :=
+      Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.Mul.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
       pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_no_signed_mul_witness_defect
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
-        promises arith_mem h_row_constraints arith_table =>
+        promises arith_mem bounds h_row_constraints arith_table
+        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a h_sign_b =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Signed }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    have h_no_signed_mul_witness_defect : False :=
-      Defects.no_malicious_signed_mul_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
+    -- NARROWED MULH exclusion: derive `¬ (exceptional product-sign shape)` directly
+    -- from `NoKnownDefect` (genuine forge-exclusion, not vacuous `False`).
+    have h_not_forge :
+        ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+          ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)) :=
+      Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.MulH.equiv_MULH state mulh_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
+      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a h_sign_b
   | mulhu mulhu_input r1 r2 rd bus v r_a pins h_match_secondary
          promises arith_mem bounds h_row_constraints arith_table
          arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value =>
@@ -452,17 +463,20 @@ theorem zisk_riscv_compliant_program_bus_remaining
       pins h_match_secondary promises arith_mem bounds arith_table
       arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_row_constraints
   | mulhsu mulhsu_input r1 r2 rd bus v r_a pins h_match_secondary
-        promises arith_mem h_row_constraints arith_table =>
+        promises arith_mem bounds h_row_constraints arith_table
+        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Unsigned }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    have h_no_signed_mul_witness_defect : False :=
-      Defects.no_malicious_signed_mul_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
+    have h_not_forge :
+        ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+          ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)) :=
+      Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU state mulhsu_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
+      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a
   | mulw mulw_input r1 r2 rd bus v r_a pins h_match_primary
         promises arith_mem h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
         h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value =>
@@ -477,28 +491,34 @@ theorem zisk_riscv_compliant_program_bus_remaining
   -- Div / Rem
   | div div_input r1 r2 rd bus v r_a
         pins h_match_primary
-        promises arith_mem h_op2_ne h_no_overflow
-        h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+        promises arith_mem bounds h_op2_ne h_no_overflow
+        h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+        h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Div.equiv_DIV state div_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem h_op2_ne h_no_overflow
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_known_bugs
+      pins h_match_primary promises arith_mem bounds h_op2_ne h_no_overflow
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+      h_r_le h_r_sign h_known_bugs
   | rem rem_input r1 r2 rd bus v r_a
         pins h_match_secondary
-        promises arith_mem h_op2_ne h_no_overflow
-        h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+        promises arith_mem bounds h_op2_ne h_no_overflow
+        h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+        h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Rem.equiv_REM state rem_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem h_op2_ne h_no_overflow
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_known_bugs
+      pins h_match_secondary promises arith_mem bounds h_op2_ne h_no_overflow
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+      h_r_le h_r_sign h_known_bugs
   | remu remu_input r1 r2 rd bus v r_a
          pins h_match_secondary promises arith_mem
       bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
@@ -511,17 +531,20 @@ theorem zisk_riscv_compliant_program_bus_remaining
       pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
       arith_chunk_ranges arith_carry_ranges remainder_bound h_rs1_value h_rs2_value
   | divw divw_input r1 r2 rd bus v r_a
-         pins h_match_primary promises arith_mem
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-         h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
+         pins h_match_primary promises arith_mem bounds
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
+      h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_op2_ne h_no_overflow h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Divw.equiv_DIVW state divw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
-      h_known_bugs
+      pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+      h_m32 h_div h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_op2_ne h_no_overflow h_r_le h_r_sign h_known_bugs
   | divuw divuw_input r1 r2 rd bus v r_a
           pins h_match_primary promises arith_mem
       bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
@@ -534,17 +557,20 @@ theorem zisk_riscv_compliant_program_bus_remaining
       pins h_match_primary promises arith_mem bounds arith_table h_row_constraints
       arith_chunk_ranges arith_carry_ranges remainder_bound h_b23 h_c23 h_sext_choice h_rs1_value h_rs2_value
   | remw remw_input r1 r2 rd bus v r_a
-         pins h_match_secondary promises arith_mem
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-         h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
+         pins h_match_secondary promises arith_mem bounds
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
+      h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_op2_ne h_no_overflow_w h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Remw.equiv_REMW state remw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w
-      h_known_bugs
+      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+      h_m32 h_div h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_op2_ne h_no_overflow_w h_r_le h_r_sign h_known_bugs
   | remuw remuw_input r1 r2 rd bus v r_a
           pins h_match_secondary promises arith_mem
       bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
@@ -611,7 +637,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -629,7 +655,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         lhu_input.imm, regidx.Regidx lhu_input.r1, regidx.Regidx lhu_input.rd, true, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -647,7 +673,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     simp only [OpEnvelope.memoryTimelineConstructionEvidence] at h_memory_construction
-    rcases loadMemoryTimelineEvidence_of_constructionEvidence promises h_memory_construction with
+    rcases loadMemoryTimelineEvidence_of_coherenceEvidence promises h_memory_construction with
       ⟨timeline⟩
     let promises' :=
       ZiskFv.EquivCore.Promises.LoadStructuralPromises.withMemoryTimelineEvidence
@@ -818,24 +844,33 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         LeanRV64D.Functions.execute
           (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.Low, signed_rs1 := srs1, signed_rs2 := srs2 }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    have h_no_signed_mul_witness_defect : False :=
-      Defects.no_malicious_signed_mul_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
+    -- NARROWED MUL exclusion: derive `¬ (exceptional product-sign shape)` directly
+    -- from `NoKnownDefect`. `no_malicious_signed_mul_witness_of_no_known_defect`
+    -- yields `¬ MaliciousSignedMulWitnessShape (.mul …)`, which is DEFEQ to the
+    -- unfolded disjunction `equiv_MUL` consumes. This is a genuine forge-exclusion,
+    -- not a vacuous `False` (the honest case is reachable and proved).
+    have h_not_forge :
+        ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+          ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)) :=
+      Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.Mul.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
       pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_no_signed_mul_witness_defect
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
-        promises arith_mem h_row_constraints arith_table =>
+        promises arith_mem bounds h_row_constraints arith_table
+        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a h_sign_b =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Signed }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    have h_no_signed_mul_witness_defect : False :=
-      Defects.no_malicious_signed_mul_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
+    have h_not_forge :
+        ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+          ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)) :=
+      Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.MulH.equiv_MULH state mulh_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
+      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a h_sign_b
   | mulhu mulhu_input r1 r2 rd bus v r_a pins h_match_secondary
          promises arith_mem bounds h_row_constraints arith_table
          arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value =>
@@ -848,17 +883,20 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       pins h_match_secondary promises arith_mem bounds arith_table
       arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_row_constraints
   | mulhsu mulhsu_input r1 r2 rd bus v r_a pins h_match_secondary
-        promises arith_mem h_row_constraints arith_table =>
+        promises arith_mem bounds h_row_constraints arith_table
+        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Unsigned }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    have h_no_signed_mul_witness_defect : False :=
-      Defects.no_malicious_signed_mul_witness_of_no_known_defect
-      h_known_bugs (by simp [Defects.MaliciousSignedMulWitnessShape])
+    have h_not_forge :
+        ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+          ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)) :=
+      Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU state mulhsu_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
+      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a
   | mulw mulw_input r1 r2 rd bus v r_a pins h_match_primary
         promises arith_mem h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
         h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value =>
@@ -872,28 +910,34 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value
   | div div_input r1 r2 rd bus v r_a
         pins h_match_primary
-        promises arith_mem h_op2_ne h_no_overflow
-        h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+        promises arith_mem bounds h_op2_ne h_no_overflow
+        h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+        h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Div.equiv_DIV state div_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem h_op2_ne h_no_overflow
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_known_bugs
+      pins h_match_primary promises arith_mem bounds h_op2_ne h_no_overflow
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+      h_r_le h_r_sign h_known_bugs
   | rem rem_input r1 r2 rd bus v r_a
         pins h_match_secondary
-        promises arith_mem h_op2_ne h_no_overflow
-        h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+        promises arith_mem bounds h_op2_ne h_no_overflow
+        h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+        h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Rem.equiv_REM state rem_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem h_op2_ne h_no_overflow
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_known_bugs
+      pins h_match_secondary promises arith_mem bounds h_op2_ne h_no_overflow
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+      h_r_le h_r_sign h_known_bugs
   | remu remu_input r1 r2 rd bus v r_a
          pins h_match_secondary promises arith_mem
       bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
@@ -906,17 +950,20 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
       arith_chunk_ranges arith_carry_ranges remainder_bound h_rs1_value h_rs2_value
   | divw divw_input r1 r2 rd bus v r_a
-         pins h_match_primary promises arith_mem
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-         h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
+         pins h_match_primary promises arith_mem bounds
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
+      h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_op2_ne h_no_overflow h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Divw.equiv_DIVW state divw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
-      h_known_bugs
+      pins h_match_primary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+      h_m32 h_div h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_op2_ne h_no_overflow h_r_le h_r_sign h_known_bugs
   | divuw divuw_input r1 r2 rd bus v r_a
           pins h_match_primary promises arith_mem
       bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
@@ -929,17 +976,20 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       pins h_match_primary promises arith_mem bounds arith_table h_row_constraints
       arith_chunk_ranges arith_carry_ranges remainder_bound h_b23 h_c23 h_sext_choice h_rs1_value h_rs2_value
   | remw remw_input r1 r2 rd bus v r_a
-         pins h_match_secondary promises arith_mem
-      h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-         h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
+         pins h_match_secondary promises arith_mem bounds
+      h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
+      h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_op2_ne h_no_overflow_w h_r_le h_r_sign =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Remw.equiv_REMW state remw_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w
-      h_known_bugs
+      pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+      arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+      h_m32 h_div h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_op2_ne h_no_overflow_w h_r_le h_r_sign h_known_bugs
   | remuw remuw_input r1 r2 rd bus v r_a
           pins h_match_secondary promises arith_mem
       bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges

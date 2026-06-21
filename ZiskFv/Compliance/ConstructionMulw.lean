@@ -311,7 +311,7 @@ theorem mulwArow_match
     carry ranges, c46, carry-chain) are DERIVED inside the body from
     `trace.balanced` / `trace.spec` via the provider's lookup-aware
     `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
-theorem construction_mulw_sound
+theorem construction_mulw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (i : Fin trace.length)

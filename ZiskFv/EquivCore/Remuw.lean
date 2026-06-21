@@ -89,7 +89,7 @@ lemma equiv_REMUW
     -- Structural-unpacking ADDED binders (17 total).
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     (chunk_ranges : ZiskFv.AirsClean.ArithDiv.ChunkRangeLookupWitness v r_a)
-    (carry_ranges : ZiskFv.AirsClean.ArithDiv.UnsignedCarryRangeLookupWitness v r_a)
+    (carry_ranges : ZiskFv.AirsClean.ArithDiv.SignedCarryRangeLookupWitness v r_a)
     (remainder_bound :
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
@@ -130,7 +130,7 @@ lemma equiv_REMUW
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges
   have h_carry_ranges :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_unsigned_carry_ranges_at_holds
+    ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
       v r_a carry_ranges
   obtain ⟨h_d23, h_d_lt_b_arith⟩ :=
     ZiskFv.EquivCore.Bridge.Arith.arith_div_remainder_bound_unsigned_w
@@ -150,8 +150,10 @@ lemma equiv_REMUW
   obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
           h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
           hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.div_unsigned_chain_witnesses_of_carry_ranges
-      v r_a h_chain h_na h_nb h_np h_nr h_div h_carry_ranges
+    ZiskFv.EquivCore.Bridge.Arith.div_unsigned_chain_witnesses_of_signed_carry_ranges
+      v r_a h_chain h_na h_nb h_np h_nr h_div
+      (ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges)
+      h_carry_ranges
   have h_packed_nat : ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
         (v.a_2 r_a).val (v.a_3 r_a).val
         * ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
@@ -160,7 +162,7 @@ lemma equiv_REMUW
           (v.d_2 r_a).val (v.d_3 r_a).val
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
           (v.c_2 r_a).val (v.c_3 r_a).val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.fgl_div_unsigned_chunks_to_nat_identity
+    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.fgl_div_unsigned_chunks_to_nat_identity_loose
       (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
       (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
       (v.c_0 r_a) (v.c_1 r_a) (v.c_2 r_a) (v.c_3 r_a)
@@ -193,7 +195,7 @@ lemma equiv_REMUW
     unfold ZiskFv.PackedBitVec.MulNoWrap.packed4 at h_a_packed_lt
     constructor <;> omega
   have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_remuw_chunked
+    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_remuw_loose
       remuw_input.r1_val remuw_input.r2_val e2
       (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
       (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
