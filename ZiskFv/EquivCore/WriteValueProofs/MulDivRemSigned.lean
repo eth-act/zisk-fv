@@ -139,6 +139,52 @@ private lemma signed_divisor_chunk_fields_zero_of_toInt_zero
     by apply Fin.ext; simpa [B] using hb2,
     by apply Fin.ext; simpa [B] using hb3⟩
 
+private lemma signed_w_divisor_chunk_fields_zero_of_toInt_zero
+    (r2_val : BitVec 64)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_b0 : (v.b_0 r_a).val < 65536) (h_b1 : (v.b_1 r_a).val < 65536)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_rs2_value :
+      (Sail.BitVec.extractLsb r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.nb r_a) * (2:ℤ)^32)
+    (h_r2_zero : Sail.BitVec.extractLsb r2_val 31 0 = 0#32) :
+    v.b_0 r_a = 0 ∧ v.b_1 r_a = 0 := by
+  let B := (v.b_0 r_a).val + (v.b_1 r_a).val * 65536
+  have h_B_lt : B < 4294967296 := by
+    have : (v.b_1 r_a).val * 65536 ≤ 65535 * 65536 :=
+      Nat.mul_le_mul_right _ (by omega)
+    omega
+  have h_r2_toInt_zero : (Sail.BitVec.extractLsb r2_val 31 0).toInt = 0 := by
+    simpa using congrArg BitVec.toInt h_r2_zero
+  have h_B_zero : B = 0 := by
+    rcases h_nb_bool with h_nb | h_nb
+    · have h_nb_val : toIntZ (v.nb r_a) = 0 := by
+        rw [h_nb]
+        decide
+      have h_B_int : (B : ℤ) = 0 := by
+        have h := h_rs2_value
+        rw [h_r2_toInt_zero, h_nb_val] at h
+        dsimp [B] at h
+        omega
+      exact_mod_cast h_B_int
+    · have h_nb_val : toIntZ (v.nb r_a) = 1 := by
+        rw [h_nb]
+        decide
+      have h_B_int : (B : ℤ) = (2:ℤ)^32 := by
+        have h := h_rs2_value
+        rw [h_r2_toInt_zero, h_nb_val] at h
+        dsimp [B] at h
+        omega
+      have h_B_eq : B = 4294967296 := by
+        norm_num at h_B_int
+        exact_mod_cast h_B_int
+      omega
+  have hb1 : (v.b_1 r_a).val = 0 := by omega
+  have hb0 : (v.b_0 r_a).val = 0 := by omega
+  exact ⟨by apply Fin.ext; simpa using hb0,
+    by apply Fin.ext; simpa using hb1⟩
+
 /-- **Signed DIV divisor-zero boundary.**
 
     When the signed divisor has `toInt = 0`, the newly exposed ArithDiv
@@ -1636,6 +1682,127 @@ private lemma bv32_ofInt_eq_ofNat_of_nonneg_lt_sig (D : ℤ)
   have h_emod : D % ((2^32 : ℕ) : ℤ) = D :=
     Int.emod_eq_of_lt h_lb (by exact_mod_cast h_ub)
   rw [h_emod]
+
+/-- **Signed DIVW divisor-zero boundary.**
+
+    W-mode divisor-zero returns the sign-extended low-32 all-ones quotient.
+    The boundary constraints force `a₀ = a₁ = 0xffff`; the W sign-extension
+    choice then forces the high result bytes to `0xff`. -/
+lemma h_rd_val_mdrs_divw_by_zero_chunked
+    (r1_val r2_val : BitVec 64)
+    (e : Interaction.MemoryBusEntry FGL)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
+    (h_chunk_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+    (h_boundary :
+      ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_byte_lo :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
+    (h_sext_choice :
+      (((byteAt e 4).val = 0 ∧ (byteAt e 5).val = 0 ∧ (byteAt e 6).val = 0 ∧ (byteAt e 7).val = 0) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
+      (((byteAt e 4).val = 255 ∧ (byteAt e 5).val = 255 ∧ (byteAt e 6).val = 255 ∧ (byteAt e 7).val = 255) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
+    (h_rs2_value :
+      (Sail.BitVec.extractLsb r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.nb r_a) * (2:ℤ)^32)
+    (h_r2_zero : Sail.BitVec.extractLsb r2_val 31 0 = 0#32) :
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
+      = (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb r1_val 31 0
+         let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb r2_val 31 0
+         let q32 : BitVec 32 :=
+           if r2_lo32 = 0#32
+             then BitVec.allOnes 32
+             else if r1_lo32 = (BitVec.ofNat 32 (2^31)) ∧ r2_lo32 = BitVec.allOnes 32
+               then BitVec.ofNat 32 (2^31)
+               else BitVec.ofInt 32 (Int.tdiv r1_lo32.toInt r2_lo32.toInt)
+         BitVec.signExtend 64 q32) := by
+  obtain ⟨_, _, _, _, h_b0, h_b1, _, _, _, _, _, _, _, _, _, _⟩ :=
+    h_chunk_ranges
+  rcases h_boundary with
+    ⟨_, _, _, _, _, _hb0_force, _hb1_force, _hb2_force, _hb3_force,
+      ha0_force, ha1_force, _, _, _, _, _, _, _, _, _, _,
+      h_inv, _, _, _, _, _⟩
+  obtain ⟨hb0_zero, hb1_zero⟩ :=
+    signed_w_divisor_chunk_fields_zero_of_toInt_zero r2_val v r_a
+      h_b0 h_b1 h_nb_bool h_rs2_value h_r2_zero
+  have hb2_zero : v.b_2 r_a = 0 := by
+    apply Fin.ext
+    simpa using h_b23.1
+  have hb3_zero : v.b_3 r_a = 0 := by
+    apply Fin.ext
+    simpa using h_b23.2
+  have h_div_by_zero : v.div_by_zero r_a = 1 :=
+    ZiskFv.Airs.ArithDiv.div_by_zero_eq_one_of_zero_b_chunks h_inv h_div
+      hb0_zero hb1_zero hb2_zero hb3_zero
+  have ha0 : v.a_0 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.a0_eq_ffff_of_div_by_zero ha0_force h_div_by_zero
+  have ha1 : v.a_1 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.a1_eq_ffff_of_div_by_zero ha1_force h_div_by_zero
+  have ha0_val : (v.a_0 r_a).val = 65535 := by rw [ha0]; rfl
+  have ha1_val : (v.a_1 r_a).val = 65535 := by rw [ha1]; rfl
+  have h_q_eq : (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 = 4294967295 := by
+    rw [ha0_val, ha1_val]
+  have h_byte_lo_allones :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        = 4294967295 := by
+    rw [h_byte_lo, h_q_eq]
+  have h_spec :
+      (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb r1_val 31 0
+       let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb r2_val 31 0
+       let q32 : BitVec 32 :=
+         if r2_lo32 = 0#32
+           then BitVec.allOnes 32
+           else if r1_lo32 = (BitVec.ofNat 32 (2^31)) ∧ r2_lo32 = BitVec.allOnes 32
+             then BitVec.ofNat 32 (2^31)
+             else BitVec.ofInt 32 (Int.tdiv r1_lo32.toInt r2_lo32.toInt)
+       BitVec.signExtend 64 q32)
+        = BitVec.signExtend 64 (BitVec.allOnes 32) := by
+    have h_r2_zero' : BitVec.extractLsb 31 0 r2_val = 0#32 := by
+      simpa [Sail.BitVec.extractLsb] using h_r2_zero
+    simp [Sail.BitVec.extractLsb, h_r2_zero']
+  have h_all_ones : BitVec.allOnes 32 = BitVec.ofNat 32 4294967295 := by
+    decide
+  have h_byte_sum_eq :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
+      = (BitVec.signExtend 64 (BitVec.ofNat 32 4294967295)).toNat := by
+    rcases h_sext_choice with ⟨⟨hx4, hx5, hx6, hx7⟩, h_pos⟩ |
+                              ⟨⟨hx4, hx5, hx6, hx7⟩, h_neg⟩
+    · rw [h_q_eq] at h_pos
+      omega
+    · rw [hx4, hx5, hx6, hx7]
+      have h_byte_eq_neg :
+          (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+            + 255 * 4294967296 + 255 * 1099511627776
+            + 255 * 281474976710656 + 255 * 72057594037927936
+          = ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
+              + 18446744069414584320 := by ring
+      rw [h_byte_eq_neg, h_byte_lo_allones]
+      rw [h_q_eq] at h_neg
+      have h_close := w_sext_close_neg_sig
+        4294967295 (4294967295 + 18446744069414584320)
+        (by norm_num) (by norm_num) rfl h_neg
+      rw [show BitVec.signExtend 64 (BitVec.ofNat 32 4294967295)
+            = BitVec.ofNat 64 (4294967295 + 18446744069414584320)
+            from h_close]
+      rw [BitVec.toNat_ofNat]
+  apply BitVec.eq_of_toNat_eq
+  rw [u64_toBV_of_bytes_toNat (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
+        h0 h1 h2 h3 h4 h5 h6 h7]
+  rw [h_spec, h_all_ones]
+  exact h_byte_sum_eq
 
 /-! ## DIVW chunked discharge (signed 32-bit; non-boundary case)
 

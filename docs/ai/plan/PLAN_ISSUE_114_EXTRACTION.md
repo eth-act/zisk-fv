@@ -18,6 +18,7 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
   - [x] Narrow the signed DIV/REM defect predicate to the nonzero-divisor path.
   - [x] Thread `div_boundary_constraints` through non-W signed DIV wrappers,
     envelopes, dispatch, and trace export.
+  - [x] Add and verify a boundary-aware EquivCore DIVW theorem.
   - [ ] Add wrapper-level boundary lemmas for signed overflow.
   - [ ] Thread boundary constraints through signed REM/W callers.
 - [x] Run focused Lean checks and the appropriate final gate.
@@ -90,3 +91,16 @@ Focused gate for the non-W signed DIV plumbing chunk passed:
 ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance.AeneasBridgeTrust
 ZiskFv.Compliance.Defects ZiskFv.Compliance.Dispatch.Remaining
 ZiskFv.Compliance.TraceLevelExport`.
+
+Next residual inspection: REM/DIVW/REMW still route through non-boundary
+`EquivCore` write-value lemmas. Non-W REM divisor-zero is not the same shape as
+DIV: the architecture returns the dividend, so dropping `h_op2_ne` would require
+proving the remainder chunks `d[]` equal the dividend chunks `c[]`; the exposed
+boundary constraints directly force quotient chunks for DIV, but do not
+directly state `d[] = c[]`.
+
+`ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned` now has a DIVW
+divisor-zero write-value lemma for the low-32 all-ones quotient plus
+sign-extension, and `ZiskFv.EquivCore.Divw` has `equiv_DIVW_boundary_split`.
+Focused builds pass for both modules. The wrapper/public DIVW surfaces still
+need to be threaded through the new split.

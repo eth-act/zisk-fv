@@ -2,13 +2,13 @@ Stream: Issue 114 extraction. Worktree `.worktrees/issue-114-extraction`, branch
 Plan: docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md.
 
 Current focus:
-- Continue Issue 114 residual retirement after the non-W signed DIV
-  divisor-zero plumbing chunk.
+- Thread the verified core DIVW divisor-zero boundary split through wrappers
+  and public equivalence surfaces.
 
 Blocking:
 - None.
 
 Next step:
-- Tackle the remaining signed overflow and REM/W nonzero residual surfaces;
-  avoid calling the extraction work "full" while unsupported constraints are
-  still explicitly skipped/stubbed.
+- Update `Wrappers.Divw`, `Equivalence.Divw`, `OpEnvelope.divw`, bridge trust,
+  dispatch, and trace export to take `div_boundary_constraints` instead of a
+  global DIVW `h_op2_ne`.
