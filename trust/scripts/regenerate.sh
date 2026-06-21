@@ -2,12 +2,11 @@
 # Refresh the trust baseline files. Run this after a legitimate
 # trust-surface change, commit the updated baseline files alongside.
 #
-# Eight baselines:
+# Seven baselines:
 #   trust/generated/baseline-axioms.txt                  — V1: source-text-hash per axiom
 #   trust/generated/baseline-equiv-axiom-deps.txt        — V2: per-theorem axiom closure
 #   trust/generated/baseline-zisk-riscv-compliant.txt    — V2: uber-theorem project-axiom closure
 #   trust/generated/baseline-global-theorem-binders.txt  — V2: uber-theorem binder list
-#   trust/generated/baseline-construction-theorem-binders.txt — V2: DEEP (recursive) construction binder leaves
 #   trust/generated/baseline-hypothesis-count.txt        — anti-laundering: per-theorem binder counts
 #   trust/generated/baseline-caller-burden.txt           — anti-laundering: per-binder ledger (canonical)
 #   trust/generated/baseline-wrapper-caller-burden.txt   — anti-laundering: per-binder ledger (wrappers)
@@ -48,10 +47,6 @@ if [ -d .lake/build ]; then
   echo "Refreshing strong-export theorem binder baseline..."
   lake exe trust-gate print-strong-export-binders > trust/generated/baseline-strong-export-binders.txt
   echo "  → trust/generated/baseline-strong-export-binders.txt"
-
-  echo "Refreshing DEEP construction theorem binder baseline..."
-  lake exe trust-gate print-construction-binders-deep > trust/generated/baseline-construction-theorem-binders.txt
-  echo "  → trust/generated/baseline-construction-theorem-binders.txt"
 
   echo "Refreshing uber-theorem axiom-closure baseline..."
   {

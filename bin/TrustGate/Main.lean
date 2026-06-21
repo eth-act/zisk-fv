@@ -327,99 +327,6 @@ def cmdCheckStrongExportBinders (env : Environment) (baselinePath : String)
     rc := 1
   return rc
 
-/-- The list of sound P4 construction theorems whose DEEP binder render is
-audited by the recursive (Option X) gate. Adding a sound family = append its
-`construction_<fam>_sound` here and regenerate
-`trust/generated/baseline-construction-theorem-binders.txt`; the baseline must
-grow by EXACTLY that family's honest top-level binders (no `*RowBinding` /
-`MainRowProvenance` leaf). The block for each theorem is labelled by a
-`# <theoremName>` header line so the per-family audit surface stays separable in
-the diff. -/
-def soundConstructionTheorems : List Name :=
-  [ `ZiskFv.Compliance.construction_sub_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_and_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_or_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_xor_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_slt_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sltu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_andi_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_ori_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_xori_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_slti_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sltiu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sll_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_srl_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sra_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_slli_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_srli_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_srai_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sllw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_srlw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sraw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_slliw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_srliw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sraiw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_add_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_addi_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_subw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_addw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_addiw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_lui_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_auipc_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_mulw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_mulhu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_divu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_divuw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_remu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_remuw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sb_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sh_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_sd_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_ld_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_lbu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_lhu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_lwu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_lb_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_lh_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_lw_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_beq_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_bne_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_blt_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_bge_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_bltu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_bgeu_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_jal_sound_claimed_dead
-  , `ZiskFv.Compliance.construction_jalr_sound_claimed_dead ]
-
-/-- Subcommand: render the DEEP (recursive) construction-theorem binder list,
-for EVERY sound construction theorem in `soundConstructionTheorems`.
-
-Unlike `print-global-binders`, this recurses into every `ZiskFv.*` project
-structure appearing in a binder type, emitting one `<path> :: <type>` leaf line
-per reachable non-descended field (library structures `Fin`/`And`/`Exists`/…
-are leaves). Because the sound P4 constructions carry NO `*RowBinding` /
-`MainRowProvenance` deep record, the deep render is the flat list of each
-theorem's honest top-level binders — and any future smuggling of a fact inside a
-project structure surfaces immediately as new dotted leaf lines. Each theorem's
-block is prefixed by a `# <theoremName>` header; the numeric binder index is
-dropped (the dotted path is the stable key). -/
-def cmdPrintConstructionBindersDeep (env : Environment) (theoremNames : List Name)
-    : IO UInt32 := do
-  let mut first := true
-  for theoremName in theoremNames do
-    if (env.find? theoremName).isNone then
-      IO.eprintln s!"trust-gate: unknown const {theoremName}"
-      return 1
-    if !first then
-      IO.println ""
-    first := false
-    IO.println s!"# {theoremName}"
-    let rows ← runMeta env (TypeWalk.renderTheoremBindersDeep theoremName)
-    for r in rows do
-      IO.println s!"{r.path} :: {r.fieldType}"
-  return 0
-
 /-- Subcommand: enumerate every auditable `ZiskFv.*` const, subtract
 the reachable set, print the unreachable ones grouped by module. -/
 def cmdFindUnused (env : Environment) (path : String) : IO UInt32 := do
@@ -489,7 +396,6 @@ def usage : IO Unit := do
   IO.println "  print-strong-export-binders    print strong export theorem binder baseline rows"
   IO.println "  check-strong-export-closure PATH  check strong export theorem ZiskFv.* axiom closure == PATH"
   IO.println "  check-strong-export-binders BASELINE FORBIDDEN  check strong export binder baseline + forbidden-type walk"
-  IO.println "  print-construction-binders-deep  print DEEP (recursive) binder leaf rows for every sound construction theorem"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
@@ -532,8 +438,6 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
     cmdCheckStrongExportClosure env path
   | ["check-strong-export-binders", baselinePath, forbiddenPath] =>
     cmdCheckStrongExportBinders env baselinePath forbiddenPath
-  | ["print-construction-binders-deep"] =>
-    cmdPrintConstructionBindersDeep env soundConstructionTheorems
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/generated/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline

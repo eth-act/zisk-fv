@@ -85,6 +85,43 @@ def referencedByCI (ci : ConstantInfo) : NameSet :=
   | some v => gatherConsts v acc
   | none   => acc
 
+/-- Strip a leading Lean `private` mangling prefix, if present, returning the
+forward-ordered components of the *user-visible* name.
+
+Lean encodes a private declaration as
+`_private.<Module.Path>.<num>.<RealName...>` — a `str "_private"` root, then
+the source module's path components, then a numeric component (`Name.num`),
+then the actual user-authored name (e.g. `ZiskFv.Compliance.foo`). A naive
+`n.getRoot == `ZiskFv` therefore MISSES every private decl (its root is
+`_private`). This helper drops everything up to and including the first numeric
+component so the remainder can be root-checked like a public name. For a
+non-private name it returns the components unchanged. -/
+def strippedComponents (n : Name) : List Name :=
+  let fwd := n.componentsRev.reverse
+  if n.getRoot == `_private then
+    -- Drop through the first numeric (`Name.num`) component; what follows is
+    -- the user-visible name.
+    let rec drop : List Name → List Name
+      | [] => []
+      | c :: rest =>
+        match c with
+        | .num _ _ => rest
+        | _        => drop rest
+    drop fwd
+  else
+    fwd
+
+/-- The user-visible root of `n` (after stripping any `private` mangling). -/
+def visibleRoot (n : Name) : Name :=
+  match strippedComponents n with
+  | (h :: _) => h
+  | []       => n.getRoot
+
+/-- True iff `n` is project-namespaced (`ZiskFv.*`), looking THROUGH any
+`private` mangling so private project decls are not invisible to the audit. -/
+def isProjectName (n : Name) : Bool :=
+  visibleRoot n == `ZiskFv
+
 /-- BFS from `seeds`: union the syntactic-const closure under the
 environment. Stops at constants without a definition (axioms, opaques)
 after recording their type's references.
@@ -107,8 +144,9 @@ where
     | [] => acc
     | n :: rest =>
       -- Do not expand external constants: their closure adds no `ZiskFv.*`
-      -- names and is the source of the multi-minute blowup.
-      if n.getRoot != `ZiskFv then go acc rest
+      -- names and is the source of the multi-minute blowup. We look THROUGH
+      -- any `private` mangling so private project deps are still followed.
+      if !isProjectName n then go acc rest
       else
       match env.find? n with
       | none => go acc rest
@@ -117,10 +155,6 @@ where
         let newOnes := refs.toList.filter (!acc.contains ·)
         let acc' := newOnes.foldl (·.insert ·) acc
         go acc' (newOnes ++ rest)
-
-/-- True iff `n` is project-namespaced (`ZiskFv.*`). -/
-def isProjectName (n : Name) : Bool :=
-  n.getRoot == `ZiskFv
 
 /-- Enumerate every `ZiskFv.*` const in the environment, excluding
 internal compiler-generated names that begin with `_` after the
@@ -131,15 +165,20 @@ trivially track their parent definition. -/
 def isCompilerInternal (n : Name) : Bool :=
   -- Drop names containing `_proof_`, `_eq_`, `match_`, `proof_`,
   -- `_unsafe_rec`, `.rec`, `.recOn`, etc. anywhere in the chain.
-  let s := n.toString
-  s.splitOn "." |>.any fun part =>
-    part.startsWith "_" ||
-    part == "rec" || part == "recOn" || part == "casesOn" ||
-    part == "noConfusion" || part == "noConfusionType" ||
-    part == "mk" ||  -- structure constructors are auto-built; their parent type covers them
-    part == "below" || part == "brecOn" ||
-    part == "ind" || part == "indOn" ||
-    part == "binductionOn" || part == "ndrec" || part == "ndrecOn"
+  --
+  -- We classify the USER-VISIBLE name (after stripping any `private`
+  -- mangling). Otherwise the `_private` literal and the source-module-path
+  -- prefix would make EVERY private decl look compiler-internal and so be
+  -- silently dropped from the audit set.
+  (strippedComponents n).any fun part =>
+    let p := part.toString
+    p.startsWith "_" ||
+    p == "rec" || p == "recOn" || p == "casesOn" ||
+    p == "noConfusion" || p == "noConfusionType" ||
+    p == "mk" ||  -- structure constructors are auto-built; their parent type covers them
+    p == "below" || p == "brecOn" ||
+    p == "ind" || p == "indOn" ||
+    p == "binductionOn" || p == "ndrec" || p == "ndrecOn"
 
 /-- True iff `n` looks like a user-authored project Name (subject to
 the audit). -/
