@@ -19,12 +19,16 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
   - [x] Thread `div_boundary_constraints` through non-W signed DIV wrappers,
     envelopes, dispatch, and trace export.
   - [x] Add and verify a boundary-aware EquivCore DIVW theorem.
+  - [x] Thread `div_boundary_constraints` through signed DIVW wrappers,
+    envelopes, dispatch, and trace export.
   - [ ] Add wrapper-level boundary lemmas for signed overflow.
   - [ ] Thread boundary constraints through signed REM/W callers.
 - [x] Run focused Lean checks and the appropriate final gate.
 - [x] Commit the completed chunk.
 - [x] Run focused Lean checks for the non-W signed DIV plumbing chunk.
 - [x] Commit the non-W signed DIV plumbing chunk.
+- [x] Run focused Lean checks for the signed DIVW plumbing chunk.
+- [ ] Commit the signed DIVW plumbing chunk.
 
 ## Notes
 
@@ -104,3 +108,10 @@ divisor-zero write-value lemma for the low-32 all-ones quotient plus
 sign-extension, and `ZiskFv.EquivCore.Divw` has `equiv_DIVW_boundary_split`.
 Focused builds pass for both modules. The wrapper/public DIVW surfaces still
 need to be threaded through the new split.
+
+DIVW public plumbing is complete: wrappers, `Equivalence.Divw`,
+`OpEnvelope.divw`, Aeneas bridge trust, `Defects`, dispatch, and trace export
+now take `div_boundary_constraints` instead of a global DIVW `h_op2_ne`.
+Individual focused builds passed for `OpEnvelope`, `Defects`, `Equivalence.Divw`,
+`AeneasBridgeTrust`, `Dispatch.Remaining`, and `TraceLevelExport`; the combined
+focused gate also passed.

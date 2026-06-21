@@ -2,13 +2,10 @@ Stream: Issue 114 extraction. Worktree `.worktrees/issue-114-extraction`, branch
 Plan: docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md.
 
 Current focus:
-- Thread the verified core DIVW divisor-zero boundary split through wrappers
-  and public equivalence surfaces.
+- Commit the verified DIVW boundary-threading public-surface edits.
 
 Blocking:
 - None.
 
 Next step:
-- Update `Wrappers.Divw`, `Equivalence.Divw`, `OpEnvelope.divw`, bridge trust,
-  dispatch, and trace export to take `div_boundary_constraints` instead of a
-  global DIVW `h_op2_ne`.
+- Stage only the touched DIVW plumbing files and commit the chunk.

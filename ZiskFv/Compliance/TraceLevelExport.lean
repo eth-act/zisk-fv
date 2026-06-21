@@ -2571,6 +2571,8 @@ structure RowData_divw
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+  h_boundary :
+    ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a
   arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
   arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
   arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
@@ -2618,7 +2620,6 @@ structure RowData_divw
     (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
       = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
           - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32
-  h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
   h_no_overflow :
     ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
         ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32)
@@ -4217,10 +4218,10 @@ noncomputable def divwEnvOf
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
   OpEnvelope.divw d.divw_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
     d.h_match_primary d.promises d.arith_mem d.bounds
-    d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
+    d.h_row_constraints d.h_boundary d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
     d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin d.h_m32_v d.h_div_v
     d.h_a23 d.h_b23 d.h_d23 d.h_c23 d.h_byte_lo d.h_sext_choice
-    d.h_rs1_value d.h_rs2_value d.h_op2_ne d.h_no_overflow d.h_r_le d.h_r_sign
+    d.h_rs1_value d.h_rs2_value d.h_no_overflow d.h_r_le d.h_r_sign
 
 /-- The `OpEnvelope.remw` env CONSTRUCTED from a `RowData_remw` (W-mode secondary). -/
 noncomputable def remwEnvOf

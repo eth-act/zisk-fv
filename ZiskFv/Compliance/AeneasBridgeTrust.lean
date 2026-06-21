@@ -3386,6 +3386,8 @@ def OpEnvelope.divwOfExtractedShape
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_boundary :
+      ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
@@ -3432,7 +3434,6 @@ def OpEnvelope.divwOfExtractedShape
       (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
-    (h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
           ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
@@ -3447,10 +3448,10 @@ def OpEnvelope.divwOfExtractedShape
     OpEnvelope state m r_main :=
   OpEnvelope.divw divw_input r1 r2 rd bus v r_a
     (MainRowProvenance.divWPins_of_extracted_shape provenance h_op h_external)
-    h_match_primary promises arith_mem bounds h_row_constraints arith_table
+    h_match_primary promises arith_mem bounds h_row_constraints h_boundary arith_table
     arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_m32_pin h_div_pin h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-    h_rs1_value h_rs2_value h_op2_ne h_no_overflow h_r_le h_r_sign
+    h_rs1_value h_rs2_value h_no_overflow h_r_le h_r_sign
 
 /-- The DIVW bridge predicate is derivable from extracted row-shape
 equalities and the remaining dynamic ArithDiv facts. -/
@@ -3478,6 +3479,8 @@ theorem OpEnvelope.aeneasBridgeTrust_divwOfExtractedShape
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_boundary :
+      ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
@@ -3524,7 +3527,6 @@ theorem OpEnvelope.aeneasBridgeTrust_divwOfExtractedShape
       (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
-    (h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
           ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
@@ -3539,10 +3541,10 @@ theorem OpEnvelope.aeneasBridgeTrust_divwOfExtractedShape
     (OpEnvelope.divwOfExtractedShape
       divw_input r1 r2 rd bus v r_a provenance h_op h_external h_m32
       h_set_pc h_store_pc h_jmp_offset1 h_jmp_offset2 h_match_primary
-      promises arith_mem bounds h_row_constraints arith_table arith_chunk_ranges
+      promises arith_mem bounds h_row_constraints h_boundary arith_table arith_chunk_ranges
       arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
       h_m32_pin h_div_pin h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-      h_rs1_value h_rs2_value h_op2_ne h_no_overflow h_r_le h_r_sign).aeneasBridgeTrust := by
+      h_rs1_value h_rs2_value h_no_overflow h_r_le h_r_sign).aeneasBridgeTrust := by
   unfold OpEnvelope.divwOfExtractedShape OpEnvelope.aeneasBridgeTrust
   let pins := MainRowProvenance.divWPins_of_extracted_shape provenance h_op h_external
   let controls :=
