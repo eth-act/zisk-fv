@@ -2,7 +2,7 @@
 
 ## Issue 114 Extraction
 
-Plan: `docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md`. Active stream in `.worktrees/issue-114-extraction`: remove the `Main`/`Arith` `--only` extraction lists so omitted constraints become either generated definitions or explicit unsupported stubs, then retire the current div/rem div-by-zero and signed-overflow hypotheses using the exposed Arith constraints. The work starts from `origin/main` at `028da000` to include the recent trace-level export changes.
+Plan: `docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md`. Active stream in `.worktrees/issue-114-extraction`: remove the `Main`/`Arith` `--only` extraction lists so every constraint is attempted, with generated definitions or explicit unsupported stubs as appropriate, then retire the current div/rem div-by-zero and signed-overflow hypotheses using the exposed Arith constraints. The work starts from `origin/main` at `028da000` to include the recent trace-level export changes; a 2026-06-21 fetch confirmed `origin/main` still points there.
 
 ## Endgame
 

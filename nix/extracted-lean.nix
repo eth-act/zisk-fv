@@ -23,9 +23,9 @@ stdenv.mkDerivation {
     ${pil-extract}/bin/pil-extract circuit-shim \
       --output $out/Circuit.lean
 
-    # Full-AIR extractions. `--skip-unsupported` keeps the extraction total:
-    # render every supported constraint and emit an explicit stub for each
-    # genuinely unsupported FixedCol/Challenge/ExtF shape.
+    # Attempt every constraint in these AIRs. `--skip-unsupported` renders every
+    # supported constraint and emits an explicit stub for each genuinely
+    # unsupported FixedCol/Challenge/ExtF shape.
     for air in Mem MemAlign MemAlignByte MemAlignReadByte MemAlignWriteByte \
                Binary BinaryExtension BinaryAdd; do
       ${pil-extract}/bin/pil-extract air \

@@ -6,8 +6,8 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
 
 - [x] Start from current `origin/main` in an isolated worktree.
 - [x] Inspect current div/rem proof surface and locate the two residual hypotheses.
-- [x] Replace `Main`/`Arith` `--only` extraction with explicit unsupported-stub extraction.
-- [x] Regenerate or inspect extractor output to confirm skipped constraints are now named stubs rather than silently omitted.
+- [x] Replace `Main`/`Arith` `--only` extraction with all-constraint-attempt extraction.
+- [x] Regenerate or inspect extractor output to confirm constraints are no longer silently omitted.
 - [x] Discharge the div-by-zero and signed-overflow residuals using existing Arith/AirsClean idioms.
   - [x] Add named ArithDiv forms for supported div-by-zero / overflow local constraints.
   - [x] Thread the new `inv_sum_all_bs` witness through the concrete `Valid_ArithDiv` constructor.
@@ -54,7 +54,12 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
 
 `--skip-unsupported` is the intended behavior here: every constraint should be attempted, and genuinely unsupported constraints should be visible as generated stub declarations. The important distinction is that F-clean Arith div-by-zero and overflow constraints are not unsupported; they were only absent because `--only` excluded them.
 
-Extractor inspection on the existing generated pilout shows Arith now emits definitions for constraints `0..48` and explicit stubs for unsupported constraints `49..64`; Main emits explicit unsupported stubs instead of omitting constraints outside the old list. The remaining proof work is a true boundary-case split: `h_op2_ne` and `h_no_overflow` are not facts to prove globally, because zero divisors and INT_MIN/-1 are valid inputs.
+Fresh extractor inspection on 2026-06-21 (`nix build .#extracted-lean --no-link
+--print-out-paths`) shows `Arith.lean` emits definitions for constraints `0..64`
+and `Main.lean` emits definitions through `constraint_143_every_row`; no
+`skipped` / `unsupported` comments appear in the generated package. The proof
+work is a true boundary-case split: `h_op2_ne` and `h_no_overflow` are not facts
+to prove globally, because zero divisors and INT_MIN/-1 are valid inputs.
 
 Focused checks in the issue worktree now pass for `ZiskFv.Airs.Arith.Div` and
 `ZiskFv.Compliance.ConstructionDivu` after running `nix run .#populate` and
@@ -234,3 +239,14 @@ helpers, dispatch, and trace export no longer require or store a global REMW
 `ZiskFv.Compliance.AeneasBridgeTrust`, `ZiskFv.Compliance.Dispatch.Remaining`,
 and `ZiskFv.Compliance.TraceLevelExport`; a focused residual search finds only
 local nonzero branches, unsigned paths, or legacy strict core lemmas.
+
+Post-fetch completion audit on 2026-06-21: `git fetch origin main`,
+`git fetch origin --prune`, and `git ls-remote origin refs/heads/main` all
+confirm `origin/main` is still `028da000`, so no rebase was available or needed.
+`nix build .#extracted-lean --no-link --print-out-paths` rebuilt the extractor
+artifact at
+`/nix/store/56hicdmrg7rq0hqh9x69s2vmrfv95qzm-zisk-fv-extracted-lean-1.0`;
+inspection found `Arith.lean` definitions through `constraint_64_every_row`,
+`Main.lean` definitions through `constraint_143_every_row`, and no
+`skipped` / `unsupported` comments in the generated package. `git diff --check`
+and the broad `lake build` both pass.
