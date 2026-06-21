@@ -2,12 +2,12 @@ Stream: Issue 114 extraction. Worktree `.worktrees/issue-114-extraction`, branch
 Plan: docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md.
 
 Current focus:
-- Inspect the next signed-overflow proof surface after adding the W-mode
-  ArithDiv overflow projection lemmas.
+- Inspect the quotient/remainder chunk proof needed to retire signed overflow
+  from DIV/DIVW public callers.
 
 Blocking:
 - None.
 
 Next step:
-- Re-orient on the DIV/DIVW overflow wrappers and decide the next narrow
-  boundary split before editing more public surfaces.
+- Re-orient on the carry-chain proof shape for the active overflow branch, then
+  decide whether the next slice is DIV quotient overflow or REM remainder zero.

@@ -9,6 +9,7 @@ import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Bits.Execution
 import ZiskFv.Airs.Arith.Mul
+import ZiskFv.Airs.Arith.Div
 import ZiskFv.SailSpec.mulw
 import ZiskFv.SailSpec.divw  -- for `to_bits_truncate_32_eq_ofInt_divw`
 import ZiskFv.EquivCore.Bridge.Arith
@@ -184,6 +185,177 @@ private lemma signed_w_divisor_chunk_fields_zero_of_toInt_zero
   have hb0 : (v.b_0 r_a).val = 0 := by omega
   exact ⟨by apply Fin.ext; simpa using hb0,
     by apply Fin.ext; simpa using hb1⟩
+
+lemma signed_div_overflow_operands_of_boundary
+    (r1_val r2_val : BitVec 64)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_boundary :
+      ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
+    (h_m32 : v.m32 r_a = 0)
+    (h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_rs1_value :
+      r1_val.toInt
+        = (packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+            (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64)
+    (h_rs2_value :
+      r2_val.toInt
+        = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+            (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    (h_overflow : v.div_overflow r_a = 1) :
+    r1_val.toInt = -(2:ℤ)^63 ∧ r2_val.toInt = -1 := by
+  rcases h_boundary with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _,
+      hb0_force, hb1_force, hb2_force, hb3_force,
+      hc0_force, hc1_force, hc2_force, hc3_force,
+      _, _, _, _, _, _⟩
+  have hb0 : v.b_0 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.b0_eq_ffff_of_div_overflow hb0_force h_overflow
+  have hb1 : v.b_1 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.b1_eq_ffff_of_div_overflow hb1_force h_overflow
+  have hb2 : v.b_2 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.b2_eq_ffff_of_div_overflow hb2_force h_overflow h_m32
+  have hb3 : v.b_3 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.b3_eq_ffff_of_div_overflow hb3_force h_overflow h_m32
+  have hc0 : v.c_0 r_a = 0 :=
+    ZiskFv.Airs.ArithDiv.c0_eq_zero_of_div_overflow hc0_force h_overflow
+  have hc1 : v.c_1 r_a = 0 :=
+    ZiskFv.Airs.ArithDiv.c1_eq_zero_of_div_overflow hc1_force h_overflow h_m32
+  have hc2 : v.c_2 r_a = 0 :=
+    ZiskFv.Airs.ArithDiv.c2_eq_zero_of_div_overflow hc2_force h_overflow
+  have hc3 : v.c_3 r_a = 32768 :=
+    ZiskFv.Airs.ArithDiv.c3_eq_intmin_of_div_overflow hc3_force h_overflow h_m32
+  have hb0_val : (v.b_0 r_a).val = 65535 := by rw [hb0]; rfl
+  have hb1_val : (v.b_1 r_a).val = 65535 := by rw [hb1]; rfl
+  have hb2_val : (v.b_2 r_a).val = 65535 := by rw [hb2]; rfl
+  have hb3_val : (v.b_3 r_a).val = 65535 := by rw [hb3]; rfl
+  have hc0_val : (v.c_0 r_a).val = 0 := by rw [hc0]; rfl
+  have hc1_val : (v.c_1 r_a).val = 0 := by rw [hc1]; rfl
+  have hc2_val : (v.c_2 r_a).val = 0 := by rw [hc2]; rfl
+  have hc3_val : (v.c_3 r_a).val = 32768 := by rw [hc3]; rfl
+  have h_b_pack :
+      (packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+        (v.b_2 r_a).val (v.b_3 r_a).val : ℤ) = (2:ℤ)^64 - 1 := by
+    rw [hb0_val, hb1_val, hb2_val, hb3_val]
+    norm_num [packed4]
+  have h_c_pack :
+      (packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+        (v.c_2 r_a).val (v.c_3 r_a).val : ℤ) = (2:ℤ)^63 := by
+    rw [hc0_val, hc1_val, hc2_val, hc3_val]
+    norm_num [packed4]
+  have h_np_val : (v.np r_a).val = 1 := by
+    rcases h_np_bool with hnp | hnp
+    · have h_big : r1_val.toInt = (2:ℤ)^63 := by
+        rw [h_rs1_value, h_c_pack, hnp]
+        norm_num
+      have hlt : r1_val.toInt < (2:ℤ)^63 := by
+        have h := @BitVec.toInt_lt 64 r1_val
+        norm_num at h ⊢
+        exact h
+      omega
+    · rw [hnp]
+      rfl
+  have h_nb_val : (v.nb r_a).val = 1 := by
+    rcases h_nb_bool with hnb | hnb
+    · have h_big : r2_val.toInt = (2:ℤ)^64 - 1 := by
+        rw [h_rs2_value, h_b_pack, hnb]
+        norm_num
+      have hlt : r2_val.toInt < (2:ℤ)^63 := by
+        have h := @BitVec.toInt_lt 64 r2_val
+        norm_num at h ⊢
+        exact h
+      omega
+    · rw [hnb]
+      rfl
+  constructor
+  · rw [h_rs1_value, h_c_pack, h_np_val]
+    norm_num
+  · rw [h_rs2_value, h_b_pack, h_nb_val]
+    norm_num
+
+lemma signed_divw_overflow_operands_of_boundary
+    (r1_val r2_val : BitVec 64)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_boundary :
+      ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
+    (h_m32 : v.m32 r_a = 1)
+    (h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_rs1_value :
+      (Sail.BitVec.extractLsb r1_val 31 0).toInt
+        = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.np r_a) * (2:ℤ)^32)
+    (h_rs2_value :
+      (Sail.BitVec.extractLsb r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.nb r_a) * (2:ℤ)^32)
+    (h_overflow : v.div_overflow r_a = 1) :
+    Sail.BitVec.extractLsb r1_val 31 0 = BitVec.ofNat 32 (2^31)
+      ∧ Sail.BitVec.extractLsb r2_val 31 0 = BitVec.allOnes 32 := by
+  rcases h_boundary with
+    ⟨_, _, _, _, _, _, _, _, _, _, _, _, _,
+      hb0_force, hb1_force, _, _,
+      hc0_force, hc1_force, _, _,
+      _, _, _, _, _, _⟩
+  have hb0 : v.b_0 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.b0_eq_ffff_of_div_overflow hb0_force h_overflow
+  have hb1 : v.b_1 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.b1_eq_ffff_of_div_overflow hb1_force h_overflow
+  have hc0 : v.c_0 r_a = 0 :=
+    ZiskFv.Airs.ArithDiv.c0_eq_zero_of_div_overflow hc0_force h_overflow
+  have hc1 : v.c_1 r_a = 32768 :=
+    ZiskFv.Airs.ArithDiv.c1_eq_intmin_of_div_overflow_w hc1_force h_overflow h_m32
+  have hb0_val : (v.b_0 r_a).val = 65535 := by rw [hb0]; rfl
+  have hb1_val : (v.b_1 r_a).val = 65535 := by rw [hb1]; rfl
+  have hc0_val : (v.c_0 r_a).val = 0 := by rw [hc0]; rfl
+  have hc1_val : (v.c_1 r_a).val = 32768 := by rw [hc1]; rfl
+  have h_b_pack : ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+      = (2:ℤ)^32 - 1 := by
+    rw [hb0_val, hb1_val]
+    norm_num
+  have h_c_pack : ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
+      = (2:ℤ)^31 := by
+    rw [hc0_val, hc1_val]
+    norm_num
+  have h_np_z : toIntZ (v.np r_a) = 1 := by
+    rcases toIntZ_bool_cases h_np_bool with hnp | hnp
+    · have h_big : (Sail.BitVec.extractLsb r1_val 31 0).toInt = (2:ℤ)^31 := by
+        rw [h_rs1_value, h_c_pack, hnp]
+        norm_num
+      have hlt : (Sail.BitVec.extractLsb r1_val 31 0).toInt < (2:ℤ)^31 := by
+        have h := @BitVec.toInt_lt 32 (Sail.BitVec.extractLsb r1_val 31 0)
+        norm_num at h ⊢
+        exact h
+      omega
+    · exact hnp
+  have h_nb_z : toIntZ (v.nb r_a) = 1 := by
+    rcases toIntZ_bool_cases h_nb_bool with hnb | hnb
+    · have h_big : (Sail.BitVec.extractLsb r2_val 31 0).toInt = (2:ℤ)^32 - 1 := by
+        rw [h_rs2_value, h_b_pack, hnb]
+        norm_num
+      have hlt : (Sail.BitVec.extractLsb r2_val 31 0).toInt < (2:ℤ)^31 := by
+        have h := @BitVec.toInt_lt 32 (Sail.BitVec.extractLsb r2_val 31 0)
+        norm_num at h ⊢
+        exact h
+      omega
+    · exact hnb
+  have h_r1_toInt :
+      (Sail.BitVec.extractLsb r1_val 31 0).toInt = -(2:ℤ)^31 := by
+    rw [h_rs1_value, h_c_pack, h_np_z]
+    norm_num
+  have h_r2_toInt :
+      (Sail.BitVec.extractLsb r2_val 31 0).toInt = -1 := by
+    rw [h_rs2_value, h_b_pack, h_nb_z]
+    norm_num
+  constructor
+  · apply BitVec.toInt_inj.mp
+    rw [h_r1_toInt]
+    native_decide
+  · apply BitVec.toInt_inj.mp
+    rw [h_r2_toInt]
+    native_decide
 
 /-- **Signed DIV divisor-zero boundary.**
 

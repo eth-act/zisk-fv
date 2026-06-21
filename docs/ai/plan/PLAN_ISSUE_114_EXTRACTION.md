@@ -25,6 +25,9 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
     - [x] Add W-mode overflow field projections in `Airs.Arith.Div`.
     - [x] Run a focused `ZiskFv.Airs.Arith.Div` build for the projection chunk.
     - [x] Commit the signed-overflow projection chunk.
+    - [x] Add full-width and W-mode active-overflow operand bridge lemmas.
+    - [x] Run a focused `MulDivRemSigned` build for the overflow bridge chunk.
+    - [x] Commit the signed-overflow operand bridge chunk.
   - [ ] Thread boundary constraints through signed REM/W callers.
 - [x] Run focused Lean checks and the appropriate final gate.
 - [x] Commit the completed chunk.
@@ -130,3 +133,14 @@ consequences for `b2`, `b3`, `c1`, and `c3`.
 `ZiskFv.Airs.Arith.Div` now has the W-mode overflow projections for
 `b2 = 0`, `b3 = 0`, `c1 = 32768`, and `c3 = 0`; focused build
 `lake build ZiskFv.Airs.Arith.Div` passes.
+
+Next helper layer: active `div_overflow = 1` plus the boundary constraints
+should imply the exact Sail overflow predicates at the operand bridge:
+full-width `r1.toInt = -2^63 ∧ r2.toInt = -1`, and W-mode low-32
+`r1 = INT32_MIN ∧ r2 = -1`. This bridge is separate from the harder quotient /
+remainder chunk proof, which still needs the carry-chain.
+
+`ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned` now exposes
+`signed_div_overflow_operands_of_boundary` and
+`signed_divw_overflow_operands_of_boundary`. Focused build
+`lake build ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned` passes.
