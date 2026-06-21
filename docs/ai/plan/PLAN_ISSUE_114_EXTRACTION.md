@@ -22,13 +22,16 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
   - [x] Thread `div_boundary_constraints` through signed DIVW wrappers,
     envelopes, dispatch, and trace export.
   - [ ] Add wrapper-level boundary lemmas for signed overflow.
+    - [x] Add W-mode overflow field projections in `Airs.Arith.Div`.
+    - [x] Run a focused `ZiskFv.Airs.Arith.Div` build for the projection chunk.
+    - [x] Commit the signed-overflow projection chunk.
   - [ ] Thread boundary constraints through signed REM/W callers.
 - [x] Run focused Lean checks and the appropriate final gate.
 - [x] Commit the completed chunk.
 - [x] Run focused Lean checks for the non-W signed DIV plumbing chunk.
 - [x] Commit the non-W signed DIV plumbing chunk.
 - [x] Run focused Lean checks for the signed DIVW plumbing chunk.
-- [ ] Commit the signed DIVW plumbing chunk.
+- [x] Commit the signed DIVW plumbing chunk.
 
 ## Notes
 
@@ -115,3 +118,15 @@ now take `div_boundary_constraints` instead of a global DIVW `h_op2_ne`.
 Individual focused builds passed for `OpEnvelope`, `Defects`, `Equivalence.Divw`,
 `AeneasBridgeTrust`, `Dispatch.Remaining`, and `TraceLevelExport`; the combined
 focused gate also passed.
+
+Checkpoint commit `e7b0730` records the signed DIVW public plumbing. Remaining
+residuals are signed overflow and signed REM/REMW divisor-zero handling.
+
+Next narrow slice: add the W-mode analogues of the existing full-width overflow
+field projections in `ZiskFv.Airs.Arith.Div`. The current helpers expose the
+full-width `m32 = 0` consequences; W-mode overflow also needs the `m32 = 1`
+consequences for `b2`, `b3`, `c1`, and `c3`.
+
+`ZiskFv.Airs.Arith.Div` now has the W-mode overflow projections for
+`b2 = 0`, `b3 = 0`, `c1 = 32768`, and `c3 = 0`; focused build
+`lake build ZiskFv.Airs.Arith.Div` passes.

@@ -514,6 +514,15 @@ theorem b2_eq_ffff_of_div_overflow
   rw [h_flag, h_m32] at h
   exact sub_eq_zero.mp (by simpa using h)
 
+theorem b2_eq_zero_of_div_overflow_w
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_b2_ffff v row)
+    (h_flag : v.div_overflow row = 1) (h_m32 : v.m32 row = 1) :
+    v.b_2 row = 0 := by
+  unfold div_overflow_forces_b2_ffff at h
+  rw [h_flag, h_m32] at h
+  simpa using h
+
 theorem b3_eq_ffff_of_div_overflow
     {v : Valid_ArithDiv F ExtF} {row : ℕ}
     (h : div_overflow_forces_b3_ffff v row)
@@ -522,6 +531,15 @@ theorem b3_eq_ffff_of_div_overflow
   unfold div_overflow_forces_b3_ffff at h
   rw [h_flag, h_m32] at h
   exact sub_eq_zero.mp (by simpa using h)
+
+theorem b3_eq_zero_of_div_overflow_w
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_b3_ffff v row)
+    (h_flag : v.div_overflow row = 1) (h_m32 : v.m32 row = 1) :
+    v.b_3 row = 0 := by
+  unfold div_overflow_forces_b3_ffff at h
+  rw [h_flag, h_m32] at h
+  simpa using h
 
 theorem c0_eq_zero_of_div_overflow
     {v : Valid_ArithDiv F ExtF} {row : ℕ}
@@ -536,6 +554,15 @@ theorem c1_eq_zero_of_div_overflow
     (h : div_overflow_forces_c1_intmin v row)
     (h_flag : v.div_overflow row = 1) (h_m32 : v.m32 row = 0) :
     v.c_1 row = 0 := by
+  unfold div_overflow_forces_c1_intmin at h
+  rw [h_flag, h_m32] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem c1_eq_intmin_of_div_overflow_w
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_c1_intmin v row)
+    (h_flag : v.div_overflow row = 1) (h_m32 : v.m32 row = 1) :
+    v.c_1 row = 32768 := by
   unfold div_overflow_forces_c1_intmin at h
   rw [h_flag, h_m32] at h
   exact sub_eq_zero.mp (by simpa using h)
@@ -556,6 +583,15 @@ theorem c3_eq_intmin_of_div_overflow
   unfold div_overflow_forces_c3_intmin at h
   rw [h_flag, h_m32] at h
   exact sub_eq_zero.mp (by simpa using h)
+
+theorem c3_eq_zero_of_div_overflow_w
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_c3_intmin v row)
+    (h_flag : v.div_overflow row = 1) (h_m32 : v.m32 row = 1) :
+    v.c_3 row = 0 := by
+  unfold div_overflow_forces_c3_intmin at h
+  rw [h_flag, h_m32] at h
+  simpa using h
 
 /-- **DIV/REM-subset mode predicates bundled.** Same boolean-selector
     subset the MUL-family compositional proof relies on — these

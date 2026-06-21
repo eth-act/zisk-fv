@@ -2,10 +2,12 @@ Stream: Issue 114 extraction. Worktree `.worktrees/issue-114-extraction`, branch
 Plan: docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md.
 
 Current focus:
-- Commit the verified DIVW boundary-threading public-surface edits.
+- Inspect the next signed-overflow proof surface after adding the W-mode
+  ArithDiv overflow projection lemmas.
 
 Blocking:
 - None.
 
 Next step:
-- Stage only the touched DIVW plumbing files and commit the chunk.
+- Re-orient on the DIV/DIVW overflow wrappers and decide the next narrow
+  boundary split before editing more public surfaces.
