@@ -140,7 +140,7 @@ lemma equiv_DIV
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
     (h_op2_ne : div_input.r2_val.toInt ≠ 0)
-    (h_no_overflow :
+    (_h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_r_abs :
       ((ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -173,7 +173,7 @@ lemma equiv_DIV
       h_chain h_chunk_ranges h_carry_ranges
       h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
       h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-      h_op2_ne h_no_overflow h_r_abs h_r_sign
+      h_op2_ne h_r_abs h_r_sign
   rw [equiv_DIV_sail state div_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
@@ -189,7 +189,7 @@ lemma equiv_DIV
 
 /-- Boundary-aware canonical equivalence for RV64 `DIV`.
 
-    This variant keeps the old non-boundary path for `r2.toInt ≠ 0`, but handles
+    This variant keeps the nonzero-divisor path for `r2.toInt ≠ 0`, but handles
     the architecturally valid divisor-zero branch from the exposed ArithDiv
     boundary constraints instead of requiring a global `h_op2_ne` hypothesis. -/
 lemma equiv_DIV_boundary_split
@@ -243,7 +243,7 @@ lemma equiv_DIV_boundary_split
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
-    (h_no_overflow :
+    (_h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_r_abs_of_ne :
       div_input.r2_val.toInt ≠ 0 →
@@ -287,7 +287,7 @@ lemma equiv_DIV_boundary_split
           h_chain h_chunk_ranges h_carry_ranges
           h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
           h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-          h_r2_zero h_no_overflow (h_r_abs_of_ne h_r2_zero) h_r_sign
+          h_r2_zero (h_r_abs_of_ne h_r2_zero) h_r_sign
   rw [equiv_DIV_sail state div_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

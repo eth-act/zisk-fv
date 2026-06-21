@@ -1015,11 +1015,9 @@ where the BV32 result is derived from a 4-chunk W-mode chunk
 identity (the `arith_{mul,div}_w_carry_identity` output, after
 operand-pin substitution to ℤ and sign-witness booleanity).
 
-The signed-DIV/REM wrappers take the non-boundary case as a
-precondition (`r2_lo32.toInt ≠ 0` and no `INT32_MIN / -1`
-overflow); the dispatch on the two boundary cases stays at the
-per-opcode boundary (Layer 4), using `int_tdiv_overflow_w` /
-`int_tmod_overflow_w` from Part 3. -/
+The signed-DIV/REM wrappers take the nonzero-divisor case as a precondition
+and split the `INT32_MIN / -1` overflow branch internally; divisor-zero
+dispatch stays at the per-opcode boundary (Layer 4). -/
 
 /-! ### 11.1 — 32-bit BV-output helpers (shared by all W wrappers) -/
 
@@ -1154,7 +1152,7 @@ lemma fgl_mul_w_signed_to_bv64
   -- Bridge `ofNat 32 C_32.toNat = ofInt 32 C_32`.
   rw [← bv32_ofInt_eq_ofNat_of_nonneg_lt C_32 h_C_lb h_C_ub, ← h_prod_mod]
 
-/-! ### 11.3 — DIVW / REMW: signed-W BV64 wrappers (non-boundary case)
+/-! ### 11.3 — DIVW / REMW: signed-W BV64 wrappers (nonzero-divisor case)
 
 For DIVW / REMW, the wrapper takes the chain-witness-derived equality
 `q = Int.tdiv r1_lo32.toInt r2_lo32.toInt` (likewise `r_rem = Int.tmod ...`)
@@ -1165,17 +1163,15 @@ stays purely BV-side and consumes `Int.tdiv`-equalities directly so
 that the 32-bit uniqueness reasoning can be reused via Mathlib's
 `Int.tdiv_tmod_unique` family from the per-opcode Layer 4 site.
 
-Under the non-boundary precondition (`r2_lo32 ≠ 0`,
-no INT32_MIN / -1 overflow), the wrapper rewrites the 3-branch
-`PureSpec.execute_DIVREM_divw_pure` dispatch's quotient to its
-`BitVec.ofInt 32 (Int.tdiv …)` form and concludes the BV64-form
-sign-extended equality. -/
+Under the nonzero-divisor precondition (`r2_lo32 ≠ 0`), the wrapper rewrites
+the 3-branch `PureSpec.execute_DIVREM_divw_pure` dispatch's quotient to its
+`BitVec.ofInt 32 (Int.tdiv …)` form, handling the overflow branch internally,
+and concludes the BV64-form sign-extended equality. -/
 
-/-- **Signed-DIVW final BV64 wrapper (non-boundary case).**
+/-- **Signed-DIVW final BV64 wrapper (nonzero-divisor case).**
 
-    Given the non-boundary BV preconditions on `r1_lo32`, `r2_lo32`
-    (no zero divisor, no INT32_MIN / -1 overflow) plus the
-    `q = Int.tdiv …` equality (delivered by Layer 4 via the
+    Given the nonzero-divisor BV precondition plus the `q = Int.tdiv …`
+    equality (delivered by Layer 4 via the
     4-chunk Euclidean witness + uniqueness), conclude that the
     BV64 sign-extended quotient form matches the BV64 sign-extended
     output of `PureSpec.execute_DIVREM_divw_pure`'s 3-branch
@@ -1183,9 +1179,6 @@ sign-extended equality. -/
 lemma fgl_div_w_signed_to_bv64
     (r1 r2 : BitVec 64) (q : ℤ)
     (h_r2_lo32_ne : Sail.BitVec.extractLsb r2 31 0 ≠ 0#32)
-    (h_no_overflow :
-      ¬ (Sail.BitVec.extractLsb r1 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb r2 31 0 = BitVec.allOnes 32))
     (h_q_eq : q = Int.tdiv (Sail.BitVec.extractLsb r1 31 0).toInt
                             (Sail.BitVec.extractLsb r2 31 0).toInt) :
     BitVec.signExtend 64 (BitVec.ofInt 32 q)
@@ -1198,17 +1191,20 @@ lemma fgl_div_w_signed_to_bv64
               else BitVec.ofInt 32
                     (Int.tdiv (Sail.BitVec.extractLsb r1 31 0).toInt
                               (Sail.BitVec.extractLsb r2 31 0).toInt)) := by
-  rw [if_neg h_r2_lo32_ne, if_neg h_no_overflow, h_q_eq]
+  rw [if_neg h_r2_lo32_ne]
+  by_cases h_overflow :
+      Sail.BitVec.extractLsb r1 31 0 = (BitVec.ofNat 32 (2^31))
+        ∧ Sail.BitVec.extractLsb r2 31 0 = BitVec.allOnes 32
+  · rw [if_pos h_overflow, h_q_eq, h_overflow.1, h_overflow.2]
+    native_decide
+  · rw [if_neg h_overflow, h_q_eq]
 
-/-- **Signed-REMW final BV64 wrapper (non-boundary case).**
+/-- **Signed-REMW final BV64 wrapper (nonzero-divisor case).**
 
     Companion to `fgl_div_w_signed_to_bv64` for the remainder. -/
 lemma fgl_rem_w_signed_to_bv64
     (r1 r2 : BitVec 64) (r_rem : ℤ)
     (h_r2_lo32_ne : Sail.BitVec.extractLsb r2 31 0 ≠ 0#32)
-    (h_no_overflow :
-      ¬ (Sail.BitVec.extractLsb r1 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb r2 31 0 = BitVec.allOnes 32))
     (h_r_eq : r_rem = Int.tmod (Sail.BitVec.extractLsb r1 31 0).toInt
                                 (Sail.BitVec.extractLsb r2 31 0).toInt) :
     BitVec.signExtend 64 (BitVec.ofInt 32 r_rem)
@@ -1221,7 +1217,13 @@ lemma fgl_rem_w_signed_to_bv64
               else BitVec.ofInt 32
                     (Int.tmod (Sail.BitVec.extractLsb r1 31 0).toInt
                               (Sail.BitVec.extractLsb r2 31 0).toInt)) := by
-  rw [if_neg h_r2_lo32_ne, if_neg h_no_overflow, h_r_eq]
+  rw [if_neg h_r2_lo32_ne]
+  by_cases h_overflow :
+      Sail.BitVec.extractLsb r1 31 0 = (BitVec.ofNat 32 (2^31))
+        ∧ Sail.BitVec.extractLsb r2 31 0 = BitVec.allOnes 32
+  · rw [if_pos h_overflow, h_r_eq, h_overflow.1, h_overflow.2]
+    native_decide
+  · rw [if_neg h_overflow, h_r_eq]
 
 /-! ### 11.4 — DIVUW / REMUW: unsigned-W BV64 wrappers (non-zero divisor)
 

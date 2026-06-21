@@ -91,8 +91,8 @@ lemma equiv_REMW_sail
     validator (`v`/`r_a`), W chain-holds, mode pins,
     op pin, sign-witness booleanity + XOR + signed-W remainder-sign
     pin, c_2=c_3=0 bus-W pin, byte-pack + sign-extension witnesses,
-    operand toInt-form bridges, and non-boundary CIRCUIT-CONSTRAINTs
-    (`h_op2_ne`, `h_no_overflow_w`, `h_r_abs`, `h_r_sign`). -/
+    operand toInt-form bridges, and nonzero-divisor CIRCUIT-CONSTRAINTs
+    (`h_op2_ne`, `h_r_abs`, `h_r_sign`). -/
 lemma equiv_REMW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput)
@@ -152,7 +152,7 @@ lemma equiv_REMW
             - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
     -- Non-boundary (CIRCUIT-CONSTRAINT).
     (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
-    (h_no_overflow_w :
+    (_h_no_overflow_w :
       ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
           ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
     -- Magnitude bound + sign-correctness (CIRCUIT-CONSTRAINT — strict bound
@@ -188,7 +188,7 @@ lemma equiv_REMW
       h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
       h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
       h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-      h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w h_r_abs h_r_sign
+      h_rs1_value h_rs2_value h_op2_ne h_r_abs h_r_sign
   rw [equiv_REMW_sail state remw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

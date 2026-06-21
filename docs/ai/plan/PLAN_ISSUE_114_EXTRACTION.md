@@ -28,6 +28,10 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
     - [x] Add full-width and W-mode active-overflow operand bridge lemmas.
     - [x] Run a focused `MulDivRemSigned` build for the overflow bridge chunk.
     - [x] Commit the signed-overflow operand bridge chunk.
+    - [x] Make signed DIV/REM pure bridges overflow-aware.
+    - [x] Drop `h_no_overflow` from core signed DIV/REM write-value lemmas.
+    - [x] Run focused builds for the touched core signed DIV/REM modules.
+    - [x] Commit the core signed-overflow bridge chunk.
   - [ ] Thread boundary constraints through signed REM/W callers.
 - [x] Run focused Lean checks and the appropriate final gate.
 - [x] Commit the completed chunk.
@@ -144,3 +148,13 @@ remainder chunk proof, which still needs the carry-chain.
 `signed_div_overflow_operands_of_boundary` and
 `signed_divw_overflow_operands_of_boundary`. Focused build
 `lake build ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned` passes.
+
+Next slice: the Euclidean uniqueness bridges already determine quotient and
+remainder in the `INT_MIN / -1` case, so the pure BitVec bridge lemmas should
+split on the overflow spec branch internally instead of requiring callers to
+exclude it with `h_no_overflow`.
+
+The pure signed DIV/REM BV bridges now split signed overflow internally, and
+the core signed DIV/REM/DIVW/REMW write-value lemmas no longer take
+`h_no_overflow`. Focused build passed for `SignedNoWrap`, `SignedChunkLift`,
+`MulDivRemSigned`, and `EquivCore.{Div,Rem,Divw,Remw}`.

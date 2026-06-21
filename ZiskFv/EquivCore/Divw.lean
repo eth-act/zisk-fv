@@ -149,7 +149,7 @@ lemma equiv_DIVW
                   - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
     -- Non-boundary (CIRCUIT-CONSTRAINT — caller excludes div-by-zero / INT_MIN/-1).
     (h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32)
-    (h_no_overflow :
+    (_h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
           ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
     -- Magnitude + sign-correctness (CIRCUIT-CONSTRAINT — strict bound recovered
@@ -185,7 +185,7 @@ lemma equiv_DIVW
       h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
       h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
       h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-      h_rs1_value h_rs2_value h_op2_ne h_no_overflow h_r_abs h_r_sign
+      h_rs1_value h_rs2_value h_op2_ne h_r_abs h_r_sign
   rw [equiv_DIVW_sail state divw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
@@ -203,7 +203,7 @@ lemma equiv_DIVW
 
 /- Boundary-aware canonical equivalence for RV64 `DIVW`.
 
-   This keeps the existing non-boundary path for nonzero low-32 divisors, but
+   This keeps the existing nonzero-divisor path for nonzero low-32 divisors, but
    closes the architecturally valid divisor-zero branch from the exposed ArithDiv
    boundary constraints instead of requiring a global `h_op2_ne` hypothesis. -/
 lemma equiv_DIVW_boundary_split
@@ -253,7 +253,7 @@ lemma equiv_DIVW_boundary_split
     (h_rs2_value : (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
               = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
                   - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
-    (h_no_overflow :
+    (_h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
           ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
     (h_r_abs_of_ne :
@@ -306,7 +306,7 @@ lemma equiv_DIVW_boundary_split
           h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
           h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
           h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-          h_rs1_value h_rs2_value h_r2_zero h_no_overflow (h_r_abs_of_ne h_r2_zero) h_r_sign
+          h_rs1_value h_rs2_value h_r2_zero (h_r_abs_of_ne h_r2_zero) h_r_sign
   rw [equiv_DIVW_sail state divw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

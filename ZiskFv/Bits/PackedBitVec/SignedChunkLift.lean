@@ -1641,14 +1641,13 @@ Group C — operand `toInt`-form bridge (B7):
 Group D — DIV / REM final wrappers (B5, B6):
 * `fgl_div_signed_to_bv64` — given the abs-Euclidean identity from
   A.1's `fgl_div_signed_chunks_to_abs` (after pin substitution + sign
-  reconciliation), plus the non-boundary preconditions (r2 ≠ 0 and no
-  INT_MIN over -1 overflow), conclude `BitVec.ofInt 64 q_int = (execute_DIV_REM_pure r1 r2 .DRS).1`.
+  reconciliation), plus `r2 ≠ 0`, conclude
+  `BitVec.ofInt 64 q_int = (execute_DIV_REM_pure r1 r2 .DRS).1`, including
+  the `INT_MIN / -1` overflow branch.
 * `fgl_rem_signed_to_bv64` — analogous for remainder.
 
-The DIV / REM wrappers take the non-boundary case directly; the two
-boundary cases (`r2 = 0` and `r1 = INT_MIN ∧ r2 = -1`) are handled
-by the per-opcode dispatch using `int_tdiv_overflow_full` /
-`int_tmod_overflow_full` from `SignedNoWrap.lean`. -/
+The DIV / REM wrappers still take the nonzero-divisor case directly; the
+divisor-zero case stays at the per-opcode boundary. -/
 
 /-! ### 8.1 — Sign-witness pin lifts (B1, part a)
 
@@ -2013,27 +2012,21 @@ The signed-DIV BV64 output is `BitVec.ofInt 64 q` where `q` is the
 witnessed quotient lifted via the sign witnesses + abs-Euclidean
 identity from `fgl_div_signed_chunks_to_abs`.
 
-The wrapper takes the **non-boundary** case as a precondition:
-`r2.toInt ≠ 0` and `¬ (r1.toInt = -2^63 ∧ r2.toInt = -1)`. In that
-case `execute_DIV_REM_pure_int r1 r2 .DRS` returns `(Int.tdiv r1.toInt
-r2.toInt, Int.tmod r1.toInt r2.toInt)`.
-
-The boundary cases are handled by the caller using
-`int_tdiv_overflow_full` / `int_tmod_overflow_full` and the AIR's
-`b = 0` / `nr` slots — those dispatches live at the per-opcode
-boundary as documented in `SignedNoWrap.lean`'s Part 10 scope note.
+The wrapper takes the nonzero-divisor case as a precondition and splits the
+`INT_MIN / -1` overflow branch internally; only divisor-zero dispatch stays at
+the per-opcode boundary.
 
 The wrapper takes the ℤ-Euclidean identity `r1.toInt = q * r2.toInt + r`
 plus the standard `Int.tdiv`-shape preconditions (sign of `r` matches
 sign of dividend; `|r| < |r2|`) and concludes the BV64-output equality.
 -/
 
-/-- **Signed-DIV final BV64 wrapper (non-boundary case).**
+/-- **Signed-DIV final BV64 wrapper (nonzero-divisor case).**
 
     Given:
     * The ℤ-Euclidean identity `r1.toInt = q * r2.toInt + r` where `q, r`
       are the witnessed quotient / remainder lifted to ℤ.
-    * `r2.toInt ≠ 0` and `¬ (r1.toInt = -2^63 ∧ r2.toInt = -1)` (no boundary).
+    * `r2.toInt ≠ 0`.
     * `Int.tdiv`-compatibility: `|r| < |r2.toInt|` and `r * r1.toInt ≥ 0`
       (the truncated-mod-of-divisor sign convention).
 
@@ -2041,7 +2034,6 @@ sign of dividend; `|r| < |r2|`) and concludes the BV64-output equality.
 lemma fgl_div_signed_to_bv64
     (r1 r2 : BitVec 64) (q r : ℤ)
     (h_r2_ne : r2.toInt ≠ 0)
-    (h_no_overflow : ¬ (r1.toInt = -2^63 ∧ r2.toInt = -1))
     (h_euclid : r1.toInt = q * r2.toInt + r)
     (h_r_abs : r.natAbs < r2.toInt.natAbs)
     (h_r_sign : 0 ≤ r * r1.toInt) :
@@ -2054,34 +2046,40 @@ lemma fgl_div_signed_to_bv64
   -- conditional dispatch on the boundary cases.
   simp only [execute_DIV_REM_pure, execute_DIV_REM_pure_int,
              if_neg h_r2_ne]
-  -- Goal mentions decide && decide; collapse it via h_no_overflow.
-  have h_cond : (decide (r1.toInt = -2^63) && decide (r2.toInt = -1)) = false := by
-    rw [Bool.and_eq_false_iff]
-    by_cases h1 : r1.toInt = -2^63
-    · by_cases h2 : r2.toInt = -1
-      · exact absurd ⟨h1, h2⟩ h_no_overflow
-      · right; exact decide_eq_false h2
-    · left; exact decide_eq_false h1
-  simp only [h_cond, Bool.false_eq_true, if_false]
-  rw [h_q_eq]
+  by_cases h_overflow : r1.toInt = -2^63 ∧ r2.toInt = -1
+  · have h_cond :
+        (decide (r1.toInt = -2^63) && decide (r2.toInt = -1)) = true := by
+      rw [Bool.and_eq_true]
+      exact ⟨decide_eq_true h_overflow.1, decide_eq_true h_overflow.2⟩
+    simp only [h_cond, if_true]
+    rw [h_q_eq, h_overflow.1, h_overflow.2, int_tdiv_overflow_full]
+    native_decide
+  · have h_cond :
+        (decide (r1.toInt = -2^63) && decide (r2.toInt = -1)) = false := by
+      rw [Bool.and_eq_false_iff]
+      by_cases h1 : r1.toInt = -2^63
+      · by_cases h2 : r2.toInt = -1
+        · exact absurd ⟨h1, h2⟩ h_overflow
+        · right; exact decide_eq_false h2
+      · left; exact decide_eq_false h1
+    simp only [h_cond, Bool.false_eq_true, if_false]
+    rw [h_q_eq]
 
 /-! ### 8.6 — REM final wrapper (B6)
 
-Analogous to 8.5 for the remainder. The non-boundary case has
-`(execute_DIV_REM_pure r1 r2 .DRS).2 = BitVec.ofInt 64 (Int.tmod r1.toInt r2.toInt)`.
+Analogous to 8.5 for the remainder. The nonzero-divisor case has
+`(execute_DIV_REM_pure r1 r2 .DRS).2 =
+BitVec.ofInt 64 (Int.tmod r1.toInt r2.toInt)`.
 -/
 
-/-- **Signed-REM final BV64 wrapper (non-boundary case).**
+/-- **Signed-REM final BV64 wrapper (nonzero-divisor case).**
 
-    Same preconditions as `fgl_div_signed_to_bv64` (Euclidean identity
-    + non-boundary). The remainder branch always returns
-    `BitVec.ofInt 64 (Int.tmod r1.toInt r2.toInt)`, regardless of the
-    boundary dispatch — but the chunk-derived witnessed `r` matches
-    `Int.tmod r1.toInt r2.toInt` only in the non-boundary case. -/
+    Same preconditions as `fgl_div_signed_to_bv64`. The remainder branch
+    returns `BitVec.ofInt 64 (Int.tmod r1.toInt r2.toInt)`, and Euclidean
+    uniqueness identifies the chunk-derived witnessed remainder. -/
 lemma fgl_rem_signed_to_bv64
     (r1 r2 : BitVec 64) (q r : ℤ)
     (h_r2_ne : r2.toInt ≠ 0)
-    (_h_no_overflow : ¬ (r1.toInt = -2^63 ∧ r2.toInt = -1))
     (h_euclid : r1.toInt = q * r2.toInt + r)
     (h_r_abs : r.natAbs < r2.toInt.natAbs)
     (h_r_sign : 0 ≤ r * r1.toInt) :

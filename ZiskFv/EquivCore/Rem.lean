@@ -142,7 +142,7 @@ lemma equiv_REM
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
     (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
-    (h_no_overflow :
+    (_h_no_overflow :
       ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
     (h_r_abs :
       ((ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -175,7 +175,7 @@ lemma equiv_REM
       h_chain h_chunk_ranges h_carry_ranges
       h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
       h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-      h_op2_ne h_no_overflow h_r_abs h_r_sign
+      h_op2_ne h_r_abs h_r_sign
   rw [equiv_REM_sail state rem_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

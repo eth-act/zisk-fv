@@ -2,12 +2,12 @@ Stream: Issue 114 extraction. Worktree `.worktrees/issue-114-extraction`, branch
 Plan: docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md.
 
 Current focus:
-- Inspect the quotient/remainder chunk proof needed to retire signed overflow
-  from DIV/DIVW public callers.
+- Commit the core signed-overflow bridge/write-value chunk after the focused
+  build passed.
 
 Blocking:
 - None.
 
 Next step:
-- Re-orient on the carry-chain proof shape for the active overflow branch, then
-  decide whether the next slice is DIV quotient overflow or REM remainder zero.
+- Stage the touched core files plus the trail files, commit the chunk, then
+  start removing now-unused signed-overflow premises from public callers.

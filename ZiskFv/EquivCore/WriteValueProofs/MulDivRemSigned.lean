@@ -362,7 +362,7 @@ lemma signed_divw_overflow_operands_of_boundary
     When the signed divisor has `toInt = 0`, the newly exposed ArithDiv
     boundary constraints force the quotient chunks to all ones. Combined with
     the byte-lane match, this closes the Sail `DIV` divisor-zero branch without
-    using the non-boundary `h_op2_ne` / `h_no_overflow` path. -/
+    using the nonzero-divisor path. -/
 lemma h_rd_val_mdrs_div_by_zero_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
@@ -1344,16 +1344,14 @@ operating on unsigned Nat division of the low 32 bits.
 
 /-! ## REMUW: rd ← sign_extend_64(unsigned 32-bit remainder) -/
 
-/-! ## DIV chunked discharge (signed 64-bit; non-boundary case) -/
+/-! ## DIV chunked discharge (signed 64-bit; nonzero-divisor case) -/
 
-/-- **`h_rd_val` discharge for DIV — signed 64-bit non-boundary form.**
+/-- **`h_rd_val` discharge for DIV — signed 64-bit nonzero-divisor form.**
 
     This composes the ArithDiv signed carry-chain identity, sign-witness
     pins, operand packing bridges, and signed Euclidean uniqueness to derive
-    the quotient written by the circuit. Boundary behavior (`rs2 = 0` and
-    `INT64_MIN / -1`) remains represented by explicit preconditions at this
-    layer and is discharged separately by the opcode wrapper before the defect
-    gate can be removed. -/
+    the quotient written by the circuit. Divisor-zero is discharged separately
+    by the opcode wrapper; `INT64_MIN / -1` is handled by the pure BV bridge. -/
 lemma h_rd_val_mdrs_div_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
@@ -1400,8 +1398,6 @@ lemma h_rd_val_mdrs_div_chunked
             (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
     (h_op2_ne : r2_val.toInt ≠ 0)
-    (h_no_overflow :
-      ¬ (r1_val.toInt = -(2:ℤ)^63 ∧ r2_val.toInt = -1))
     (h_r_abs :
       ((packed4 (v.d_0 r_a).val (v.d_1 r_a).val
           (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
@@ -1542,7 +1538,7 @@ lemma h_rd_val_mdrs_div_chunked
     fgl_div_signed_to_bv64 r1_val r2_val
       (A - toIntZ (v.na r_a) * 2^64)
       (D - toIntZ (v.nr r_a) * 2^64)
-      h_op2_ne h_no_overflow h_euclid h_r_abs' h_r_sign'
+      h_op2_ne h_euclid h_r_abs' h_r_sign'
   have h_q_mod :
       BitVec.ofInt 64 (A - toIntZ (v.na r_a) * 2^64)
         = BitVec.ofNat 64 A.toNat := by
@@ -1565,14 +1561,15 @@ lemma h_rd_val_mdrs_div_chunked
     omega
   exact (Nat.mod_eq_of_lt h_A_nat_lt).symm
 
-/-! ## REM chunked discharge (signed 64-bit; non-boundary case) -/
+/-! ## REM chunked discharge (signed 64-bit; nonzero-divisor case) -/
 
-/-- **`h_rd_val` discharge for REM — signed 64-bit non-boundary form.**
+/-- **`h_rd_val` discharge for REM — signed 64-bit nonzero-divisor form.**
 
     This is the remainder analogue of `h_rd_val_mdrs_div_chunked`: the
     ArithDiv carry-chain and signed Euclidean uniqueness derive the value
-    written by the circuit from the `d_*` remainder chunks. Boundary behavior
-    (`rs2 = 0` and `INT64_MIN / -1`) remains explicit at this layer. -/
+    written by the circuit from the `d_*` remainder chunks. Divisor-zero
+    remains explicit at this layer; signed overflow is handled by the pure BV
+    bridge. -/
 lemma h_rd_val_mdrs_rem_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
@@ -1619,8 +1616,6 @@ lemma h_rd_val_mdrs_rem_chunked
             (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
     (h_op2_ne : r2_val.toInt ≠ 0)
-    (h_no_overflow :
-      ¬ (r1_val.toInt = -(2:ℤ)^63 ∧ r2_val.toInt = -1))
     (h_r_abs :
       ((packed4 (v.d_0 r_a).val (v.d_1 r_a).val
           (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
@@ -1757,7 +1752,7 @@ lemma h_rd_val_mdrs_rem_chunked
     fgl_rem_signed_to_bv64 r1_val r2_val
       (A - toIntZ (v.na r_a) * 2^64)
       (D - toIntZ (v.nr r_a) * 2^64)
-      h_op2_ne h_no_overflow h_euclid h_r_abs' h_r_sign'
+      h_op2_ne h_euclid h_r_abs' h_r_sign'
   have h_r_mod :
       BitVec.ofInt 64 (D - toIntZ (v.nr r_a) * 2^64)
         = BitVec.ofNat 64 D.toNat := by
@@ -1976,7 +1971,7 @@ lemma h_rd_val_mdrs_divw_by_zero_chunked
   rw [h_spec, h_all_ones]
   exact h_byte_sum_eq
 
-/-! ## DIVW chunked discharge (signed 32-bit; non-boundary case)
+/-! ## DIVW chunked discharge (signed 32-bit; nonzero-divisor case)
 
 The W-mode signed variant of `h_rd_val_mdrs_div_chunked`. Composes:
 `div_w_chain_witnesses` (m32=1) → `abs_euclidean_to_signed_euclidean_div_rem_w`
@@ -2031,9 +2026,6 @@ lemma h_rd_val_mdrs_divw_chunked
       (Sail.BitVec.extractLsb r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ) - toIntZ (v.nb r_a) * (2:ℤ)^32)
     (h_op2_ne : Sail.BitVec.extractLsb r2_val 31 0 ≠ 0#32)
-    (h_no_overflow :
-      ¬ (Sail.BitVec.extractLsb r1_val 31 0 = BitVec.ofNat 32 (2^31)
-          ∧ Sail.BitVec.extractLsb r2_val 31 0 = BitVec.allOnes 32))
     (h_r_abs :
       (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
         - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
@@ -2186,7 +2178,7 @@ lemma h_rd_val_mdrs_divw_chunked
   -- low-level signed-W BV64 bridge.
   have h_div_bv :=
     ZiskFv.PackedBitVec.SignedNoWrap.fgl_div_w_signed_to_bv64
-      r1_val r2_val (A32 - toIntZ (v.na r_a) * 2^32) h_op2_ne h_no_overflow h_q_eq
+      r1_val r2_val (A32 - toIntZ (v.na r_a) * 2^32) h_op2_ne h_q_eq
   -- quotient lifts to BV32 of the packed quotient mod 2^32.
   have h_na_v : toIntZ (v.na r_a) = (v.na r_a).val := by
     rcases h_na_bool with h | h <;> rw [h] <;> decide
@@ -2267,7 +2259,7 @@ lemma h_rd_val_mdrs_divw_chunked
       exact (Nat.mod_eq_of_lt h_byte_sum_lt).symm
   rw [h_byte_sum_eq]
 
-/-! ## REMW chunked discharge (signed W remainder; non-boundary case)
+/-! ## REMW chunked discharge (signed W remainder; nonzero-divisor case)
 
 W-variant of `h_rd_val_mdrs_rem_chunked`. Mirror of `h_rd_val_mdrs_divw_chunked`
 but the byte lanes pack the remainder `d_0 + d_1*65536` (low 32) instead of the
@@ -2317,9 +2309,6 @@ lemma h_rd_val_mdrs_remw_chunked
       (Sail.BitVec.extractLsb r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ) - toIntZ (v.nb r_a) * (2:ℤ)^32)
     (h_op2_ne : Sail.BitVec.extractLsb r2_val 31 0 ≠ 0#32)
-    (h_no_overflow :
-      ¬ (Sail.BitVec.extractLsb r1_val 31 0 = BitVec.ofNat 32 (2^31)
-          ∧ Sail.BitVec.extractLsb r2_val 31 0 = BitVec.allOnes 32))
     (h_r_abs :
       (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
         - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
@@ -2453,7 +2442,7 @@ lemma h_rd_val_mdrs_remw_chunked
   -- low-level signed-W BV64 bridge.
   have h_rem_bv :=
     ZiskFv.PackedBitVec.SignedNoWrap.fgl_rem_w_signed_to_bv64
-      r1_val r2_val (D32 - toIntZ (v.nr r_a) * 2^32) h_op2_ne h_no_overflow h_r_eq
+      r1_val r2_val (D32 - toIntZ (v.nr r_a) * 2^32) h_op2_ne h_r_eq
   -- remainder lifts to BV32 of the packed remainder mod 2^32.
   have h_r_mod :
       BitVec.ofInt 32 (D32 - toIntZ (v.nr r_a) * 2^32)
