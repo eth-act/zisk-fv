@@ -1,0 +1,29 @@
+# trust/generated/baseline-strong-export-closure.txt
+#
+# The ZiskFv.* project-axiom closure (transitive ZiskFv.* axioms only — Lean
+# kernel axioms and Sail-translated module axioms excluded) of the
+# strengthened trace-level export theorem
+#
+#   ZiskFv.Compliance.zisk_compliant_of_accepted_trace_strong
+#
+# This is the #61 channel-balance trace-level export (63/63 RV64IM arms on
+# the OpEnvelope route). Its project-trust footprint is audited here exactly
+# as zisk_riscv_compliant_program_bus is audited by
+# baseline-zisk-riscv-compliant.txt: the V2 gate's check-strong-export-closure
+# subcommand asserts the live closure equals this file (additions OR removals
+# fail the gate).
+#
+# The closure is EMPTY: this theorem depends on ZERO ZiskFv.* project axioms
+# (its raw axiom closure is identical to zisk_riscv_compliant_program_bus's —
+# Lean kernel axioms + Sail-translation axioms only, no sorryAx).
+#
+# How this file was generated:
+#
+#   lake exe trust-gate print-strong-export-closure \
+#     > trust/generated/baseline-strong-export-closure.txt  (body, below the header)
+#
+# Refresh via `trust/scripts/regenerate.sh` (requires `lake build` artefacts
+# under `.lake/build/`). Last regenerated: 2026-06-20.
+#
+# Total ZiskFv.* axiom entries: 0
+#
