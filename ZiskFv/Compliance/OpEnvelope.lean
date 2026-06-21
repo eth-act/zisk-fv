@@ -2077,8 +2077,6 @@ inductive OpEnvelope
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_no_overflow :
-      ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_boundary :
@@ -2274,8 +2272,6 @@ inductive OpEnvelope
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
-    (h_no_overflow :
-      ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)

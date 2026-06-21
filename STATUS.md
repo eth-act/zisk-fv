@@ -2,12 +2,11 @@ Stream: Issue 114 extraction. Worktree `.worktrees/issue-114-extraction`, branch
 Plan: docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md.
 
 Current focus:
-- Commit the core signed-overflow bridge/write-value chunk after the focused
-  build passed.
+- Non-W signed DIV/REM signed-overflow public-surface cleanup is verified.
 
 Blocking:
 - None.
 
 Next step:
-- Stage the touched core files plus the trail files, commit the chunk, then
-  start removing now-unused signed-overflow premises from public callers.
+- Commit the verified slice, then continue with the next planned checkpoint
+  (W-mode signed-overflow public-surface cleanup).

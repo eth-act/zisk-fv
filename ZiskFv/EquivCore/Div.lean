@@ -140,8 +140,6 @@ lemma equiv_DIV
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
     (h_op2_ne : div_input.r2_val.toInt ≠ 0)
-    (_h_no_overflow :
-      ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_r_abs :
       ((ZiskFv.PackedBitVec.MulNoWrap.packed4
           (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
@@ -243,8 +241,6 @@ lemma equiv_DIV_boundary_split
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
-    (_h_no_overflow :
-      ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_r_abs_of_ne :
       div_input.r2_val.toInt ≠ 0 →
         ((ZiskFv.PackedBitVec.MulNoWrap.packed4

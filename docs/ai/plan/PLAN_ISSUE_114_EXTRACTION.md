@@ -32,6 +32,8 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
     - [x] Drop `h_no_overflow` from core signed DIV/REM write-value lemmas.
     - [x] Run focused builds for the touched core signed DIV/REM modules.
     - [x] Commit the core signed-overflow bridge chunk.
+    - [x] Remove signed-overflow premises from non-W DIV/REM public callers.
+    - [x] Run focused builds for the non-W signed-overflow public-surface chunk.
   - [ ] Thread boundary constraints through signed REM/W callers.
 - [x] Run focused Lean checks and the appropriate final gate.
 - [x] Commit the completed chunk.
@@ -158,3 +160,16 @@ The pure signed DIV/REM BV bridges now split signed overflow internally, and
 the core signed DIV/REM/DIVW/REMW write-value lemmas no longer take
 `h_no_overflow`. Focused build passed for `SignedNoWrap`, `SignedChunkLift`,
 `MulDivRemSigned`, and `EquivCore.{Div,Rem,Divw,Remw}`.
+
+The non-W signed DIV/REM public-surface patch is applied: `EquivCore`,
+`Equivalence`, wrappers, `OpEnvelope`, defect examples, extracted-shape trust
+helpers, dispatch, and trace export no longer take or store the signed-overflow
+premise. W-mode still carries its own overflow binders and is intentionally left
+for a separate checkpoint.
+
+Focused gates for the non-W public-surface cleanup passed:
+`lake build ZiskFv.EquivCore.Div ZiskFv.EquivCore.Rem ZiskFv.Equivalence.Div
+ZiskFv.Equivalence.Rem ZiskFv.Compliance.Wrappers.Div
+ZiskFv.Compliance.Wrappers.Rem`, and `lake build
+ZiskFv.Compliance.AeneasBridgeTrust ZiskFv.Compliance.Dispatch.Remaining
+ZiskFv.Compliance.TraceLevelExport`.

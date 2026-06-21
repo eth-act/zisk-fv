@@ -2336,8 +2336,8 @@ structure RowData_mulhsu
     honest signed DIV row with a nonzero divisor has `|r| < |op2|` strictly
     (e.g. `7 / 2` rem `1`, `|1| ≠ |2|`), so `NoKnownDefect` is TRUE.  This is
     NOT the false selector-∀ and NOT a contradictory `False`-binder.  Div-by-zero
-    is handled by the ArithDiv boundary constraints; signed overflow remains
-    carried as `h_no_overflow` (separate #114 work, NOT discharged here).
+    is handled by the ArithDiv boundary constraints; signed overflow is handled
+    by the signed DIV bridge.
     Non-vacuous: a real trace with an honest signed DIV row supplies all binders
     (anti-vacuity witness `honest_div_witness_not_forge`). -/
 structure RowData_div
@@ -2379,9 +2379,6 @@ structure RowData_div
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program binding.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
-  -- Boundary / overflow residuals (separate #114 work; carried, NOT discharged).
-  h_no_overflow :
-    ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1)
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
   h_boundary :
@@ -2439,7 +2436,7 @@ structure RowData_div
 /-- Irreducible per-row residuals for the `rem` archetype — the signed 64-bit
     remainder (op `185`, secondary ArithDiv lane).  Mirror of `RowData_div` for the
     remainder lane (`opBus_row_ArithDivSecondary`).  Carries the narrowed honest
-    shape `|r| ≠ |op2|`; the div-by-zero / overflow residuals stay carried. -/
+    shape `|r| ≠ |op2|`; the divisor-zero residual stays carried. -/
 structure RowData_rem
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
   rem_input : PureSpec.RemInput
@@ -2478,8 +2475,6 @@ structure RowData_rem
       (mainOfTable trace.program binding.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
   h_op2_ne : rem_input.r2_val.toInt ≠ 0
-  h_no_overflow :
-    ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1)
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
   arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
@@ -4193,8 +4188,8 @@ noncomputable def divEnvOf
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
   OpEnvelope.div d.div_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
-    d.h_match_primary d.promises d.arith_mem d.bounds d.h_no_overflow
-    d.h_row_constraints d.h_boundary d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
+    d.h_match_primary d.promises d.arith_mem d.bounds d.h_row_constraints d.h_boundary
+    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
     d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin
     d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
 
@@ -4205,8 +4200,8 @@ noncomputable def remEnvOf
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
   OpEnvelope.rem d.rem_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
-    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_op2_ne d.h_no_overflow
-    d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
+    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_op2_ne d.h_row_constraints
+    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
     d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin
     d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
 
@@ -9935,8 +9930,7 @@ theorem stepStrong_mulhsu
     `LT_ABS_NP` false-positive, so `NoKnownDefect` is TRUE and the caller proves
     it.  Non-vacuous: the narrowed DIV exclusion is exactly the genuine circuit-bug
     forge (codygunton/zisk#5), and divisor-zero rows are handled by
-    `h_boundary`.  Signed overflow remains carried as `h_no_overflow` (separate
-    #114 work). -/
+    `h_boundary`; signed overflow is handled by the signed DIV bridge. -/
 theorem stepStrong_div
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
     (d : RowData_div trace binding i)

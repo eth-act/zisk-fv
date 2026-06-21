@@ -45,8 +45,6 @@ theorem equiv_REM
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
-    (h_no_overflow :
-      ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
     (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
@@ -88,7 +86,7 @@ theorem equiv_REM
       (ZiskFv.Compliance.OpEnvelope.rem
         (state := state) (m := m) (r_main := r_main)
         rem_input r1 r2 rd bus v r_a pins h_match_secondary promises arith_mem bounds
-        h_op2_ne h_no_overflow h_row_constraints arith_table
+        h_op2_ne h_row_constraints arith_table
         arith_chunk_ranges arith_carry_ranges
         h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
         h_r_le h_r_sign))
@@ -114,8 +112,8 @@ theorem equiv_REM
     lt_of_le_of_ne h_r_le h_not_forge
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_REM_of_table state rem_input r1 r2 rd bus m r_main v r_a
-    pins h_match_secondary promises arith_mem bounds h_op2_ne h_no_overflow
-    h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
+    pins h_match_secondary promises arith_mem bounds h_op2_ne h_row_constraints arith_table
+    arith_chunk_ranges arith_carry_ranges
     h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value h_r_abs h_r_sign
 
 

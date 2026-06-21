@@ -68,9 +68,9 @@ open ZiskFv.EquivCore.Promises
        protocol, NOT promise hypotheses on Sail outputs).
     5. The SPEC-PRE preconditions on the Sail input and the ArithDiv boundary
        evidence (`h_input_r1`, `h_input_r2`, `h_input_rd`, `h_input_pc`,
-       `h_no_overflow`, `h_boundary`).  The divisor-zero branch is handled
-       by the boundary-aware core proof rather than by a caller-supplied
-       nonzero-divisor precondition.
+       `h_boundary`).  The divisor-zero and signed-overflow branches are handled
+       by the boundary-aware core proof rather than by caller-supplied
+       exclusion preconditions.
     6. The universal-per-row constructibility obligations (the
        per-row Arith-AIR constraints: `h_chain`, `h_na_bool`,
        `h_nb_bool`, `h_nr_bool`, `h_np_xor`). In Compliance.lean
@@ -116,8 +116,6 @@ lemma equiv_DIV_of_table
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_no_overflow :
-      ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_boundary : ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
@@ -227,7 +225,7 @@ lemma equiv_DIV_of_table
     v r_a h_chain h_boundary arith_chunk_ranges arith_carry_ranges
     h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_sext h_m32 h_div h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-    h_no_overflow h_r_abs_of_ne h_r_sign
+    h_r_abs_of_ne h_r_sign
 
 /-- Compatibility wrapper preserving the canonical Compliance theorem name. -/
 lemma equiv_DIV
@@ -247,8 +245,6 @@ lemma equiv_DIV
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_no_overflow :
-      ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_boundary : ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
@@ -297,7 +293,7 @@ lemma equiv_DIV
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_DIV_of_table state div_input r1 r2 rd bus m r_main v r_a pins h_match_primary
-    promises arith_mem bounds h_no_overflow h_row_constraints h_boundary arith_table
+    promises arith_mem bounds h_row_constraints h_boundary arith_table
     arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
 
