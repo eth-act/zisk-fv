@@ -2333,10 +2333,11 @@ structure RowData_mulhsu
     positive the `LT_ABS_NP` chain admits).  This makes the threaded
     `StepNoKnownDefect` obligation — the GENUINE `NoKnownDefect (divEnvOf …)` of the
     SPECIFIC env this row constructs — SATISFIABLE (see `stepStrong_div`): for an
-    honest signed DIV row `|r| < |op2|` strictly (e.g. `7 / 2` rem `1`, `|1| ≠ |2|`),
-    so `NoKnownDefect` is TRUE.  This is NOT the false selector-∀ and NOT a
-    contradictory `False`-binder.  Div-by-zero / overflow remain carried as residuals
-    (`h_op2_ne`/`h_no_overflow`, separate #114 work, NOT discharged here).
+    honest signed DIV row with a nonzero divisor has `|r| < |op2|` strictly
+    (e.g. `7 / 2` rem `1`, `|1| ≠ |2|`), so `NoKnownDefect` is TRUE.  This is
+    NOT the false selector-∀ and NOT a contradictory `False`-binder.  Div-by-zero
+    is handled by the ArithDiv boundary constraints; signed overflow remains
+    carried as `h_no_overflow` (separate #114 work, NOT discharged here).
     Non-vacuous: a real trace with an honest signed DIV row supplies all binders
     (anti-vacuity witness `honest_div_witness_not_forge`). -/
 structure RowData_div
@@ -2378,12 +2379,13 @@ structure RowData_div
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program binding.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
-  -- Div-by-zero / overflow residuals (separate #114 work; carried, NOT discharged).
-  h_op2_ne : div_input.r2_val.toInt ≠ 0
+  -- Boundary / overflow residuals (separate #114 work; carried, NOT discharged).
   h_no_overflow :
     ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1)
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+  h_boundary :
+    ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a
   arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
   arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
   arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
@@ -2427,11 +2429,12 @@ structure RowData_div
     0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
           (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
           - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt
-  -- Narrowed honest shape: NOT the `|r| = |op2|` false positive.  Makes the
-  -- threaded `NoKnownDefect` obligation SATISFIABLE for honest DIV rows.
+  -- Narrowed honest shape: NOT the nonzero-divisor `|r| = |op2|` false positive.
+  -- Makes the threaded `NoKnownDefect` obligation SATISFIABLE for honest DIV rows.
   h_not_forge :
-    ¬ ((ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
-        = div_input.r2_val.toInt.natAbs)
+    ¬ (div_input.r2_val.toInt ≠ 0
+        ∧ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
+          = div_input.r2_val.toInt.natAbs)
 
 /-- Irreducible per-row residuals for the `rem` archetype — the signed 64-bit
     remainder (op `185`, secondary ArithDiv lane).  Mirror of `RowData_div` for the
@@ -2527,7 +2530,8 @@ structure RowData_rem
     division (op `188`, `m32 = 1`, primary ArithDiv lane).  W-mode analogue of
     `RowData_div`: carries the W-mode chunk-zero pins (`h_a23`/`h_b23`/`h_d23`/
     `h_c23`), the sign-extension choice, the W-mode packing equations, and the
-    narrowed W honest shape `|r₃₂| ≠ |op2₃₂|`. -/
+    narrowed W honest shape excluding the nonzero-divisor `|r₃₂| = |op2₃₂|`
+    false positive. -/
 structure RowData_divw
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
   divw_input : PureSpec.DivwInput
@@ -2628,8 +2632,9 @@ structure RowData_divw
           - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
         * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
   h_not_forge :
-    ¬ ((ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
-        = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs)
+    ¬ (Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
+        ∧ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+          = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs)
 
 /-- Irreducible per-row residuals for the `remw` archetype — the signed 32-bit
     remainder (op `189`, `m32 = 1`, secondary ArithDiv lane).  W-mode analogue of
@@ -2733,8 +2738,9 @@ structure RowData_remw
           - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
         * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
   h_not_forge :
-    ¬ ((ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
-        = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+    ¬ (Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
+        ∧ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+          = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
 
 /-- Irreducible per-row residuals for the `mulhu` archetype — the binders of
     `construction_mulhu_sound` after `(trace) (binding) (i)`, verbatim. -/
@@ -4186,8 +4192,8 @@ noncomputable def divEnvOf
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
   OpEnvelope.div d.div_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
-    d.h_match_primary d.promises d.arith_mem d.bounds d.h_op2_ne d.h_no_overflow
-    d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
+    d.h_match_primary d.promises d.arith_mem d.bounds d.h_no_overflow
+    d.h_row_constraints d.h_boundary d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
     d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin
     d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
 
@@ -4233,14 +4239,13 @@ noncomputable def remwEnvOf
 
     The `StepNoKnownDefect (.div d)` obligation — `Defects.NoKnownDefect (divEnvOf
     …)` — is DISCHARGED from `RowData_div.h_not_forge` (the narrowed honest shape
-    `|r| ≠ |op2|`).  Concretely: for the `.div` env the arith-MUL defect predicate
-    is `False` (not a mul env) and the FENCE defect predicate's negation is `True`,
-    while the arith-DIV defect predicate is exactly the `|r| = |op2|` false-positive
-    forge that `h_not_forge` rules out.  Hence the threaded obligation is SATISFIABLE
-    for every honest signed DIV row (`|r| < |op2|` strictly, so `|r| ≠ |op2|`), so
-    the `.div` arm of `zisk_compliant_of_accepted_trace_strong` is NON-VACUOUS — see
-    the matching anti-vacuity witness `Defects.honest_div_witness_not_forge`.  This
-    is the Lean-checked anti-vacuity guard for the strong-export DIV arm. -/
+    nonzero-divisor `|r| ≠ |op2|` shape).  Concretely: for the `.div` env the
+    arith-MUL defect predicate is `False` (not a mul env) and the FENCE defect
+    predicate's negation is `True`, while the arith-DIV defect predicate is exactly
+    the nonzero-divisor `|r| = |op2|` false-positive forge that `h_not_forge` rules
+    out.  Hence the threaded obligation is SATISFIABLE for honest signed DIV rows,
+    including divisor-zero rows handled by the boundary constraints.  This is the
+    Lean-checked anti-vacuity guard for the strong-export DIV arm. -/
 theorem div_noKnownDefect_of_rowData
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
     (d : RowData_div trace binding i) :
@@ -4266,8 +4271,10 @@ theorem rem_noKnownDefect_of_rowData
   | arithMulSignedWitnessSoundness =>
       simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, remEnvOf]
   | arithDivDynamicWitnessSoundness =>
-      simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
-        Defects.signedRemainderInt, remEnvOf] using d.h_not_forge
+      simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
+        Defects.signedRemainderInt, remEnvOf]
+      intro _ h_eq
+      exact d.h_not_forge h_eq
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, remEnvOf]
 
@@ -4282,8 +4289,8 @@ theorem divw_noKnownDefect_of_rowData
   | arithMulSignedWitnessSoundness =>
       simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, divwEnvOf]
   | arithDivDynamicWitnessSoundness =>
-      simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
-        Defects.signedRemainderIntW, divwEnvOf] using d.h_not_forge
+      simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, divwEnvOf]
+        using d.h_not_forge
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, divwEnvOf]
 
@@ -4298,8 +4305,8 @@ theorem remw_noKnownDefect_of_rowData
   | arithMulSignedWitnessSoundness =>
       simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, remwEnvOf]
   | arithDivDynamicWitnessSoundness =>
-      simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
-        Defects.signedRemainderIntW, remwEnvOf] using d.h_not_forge
+      simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, remwEnvOf]
+        using d.h_not_forge
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, remwEnvOf]
 
@@ -9923,11 +9930,12 @@ theorem stepStrong_mulhsu
     arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
     global theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
     SATISFIABLE: for an honest signed DIV row (`RowData_div.h_not_forge`, i.e.
-    `|r| ≠ |op2|`) the row is outside the `|r| = |op2|` `LT_ABS_NP` false-positive,
-    so `NoKnownDefect` is TRUE and the caller proves it.  Non-vacuous: the narrowed
-    DIV exclusion is exactly the genuine circuit-bug forge (codygunton/zisk#5), so
-    an honest signed DIV row supplies all binders.  Div-by-zero / overflow remain
-    carried as residuals (`h_op2_ne`/`h_no_overflow`, separate #114 work). -/
+    nonzero-divisor `|r| ≠ |op2|`) the row is outside the `|r| = |op2|`
+    `LT_ABS_NP` false-positive, so `NoKnownDefect` is TRUE and the caller proves
+    it.  Non-vacuous: the narrowed DIV exclusion is exactly the genuine circuit-bug
+    forge (codygunton/zisk#5), and divisor-zero rows are handled by
+    `h_boundary`.  Signed overflow remains carried as `h_no_overflow` (separate
+    #114 work). -/
 theorem stepStrong_div
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
     (d : RowData_div trace binding i)

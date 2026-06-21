@@ -3126,11 +3126,12 @@ def OpEnvelope.divOfExtractedShape
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_op2_ne : div_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_boundary :
+      ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
@@ -3174,7 +3175,7 @@ def OpEnvelope.divOfExtractedShape
     OpEnvelope state m r_main :=
   OpEnvelope.div div_input r1 r2 rd bus v r_a
     (MainRowProvenance.divPins_of_extracted_shape provenance h_op h_external)
-    h_match_primary promises arith_mem bounds h_op2_ne h_no_overflow h_row_constraints
+    h_match_primary promises arith_mem bounds h_no_overflow h_row_constraints h_boundary
     arith_table arith_chunk_ranges arith_carry_ranges
     h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
     h_r_le h_r_sign
@@ -3203,11 +3204,12 @@ theorem OpEnvelope.aeneasBridgeTrust_divOfExtractedShape
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_op2_ne : div_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_boundary :
+      ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
@@ -3251,7 +3253,7 @@ theorem OpEnvelope.aeneasBridgeTrust_divOfExtractedShape
     (OpEnvelope.divOfExtractedShape
       div_input r1 r2 rd bus v r_a provenance h_op h_external h_m32
       h_set_pc h_store_pc h_jmp_offset1 h_jmp_offset2 h_match_primary
-      promises arith_mem bounds h_op2_ne h_no_overflow h_row_constraints arith_table
+      promises arith_mem bounds h_no_overflow h_row_constraints h_boundary arith_table
       arith_chunk_ranges arith_carry_ranges
       h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
       h_r_le h_r_sign).aeneasBridgeTrust := by

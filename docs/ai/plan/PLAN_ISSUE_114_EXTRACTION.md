@@ -16,10 +16,14 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
   - [x] Add and verify a signed DIV divisor-zero write-value lemma.
   - [x] Add and verify a boundary-aware EquivCore DIV theorem.
   - [x] Narrow the signed DIV/REM defect predicate to the nonzero-divisor path.
-  - [ ] Add wrapper-level boundary lemmas for div-by-zero and signed overflow.
-  - [ ] Thread boundary constraints through signed DIV/REM/W callers.
+  - [x] Thread `div_boundary_constraints` through non-W signed DIV wrappers,
+    envelopes, dispatch, and trace export.
+  - [ ] Add wrapper-level boundary lemmas for signed overflow.
+  - [ ] Thread boundary constraints through signed REM/W callers.
 - [x] Run focused Lean checks and the appropriate final gate.
-- [ ] Commit the completed chunk.
+- [x] Commit the completed chunk.
+- [x] Run focused Lean checks for the non-W signed DIV plumbing chunk.
+- [x] Commit the non-W signed DIV plumbing chunk.
 
 ## Notes
 
@@ -66,3 +70,23 @@ The combined focused gate passed for `ZiskFv.Airs.Arith.Div`,
 `ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned`, `ZiskFv.EquivCore.Div`,
 `ZiskFv.Compliance.ConstructionDivu`, `ZiskFv.Compliance.Defects`, and
 `ZiskFv.Equivalence.{Div,Rem,Divw,Remw}`.
+
+Checkpoint commit `1541867` records the extraction and signed DIV
+divisor-zero groundwork. Remaining work is source plumbing: wrappers still need
+an honest `div_boundary_constraints` proof, and public signed DIV/REM callers
+still use their old nonzero / no-overflow hypotheses until that proof is
+threaded.
+
+The non-W signed DIV path now threads `div_boundary_constraints` through
+`Wrappers.Div`, `Equivalence.Div`, `OpEnvelope.div`, Aeneas bridge trust,
+dispatch, and `TraceLevelExport`. `TraceLevelExport` builds after aligning the
+DIVW/REMW row-data `h_not_forge` residuals with the narrowed nonzero-divisor
+defect shape, avoiding the old unguarded `|r| = |op2|` proof surface. This
+removes the public non-W signed DIV `h_op2_ne` hypothesis; signed overflow and
+the REM/W nonzero hypotheses are still carried.
+
+Focused gate for the non-W signed DIV plumbing chunk passed:
+`lake build ZiskFv.Compliance.Wrappers.Div ZiskFv.Equivalence.Div
+ZiskFv.Compliance.OpEnvelope ZiskFv.Compliance.AeneasBridgeTrust
+ZiskFv.Compliance.Defects ZiskFv.Compliance.Dispatch.Remaining
+ZiskFv.Compliance.TraceLevelExport`.
