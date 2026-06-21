@@ -36,7 +36,13 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
     - [x] Run focused builds for the non-W signed-overflow public-surface chunk.
     - [x] Remove signed-overflow premises from W-mode DIVW/REMW public callers.
     - [x] Run focused builds for the W-mode signed-overflow public-surface chunk.
-  - [ ] Thread boundary constraints through signed REM/W callers.
+  - [ ] Remove signed REM/W divisor-zero premises from callers.
+    - [x] Inspect signed REM/REMW divisor-zero proof obligations and available
+      ArithDiv boundary facts.
+    - [x] Add and verify a signed REM divisor-zero write-value lemma.
+    - [x] Thread the signed REM zero-divisor split through core/public callers.
+    - [ ] Add and verify a signed REMW divisor-zero write-value lemma.
+    - [ ] Thread the signed REMW zero-divisor split through core/public callers.
 - [x] Run focused Lean checks and the appropriate final gate.
 - [x] Commit the completed chunk.
 - [x] Run focused Lean checks for the non-W signed DIV plumbing chunk.
@@ -188,6 +194,24 @@ store `h_no_overflow` / `h_no_overflow_w`; a focused `rg` over `EquivCore`,
 Focused gates passed for `ZiskFv.EquivCore.Divw`, `ZiskFv.EquivCore.Remw`,
 `ZiskFv.Equivalence.Divw`, `ZiskFv.Equivalence.Remw`,
 `ZiskFv.Compliance.Wrappers.Divw`, `ZiskFv.Compliance.Wrappers.Remw`,
+`ZiskFv.Compliance.OpEnvelope`, `ZiskFv.Compliance.Defects`,
+`ZiskFv.Compliance.AeneasBridgeTrust`, `ZiskFv.Compliance.Dispatch.Remaining`,
+and `ZiskFv.Compliance.TraceLevelExport`.
+
+Checkpoint commit `3109535` records the W-mode signed-overflow public-surface
+cleanup. Remaining proof work is signed REM/REMW divisor-zero handling. For
+REM, the zero-divisor branch appears to need the signed carry-chain identity
+rather than `div_boundary_constraints`: once `r2.toInt = 0`, the chain reduces
+the packed remainder `D` to the dividend `r1`, matching the Sail REM result.
+
+The non-W signed REM divisor-zero split is applied and verified. New lemma
+`h_rd_val_mdrs_rem_by_zero_chunked` proves the zero-divisor write value from
+the carry-chain, and `EquivCore.Rem.equiv_REM` now splits internally on
+`r2.toInt = 0`; wrappers, `Equivalence.Rem`, `OpEnvelope.rem`, defect witnesses,
+extracted-shape trust helpers, dispatch, and trace export no longer require or
+store a global REM `h_op2_ne`. Focused gates passed for
+`ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned`, `ZiskFv.EquivCore.Rem`,
+`ZiskFv.Compliance.Wrappers.Rem`, `ZiskFv.Equivalence.Rem`,
 `ZiskFv.Compliance.OpEnvelope`, `ZiskFv.Compliance.Defects`,
 `ZiskFv.Compliance.AeneasBridgeTrust`, `ZiskFv.Compliance.Dispatch.Remaining`,
 and `ZiskFv.Compliance.TraceLevelExport`.

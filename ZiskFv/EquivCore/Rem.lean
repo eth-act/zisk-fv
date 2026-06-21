@@ -141,11 +141,11 @@ lemma equiv_REM
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
-    (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
-    (h_r_abs :
-      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-        - (v.nr r_a).val * (2:ℤ)^64).natAbs < rem_input.r2_val.toInt.natAbs)
+    (h_r_abs_of_ne :
+      rem_input.r2_val.toInt ≠ 0 →
+        ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+          - (v.nr r_a).val * (2:ℤ)^64).natAbs < rem_input.r2_val.toInt.natAbs)
     (h_r_sign :
       0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
@@ -166,14 +166,26 @@ lemma equiv_REM
   have h_carry_ranges :=
     ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
       v r_a carry_ranges
-  have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_rem_chunked
-      rem_input.r1_val rem_input.r2_val e2 v r_a
-      h0 h1 h2 h3 h4 h5 h6 h7
-      h_chain h_chunk_ranges h_carry_ranges
-      h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
-      h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-      h_op2_ne h_r_abs h_r_sign
+  have h_rd_val :
+      U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                  ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8), ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
+        = (execute_DIV_REM_pure rem_input.r1_val rem_input.r2_val .DRS).2 := by
+    by_cases h_r2_zero : rem_input.r2_val.toInt = 0
+    · exact
+        ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_rem_by_zero_chunked
+          rem_input.r1_val rem_input.r2_val e2 v r_a
+          h0 h1 h2 h3 h4 h5 h6 h7
+          h_chain h_chunk_ranges h_carry_ranges
+          h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+          h_byte_lo h_byte_hi h_rs1_value h_rs2_value h_r2_zero
+    · exact
+        ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_rem_chunked
+          rem_input.r1_val rem_input.r2_val e2 v r_a
+          h0 h1 h2 h3 h4 h5 h6 h7
+          h_chain h_chunk_ranges h_carry_ranges
+          h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+          h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+          h_r2_zero (h_r_abs_of_ne h_r2_zero) h_r_sign
   rw [equiv_REM_sail state rem_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

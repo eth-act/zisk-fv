@@ -2474,7 +2474,6 @@ structure RowData_rem
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program binding.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
-  h_op2_ne : rem_input.r2_val.toInt ≠ 0
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
   arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
@@ -4194,7 +4193,7 @@ noncomputable def remEnvOf
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
   OpEnvelope.rem d.rem_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
-    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_op2_ne d.h_row_constraints
+    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_row_constraints
     d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
     d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin
     d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign

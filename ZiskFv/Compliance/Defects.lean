@@ -116,9 +116,9 @@ The narrowed predicate is therefore EXACTLY the false-positive equality
 `NoKnownDefect`) upgrades the in-model WEAK bound `|r| ≤ |op2|` (the most the
 `LT_ABS_NP`/`LT_ABS_PN` chain can soundly witness) to the STRICT bound
 `|r| < |op2|` that Sail DIV/REM requires on that path.  The architecturally
-valid divisor-zero branch is handled separately by the ArithDiv boundary
-constraints and is not a strict-remainder-bound obligation.  Honest rows are
-NOT in this shape (anti-vacuity guards
+valid divisor-zero branch is handled separately by opcode-specific zero-branch
+proofs and is not a strict-remainder-bound obligation. Honest rows are NOT in
+this shape (anti-vacuity guards
 `honest_{div,rem,divw,remw}_witness_not_forge`). -/
 def ArithDivDynamicWitnessShape
     : OpEnvelope state m r_main → Prop
@@ -408,7 +408,6 @@ theorem honest_rem_witness_not_forge
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
     (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
@@ -444,7 +443,7 @@ theorem honest_rem_witness_not_forge
       (signedRemainderInt v r_a).natAbs < rem_input.r2_val.toInt.natAbs) :
     ¬ ArithDivDynamicWitnessShape
         (OpEnvelope.rem rem_input r1 r2 rd bus v r_a pins h_match_secondary promises
-          arith_mem bounds h_op2_ne h_row_constraints arith_table
+          arith_mem bounds h_row_constraints arith_table
           arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor
           h_nr_pin h_rs1_value h_rs2_value h_r_le h_r_sign) := by
   dsimp [ArithDivDynamicWitnessShape, signedRemainderInt]
