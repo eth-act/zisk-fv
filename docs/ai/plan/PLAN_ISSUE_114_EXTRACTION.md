@@ -34,6 +34,8 @@ Goal: remove the `--only` extraction curation for `Main` and `Arith`, enumerate 
     - [x] Commit the core signed-overflow bridge chunk.
     - [x] Remove signed-overflow premises from non-W DIV/REM public callers.
     - [x] Run focused builds for the non-W signed-overflow public-surface chunk.
+    - [x] Remove signed-overflow premises from W-mode DIVW/REMW public callers.
+    - [x] Run focused builds for the W-mode signed-overflow public-surface chunk.
   - [ ] Thread boundary constraints through signed REM/W callers.
 - [x] Run focused Lean checks and the appropriate final gate.
 - [x] Commit the completed chunk.
@@ -173,3 +175,19 @@ ZiskFv.Equivalence.Rem ZiskFv.Compliance.Wrappers.Div
 ZiskFv.Compliance.Wrappers.Rem`, and `lake build
 ZiskFv.Compliance.AeneasBridgeTrust ZiskFv.Compliance.Dispatch.Remaining
 ZiskFv.Compliance.TraceLevelExport`.
+
+Checkpoint commit `fa3a62e` records the non-W public-surface cleanup. Next slice
+is the same signed-overflow premise removal for W-mode signed DIVW/REMW callers;
+W-mode divisor-zero handling remains a separate issue from overflow removal.
+
+The W-mode signed DIVW/REMW public-surface cleanup is applied and verified:
+`EquivCore`, `Equivalence`, wrappers, `OpEnvelope`, defect examples,
+extracted-shape trust helpers, dispatch, and trace export no longer take or
+store `h_no_overflow` / `h_no_overflow_w`; a focused `rg` over `EquivCore`,
+`Equivalence`, and `Compliance` finds no remaining `no_overflow` premise names.
+Focused gates passed for `ZiskFv.EquivCore.Divw`, `ZiskFv.EquivCore.Remw`,
+`ZiskFv.Equivalence.Divw`, `ZiskFv.Equivalence.Remw`,
+`ZiskFv.Compliance.Wrappers.Divw`, `ZiskFv.Compliance.Wrappers.Remw`,
+`ZiskFv.Compliance.OpEnvelope`, `ZiskFv.Compliance.Defects`,
+`ZiskFv.Compliance.AeneasBridgeTrust`, `ZiskFv.Compliance.Dispatch.Remaining`,
+and `ZiskFv.Compliance.TraceLevelExport`.

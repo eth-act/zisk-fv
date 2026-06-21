@@ -2206,9 +2206,6 @@ inductive OpEnvelope
       (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nb r_a) * (2:ℤ)^32)
-    (h_no_overflow :
-      ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
-          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
     -- WEAK signed-W remainder bound `|r₃₂| ≤ |op2₃₂|` (extraction-fidelity
     -- residual; the STRICT bound is recovered from the narrowed `|r₃₂| = |op2₃₂|`
     -- defect exclusion at the canonical layer).
@@ -2395,9 +2392,6 @@ inductive OpEnvelope
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nb r_a) * (2:ℤ)^32)
     (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
-    (h_no_overflow_w :
-      ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
     -- WEAK signed-W remainder bound `|r₃₂| ≤ |op2₃₂|` (extraction-fidelity residual).
     (h_r_le :
       (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)

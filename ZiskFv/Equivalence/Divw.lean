@@ -80,9 +80,6 @@ theorem equiv_DIVW
     (h_rs2_value :
       (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ) - toIntZ (v.nb r_a) * (2:ℤ)^32)
-    (h_no_overflow :
-      ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
-          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
     -- WEAK signed-W remainder bound `|r₃₂| ≤ |op2₃₂|` (extraction-fidelity residual).
     (h_r_le :
       (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
@@ -100,7 +97,7 @@ theorem equiv_DIVW
         h_row_constraints h_boundary arith_table arith_chunk_ranges arith_carry_ranges
         h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
         h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
-        h_no_overflow h_r_le h_r_sign))
+        h_r_le h_r_sign))
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
@@ -136,7 +133,7 @@ theorem equiv_DIVW
     pins h_match_primary promises arith_mem bounds h_row_constraints h_boundary arith_table
     arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_m32 h_div h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-    h_rs1_value h_rs2_value h_no_overflow h_r_abs_of_ne h_r_sign
+    h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
 
 
 end ZiskFv.Equivalence.Divw

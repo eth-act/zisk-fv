@@ -2,11 +2,12 @@ Stream: Issue 114 extraction. Worktree `.worktrees/issue-114-extraction`, branch
 Plan: docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md.
 
 Current focus:
-- Non-W signed DIV/REM signed-overflow public-surface cleanup is verified.
+- W-mode signed DIVW/REMW public-surface overflow premise cleanup is verified
+  and ready to commit.
 
 Blocking:
 - None.
 
 Next step:
-- Commit the verified slice, then continue with the next planned checkpoint
-  (W-mode signed-overflow public-surface cleanup).
+- Commit the W-mode signed-overflow cleanup, then continue with signed
+  REM/REMW divisor-zero boundary threading.

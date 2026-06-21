@@ -150,11 +150,8 @@ lemma equiv_REMW
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
-    -- Non-boundary (CIRCUIT-CONSTRAINT).
+    -- Nonzero-divisor path (CIRCUIT-CONSTRAINT).
     (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
-    (_h_no_overflow_w :
-      ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
     -- Magnitude bound + sign-correctness (CIRCUIT-CONSTRAINT — strict bound
     -- recovered at the canonical layer from WEAK bound + narrowed defect).
     (h_r_abs :

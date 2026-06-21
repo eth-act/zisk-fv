@@ -2615,9 +2615,6 @@ structure RowData_divw
     (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
       = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
           - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32
-  h_no_overflow :
-    ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
-        ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32)
   -- WEAK signed-W remainder bound `|r₃₂| ≤ |op2₃₂|` (extraction-fidelity residual).
   h_r_le :
     (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
@@ -2722,9 +2719,6 @@ structure RowData_remw
       = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
           - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32
   h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
-  h_no_overflow_w :
-    ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
-        ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32)
   h_r_le :
     (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
       - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
@@ -4216,7 +4210,7 @@ noncomputable def divwEnvOf
     d.h_row_constraints d.h_boundary d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
     d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin d.h_m32_v d.h_div_v
     d.h_a23 d.h_b23 d.h_d23 d.h_c23 d.h_byte_lo d.h_sext_choice
-    d.h_rs1_value d.h_rs2_value d.h_no_overflow d.h_r_le d.h_r_sign
+    d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
 
 /-- The `OpEnvelope.remw` env CONSTRUCTED from a `RowData_remw` (W-mode secondary). -/
 noncomputable def remwEnvOf
@@ -4229,7 +4223,7 @@ noncomputable def remwEnvOf
     d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
     d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin d.h_m32_v d.h_div_v
     d.h_a23 d.h_b23 d.h_d23 d.h_c23 d.h_byte_lo d.h_sext_choice
-    d.h_rs1_value d.h_rs2_value d.h_op2_ne d.h_no_overflow_w d.h_r_le d.h_r_sign
+    d.h_rs1_value d.h_rs2_value d.h_op2_ne d.h_r_le d.h_r_sign
 
 /-- **Non-vacuity / satisfiability witness for the threaded DIV obligation.**
 
