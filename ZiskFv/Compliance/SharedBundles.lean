@@ -169,13 +169,35 @@ theorem ArithMulTableWitness.spec
   ZiskFv.AirsClean.ArithMul.arith_table_spec_of_lookup_aware_const_soundness
     w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
 
+/-- Chunk range bounds derived from an `ArithMulTableWitness`.
+
+After RANK 2a, `mainWithArithTable` embeds the sixteen `bits(16)` chunk
+lookups, so the ArithTable witness alone supplies `< 2^16` bounds — no
+separate `ChunkRangeLookupWitness` is required. -/
+theorem ArithMulTableWitness.chunk_ranges
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (w : ArithMulTableWitness v r) :
+    (v.a_0 r).val < 2 ^ 16 ∧ (v.a_1 r).val < 2 ^ 16
+  ∧ (v.a_2 r).val < 2 ^ 16 ∧ (v.a_3 r).val < 2 ^ 16
+  ∧ (v.b_0 r).val < 2 ^ 16 ∧ (v.b_1 r).val < 2 ^ 16
+  ∧ (v.b_2 r).val < 2 ^ 16 ∧ (v.b_3 r).val < 2 ^ 16
+  ∧ (v.c_0 r).val < 2 ^ 16 ∧ (v.c_1 r).val < 2 ^ 16
+  ∧ (v.c_2 r).val < 2 ^ 16 ∧ (v.c_3 r).val < 2 ^ 16
+  ∧ (v.d_0 r).val < 2 ^ 16 ∧ (v.d_1 r).val < 2 ^ 16
+  ∧ (v.d_2 r).val < 2 ^ 16 ∧ (v.d_3 r).val < 2 ^ 16 := by
+  have h :=
+    ZiskFv.AirsClean.ArithMul.chunk_ranges_of_arith_table_const_soundness
+      w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
+  simpa [ZiskFv.AirsClean.ArithMul.ChunkRangeSpec,
+    ZiskFv.AirsClean.ArithMul.rowAt] using h
+
 /-- Lookup-aware Clean witness for a selected ArithMul row's sixteen
     `bits(16)` chunk checks.
 
-This is the T6 structural source for replacing
-`arith_mul_columns_in_range` on MUL-family paths: callers expose the Clean
-operation soundness proof for `mainWithChunkRanges`, and the actual
-`a/b/c/d` chunk bounds are derived by `AirsClean.ArithMul.Bridge`. -/
+    DEPRECATED after RANK 2a: `ArithMulTableWitness.chunk_ranges` derives
+    the same bounds from the ArithTable witness (which now embeds the chunk
+    lookups in `mainWithArithTable`).  Retained as a compatibility alias
+    so existing callers compile without immediate refactoring. -/
 abbrev ArithMulChunkRangeWitness
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :=
   ZiskFv.AirsClean.ArithMul.ChunkRangeLookupWitness v r

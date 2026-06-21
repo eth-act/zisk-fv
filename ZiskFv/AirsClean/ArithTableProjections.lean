@@ -97,6 +97,173 @@ theorem op_val_ge_176
     rw [hop]
     norm_num
 
+/-- Bare-`ArithMulRow` MULW mode pins (mirrors `op_val_ge_176`'s shape — a bare
+    row + `ArithTableSpec`, no `Valid_ArithMul`/`rowAt` wrapper).  This lets the
+    P4 MULW construction read the mode flags off the balance-selected provider
+    `ArithMulRow` WITHOUT routing through `vOfMulwRow`, whose per-field closures
+    force a costly whnf of the heavy `Classical.choose` provider row. -/
+theorem mulw_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 182) :
+    row.flags.div = 0 ∧ row.flags.main_mul = 1 ∧ row.flags.main_div = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, hdiv, _hna, _hnb, _hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hdiv, hmain_mul, hmain_div⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
+/-- Bare-`ArithMulRow` MULHU secondary mode pins (mirrors `mulw_mode_pins_of_row`
+    — a bare row + `ArithTableSpec`, no `Valid_ArithMul`/`rowAt` wrapper).  Lets
+    the P4 MULHU construction read the secondary mode flags off the
+    balance-selected provider `ArithMulRow` WITHOUT routing through a `rowAt`
+    view (whose per-field closures force a costly whnf of the heavy
+    `Classical.choose` provider row). -/
+theorem mulhu_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 177) :
+    row.flags.div = 0 ∧ row.flags.main_mul = 0 ∧ row.flags.main_div = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, hdiv, _hna, _hnb, _hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hdiv, hmain_mul, hmain_div⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
+/-- Bare-`ArithMulRow` DIVU mode pins (mirrors `mulw_mode_pins_of_row`).  Reads
+    the full unsigned-DIVU mode flags off the balance-selected provider
+    `ArithMulRow` (the DIVU provider is the SHARED ArithMul component) WITHOUT
+    routing through a `rowAt` view.  At op `184` (`OP_DIVU`) the shared
+    74-row ArithTable pins `na = nb = np = nr = sext = m32 = 0`, `div = 1`,
+    `main_div = 1`, `main_mul = 0`. -/
+theorem divu_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 184) :
+    row.flags.na = 0 ∧ row.flags.nb = 0 ∧ row.flags.np = 0 ∧ row.flags.nr = 0
+      ∧ row.flags.sext = 0 ∧ row.flags.m32 = 0 ∧ row.flags.div = 1
+      ∧ row.flags.main_div = 1 ∧ row.flags.main_mul = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, hm32, hdiv, hna, hnb, hnp, hnr, hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hna, hnb, hnp, hnr, hsext, hm32, hdiv, hmain_div, hmain_mul⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
+/-- Bare-`ArithMulRow` REMU secondary mode pins (mirrors `divu_mode_pins_of_row`
+    but for `OP_REMU = 185`).  Reads the full unsigned-REMU mode flags off the
+    balance-selected provider `ArithMulRow` (the REMU provider is the SHARED
+    ArithMul component) WITHOUT routing through a `rowAt` view.  At op `185`
+    (`OP_REMU`) the shared 74-row ArithTable pins
+    `na = nb = np = nr = sext = m32 = 0`, `div = 1`, `main_div = 0`,
+    `main_mul = 0` (REMU consumes the **secondary** lane — the remainder in
+    `d[]` — so `main_div = 0`, unlike DIVU's `main_div = 1`). -/
+theorem remu_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 185) :
+    row.flags.na = 0 ∧ row.flags.nb = 0 ∧ row.flags.np = 0 ∧ row.flags.nr = 0
+      ∧ row.flags.sext = 0 ∧ row.flags.m32 = 0 ∧ row.flags.div = 1
+      ∧ row.flags.main_div = 0 ∧ row.flags.main_mul = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, hm32, hdiv, hna, hnb, hnp, hnr, hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hna, hnb, hnp, hnr, hsext, hm32, hdiv, hmain_div, hmain_mul⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
+/-- Bare-`ArithMulRow` DIVUW (W-mode) mode pins (mirrors `divu_mode_pins_of_row`
+    but for `OP_DIVU_W = 188`, `m32 = 1`).  Reads the unsigned-DIVUW mode flags
+    off the balance-selected provider `ArithMulRow` (the DIVUW provider is the
+    SHARED ArithMul component) WITHOUT routing through a `rowAt` view.  At op
+    `188` all three shared 74-row ArithTable rows pin
+    `na = nb = np = nr = 0`, `m32 = 1`, `div = 1`, `main_div = 1`,
+    `main_mul = 0`.  Note `sext` is NOT uniform across the op-188 rows
+    (the W-mode sign-extension lives in the `bus_res1` encoding / the
+    `h_sext_choice` bus residual), so it is intentionally omitted. -/
+theorem divuw_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 188) :
+    row.flags.na = 0 ∧ row.flags.nb = 0 ∧ row.flags.np = 0 ∧ row.flags.nr = 0
+      ∧ row.flags.m32 = 1 ∧ row.flags.div = 1
+      ∧ row.flags.main_div = 1 ∧ row.flags.main_mul = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, hm32, hdiv, hna, hnb, hnp, hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hna, hnb, hnp, hnr, hm32, hdiv, hmain_div, hmain_mul⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
+/-- Bare-`ArithMulRow` REMUW (W-mode secondary) mode pins (mirrors
+    `remu_mode_pins_of_row` but for `OP_REMU_W = 189`, `m32 = 1`).  Reads the
+    unsigned-REMUW mode flags off the balance-selected provider `ArithMulRow`
+    (the REMUW provider is the SHARED ArithMul component) WITHOUT routing through
+    a `rowAt` view.  At op `189` all four shared 74-row ArithTable rows pin
+    `na = nb = np = nr = 0`, `m32 = 1`, `div = 1`, `main_div = 0`,
+    `main_mul = 0` (REMUW consumes the **secondary** lane — the remainder in
+    `d[]` — so `main_div = 0`, unlike DIVUW's `main_div = 1`; and `m32 = 1` for
+    the W width, unlike REMU's `m32 = 0`).  Note `sext` is NOT uniform across the
+    op-189 rows (the W-mode sign-extension lives in the `h_sext_choice` bus
+    residual), so it is intentionally omitted. -/
+theorem remuw_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 189) :
+    row.flags.na = 0 ∧ row.flags.nb = 0 ∧ row.flags.np = 0 ∧ row.flags.nr = 0
+      ∧ row.flags.m32 = 1 ∧ row.flags.div = 1
+      ∧ row.flags.main_div = 0 ∧ row.flags.main_mul = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, hm32, hdiv, hna, hnb, hnp, hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hna, hnb, hnp, hnr, hm32, hdiv, hmain_div, hmain_mul⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
 theorem mul_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec

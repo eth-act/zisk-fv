@@ -654,6 +654,42 @@ theorem static_table_op_val_ne_W_add_sub_of_spec_facts
     row.flags.op.val ≠ 0x1A ∧ row.flags.op.val ≠ 0x1B := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_W_add_sub h_specs.1
 
+theorem static_table_op_val_ne_arith_mul_w_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 182 ∧ row.flags.op.val ≠ 166 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_mul_w h_specs.1
+
+theorem static_table_op_val_ne_arith_mul_uh_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 177 ∧ row.flags.op.val ≠ 161 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_mul_uh h_specs.1
+
+theorem static_table_op_val_ne_arith_divu_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 184 ∧ row.flags.op.val ≠ 168 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_divu h_specs.1
+
+theorem static_table_op_val_ne_arith_remu_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 185 ∧ row.flags.op.val ≠ 169 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_remu h_specs.1
+
+theorem static_table_op_val_ne_arith_divuw_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 188 ∧ row.flags.op.val ≠ 172 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_divuw h_specs.1
+
+theorem static_table_op_val_ne_arith_remuw_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 189 ∧ row.flags.op.val ≠ 173 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_remuw h_specs.1
+
 /-- A row accepted by the lookup-aware BinaryExtension component cannot carry
     Binary-table bitwise opcodes (`AND`/`OR`/`XOR`, values 14/15/16). -/
 theorem staticLookupComponent_op_val_ne_bitwise_of_spec
@@ -742,6 +778,78 @@ theorem shiftStaticLookupComponent_op_val_ne_W_add_sub_of_spec
       ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 0x1B := by
   rw [shiftStaticLookupComponent_spec] at h_spec
   exact static_table_op_val_ne_W_add_sub_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith MULW bus opcode `182` (`OP_MUL_W`) nor the alternate
+    `m32 = 0` decomposition value `166`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_mul_w_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 182
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 166 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_mul_w_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith MULHU bus opcode `177` (`OP_MULUH`) nor the alternate
+    `m32 = 1` decomposition value `161`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_mul_uh_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 177
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 161 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_mul_uh_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith DIVU bus opcode `184` (`OP_DIVU`) nor the alternate
+    `m32 = 0` decomposition value `168`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_divu_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 184
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 168 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_divu_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith REMU bus opcode `185` (`OP_REMU`) nor the alternate
+    `m32 = 0` decomposition value `169`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_remu_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 185
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 169 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_remu_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith DIVUW bus opcode `188` (`OP_DIVU_W`) nor the alternate
+    `m32 = 0` decomposition value `172`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_divuw_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 188
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 172 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_divuw_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith REMUW bus opcode `189` (`OP_REMU_W`) nor the alternate
+    `m32 = 0` decomposition value `173`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_remuw_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 189
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 173 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_remuw_of_spec_facts
     (shiftStaticLookupComponent.rowInput env) h_spec.2.1
 
 theorem aCols_eval_eq

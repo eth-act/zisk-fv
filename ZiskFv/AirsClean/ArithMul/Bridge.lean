@@ -84,9 +84,75 @@ theorem arith_table_spec_of_lookup_aware_soundness
   simp only [mainWithArithTable, main, circuit_norm] at h_holds
   rcases h_holds with
     ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
-      h_lookup⟩
+      _h46, h_lookup, _ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
+      _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3,
+      _hcy0, _hcy1, _hcy2, _hcy3, _hcy4, _hcy5, _hcy6⟩
   simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
     ArithTableSpec, arithTableRow] using h_lookup
+
+/-- Extract the sixteen 16-bit chunk range bounds from a `mainWithArithTable`
+    soundness proof.  After RANK 2a, `mainWithArithTable` includes the chunk
+    range lookups, so the ArithTable witness alone supplies chunk ranges. -/
+theorem chunk_ranges_of_arith_table_soundness
+    (offset : ℕ) (env : Environment FGL)
+    (input_var : Var ArithMulRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable input_var).operations offset)) :
+    (Expression.eval env input_var.chunks.a_0).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.a_1).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.a_2).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.a_3).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.b_0).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.b_1).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.b_2).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.b_3).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.c_0).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.c_1).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.c_2).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.c_3).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.d_0).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.d_1).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.d_2).val < 2 ^ 16
+  ∧ (Expression.eval env input_var.chunks.d_3).val < 2 ^ 16 := by
+  simp only [mainWithArithTable, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      _h46, _h_lookup, ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+      hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3,
+      _hcy0, _hcy1, _hcy2, _hcy3, _hcy4, _hcy5, _hcy6⟩
+  exact ⟨by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using ha0,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using ha1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using ha2,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using ha3,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hb0,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hb1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hb2,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hb3,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hc0,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hc1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hc2,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hc3,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hd0,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hd1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hd2,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hd3⟩
 
 /-- Constant-row specialization of
     `arith_table_spec_of_lookup_aware_soundness`.
@@ -103,6 +169,20 @@ theorem arith_table_spec_of_lookup_aware_const_soundness
   have h_table :=
     arith_table_spec_of_lookup_aware_soundness offset env (constVar row) h_holds
   simpa [ArithTableSpec, arithTableRow, constVar] using h_table
+
+/-- Constant-row specialization of `chunk_ranges_of_arith_table_soundness`.
+
+    After RANK 2a the ArithTable witness (which holds `mainWithArithTable`
+    soundness) automatically supplies the chunk range bounds via the 16
+    newly-embedded chunk lookups. -/
+theorem chunk_ranges_of_arith_table_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : ArithMulRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable (constVar row)).operations offset)) :
+    ChunkRangeSpec row := by
+  have h := chunk_ranges_of_arith_table_soundness offset env (constVar row) h_holds
+  simpa [ChunkRangeSpec, constVar] using h
 
 /-- Project a `Valid_ArithMul` at row `r` into a Clean `ArithMulRow FGL`.
     The `Valid_ArithMul` record exposes all 28 chunk / flag / carry
@@ -242,15 +322,31 @@ theorem signed_carry_ranges_of_lookup_aware_const_soundness
     by simpa [rowAt, constVar] using h_cy5,
     by simpa [rowAt, constVar] using h_cy6⟩
 
-/-- Concrete primary MUL/MULW op-bus message for a Clean ArithMul row. -/
-@[reducible]
+/-- Concrete ArithMul op-bus message for a Clean ArithMul row — the
+    field-valued image of `primaryOpBusMessageExpr`, carrying the same real
+    PIL MUXED `a_lo` / `a_hi` / `c_lo` lanes (`arith.pil:247-258`).  Under the
+    MUL/MULW mode pins (`div=0`, `main_mul=1`, `main_div=0`) the muxes reduce
+    to the plain `a`/`c`-chunk lanes — see
+    `primaryOpBusMessage_toEntry_rowAt_eq_opBus_row`.
+
+    NOTE: deliberately NOT `@[reducible]`.  The faithful mux makes this message
+    large; leaving it reducible caused `exact`/`isDefEq` in the MULW construction
+    to eagerly unfold it and whnf the heavy balance-selected provider row while
+    comparing the per-lane field projections.  Every consumer unfolds it
+    explicitly (`simp only [primaryOpBusMessage]` or `eval_primaryOpBusMessageExpr`),
+    so non-reducibility is safe. -/
 def primaryOpBusMessage (row : ArithMulRow FGL) : OpBusMessage FGL :=
   { op := row.flags.op
-    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
-    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    a_lo := row.flags.div * (row.chunks.c_0 + row.chunks.c_1 * 65536)
+      + (1 - row.flags.div) * (row.chunks.a_0 + row.chunks.a_1 * 65536)
+    a_hi := row.flags.div * (row.chunks.c_2 + row.chunks.c_3 * 65536)
+      + (1 - row.flags.div) * (row.chunks.a_2 + row.chunks.a_3 * 65536)
     b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
     b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
-    c_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
+    c_lo := (1 - row.flags.main_mul - row.flags.main_div)
+        * (row.chunks.d_0 + row.chunks.d_1 * 65536)
+      + row.flags.main_mul * (row.chunks.c_0 + row.chunks.c_1 * 65536)
+      + row.flags.main_div * (row.chunks.a_0 + row.chunks.a_1 * 65536)
     c_hi := row.flags.bus_res1
     flag := 0
     main_step := 0
@@ -275,12 +371,14 @@ def secondaryOpBusMessage (row : ArithMulRow FGL) : OpBusMessage FGL :=
 theorem eval_primaryOpBusMessageExpr
     (env : Environment FGL) (row : Var ArithMulRow FGL) :
     eval env (primaryOpBusMessageExpr row) = primaryOpBusMessage (eval env row) := by
-  rw [OpBusMessage.mk.injEq]
+  rw [primaryOpBusMessage, OpBusMessage.mk.injEq]
   simp only [primaryOpBusMessageExpr, ProvableStruct.eval_eq_eval,
     ProvableStruct.eval, ProvableStruct.fromComponents,
     ProvableStruct.components, ProvableStruct.toComponents,
     ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
-  repeat constructor
+  -- `eval` normalizes `1 - x` to `1 + -1 * x`; the `a_lo`/`a_hi`/`c_lo` mux
+  -- lanes therefore need `ring`, not `rfl` (the other lanes are `True`/defeq).
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> first | trivial | ring
 
 /-- Op-only projection of `eval_primaryOpBusMessageExpr`, used to avoid
     unfolding the entire operation-bus message in downstream provider
@@ -290,6 +388,18 @@ theorem eval_primaryOpBusMessageExpr_toEntry_op
     (OpBusMessage.toEntry (eval env (primaryOpBusMessageExpr row)) multiplicity).op =
       (eval env row).flags.op := by
   rw [eval_primaryOpBusMessageExpr]
+  -- `primaryOpBusMessage` is no longer reducible; project `.op` explicitly.
+  simp only [primaryOpBusMessage]
+
+/-- Cheap `op`-lane projection of the concrete primary message.  Stated over a
+    FREE `ArithMulRow` so the proof is `rfl` (a single structure-literal `.op`
+    pick that never touches the muxed `a_lo`/`a_hi`/`c_lo` lanes); applying it
+    to a balance-selected (heavy `Classical.choose`) provider row is then mere
+    substitution, avoiding the whnf blow-up of forcing the full message. -/
+@[simp]
+theorem primaryOpBusMessage_toEntry_op (row : ArithMulRow FGL) (multiplicity : FGL) :
+    (OpBusMessage.toEntry (primaryOpBusMessage row) multiplicity).op = row.flags.op :=
+  rfl
 
 theorem eval_secondaryOpBusMessageExpr
     (env : Environment FGL) (row : Var ArithMulRow FGL) :
@@ -302,17 +412,51 @@ theorem eval_secondaryOpBusMessageExpr
     ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
   repeat constructor
 
+/-- Mode-conditional MUL/MULW bridge: the FAITHFUL muxed primary message
+    reduces to the plain MUL/MULW `opBus_row_Arith` entry exactly at the
+    MUL/MULW mode pins (`div=0`, `main_mul=1`, `main_div=0`).
+
+    With the muxed `primaryOpBusMessage`, the `a_lo`/`a_hi` lanes carry
+    `div·c + (1-div)·a` (→ `a` at `div=0`) and the `c_lo` lane carries
+    `(1-main_mul-main_div)·d + main_mul·c + main_div·a` (→ `c` at
+    `main_mul=1, main_div=0`).  This is no longer `rfl`; the mode pins are
+    discharged by the caller (e.g. `construction_mulw_sound`) from the
+    provider row's `ArithTableSpec` + opcode pin. -/
 theorem primaryOpBusMessage_toEntry_rowAt_eq_opBus_row
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_div : v.div r = 0) (h_main_mul : v.main_mul r = 1) (h_main_div : v.main_div r = 0) :
     OpBusMessage.toEntry (primaryOpBusMessage (rowAt v r)) (v.multiplicity r) =
       ZiskFv.Airs.ArithMul.opBus_row_Arith v r := by
-  rfl
+  simp only [OpBusMessage.toEntry, primaryOpBusMessage, rowAt,
+    ZiskFv.Airs.ArithMul.opBus_row_Arith, h_div, h_main_mul, h_main_div]
+  ring
 
 theorem secondaryOpBusMessage_toEntry_rowAt_eq_opBus_row
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
     OpBusMessage.toEntry (secondaryOpBusMessage (rowAt v r)) (v.multiplicity r) =
       ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r := by
   rfl
+
+/-- Mode-conditional MULHU bridge: the FAITHFUL muxed primary message reduces
+    to the secondary high-half `opBus_row_ArithMulSecondary` entry (the d-lane
+    message) exactly at the MULHU secondary mode pins (`div = 0`,
+    `main_mul = 0`, `main_div = 0`).
+
+    At these pins the muxed `a_lo`/`a_hi` lanes (`div·c + (1-div)·a`) collapse to
+    the `a`-chunks, and the muxed `c_lo` lane
+    (`(1-main_mul-main_div)·d + main_mul·c + main_div·a`) collapses to the
+    `d`-chunks — i.e. the muxed primary message at MULHU mode IS the secondary
+    d-lane message.  The mode pins are discharged by the caller (e.g.
+    `construction_mulhu_sound`) from the provider row's `ArithTableSpec` +
+    opcode pin. -/
+theorem primaryOpBusMessage_toEntry_rowAt_eq_opBus_row_secondary
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_div : v.div r = 0) (h_main_mul : v.main_mul r = 0) (h_main_div : v.main_div r = 0) :
+    OpBusMessage.toEntry (primaryOpBusMessage (rowAt v r)) (v.multiplicity r) =
+      ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r := by
+  simp only [OpBusMessage.toEntry, primaryOpBusMessage,
+    ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary, h_div, h_main_mul, h_main_div]
+  ring
 
 /-- The Clean Component `Spec` projected at a `Valid_ArithMul` row,
     derived **through the Clean Component**. From the AIR's MUL-mode
@@ -383,18 +527,24 @@ theorem mul_carry_chain_holds_via_component
   · exact hs38
 
 /-- Combine the load-bearing Clean carry-chain route with a separately
-    sourced ArithTable lookup membership proof.
+    sourced ArithTable lookup membership proof and the `bus_res1` mux
+    equation (constraint 46, `arith.pil:262`).
 
-    This is the non-laundered C3/C4-b shape: `h_table` is explicit here
-    because the current global theorem does not yet provide lookup
-    membership. Compliance wrappers must not acquire this as a fresh
-    per-opcode promise; the proof becomes useful only once the shared
-    lookup/ensemble statement supplies `ArithTableSpec (rowAt v r)`. -/
+    This is the non-laundered C3/C4-b shape: `h_table` and `h_c46` are
+    explicit here because the current global theorem does not yet provide
+    lookup membership.  Compliance wrappers must not acquire these as
+    fresh per-opcode promises; the proof becomes useful only once the
+    shared lookup/ensemble statement supplies `ArithTableSpec (rowAt v r)`
+    and `C46Spec (rowAt v r)`. -/
 theorem full_spec_of_carry_chain_and_arith_table
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r)
-    (h_table : ArithTableSpec (rowAt v r)) :
+    (h_table : ArithTableSpec (rowAt v r))
+    (h_c46 : C46Spec (rowAt v r))
+    (h_chunk_ranges : ChunkRangeSpec (rowAt v r))
+    (h_carry_ranges : CarryRangeSpec (rowAt v r)) :
     FullSpec (rowAt v r) := by
-  exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table⟩
+  exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table, h_c46, h_chunk_ranges,
+    h_carry_ranges⟩
 
 end ZiskFv.AirsClean.ArithMul

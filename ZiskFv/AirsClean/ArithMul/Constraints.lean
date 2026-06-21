@@ -39,16 +39,35 @@ open Circuit (assertZero lookup)
 open ZiskFv.AirsClean.RangeTables
 open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
 
-/-- Primary MUL/MULW op-bus message: low result in the `c[]` chunks. -/
+/-- ArithMul op-bus message — FAITHFUL to the real PIL `bus_emission_Arith_0`
+    (`arith.pil:247-258`, extracted verbatim in
+    `build/extraction/Extraction/Buses.lean`).  The `a_lo` / `a_hi` / `c_lo`
+    lanes are the real MUXED lanes covering every arith mode (mul-low /
+    mul-high / div / rem) via `div` / `main_mul` / `main_div`:
+
+    * `a_lo` (bus_a0)  = `div·(c_0+c_1·2^16) + (1-div)·(a_0+a_1·2^16)`
+    * `a_hi` (bus_a1)  = `div·(c_2+c_3·2^16) + (1-div)·(a_2+a_3·2^16)`
+    * `c_lo` (bus_res0)= `(1-main_mul-main_div)·(d_0+d_1·2^16)
+                         + main_mul·(c_0+c_1·2^16) + main_div·(a_0+a_1·2^16)`
+
+    `b_lo` / `b_hi` / `c_hi` (= bus_res1) are unchanged.  Under the MUL/MULW
+    mode pins (`div=0`, `main_mul=1`, `main_div=0`) these muxes reduce to the
+    plain `a`/`c`-chunk lanes (the previous hand-specialization); the per-mode
+    reduction is the bridge in `Bridge.lean`. -/
 @[reducible]
 def primaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
     OpBusMessage (Expression FGL) :=
   { op := row.flags.op
-    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
-    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    a_lo := row.flags.div * (row.chunks.c_0 + row.chunks.c_1 * 65536)
+      + (1 - row.flags.div) * (row.chunks.a_0 + row.chunks.a_1 * 65536)
+    a_hi := row.flags.div * (row.chunks.c_2 + row.chunks.c_3 * 65536)
+      + (1 - row.flags.div) * (row.chunks.a_2 + row.chunks.a_3 * 65536)
     b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
     b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
-    c_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
+    c_lo := (1 - row.flags.main_mul - row.flags.main_div)
+        * (row.chunks.d_0 + row.chunks.d_1 * 65536)
+      + row.flags.main_mul * (row.chunks.c_0 + row.chunks.c_1 * 65536)
+      + row.flags.main_div * (row.chunks.a_0 + row.chunks.a_1 * 65536)
     c_hi := row.flags.bus_res1
     flag := 0
     main_step := 0
@@ -171,13 +190,61 @@ def main (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
 
 
 /-- Lookup-aware ArithMul circuit path. This appends the full 15-column
-    `arith_table_assumes` ROM lookup after the existing carry-chain/op-bus
+    `arith_table_assumes` ROM lookup and the `bus_res1` mux constraint
+    (constraint 46, `arith.pil:262`) after the existing carry-chain/op-bus
     component body. The current load-bearing carry-chain component remains
     unchanged until Compliance supplies this lookup evidence globally. -/
 @[circuit_norm]
 def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   main row
+  -- Constraint 46 (`arith.pil:262`): bus_res1 − (sext·4294967295 +
+  --   (1 − m32)·((1 − main_mul − main_div)·(d_2 + d_3·65536)
+  --              + main_mul·(c_2 + c_3·65536)
+  --              + main_div·(a_2 + a_3·65536))) = 0.
+  -- Mirror of `constraint_46_every_row` in `Extraction/Arith.lean:165`.
+  assertZero (row.flags.bus_res1
+    - (row.flags.sext * 4294967295
+      + (1 - row.flags.m32) * (
+          (1 - row.flags.main_mul - row.flags.main_div)
+              * (row.chunks.d_2 + row.chunks.d_3 * 65536)
+          + row.flags.main_mul * (row.chunks.c_2 + row.chunks.c_3 * 65536)
+          + row.flags.main_div
+              * (row.chunks.a_2 + row.chunks.a_3 * 65536))))
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+  -- Sixteen `bits(16)` chunk column range lookups (`arith.pil:18-21`).
+  -- These are shared across signed and unsigned Arith rows, so they are
+  -- sound to include in the SHARED component: real arith rows always
+  -- have 16-bit a/b/c/d chunks.
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_3
+  -- Seven `ARITH_RANGE_CARRY` signed-carry range lookups (`arith.pil:17,280`).
+  -- `carry[]` is declared as `bits(64, signed)` and range-checked with the
+  -- single ARITH_RANGE_CARRY type = the signed-carry range. The
+  -- `signedCarryRangeTable.Spec t = (t.val < 983041 ∨ GL_prime − 983040 ≤ t.val)`
+  -- holds for EVERY Arith row: unsigned carries are < 2^17 < 983041 (first
+  -- disjunct) and signed carries satisfy the disjunction by construction.
+  -- Sound to include in the SHARED component — no vacuity.
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_0
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_1
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_2
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_3
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_4
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_5
+  lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_6
 
 /-- Lookup-aware ArithMul path for the sixteen `bits(16)` chunk columns.
     This models the column-level PIL declarations at `arith.pil:18-21`.

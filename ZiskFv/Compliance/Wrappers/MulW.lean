@@ -172,6 +172,134 @@ lemma equiv_MULW_of_table
     h_arith_chunk_ranges_arg h_arith_carry_ranges
     h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
 
+/-- **F4 extraction bridge for `equiv_MULW`.**
+
+    Identical conclusion and operand-bridge burden to `equiv_MULW_of_table`,
+    but the four lookup-aware Arith witness records (`arith_table`,
+    `h_row_constraints`, `arith_chunk_ranges`, `arith_carry_ranges`) are
+    replaced by the *single* `ZiskFv.AirsClean.ArithMul.FullSpec (rowAt v r_a)`
+    hypothesis.
+
+    `FullSpec` is exactly what the lookup-aware ArithMul provider's
+    `componentWithArithTable.Spec` yields (`componentWithArithTable_spec`), so a
+    P4 construction can hand the provider's balance-derived `Spec` here directly
+    instead of re-packaging it as four caller witnesses. Its five conjuncts map
+    1:1 onto what the body needs:
+
+    * `Spec (rowAt v r_a)` → `mul_carry_chain_holds v r_a` (defeq),
+    * `C46Spec (rowAt v r_a)` → `mul_constraint_46_named v r_a` (defeq),
+    * `ArithTableSpec (rowAt v r_a)` → the MULW mode pins,
+    * `ChunkRangeSpec (rowAt v r_a)` → the sixteen 16-bit chunk bounds,
+    * `CarryRangeSpec (rowAt v r_a)` → the seven signed-carry range bounds.
+
+    No new trust: the carry-chain, ROM membership, `bus_res1` mux, and the
+    range bounds all come from the provider component's proven soundness via
+    `FullSpec`, not from fresh per-opcode promises. -/
+lemma equiv_MULW_of_fullSpec
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (mulw_input : PureSpec.MulwInput)
+    (r1 r2 rd : regidx)
+    (bus : ZiskFv.Compliance.BusRows)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL_W)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_Arith v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
+        (PureSpec.execute_MULW_pure mulw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (h_full_spec :
+      ZiskFv.AirsClean.ArithMul.FullSpec (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
+    (h_sext_choice :
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
+        (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
+        (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
+    (h_rs1_value :
+      (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
+        = ((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℤ)
+            - (v.na r_a).val * (2:ℤ)^32)
+    (h_rs2_value :
+      (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^32) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MULW (r2, r1, rd))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  -- Unpack FullSpec into its five conjuncts.
+  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_ranges_spec, h_carry_ranges_spec⟩ :=
+    h_full_spec
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨_h_main_active, h_main_op_mulw⟩ := pins
+  -- ============ Project bus-bundle fields used by the body ============
+  have h_m2_mult := promises.m2_mult
+  have h_m2_as := promises.m2_as
+  -- ============ DERIVE arith-side opcode literal ============
+  have h_op_eq := arith_mul_primary_op_eq h_match_primary
+  have h_op_arith_mulw : v.op r_a = 182 := by
+    rw [h_op_eq, h_main_op_mulw]; simp [OP_MUL_W]
+  -- ============ Unpack matches_entry lane projections ============
+  obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
+          h_c0_eq_FGL, _h_c1_eq_FGL⟩ :=
+    arith_mul_primary_projections h_match_primary
+  -- ============ Carry chain + c46 from FullSpec ============
+  -- `Spec (rowAt v r_a)` is defeq to the 11-clause `mul_carry_chain_holds`,
+  -- and `C46Spec (rowAt v r_a)` is defeq to `mul_constraint_46_named`.
+  have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a := h_spec
+  -- ============ DISCHARGE true MULW static mode pins ============
+  obtain ⟨h_na, h_nb, h_np, h_nr, h_m32, h_div⟩ :=
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mulw_basic_mode_pin
+      v r_a h_arith_table h_op_arith_mulw
+  have h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1 := Or.inl h_na
+  have h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1 := Or.inl h_nb
+  have h_np_xor :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+            - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+                * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) := by
+    rw [h_na, h_nb, h_np]
+    decide
+  -- ============ Chunk / carry ranges from FullSpec ============
+  have h_arith_chunk_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a := h_chunk_ranges_spec
+  have h_arith_carry_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a :=
+    h_carry_ranges_spec
+  obtain ⟨_h_a0_lt, _h_a1_lt, _h_a2_lt, _h_a3_lt,
+          _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
+          h_c0_lt, h_c1_lt, _h_c2_lt, _h_c3_lt,
+          _h_d0_lt, _h_d1_lt, _h_d2_lt, _h_d3_lt⟩ :=
+    h_chunk_ranges_spec
+  -- ============ DISCHARGE h_byte_lo (lane match, primary lane = c[]) ============
+  have h_bundle := arith_mem.c_lane_vals
+  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      = (m.c_0 r_main).val := by
+    have h_e2_lo_bound : e2.value_0.val < 4294967296 := by
+      rw [← h_bundle.1, h_c0_eq_FGL]
+      rw [arith_h_pair_lift _ _ h_c0_lt h_c1_lt]
+      omega
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_e2_lo_bound, h_bundle.1]
+  have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_c0_lt h_c1_lt
+  -- ============ Delegate to `equiv_MULW` (EquivCore) ============
+  exact ZiskFv.EquivCore.MulW.equiv_MULW
+    state mulw_input r1 r2 rd v r_a
+    ⟨exec_row, e0, e1, e2⟩
+    promises
+    h_chain h_nr h_m32 h_div h_op_arith_mulw
+    h_na_bool h_nb_bool h_np_xor
+    h_arith_chunk_ranges h_arith_carry_ranges
+    h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+
 /-- Compatibility wrapper preserving the current canonical surface while
     the Compliance dispatcher is migrated to row-native table witnesses. -/
 lemma equiv_MULW

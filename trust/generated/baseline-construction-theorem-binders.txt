@@ -1055,3 +1055,566 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq auipc_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.eRdLui trace binding i).ptr)
 h_no_wrap :: instLTNat.lt (instHAdd.hAdd auipc_input.PC.toNat (BitVec.signExtend 64 (BitVec.instHAppendHAddNat.hAppend auipc_input.imm 0)).toNat) 18446744069414584321
 h_pc_offset_lt_2_32 :: instLTNat.lt (instHAdd.hAdd auipc_input.PC (BitVec.signExtend 64 (BitVec.instHAppendHAddNat.hAppend auipc_input.imm 0))).toNat 4294967296
+
+# ZiskFv.Compliance.construction_mulw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+mulw_input :: PureSpec.MulwInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_MUL_W
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok mulw_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok mulw_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some mulw_input.PC)
+h_input_rd :: Eq mulw_input.rd (regidx_to_fin rd)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_MULW_pure mulw_input).nextPC
+h_rd_idx :: Eq mulw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+h_a23 :: And (Eq ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).a_2 0).val 0) (Eq ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).a_3 0).val 0)
+h_b23 :: And (Eq ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_2 0).val 0) (Eq ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_3 0).val 0)
+h_sext_choice :: Or (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 0) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 0) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 0) (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 0)))) (instLTNat.lt (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).c_0 0).val (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).c_1 0).val 65536)) 2147483648)) (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 255) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 255) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 255) (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 255)))) (GE.ge (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).c_0 0).val (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).c_1 0).val 65536)) 2147483648))
+h_rs1_value :: Eq (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt (instHSub.hSub (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).a_0 0).val.cast (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).a_1 0).val.cast 65536)) (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).na 0).val.cast (instHPow.hPow 2 32)))
+h_rs2_value :: Eq (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt (instHSub.hSub (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_0 0).val.cast (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_1 0).val.cast 65536)) (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).nb 0).val.cast (instHPow.hPow 2 32)))
+
+# ZiskFv.Compliance.construction_mulhu_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+mulhu_input :: PureSpec.MulhuInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_MULUH
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok mulhu_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok mulhu_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some mulhu_input.PC)
+h_input_rd :: Eq mulhu_input.rd (regidx_to_fin rd)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
+h_rd_idx :: Eq mulhu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+bounds.x0_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 0).val 256
+bounds.x1_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 1).val 256
+bounds.x2_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 2).val 256
+bounds.x3_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 3).val 256
+bounds.x4_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 256
+bounds.x5_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 256
+bounds.x6_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 256
+bounds.x7_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 256
+h_rs1_value :: Eq mulhu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_0 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_1 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_2 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).a_3 0).val)
+h_rs2_value :: Eq mulhu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_0 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_1 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_2 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_3 0).val)
+
+# ZiskFv.Compliance.construction_divu_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+divu_input :: PureSpec.DivuInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_DIVU
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok divu_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok divu_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some divu_input.PC)
+h_input_rd :: Eq divu_input.rd (regidx_to_fin rd)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
+h_rd_idx :: Eq divu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+bounds.x0_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 0).val 256
+bounds.x1_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 1).val 256
+bounds.x2_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 2).val 256
+bounds.x3_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 3).val 256
+bounds.x4_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 256
+bounds.x5_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 256
+bounds.x6_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 256
+bounds.x7_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 256
+remainder_bound.binary.b_op :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.mode32 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.result_is_a :: Nat → Fin 18446744069414584321
+remainder_bound.binary.use_first_byte :: Nat → Fin 18446744069414584321
+remainder_bound.binary.c_is_signed :: Nat → Fin 18446744069414584321
+remainder_bound.binary.b_op_or_sext :: Nat → Fin 18446744069414584321
+remainder_bound.binary.mode32_and_c_is_signed :: Nat → Fin 18446744069414584321
+remainder_bound.binary.gsum :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_3 :: Nat → Fin 18446744069414584321
+remainder_bound.r_binary :: Nat
+remainder_bound.binary_core :: ZiskFv.Airs.Binary.core_every_row remainder_bound.1 remainder_bound.2
+remainder_bound.binary_ltu_chain.chain_0 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_0 remainder_bound.2) (remainder_bound.1.free_in_b_0 remainder_bound.2) (remainder_bound.1.free_in_c_0 remainder_bound.2) 0 (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2)) (instHMul.hMul 2 (remainder_bound.1.use_first_byte remainder_bound.2))
+remainder_bound.binary_ltu_chain.chain_1 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_1 remainder_bound.2) (remainder_bound.1.free_in_b_1 remainder_bound.2) (remainder_bound.1.free_in_c_1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_2 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_2 remainder_bound.2) (remainder_bound.1.free_in_b_2 remainder_bound.2) (remainder_bound.1.free_in_c_2 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_3 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_3 remainder_bound.2) (remainder_bound.1.free_in_b_3 remainder_bound.2) (remainder_bound.1.free_in_c_3 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2)) (remainder_bound.1.mode32 remainder_bound.2)
+remainder_bound.binary_ltu_chain.chain_4 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_4 remainder_bound.2) (remainder_bound.1.free_in_b_4 remainder_bound.2) (remainder_bound.1.free_in_c_4 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_5 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_5 remainder_bound.2) (remainder_bound.1.free_in_b_5 remainder_bound.2) (remainder_bound.1.free_in_c_5 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_6 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_6 remainder_bound.2) (remainder_bound.1.free_in_b_6 remainder_bound.2) (remainder_bound.1.free_in_c_6 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_7 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_7 remainder_bound.2) (remainder_bound.1.free_in_b_7 remainder_bound.2) (remainder_bound.1.free_in_c_7 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags7Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2)) (instHSub.hSub 1 (remainder_bound.1.mode32 remainder_bound.2))
+remainder_bound.binary_ltu_chain.c0_lt :: instLTNat.lt (remainder_bound.1.free_in_c_0 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c1_lt :: instLTNat.lt (remainder_bound.1.free_in_c_1 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c2_lt :: instLTNat.lt (remainder_bound.1.free_in_c_2 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c3_lt :: instLTNat.lt (remainder_bound.1.free_in_c_3 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c4_lt :: instLTNat.lt (remainder_bound.1.free_in_c_4 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c5_lt :: instLTNat.lt (remainder_bound.1.free_in_c_5 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c6_lt :: instLTNat.lt (remainder_bound.1.free_in_c_6 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c7_lt :: instLTNat.lt (remainder_bound.1.free_in_c_7 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.cin0_eq :: Eq (Fin.val 0) 0
+remainder_bound.binary_ltu_chain.cin1_eq :: Eq (remainder_bound.1.carry_0 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin2_eq :: Eq (remainder_bound.1.carry_1 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin3_eq :: Eq (remainder_bound.1.carry_2 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin4_eq :: Eq (remainder_bound.1.carry_3 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin5_eq :: Eq (remainder_bound.1.carry_4 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin6_eq :: Eq (remainder_bound.1.carry_5 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin7_eq :: Eq (remainder_bound.1.carry_6 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.pi0_ne :: Ne (instHMul.hMul 2 (remainder_bound.1.use_first_byte remainder_bound.2)).val 1
+remainder_bound.binary_ltu_chain.pi1_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi2_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi3_ne :: Ne (remainder_bound.1.mode32 remainder_bound.2).val 1
+remainder_bound.binary_ltu_chain.pi4_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi5_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi6_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi7_eq :: Eq (instHSub.hSub 1 (remainder_bound.1.mode32 remainder_bound.2)).val 1
+remainder_bound.remainder_bound_match :: ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound (ZiskFv.Compliance.vOfDivuRow (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op)) 0) (ZiskFv.Airs.OperationBus.opBus_row_Binary remainder_bound.1 remainder_bound.2)
+h_rs1_value :: Eq divu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.c_0.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.c_1.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.c_2.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.c_3.val)
+h_rs2_value :: Eq divu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_0.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_1.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_2.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_3.val)
+
+# ZiskFv.Compliance.construction_divuw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+divuw_input :: PureSpec.DivuwInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_DIVU_W
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok divuw_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok divuw_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some divuw_input.PC)
+h_input_rd :: Eq divuw_input.rd (regidx_to_fin rd)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
+h_rd_idx :: Eq divuw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+bounds.x0_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 0).val 256
+bounds.x1_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 1).val 256
+bounds.x2_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 2).val 256
+bounds.x3_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 3).val 256
+bounds.x4_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 256
+bounds.x5_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 256
+bounds.x6_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 256
+bounds.x7_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 256
+remainder_bound.binary.b_op :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.mode32 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.result_is_a :: Nat → Fin 18446744069414584321
+remainder_bound.binary.use_first_byte :: Nat → Fin 18446744069414584321
+remainder_bound.binary.c_is_signed :: Nat → Fin 18446744069414584321
+remainder_bound.binary.b_op_or_sext :: Nat → Fin 18446744069414584321
+remainder_bound.binary.mode32_and_c_is_signed :: Nat → Fin 18446744069414584321
+remainder_bound.binary.gsum :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_3 :: Nat → Fin 18446744069414584321
+remainder_bound.r_binary :: Nat
+remainder_bound.binary_core :: ZiskFv.Airs.Binary.core_every_row remainder_bound.1 remainder_bound.2
+remainder_bound.binary_ltu_chain.chain_0 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_0 remainder_bound.2) (remainder_bound.1.free_in_b_0 remainder_bound.2) (remainder_bound.1.free_in_c_0 remainder_bound.2) 0 (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2)) (instHMul.hMul 2 (remainder_bound.1.use_first_byte remainder_bound.2))
+remainder_bound.binary_ltu_chain.chain_1 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_1 remainder_bound.2) (remainder_bound.1.free_in_b_1 remainder_bound.2) (remainder_bound.1.free_in_c_1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_2 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_2 remainder_bound.2) (remainder_bound.1.free_in_b_2 remainder_bound.2) (remainder_bound.1.free_in_c_2 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_3 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_3 remainder_bound.2) (remainder_bound.1.free_in_b_3 remainder_bound.2) (remainder_bound.1.free_in_c_3 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2)) (remainder_bound.1.mode32 remainder_bound.2)
+remainder_bound.binary_ltu_chain.chain_4 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_4 remainder_bound.2) (remainder_bound.1.free_in_b_4 remainder_bound.2) (remainder_bound.1.free_in_c_4 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_5 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_5 remainder_bound.2) (remainder_bound.1.free_in_b_5 remainder_bound.2) (remainder_bound.1.free_in_c_5 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_6 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_6 remainder_bound.2) (remainder_bound.1.free_in_b_6 remainder_bound.2) (remainder_bound.1.free_in_c_6 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_7 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_7 remainder_bound.2) (remainder_bound.1.free_in_b_7 remainder_bound.2) (remainder_bound.1.free_in_c_7 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags7Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2)) (instHSub.hSub 1 (remainder_bound.1.mode32 remainder_bound.2))
+remainder_bound.binary_ltu_chain.c0_lt :: instLTNat.lt (remainder_bound.1.free_in_c_0 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c1_lt :: instLTNat.lt (remainder_bound.1.free_in_c_1 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c2_lt :: instLTNat.lt (remainder_bound.1.free_in_c_2 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c3_lt :: instLTNat.lt (remainder_bound.1.free_in_c_3 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c4_lt :: instLTNat.lt (remainder_bound.1.free_in_c_4 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c5_lt :: instLTNat.lt (remainder_bound.1.free_in_c_5 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c6_lt :: instLTNat.lt (remainder_bound.1.free_in_c_6 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c7_lt :: instLTNat.lt (remainder_bound.1.free_in_c_7 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.cin0_eq :: Eq (Fin.val 0) 0
+remainder_bound.binary_ltu_chain.cin1_eq :: Eq (remainder_bound.1.carry_0 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin2_eq :: Eq (remainder_bound.1.carry_1 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin3_eq :: Eq (remainder_bound.1.carry_2 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin4_eq :: Eq (remainder_bound.1.carry_3 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin5_eq :: Eq (remainder_bound.1.carry_4 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin6_eq :: Eq (remainder_bound.1.carry_5 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin7_eq :: Eq (remainder_bound.1.carry_6 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.pi0_ne :: Ne (instHMul.hMul 2 (remainder_bound.1.use_first_byte remainder_bound.2)).val 1
+remainder_bound.binary_ltu_chain.pi1_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi2_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi3_ne :: Ne (remainder_bound.1.mode32 remainder_bound.2).val 1
+remainder_bound.binary_ltu_chain.pi4_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi5_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi6_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi7_eq :: Eq (instHSub.hSub 1 (remainder_bound.1.mode32 remainder_bound.2)).val 1
+remainder_bound.remainder_bound_match :: ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound (ZiskFv.Compliance.vOfDivuRow (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op)) 0) (ZiskFv.Airs.OperationBus.opBus_row_Binary remainder_bound.1 remainder_bound.2)
+h_b23 :: And (Eq (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.b_2.val 0) (Eq (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.b_3.val 0)
+h_c23 :: And (Eq (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.c_2.val 0) (Eq (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.c_3.val 0)
+h_sext_choice :: Or (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 0) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 0) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 0) (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 0)))) (instLTNat.lt (instHAdd.hAdd (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.a_0.val (instHMul.hMul (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.a_1.val 65536)) 2147483648)) (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 255) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 255) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 255) (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 255)))) (GE.ge (instHAdd.hAdd (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.a_0.val (instHMul.hMul (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.a_1.val 65536)) 2147483648))
+h_rs1_value :: Eq (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.c_0.val (instHMul.hMul (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.c_1.val 65536))
+h_rs2_value :: Eq (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.b_0.val (instHMul.hMul (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.b_1.val 65536))
+
+# ZiskFv.Compliance.construction_remu_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+remu_input :: PureSpec.RemuInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_REMU
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok remu_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok remu_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some remu_input.PC)
+h_input_rd :: Eq remu_input.rd (regidx_to_fin rd)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
+h_rd_idx :: Eq remu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+bounds.x0_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 0).val 256
+bounds.x1_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 1).val 256
+bounds.x2_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 2).val 256
+bounds.x3_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 3).val 256
+bounds.x4_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 256
+bounds.x5_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 256
+bounds.x6_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 256
+bounds.x7_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 256
+remainder_bound.binary.b_op :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.mode32 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.result_is_a :: Nat → Fin 18446744069414584321
+remainder_bound.binary.use_first_byte :: Nat → Fin 18446744069414584321
+remainder_bound.binary.c_is_signed :: Nat → Fin 18446744069414584321
+remainder_bound.binary.b_op_or_sext :: Nat → Fin 18446744069414584321
+remainder_bound.binary.mode32_and_c_is_signed :: Nat → Fin 18446744069414584321
+remainder_bound.binary.gsum :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_3 :: Nat → Fin 18446744069414584321
+remainder_bound.r_binary :: Nat
+remainder_bound.binary_core :: ZiskFv.Airs.Binary.core_every_row remainder_bound.1 remainder_bound.2
+remainder_bound.binary_ltu_chain.chain_0 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_0 remainder_bound.2) (remainder_bound.1.free_in_b_0 remainder_bound.2) (remainder_bound.1.free_in_c_0 remainder_bound.2) 0 (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2)) (instHMul.hMul 2 (remainder_bound.1.use_first_byte remainder_bound.2))
+remainder_bound.binary_ltu_chain.chain_1 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_1 remainder_bound.2) (remainder_bound.1.free_in_b_1 remainder_bound.2) (remainder_bound.1.free_in_c_1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_2 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_2 remainder_bound.2) (remainder_bound.1.free_in_b_2 remainder_bound.2) (remainder_bound.1.free_in_c_2 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_3 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_3 remainder_bound.2) (remainder_bound.1.free_in_b_3 remainder_bound.2) (remainder_bound.1.free_in_c_3 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2)) (remainder_bound.1.mode32 remainder_bound.2)
+remainder_bound.binary_ltu_chain.chain_4 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_4 remainder_bound.2) (remainder_bound.1.free_in_b_4 remainder_bound.2) (remainder_bound.1.free_in_c_4 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_5 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_5 remainder_bound.2) (remainder_bound.1.free_in_b_5 remainder_bound.2) (remainder_bound.1.free_in_c_5 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_6 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_6 remainder_bound.2) (remainder_bound.1.free_in_b_6 remainder_bound.2) (remainder_bound.1.free_in_c_6 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_7 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_7 remainder_bound.2) (remainder_bound.1.free_in_b_7 remainder_bound.2) (remainder_bound.1.free_in_c_7 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags7Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2)) (instHSub.hSub 1 (remainder_bound.1.mode32 remainder_bound.2))
+remainder_bound.binary_ltu_chain.c0_lt :: instLTNat.lt (remainder_bound.1.free_in_c_0 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c1_lt :: instLTNat.lt (remainder_bound.1.free_in_c_1 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c2_lt :: instLTNat.lt (remainder_bound.1.free_in_c_2 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c3_lt :: instLTNat.lt (remainder_bound.1.free_in_c_3 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c4_lt :: instLTNat.lt (remainder_bound.1.free_in_c_4 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c5_lt :: instLTNat.lt (remainder_bound.1.free_in_c_5 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c6_lt :: instLTNat.lt (remainder_bound.1.free_in_c_6 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c7_lt :: instLTNat.lt (remainder_bound.1.free_in_c_7 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.cin0_eq :: Eq (Fin.val 0) 0
+remainder_bound.binary_ltu_chain.cin1_eq :: Eq (remainder_bound.1.carry_0 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin2_eq :: Eq (remainder_bound.1.carry_1 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin3_eq :: Eq (remainder_bound.1.carry_2 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin4_eq :: Eq (remainder_bound.1.carry_3 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin5_eq :: Eq (remainder_bound.1.carry_4 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin6_eq :: Eq (remainder_bound.1.carry_5 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin7_eq :: Eq (remainder_bound.1.carry_6 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.pi0_ne :: Ne (instHMul.hMul 2 (remainder_bound.1.use_first_byte remainder_bound.2)).val 1
+remainder_bound.binary_ltu_chain.pi1_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi2_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi3_ne :: Ne (remainder_bound.1.mode32 remainder_bound.2).val 1
+remainder_bound.binary_ltu_chain.pi4_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi5_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi6_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi7_eq :: Eq (instHSub.hSub 1 (remainder_bound.1.mode32 remainder_bound.2)).val 1
+remainder_bound.remainder_bound_match :: ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound (ZiskFv.Compliance.vOfDivuRow (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op)) 0) (ZiskFv.Airs.OperationBus.opBus_row_Binary remainder_bound.1 remainder_bound.2)
+h_rs1_value :: Eq remu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.c_0.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.c_1.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.c_2.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.c_3.val)
+h_rs2_value :: Eq remu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_0.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_1.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_2.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_3.val)
+
+# ZiskFv.Compliance.construction_remuw_sound
+trace.length :: Nat
+trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
+trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
+trace.constraints :: trace.3.Constraints
+trace.spec :: trace.3.Spec
+trace.balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
+binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.length
+remuw_input :: PureSpec.RemuwInput
+r1 :: regidx
+r2 :: regidx
+rd :: regidx
+h_main_op :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op i.val) ZiskFv.Trusted.OP_REMU_W
+h_main_active :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op i.val) 1
+h_store_pc :: Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc i.val) 0
+h_input_r1 :: Eq (read_xreg (regidx_to_fin r1) (binding.stateAt i)) (EStateM.Result.ok remuw_input.r1_val (binding.stateAt i))
+h_input_r2 :: Eq (read_xreg (regidx_to_fin r2) (binding.stateAt i)) (EStateM.Result.ok remuw_input.r2_val (binding.stateAt i))
+h_input_pc :: Eq ((binding.stateAt i).regs.get? Register.PC) (Option.some remuw_input.PC)
+h_input_rd :: Eq remuw_input.rd (regidx_to_fin rd)
+execRow :: List (Interaction.ExecutionBusEntry (Fin 18446744069414584321))
+h_exec_len :: Eq (ZiskFv.Compliance.busSub trace binding i execRow).exec_row.length 2
+h_e0_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 0).multiplicity (-1)
+h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).multiplicity 1
+h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSub trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
+h_rd_idx :: Eq remuw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
+bounds.x0_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 0).val 256
+bounds.x1_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 1).val 256
+bounds.x2_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 2).val 256
+bounds.x3_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 3).val 256
+bounds.x4_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 256
+bounds.x5_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 256
+bounds.x6_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 256
+bounds.x7_lt :: instLTNat.lt (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 256
+remainder_bound.binary.b_op :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_a_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_b_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.free_in_c_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_3 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_4 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_5 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_6 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.carry_7 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.mode32 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.result_is_a :: Nat → Fin 18446744069414584321
+remainder_bound.binary.use_first_byte :: Nat → Fin 18446744069414584321
+remainder_bound.binary.c_is_signed :: Nat → Fin 18446744069414584321
+remainder_bound.binary.b_op_or_sext :: Nat → Fin 18446744069414584321
+remainder_bound.binary.mode32_and_c_is_signed :: Nat → Fin 18446744069414584321
+remainder_bound.binary.gsum :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_0 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_1 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_2 :: Nat → Fin 18446744069414584321
+remainder_bound.binary.im_3 :: Nat → Fin 18446744069414584321
+remainder_bound.r_binary :: Nat
+remainder_bound.binary_core :: ZiskFv.Airs.Binary.core_every_row remainder_bound.1 remainder_bound.2
+remainder_bound.binary_ltu_chain.chain_0 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_0 remainder_bound.2) (remainder_bound.1.free_in_b_0 remainder_bound.2) (remainder_bound.1.free_in_c_0 remainder_bound.2) 0 (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2)) (instHMul.hMul 2 (remainder_bound.1.use_first_byte remainder_bound.2))
+remainder_bound.binary_ltu_chain.chain_1 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_1 remainder_bound.2) (remainder_bound.1.free_in_b_1 remainder_bound.2) (remainder_bound.1.free_in_c_1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_2 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_2 remainder_bound.2) (remainder_bound.1.free_in_b_2 remainder_bound.2) (remainder_bound.1.free_in_c_2 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_3 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_3 remainder_bound.2) (remainder_bound.1.free_in_b_3 remainder_bound.2) (remainder_bound.1.free_in_c_3 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2)) (remainder_bound.1.mode32 remainder_bound.2)
+remainder_bound.binary_ltu_chain.chain_4 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_4 remainder_bound.2) (remainder_bound.1.free_in_b_4 remainder_bound.2) (remainder_bound.1.free_in_c_4 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_5 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_5 remainder_bound.2) (remainder_bound.1.free_in_b_5 remainder_bound.2) (remainder_bound.1.free_in_c_5 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_6 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_6 remainder_bound.2) (remainder_bound.1.free_in_b_6 remainder_bound.2) (remainder_bound.1.free_in_c_6 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2)) 0
+remainder_bound.binary_ltu_chain.chain_7 :: ZiskFv.Airs.Binary.consumer_byte_match_chain_wf ZiskFv.Airs.Tables.BinaryTable.OP_LTU (remainder_bound.1.free_in_a_7 remainder_bound.2) (remainder_bound.1.free_in_b_7 remainder_bound.2) (remainder_bound.1.free_in_c_7 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2) (ZiskFv.AirsClean.Binary.lookupFlags7Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2)) (instHSub.hSub 1 (remainder_bound.1.mode32 remainder_bound.2))
+remainder_bound.binary_ltu_chain.c0_lt :: instLTNat.lt (remainder_bound.1.free_in_c_0 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c1_lt :: instLTNat.lt (remainder_bound.1.free_in_c_1 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c2_lt :: instLTNat.lt (remainder_bound.1.free_in_c_2 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c3_lt :: instLTNat.lt (remainder_bound.1.free_in_c_3 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c4_lt :: instLTNat.lt (remainder_bound.1.free_in_c_4 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c5_lt :: instLTNat.lt (remainder_bound.1.free_in_c_5 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c6_lt :: instLTNat.lt (remainder_bound.1.free_in_c_6 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.c7_lt :: instLTNat.lt (remainder_bound.1.free_in_c_7 remainder_bound.2).val 256
+remainder_bound.binary_ltu_chain.cin0_eq :: Eq (Fin.val 0) 0
+remainder_bound.binary_ltu_chain.cin1_eq :: Eq (remainder_bound.1.carry_0 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_0 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin2_eq :: Eq (remainder_bound.1.carry_1 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_1 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin3_eq :: Eq (remainder_bound.1.carry_2 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags012Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_2 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin4_eq :: Eq (remainder_bound.1.carry_3 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_3 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin5_eq :: Eq (remainder_bound.1.carry_4 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_4 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin6_eq :: Eq (remainder_bound.1.carry_5 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_5 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.cin7_eq :: Eq (remainder_bound.1.carry_6 remainder_bound.2).val (instHMod.hMod (ZiskFv.AirsClean.Binary.lookupFlags3456Row (ZiskFv.AirsClean.Binary.rowAt remainder_bound.1 remainder_bound.2) (remainder_bound.1.carry_6 remainder_bound.2)).val 2)
+remainder_bound.binary_ltu_chain.pi0_ne :: Ne (instHMul.hMul 2 (remainder_bound.1.use_first_byte remainder_bound.2)).val 1
+remainder_bound.binary_ltu_chain.pi1_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi2_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi3_ne :: Ne (remainder_bound.1.mode32 remainder_bound.2).val 1
+remainder_bound.binary_ltu_chain.pi4_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi5_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi6_ne :: Ne (Fin.val 0) 1
+remainder_bound.binary_ltu_chain.pi7_eq :: Eq (instHSub.hSub 1 (remainder_bound.1.mode32 remainder_bound.2)).val 1
+remainder_bound.remainder_bound_match :: ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound (ZiskFv.Compliance.vOfDivuRow (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op)) 0) (ZiskFv.Airs.OperationBus.opBus_row_Binary remainder_bound.1 remainder_bound.2)
+h_b23 :: And (Eq (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.b_2.val 0) (Eq (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.b_3.val 0)
+h_c23 :: And (Eq (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.c_2.val 0) (Eq (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.c_3.val 0)
+h_sext_choice :: Or (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 0) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 0) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 0) (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 0)))) (instLTNat.lt (instHAdd.hAdd (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.d_0.val (instHMul.hMul (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.d_1.val 65536)) 2147483648)) (And (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 4).val 255) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 5).val 255) (And (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 6).val 255) (Eq (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSub trace binding i execRow).e2 7).val 255)))) (GE.ge (instHAdd.hAdd (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.d_0.val (instHMul.hMul (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.d_1.val 65536)) 2147483648))
+h_rs1_value :: Eq (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.c_0.val (instHMul.hMul (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.c_1.val 65536))
+h_rs2_value :: Eq (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.b_0.val (instHMul.hMul (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.b_1.val 65536))

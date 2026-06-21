@@ -150,11 +150,71 @@ def Spec (row : ArithMulRow FGL) : Prop :=
 def ArithTableSpec (row : ArithMulRow FGL) : Prop :=
   ArithTable.arithTable.Spec (arithTableRow row)
 
-/-- Full ArithMul row contract once the ArithTable lookup is plumbed into
-    Compliance: carry-chain algebra plus ROM membership for the full
-    `arith_table_assumes` tuple. -/
+/-- Constraint 46 (`arith.pil:262`): the `bus_res1` output mux.
+    Pins `bus_res1` to its mode-specialised value — sign-extension path
+    (`sext * 4294967295`) or the appropriate high-chunk pair depending
+    on `m32`, `main_mul`, and `main_div`.
+
+    This is a verbatim algebraic mirror of `constraint_46_every_row` in
+    `build/extraction/Extraction/Arith.lean:165`.  Constructibility:
+    real Arith rows satisfy this because `arith_full.rs` computes
+    `bus_res1` as exactly this mux (PIL `arith.pil:262`).  No axiom is
+    introduced — the constraint is discharged by the `assertZero` in
+    `mainWithArithTable`. -/
+@[reducible]
+def C46Spec (row : ArithMulRow FGL) : Prop :=
+  row.flags.bus_res1
+    - (row.flags.sext * 4294967295
+      + (1 - row.flags.m32) * (
+          (1 - row.flags.main_mul - row.flags.main_div)
+              * (row.chunks.d_2 + row.chunks.d_3 * 65536)
+          + row.flags.main_mul * (row.chunks.c_2 + row.chunks.c_3 * 65536)
+          + row.flags.main_div
+              * (row.chunks.a_2 + row.chunks.a_3 * 65536))) = 0
+
+/-- The sixteen 16-bit chunk column range constraints (`arith.pil:18-21`):
+    each of the a/b/c/d chunks is a 16-bit value.  These hold for every
+    Arith row (signed or unsigned), so they are part of the shared
+    component's contract.  Constructibility: real ZisK Arith rows have
+    16-bit chunks by construction in `arith_full.rs`. -/
+@[reducible]
+def ChunkRangeSpec (row : ArithMulRow FGL) : Prop :=
+  (row.chunks.a_0).val < 2 ^ 16 ∧ (row.chunks.a_1).val < 2 ^ 16
+  ∧ (row.chunks.a_2).val < 2 ^ 16 ∧ (row.chunks.a_3).val < 2 ^ 16
+  ∧ (row.chunks.b_0).val < 2 ^ 16 ∧ (row.chunks.b_1).val < 2 ^ 16
+  ∧ (row.chunks.b_2).val < 2 ^ 16 ∧ (row.chunks.b_3).val < 2 ^ 16
+  ∧ (row.chunks.c_0).val < 2 ^ 16 ∧ (row.chunks.c_1).val < 2 ^ 16
+  ∧ (row.chunks.c_2).val < 2 ^ 16 ∧ (row.chunks.c_3).val < 2 ^ 16
+  ∧ (row.chunks.d_0).val < 2 ^ 16 ∧ (row.chunks.d_1).val < 2 ^ 16
+  ∧ (row.chunks.d_2).val < 2 ^ 16 ∧ (row.chunks.d_3).val < 2 ^ 16
+
+/-- The seven signed-carry range constraints (`arith.pil:17, 280`):
+    each of the seven carry witnesses lies in the `ARITH_RANGE_CARRY`
+    range — `(val < 983041 ∨ GL_prime − 983040 ≤ val)`.  This holds for
+    every Arith row: unsigned carries are < 2^17 < 983041 (first
+    disjunct) and signed carries satisfy the disjunction by construction.
+    Constructibility: real ZisK Arith rows satisfy this because ZisK's
+    prover sets each `carry_i` as a field element in the signed-carry
+    range by PIL `arith.pil:280`.  No axiom is introduced — the constraint
+    is discharged by the `signedCarryRangeTable` lookups in
+    `mainWithArithTable`. -/
+@[reducible]
+def CarryRangeSpec (row : ArithMulRow FGL) : Prop :=
+  ((row.carries.carry_0).val < 983041 ∨ GL_prime - 983040 ≤ (row.carries.carry_0).val)
+  ∧ ((row.carries.carry_1).val < 983041 ∨ GL_prime - 983040 ≤ (row.carries.carry_1).val)
+  ∧ ((row.carries.carry_2).val < 983041 ∨ GL_prime - 983040 ≤ (row.carries.carry_2).val)
+  ∧ ((row.carries.carry_3).val < 983041 ∨ GL_prime - 983040 ≤ (row.carries.carry_3).val)
+  ∧ ((row.carries.carry_4).val < 983041 ∨ GL_prime - 983040 ≤ (row.carries.carry_4).val)
+  ∧ ((row.carries.carry_5).val < 983041 ∨ GL_prime - 983040 ≤ (row.carries.carry_5).val)
+  ∧ ((row.carries.carry_6).val < 983041 ∨ GL_prime - 983040 ≤ (row.carries.carry_6).val)
+
+/-- Full ArithMul row contract once the ArithTable lookup, the
+    `bus_res1` mux constraint (c46), the sixteen 16-bit chunk range
+    lookups, and the seven signed-carry range lookups are plumbed into
+    Compliance: carry-chain algebra + ROM membership + `bus_res1`
+    pinning + 16-bit chunk bounds + signed-carry bounds. -/
 @[reducible]
 def FullSpec (row : ArithMulRow FGL) : Prop :=
-  Spec row ∧ ArithTableSpec row
+  Spec row ∧ ArithTableSpec row ∧ C46Spec row ∧ ChunkRangeSpec row ∧ CarryRangeSpec row
 
 end ZiskFv.AirsClean.ArithMul
