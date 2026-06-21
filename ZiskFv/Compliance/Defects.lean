@@ -112,32 +112,38 @@ division ALWAYS has `|r| < |op2|` strictly (e.g. `x/x` has remainder `0`), so
 this forge shape is never produced by a real trace.
 
 The narrowed predicate is therefore EXACTLY the false-positive equality
-`|remainder| = |divisor|`.  Excluding it (via `NoKnownDefect`) upgrades the
-in-model WEAK bound `|r| ≤ |op2|` (the most the `LT_ABS_NP`/`LT_ABS_PN` chain
-can soundly witness) to the STRICT bound `|r| < |op2|` that Sail DIV/REM
-requires — making the narrowing load-bearing rather than cosmetic.  Honest
-rows are NOT in this shape (anti-vacuity guards
+`|remainder| = |divisor|` on the nonzero-divisor path.  Excluding it (via
+`NoKnownDefect`) upgrades the in-model WEAK bound `|r| ≤ |op2|` (the most the
+`LT_ABS_NP`/`LT_ABS_PN` chain can soundly witness) to the STRICT bound
+`|r| < |op2|` that Sail DIV/REM requires on that path.  The architecturally
+valid divisor-zero branch is handled separately by the ArithDiv boundary
+constraints and is not a strict-remainder-bound obligation.  Honest rows are
+NOT in this shape (anti-vacuity guards
 `honest_{div,rem,divw,remw}_witness_not_forge`). -/
 def ArithDivDynamicWitnessShape
     : OpEnvelope state m r_main → Prop
   | .div div_input _ _ _ _ v r_a .. =>
-      (signedRemainderInt v r_a).natAbs = div_input.r2_val.toInt.natAbs
+      div_input.r2_val.toInt ≠ 0
+        ∧ (signedRemainderInt v r_a).natAbs = div_input.r2_val.toInt.natAbs
   | .rem rem_input _ _ _ _ v r_a .. =>
-      (signedRemainderInt v r_a).natAbs = rem_input.r2_val.toInt.natAbs
+      rem_input.r2_val.toInt ≠ 0
+        ∧ (signedRemainderInt v r_a).natAbs = rem_input.r2_val.toInt.natAbs
   -- W-mode (`DIVW`/`REMW`): narrowed to the EXACT `|r₃₂| = |op2₃₂|`
   -- false-positive shape, the W analogue of the `.div`/`.rem` narrowing.
   -- The `LT_ABS_NP`/`LT_ABS_PN` byte chain at 32-bit width accepts a
   -- remainder whose 32-bit magnitude EQUALS the divisor's 32-bit magnitude;
-  -- excluding it upgrades the WEAK in-model bound `|r₃₂| ≤ |op2₃₂|` to the
-  -- STRICT bound that Sail DIVW/REMW require.  Honest W rows have
-  -- `|r₃₂| < |op2₃₂|` strictly, so are never in this shape (anti-vacuity
-  -- guards `honest_{divw,remw}_witness_not_forge`).
+  -- excluding it on the nonzero-divisor path upgrades the WEAK in-model bound
+  -- `|r₃₂| ≤ |op2₃₂|` to the STRICT bound that Sail DIVW/REMW require there.
+  -- Honest W rows have `|r₃₂| < |op2₃₂|` strictly, so are never in this shape
+  -- (anti-vacuity guards `honest_{divw,remw}_witness_not_forge`).
   | .divw divw_input _ _ _ _ v r_a .. =>
-      (signedRemainderIntW v r_a).natAbs
-        = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs
+      Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
+        ∧ (signedRemainderIntW v r_a).natAbs
+          = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs
   | .remw remw_input _ _ _ _ v r_a .. =>
-      (signedRemainderIntW v r_a).natAbs
-        = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs
+      Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
+        ∧ (signedRemainderIntW v r_a).natAbs
+          = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs
   | _ => False
 
 /-- `Blocks id env` means defect `id` excludes this envelope from the
@@ -383,7 +389,9 @@ theorem honest_div_witness_not_forge
           arith_mem bounds h_op2_ne h_no_overflow h_row_constraints arith_table
           arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor
           h_nr_pin h_rs1_value h_rs2_value h_r_le h_r_sign) := by
-  simpa [ArithDivDynamicWitnessShape, signedRemainderInt] using Nat.ne_of_lt h_honest_strict
+  dsimp [ArithDivDynamicWitnessShape, signedRemainderInt]
+  rintro ⟨_, h_eq⟩
+  exact (Nat.ne_of_lt h_honest_strict) h_eq
 
 /-- **Non-vacuity / constructibility witness for the narrowed REM exclusion.**
     Companion of `honest_div_witness_not_forge` for the remainder lane. -/
@@ -443,7 +451,9 @@ theorem honest_rem_witness_not_forge
           arith_mem bounds h_op2_ne h_no_overflow h_row_constraints arith_table
           arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor
           h_nr_pin h_rs1_value h_rs2_value h_r_le h_r_sign) := by
-  simpa [ArithDivDynamicWitnessShape, signedRemainderInt] using Nat.ne_of_lt h_honest_strict
+  dsimp [ArithDivDynamicWitnessShape, signedRemainderInt]
+  rintro ⟨_, h_eq⟩
+  exact (Nat.ne_of_lt h_honest_strict) h_eq
 
 /-- **Non-vacuity / constructibility witness for the narrowed DIVW exclusion.**
 
@@ -526,7 +536,9 @@ theorem honest_divw_witness_not_forge
           h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
           h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
           h_op2_ne h_no_overflow h_r_le h_r_sign) := by
-  simpa [ArithDivDynamicWitnessShape] using Nat.ne_of_lt h_honest_strict
+  dsimp [ArithDivDynamicWitnessShape]
+  rintro ⟨_, h_eq⟩
+  exact (Nat.ne_of_lt h_honest_strict) h_eq
 
 /-- **Non-vacuity / constructibility witness for the narrowed REMW exclusion.**
     Companion of `honest_divw_witness_not_forge` for the W remainder lane. -/
@@ -601,6 +613,8 @@ theorem honest_remw_witness_not_forge
           h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
           h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
           h_op2_ne h_no_overflow_w h_r_le h_r_sign) := by
-  simpa [ArithDivDynamicWitnessShape] using Nat.ne_of_lt h_honest_strict
+  dsimp [ArithDivDynamicWitnessShape]
+  rintro ⟨_, h_eq⟩
+  exact (Nat.ne_of_lt h_honest_strict) h_eq
 
 end ZiskFv.Compliance.Defects

@@ -129,6 +129,7 @@ def vOfDivuRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
   signed := fun _ => arow.flags.signed
   div_by_zero := fun _ => arow.flags.div_by_zero
   div_overflow := fun _ => arow.flags.div_overflow
+  inv_sum_all_bs := fun _ => 0
   op := fun _ => arow.flags.op
   bus_res1 := fun _ => arow.flags.bus_res1
   multiplicity := fun _ => 1

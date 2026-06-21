@@ -100,11 +100,17 @@ theorem equiv_DIV
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   -- The narrowed defect excludes EXACTLY `|r| = |op2|`; combine with the WEAK
   -- bound `h_r_le` to recover the STRICT remainder bound required by Sail DIV.
-  have h_not_forge :
-      ¬ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
-          = div_input.r2_val.toInt.natAbs :=
+  have h_not_forge_shape :
+      ¬ (div_input.r2_val.toInt ≠ 0
+          ∧ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
+            = div_input.r2_val.toInt.natAbs) :=
     ZiskFv.Compliance.Defects.no_arith_div_dynamic_witness_of_no_known_defect
       h_avoid_known_bugs
+  have h_not_forge :
+      ¬ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
+          = div_input.r2_val.toInt.natAbs := by
+    intro h_eq
+    exact h_not_forge_shape ⟨h_op2_ne, h_eq⟩
   have h_r_abs :
       ((ZiskFv.PackedBitVec.MulNoWrap.packed4
           (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)

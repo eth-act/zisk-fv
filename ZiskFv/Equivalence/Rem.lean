@@ -96,11 +96,17 @@ theorem equiv_REM
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  have h_not_forge :
-      ¬ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
-          = rem_input.r2_val.toInt.natAbs :=
+  have h_not_forge_shape :
+      ¬ (rem_input.r2_val.toInt ≠ 0
+          ∧ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
+            = rem_input.r2_val.toInt.natAbs) :=
     ZiskFv.Compliance.Defects.no_arith_div_dynamic_witness_of_no_known_defect
       h_avoid_known_bugs
+  have h_not_forge :
+      ¬ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
+          = rem_input.r2_val.toInt.natAbs := by
+    intro h_eq
+    exact h_not_forge_shape ⟨h_op2_ne, h_eq⟩
   have h_r_abs :
       ((ZiskFv.PackedBitVec.MulNoWrap.packed4
           (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)

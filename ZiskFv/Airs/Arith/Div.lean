@@ -84,6 +84,9 @@ open Goldilocks
       lookup columns. They are structural fields for the full 15-column
       Clean ArithTable lookup tuple; adding them does not assert any table
       membership or value pin.
+    * `inv_sum_all_bs` — stage-1 col 38 — inverse witness used by
+      `constraint_25_every_row` to force `div_by_zero` exactly when a division
+      row has zero divisor chunks.
     * `op` — stage-1 col 39 — the 8-bit opcode literal
       (0xb8..0xbb for 64-bit DIV family).
     * `bus_res1` — stage-1 col 40 — the range-checked high-32 witness
@@ -130,6 +133,7 @@ structure Valid_ArithDiv (F ExtF : Type)
   signed : ℕ → F
   div_by_zero : ℕ → F
   div_overflow : ℕ → F
+  inv_sum_all_bs : ℕ → F
   op : ℕ → F
   bus_res1 : ℕ → F
   multiplicity : ℕ → F
@@ -174,6 +178,384 @@ def boolean_np (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
 @[simp]
 def boolean_sext (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   v.sext row * (1 - v.sext row) = 0
+
+/-! ## Additional local constraints exposed by uncurated Arith extraction -/
+
+/-- `div` is boolean — mirrors `constraint_39_every_row`. -/
+@[simp]
+def boolean_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div row * (1 - v.div row) = 0
+
+/-! ## W-mode high-lane local constraints -/
+
+/-- W-mode zeroes the high 32 bits of the operation-bus `a` lane — mirrors
+    `constraint_47_every_row`. -/
+@[simp]
+def w_mode_bus_a_hi_zero (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.m32 row
+    * (v.div row * (v.c_2 row + v.c_3 row * 65536)
+      + (1 - v.div row) * (v.a_2 row + v.a_3 row * 65536)) = 0
+
+/-- W-mode zeroes the high 32 bits of the operation-bus `b` lane — mirrors
+    `constraint_48_every_row`. -/
+@[simp]
+def w_mode_bus_b_hi_zero (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.m32 row * (v.b_2 row + v.b_3 row * 65536) = 0
+
+/-! ## Boundary-specialized local constraints
+
+These are the named-column mirrors of the supported row-local constraints
+exposed once Arith extraction no longer uses the old `--only` list. They are
+kept separate from `div_row_constraints_with_c46`, because existing DIV/REM
+callers consume only the carry-chain + `bus_res1` equation; boundary handling
+needs these additional facts explicitly.
+-/
+
+/-- `main_div` is boolean — mirrors `constraint_0_every_row`. -/
+@[simp]
+def boolean_main_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.main_div row * (v.main_div row - 1) = 0
+
+/-- `main_mul` is boolean — mirrors `constraint_1_every_row`. -/
+@[simp]
+def boolean_main_mul (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.main_mul row * (v.main_mul row - 1) = 0
+
+/-- `signed` is boolean — mirrors `constraint_3_every_row`. -/
+@[simp]
+def boolean_signed (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.signed row * (1 - v.signed row) = 0
+
+/-- `div_by_zero` is boolean — mirrors `constraint_4_every_row`. -/
+@[simp]
+def boolean_div_by_zero (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * (1 - v.div_by_zero row) = 0
+
+/-- `div_overflow` is boolean — mirrors `constraint_5_every_row`. -/
+@[simp]
+def boolean_div_overflow (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * (1 - v.div_overflow row) = 0
+
+/-- If `div_by_zero` is active, divisor chunk `b[0]` is zero — mirrors
+    `constraint_9_every_row`. -/
+@[simp]
+def div_by_zero_forces_b0 (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * v.b_0 row = 0
+
+/-- If `div_by_zero` is active, divisor chunk `b[1]` is zero — mirrors
+    `constraint_10_every_row`. -/
+@[simp]
+def div_by_zero_forces_b1 (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * v.b_1 row = 0
+
+/-- If `div_by_zero` is active, divisor chunk `b[2]` is zero — mirrors
+    `constraint_11_every_row`. -/
+@[simp]
+def div_by_zero_forces_b2 (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * v.b_2 row = 0
+
+/-- If `div_by_zero` is active, divisor chunk `b[3]` is zero — mirrors
+    `constraint_12_every_row`. -/
+@[simp]
+def div_by_zero_forces_b3 (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * v.b_3 row = 0
+
+/-- Div-by-zero quotient low chunk `a[0] = 0xffff` — mirrors
+    `constraint_13_every_row`. -/
+@[simp]
+def div_by_zero_forces_a0_ffff (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * (v.a_0 row - 65535) = 0
+
+/-- Div-by-zero quotient low chunk `a[1] = 0xffff` — mirrors
+    `constraint_14_every_row`. -/
+@[simp]
+def div_by_zero_forces_a1_ffff (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * (v.a_1 row - 65535) = 0
+
+/-- Div-by-zero quotient high chunk `a[2]` — mirrors
+    `constraint_15_every_row`, with W-mode high chunks zeroed. -/
+@[simp]
+def div_by_zero_forces_a2_ffff (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * (v.a_2 row - (1 - v.m32 row) * 65535) = 0
+
+/-- Div-by-zero quotient high chunk `a[3]` — mirrors
+    `constraint_16_every_row`, with W-mode high chunks zeroed. -/
+@[simp]
+def div_by_zero_forces_a3_ffff (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * (v.a_3 row - (1 - v.m32 row) * 65535) = 0
+
+/-- Overflow divisor chunk `b[0] = 0xffff` — mirrors
+    `constraint_17_every_row`. -/
+@[simp]
+def div_overflow_forces_b0_ffff (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * (v.b_0 row - 65535) = 0
+
+/-- Overflow divisor chunk `b[1] = 0xffff` — mirrors
+    `constraint_18_every_row`. -/
+@[simp]
+def div_overflow_forces_b1_ffff (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * (v.b_1 row - 65535) = 0
+
+/-- Overflow divisor high chunk `b[2]` — mirrors `constraint_19_every_row`. -/
+@[simp]
+def div_overflow_forces_b2_ffff (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * (v.b_2 row - (1 - v.m32 row) * 65535) = 0
+
+/-- Overflow divisor high chunk `b[3]` — mirrors `constraint_20_every_row`. -/
+@[simp]
+def div_overflow_forces_b3_ffff (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * (v.b_3 row - (1 - v.m32 row) * 65535) = 0
+
+/-- Overflow dividend chunk `c[0] = 0` — mirrors `constraint_21_every_row`. -/
+@[simp]
+def div_overflow_forces_c0_zero (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * v.c_0 row = 0
+
+/-- Overflow dividend chunk `c[1]` — mirrors `constraint_22_every_row`. -/
+@[simp]
+def div_overflow_forces_c1_intmin (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * (v.c_1 row - v.m32 row * 32768) = 0
+
+/-- Overflow dividend chunk `c[2] = 0` — mirrors `constraint_23_every_row`. -/
+@[simp]
+def div_overflow_forces_c2_zero (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * v.c_2 row = 0
+
+/-- Overflow dividend chunk `c[3]` — mirrors `constraint_24_every_row`. -/
+@[simp]
+def div_overflow_forces_c3_intmin (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * (v.c_3 row - (1 - v.m32 row) * 32768) = 0
+
+/-- Inverse-sum div-by-zero detector — mirrors `constraint_25_every_row`. -/
+@[simp]
+def div_by_zero_inverse_sum (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  (v.div row - v.div_by_zero row)
+    * (1 - v.inv_sum_all_bs row
+      * (((v.b_0 row + v.b_1 row) + v.b_2 row) + v.b_3 row)) = 0
+
+/-- `div_by_zero` is active only on division rows — mirrors
+    `constraint_26_every_row`. -/
+@[simp]
+def div_by_zero_only_on_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * (1 - v.div row) = 0
+
+/-- `div_overflow` is active only on division rows — mirrors
+    `constraint_27_every_row`. -/
+@[simp]
+def div_overflow_only_on_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * (1 - v.div row) = 0
+
+/-- `div_overflow` is active only on signed rows — mirrors
+    `constraint_28_every_row`. -/
+@[simp]
+def div_overflow_only_on_signed (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * (1 - v.signed row) = 0
+
+/-- Overflow and div-by-zero are mutually exclusive — mirrors
+    `constraint_29_every_row`. -/
+@[simp]
+def div_overflow_div_by_zero_disjoint (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_overflow row * v.div_by_zero row = 0
+
+/-- Div-by-zero and overflow are mutually exclusive — mirrors
+    `constraint_30_every_row`. -/
+@[simp]
+def div_by_zero_div_overflow_disjoint (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.div_by_zero row * v.div_overflow row = 0
+
+/-- Boundary-local ArithDiv constraints newly exposed by uncurated Arith
+    extraction. This deliberately excludes lookup/bus/range constraints
+    `49..64`, which remain modeled by the existing operation-bus and lookup
+    witnesses. -/
+@[simp]
+def div_boundary_constraints (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  boolean_main_div v row
+  ∧ boolean_main_mul v row
+  ∧ boolean_signed v row
+  ∧ boolean_div_by_zero v row
+  ∧ boolean_div_overflow v row
+  ∧ div_by_zero_forces_b0 v row
+  ∧ div_by_zero_forces_b1 v row
+  ∧ div_by_zero_forces_b2 v row
+  ∧ div_by_zero_forces_b3 v row
+  ∧ div_by_zero_forces_a0_ffff v row
+  ∧ div_by_zero_forces_a1_ffff v row
+  ∧ div_by_zero_forces_a2_ffff v row
+  ∧ div_by_zero_forces_a3_ffff v row
+  ∧ div_overflow_forces_b0_ffff v row
+  ∧ div_overflow_forces_b1_ffff v row
+  ∧ div_overflow_forces_b2_ffff v row
+  ∧ div_overflow_forces_b3_ffff v row
+  ∧ div_overflow_forces_c0_zero v row
+  ∧ div_overflow_forces_c1_intmin v row
+  ∧ div_overflow_forces_c2_zero v row
+  ∧ div_overflow_forces_c3_intmin v row
+  ∧ div_by_zero_inverse_sum v row
+  ∧ div_by_zero_only_on_div v row
+  ∧ div_overflow_only_on_div v row
+  ∧ div_overflow_only_on_signed v row
+  ∧ div_overflow_div_by_zero_disjoint v row
+  ∧ div_by_zero_div_overflow_disjoint v row
+
+/-- All supported row-local ArithDiv constraints that were absent from the old
+    `--only` extraction list. Lookup, permutation, and challenge/exposed
+    constraints remain modeled separately. -/
+@[simp]
+def div_previously_omitted_local_constraints
+    (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  div_boundary_constraints v row
+  ∧ boolean_div v row
+  ∧ w_mode_bus_a_hi_zero v row
+  ∧ w_mode_bus_b_hi_zero v row
+
+/-! ## Boundary equation projections -/
+
+theorem b0_eq_zero_of_div_by_zero
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_by_zero_forces_b0 v row) (h_flag : v.div_by_zero row = 1) :
+    v.b_0 row = 0 := by
+  unfold div_by_zero_forces_b0 at h
+  rw [h_flag] at h
+  simpa using h
+
+theorem b1_eq_zero_of_div_by_zero
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_by_zero_forces_b1 v row) (h_flag : v.div_by_zero row = 1) :
+    v.b_1 row = 0 := by
+  unfold div_by_zero_forces_b1 at h
+  rw [h_flag] at h
+  simpa using h
+
+theorem b2_eq_zero_of_div_by_zero
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_by_zero_forces_b2 v row) (h_flag : v.div_by_zero row = 1) :
+    v.b_2 row = 0 := by
+  unfold div_by_zero_forces_b2 at h
+  rw [h_flag] at h
+  simpa using h
+
+theorem b3_eq_zero_of_div_by_zero
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_by_zero_forces_b3 v row) (h_flag : v.div_by_zero row = 1) :
+    v.b_3 row = 0 := by
+  unfold div_by_zero_forces_b3 at h
+  rw [h_flag] at h
+  simpa using h
+
+theorem div_by_zero_eq_one_of_zero_b_chunks
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_by_zero_inverse_sum v row)
+    (h_div : v.div row = 1)
+    (h_b0 : v.b_0 row = 0) (h_b1 : v.b_1 row = 0)
+    (h_b2 : v.b_2 row = 0) (h_b3 : v.b_3 row = 0) :
+    v.div_by_zero row = 1 := by
+  unfold div_by_zero_inverse_sum at h
+  rw [h_div, h_b0, h_b1, h_b2, h_b3] at h
+  have h_sub : 1 - v.div_by_zero row = 0 := by
+    simpa using h
+  exact (sub_eq_zero.mp h_sub).symm
+
+theorem a0_eq_ffff_of_div_by_zero
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_by_zero_forces_a0_ffff v row) (h_flag : v.div_by_zero row = 1) :
+    v.a_0 row = 65535 := by
+  unfold div_by_zero_forces_a0_ffff at h
+  rw [h_flag] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem a1_eq_ffff_of_div_by_zero
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_by_zero_forces_a1_ffff v row) (h_flag : v.div_by_zero row = 1) :
+    v.a_1 row = 65535 := by
+  unfold div_by_zero_forces_a1_ffff at h
+  rw [h_flag] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem a2_eq_ffff_of_div_by_zero
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_by_zero_forces_a2_ffff v row)
+    (h_flag : v.div_by_zero row = 1) (h_m32 : v.m32 row = 0) :
+    v.a_2 row = 65535 := by
+  unfold div_by_zero_forces_a2_ffff at h
+  rw [h_flag, h_m32] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem a3_eq_ffff_of_div_by_zero
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_by_zero_forces_a3_ffff v row)
+    (h_flag : v.div_by_zero row = 1) (h_m32 : v.m32 row = 0) :
+    v.a_3 row = 65535 := by
+  unfold div_by_zero_forces_a3_ffff at h
+  rw [h_flag, h_m32] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem b0_eq_ffff_of_div_overflow
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_b0_ffff v row) (h_flag : v.div_overflow row = 1) :
+    v.b_0 row = 65535 := by
+  unfold div_overflow_forces_b0_ffff at h
+  rw [h_flag] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem b1_eq_ffff_of_div_overflow
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_b1_ffff v row) (h_flag : v.div_overflow row = 1) :
+    v.b_1 row = 65535 := by
+  unfold div_overflow_forces_b1_ffff at h
+  rw [h_flag] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem b2_eq_ffff_of_div_overflow
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_b2_ffff v row)
+    (h_flag : v.div_overflow row = 1) (h_m32 : v.m32 row = 0) :
+    v.b_2 row = 65535 := by
+  unfold div_overflow_forces_b2_ffff at h
+  rw [h_flag, h_m32] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem b3_eq_ffff_of_div_overflow
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_b3_ffff v row)
+    (h_flag : v.div_overflow row = 1) (h_m32 : v.m32 row = 0) :
+    v.b_3 row = 65535 := by
+  unfold div_overflow_forces_b3_ffff at h
+  rw [h_flag, h_m32] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem c0_eq_zero_of_div_overflow
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_c0_zero v row) (h_flag : v.div_overflow row = 1) :
+    v.c_0 row = 0 := by
+  unfold div_overflow_forces_c0_zero at h
+  rw [h_flag] at h
+  simpa using h
+
+theorem c1_eq_zero_of_div_overflow
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_c1_intmin v row)
+    (h_flag : v.div_overflow row = 1) (h_m32 : v.m32 row = 0) :
+    v.c_1 row = 0 := by
+  unfold div_overflow_forces_c1_intmin at h
+  rw [h_flag, h_m32] at h
+  exact sub_eq_zero.mp (by simpa using h)
+
+theorem c2_eq_zero_of_div_overflow
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_c2_zero v row) (h_flag : v.div_overflow row = 1) :
+    v.c_2 row = 0 := by
+  unfold div_overflow_forces_c2_zero at h
+  rw [h_flag] at h
+  simpa using h
+
+theorem c3_eq_intmin_of_div_overflow
+    {v : Valid_ArithDiv F ExtF} {row : ℕ}
+    (h : div_overflow_forces_c3_intmin v row)
+    (h_flag : v.div_overflow row = 1) (h_m32 : v.m32 row = 0) :
+    v.c_3 row = 32768 := by
+  unfold div_overflow_forces_c3_intmin at h
+  rw [h_flag, h_m32] at h
+  exact sub_eq_zero.mp (by simpa using h)
 
 /-- **DIV/REM-subset mode predicates bundled.** Same boolean-selector
     subset the MUL-family compositional proof relies on — these

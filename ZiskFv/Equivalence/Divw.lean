@@ -107,11 +107,17 @@ theorem equiv_DIVW
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   -- The narrowed defect excludes EXACTLY `|r₃₂| = |op2₃₂|`; combine with the WEAK
   -- bound `h_r_le` to recover the STRICT remainder bound required by Sail DIVW.
-  have h_not_forge :
-      ¬ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
-          = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs :=
+  have h_not_forge_shape :
+      ¬ (Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
+          ∧ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+            = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs) :=
     ZiskFv.Compliance.Defects.no_arith_div_dynamic_witness_of_no_known_defect
       h_avoid_known_bugs
+  have h_not_forge :
+      ¬ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+          = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs := by
+    intro h_eq
+    exact h_not_forge_shape ⟨h_op2_ne, h_eq⟩
   have h_r_abs :
       (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
         - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs

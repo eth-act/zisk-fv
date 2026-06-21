@@ -92,6 +92,125 @@ private lemma byte_sum_eq_packed4_sig
       = (c₂ + c₃ * 65536) * 4294967296 := by rw [h_hi]
   linarith [h_lo, hh]
 
+private lemma signed_divisor_chunk_fields_zero_of_toInt_zero
+    (r2_val : BitVec 64)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_b0 : (v.b_0 r_a).val < 65536) (h_b1 : (v.b_1 r_a).val < 65536)
+    (h_b2 : (v.b_2 r_a).val < 65536) (h_b3 : (v.b_3 r_a).val < 65536)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_rs2_value :
+      r2_val.toInt
+        = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+            (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    (h_r2_zero : r2_val.toInt = 0) :
+    v.b_0 r_a = 0 ∧ v.b_1 r_a = 0 ∧ v.b_2 r_a = 0 ∧ v.b_3 r_a = 0 := by
+  let B := packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+    (v.b_2 r_a).val (v.b_3 r_a).val
+  have h_B_lt : B < 18446744073709551616 :=
+    packed4_lt_2_64 h_b0 h_b1 h_b2 h_b3
+  have h_B_zero : B = 0 := by
+    rcases h_nb_bool with h_nb | h_nb
+    · have h_nb_val : (v.nb r_a).val = 0 := by
+        rw [h_nb]
+        rfl
+      have h_B_int : (B : ℤ) = 0 := by
+        have h := h_rs2_value
+        rw [h_r2_zero, h_nb_val] at h
+        dsimp [B] at h
+        omega
+      exact_mod_cast h_B_int
+    · have h_nb_val : (v.nb r_a).val = 1 := by
+        rw [h_nb]
+        rfl
+      have h_B_int : (B : ℤ) = (2:ℤ)^64 := by
+        have h := h_rs2_value
+        rw [h_r2_zero, h_nb_val] at h
+        dsimp [B] at h
+        omega
+      have h_B_eq : B = 18446744073709551616 := by
+        norm_num at h_B_int
+        exact_mod_cast h_B_int
+      omega
+  have h_chunks := packed4_eq_zero h_B_zero
+  rcases h_chunks with ⟨hb0, hb1, hb2, hb3⟩
+  exact ⟨by apply Fin.ext; simpa [B] using hb0,
+    by apply Fin.ext; simpa [B] using hb1,
+    by apply Fin.ext; simpa [B] using hb2,
+    by apply Fin.ext; simpa [B] using hb3⟩
+
+/-- **Signed DIV divisor-zero boundary.**
+
+    When the signed divisor has `toInt = 0`, the newly exposed ArithDiv
+    boundary constraints force the quotient chunks to all ones. Combined with
+    the byte-lane match, this closes the Sail `DIV` divisor-zero branch without
+    using the non-boundary `h_op2_ne` / `h_no_overflow` path. -/
+lemma h_rd_val_mdrs_div_by_zero_chunked
+    (r1_val r2_val : BitVec 64)
+    (e : Interaction.MemoryBusEntry FGL)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
+    (h_chunk_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+    (h_boundary :
+      ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
+    (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_byte_lo :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
+    (h_byte_hi :
+      (byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
+        = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536)
+    (h_rs2_value :
+      r2_val.toInt
+        = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+            (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    (h_r2_zero : r2_val.toInt = 0) :
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
+      = (execute_DIV_REM_pure r1_val r2_val .DRS).1 := by
+  obtain ⟨_, _, _, _, h_b0, h_b1, h_b2, h_b3, _, _, _, _, _, _, _, _⟩ :=
+    h_chunk_ranges
+  rcases h_boundary with
+    ⟨_, _, _, _, _, _hb0_force, _hb1_force, _hb2_force, _hb3_force,
+      ha0_force, ha1_force, ha2_force, ha3_force, _, _, _, _, _, _, _, _,
+      h_inv, _, _, _, _, _⟩
+  obtain ⟨hb0_zero, hb1_zero, hb2_zero, hb3_zero⟩ :=
+    signed_divisor_chunk_fields_zero_of_toInt_zero r2_val v r_a
+      h_b0 h_b1 h_b2 h_b3 h_nb_bool h_rs2_value h_r2_zero
+  have h_div_by_zero : v.div_by_zero r_a = 1 :=
+    ZiskFv.Airs.ArithDiv.div_by_zero_eq_one_of_zero_b_chunks h_inv h_div
+      hb0_zero hb1_zero hb2_zero hb3_zero
+  have ha0 : v.a_0 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.a0_eq_ffff_of_div_by_zero ha0_force h_div_by_zero
+  have ha1 : v.a_1 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.a1_eq_ffff_of_div_by_zero ha1_force h_div_by_zero
+  have ha2 : v.a_2 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.a2_eq_ffff_of_div_by_zero ha2_force h_div_by_zero h_m32
+  have ha3 : v.a_3 r_a = 65535 :=
+    ZiskFv.Airs.ArithDiv.a3_eq_ffff_of_div_by_zero ha3_force h_div_by_zero h_m32
+  have ha0_val : (v.a_0 r_a).val = 65535 := by rw [ha0]; rfl
+  have ha1_val : (v.a_1 r_a).val = 65535 := by rw [ha1]; rfl
+  have ha2_val : (v.a_2 r_a).val = 65535 := by rw [ha2]; rfl
+  have ha3_val : (v.a_3 r_a).val = 65535 := by rw [ha3]; rfl
+  have h_byte_eq_packed :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
+      = packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val :=
+    byte_sum_eq_packed4_sig e _ _ _ _ h_byte_lo h_byte_hi
+  apply BitVec.eq_of_toNat_eq
+  rw [u64_toBV_of_bytes_toNat (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
+        h0 h1 h2 h3 h4 h5 h6 h7]
+  rw [h_byte_eq_packed, ha0_val, ha1_val, ha2_val, ha3_val]
+  simp [packed4, execute_DIV_REM_pure, execute_DIV_REM_pure_int, h_r2_zero]
+
 /-! ## MUL: rd ← low 64 bits of product via signed Arith rows -/
 
 /-- **`h_rd_val` discharge for MUL — signed-row low-half form.**

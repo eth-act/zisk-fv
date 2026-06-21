@@ -1,5 +1,9 @@
 # Projects
 
+## Issue 114 Extraction
+
+Plan: `docs/ai/plan/PLAN_ISSUE_114_EXTRACTION.md`. Active stream in `.worktrees/issue-114-extraction`: remove the `Main`/`Arith` `--only` extraction lists so omitted constraints become either generated definitions or explicit unsupported stubs, then retire the current div/rem div-by-zero and signed-overflow hypotheses using the exposed Arith constraints. The work starts from `origin/main` at `028da000` to include the recent trace-level export changes.
+
 ## Endgame
 
 Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — campaign from the current envelope-conditional global theorem to a trace-level public statement, with P1 complete on main via #89 and P3 complete on main via #90/#91. Active stream: `docs/ai/plan/PLAN_ENDGAME_P4.md`, the first trust-reducing phase: build `AcceptedTrace -> OpEnvelope`, discharge bucket-(a) evidence, and leave only `aeneasBridgeTrust`, `ProgramBinding`/boot, and `NoKnownDefect`. Current focus is stacked P4 PR2/PR2a work in `.worktrees/endgame-p4-pr2` on rebased PR1 `da0dfc2c`; extractor, provider-free breadth, lookup-aware ArithMul wrapper, full-ensemble ArithMul provider swap, ArithMul opcode-exclusion, full-ensemble XOR provider selector, XOR bus/promise construction, XOR Binary provider input-row derivation, balance-fed XOR construction, and balance-fed AND construction are pushed through `5c261c7`. Cody's latest 2026-06-14 pull/rebase request was a no-op: `main` stayed `236449c9`, PR1 stayed `da0dfc2c`, and PR2 stayed `f31bbc6`; local AND/logical-Binary edits were preserved by autostash. The current changeset adds verified balance-fed OR construction; next is continuing Binary-family breadth beyond AND/OR/XOR.

@@ -23,8 +23,9 @@ stdenv.mkDerivation {
     ${pil-extract}/bin/pil-extract circuit-shim \
       --output $out/Circuit.lean
 
-    # Full-AIR extractions (with --skip-unsupported for the
-    # FixedCol/Challenge operands the V1 extractor doesn't render).
+    # Full-AIR extractions. `--skip-unsupported` keeps the extraction total:
+    # render every supported constraint and emit an explicit stub for each
+    # genuinely unsupported FixedCol/Challenge/ExtF shape.
     for air in Mem MemAlign MemAlignByte MemAlignReadByte MemAlignWriteByte \
                Binary BinaryExtension BinaryAdd; do
       ${pil-extract}/bin/pil-extract air \
@@ -34,16 +35,15 @@ stdenv.mkDerivation {
         --output "$out/$air.lean"
     done
 
-    # Subset extractions for Main and Arith. Indices match
-    # `Airs/Main.lean::extraction_bridge`; they shifted from the
-    # v0.15.0 set (8,9,15,16,17,18,19,20,24,30) when ZisK reorganised
-    # operation-bus emissions in v0.16.0+.
+    # Main and Arith must also enumerate all constraints. Older builds used
+    # hand-curated `--only` lists here, which silently omitted supported
+    # row-local constraints such as Arith's div-by-zero / overflow equations.
     ${pil-extract}/bin/pil-extract air --pilout ${zisk-pilout} --air Main \
-      --only 7,8,13,14,15,16,17,18,22,28 \
+      --skip-unsupported \
       --output $out/Main.lean
 
     ${pil-extract}/bin/pil-extract air --pilout ${zisk-pilout} --air Arith \
-      --only 2,6,7,8,31,32,33,34,35,36,37,38,40,41,42,43,44,45,46 \
+      --skip-unsupported \
       --output $out/Arith.lean
 
     # Bus-emission extraction for the operation bus (id=5000) across

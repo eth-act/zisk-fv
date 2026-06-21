@@ -105,11 +105,17 @@ theorem equiv_REMW
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  have h_not_forge :
-      ¬ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
-          = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs :=
+  have h_not_forge_shape :
+      ¬ (Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
+          ∧ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+            = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs) :=
     ZiskFv.Compliance.Defects.no_arith_div_dynamic_witness_of_no_known_defect
       h_avoid_known_bugs
+  have h_not_forge :
+      ¬ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+          = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs := by
+    intro h_eq
+    exact h_not_forge_shape ⟨h_op2_ne, h_eq⟩
   have h_r_abs :
       (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
         - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
