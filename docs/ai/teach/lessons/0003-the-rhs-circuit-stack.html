@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 03 · The RHS Circuit Stack — zisk-fv</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --soft:#5f5f56; --rule:#d8d4c8; --bg:#fdfcf7;
+    --accent:#7a2e1d; --rhs:#3a4a78; --gold:#9a7b1f; --gen:#6b5b95;
+    --airs:#8a5a2b; --clean:#2d6a5a; --zc:#7a3b6b;
+    --code:#f1ecdd; --ok:#2d6a3f; --no:#9a2b1f;
+  }
+  *{box-sizing:border-box}
+  html{font-size:17px}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:46rem;margin:0 auto;padding:3rem 1.5rem 5rem}
+  code{background:var(--code);padding:.05em .32em;border-radius:3px;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.81em}
+  a{color:var(--accent)}
+  .kicker{font-variant:small-caps;letter-spacing:.13em;color:var(--accent);font-size:.82rem;font-weight:600}
+  h1{font-size:2.0rem;line-height:1.08;margin:.3rem 0 .5rem;font-weight:600}
+  .lede{font-size:1.06rem;color:#33332e}
+  .lede em{color:var(--accent)}
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:1.3rem;margin-bottom:2rem}
+  .win{background:#f6f1e1;border:1px solid var(--rule);border-left:3px solid var(--gold);
+    padding:.7rem 1rem;margin:1.4rem 0 0;font-size:.95rem}
+  .win b{font-variant:small-caps;letter-spacing:.06em;color:var(--gold)}
+  .recap{background:#eef0f6;border:1px solid #c6cde0;border-radius:6px;padding:.6rem 1rem;font-size:.9rem;margin:1.2rem 0 0}
+  .recap b{color:var(--rhs)}
+  h2{font-size:1.3rem;margin:2.6rem 0 .5rem;font-weight:600}
+  h2 .num{color:var(--soft);font-weight:400;margin-right:.45rem}
+  p{margin:.7rem 0}
+  .soft{color:var(--soft)}
+  .side{float:right;clear:right;width:13.5rem;margin:.35rem -14.8rem .8rem 0;
+    font-size:.8rem;line-height:1.42;color:var(--soft);border-top:1px solid var(--rule);padding-top:.35rem}
+  .side b{color:var(--accent);font-variant:small-caps;letter-spacing:.04em}
+  @media(max-width:1180px){.side{float:none;width:auto;margin:.7rem 0;
+    border:1px solid var(--rule);border-left:3px solid var(--accent);padding:.5rem .8rem;background:#faf7ee}}
+  cite{display:block;color:var(--soft);font-style:normal;font-size:.74rem;
+    font-family:ui-monospace,Menlo,monospace;margin-top:.2rem}
+  /* generation diagram */
+  .diagram{margin:1.4rem 0;border:1px solid var(--rule);border-radius:6px;background:#fffdf6;padding:1.1rem 1rem .9rem}
+  .band-label{font-variant:small-caps;letter-spacing:.08em;font-size:.74rem;color:var(--soft);margin:.1rem 0 .5rem}
+  .node{border:1px solid var(--rule);border-radius:5px;padding:.32rem .55rem;background:#fff;font-size:.82rem;display:inline-block}
+  .node .t{font-weight:600} .node .p{color:var(--soft);font-family:ui-monospace,Menlo,monospace;font-size:.72rem}
+  .pipe{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+  .arr{color:var(--soft)}
+  .forks{margin:.7rem 0 0;display:flex;flex-direction:column;gap:.4rem}
+  .fork{display:flex;gap:.5rem;align-items:baseline;font-size:.82rem;border-left:2px solid var(--rule);padding-left:.6rem}
+  .fork .k{font-family:ui-monospace,Menlo,monospace;font-weight:600;color:var(--gen);flex:none;min-width:8.5rem}
+  .fork.live{border-left-color:var(--clean)} .fork.legacy{border-left-color:var(--airs)}
+  .tag2{font-size:.68rem;font-variant:small-caps;letter-spacing:.05em;padding:.05rem .4rem;border-radius:10px;margin-left:.3rem}
+  .tag2.live{background:#e6f0ec;color:var(--clean);border:1px solid #bcd8c2}
+  .tag2.legacy{background:#f3ead9;color:var(--airs);border:1px solid #e0cba8}
+  /* three trees */
+  .trees{display:flex;flex-direction:column;gap:.5rem;margin:1.2rem 0}
+  .tree{border:1px solid var(--rule);border-radius:7px;padding:.6rem .8rem;background:#fffdf6}
+  .tree .h{display:flex;align-items:baseline;gap:.5rem}
+  .tree .nm{font-weight:600;font-size:1rem;font-family:ui-monospace,Menlo,monospace}
+  .tree.a .nm{color:var(--airs)} .tree.c .nm{color:var(--clean)} .tree.z .nm{color:var(--zc)}
+  .tree .gr{margin-left:auto;font-size:.7rem;color:var(--soft);font-variant:small-caps;letter-spacing:.04em}
+  .tree .d{font-size:.85rem;margin-top:.25rem}
+  .tree .role{font-size:.78rem;color:var(--soft);margin-top:.2rem;font-style:italic}
+  /* seam box */
+  .seam{border:1px solid var(--accent);border-radius:7px;background:#fbf2ee;padding:.8rem 1rem;margin:1.3rem 0}
+  .seam .h{font-variant:small-caps;letter-spacing:.05em;color:var(--accent);font-weight:600;margin-bottom:.3rem}
+  .flowline{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:#fff;border:1px solid var(--rule);
+    border-radius:5px;padding:.4rem .6rem;margin:.4rem 0;overflow-x:auto;white-space:nowrap}
+  /* labs */
+  .lab{border:1px solid var(--rule);border-radius:6px;background:#fffdf6;padding:1.1rem;margin:1.3rem 0}
+  .lab .tag{font-variant:small-caps;letter-spacing:.08em;font-size:.74rem;color:var(--accent);font-weight:600}
+  .lab h3{margin:.15rem 0 .5rem}
+  .btn{font-family:inherit;font-size:.84rem;border:1px solid var(--accent);color:var(--accent);background:#fff;
+    border-radius:5px;padding:.34rem .8rem;cursor:pointer;margin-right:.5rem}
+  .btn:hover{background:var(--accent);color:#fff}
+  .verdict{margin-top:.7rem;font-size:.9rem;min-height:1.2rem}
+  .verdict.ok{color:var(--ok)} .verdict.no{color:var(--no)}
+  .srow{display:flex;align-items:center;gap:.5rem;border:1px solid var(--rule);border-radius:6px;background:#fff;
+    padding:.4rem .55rem;margin:.35rem 0;font-size:.84rem}
+  .srow .q{flex:1}
+  .seg{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;flex:none}
+  .seg button{font-family:inherit;font-size:.72rem;border:0;background:#fff;cursor:pointer;padding:.28rem .5rem;color:var(--soft)}
+  .seg button.on{color:#fff}
+  .seg button.on[data-v="a"]{background:var(--airs)} .seg button.on[data-v="c"]{background:var(--clean)} .seg button.on[data-v="z"]{background:var(--zc)}
+  .srow.right{box-shadow:inset 3px 0 0 var(--ok)} .srow.wrong{box-shadow:inset 3px 0 0 var(--no)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.6rem;margin-top:.5rem}
+  .card{perspective:900px;height:8.8rem;cursor:pointer}
+  .card .inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+  .card.flip .inner{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;border:1px solid var(--rule);border-radius:6px;
+    padding:.55rem .65rem;display:flex;flex-direction:column;justify-content:center}
+  .face.front{background:#fff} .face.back{background:#f3efe2;transform:rotateY(180deg);font-size:.78rem}
+  .face .q{font-weight:600;font-size:.84rem} .face .hint{color:var(--soft);font-size:.72rem;margin-top:.3rem}
+  .face .path{color:var(--soft);font-family:ui-monospace,Menlo,monospace;font-size:.67rem;margin-top:.35rem}
+  .src{border:1px solid var(--rule);border-left:3px solid var(--rhs);background:#f1f3f8;padding:.8rem 1rem;margin:1.6rem 0;font-size:.92rem;border-radius:0 5px 5px 0}
+  .src b{font-variant:small-caps;letter-spacing:.05em;color:var(--rhs)}
+  .ask{background:#f6f1e1;border:1px solid var(--rule);border-radius:6px;padding:.8rem 1rem;margin:1.8rem 0 0;font-size:.92rem}
+  .ask b{color:var(--accent)}
+  footer{margin-top:2.6rem;padding-top:1.1rem;border-top:1px solid var(--rule);display:flex;justify-content:space-between;font-size:.85rem;color:var(--soft);flex-wrap:wrap;gap:.6rem}
+  @media print{.lab,.ask{break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+<a href="../index.html" title="Course home" style="position:fixed;top:.7rem;left:.7rem;z-index:50;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:.78rem;font-weight:600;text-decoration:none;background:#7a2e1d;color:#fff;padding:.32rem .66rem;border-radius:20px;box-shadow:0 1px 5px rgba(0,0,0,.22)">⌂&nbsp;Home</a>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">zisk-fv architecture · lesson 03</div>
+  <h1>The RHS Circuit Stack</h1>
+  <p class="lede">In Lesson 02, the ADD proof bottomed out at "a well-formed <code>BinaryRow</code> from a valid provider table." Today: <em>where does that row come from</em>, and why are there <em>three</em> different in-tree representations of the same ZisK circuit? This is the most layered and most duplicated territory in the repo — which makes it the richest re-architecture ground.</p>
+  <div class="win"><b>Your win today —</b> name the three circuit-side trees, say what each is for and at what granularity, and point to the exact seam (and the literal duplication) a re-architecture would target.</div>
+  <div class="recap"><b>From Lesson 02:</b> the RHS endpoint was a <code>BinaryRow</code> + an <code>Air.Flat.Table</code> whose spec proved the row well-formed. Those names come from <code>AirsClean</code>; the bus/<code>Valid_</code> machinery comes from <code>Airs</code>. Today we see how they fit.</div>
+</header>
+
+<h2><span class="num">1</span>Generation: pilout → pil-extract → two targets</h2>
+<p>The RHS starts as ZisK's real constraints, compiled to a protobuf (<code>build/zisk.pilout</code>, 22 AIRs — ~10 on the RV64IM path). The Rust tool <code>tools/pil-extract</code> reads it. The architecturally important fact: it has <em>two different emission targets</em>, born at different times.</p>
+
+<div class="diagram">
+  <div class="band-label">pil-extract emission targets</div>
+  <div class="pipe">
+    <span class="node"><span class="t">build/zisk.pilout</span><br><span class="p">22 AIRs, protobuf</span></span>
+    <span class="arr">→</span>
+    <span class="node"><span class="t">tools/pil-extract</span><br><span class="p">Rust; 5 subcommands</span></span>
+    <span class="arr">→</span>
+  </div>
+  <div class="forks">
+    <div class="fork legacy"><span class="k">air</span><span>→ <code>build/extraction/*.lean</code>, typed over the old <code>LeanZKCircuit.OpenVM.Circuit</code> shim. <strong>Gitignored, and off the main Lake graph</strong> — only the <code>Mem</code> subset is cross-checked by the test gate.<span class="tag2 legacy">legacy</span></span></div>
+    <div class="fork live"><span class="k">clean-component</span><span>→ <strong>committed</strong> <code>AirsClean/&lt;AIR&gt;/{Row,Constraints}.lean</code>, "faithful-by-construction" Clean source. The diff is the audit surface.<span class="tag2 live">live</span></span></div>
+    <div class="fork"><span class="k">arith-table<br>bus-emissions<br>mem-air-facts</span><span>→ shared lookup tables (<code>ArithTable</code>), bus-emission specs, and Mem source reports.</span></div>
+  </div>
+</div>
+<p class="soft" style="font-size:.86rem">So even the <em>extractor</em> carries a legacy/modern split: the <code>air</code> path predates the Clean migration and lingers (Mem cross-check only); <code>clean-component</code> is the current target. <cite>docs/extraction/extractor-notes.md · lakefile.toml (per-AIR extraction "outside the main Lake dependency graph")</cite></p>
+
+<h2><span class="num">2</span>The three hand-stewarded trees</h2>
+<p>Downstream of generation sit three Lean trees. The trap is thinking they're three layers of <em>one</em> stack — they aren't. They model the circuit at <em>two different granularities</em> and partly overlap.</p>
+
+<div class="trees">
+  <div class="tree a">
+    <div class="h"><span class="nm">ZiskFv/Airs/</span><span class="gr">32 files · per AIR-family</span></div>
+    <div class="d">Named-column <code>Valid_&lt;AIR&gt;</code> records, the <strong>operation-bus &amp; memory-bus models</strong> (<code>matches_entry</code>, <code>opBus_row_*</code>), the lookup <strong>tables</strong> (<code>BinaryTable</code>, …), and "packed-correct" BitVec lemmas.</div>
+    <div class="role">Role: the model <em>everything downstream consumes</em>. Despite the Clean migration, this is still the spine.</div>
+  </div>
+  <div class="tree c">
+    <div class="h"><span class="nm">ZiskFv/AirsClean/</span><span class="gr">73 files · per AIR-family</span></div>
+    <div class="d">The Clean-DSL components. Per family ~6 files: <code>Row</code>/<code>Constraints</code> (the <em>generated</em>, faithful-by-construction pair) + <code>Circuit</code>/<code>Spec</code>/<code>Soundness</code>/<code>Bridge</code> (hand-written proofs). <code>FullEnsemble</code> assembles them.</div>
+    <div class="role">Role: the modern, generation-anchored circuit surface — validated AIR-by-AIR (BinaryAdd, MemAlignByte, …).</div>
+  </div>
+  <div class="tree z">
+    <div class="h"><span class="nm">ZiskFv/ZiskCircuit/</span><span class="gr">65 files · per OPCODE</span></div>
+    <div class="d">Per-opcode <strong>compositional circuit-correctness</strong> in pure field arithmetic. E.g. <code>Add.lean</code>: given Main's ADD-subset constraints + BinaryAdd's carry chain + the op-bus match, prove the Main row's <code>c</code> lanes = the 64-bit sum of <code>a</code>+<code>b</code>.</div>
+    <div class="role">Role: "the circuit computes the right number for this opcode." Built on <code>Airs</code>; consumed by <code>EquivCore</code>.</div>
+  </div>
+</div>
+<p><span class="side"><b>Granularity tell —</b> <code>Airs</code> and <code>AirsClean</code> are indexed by <em>AIR family</em> (Binary, Arith, Mem…). <code>ZiskCircuit</code> is indexed by <em>opcode</em> (Add, Sub, Lw…). That mismatch is why a single opcode proof pulls from all three: ZiskCircuit/&lt;Op&gt; for the arithmetic, Airs for the bus/table, AirsClean for the row.</span>
+Note the granularity: <code>Airs</code> and <code>AirsClean</code> are per-<em>AIR</em>; <code>ZiskCircuit</code> is per-<em>opcode</em>. And note the dependency direction — <code>ZiskCircuit/Add.lean</code> <code>import</code>s <code>Airs</code> (Main, BinaryAdd, OperationBus), <em>not</em> AirsClean. The arithmetic-correctness layer was built on the older model.</p>
+
+<h2><span class="num">3</span>The seam — and the duplication</h2>
+<p>Here's the payoff, and the thing a re-architecture has to confront. <strong><code>AirsClean</code> does not replace <code>Airs</code>. It bridges <em>into</em> it.</strong> A generated Clean <code>BinaryRow</code> is lowered into the legacy <code>Valid_Binary</code> record that the bus model and <code>EquivCore</code> already understand:</p>
+<div class="seam">
+  <div class="h">the bridge that joins the two stacks</div>
+  <div class="flowline">AirsClean.Binary.<b>validOfRow</b> : BinaryRow FGL → Airs.…Valid_Binary FGL FGL</div>
+  <p style="margin:.3rem 0 0;font-size:.86rem">Its docstring: <em>"<code>Valid_Binary</code> ↔ <code>BinaryRow</code> compatibility … No <code>Circuit.main</code> left."</em> It even reconstructs "the eight legacy <code>BinaryTable.wf_properties</code> facts." So the modern row is translated back into the legacy shape before the proof proceeds.</p>
+  <cite>ZiskFv/AirsClean/Binary/Bridge.lean:346 · used in EquivCore/&lt;Op&gt; and Compliance/Wrappers/&lt;Op&gt;</cite>
+</div>
+<p><span class="side"><b>Re-arch lens —</b> three questions this territory forces: (1) Should <code>Airs</code>'s hand-written <code>Valid_</code> model be <em>subsumed</em> by generated <code>AirsClean</code>, removing the <code>validOfRow</code> bridge? (2) Should the duplicated tables be unified to one source of truth? (3) Can the legacy <code>air</code>→OpenVM-shim extraction be retired once <code>Mem</code> moves to <code>clean-component</code>? Each shrinks the RHS surface; none is free.</span>
+And the duplication is not subtle. The Binary operation table is defined <em>twice</em>, in two namespaces, each with its own opcode constants:</p>
+<div class="flowline" style="white-space:normal">ZiskFv.Airs.Tables.<b>BinaryTable</b> &nbsp;(<code>OP_LTU=0x06</code>, …) &nbsp;&nbsp;vs&nbsp;&nbsp; ZiskFv.AirsClean.<b>BinaryTable</b> &nbsp;(<code>tableSize</code>, <code>OP_MINU=0x02</code>, …)</div>
+<p>Two definitions of the same upstream table is exactly the kind of accreted seam your mission is about: harmless to the proof (both are checked), but a real cost to comprehension and change. <cite>ZiskFv/Airs/Tables/BinaryTable.lean:29 · ZiskFv/AirsClean/BinaryTable.lean:28</cite></p>
+
+<h2><span class="num">4</span>One honest aside: where constructibility lives</h2>
+<p>The split matters for <em>trust</em>, not just tidiness. The generated <code>AirsClean</code> <code>Row</code>/<code>Constraints</code> are faithful-by-construction — their fidelity is the extractor's job, audited by diff. But the hand-written <code>Airs</code> <code>Valid_&lt;AIR&gt;</code> records are where the <em>constructibility</em> risk sits: if a <code>Valid_</code> record declares constraints <em>stronger</em> than ZisK's circuit enforces, every equivalence theorem over it becomes vacuous (you can't build the instance). That's why the trust gate's anti-laundering rules single out <code>Valid_&lt;AIR&gt;</code> changes. The <code>validOfRow</code> bridge is the project's current answer: tie the hand-written record to a generated row so the two can't drift apart silently.</p>
+
+<!-- ===================== RETRIEVAL ===================== -->
+<h2><span class="num">5</span>Make it stick</h2>
+<div class="lab">
+  <div class="tag">Drill A · sort</div>
+  <h3>Which tree owns it?</h3>
+  <p class="soft" style="font-size:.88rem;margin:.2rem 0 .5rem">Assign each artifact to <span style="color:var(--airs);font-weight:600">Airs</span>, <span style="color:var(--clean);font-weight:600">AirsClean</span>, or <span style="color:var(--zc);font-weight:600">ZiskCircuit</span>. Then check.</p>
+  <div id="sorter"></div>
+  <button class="btn" id="scheck">Check</button>
+  <button class="btn" id="sreset" style="border-color:var(--soft);color:var(--soft)">Reset</button>
+  <div class="verdict" id="sverdict"></div>
+</div>
+
+<div class="lab">
+  <div class="tag">Drill B · recall cards</div>
+  <h3>The seam, from memory</h3>
+  <p class="soft" style="font-size:.88rem;margin:.2rem 0 .3rem">Answer aloud, then flip.</p>
+  <div class="cards" id="cards"></div>
+</div>
+
+<div class="src">
+  <b>Primary source —</b> read <a href="../../../docs/extraction/extractor-notes.md">docs/extraction/extractor-notes.md</a> (the <code>clean-component</code> §, on faithful-by-construction emission) and <a href="../../../docs/extraction/air-inventory.md">air-inventory.md</a> (the 22-AIR map). Then open <a href="../../../ZiskFv/AirsClean/Binary/Bridge.lean">AirsClean/Binary/Bridge.lean</a> and find <code>validOfRow</code> — the seam in the flesh. Everything here was read from those files.
+</div>
+
+<div class="ask">
+  <b>Your teacher is on call.</b> Want to go deeper on any one tree (e.g. how a Clean <code>Component</code> is actually structured, or the memory-bus side which is messier than Binary)? Or shall we do <strong>Lesson 04 — the three global hypotheses &amp; trust structure</strong> next, where this RHS picture connects back to <code>aeneasBridgeTrust</code>? Ask, or challenge anything above.
+</div>
+
+<footer>
+  <span>◂ <a href="0002-one-opcode-end-to-end.html">Lesson 02</a> · <a href="../reference/glossary.html">Glossary</a> · <a href="../index.html">Home</a></span>
+  <span>Next ▸ <em>04 — the global hypotheses &amp; trust</em></span>
+</footer>
+
+</div>
+
+<script>
+const ITEMS = [
+  {q:'opBus_row_Main / matches_entry (the bus model)', a:'a'},
+  {q:'Generated Row.lean + Constraints.lean (faithful-by-construction)', a:'c'},
+  {q:'Add.lean: c-lanes = a + b from Main + carry chain', a:'z'},
+  {q:'validOfRow : BinaryRow → Valid_Binary (the bridge)', a:'c'},
+  {q:'Valid_<AIR> named-column records + lookup tables', a:'a'},
+  {q:'Per-opcode circuit-correctness consumed by EquivCore', a:'z'},
+];
+const LABEL={a:'Airs',c:'AirsClean',z:'ZiskCircuit'};
+let choice={};
+const sorter=document.getElementById('sorter');
+function render(){
+  sorter.innerHTML='';
+  ITEMS.forEach((it,i)=>{
+    const row=document.createElement('div');row.className='srow';row.id='r'+i;
+    row.innerHTML='<span class="q">'+it.q+'</span><span class="seg">'+
+      ['a','c','z'].map(v=>'<button data-i="'+i+'" data-v="'+v+'">'+LABEL[v]+'</button>').join('')+'</span>';
+    sorter.appendChild(row);
+  });
+  sorter.querySelectorAll('button').forEach(b=>{
+    if(choice[b.dataset.i]===b.dataset.v)b.classList.add('on');
+    b.onclick=()=>{choice[b.dataset.i]=b.dataset.v;render();};
+  });
+}
+document.getElementById('scheck').onclick=()=>{
+  const v=document.getElementById('sverdict');
+  if(Object.keys(choice).length<ITEMS.length){v.className='verdict no';v.textContent='Classify all six first.';return;}
+  let ok=0;ITEMS.forEach((it,i)=>{const r=document.getElementById('r'+i);r.classList.remove('right','wrong');
+    const good=choice[i]===it.a;r.classList.add(good?'right':'wrong');if(good)ok++;});
+  v.className='verdict '+(ok===ITEMS.length?'ok':'no');
+  v.textContent=ok===ITEMS.length?'✓ All six. Airs = bus/Valid/tables; AirsClean = generated Clean rows + bridge; ZiskCircuit = per-opcode arithmetic.'
+    :'✗ '+ok+'/'+ITEMS.length+'. Tells: bus/table/Valid → Airs; "generated" or "Row/Constraints/bridge" → AirsClean; "per-opcode" or "= a+b" → ZiskCircuit.';
+};
+document.getElementById('sreset').onclick=()=>{choice={};render();const v=document.getElementById('sverdict');v.textContent='';v.className='verdict';};
+render();
+
+const CARDS=[
+  {q:'What single function joins AirsClean to Airs?',a:'validOfRow — lowers a Clean BinaryRow into the legacy Valid_Binary record.',p:'AirsClean/Binary/Bridge.lean:346'},
+  {q:'What is duplicated across the two stacks?',a:'The Binary op-table: Airs.Tables.BinaryTable AND AirsClean.BinaryTable, two namespaces.',p:'duplication seam'},
+  {q:'Which pil-extract target is live vs legacy?',a:'clean-component → committed AirsClean (live); air → gitignored OpenVM-shim, off Lake graph (legacy, Mem cross-check only).',p:'extractor-notes.md'},
+  {q:'Why does one opcode pull from all three trees?',a:'Granularity mismatch: ZiskCircuit is per-opcode; Airs/AirsClean are per-AIR-family.',p:'§2'},
+  {q:'Where does constructibility risk live?',a:'In Airs Valid_<AIR> records — over-strong constraints make theorems vacuous; that\'s why the trust gate watches them.',p:'§4'},
+];
+const cardsEl=document.getElementById('cards');
+CARDS.forEach(c=>{const d=document.createElement('div');d.className='card';
+  d.innerHTML='<div class="inner"><div class="face front"><div class="q">'+c.q+'</div><div class="hint">recall → flip</div></div><div class="face back">'+c.a+'<div class="path">'+c.p+'</div></div></div>';
+  d.onclick=()=>d.classList.toggle('flip');cardsEl.appendChild(d);});
+</script>
+</body>
+</html>

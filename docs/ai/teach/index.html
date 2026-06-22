@@ -65,7 +65,7 @@
   <div class="kicker">teaching workspace</div>
   <h1>zisk-fv · Architecture</h1>
   <p class="why">Build an accurate mental model of this repo's architecture — proof structure first, then build &amp; CI — in order to deliberately re-architect it.</p>
-  <div class="next"><b>Continue →</b> You've finished <a href="lessons/0002-one-opcode-end-to-end.html">Lesson 02</a>. Suggested next: <strong>Lesson 04 — the three global hypotheses</strong> (closes the "what do these hypotheses mean" thread), or <strong>Lesson 03 — the RHS circuit stack</strong>. Ask your teacher to build either.</div>
+  <div class="next"><b>Continue →</b> You've finished <a href="lessons/0003-the-rhs-circuit-stack.html">Lesson 03</a>. Suggested next: <strong>Lesson 04 — the three global hypotheses &amp; trust structure</strong>, which ties the RHS picture back to <code>aeneasBridgeTrust</code>. Ask your teacher to build it.</div>
 </header>
 
 <h2>Lessons</h2>
@@ -82,10 +82,11 @@
   <div class="take"><b>Takeaway —</b> rungs 1–3 discharge (arithmetic ← row ← table); rungs 4–6 reshape/unpack/aggregate; the promises relocate into <code>OpEnvelope</code>, never eliminated.</div>
 </a>
 
-<div class="lesson planned">
-  <div class="row1"><span class="no">03</span><span class="ttl">The RHS Circuit Stack</span><span class="badge soon">planned</span></div>
-  <div class="desc">pilout → <code>pil-extract</code> → <code>Airs</code> vs <code>AirsClean</code> → <code>ZiskCircuit</code>. The big duplication-seam question: two circuit-side stacks, and what to do about them.</div>
-</div>
+<a class="lesson" href="lessons/0003-the-rhs-circuit-stack.html">
+  <div class="row1"><span class="no">03</span><span class="ttl">The RHS Circuit Stack</span><span class="badge done">done</span></div>
+  <div class="desc">pilout → <code>pil-extract</code> → <code>Airs</code> vs <code>AirsClean</code> → <code>ZiskCircuit</code>. The three circuit-side trees, the <code>validOfRow</code> seam, and the literal table duplication.</div>
+  <div class="take"><b>Takeaway —</b> three representations of one circuit: <code>Airs</code> (bus/Valid/tables) ← <code>AirsClean</code> (generated Clean rows, bridged by <code>validOfRow</code>) and <code>ZiskCircuit</code> (per-opcode arithmetic). The seam + duplicated <code>BinaryTable</code> are prime re-arch targets.</div>
+</a>
 
 <div class="lesson planned">
   <div class="row1"><span class="no">04</span><span class="ttl">The Three Global Hypotheses &amp; Trust Structure</span><span class="badge soon">planned</span></div>
@@ -112,12 +113,13 @@
   <a class="lk" href="learning-records/0001-starting-point-and-mission.md"><div class="t"><span class="ic">LR</span>0001 · Starting point &amp; mission</div></a>
   <a class="lk" href="learning-records/0002-claim-is-conditioned-not-unconditional.md"><div class="t"><span class="ic">LR</span>0002 · The claim is conditioned</div></a>
   <a class="lk" href="learning-records/0003-discharge-is-layered-promises-relocate.md"><div class="t"><span class="ic">LR</span>0003 · Discharge is layered</div></a>
+  <a class="lk" href="learning-records/0004-rhs-three-representations-seam.md"><div class="t"><span class="ic">LR</span>0004 · RHS: three representations</div></a>
 </div>
 
-<div class="note"><b>Validation status:</b> every lesson claim has been checked against repo source (signatures, baselines), cited by <code>file:line</code>. Still outstanding — the definitive <code>lake build</code> in this worktree: <code>build/</code> and <code>.lake/</code> are unpopulated, so the kernel check hasn't been run here. Ask your teacher to run <code>nix run .#populate &amp;&amp; lake build</code> for ground truth.</div>
+<div class="note"><b>Validation status:</b> every lesson claim has been checked against repo source (signatures, baselines), cited by <code>file:line</code>. In the base dir, <code>build/</code> and <code>.lake/</code> <em>are</em> populated (oleans present — a <code>lake build</code> has run here before), but a green build against the <em>current</em> source hasn't been re-confirmed this session. Ask your teacher to run <code>lake build</code> for fresh kernel ground truth.</div>
 
 <footer>
-  Teaching workspace at <code>docs/ai/teach/</code> in the <code>review</code> worktree ·
+  Teaching workspace at <code>docs/ai/teach/</code> on the <code>review</code> branch (base dir) ·
   served locally. Your teacher (Claude) is on call — ask to go deeper, challenge a claim, or pick what to learn next.
 </footer>
 

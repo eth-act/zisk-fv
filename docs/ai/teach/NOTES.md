@@ -28,7 +28,7 @@
 ## Lesson plan (provisional, proofs-first)
 - [x] 0001 — The Territory Map (top-down: two arcs + trust gate + build/CI).
 - [x] 0002 — One opcode (ADD) end-to-end; layered discharge; promises relocate to OpEnvelope.
-- [ ] 0003 — The RHS circuit stack: pilout → pil-extract → Airs vs AirsClean → ZiskCircuit.
+- [x] 0003 — RHS circuit stack: pil-extract (air/clean-component) → Airs vs AirsClean (validOfRow seam, dup BinaryTable) → ZiskCircuit per-opcode.
 - [ ] 0004 — **The three global hypotheses + trust structure** (aeneasBridgeTrust,
       memoryTimelineConstruction, NoKnownDefect) — answers the user's explicit
       "what these hypotheses mean" ask at the global level. Previewed in 0002 §4.
@@ -40,4 +40,7 @@
 - README/CLAUDE may be stale/overclaimed — VALIDATE every key claim against
   source (read signatures, baselines) before it goes in a lesson. Cite file:line.
 - Confirmed stale: `simplification-suggestions.md` (FromTrust→Wrappers).
-- Definitive `lake build` still unrun here (build/ + .lake unpopulated).
+- RTK note: ripgrep output truncates long Lean idents (e.g. `validOfRow`→`ln`,
+  `rv64im_completeness`→`n`). Don't treat those as the real names — verify.
+- Now in base dir on `review`; build/ + .lake ARE populated (oleans present).
+  Definitive green `lake build` against current source not re-confirmed this session.
