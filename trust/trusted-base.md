@@ -356,8 +356,10 @@ Active conclusions:
   evidence plus the unsigned Euclidean identity.
 - Signed full-64 `DIV` and `REM` are now **narrowed and non-vacuously proved**:
   the `Defects.ArithDivDynamicWitnessShape` `.div`/`.rem` exclusion is the EXACT
-  `|r| = |op2|` false-positive shape (`(signedRemainderInt v r_a).natAbs =
-  op2.toInt.natAbs`), not the opcode-wide `True`. The canonical `equiv_DIV` /
+  `op2 ≠ 0 ∧ |r| = |op2|` false-positive shape (`op2.toInt ≠ 0 ∧
+  (signedRemainderInt v r_a).natAbs = op2.toInt.natAbs`), not the opcode-wide
+  `True` — narrowed to the nonzero-divisor path so the divisor-zero branch is
+  discharged separately (see the #114 bullet below). The canonical `equiv_DIV` /
   `equiv_REM` are real (no `False.elim`); they carry the WEAK signed remainder
   bound `h_r_le : |r| ≤ |op2|` plus the signed operand bridges / `h_nr_pin` /
   `h_r_sign` as caller residuals and DERIVE the STRICT `|r| < |op2|` from the
@@ -366,9 +368,9 @@ Active conclusions:
   per-theorem `collectAxioms` closure is unchanged).
 - Signed W-mode `DIVW` and `REMW` are now **narrowed and non-vacuously proved**
   (2026-06-20): the `Defects.ArithDivDynamicWitnessShape` `.divw`/`.remw`
-  exclusion is the EXACT W false-positive shape
-  (`(signedRemainderIntW v r_a).natAbs = (extractLsb op2 31 0).toInt.natAbs`),
-  not the opcode-wide `True`. The missing mid-level W discharge infrastructure
+  exclusion is the EXACT W false-positive shape on the nonzero-divisor path
+  (`extractLsb op2 31 0 ≠ 0#32 ∧ (signedRemainderIntW v r_a).natAbs =
+  (extractLsb op2 31 0).toInt.natAbs`), not the opcode-wide `True`. The missing mid-level W discharge infrastructure
   was built: `div_w_chain_witnesses` (the m32=1 W carry chain) +
   `h_rd_val_mdrs_{divw,remw}_chunked` (composing it with the existing low-level
   W bridges `abs_euclidean_to_signed_euclidean_div_rem_w`,
@@ -392,6 +394,22 @@ Active conclusions:
   strict bound Sail requires. Visible in the canonical/wrapper caller-burden
   ledgers; details in [`defects.md`](defects.md)
   (`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`).
+- **Divisor-zero / signed-overflow boundary discharge (DIV/DIVW/REM/REMW,
+  #114, 2026-06-22).** The canonical theorems previously carried caller
+  promises `h_op2_ne` (`op2 ≠ 0`) and `h_no_overflow` (¬`INT_MIN`/−1); both are
+  now removed. The divisor-zero and signed-overflow branches are discharged
+  in-model: `DIV`/`DIVW` consume the exposed ArithDiv boundary constraints
+  `Airs.ArithDiv.div_boundary_constraints` — row-local div-by-zero/overflow
+  flag machinery (forces divisor chunks `b = 0` / quotient `a = 0xffff` on
+  div-by-zero, `b = −1` / dividend `c = INT_MIN` on overflow, plus the
+  inverse-sum detector), faithful named-column mirrors of `arith.pil`
+  constraints 0–30 now rendered by the uncurated `--skip-unsupported`
+  extraction (65 defs, 0 stubs) — while `REM`/`REMW` derive the divisor-zero
+  remainder from the carry-chain identity (`b = 0 ⟹ d = c`) plus chunk ranges.
+  `ArithDivDynamicWitnessShape` is narrowed to the nonzero-divisor path
+  accordingly. Net anti-laundering metric shrinks (8 `[bridge]` caller binders
+  removed, 2 `[row]` `h_boundary` added; hypothesis-count 356 → 350);
+  per-theorem `collectAxioms` closure still 0 `ZiskFv.*` axioms.
 - Signed `MUL`, `MULH`, and `MULHSU` have their malicious-witness defect
   **narrowed** to the exact exceptional product-sign forge shape (`(na=1,nb=0,
   np=0)` / `(na=0,nb=1,np=0)`); the honest cases are proved non-vacuously

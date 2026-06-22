@@ -117,7 +117,9 @@ theorem arith_table_spec_of_lookup_aware_const_soundness
   simpa [ArithTableSpec, arithTableRow, constVar] using h_table
 
 /-- Project a `Valid_ArithDiv` at row `r` into a Clean `ArithDivRow FGL`.
-    The 38 columns map 1:1 (`carry_i` ↔ `Valid_ArithDiv.cy_i`). -/
+    The Clean-row columns map 1:1 (`carry_i` ↔ `Valid_ArithDiv.cy_i`);
+    extraction-only witnesses such as `inv_sum_all_bs` are not part of the
+    Clean row. -/
 @[reducible]
 def rowAt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
     : ArithDivRow FGL where

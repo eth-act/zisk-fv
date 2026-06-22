@@ -44,9 +44,6 @@ theorem equiv_REM
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
-    (h_no_overflow :
-      ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
     (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
@@ -88,7 +85,7 @@ theorem equiv_REM
       (ZiskFv.Compliance.OpEnvelope.rem
         (state := state) (m := m) (r_main := r_main)
         rem_input r1 r2 rd bus v r_a pins h_match_secondary promises arith_mem bounds
-        h_op2_ne h_no_overflow h_row_constraints arith_table
+        h_row_constraints arith_table
         arith_chunk_ranges arith_carry_ranges
         h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
         h_r_le h_r_sign))
@@ -96,21 +93,30 @@ theorem equiv_REM
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  have h_not_forge :
-      ¬ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
-          = rem_input.r2_val.toInt.natAbs :=
+  have h_not_forge_shape :
+      ¬ (rem_input.r2_val.toInt ≠ 0
+          ∧ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
+            = rem_input.r2_val.toInt.natAbs) :=
     ZiskFv.Compliance.Defects.no_arith_div_dynamic_witness_of_no_known_defect
       h_avoid_known_bugs
-  have h_r_abs :
-      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-        - (v.nr r_a).val * (2:ℤ)^64).natAbs < rem_input.r2_val.toInt.natAbs :=
-    lt_of_le_of_ne h_r_le h_not_forge
+  have h_r_abs_of_ne :
+      rem_input.r2_val.toInt ≠ 0 →
+        ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+          - (v.nr r_a).val * (2:ℤ)^64).natAbs < rem_input.r2_val.toInt.natAbs := by
+    intro h_op2_ne
+    have h_not_forge :
+        ¬ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
+            = rem_input.r2_val.toInt.natAbs := by
+      intro h_eq
+      exact h_not_forge_shape ⟨h_op2_ne, h_eq⟩
+    exact lt_of_le_of_ne h_r_le h_not_forge
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_REM_of_table state rem_input r1 r2 rd bus m r_main v r_a
-    pins h_match_secondary promises arith_mem bounds h_op2_ne h_no_overflow
-    h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
-    h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value h_r_abs h_r_sign
+    pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
+    arith_chunk_ranges arith_carry_ranges
+    h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
+    h_r_abs_of_ne h_r_sign
 
 
 end ZiskFv.Equivalence.Rem

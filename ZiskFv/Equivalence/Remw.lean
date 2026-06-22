@@ -79,10 +79,6 @@ theorem equiv_REMW
     (h_rs2_value :
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ) - toIntZ (v.nb r_a) * (2:ℤ)^32)
-    (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
-    (h_no_overflow_w :
-      ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
     -- WEAK signed-W remainder bound `|r₃₂| ≤ |op2₃₂|` (extraction-fidelity residual).
     (h_r_le :
       (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
@@ -100,20 +96,28 @@ theorem equiv_REMW
         h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
         h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_m32 h_div
         h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
-        h_op2_ne h_no_overflow_w h_r_le h_r_sign))
+        h_r_le h_r_sign))
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  have h_not_forge :
-      ¬ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
-          = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs :=
+  have h_not_forge_shape :
+      ¬ (Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
+          ∧ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+            = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs) :=
     ZiskFv.Compliance.Defects.no_arith_div_dynamic_witness_of_no_known_defect
       h_avoid_known_bugs
-  have h_r_abs :
-      (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
-        - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
-        < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs := by
+  have h_r_abs_of_ne :
+      Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32 →
+        (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+          - toIntZ (v.nr r_a) * (2:ℤ)^32).natAbs
+          < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs := by
+    intro h_op2_ne
+    have h_not_forge :
+        ¬ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
+            = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs := by
+      intro h_eq
+      exact h_not_forge_shape ⟨h_op2_ne, h_eq⟩
     have h_nr_v : toIntZ (v.nr r_a) = (v.nr r_a).val := by
       rcases h_nr_bool with h | h <;> rw [h] <;> decide
     have h_eq : ((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
@@ -126,7 +130,7 @@ theorem equiv_REMW
     pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
     arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_m32 h_div h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
-    h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w h_r_abs h_r_sign
+    h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
 
 
 end ZiskFv.Equivalence.Remw

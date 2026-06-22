@@ -86,6 +86,13 @@ lemma packed4_lt_2_64
   unfold packed4
   omega
 
+lemma packed4_eq_zero
+    {c₀ c₁ c₂ c₃ : ℕ}
+    (h : packed4 c₀ c₁ c₂ c₃ = 0) :
+    c₀ = 0 ∧ c₁ = 0 ∧ c₂ = 0 ∧ c₃ = 0 := by
+  unfold packed4 at h
+  omega
+
 /-! ## Pure-ℕ aggregator: MUL-unsigned 8-chunk carry chain
 
 This is the core algebraic lemma: given the 8 ℕ chunk equations of
