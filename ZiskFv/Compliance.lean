@@ -72,10 +72,20 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- Unified per-arm conclusion: conjunction of the ten family-
     specific `exec_eq_<family>` Props. Exactly one family fires
-    non-trivially for any given arm; the others are `True`. -/
+    non-trivially for any given arm; the others are definitionally `True`,
+    so for any *concrete* arm 9 of the 10 family conjuncts collapse to `True`.
+
+    NOTE (legibility wart, scheduled to be split out — see PLAN_ARCH_CLARIFICATION
+    step S9): the first two conjuncts `aeneasBridgeTrust` and
+    `memoryTimelineConstructionEvidence` are ALSO hypotheses of
+    `zisk_riscv_compliant_program_bus`, discharged there by `exact h_bridge` /
+    `exact h_memory_construction`. They are assumed, not proved; including them in
+    the conclusion adds no information. The honest content is the 10 family
+    conjuncts (the channel-balance equations); the trust residuals belong only in
+    the hypothesis list. -/
 def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
-  env.aeneasBridgeTrust
-    ∧ env.memoryTimelineConstructionEvidence
+  env.aeneasBridgeTrust            -- echoed hypothesis (assumed, not proved); see S9
+    ∧ env.memoryTimelineConstructionEvidence  -- echoed hypothesis (assumed); see S9
     ∧ env.exec_eq_branch
     ∧ env.exec_eq_nomem
     ∧ env.exec_eq_rtype_binary
@@ -87,15 +97,26 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
     ∧ env.exec_eq_misc
     ∧ env.exec_eq_remaining
 
-/-- **Known-defect-aware channel-balance global theorem.**
+/-- **Soundness of ZisK's RV64IM circuit against the Sail spec, per opcode**
+    (the project's soundness half — public alias `ZiskFv.zisk_riscv_soundness`,
+    see `ZiskFv/Top.lean`).
 
-    For any `OpEnvelope` arm, the channel-balance form of the
-    conclusion (`= state_effect_via_channels …`) holds outside the
-    defect regions recorded by `Defects.NoKnownDefect`. -/
+    For any `OpEnvelope` arm, the channel-balance form of the conclusion
+    (`= state_effect_via_channels …`, defeq `(bus_effect …).2`) holds, given the
+    three conditional assumptions below. None is discharged inside this Lean
+    build; see `ZiskFv/Top.lean` for what covers each gap. In particular the
+    `NoKnownDefect` carve-out is provably `False` on the 7 signed-M/Div defect
+    opcodes, so real coverage is **54 of 63**. -/
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main)
+    -- assumed: concrete decoded Main-AIR column values (Aeneas decoder, not
+    -- imported here; checked by the external extraction gates).
     (h_bridge : env.aeneasBridgeTrust)
+    -- assumed: loads only — a generated mem-replay trace contains the read row,
+    -- prefix-aligned (whole-execution replay induction is open).
     (h_memory_construction : env.memoryTimelineConstructionEvidence)
+    -- claim-weakening: this envelope is outside every ledgered defect region;
+    -- provably `False` on the 7 signed MUL*/DIV*/REM* defects → no claim there.
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩

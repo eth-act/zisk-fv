@@ -1,3 +1,6 @@
+-- THE two public results (soundness + completeness) and how to read them.
+-- New readers: start at `ZiskFv/Top.lean`.
+import ZiskFv.Top
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction

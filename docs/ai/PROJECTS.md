@@ -1,5 +1,16 @@
 # Projects
 
+## Architecture Clarification
+
+Plan: `docs/ai/plan/PLAN_ARCH_CLARIFICATION.md` (branch `arch-clarify`, worktree
+`.worktrees/arch-clarify`, on main + PR #121). A legibility refactor of the two
+public theorems and their support tree: one entry point (`ZiskFv/Top.lean`),
+parallel honest names (`zisk_riscv_soundness` / `zisk_riscv_completeness`), fuse
+the cosmetic Equivalence layer, present hypotheses as named conditional
+assumptions (no longer echoed into conclusions), and make the 54/63 defect scope
++ trust residuals build-visible — clarity only, discharging nothing and not
+merging the two theorems (they share no Lean edge).
+
 ## Endgame
 
 Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — campaign from the current envelope-conditional global theorem to a trace-level public statement, with P1 complete on main via #89 and P3 complete on main via #90/#91. Active stream: `docs/ai/plan/PLAN_ENDGAME_P4.md`, the first trust-reducing phase: build `AcceptedTrace -> OpEnvelope`, discharge bucket-(a) evidence, and leave only `aeneasBridgeTrust`, `ProgramBinding`/boot, and `NoKnownDefect`. Current focus is stacked P4 PR2/PR2a work in `.worktrees/endgame-p4-pr2` on rebased PR1 `da0dfc2c`; extractor, provider-free breadth, lookup-aware ArithMul wrapper, full-ensemble ArithMul provider swap, ArithMul opcode-exclusion, full-ensemble XOR provider selector, XOR bus/promise construction, XOR Binary provider input-row derivation, balance-fed XOR construction, and balance-fed AND construction are pushed through `5c261c7`. Cody's latest 2026-06-14 pull/rebase request was a no-op: `main` stayed `236449c9`, PR1 stayed `da0dfc2c`, and PR2 stayed `f31bbc6`; local AND/logical-Binary edits were preserved by autostash. The current changeset adds verified balance-fed OR construction; next is continuing Binary-family breadth beyond AND/OR/XOR.
