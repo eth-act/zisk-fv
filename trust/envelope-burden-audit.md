@@ -119,7 +119,7 @@ should expose the named defect predicate, not raw contradictions.
 | ArithMul unsigned/non-defect: `mulhu`, `mulw` | ArithMul row constraints, table/range/carry witnesses, op-bus match, external-arith memory witness, operand/result packing facts | Program binding and Aeneas bridge | None |
 | ArithMul signed defect-gated: `mul`, `mulh`, `mulhsu` | Constructor fields are ordinary row/table/bus facts, but dispatch false-eliminates from `NoKnownDefect` | `NoKnownDefect` excludes the current signed-MUL defect region | None under current defect-qualified theorem |
 | ArithDiv unsigned/non-defect: `divu`, `divuw`, `remu`, `remuw` | ArithDiv row constraints, table/range/carry/remainder witnesses, op-bus match, external-arith memory witness, operand/result packing facts | Program binding and Aeneas bridge | None |
-| ArithDiv signed defect-gated: `div`, `divw`, `rem`, `remw` | Constructor fields include dynamic sign/overflow/divisor facts, but dispatch is defect-qualified | `NoKnownDefect` excludes the current signed-DIV/REM defect region | None under current defect-qualified theorem |
+| ArithDiv signed defect-gated: `div`, `divw`, `rem`, `remw` | ArithDiv row + sign facts; divisor-zero/overflow handled in-model — `div`/`divw` consume `div_boundary_constraints` (row-local flag machinery, `arith.pil` 0–30), `rem`/`remw` derive it from the carry-chain identity; the `h_op2_ne`/`h_no_overflow` caller promises are retired (#114). Dispatch defect-qualified | `NoKnownDefect` excludes the current signed-DIV/REM defect region | None under current defect-qualified theorem |
 
 ## Bucket-(c) Finding, class 1: Subword Store Preserved Bytes
 
