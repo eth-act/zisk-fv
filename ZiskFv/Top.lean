@@ -81,6 +81,6 @@ proof of completeness — the 6 hypotheses are discharged in the external Aeneas
 harness, and the real per-AIR constructibility lives separately in
 `AirsClean/*/Circuit.lean`. -/
 @[reducible] def zisk_riscv_completeness :=
-  @ZiskFv.Completeness.Rv64im.rv64im_completeness
+  @ZiskFv.Completeness.Rv64im.zisk_riscv_completeness
 
 end ZiskFv

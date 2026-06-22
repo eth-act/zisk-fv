@@ -11,7 +11,12 @@ layer, present hypotheses as named conditional assumptions (stop echoing them in
 conclusions), make the 54/63 scope + trust residuals build-visible. Clarity only —
 discharges nothing, does NOT merge the two theorems (no Lean edge between them).
 
-Current: S0 baseline — verifying warm `lake build` + trust gate green on the
-untouched #121 base before any edit. Next: S1 front door `Top.lean`.
+Progress: S0 baseline green · S1 front door `Top.lean` (fcf15bed) · S2 honesty
+docstrings (fcf15bed) · S3 completeness renames done (rv64im_completeness →
+zisk_riscv_completeness; SoundnessInput → RowInput; field ziskRowInputAvailable +
+INFORMAL-edge docstring). All builds + gate L1/L2 green; completeness confirmed
+gate-free (no baseline regen). Next: S4 low-risk semantic renames (PackedBitVec→
+Bits, Trusted→RowShape, NoKnownDefect→OutsideKnownDefectRegion, OpEnvelope fields)
+— first step needing caller-burden ledger regen.
 
 Checklist + gate-coupling map: see the plan file.

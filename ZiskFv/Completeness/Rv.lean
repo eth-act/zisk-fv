@@ -26,7 +26,12 @@ structure Interface where
   ziskLowerable : RawInstruction → Prop
   ziskRowMaterialized : RawInstruction → Prop
   ziskOpcodeCovered : RawInstruction → Prop
-  ziskSoundnessInput : RawInstruction → Prop
+  /-- The row-local input the per-opcode soundness wrappers expect for this raw
+      word. NOTE: this is an INFORMAL cross-reference to soundness — there is no
+      Lean dependency edge from completeness to `zisk_riscv_soundness`; this field
+      is just the predicate naming that witness, not a use of the soundness
+      theorem. (Renamed from `ziskSoundnessInput`, which falsely implied a tie.) -/
+  ziskRowInputAvailable : RawInstruction → Prop
   knownDecodeGap : RawInstruction → Prop
   knownRowMaterializationGap : RawInstruction → Prop
 
@@ -41,9 +46,9 @@ def ziskCircuitCovered (iface : Interface) (raw : RawInstruction) : Prop :=
   iface.ziskRowMaterialized raw ∧
   iface.ziskOpcodeCovered raw
 
-def ziskCircuitCoveredWithSoundnessInput
+def ziskCircuitCoveredWithRowInput
     (iface : Interface) (raw : RawInstruction) : Prop :=
-  iface.ziskCircuitCovered raw ∧ iface.ziskSoundnessInput raw
+  iface.ziskCircuitCovered raw ∧ iface.ziskRowInputAvailable raw
 
 /-- ZisK-internal stage proved in the generated Aeneas harness:
 decoder-supported raw words have a lowering opcode. -/
@@ -140,22 +145,22 @@ def ShapeRowMaterializationComplete
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
   ∀ raw, shape raw → iface.ziskLowerable raw → iface.ziskRowMaterialized raw
 
-def SoundnessInputComplete (iface : Interface) : Prop :=
-  ∀ raw, iface.ziskLowerable raw → iface.ziskSoundnessInput raw
+def RowInputComplete (iface : Interface) : Prop :=
+  ∀ raw, iface.ziskLowerable raw → iface.ziskRowInputAvailable raw
 
-def ShapeSoundnessInputComplete
+def ShapeRowInputComplete
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.ziskLowerable raw → iface.ziskSoundnessInput raw
+  ∀ raw, shape raw → iface.ziskLowerable raw → iface.ziskRowInputAvailable raw
 
-def CompletenessWithSoundnessInputAvoidingKnownDecodeBugs
+def CompletenessWithRowInputAvoidingKnownDecodeBugs
     (iface : Interface) : Prop :=
   ∀ raw, iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
-    iface.ziskCircuitCoveredWithSoundnessInput raw
+    iface.ziskCircuitCoveredWithRowInput raw
 
-def ShapeCompletenessWithSoundnessInputAvoidingKnownDecodeBugs
+def ShapeCompletenessWithRowInputAvoidingKnownDecodeBugs
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
   ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
-    iface.ziskCircuitCoveredWithSoundnessInput raw
+    iface.ziskCircuitCoveredWithRowInput raw
 
 /-- Main abstract composition theorem for the current plan.
 
@@ -206,8 +211,8 @@ theorem completeness_with_soundness_input_avoiding_known_decode_bugs
     (h_lower : LoweringComplete iface)
     (h_rows : RowMaterializationComplete iface)
     (h_opcode : OpcodeCoverageComplete iface)
-    (h_soundness : ShapeSoundnessInputComplete iface shape) :
-    CompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface := by
+    (h_soundness : ShapeRowInputComplete iface shape) :
+    CompletenessWithRowInputAvoidingKnownDecodeBugs iface := by
   intro raw h_sail h_not_decode_gap
   have h_shape := h_sail_subset raw h_sail
   have h_supported := h_avoid raw h_shape h_sail h_not_decode_gap
@@ -392,8 +397,8 @@ theorem shape_soundness_input_mono
     (iface : Interface)
     {shape_small shape_big : RawInstruction → Prop}
     (h_subset : ∀ raw, shape_small raw → shape_big raw)
-    (h_soundness : ShapeSoundnessInputComplete iface shape_big) :
-    ShapeSoundnessInputComplete iface shape_small := by
+    (h_soundness : ShapeRowInputComplete iface shape_big) :
+    ShapeRowInputComplete iface shape_small := by
   intro raw h_shape h_lowerable
   exact h_soundness raw (h_subset raw h_shape) h_lowerable
 
@@ -498,9 +503,9 @@ theorem shape_row_materialization_or
 theorem shape_soundness_input_or
     (iface : Interface)
     {shape_left shape_right : RawInstruction → Prop}
-    (h_left : ShapeSoundnessInputComplete iface shape_left)
-    (h_right : ShapeSoundnessInputComplete iface shape_right) :
-    ShapeSoundnessInputComplete
+    (h_left : ShapeRowInputComplete iface shape_left)
+    (h_right : ShapeRowInputComplete iface shape_right) :
+    ShapeRowInputComplete
       iface
       (fun raw => shape_left raw ∨ shape_right raw) := by
   intro raw h_shape h_lowerable

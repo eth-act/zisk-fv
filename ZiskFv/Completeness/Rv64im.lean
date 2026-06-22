@@ -42,9 +42,9 @@ def Rv64imCompletenessAvoidingKnownDecodeBugs
     (iface : Rv.Interface) : Prop :=
   Rv.Interface.CompletenessAvoidingKnownDecodeBugs iface
 
-def Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs
+def Rv64imCompletenessWithRowInputAvoidingKnownDecodeBugs
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.CompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface
+  Rv.Interface.CompletenessWithRowInputAvoidingKnownDecodeBugs iface
 
 def SupportedDecodeAvoidKnownDecodeBugs
     (iface : Rv.Interface) : Prop :=
@@ -52,63 +52,63 @@ def SupportedDecodeAvoidKnownDecodeBugs
     iface
     Rv64imShapes.SupportedDecodeShape
 
-def SupportedDecodeSoundnessInputComplete
+def SupportedDecodeRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.SupportedDecodeShape
 
-def RTypeRegisterSoundnessInputComplete
+def RTypeRegisterRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.RTypeRegisterShape
 
-def JalrRegisterImmediateSoundnessInputComplete
+def JalrRegisterImmediateRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.JalrRegisterImmediateShape
 
-def ImmediateAluRegisterSoundnessInputComplete
+def ImmediateAluRegisterRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.ImmediateAluRegisterShape
 
-def MemoryRegisterImmediateSoundnessInputComplete
+def MemoryRegisterImmediateRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.MemoryRegisterImmediateShape
 
-def ShiftRegisterSoundnessInputComplete
+def ShiftRegisterRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.ShiftRegisterShape
 
-def BranchRegisterImmediateSoundnessInputComplete
+def BranchRegisterImmediateRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.BranchRegisterImmediateShape
 
-def UpperRegisterImmediateSoundnessInputComplete
+def UpperRegisterImmediateRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.UpperRegisterImmediateShape
 
-def JumpRegisterImmediateSoundnessInputComplete
+def JumpRegisterImmediateRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.JumpRegisterImmediateShape
 
-def SupportedFencePredSuccSoundnessInputComplete
+def SupportedFencePredSuccRowInputComplete
     (iface : Rv.Interface) : Prop :=
-  Rv.Interface.ShapeSoundnessInputComplete
+  Rv.Interface.ShapeRowInputComplete
     iface
     Rv64imShapes.SupportedFencePredSuccShape
 
@@ -5455,16 +5455,16 @@ theorem supported_decode_shape_rows_of_memory_refined_families
 
 theorem supported_decode_shape_soundness_input_of_memory_refined_families
     (iface : Rv.Interface)
-    (h_r : RTypeRegisterSoundnessInputComplete iface)
-    (h_jalr : JalrRegisterImmediateSoundnessInputComplete iface)
-    (h_alu : ImmediateAluRegisterSoundnessInputComplete iface)
-    (h_memory : MemoryRegisterImmediateSoundnessInputComplete iface)
-    (h_shift : ShiftRegisterSoundnessInputComplete iface)
-    (h_branch : BranchRegisterImmediateSoundnessInputComplete iface)
-    (h_upper : UpperRegisterImmediateSoundnessInputComplete iface)
-    (h_jump : JumpRegisterImmediateSoundnessInputComplete iface)
-    (h_fence : SupportedFencePredSuccSoundnessInputComplete iface) :
-    SupportedDecodeSoundnessInputComplete iface := by
+    (h_r : RTypeRegisterRowInputComplete iface)
+    (h_jalr : JalrRegisterImmediateRowInputComplete iface)
+    (h_alu : ImmediateAluRegisterRowInputComplete iface)
+    (h_memory : MemoryRegisterImmediateRowInputComplete iface)
+    (h_shift : ShiftRegisterRowInputComplete iface)
+    (h_branch : BranchRegisterImmediateRowInputComplete iface)
+    (h_upper : UpperRegisterImmediateRowInputComplete iface)
+    (h_jump : JumpRegisterImmediateRowInputComplete iface)
+    (h_fence : SupportedFencePredSuccRowInputComplete iface) :
+    SupportedDecodeRowInputComplete iface := by
   intro raw h_shape h_lowerable
   rcases h_shape with
     h_r_shape | h_i_shape | h_shift_shape | h_store_shape |
@@ -5898,8 +5898,8 @@ theorem rv64im_global_completeness_with_soundness_input_avoiding_known_decode_bu
     (h_lower : Rv.Interface.LoweringComplete iface)
     (h_rows : Rv.Interface.RowMaterializationComplete iface)
     (h_opcode : Rv.Interface.OpcodeCoverageComplete iface)
-    (h_soundness : SupportedDecodeSoundnessInputComplete iface) :
-    Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
+    (h_soundness : SupportedDecodeRowInputComplete iface) :
+    Rv64imCompletenessWithRowInputAvoidingKnownDecodeBugs iface :=
   Rv.Interface.completeness_with_soundness_input_avoiding_known_decode_bugs
     iface
     Rv64imShapes.SupportedDecodeShape
@@ -5916,15 +5916,15 @@ Sail is the source of valid raw instructions.  For every Sail-executable
 RV64IM raw word, outside explicitly known ZisK decode gaps, the production
 ZisK decode/lower/materialize path covers the instruction and provides the
 row-local soundness input expected by the opcode soundness theorems. -/
-theorem rv64im_completeness
+theorem zisk_riscv_completeness
     (iface : Rv.Interface)
     (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
     (h_supported : SupportedDecodeAvoidKnownDecodeBugs iface)
     (h_lower : Rv.Interface.LoweringComplete iface)
     (h_rows : Rv.Interface.RowMaterializationComplete iface)
     (h_opcode : Rv.Interface.OpcodeCoverageComplete iface)
-    (h_soundness : SupportedDecodeSoundnessInputComplete iface) :
-    Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
+    (h_soundness : SupportedDecodeRowInputComplete iface) :
+    Rv64imCompletenessWithRowInputAvoidingKnownDecodeBugs iface :=
   rv64im_global_completeness_with_soundness_input_avoiding_known_decode_bugs
     iface
     h_sail_subset
@@ -5938,7 +5938,7 @@ theorem rv64im_completeness
 
 This is only a helper for the generated route aggregation: each family proves
 its own production-row soundness-input contract, and this theorem assembles
-those contracts into the uniform `rv64im_completeness` endpoint. -/
+those contracts into the uniform `zisk_riscv_completeness` endpoint. -/
 theorem rv64im_global_completeness_with_family_soundness_inputs_avoiding_known_decode_bugs
     (iface : Rv.Interface)
     (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
@@ -5946,17 +5946,17 @@ theorem rv64im_global_completeness_with_family_soundness_inputs_avoiding_known_d
     (h_lower : Rv.Interface.LoweringComplete iface)
     (h_rows : Rv.Interface.RowMaterializationComplete iface)
     (h_opcode : Rv.Interface.OpcodeCoverageComplete iface)
-    (h_r_soundness : RTypeRegisterSoundnessInputComplete iface)
-    (h_jalr_soundness : JalrRegisterImmediateSoundnessInputComplete iface)
-    (h_alu_soundness : ImmediateAluRegisterSoundnessInputComplete iface)
-    (h_memory_soundness : MemoryRegisterImmediateSoundnessInputComplete iface)
-    (h_shift_soundness : ShiftRegisterSoundnessInputComplete iface)
-    (h_branch_soundness : BranchRegisterImmediateSoundnessInputComplete iface)
-    (h_upper_soundness : UpperRegisterImmediateSoundnessInputComplete iface)
-    (h_jump_soundness : JumpRegisterImmediateSoundnessInputComplete iface)
-    (h_fence_soundness : SupportedFencePredSuccSoundnessInputComplete iface) :
-    Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
-  rv64im_completeness
+    (h_r_soundness : RTypeRegisterRowInputComplete iface)
+    (h_jalr_soundness : JalrRegisterImmediateRowInputComplete iface)
+    (h_alu_soundness : ImmediateAluRegisterRowInputComplete iface)
+    (h_memory_soundness : MemoryRegisterImmediateRowInputComplete iface)
+    (h_shift_soundness : ShiftRegisterRowInputComplete iface)
+    (h_branch_soundness : BranchRegisterImmediateRowInputComplete iface)
+    (h_upper_soundness : UpperRegisterImmediateRowInputComplete iface)
+    (h_jump_soundness : JumpRegisterImmediateRowInputComplete iface)
+    (h_fence_soundness : SupportedFencePredSuccRowInputComplete iface) :
+    Rv64imCompletenessWithRowInputAvoidingKnownDecodeBugs iface :=
+  zisk_riscv_completeness
     iface
     h_sail_subset
     h_supported
