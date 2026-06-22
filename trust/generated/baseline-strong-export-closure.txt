@@ -22,8 +22,8 @@
 #   lake exe trust-gate print-strong-export-closure \
 #     > trust/generated/baseline-strong-export-closure.txt  (body, below the header)
 #
-# Refresh via `trust/scripts/regenerate.sh` (requires `lake build` artefacts
-# under `.lake/build/`). Last regenerated: 2026-06-20.
+# Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
+# artefacts under `.lake/build/`). Last regenerated: 2026-06-22.
 #
 # Total ZiskFv.* axiom entries: 0
 #
