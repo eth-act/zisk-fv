@@ -2053,7 +2053,7 @@ lemma fgl_div_signed_to_bv64
       exact ⟨decide_eq_true h_overflow.1, decide_eq_true h_overflow.2⟩
     simp only [h_cond, if_true]
     rw [h_q_eq, h_overflow.1, h_overflow.2, int_tdiv_overflow_full]
-    native_decide
+    decide
   · have h_cond :
         (decide (r1.toInt = -2^63) && decide (r2.toInt = -1)) = false := by
       rw [Bool.and_eq_false_iff]

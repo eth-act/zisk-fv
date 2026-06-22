@@ -1196,7 +1196,7 @@ lemma fgl_div_w_signed_to_bv64
       Sail.BitVec.extractLsb r1 31 0 = (BitVec.ofNat 32 (2^31))
         ∧ Sail.BitVec.extractLsb r2 31 0 = BitVec.allOnes 32
   · rw [if_pos h_overflow, h_q_eq, h_overflow.1, h_overflow.2]
-    native_decide
+    decide
   · rw [if_neg h_overflow, h_q_eq]
 
 /-- **Signed-REMW final BV64 wrapper (nonzero-divisor case).**
@@ -1222,7 +1222,7 @@ lemma fgl_rem_w_signed_to_bv64
       Sail.BitVec.extractLsb r1 31 0 = (BitVec.ofNat 32 (2^31))
         ∧ Sail.BitVec.extractLsb r2 31 0 = BitVec.allOnes 32
   · rw [if_pos h_overflow, h_r_eq, h_overflow.1, h_overflow.2]
-    native_decide
+    decide
   · rw [if_neg h_overflow, h_r_eq]
 
 /-! ### 11.4 — DIVUW / REMUW: unsigned-W BV64 wrappers (non-zero divisor)

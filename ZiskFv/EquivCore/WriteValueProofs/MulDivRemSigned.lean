@@ -352,10 +352,10 @@ lemma signed_divw_overflow_operands_of_boundary
   constructor
   · apply BitVec.toInt_inj.mp
     rw [h_r1_toInt]
-    native_decide
+    decide
   · apply BitVec.toInt_inj.mp
     rw [h_r2_toInt]
-    native_decide
+    decide
 
 /-- **Signed DIV divisor-zero boundary.**
 
