@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.ProgramBinding.Wrappers
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.Compliance.ConstructionMulhu
 import ZiskFv.Compliance.ConstructionDivu
@@ -299,7 +299,7 @@ private lemma remuw_carry_bounds_claimed_dead
     `exists_arithMul_provider_row_matches_primary_of_remuw_from_binding`.
     Mirrors `remuArow` / `divuwArow`. -/
 noncomputable def remuwArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -312,7 +312,7 @@ noncomputable def remuwArow
 /-- `FullSpec` of the balance-selected REMUW provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem remuwArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -330,7 +330,7 @@ theorem remuwArow_fullSpec_row
 /-- The op-bus match of the balance-selected REMUW provider row against the Main
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. -/
 theorem remuwArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -351,7 +351,7 @@ theorem remuwArow_match_row
     off the BARE provider `ArithMulRow` via `remuw_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem remuwArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -383,7 +383,7 @@ theorem remuwArow_mode_pins
     `m32`-agnostic, so the REMU secondary bridge
     `match_opBus_row_ArithDivSecondary_vOfDivuRow` applies verbatim). -/
 theorem remuwArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -622,7 +622,7 @@ lemma equiv_REMUW_of_fullSpec_claimed_dead
 
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
-    `trace.balanced` / `trace.spec` via the SHARED ArithMul provider's
+    `trace.channels_balanced` / `trace.spec_holds` via the SHARED ArithMul provider's
     lookup-aware `componentWithArithTable.Spec = FullSpec`, NOT supplied as
     binders.  The low-remainder byte match is also DERIVED.
 
@@ -635,7 +635,7 @@ lemma equiv_REMUW_of_fullSpec_claimed_dead
 theorem construction_remuw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (remuw_input : PureSpec.RemuwInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins

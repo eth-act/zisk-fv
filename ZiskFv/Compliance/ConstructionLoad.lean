@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.ProgramBinding.Wrappers
 import ZiskFv.Compliance.Wrappers.Lb
 import ZiskFv.Compliance.Wrappers.Lh
 import ZiskFv.Compliance.Wrappers.Lw
@@ -47,7 +47,7 @@ obligations):
 
 Everything ELSE is derived/structural exactly as in the store/LUI pattern:
 the Main row provenance (`mainRowWithRomLd.core = rowAt …`), the per-row
-`Main.Spec` (from `trace.spec`), `store_pc = 0` lifted to the row, the
+`Main.Spec` (from `trace.spec_holds`), `store_pc = 0` lifted to the row, the
 self-referential `main_b_match`/`main_c_match` (`matches_memory_entry_refl` off
 the real Clean Main `b`/`c` emissions), and the `LoadPromises` bus shape facts
 (`m0..m2` by `rfl`).
@@ -100,7 +100,7 @@ set_option maxHeartbeats 2000000
     the real Main table. Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 def mainRowWithRomLd
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program binding.mainTable i.val
@@ -112,7 +112,7 @@ def mainRowWithRomLd
     `matches_memory_entry_refl`. -/
 @[reducible]
 def busLd
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (execRow : List (Interaction.ExecutionBusEntry FGL)) :
     ZiskFv.Compliance.BusRows where
   exec_row := execRow
@@ -126,7 +126,7 @@ def busLd
 /-- The Main row provenance at trace index `i`: `mainRowWithRomLd`'s `.core`
     equals the honest `rowAt (mainOfTable …) i`. Shared by all seven loads. -/
 theorem mainRowWithRomLd_core
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     (mainRowWithRomLd trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
@@ -154,7 +154,7 @@ theorem mainRowWithRomLd_core
 theorem construction_ld_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (ld_input : PureSpec.LdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) #76 Mem-AIR provider (irreducible — see header)
@@ -298,7 +298,7 @@ theorem construction_ld_sound_claimed_dead
 theorem construction_lbu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) #76 Mem-AIR provider (irreducible — see header)
@@ -432,7 +432,7 @@ theorem construction_lbu_sound_claimed_dead
 theorem construction_lhu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (lhu_input : PureSpec.LhuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
@@ -558,7 +558,7 @@ theorem construction_lhu_sound_claimed_dead
 theorem construction_lwu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (lwu_input : PureSpec.LwuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
@@ -695,7 +695,7 @@ theorem construction_lwu_sound_claimed_dead
 theorem construction_lb_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) #76 Mem-AIR provider (irreducible — see header)
@@ -833,7 +833,7 @@ theorem construction_lb_sound_claimed_dead
 theorem construction_lh_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
@@ -963,7 +963,7 @@ theorem construction_lh_sound_claimed_dead
 theorem construction_lw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)

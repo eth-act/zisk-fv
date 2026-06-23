@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.ProgramBinding.Wrappers
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.Compliance.ConstructionMulhu
 import ZiskFv.Compliance.ConstructionDivu
@@ -301,7 +301,7 @@ private lemma divuw_carry_bounds_claimed_dead
     `exists_arithMul_provider_row_matches_primary_of_divuw_from_binding`.
     Mirrors `divuArow`. -/
 noncomputable def divuwArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -314,7 +314,7 @@ noncomputable def divuwArow
 /-- `FullSpec` of the balance-selected DIVUW provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem divuwArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -332,7 +332,7 @@ theorem divuwArow_fullSpec_row
 /-- The op-bus match of the balance-selected DIVUW provider row against the Main
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. -/
 theorem divuwArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -353,7 +353,7 @@ theorem divuwArow_match_row
     off the BARE provider `ArithMulRow` via `divuw_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem divuwArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -384,7 +384,7 @@ theorem divuwArow_mode_pins
     faithful mux are DERIVED via `divuwArow_mode_pins` (they are `m32`-agnostic,
     so the DIVU-mode bridge `match_opBus_row_ArithDiv_vOfDivuRow` applies). -/
 theorem divuwArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -623,7 +623,7 @@ lemma equiv_DIVUW_of_fullSpec_claimed_dead
 
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
-    `trace.balanced` / `trace.spec` via the SHARED ArithMul provider's
+    `trace.channels_balanced` / `trace.spec_holds` via the SHARED ArithMul provider's
     lookup-aware `componentWithArithTable.Spec = FullSpec`, NOT supplied as
     binders.  The W-mode high-lane zeros (`b_2=b_3=c_2=c_3=0`) and the
     low-quotient byte match are also DERIVED.
@@ -636,7 +636,7 @@ lemma equiv_DIVUW_of_fullSpec_claimed_dead
 theorem construction_divuw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (divuw_input : PureSpec.DivuwInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins

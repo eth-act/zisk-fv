@@ -50,7 +50,7 @@ that construction's genuinely-irreducible residual binders (decode pins, Sail
 reads, operand/lane bridges, the `execRow` ∀-binder + exec facts,
 `h_nextPC_matches`; for loads also `MemoryTimelineEvidence` + the Mem-AIR
 provider linkage).  It does NOT package the bucket-(a) op-bus provider-match
-evidence: that is derived INSIDE each construction from `trace.balanced` (via the
+evidence: that is derived INSIDE each construction from `trace.channels_balanced` (via the
 `exists_*_from_binding` Layer-A wrappers).
 
 ## Coverage (stated explicitly — NOT hidden)
@@ -390,7 +390,7 @@ noncomputable def loadMemMsg (memRow : ZiskFv.AirsClean.Mem.MemRow FGL) :
 /-- Irreducible per-row residuals for the `sub` archetype — the binders of
     `construction_sub_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sub
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sub_input : PureSpec.SubInput
   r1 : regidx
   r2 : regidx
@@ -450,7 +450,7 @@ structure RowData_sub
 /-- Irreducible per-row residuals for the `and` archetype — the binders of
     `construction_and_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_and
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   and_input : PureSpec.AndInput
   r1 : regidx
   r2 : regidx
@@ -510,7 +510,7 @@ structure RowData_and
 /-- Irreducible per-row residuals for the `or` archetype — the binders of
     `construction_or_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_or
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   or_input : PureSpec.OrInput
   r1 : regidx
   r2 : regidx
@@ -570,7 +570,7 @@ structure RowData_or
 /-- Irreducible per-row residuals for the `xor` archetype — the binders of
     `construction_xor_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_xor
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   xor_input : PureSpec.XorInput
   r1 : regidx
   r2 : regidx
@@ -630,7 +630,7 @@ structure RowData_xor
 /-- Irreducible per-row residuals for the `slt` archetype — the binders of
     `construction_slt_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   slt_input : PureSpec.SltInput
   r1 : regidx
   r2 : regidx
@@ -690,7 +690,7 @@ structure RowData_slt
 /-- Irreducible per-row residuals for the `sltu` archetype — the binders of
     `construction_sltu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sltu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sltu_input : PureSpec.SltuInput
   r1 : regidx
   r2 : regidx
@@ -750,7 +750,7 @@ structure RowData_sltu
 /-- Irreducible per-row residuals for the `andi` archetype — the binders of
     `construction_andi_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_andi
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   andi_input : PureSpec.AndiInput
   r1 : regidx
   rd : regidx
@@ -801,7 +801,7 @@ structure RowData_andi
 /-- Irreducible per-row residuals for the `ori` archetype — the binders of
     `construction_ori_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_ori
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   ori_input : PureSpec.OriInput
   r1 : regidx
   rd : regidx
@@ -852,7 +852,7 @@ structure RowData_ori
 /-- Irreducible per-row residuals for the `xori` archetype — the binders of
     `construction_xori_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_xori
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   xori_input : PureSpec.XoriInput
   r1 : regidx
   rd : regidx
@@ -903,7 +903,7 @@ structure RowData_xori
 /-- Irreducible per-row residuals for the `slti` archetype — the binders of
     `construction_slti_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slti
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   slti_input : PureSpec.SltiInput
   r1 : regidx
   rd : regidx
@@ -954,7 +954,7 @@ structure RowData_slti
 /-- Irreducible per-row residuals for the `sltiu` archetype — the binders of
     `construction_sltiu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sltiu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sltiu_input : PureSpec.SltiuInput
   r1 : regidx
   rd : regidx
@@ -1005,7 +1005,7 @@ structure RowData_sltiu
 /-- Irreducible per-row residuals for the `sll` archetype — the binders of
     `construction_sll_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sll
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sll_input : PureSpec.SllInput
   r1 : regidx
   r2 : regidx
@@ -1065,7 +1065,7 @@ structure RowData_sll
 /-- Irreducible per-row residuals for the `srl` archetype — the binders of
     `construction_srl_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srl
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   srl_input : PureSpec.SrlInput
   r1 : regidx
   r2 : regidx
@@ -1125,7 +1125,7 @@ structure RowData_srl
 /-- Irreducible per-row residuals for the `sra` archetype — the binders of
     `construction_sra_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sra
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sra_input : PureSpec.SraInput
   r1 : regidx
   r2 : regidx
@@ -1185,7 +1185,7 @@ structure RowData_sra
 /-- Irreducible per-row residuals for the `slli` archetype — the binders of
     `construction_slli_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slli
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   slli_input : PureSpec.SlliInput
   r1 : regidx
   rd : regidx
@@ -1236,7 +1236,7 @@ structure RowData_slli
 /-- Irreducible per-row residuals for the `srli` archetype — the binders of
     `construction_srli_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srli
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   srli_input : PureSpec.SrliInput
   r1 : regidx
   rd : regidx
@@ -1287,7 +1287,7 @@ structure RowData_srli
 /-- Irreducible per-row residuals for the `srai` archetype — the binders of
     `construction_srai_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srai
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   srai_input : PureSpec.SraiInput
   r1 : regidx
   rd : regidx
@@ -1338,7 +1338,7 @@ structure RowData_srai
 /-- Irreducible per-row residuals for the `sllw` archetype — the binders of
     `construction_sllw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sllw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sllw_input : PureSpec.SllwInput
   r1 : regidx
   r2 : regidx
@@ -1398,7 +1398,7 @@ structure RowData_sllw
 /-- Irreducible per-row residuals for the `srlw` archetype — the binders of
     `construction_srlw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srlw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   srlw_input : PureSpec.SrlwInput
   r1 : regidx
   r2 : regidx
@@ -1458,7 +1458,7 @@ structure RowData_srlw
 /-- Irreducible per-row residuals for the `sraw` archetype — the binders of
     `construction_sraw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sraw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sraw_input : PureSpec.SrawInput
   r1 : regidx
   r2 : regidx
@@ -1518,7 +1518,7 @@ structure RowData_sraw
 /-- Irreducible per-row residuals for the `slliw` archetype — the binders of
     `construction_slliw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slliw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   slliw_input : PureSpec.SlliwInput
   r1 : regidx
   rd : regidx
@@ -1567,7 +1567,7 @@ structure RowData_slliw
 /-- Irreducible per-row residuals for the `srliw` archetype — the binders of
     `construction_srliw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srliw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   srliw_input : PureSpec.SrliwInput
   r1 : regidx
   rd : regidx
@@ -1616,7 +1616,7 @@ structure RowData_srliw
 /-- Irreducible per-row residuals for the `sraiw` archetype — the binders of
     `construction_sraiw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sraiw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sraiw_input : PureSpec.SraiwInput
   r1 : regidx
   rd : regidx
@@ -1665,7 +1665,7 @@ structure RowData_sraiw
 /-- Irreducible per-row residuals for the `add` archetype — the binders of
     `construction_add_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_add
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   add_input : PureSpec.AddInput
   r1 : regidx
   r2 : regidx
@@ -1725,7 +1725,7 @@ structure RowData_add
 /-- Irreducible per-row residuals for the `addi` archetype — the binders of
     `construction_addi_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_addi
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   addi_input : PureSpec.AddiInput
   r1 : regidx
   rd : regidx
@@ -1779,7 +1779,7 @@ structure RowData_addi
 /-- Irreducible per-row residuals for the `subw` archetype — the binders of
     `construction_subw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_subw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   subw_input : PureSpec.SubwInput
   r1 : regidx
   r2 : regidx
@@ -1839,7 +1839,7 @@ structure RowData_subw
 /-- Irreducible per-row residuals for the `addw` archetype — the binders of
     `construction_addw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_addw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   addw_input : PureSpec.AddwInput
   r1 : regidx
   r2 : regidx
@@ -1899,7 +1899,7 @@ structure RowData_addw
 /-- Irreducible per-row residuals for the `addiw` archetype — the binders of
     `construction_addiw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_addiw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   addiw_input : PureSpec.AddiwInput
   r1 : regidx
   rd : regidx
@@ -1950,7 +1950,7 @@ structure RowData_addiw
 /-- Irreducible per-row residuals for the `lui` archetype — the binders of
     `construction_lui_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_lui
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   lui_input : PureSpec.LuiInput
   imm : BitVec 20
   rd : regidx
@@ -1992,7 +1992,7 @@ structure RowData_lui
 /-- Irreducible per-row residuals for the `auipc` archetype — the binders of
     `construction_auipc_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_auipc
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   auipc_input : PureSpec.AuipcInput
   imm : BitVec 20
   rd : regidx
@@ -2041,7 +2041,7 @@ structure RowData_auipc
 /-- Irreducible per-row residuals for the `mulw` archetype — the binders of
     `construction_mulw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_mulw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   mulw_input : PureSpec.MulwInput
   r1 : regidx
   r2 : regidx
@@ -2132,7 +2132,7 @@ structure RowData_mulw
     contradictory `False`-binder.  Non-vacuous: a real trace with an honest signed
     MUL row supplies all binders. -/
 structure RowData_mul
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   mul_input : PureSpec.MulInput
   r1 : regidx
   r2 : regidx
@@ -2198,7 +2198,7 @@ structure RowData_mul
     Non-vacuous: a real trace with an honest signed MULH row supplies all
     binders (`h_not_forge` holds, `h_sign_*` are the true operand MSBs). -/
 structure RowData_mulh
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   mulh_input : PureSpec.MulhInput
   r1 : regidx
   r2 : regidx
@@ -2259,7 +2259,7 @@ structure RowData_mulh
     high half, op 179).  Mirror of `RowData_mulh` but the table pins `nb = 0`
     (op2 unsigned), so only ONE sign-range residual `h_sign_a` is carried. -/
 structure RowData_mulhsu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   mulhsu_input : PureSpec.MulhsuInput
   r1 : regidx
   r2 : regidx
@@ -2341,7 +2341,7 @@ structure RowData_mulhsu
     Non-vacuous: a real trace with an honest signed DIV row supplies all binders
     (anti-vacuity witness `honest_div_witness_not_forge`). -/
 structure RowData_div
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   div_input : PureSpec.DivInput
   r1 : regidx
   r2 : regidx
@@ -2438,7 +2438,7 @@ structure RowData_div
     remainder lane (`opBus_row_ArithDivSecondary`).  Carries the narrowed honest
     shape `|r| ≠ |op2|`; the divisor-zero residual stays carried. -/
 structure RowData_rem
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   rem_input : PureSpec.RemInput
   r1 : regidx
   r2 : regidx
@@ -2527,7 +2527,7 @@ structure RowData_rem
     narrowed W honest shape excluding the nonzero-divisor `|r₃₂| = |op2₃₂|`
     false positive. -/
 structure RowData_divw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   divw_input : PureSpec.DivwInput
   r1 : regidx
   r2 : regidx
@@ -2632,7 +2632,7 @@ structure RowData_divw
     remainder (op `189`, `m32 = 1`, secondary ArithDiv lane).  W-mode analogue of
     `RowData_rem`; mirror of `RowData_divw` on the secondary (remainder) lane. -/
 structure RowData_remw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   remw_input : PureSpec.RemwInput
   r1 : regidx
   r2 : regidx
@@ -2733,7 +2733,7 @@ structure RowData_remw
 /-- Irreducible per-row residuals for the `mulhu` archetype — the binders of
     `construction_mulhu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_mulhu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   mulhu_input : PureSpec.MulhuInput
   r1 : regidx
   r2 : regidx
@@ -2788,7 +2788,7 @@ structure RowData_mulhu
 /-- Irreducible per-row residuals for the `divu` archetype — the binders of
     `construction_divu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_divu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   divu_input : PureSpec.DivuInput
   r1 : regidx
   r2 : regidx
@@ -2846,7 +2846,7 @@ structure RowData_divu
 /-- Irreducible per-row residuals for the `divuw` archetype — the binders of
     `construction_divuw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_divuw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   divuw_input : PureSpec.DivuwInput
   r1 : regidx
   r2 : regidx
@@ -2919,7 +2919,7 @@ structure RowData_divuw
 /-- Irreducible per-row residuals for the `remu` archetype — the binders of
     `construction_remu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_remu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   remu_input : PureSpec.RemuInput
   r1 : regidx
   r2 : regidx
@@ -2977,7 +2977,7 @@ structure RowData_remu
 /-- Irreducible per-row residuals for the `remuw` archetype — the binders of
     `construction_remuw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_remuw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   remuw_input : PureSpec.RemuwInput
   r1 : regidx
   r2 : regidx
@@ -3050,7 +3050,7 @@ structure RowData_remuw
 /-- Irreducible per-row residuals for the `sb` archetype — the binders of
     `construction_sb_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sb
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sb_input : PureSpec.SbInput
   regs : ZiskFv.Compliance.ModeRegsFull
   h_main_active :
@@ -3103,7 +3103,7 @@ structure RowData_sb
 /-- Irreducible per-row residuals for the `sh` archetype — the binders of
     `construction_sh_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sh
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sh_input : PureSpec.ShInput
   regs : ZiskFv.Compliance.ModeRegsFull
   h_main_active :
@@ -3154,7 +3154,7 @@ structure RowData_sh
 /-- Irreducible per-row residuals for the `sw` archetype — the binders of
     `construction_sw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sw_input : PureSpec.SwInput
   regs : ZiskFv.Compliance.ModeRegsFull
   h_main_active :
@@ -3201,7 +3201,7 @@ structure RowData_sw
 /-- Irreducible per-row residuals for the `sd` archetype — the binders of
     `construction_sd_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sd
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   sd_input : PureSpec.SdInput
   regs : ZiskFv.Compliance.ModeRegsFull
   h_main_active :
@@ -3237,7 +3237,7 @@ structure RowData_sd
 /-- Irreducible per-row residuals for the `ld` archetype — the binders of
     `construction_ld_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_ld
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   ld_input : PureSpec.LdInput
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -3286,7 +3286,7 @@ structure RowData_ld
 /-- Irreducible per-row residuals for the `lbu` archetype — the binders of
     `construction_lbu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_lbu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   lbu_input : PureSpec.LbuInput
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -3338,7 +3338,7 @@ structure RowData_lbu
 /-- Irreducible per-row residuals for the `lhu` archetype — the binders of
     `construction_lhu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_lhu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   lhu_input : PureSpec.LhuInput
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -3390,7 +3390,7 @@ structure RowData_lhu
 /-- Irreducible per-row residuals for the `lwu` archetype — the binders of
     `construction_lwu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_lwu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   lwu_input : PureSpec.LwuInput
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -3442,7 +3442,7 @@ structure RowData_lwu
 /-- Irreducible per-row residuals for the `lb` archetype — the binders of
     `construction_lb_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_lb
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   lb_input : PureSpec.LbInput
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -3502,7 +3502,7 @@ structure RowData_lb
 /-- Irreducible per-row residuals for the `lh` archetype — the binders of
     `construction_lh_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_lh
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   lh_input : PureSpec.LhInput
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -3562,7 +3562,7 @@ structure RowData_lh
 /-- Irreducible per-row residuals for the `lw` archetype — the binders of
     `construction_lw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_lw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   lw_input : PureSpec.LwInput
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -3622,7 +3622,7 @@ structure RowData_lw
 /-- Irreducible per-row residuals for the `beq` archetype — the binders of
     `construction_beq_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_beq
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   beq_input : PureSpec.BeqInput
   imm : BitVec 13
   r1 : regidx
@@ -3668,7 +3668,7 @@ structure RowData_beq
 /-- Irreducible per-row residuals for the `bne` archetype — the binders of
     `construction_bne_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bne
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   bne_input : PureSpec.BneInput
   imm : BitVec 13
   r1 : regidx
@@ -3714,7 +3714,7 @@ structure RowData_bne
 /-- Irreducible per-row residuals for the `blt` archetype — the binders of
     `construction_blt_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_blt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   blt_input : PureSpec.BltInput
   imm : BitVec 13
   r1 : regidx
@@ -3760,7 +3760,7 @@ structure RowData_blt
 /-- Irreducible per-row residuals for the `bge` archetype — the binders of
     `construction_bge_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bge
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   bge_input : PureSpec.BgeInput
   imm : BitVec 13
   r1 : regidx
@@ -3806,7 +3806,7 @@ structure RowData_bge
 /-- Irreducible per-row residuals for the `bltu` archetype — the binders of
     `construction_bltu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bltu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   bltu_input : PureSpec.BltuInput
   imm : BitVec 13
   r1 : regidx
@@ -3852,7 +3852,7 @@ structure RowData_bltu
 /-- Irreducible per-row residuals for the `bgeu` archetype — the binders of
     `construction_bgeu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bgeu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   bgeu_input : PureSpec.BgeuInput
   imm : BitVec 13
   r1 : regidx
@@ -3898,7 +3898,7 @@ structure RowData_bgeu
 /-- Irreducible per-row residuals for the `jal` archetype — the binders of
     `construction_jal_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_jal
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   jal_input : PureSpec.JalInput
   imm : BitVec 21
   rd : regidx
@@ -3947,7 +3947,7 @@ structure RowData_jal
 /-- Irreducible per-row residuals for the `jalr` archetype — the binders of
     `construction_jalr_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_jalr
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   jalr_input : PureSpec.JalrInput
   imm : BitVec 12
   rs1 : regidx
@@ -4018,7 +4018,7 @@ structure RowData_jalr
     documents.  Non-vacuous: a real trace with a generic `fm=0,rs1=x0,rd=x0` FENCE
     row supplies all binders and proves the `NoKnownDefect` obligation. -/
 structure RowData_fence
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   fence_input : PureSpec.FenceInput
   fm : BitVec 4
   fenceP : BitVec 4
@@ -4054,7 +4054,7 @@ structure RowData_fence
     so the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
     exact env the proof feeds to `zisk_riscv_compliant_program_bus`. -/
 noncomputable def fenceEnvOf
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i) :
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
@@ -4073,7 +4073,7 @@ noncomputable def fenceEnvOf
     exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
     `fenceEnvOf`: a specific-env obligation, SATISFIABLE for an honest row.) -/
 noncomputable def mulEnvOf
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i) :
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
@@ -4090,11 +4090,11 @@ noncomputable def mulEnvOf
     `False` and the FENCE defect predicate's negation is `True`, while the
     arith-mul defect predicate is exactly the two exceptional product-sign shapes
     that `h_not_forge` rules out.  Hence the threaded obligation is SATISFIABLE for
-    every honest MUL row, so the `.mul` arm of `zisk_compliant_of_accepted_trace_strong`
+    every honest MUL row, so the `.mul` arm of `root_soundness`
     is NON-VACUOUS (it is not discharged by a contradictory binder).  This lemma is
     the Lean-checked anti-vacuity guard for the strong-export MUL arm. -/
 theorem mul_noKnownDefect_of_rowData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i) :
     Defects.NoKnownDefect (mulEnvOf trace binding i d) := by
   intro id
@@ -4111,7 +4111,7 @@ theorem mul_noKnownDefect_of_rowData
     `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed MULH
     row.  Carries the SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b`. -/
 noncomputable def mulhEnvOf
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i) :
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
@@ -4124,7 +4124,7 @@ noncomputable def mulhEnvOf
 /-- The `OpEnvelope.mulhsu` env CONSTRUCTED from a `RowData_mulhsu`.  Only ONE
     sign-range residual `h_sign_a` (op2 unsigned, table-pinned `nb = 0`). -/
 noncomputable def mulhsuEnvOf
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i) :
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
@@ -4139,7 +4139,7 @@ noncomputable def mulhsuEnvOf
     narrowed `MaliciousSignedMulWitnessShape` admits for op 181, so
     `NoKnownDefect (mulhEnvOf …)` is TRUE — the `.mulh` strong arm is NON-VACUOUS. -/
 theorem mulh_noKnownDefect_of_rowData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i) :
     Defects.NoKnownDefect (mulhEnvOf trace binding i d) := by
   intro id
@@ -4155,7 +4155,7 @@ theorem mulh_noKnownDefect_of_rowData
 /-- Satisfiability witness for the threaded MULHSU obligation (companion of
     `mulh_noKnownDefect_of_rowData`). -/
 theorem mulhsu_noKnownDefect_of_rowData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i) :
     Defects.NoKnownDefect (mulhsuEnvOf trace binding i d) := by
   intro id
@@ -4175,7 +4175,7 @@ theorem mulhsu_noKnownDefect_of_rowData
     `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed DIV
     row whose `|r| ≠ |op2|`.) -/
 noncomputable def divEnvOf
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i) :
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
@@ -4187,7 +4187,7 @@ noncomputable def divEnvOf
 
 /-- The `OpEnvelope.rem` env CONSTRUCTED from a `RowData_rem` (secondary lane). -/
 noncomputable def remEnvOf
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i) :
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
@@ -4199,7 +4199,7 @@ noncomputable def remEnvOf
 
 /-- The `OpEnvelope.divw` env CONSTRUCTED from a `RowData_divw` (W-mode primary). -/
 noncomputable def divwEnvOf
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i) :
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
@@ -4212,7 +4212,7 @@ noncomputable def divwEnvOf
 
 /-- The `OpEnvelope.remw` env CONSTRUCTED from a `RowData_remw` (W-mode secondary). -/
 noncomputable def remwEnvOf
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_remw trace binding i) :
     OpEnvelope (binding.stateAt i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
@@ -4235,7 +4235,7 @@ noncomputable def remwEnvOf
     including divisor-zero rows handled by the boundary constraints.  This is the
     Lean-checked anti-vacuity guard for the strong-export DIV arm. -/
 theorem div_noKnownDefect_of_rowData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i) :
     Defects.NoKnownDefect (divEnvOf trace binding i d) := by
   intro id
@@ -4251,7 +4251,7 @@ theorem div_noKnownDefect_of_rowData
 /-- Satisfiability witness for the threaded REM obligation (companion of
     `div_noKnownDefect_of_rowData`; secondary remainder lane). -/
 theorem rem_noKnownDefect_of_rowData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i) :
     Defects.NoKnownDefect (remEnvOf trace binding i d) := by
   intro id
@@ -4269,7 +4269,7 @@ theorem rem_noKnownDefect_of_rowData
 /-- Satisfiability witness for the threaded DIVW obligation (W-mode analogue of
     `div_noKnownDefect_of_rowData`; narrowed shape `|r₃₂| ≠ |op2₃₂|`). -/
 theorem divw_noKnownDefect_of_rowData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i) :
     Defects.NoKnownDefect (divwEnvOf trace binding i d) := by
   intro id
@@ -4285,7 +4285,7 @@ theorem divw_noKnownDefect_of_rowData
 /-- Satisfiability witness for the threaded REMW obligation (companion of
     `divw_noKnownDefect_of_rowData`; W-mode secondary remainder lane). -/
 theorem remw_noKnownDefect_of_rowData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_remw trace binding i) :
     Defects.NoKnownDefect (remwEnvOf trace binding i d) := by
   intro id
@@ -4325,7 +4325,7 @@ no `False.elim` or contradictory pair is used.
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.sub`. -/
 theorem stepStrong_sub
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sub trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -4461,7 +4461,7 @@ theorem stepStrong_sub
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.and`. -/
 theorem stepStrong_and
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_and trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -4597,7 +4597,7 @@ theorem stepStrong_and
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.or`. -/
 theorem stepStrong_or
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_or trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -4733,7 +4733,7 @@ theorem stepStrong_or
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.xor`. -/
 theorem stepStrong_xor
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_xor trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -4870,7 +4870,7 @@ theorem stepStrong_xor
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.slt`. -/
 theorem stepStrong_slt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_slt trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -5006,7 +5006,7 @@ theorem stepStrong_slt
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.sltu`. -/
 theorem stepStrong_sltu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sltu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -5141,7 +5141,7 @@ theorem stepStrong_sltu
     `OpEnvelope.andi` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.andi`. -/
 theorem stepStrong_andi
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_andi trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -5276,7 +5276,7 @@ theorem stepStrong_andi
     `OpEnvelope.ori` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.ori`. -/
 theorem stepStrong_ori
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_ori trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -5411,7 +5411,7 @@ theorem stepStrong_ori
     `OpEnvelope.xori` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.xori`. -/
 theorem stepStrong_xori
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_xori trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -5544,7 +5544,7 @@ theorem stepStrong_xori
     `OpEnvelope.slti` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.slti`. -/
 theorem stepStrong_slti
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_slti trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -5672,7 +5672,7 @@ theorem stepStrong_slti
     `OpEnvelope.sltiu` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.sltiu`. -/
 theorem stepStrong_sltiu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sltiu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -5801,7 +5801,7 @@ theorem stepStrong_sltiu
 /-- Strengthened `sll` step: channel-balance via constructed `OpEnvelope.sll`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sll`. -/
 theorem stepStrong_sll
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sll trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -5900,7 +5900,7 @@ theorem stepStrong_sll
 /-- Strengthened `srl` step: channel-balance via constructed `OpEnvelope.srl`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srl`. -/
 theorem stepStrong_srl
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_srl trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -5999,7 +5999,7 @@ theorem stepStrong_srl
 /-- Strengthened `sra` step: channel-balance via constructed `OpEnvelope.sra`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sra`. -/
 theorem stepStrong_sra
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sra trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -6098,7 +6098,7 @@ theorem stepStrong_sra
 /-- Strengthened `slli` step: channel-balance via constructed `OpEnvelope.slli`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.slli`. -/
 theorem stepStrong_slli
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_slli trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -6197,7 +6197,7 @@ theorem stepStrong_slli
 /-- Strengthened `srli` step: channel-balance via constructed `OpEnvelope.srli`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srli`. -/
 theorem stepStrong_srli
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_srli trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -6296,7 +6296,7 @@ theorem stepStrong_srli
 /-- Strengthened `srai` step: channel-balance via constructed `OpEnvelope.srai`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srai`. -/
 theorem stepStrong_srai
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_srai trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -6397,7 +6397,7 @@ theorem stepStrong_srai
 /-- Strengthened `subw` step: channel-balance via constructed `OpEnvelope.subw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.subw`. -/
 theorem stepStrong_subw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_subw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -6527,7 +6527,7 @@ theorem stepStrong_subw
 /-- Strengthened `addw` step: channel-balance via constructed `OpEnvelope.addw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.addw`. -/
 theorem stepStrong_addw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_addw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -6657,7 +6657,7 @@ theorem stepStrong_addw
 /-- Strengthened `addiw` step: channel-balance via constructed `OpEnvelope.addiw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.addiw`. -/
 theorem stepStrong_addiw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_addiw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -6767,7 +6767,7 @@ theorem stepStrong_addiw
 
 OpEnvelope route, mirroring the base-shift arms (`stepStrong_sll` etc.) but on the
 m32 = 1 register/immediate W-shift route.  Each arm builds `OpEnvelope.<op>` from
-the trace's BinaryExtension shift provider row (derived from `trace.balanced`),
+the trace's BinaryExtension shift provider row (derived from `trace.channels_balanced`),
 invokes `zisk_riscv_compliant_program_bus`, and projects `exec_eq_remaining` (the
 12th conjunct).  The promise/provider plumbing is the m32 = 1 variant of the base
 shift (`shift_m32_1_*_of_facts`); the conclusion is the `RTYPEW`/`SHIFTIWOP`
@@ -6777,7 +6777,7 @@ real BinaryExtension Spec row from the committed trace. -/
 /-- Strengthened `sllw` step: channel-balance via constructed `OpEnvelope.sllw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sllw`. -/
 theorem stepStrong_sllw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sllw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -6875,7 +6875,7 @@ theorem stepStrong_sllw
 /-- Strengthened `srlw` step: channel-balance via constructed `OpEnvelope.srlw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srlw`. -/
 theorem stepStrong_srlw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_srlw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -6973,7 +6973,7 @@ theorem stepStrong_srlw
 /-- Strengthened `sraw` step: channel-balance via constructed `OpEnvelope.sraw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sraw`. -/
 theorem stepStrong_sraw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sraw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7072,7 +7072,7 @@ theorem stepStrong_sraw
 /-- Strengthened `slliw` step: channel-balance via constructed `OpEnvelope.slliw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.slliw`. -/
 theorem stepStrong_slliw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_slliw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7166,7 +7166,7 @@ theorem stepStrong_slliw
 /-- Strengthened `srliw` step: channel-balance via constructed `OpEnvelope.srliw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srliw`. -/
 theorem stepStrong_srliw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_srliw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7260,7 +7260,7 @@ theorem stepStrong_srliw
 /-- Strengthened `sraiw` step: channel-balance via constructed `OpEnvelope.sraiw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sraiw`. -/
 theorem stepStrong_sraiw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sraiw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7359,7 +7359,7 @@ theorem stepStrong_sraiw
     BinaryAdd provider) + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.add`. -/
 theorem stepStrong_add
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_add trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7511,7 +7511,7 @@ theorem stepStrong_add
     (`addi_via_binary` / `addi_via_binaryadd`) + `zisk_riscv_compliant_program_bus`.
     Dominates `StepCompliance.addi`. -/
 theorem stepStrong_addi
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_addi trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7687,7 +7687,7 @@ the corresponding `bus_effect`-form arms (channel-balance form, same data). -/
     conjunct.  `aeneasBridgeTrust` is flat decode pins carried as `RowData_beq`
     residuals; `NoKnownDefect` comes from the threaded `h_known_arm`. -/
 theorem stepStrong_beq
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_beq trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7728,7 +7728,7 @@ theorem stepStrong_beq
 
 /-- Strengthened `bne` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bne
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_bne trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7769,7 +7769,7 @@ theorem stepStrong_bne
 
 /-- Strengthened `blt` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_blt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_blt trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7810,7 +7810,7 @@ theorem stepStrong_blt
 
 /-- Strengthened `bge` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bge
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_bge trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7851,7 +7851,7 @@ theorem stepStrong_bge
 
 /-- Strengthened `bltu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bltu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_bltu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7892,7 +7892,7 @@ theorem stepStrong_bltu
 
 /-- Strengthened `bgeu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bgeu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_bgeu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -7944,7 +7944,7 @@ theorem stepStrong_bgeu
     `⟨⟨provenance⟩, row_mode, h_imm_lo_nat, h_imm_hi_nat⟩`; `memoryTimeline`
     trivially; `NoKnownDefect` from the threaded `h_known_arm` (non-defect). -/
 theorem stepStrong_lui
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_lui trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8032,7 +8032,7 @@ theorem stepStrong_lui
     `⟨⟨provenance⟩, row_mode, h_offset_bridge, h_pc_bridge⟩`; `NoKnownDefect` from
     the threaded `h_known_arm` (non-defect). -/
 theorem stepStrong_auipc
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_auipc trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8120,7 +8120,7 @@ theorem stepStrong_auipc
     `⟨⟨provenance⟩, row_mode, h_jmp2, h_pc_bridge⟩`; `NoKnownDefect` from the
     threaded `h_known_arm` (non-defect). -/
 theorem stepStrong_jal
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_jal trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8208,7 +8208,7 @@ theorem stepStrong_jal
     `NoKnownDefect`.  JALR's `aeneasBridgeTrust` is flat decode pins already in
     `RowData_jalr` (no `MainRowProvenance`). -/
 theorem stepStrong_jalr
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_jalr trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8317,7 +8317,7 @@ private def emptyMainEnv : Environment FGL :=
 
 /-- Strengthened `sb` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sb
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sb trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8383,7 +8383,7 @@ theorem stepStrong_sb
 
 /-- Strengthened `sh` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sh
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sh trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8449,7 +8449,7 @@ theorem stepStrong_sh
 
 /-- Strengthened `sw` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8515,7 +8515,7 @@ theorem stepStrong_sw
 
 /-- Strengthened `sd` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sd
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_sd trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8598,7 +8598,7 @@ records are real `Valid_Mem`/`Valid_BinaryExtension` rows. -/
 
 /-- Strengthened `ld` step (channel-balance form). -/
 theorem stepStrong_ld
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_ld trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8676,7 +8676,7 @@ theorem stepStrong_ld
 
 /-- Strengthened `lbu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lbu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_lbu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8754,7 +8754,7 @@ theorem stepStrong_lbu
 
 /-- Strengthened `lhu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lhu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_lhu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8832,7 +8832,7 @@ theorem stepStrong_lhu
 
 /-- Strengthened `lwu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lwu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_lwu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8910,7 +8910,7 @@ theorem stepStrong_lwu
 
 /-- Strengthened `lb` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lb
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_lb trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -8989,7 +8989,7 @@ theorem stepStrong_lb
 
 /-- Strengthened `lh` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lh
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_lh trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -9068,7 +9068,7 @@ theorem stepStrong_lh
 
 /-- Strengthened `lw` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_lw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -9174,7 +9174,7 @@ the real `busSub` row.  These are strictly stronger than the corresponding
     pins carried as `RowData_mulw` residuals (`m32 = 1` for W-mode); `NoKnownDefect`
     comes from the threaded `h_known_arm`.  Non-vacuous (real provider FullSpec). -/
 theorem stepStrong_mulw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -9277,10 +9277,10 @@ theorem stepStrong_mulw
     `NoKnownDefect` comes from the threaded `h_known_arm`.
 
     Non-vacuous: the envelope's witnesses are the REAL provider row's FullSpec
-    projections derived from `trace.balanced` / `trace.spec`, not a fabricated
+    projections derived from `trace.channels_balanced` / `trace.spec_holds`, not a fabricated
     environment; `execRow` remains a genuine ∀-binder. -/
 theorem stepStrong_mulhu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulhu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -9392,7 +9392,7 @@ theorem stepStrong_mulhu
     `NoKnownDefect` comes from the threaded `h_known_arm`.  Non-vacuous (real
     provider FullSpec; the witnesses' substance is the balance-derived facts). -/
 theorem stepStrong_divu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_divu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -9500,7 +9500,7 @@ theorem stepStrong_divu
     (`equiv_DIVUW`).  Adds the W-mode residuals `h_b23`/`h_c23`/`h_sext_choice`
     carried by `RowData_divuw`.  Non-vacuous (real provider FullSpec). -/
 theorem stepStrong_divuw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_divuw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -9603,7 +9603,7 @@ theorem stepStrong_divuw
     secondary d-lane (`opBus_row_ArithDivSecondary`, REMU mode `main_div = 0`).
     Non-vacuous (real provider FullSpec; witnesses' substance is balance-derived). -/
 theorem stepStrong_remu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_remu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -9705,7 +9705,7 @@ theorem stepStrong_remu
     (`m32 = 1`), secondary d-lane match (`opBus_row_ArithDivSecondary`), routing
     to the `exec_eq_remaining` conjunct (`equiv_REMUW`).  Non-vacuous. -/
 theorem stepStrong_remuw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_remuw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -9822,7 +9822,7 @@ theorem stepStrong_remuw
     the two exceptional product-sign shapes the ArithTable admits for op 180, so an
     honest signed MUL row supplies all binders. -/
 theorem stepStrong_mul
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i)
     (h_known : Defects.NoKnownDefect (mulEnvOf trace binding i d)) :
     (do
@@ -9855,7 +9855,7 @@ theorem stepStrong_mul
     consumes the documented SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b` carried by
     `RowData_mulh`.  Non-vacuous. -/
 theorem stepStrong_mulh
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i)
     (h_known : Defects.NoKnownDefect (mulhEnvOf trace binding i d)) :
     (do
@@ -9881,7 +9881,7 @@ theorem stepStrong_mulh
     Companion of `stepStrong_mulh` for the signed × unsigned high multiply
     (op 179).  Carries ONE sign-range residual `h_sign_a` (op2 unsigned). -/
 theorem stepStrong_mulhsu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i)
     (h_known : Defects.NoKnownDefect (mulhsuEnvOf trace binding i d)) :
     (do
@@ -9924,7 +9924,7 @@ theorem stepStrong_mulhsu
     forge (codygunton/zisk#5), and divisor-zero rows are handled by
     `h_boundary`; signed overflow is handled by the signed DIV bridge. -/
 theorem stepStrong_div
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i)
     (h_known : Defects.NoKnownDefect (divEnvOf trace binding i d)) :
     (do
@@ -9947,7 +9947,7 @@ theorem stepStrong_div
     `h_known` is the GENUINE `NoKnownDefect (remEnvOf …)`, SATISFIABLE for an honest
     signed REM row (`RowData_rem.h_not_forge`).  Non-vacuous. -/
 theorem stepStrong_rem
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i)
     (h_known : Defects.NoKnownDefect (remEnvOf trace binding i d)) :
     (do
@@ -9971,7 +9971,7 @@ theorem stepStrong_rem
     `NoKnownDefect (divwEnvOf …)`, SATISFIABLE for an honest signed DIVW row
     (`RowData_divw.h_not_forge`, `|r₃₂| ≠ |op2₃₂|`).  Non-vacuous. -/
 theorem stepStrong_divw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i)
     (h_known : Defects.NoKnownDefect (divwEnvOf trace binding i d)) :
     (do
@@ -9992,7 +9992,7 @@ theorem stepStrong_divw
     W-mode analogue of `stepStrong_rem` (signed 32-bit remainder, op `189`,
     `m32 = 1`, secondary lane).  Non-vacuous (`RowData_remw.h_not_forge`). -/
 theorem stepStrong_remw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_remw trace binding i)
     (h_known : Defects.NoKnownDefect (remwEnvOf trace binding i d)) :
     (do
@@ -10026,7 +10026,7 @@ theorem stepStrong_remw
     proves it.  Non-vacuous: the malicious FENCE shapes are excluded exactly by the
     honest-shape pins the caller supplies, as the FENCE defect ledger documents. -/
 theorem stepStrong_fence
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i)
     (h_known : Defects.NoKnownDefect (fenceEnvOf trace binding i d)) :
     execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding.stateAt i)
@@ -10050,7 +10050,7 @@ theorem stepStrong_fence
     the exact forge witness (so honest rows are never excluded).  No arm is omitted —
     the export is 63/63 on the OpEnvelope route. -/
 inductive StrongRowConstructionData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) where
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
   | sub (d : RowData_sub trace binding i) : StrongRowConstructionData trace binding i
   | and (d : RowData_and trace binding i) : StrongRowConstructionData trace binding i
   | or (d : RowData_or trace binding i) : StrongRowConstructionData trace binding i
@@ -10130,7 +10130,7 @@ inductive StrongRowConstructionData
     obligation is SATISFIABLE for an honest FENCE row (see `RowData_fence` /
     `stepStrong_fence`). -/
 def StepNoKnownDefect
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     StrongRowConstructionData trace binding i → Prop
   | .sub _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
@@ -10375,7 +10375,7 @@ def StepNoKnownDefect
     (`state_effect_via_channels`) form — the OLD global theorem's per-arm
     conclusion — keyed on the row archetype. -/
 def StepComplianceStrong
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     StrongRowConstructionData trace binding i → Prop
   | .sub d =>
       (do
@@ -10856,7 +10856,7 @@ def StepComplianceStrong
     `zisk_riscv_compliant_program_bus`.  For the direct-lift arms (which never call
     the old theorem) the obligation is `True` and is ignored. -/
 theorem stepComplianceStrong_of_rowData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : StrongRowConstructionData trace binding i)
     (h_known : StepNoKnownDefect trace binding i d) :
     StepComplianceStrong trace binding i d := by
@@ -10924,62 +10924,5 @@ theorem stepComplianceStrong_of_rowData
   | lh d => exact stepStrong_lh trace binding i d h_known
   | lw d => exact stepStrong_lw trace binding i d h_known
   | fence d => exact stepStrong_fence trace binding i d h_known
-
-/-- **Strengthened trace-level export (#61, channel-balance form).**
-
-    From an accepted full-ensemble trace, a program binding, and a per-row
-    classification into ALL 63 RV64IM archetypes, EVERY row satisfies the
-    canonical channel-balance per-step conclusion (`= state_effect_via_channels …`)
-    — the SAME conclusion the OLD global theorem `zisk_riscv_compliant_program_bus`
-    produces.  For the 22 op-bus ALU arms the `OpEnvelope` is CONSTRUCTED from the
-    trace inside each `stepStrong_<op>` (no caller-supplied envelope); for the
-    control-flow + U-type + store + load + M-ext-unsigned arms the conclusion is
-    the channel-balance lift of each `construction_<op>_sound` over the real trace
-    row; the 7 signed-M arms (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW) and FENCE CONSTRUCT
-    their `OpEnvelope.<op>` (= `<op>EnvOf`) from the trace row.  The 6 M-ext-unsigned
-    arms (MULW/MULHU/DIVU/DIVUW/REMU/REMUW) lift the FAITHFUL loose-bound (`<983041`)
-    construction, NEVER the canonical equiv's tight (`<131072`) carry bound, so they
-    are non-vacuous and sound.  This is strictly stronger
-    than the `bus_effect`-form `zisk_compliant_of_accepted_trace`: every
-    conclusion it yields is `state_effect_via_channels …`, defeq-implying the
-    `bus_effect`-form, over the committed trace.
-
-    ## Threaded defect-exclusion hypothesis (`h_known_bugs`)
-
-    The `h_known_bugs` premise is the per-row defect-exclusion obligation
-    (`StepNoKnownDefect`).  It is threaded — via `stepComplianceStrong_of_rowData`
-    — to each OpEnvelope-route `stepStrong_<op>`, which feeds it to the old global
-    theorem `zisk_riscv_compliant_program_bus` in place of an internally-proved
-    `NoKnownDefect`.  For the non-defect arms (op-bus ALU + M-ext-unsigned +
-    control-flow / U-type / store / load) the obligation is `EnvNoKnownDefectFor` on
-    a non-defect constructor (or `True` for the direct-lift arms), so it is TRIVIALLY
-    satisfiable — see `envNoKnownDefectFor_of_nondefect` — and this theorem is
-    therefore NOT vacuous.
-
-    The FENCE arm and the 7 signed-M arms (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW) are the
-    defect/gap ops landed on the OpEnvelope route: each one's `StepNoKnownDefect`
-    obligation is the GENUINE `NoKnownDefect (<op>EnvOf …)` of the SPECIFIC honest env
-    it constructs, NOT the (false) `EnvNoKnownDefectFor` selector-∀ and NOT a
-    contradictory `False`-binder.
-
-    The 7 signed-M arms ARE landed because their defect predicates were NARROWED from
-    the old opcode-wide `| .mul .. => True` form to the EXACT witness-conditional forge
-    shapes: MUL/MULH/MULHSU exclude only `np=0 ∧ na⊕nb=1`
-    (`MaliciousSignedMulWitnessShape`); DIV/REM/DIVW/REMW exclude only the `|r|=|d|`
-    `LT_ABS_NP` false positive (`ArithDivDynamicWitnessShape`, codygunton/zisk#5).
-    Honest rows are NEVER excluded, so each arm's `NoKnownDefect` is SATISFIABLE for a
-    real honest signed-M row (anti-vacuity witnesses `honest_<op>_witness_not_forge`).
-    A documented sign-range residual `na = MSB` is carried per row (the real circuit
-    enforces it; the FV model collapsed it to FULL — dischargeable, issue #114).  The
-    FENCE arm is likewise SATISFIABLE for an honest FENCE row (`fm=0, rs1=x0, rd=x0`)
-    — the malicious shapes excluded exactly by the honest pins (`RowData_fence`). -/
-theorem zisk_compliant_of_accepted_trace_strong
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
-    (rowData : ∀ i : Fin trace.length, StrongRowConstructionData trace binding i)
-    (h_known_bugs : ∀ i : Fin trace.length, StepNoKnownDefect trace binding i (rowData i)) :
-    ∀ i : Fin trace.length, StepComplianceStrong trace binding i (rowData i) :=
-  fun i => stepComplianceStrong_of_rowData trace binding i (rowData i) (h_known_bugs i)
-
 
 end ZiskFv.Compliance

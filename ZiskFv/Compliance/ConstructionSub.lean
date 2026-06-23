@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.ProgramBinding.Wrappers
 import ZiskFv.Compliance.Wrappers.Sub
 
 /-!
@@ -20,7 +20,7 @@ A SUB envelope's content splits into three buckets against the live Clean
 ensemble (channels = OpBus + MemBus only; per-row component model):
 
 * **(a) derived** — proven inside the body, NOT a binder:
-  - op-bus provider match (from `trace.balanced`, via the salvaged Layer-A
+  - op-bus provider match (from `trace.channels_balanced`, via the salvaged Layer-A
     `exists_staticBinary_provider_row_matches_sub_from_binding`, bottoming in an
     axiom-free Layer-B permutation theorem),
   - row shape (`mainOfTable` / `rowAt_mainOfTable`),
@@ -119,7 +119,7 @@ theorem allByteMatchesOfStaticOut64_local
     real Main table.  Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 def mainRowWithRomSub
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program binding.mainTable i.val
@@ -129,7 +129,7 @@ def mainRowWithRomSub
     `m0..m2` shape facts are then `rfl`. -/
 @[reducible]
 def busSub
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (execRow : List (Interaction.ExecutionBusEntry FGL)) :
     ZiskFv.Compliance.BusRows where
   exec_row := execRow
@@ -155,12 +155,12 @@ def busSub
       not vacuous).
 
     Derived inside the body (NOT binders): op-bus provider match (from
-    `trace.balanced`), row shape, circuit-internal rd arithmetic, the MemBus
+    `trace.channels_balanced`), row shape, circuit-internal rd arithmetic, the MemBus
     `m0..m2` shape, `h_lane_rd`, and the lane→Sail binding facts. -/
 theorem construction_sub_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -234,7 +234,7 @@ theorem construction_sub_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced`
+  -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     exists_staticBinary_provider_row_matches_sub_from_binding

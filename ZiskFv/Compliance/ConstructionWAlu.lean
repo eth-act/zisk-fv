@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.ProgramBinding.Wrappers
 import ZiskFv.Compliance.ConstructionSub
 import ZiskFv.Compliance.Wrappers.Addw
 import ZiskFv.Compliance.Wrappers.Subw
@@ -80,7 +80,7 @@ set_option maxHeartbeats 2000000
 theorem construction_subw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -150,7 +150,7 @@ theorem construction_subw_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced`. SUBW = `Or.inr`.
+  -- (a) op-bus provider match, derived from `trace.channels_balanced`. SUBW = `Or.inr`.
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     exists_staticBinary_provider_row_matches_w_from_binding
@@ -260,7 +260,7 @@ theorem construction_subw_sound_claimed_dead
 theorem construction_addw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (addw_input : PureSpec.AddwInput)
     (r1 r2 rd : regidx)
     (h_main_op :
@@ -439,7 +439,7 @@ theorem construction_addw_sound_claimed_dead
 theorem construction_addiw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx)
     (imm : BitVec 12)

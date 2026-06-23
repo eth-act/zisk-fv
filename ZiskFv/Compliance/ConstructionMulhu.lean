@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.ProgramBinding.Wrappers
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.EquivCore.MulHU
 import ZiskFv.EquivCore.Promises.ArithHelpers
@@ -616,7 +616,7 @@ lemma equiv_MULHU_of_fullSpec_claimed_dead
     `exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding`.
     Mirrors `mulwArow`. -/
 noncomputable def mulhuArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -629,7 +629,7 @@ noncomputable def mulhuArow
 /-- `FullSpec` of the balance-selected MULHU provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem mulhuArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -645,7 +645,7 @@ theorem mulhuArow_fullSpec_row
 
 /-- `FullSpec` of the balance-selected MULHU provider row view. -/
 theorem mulhuArow_fullSpec
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -679,7 +679,7 @@ theorem match_opBus_row_ArithMulSecondary_vOfMulwRow
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form (cheap: free
     `ArithMulRow`, no `vOfMulwRow`/`opBus_row_*` whnf). -/
 theorem mulhuArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -700,7 +700,7 @@ theorem mulhuArow_match_row
     off the BARE provider `ArithMulRow` via `mulhu_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem mulhuArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -724,7 +724,7 @@ theorem mulhuArow_mode_pins
     Main row's emission, in `opBus_row_ArithMulSecondary` form.  The MULHU mode
     pins needed to reduce the faithful mux are DERIVED via `mulhuArow_mode_pins`. -/
 theorem mulhuArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -744,12 +744,12 @@ theorem mulhuArow_match
 
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
-    `trace.balanced` / `trace.spec` via the provider's lookup-aware
+    `trace.channels_balanced` / `trace.spec_holds` via the provider's lookup-aware
     `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
 theorem construction_mulhu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins

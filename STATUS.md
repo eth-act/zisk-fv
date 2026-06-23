@@ -3,7 +3,7 @@ branch p4-loads-stores (PR #112, stacked on PR #110). Metaplan: docs/ai/plan/PLA
 Gate V1 18/18 + V2 12/12 throughout. 0 new ZiskFv.* axioms.
 
 === DONE: 63/63 on the OpEnvelope-route ===
-zisk_compliant_of_accepted_trace_strong: for ALL 63 RV64IM opcodes, construct OpEnvelope.<op>
+root_soundness: for ALL 63 RV64IM opcodes, construct OpEnvelope.<op>
 from the trace + invoke zisk_riscv_compliant_program_bus + thread h_known_bugs. NO OpEnvelope
 input (takes rowData), NO direct-lift. Non-vacuous (63 stepStrong arms, no False.elim, execRow real
 ∀-binder). NO main-theorem refactor (canonical/OpEnvelope/old-theorem intact — every arm built from

@@ -84,13 +84,13 @@ set_option maxHeartbeats 2000000
       genuine `execRow` ∀-binder.
 
     Derived inside the body (NOT binders): op-bus provider match (from
-    `trace.balanced`, via the salvaged logic wrapper), row shape, circuit-internal
+    `trace.channels_balanced`, via the salvaged logic wrapper), row shape, circuit-internal
     rd arithmetic, the MemBus `m0..m2` shape, `h_lane_rd`, and the lane→Sail
     binding facts. -/
 theorem construction_or_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -161,7 +161,7 @@ theorem construction_or_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced` via the salvaged
+  -- (a) op-bus provider match, derived from `trace.channels_balanced` via the salvaged
   -- logic wrapper (serves AND / OR / XOR; op pin given as the OR disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -285,7 +285,7 @@ theorem construction_or_sound_claimed_dead
 theorem construction_xor_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (xor_input : PureSpec.XorInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -356,7 +356,7 @@ theorem construction_xor_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced` via the salvaged
+  -- (a) op-bus provider match, derived from `trace.channels_balanced` via the salvaged
   -- logic wrapper (serves AND / OR / XOR; op pin given as the XOR disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=

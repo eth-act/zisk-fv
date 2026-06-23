@@ -31,7 +31,7 @@ per-class in `trust/trusted-base.md`. All 63 RV64IM opcodes are covered as
 `ZiskFv.Compliance.equiv_<OP>` wrappers under
 `ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 63-arm
 `OpEnvelope` sum type.
-`ZiskFv.Completeness.Rv64im.rv64im_completeness` is also checked in as an
+`ZiskFv.Completeness.root_completeness` is also checked in as an
 acceptance/coverage theorem for Sail-executable RV64IM raw words outside the
 recorded FENCE decode gap. It is interface-mediated through the Aeneas
 extraction gate and does not revive Clean prover completeness non-claims.

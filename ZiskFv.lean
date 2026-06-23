@@ -133,6 +133,9 @@ import ZiskFv.ZiskCircuit.MemTimeline.Linkage
 import ZiskFv.ZiskCircuit.MemTimeline.Spike
 import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.AcceptedTrace.Spec
+import ZiskFv.Compliance.ProgramBinding.Basic
+import ZiskFv.Compliance.ProgramBinding.Wrappers
 import ZiskFv.Compliance.ConstructionSub
 import ZiskFv.Compliance.ConstructionAnd
 import ZiskFv.Compliance.ConstructionLogic
@@ -155,6 +158,8 @@ import ZiskFv.Compliance.ConstructionBranch
 import ZiskFv.Compliance.ConstructionJump
 import ZiskFv.Compliance.TraceLevelExport
 import ZiskFv.Compliance
+import ZiskFv.Soundness
 import ZiskFv.Completeness.Rv
 import ZiskFv.Completeness.Rv64im
 import ZiskFv.Completeness.Rv64im.SailDecode
+import ZiskFv.Completeness

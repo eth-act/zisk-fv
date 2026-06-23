@@ -34,7 +34,7 @@ and the residual budget — is reused verbatim.
 An AND envelope's content splits into the same three buckets as SUB:
 
 * **(a) derived** — proven inside the body, NOT a binder:
-  - op-bus provider match (from `trace.balanced`, via the salvaged logic
+  - op-bus provider match (from `trace.channels_balanced`, via the salvaged logic
     Layer-A wrapper, bottoming in an axiom-free Layer-B permutation theorem),
   - row shape (`mainOfTable` / `rowAt_mainOfTable`),
   - circuit-internal rd arithmetic (the already-proven packed byte-chain lemmas;
@@ -102,13 +102,13 @@ set_option maxHeartbeats 2000000
       not vacuous).
 
     Derived inside the body (NOT binders): op-bus provider match (from
-    `trace.balanced`, via the salvaged logic wrapper), row shape,
+    `trace.channels_balanced`, via the salvaged logic wrapper), row shape,
     circuit-internal rd arithmetic, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the lane→Sail binding facts. -/
 theorem construction_and_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -182,7 +182,7 @@ theorem construction_and_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced` via the salvaged
+  -- (a) op-bus provider match, derived from `trace.channels_balanced` via the salvaged
   -- logic wrapper (serves AND / OR / XOR; op pin given as the AND disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
