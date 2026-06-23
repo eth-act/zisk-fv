@@ -134,8 +134,8 @@ import ZiskFv.ZiskCircuit.MemTimeline.Spike
 import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance.AcceptedTrace
 import ZiskFv.Compliance.AcceptedTrace.Spec
-import ZiskFv.Compliance.ProgramBinding.Basic
-import ZiskFv.Compliance.ProgramBinding.Wrappers
+import ZiskFv.Compliance.ProgramBinding
+import ZiskFv.Compliance.ProviderFromBinding
 import ZiskFv.Compliance.ConstructionSub
 import ZiskFv.Compliance.ConstructionAnd
 import ZiskFv.Compliance.ConstructionLogic
