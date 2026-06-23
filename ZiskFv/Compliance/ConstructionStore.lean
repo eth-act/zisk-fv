@@ -20,7 +20,7 @@ side** instead of the operation bus.
 ALU/M-ext ops READ their operands off register-bus MemBus entries and write
 `rd`; their op-bus `equiv_<OP>` is resolved against a *separate* provider AIR
 (Binary / Arith / …) via a Layer-A `exists_*_provider_row_matches_*_from_binding`
-wrapper that consumes `trace.balanced`.
+wrapper that consumes `trace.channels_balanced`.
 
 Stores WRITE memory. The store's memory-bus write entry (`bus.e2`, address-space
 `as = 2`) is the Main row's **own** c/store emission `cMemMessage`. The
@@ -50,7 +50,7 @@ the structural counterpart, derived from the real trace row.
 
 * **(a) derived inside the body** (NOT binders): the Main row provenance
   (`mainRowWithRomSt.core = rowAt …`), the per-row `Main.Spec` (from
-  `trace.spec`, via `mainSpec_at`), `store_pc = 0` lifted to the row, and the
+  `trace.spec_holds`, via `mainSpec_at`), `store_pc = 0` lifted to the row, and the
   self-referential `main_c_match` (`matches_memory_entry_refl`).
 
 * **(b) named residual** — explicit top-level binders:
@@ -101,7 +101,7 @@ set_option maxHeartbeats 2000000
     the real Main table. Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 def mainRowWithRomSt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program binding.mainTable i.val
@@ -112,7 +112,7 @@ def mainRowWithRomSt
     `S*CleanWitness.main_c_match` is then `matches_memory_entry_refl`. -/
 @[reducible]
 def eRdSt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     Interaction.MemoryBusEntry FGL :=
   ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
     (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2
@@ -123,7 +123,7 @@ def eRdSt
     mult/as shape facts are then `rfl`. -/
 @[reducible]
 def busSt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (execRow : List (Interaction.ExecutionBusEntry FGL)) :
     ZiskFv.Compliance.BusRows where
   exec_row := execRow
@@ -136,7 +136,7 @@ def busSt
 /-- The Main row provenance at trace index `i`: `mainRowWithRomSt`'s `.core`
     equals the honest `rowAt (mainOfTable …) i`. Shared by all four stores. -/
 theorem mainRowWithRomSt_core
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     (mainRowWithRomSt trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
@@ -157,7 +157,7 @@ theorem mainRowWithRomSt_core
 theorem construction_sb_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sb_input : PureSpec.SbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) decode pins
@@ -291,7 +291,7 @@ theorem construction_sb_sound_claimed_dead
 theorem construction_sh_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sh_input : PureSpec.ShInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) decode pins
@@ -414,7 +414,7 @@ theorem construction_sh_sound_claimed_dead
 theorem construction_sw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sw_input : PureSpec.SwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) decode pins
@@ -532,7 +532,7 @@ theorem construction_sw_sound_claimed_dead
 theorem construction_sd_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sd_input : PureSpec.SdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) decode pins

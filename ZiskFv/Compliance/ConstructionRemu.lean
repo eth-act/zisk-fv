@@ -137,7 +137,7 @@ theorem match_opBus_row_ArithDivSecondary_vOfDivuRow
     `exists_arithMul_provider_row_matches_primary_of_remu_from_binding`.
     Mirrors `divuArow`. -/
 noncomputable def remuArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -150,7 +150,7 @@ noncomputable def remuArow
 /-- `FullSpec` of the balance-selected REMU provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem remuArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -168,7 +168,7 @@ theorem remuArow_fullSpec_row
 /-- The op-bus match of the balance-selected REMU provider row against the Main
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. -/
 theorem remuArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -189,7 +189,7 @@ theorem remuArow_match_row
     off the BARE provider `ArithMulRow` via `remu_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem remuArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -219,7 +219,7 @@ theorem remuArow_mode_pins
     Main row's emission, in `opBus_row_ArithDivSecondary` form.  The REMU mode
     pins needed to reduce the faithful mux are DERIVED via `remuArow_mode_pins`. -/
 theorem remuArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -605,7 +605,7 @@ lemma equiv_REMU_of_fullSpec_claimed_dead
 
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
-    `trace.balanced` / `trace.spec` via the SHARED ArithMul provider's
+    `trace.channels_balanced` / `trace.spec_holds` via the SHARED ArithMul provider's
     lookup-aware `componentWithArithTable.Spec = FullSpec`, NOT supplied as
     binders.
 
@@ -618,7 +618,7 @@ lemma equiv_REMU_of_fullSpec_claimed_dead
 theorem construction_remu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (remu_input : PureSpec.RemuInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins

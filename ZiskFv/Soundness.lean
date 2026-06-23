@@ -21,9 +21,9 @@ namespace ZiskFv.Compliance
 theorem root_soundness
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (rowData : ∀ i : Fin trace.length, StrongRowConstructionData trace binding i)
-    (h_known_bugs : ∀ i : Fin trace.length, StepNoKnownDefect trace binding i (rowData i)) :
-    ∀ i : Fin trace.length, StepComplianceStrong trace binding i (rowData i) :=
+    (rowData : ∀ i : Fin trace.numInstructions, StrongRowConstructionData trace binding i)
+    (h_known_bugs : ∀ i : Fin trace.numInstructions, StepNoKnownDefect trace binding i (rowData i)) :
+    ∀ i : Fin trace.numInstructions, StepComplianceStrong trace binding i (rowData i) :=
   fun i => stepComplianceStrong_of_rowData trace binding i (rowData i) (h_known_bugs i)
 
 end ZiskFv.Compliance

@@ -1,16 +1,16 @@
 # ZiskFv.Compliance.construction_sub_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sub_input :: PureSpec.SubInput
 r1 :: regidx
 r2 :: regidx
@@ -35,18 +35,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq sub_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_and_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 and_input :: PureSpec.AndInput
 r1 :: regidx
 r2 :: regidx
@@ -71,18 +71,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq and_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_or_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 or_input :: PureSpec.OrInput
 r1 :: regidx
 r2 :: regidx
@@ -107,18 +107,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq or_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_xor_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 xor_input :: PureSpec.XorInput
 r1 :: regidx
 r2 :: regidx
@@ -143,18 +143,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq xor_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_slt_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 slt_input :: PureSpec.SltInput
 r1 :: regidx
 r2 :: regidx
@@ -179,18 +179,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq slt_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_sltu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sltu_input :: PureSpec.SltuInput
 r1 :: regidx
 r2 :: regidx
@@ -215,18 +215,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq sltu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_andi_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 andi_input :: PureSpec.AndiInput
 r1 :: regidx
 rd :: regidx
@@ -250,18 +250,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq andi_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_ori_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 ori_input :: PureSpec.OriInput
 r1 :: regidx
 rd :: regidx
@@ -285,18 +285,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq ori_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_xori_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 xori_input :: PureSpec.XoriInput
 r1 :: regidx
 rd :: regidx
@@ -320,18 +320,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq xori_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_slti_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 slti_input :: PureSpec.SltiInput
 r1 :: regidx
 rd :: regidx
@@ -355,18 +355,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq slti_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_sltiu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sltiu_input :: PureSpec.SltiuInput
 r1 :: regidx
 rd :: regidx
@@ -390,18 +390,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq sltiu_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_sll_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sll_input :: PureSpec.SllInput
 r1 :: regidx
 r2 :: regidx
@@ -426,18 +426,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq sll_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_srl_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 srl_input :: PureSpec.SrlInput
 r1 :: regidx
 r2 :: regidx
@@ -462,18 +462,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq srl_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_sra_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sra_input :: PureSpec.SraInput
 r1 :: regidx
 r2 :: regidx
@@ -498,18 +498,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq sra_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_slli_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 slli_input :: PureSpec.SlliInput
 r1 :: regidx
 rd :: regidx
@@ -533,18 +533,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq slli_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_srli_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 srli_input :: PureSpec.SrliInput
 r1 :: regidx
 rd :: regidx
@@ -568,18 +568,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq srli_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_srai_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 srai_input :: PureSpec.SraiInput
 r1 :: regidx
 rd :: regidx
@@ -603,18 +603,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq srai_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_sllw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sllw_input :: PureSpec.SllwInput
 r1 :: regidx
 r2 :: regidx
@@ -639,18 +639,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq sllw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_srlw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 srlw_input :: PureSpec.SrlwInput
 r1 :: regidx
 r2 :: regidx
@@ -675,18 +675,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq srlw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_sraw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sraw_input :: PureSpec.SrawInput
 r1 :: regidx
 r2 :: regidx
@@ -711,18 +711,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq sraw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_slliw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 slliw_input :: PureSpec.SlliwInput
 r1 :: regidx
 rd :: regidx
@@ -744,18 +744,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq slliw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_srliw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 srliw_input :: PureSpec.SrliwInput
 r1 :: regidx
 rd :: regidx
@@ -777,18 +777,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq srliw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_sraiw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sraiw_input :: PureSpec.SraiwInput
 r1 :: regidx
 rd :: regidx
@@ -810,18 +810,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq sraiw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_add_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 add_input :: PureSpec.AddInput
 r1 :: regidx
 r2 :: regidx
@@ -846,18 +846,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq add_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_addi_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 addi_input :: PureSpec.AddiInput
 r1 :: regidx
 rd :: regidx
@@ -882,18 +882,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq addi_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_subw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 subw_input :: PureSpec.SubwInput
 r1 :: regidx
 r2 :: regidx
@@ -918,18 +918,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq subw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_addw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 addw_input :: PureSpec.AddwInput
 r1 :: regidx
 r2 :: regidx
@@ -954,18 +954,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq addw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_addiw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 addiw_input :: PureSpec.AddiwInput
 r1 :: regidx
 rd :: regidx
@@ -989,18 +989,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq addiw_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.busSub trace binding i execRow).e2.ptr)
 
 # ZiskFv.Compliance.construction_lui_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 lui_input :: PureSpec.LuiInput
 imm :: BitVec 20
 rd :: regidx
@@ -1022,18 +1022,18 @@ h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.ge
 h_rd_idx :: Eq lui_input.rd (Transpiler.wrap_to_regidx (ZiskFv.Compliance.eRdLui trace binding i).ptr)
 
 # ZiskFv.Compliance.construction_auipc_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 auipc_input :: PureSpec.AuipcInput
 imm :: BitVec 20
 rd :: regidx
@@ -1057,18 +1057,18 @@ h_no_wrap :: instLTNat.lt (instHAdd.hAdd auipc_input.PC.toNat (BitVec.signExtend
 h_pc_offset_lt_2_32 :: instLTNat.lt (instHAdd.hAdd auipc_input.PC (BitVec.signExtend 64 (BitVec.instHAppendHAddNat.hAppend auipc_input.imm 0))).toNat 4294967296
 
 # ZiskFv.Compliance.construction_mulw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 mulw_input :: PureSpec.MulwInput
 r1 :: regidx
 r2 :: regidx
@@ -1093,18 +1093,18 @@ h_rs1_value :: Eq (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt (instHSu
 h_rs2_value :: Eq (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt (instHSub.hSub (instHAdd.hAdd ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_0 0).val.cast (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).b_1 0).val.cast 65536)) (instHMul.hMul ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulwArow trace binding i h_main_active h_main_op)).nb 0).val.cast (instHPow.hPow 2 32)))
 
 # ZiskFv.Compliance.construction_mulhu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 mulhu_input :: PureSpec.MulhuInput
 r1 :: regidx
 r2 :: regidx
@@ -1134,18 +1134,18 @@ h_rs1_value :: Eq mulhu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed
 h_rs2_value :: Eq mulhu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_0 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_1 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_2 0).val ((ZiskFv.Compliance.vOfMulwRow (ZiskFv.Compliance.mulhuArow trace binding i h_main_active h_main_op)).b_3 0).val)
 
 # ZiskFv.Compliance.construction_divu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 divu_input :: PureSpec.DivuInput
 r1 :: regidx
 r2 :: regidx
@@ -1254,18 +1254,18 @@ h_rs1_value :: Eq divu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4
 h_rs2_value :: Eq divu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_0.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_1.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_2.val (ZiskFv.Compliance.divuArow trace binding i h_main_active h_main_op).chunks.b_3.val)
 
 # ZiskFv.Compliance.construction_divuw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 divuw_input :: PureSpec.DivuwInput
 r1 :: regidx
 r2 :: regidx
@@ -1377,18 +1377,18 @@ h_rs1_value :: Eq (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat (instHA
 h_rs2_value :: Eq (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.b_0.val (instHMul.hMul (ZiskFv.Compliance.divuwArow trace binding i h_main_active h_main_op).chunks.b_1.val 65536))
 
 # ZiskFv.Compliance.construction_remu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 remu_input :: PureSpec.RemuInput
 r1 :: regidx
 r2 :: regidx
@@ -1497,18 +1497,18 @@ h_rs1_value :: Eq remu_input.r1_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4
 h_rs2_value :: Eq remu_input.r2_val.toNat (ZiskFv.PackedBitVec.MulNoWrap.packed4 (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_0.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_1.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_2.val (ZiskFv.Compliance.remuArow trace binding i h_main_active h_main_op).chunks.b_3.val)
 
 # ZiskFv.Compliance.construction_remuw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 remuw_input :: PureSpec.RemuwInput
 r1 :: regidx
 r2 :: regidx
@@ -1620,18 +1620,18 @@ h_rs1_value :: Eq (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat (instHA
 h_rs2_value :: Eq (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat (instHAdd.hAdd (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.b_0.val (instHMul.hMul (ZiskFv.Compliance.remuwArow trace binding i h_main_active h_main_op).chunks.b_1.val 65536))
 
 # ZiskFv.Compliance.construction_sb_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sb_input :: PureSpec.SbInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -1660,18 +1660,18 @@ h_m6 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (ins
 h_m7 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (instHAdd.hAdd (ZiskFv.Compliance.busSt trace binding i execRow).e2.ptr.toNat 7)) (Option.some { toFin := ⟨instHMod.hMod (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSt trace binding i execRow).e2 7).val 256, ⋯⟩ })
 
 # ZiskFv.Compliance.construction_sh_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sh_input :: PureSpec.ShInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -1699,18 +1699,18 @@ h_m6 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (ins
 h_m7 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (instHAdd.hAdd (ZiskFv.Compliance.busSt trace binding i execRow).e2.ptr.toNat 7)) (Option.some { toFin := ⟨instHMod.hMod (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSt trace binding i execRow).e2 7).val 256, ⋯⟩ })
 
 # ZiskFv.Compliance.construction_sw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sw_input :: PureSpec.SwInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -1736,18 +1736,18 @@ h_m6 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (ins
 h_m7 :: Eq (Std.ExtHashMap.instGetElem?Mem.getElem? (binding.stateAt i).mem (instHAdd.hAdd (ZiskFv.Compliance.busSt trace binding i execRow).e2.ptr.toNat 7)) (Option.some { toFin := ⟨instHMod.hMod (ZiskFv.Channels.MemoryBusBytes.byteAt (ZiskFv.Compliance.busSt trace binding i execRow).e2 7).val 256, ⋯⟩ })
 
 # ZiskFv.Compliance.construction_sd_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 sd_input :: PureSpec.SdInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -1768,18 +1768,18 @@ h_e1_mult :: Eq (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSt 
 h_nextPC_matches :: Eq (Eq.rec (BitVec.ofNat 64 (List.instGetElem?NatLtLength.getElem! (ZiskFv.Compliance.busSt trace binding i execRow).exec_row 1).pc.val) register_type_pc_equiv) (PureSpec.execute_STORED_pure sd_input).nextPC
 
 # ZiskFv.Compliance.construction_ld_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 ld_input :: PureSpec.LdInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -1828,18 +1828,18 @@ h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
 # ZiskFv.Compliance.construction_lbu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 lbu_input :: PureSpec.LbuInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -1950,18 +1950,18 @@ h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
 # ZiskFv.Compliance.construction_lhu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 lhu_input :: PureSpec.LhuInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -2072,18 +2072,18 @@ h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
 # ZiskFv.Compliance.construction_lwu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 lwu_input :: PureSpec.LwuInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -2194,18 +2194,18 @@ h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
 # ZiskFv.Compliance.construction_lb_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 lb_input :: PureSpec.LbInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -2294,18 +2294,18 @@ h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
 # ZiskFv.Compliance.construction_lh_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 lh_input :: PureSpec.LhInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -2394,18 +2394,18 @@ h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
 # ZiskFv.Compliance.construction_lw_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 lw_input :: PureSpec.LwInput
 regs.mstatus :: RegisterType Register.mstatus
 regs.pmaRegion :: PMA_Region
@@ -2494,18 +2494,18 @@ h_mem_sel :: Eq (mem.sel r_mem) 1
 h_mem_wr :: Eq (mem.wr r_mem) 0
 
 # ZiskFv.Compliance.construction_beq_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 beq_input :: PureSpec.BeqInput
 imm :: BitVec 13
 r1 :: regidx
@@ -2526,18 +2526,18 @@ h_not_throws :: Eq (PureSpec.execute_BEQ_pure beq_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BEQ_pure beq_input).success Bool.true
 
 # ZiskFv.Compliance.construction_bne_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 bne_input :: PureSpec.BneInput
 imm :: BitVec 13
 r1 :: regidx
@@ -2558,18 +2558,18 @@ h_not_throws :: Eq (PureSpec.execute_BNE_pure bne_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BNE_pure bne_input).success Bool.true
 
 # ZiskFv.Compliance.construction_blt_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 blt_input :: PureSpec.BltInput
 imm :: BitVec 13
 r1 :: regidx
@@ -2590,18 +2590,18 @@ h_not_throws :: Eq (PureSpec.execute_BLT_pure blt_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BLT_pure blt_input).success Bool.true
 
 # ZiskFv.Compliance.construction_bge_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 bge_input :: PureSpec.BgeInput
 imm :: BitVec 13
 r1 :: regidx
@@ -2622,18 +2622,18 @@ h_not_throws :: Eq (PureSpec.execute_BGE_pure bge_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BGE_pure bge_input).success Bool.true
 
 # ZiskFv.Compliance.construction_bltu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 bltu_input :: PureSpec.BltuInput
 imm :: BitVec 13
 r1 :: regidx
@@ -2654,18 +2654,18 @@ h_not_throws :: Eq (PureSpec.execute_BLTU_pure bltu_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BLTU_pure bltu_input).success Bool.true
 
 # ZiskFv.Compliance.construction_bgeu_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 bgeu_input :: PureSpec.BgeuInput
 imm :: BitVec 13
 r1 :: regidx
@@ -2686,18 +2686,18 @@ h_not_throws :: Eq (PureSpec.execute_BGEU_pure bgeu_input).throws Bool.false
 h_success :: Eq (PureSpec.execute_BGEU_pure bgeu_input).success Bool.true
 
 # ZiskFv.Compliance.construction_jal_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 jal_input :: PureSpec.JalInput
 imm :: BitVec 21
 rd :: regidx
@@ -2728,18 +2728,18 @@ h_pc_bound :: instLTNat.lt jal_input.PC.toNat (instHSub.hSub 1844674406941458432
 h_pc_offset_lt_2_32 :: instLTNat.lt (instHAdd.hAdd jal_input.PC (BitVec.ofNat 64 4)).toNat 4294967296
 
 # ZiskFv.Compliance.construction_jalr_sound_claimed_dead
-trace.length :: Nat
+trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
-trace.constraints :: trace.3.Constraints
-trace.spec :: trace.3.Spec
-trace.balanced :: trace.3.BalancedChannels
-binding.stateAt :: Fin trace.length → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+trace.constraints_hold :: trace.3.Constraints
+trace.spec_holds :: trace.3.Spec
+trace.channels_balanced :: trace.3.BalancedChannels
+binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
 binding.mainTable_mem :: List.instMembership.mem trace.witness.allTables binding.2
-binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.length trace.program)
-binding.mainTable_index :: ∀ (i : Fin trace.length), instLTNat.lt i.val binding.2.table.length
-i :: Fin trace.length
+binding.mainTable_component :: Eq binding.2.component (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.numInstructions trace.program)
+binding.mainTable_index :: ∀ (i : Fin trace.numInstructions), instLTNat.lt i.val binding.2.table.length
+i :: Fin trace.numInstructions
 jalr_input :: PureSpec.JalrInput
 imm :: BitVec 12
 rs1 :: regidx

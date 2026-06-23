@@ -8,7 +8,7 @@ The first **provider-free** (`is_external_op = 0`) honest sound construction in
 the P4 sweep. LUI is realized by a single *internal* Zisk microinstruction
 (`OP_COPYB`), so it emits **no** operation-bus entry: there is no op-bus provider
 block at all (in contrast to `ConstructionSub.lean`, which derives the staticBinary
-op-bus provider match from `trace.balanced`). LUI is therefore STRICTLY MORE
+op-bus provider match from `trace.channels_balanced`). LUI is therefore STRICTLY MORE
 derivable than the 28 provider-backed families — the entire LUI Main constraint
 subset comes straight out of the per-row `Main.Spec`, and the rd-value is the
 identity copy `c_0/c_1 = b_0/b_1 = imm`.
@@ -64,7 +64,7 @@ set_option maxHeartbeats 2000000
     table.  Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 def mainRowWithRomLui
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program binding.mainTable i.val
@@ -74,15 +74,15 @@ def mainRowWithRomLui
     match is then `matches_memory_entry_refl`. -/
 @[reducible]
 def eRdLui
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     Interaction.MemoryBusEntry FGL :=
   ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
     (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomLui trace binding i)) 1 1
 
-/-- The Main per-row `Spec` at trace index `i`, derived from `trace.spec`.
+/-- The Main per-row `Spec` at trace index `i`, derived from `trace.spec_holds`.
     (Standalone version of the in-wrapper `h_main_spec` derivation.) -/
 theorem mainSpec_at
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length) :
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.Spec
       (ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
@@ -94,7 +94,7 @@ theorem mainSpec_at
       binding.mainTable.component.Spec
         (binding.mainTable.environment (binding.mainTable.table.get mainIdx)) := by
     simpa [mainRow] using
-      trace.spec binding.mainTable binding.mainTable_mem mainRow h_mainRow_mem
+      trace.spec_holds binding.mainTable binding.mainTable_mem mainRow h_mainRow_mem
   simpa [mainIdx] using
     ZiskFv.AirsClean.FullEnsemble.mainSpec_rowAt_mainOfTable_of_component_spec
       trace.program binding.mainTable mainIdx binding.mainTable_component
@@ -119,7 +119,7 @@ theorem mainSpec_at
 theorem construction_lui_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
     (rd : regidx)

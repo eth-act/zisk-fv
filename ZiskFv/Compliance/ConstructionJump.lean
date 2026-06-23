@@ -81,7 +81,7 @@ set_option maxHeartbeats 2000000
 theorem construction_jal_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
     (rd : regidx)
@@ -211,7 +211,7 @@ theorem construction_jal_sound_claimed_dead
 theorem construction_jalr_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (jalr_input : PureSpec.JalrInput)
     (imm : BitVec 12)
     (rs1 rd : regidx)

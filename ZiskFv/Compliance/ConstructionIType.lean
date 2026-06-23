@@ -119,14 +119,14 @@ set_option maxHeartbeats 2000000
       genuine `execRow` ∀-binder.
 
     Derived inside the body (NOT binders): op-bus provider match (from
-    `trace.balanced`, via the salvaged logic wrapper), row shape, the 8-byte
+    `trace.channels_balanced`, via the salvaged logic wrapper), row shape, the 8-byte
     immediate form `h_input_imm_row` (from `h_andi_subset` + `h_matches`),
     circuit-internal rd arithmetic, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the r1 lane→Sail binding fact. -/
 theorem construction_andi_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (andi_input : PureSpec.AndiInput)
     (r1 rd : regidx)
     (imm : BitVec 12)
@@ -190,7 +190,7 @@ theorem construction_andi_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced` via the salvaged
+  -- (a) op-bus provider match, derived from `trace.channels_balanced` via the salvaged
   -- logic wrapper (serves AND/ANDI / OR/ORI / XOR/XORI; op pin = AND disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -316,7 +316,7 @@ theorem construction_andi_sound_claimed_dead
 theorem construction_ori_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (ori_input : PureSpec.OriInput)
     (r1 rd : regidx)
     (imm : BitVec 12)
@@ -497,7 +497,7 @@ theorem construction_ori_sound_claimed_dead
 theorem construction_xori_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (xori_input : PureSpec.XoriInput)
     (r1 rd : regidx)
     (imm : BitVec 12)
@@ -679,7 +679,7 @@ theorem construction_xori_sound_claimed_dead
 theorem construction_slti_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (slti_input : PureSpec.SltiInput)
     (r1 rd : regidx)
     (imm : BitVec 12)
@@ -854,7 +854,7 @@ theorem construction_slti_sound_claimed_dead
 theorem construction_sltiu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx)
     (imm : BitVec 12)

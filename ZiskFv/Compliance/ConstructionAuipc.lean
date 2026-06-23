@@ -79,7 +79,7 @@ set_option maxHeartbeats 2000000
 theorem construction_auipc_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)
     (rd : regidx)

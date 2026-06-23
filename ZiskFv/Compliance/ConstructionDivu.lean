@@ -437,7 +437,7 @@ private lemma divu_carry_bounds_claimed_dead
     `exists_arithMul_provider_row_matches_primary_of_divu_from_binding`.
     Mirrors `mulwArow`. -/
 noncomputable def divuArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -450,7 +450,7 @@ noncomputable def divuArow
 /-- `FullSpec` of the balance-selected DIVU provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem divuArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -468,7 +468,7 @@ theorem divuArow_fullSpec_row
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form (cheap: free
     `ArithMulRow`, no view whnf). -/
 theorem divuArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -489,7 +489,7 @@ theorem divuArow_match_row
     off the BARE provider `ArithMulRow` via `divu_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem divuArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -519,7 +519,7 @@ theorem divuArow_mode_pins
     Main row's emission, in `opBus_row_ArithDiv` form.  The DIVU mode pins
     needed to reduce the faithful mux are DERIVED via `divuArow_mode_pins`. -/
 theorem divuArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -721,7 +721,7 @@ lemma equiv_DIVU_of_fullSpec_claimed_dead
 
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
-    `trace.balanced` / `trace.spec` via the SHARED ArithMul provider's
+    `trace.channels_balanced` / `trace.spec_holds` via the SHARED ArithMul provider's
     lookup-aware `componentWithArithTable.Spec = FullSpec`, NOT supplied as
     binders.
 
@@ -734,7 +734,7 @@ lemma equiv_DIVU_of_fullSpec_claimed_dead
 theorem construction_divu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins

@@ -20,7 +20,7 @@ residual binders — mirroring `construction_add_sound`, but on the
 
 A conditional branch reads `rs1`/`rs2`, compares them, and updates only the PC.
 It emits NO operation-bus entry (so there is no provider disjunction to resolve
-from `trace.balanced`, in contrast to ADD/SUB), and NO memory-bus entry (so there
+from `trace.channels_balanced`, in contrast to ADD/SUB), and NO memory-bus entry (so there
 is no `StorePcMemoryWitness` / rd-write to discharge, in contrast to LUI/AUIPC).
 The entire state effect is carried by the execution bus's single PC update. The
 canonical `equiv_<BOP>` consumes only a `BranchInstrOperands` + a `BranchPromises`
@@ -108,7 +108,7 @@ set_option maxHeartbeats 2000000
 theorem construction_beq_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (beq_input : PureSpec.BeqInput)
     (imm : BitVec 13)
     (r1 r2 : regidx)
@@ -169,7 +169,7 @@ theorem construction_beq_sound_claimed_dead
 theorem construction_bne_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (bne_input : PureSpec.BneInput)
     (imm : BitVec 13)
     (r1 r2 : regidx)
@@ -221,7 +221,7 @@ theorem construction_bne_sound_claimed_dead
 theorem construction_blt_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (blt_input : PureSpec.BltInput)
     (imm : BitVec 13)
     (r1 r2 : regidx)
@@ -273,7 +273,7 @@ theorem construction_blt_sound_claimed_dead
 theorem construction_bge_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (bge_input : PureSpec.BgeInput)
     (imm : BitVec 13)
     (r1 r2 : regidx)
@@ -325,7 +325,7 @@ theorem construction_bge_sound_claimed_dead
 theorem construction_bltu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (bltu_input : PureSpec.BltuInput)
     (imm : BitVec 13)
     (r1 r2 : regidx)
@@ -377,7 +377,7 @@ theorem construction_bltu_sound_claimed_dead
 theorem construction_bgeu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (bgeu_input : PureSpec.BgeuInput)
     (imm : BitVec 13)
     (r1 r2 : regidx)
