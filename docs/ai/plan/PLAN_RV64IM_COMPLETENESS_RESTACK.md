@@ -5,7 +5,7 @@
 Land the Sail-first RV64IM acceptance-completeness surface from branch
 `rv64im-completeness` (open PR #60) on current main as a fresh, minimal
 branch. The public endpoint is
-`ZiskFv.Completeness.Rv64im.rv64im_completeness`: every Sail-executable
+`ZiskFv.Completeness.Rv64im.root_completeness`: every Sail-executable
 RV64IM raw word — outside the recorded FENCE decode gap
 (`ZISK-DEFECT-FENCE-INCOMPLETE` in `trust/defects.md`) — is covered by the
 pinned production ZisK decode/lower/materialize path AND yields the
@@ -127,7 +127,7 @@ still state the mediation plainly.
 ## Phase 3 — Docs and framing
 
 - [x] Update `trust/README.md` (or the most fitting trust doc) with a
-      short section: what `rv64im_completeness` claims, the interface
+      short section: what `root_completeness` claims, the interface
       mediation, where the premises are checked, and the explicit
       disclaimer vs the demoted Clean completeness non-claims.
 - [x] Update `CLAUDE.md` Status paragraph (one or two sentences) and

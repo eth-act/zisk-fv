@@ -4090,7 +4090,7 @@ noncomputable def mulEnvOf
     `False` and the FENCE defect predicate's negation is `True`, while the
     arith-mul defect predicate is exactly the two exceptional product-sign shapes
     that `h_not_forge` rules out.  Hence the threaded obligation is SATISFIABLE for
-    every honest MUL row, so the `.mul` arm of `zisk_compliant_of_accepted_trace_strong`
+    every honest MUL row, so the `.mul` arm of `root_soundness`
     is NON-VACUOUS (it is not discharged by a contradictory binder).  This lemma is
     the Lean-checked anti-vacuity guard for the strong-export MUL arm. -/
 theorem mul_noKnownDefect_of_rowData
@@ -10925,55 +10925,15 @@ theorem stepComplianceStrong_of_rowData
   | lw d => exact stepStrong_lw trace binding i d h_known
   | fence d => exact stepStrong_fence trace binding i d h_known
 
-/-- **Strengthened trace-level export (#61, channel-balance form).**
+/-- **Root soundness — trace-level export (#61).**
 
-    From an accepted full-ensemble trace, a program binding, and a per-row
-    classification into ALL 63 RV64IM archetypes, EVERY row satisfies the
-    canonical channel-balance per-step conclusion (`= state_effect_via_channels …`)
-    — the SAME conclusion the OLD global theorem `zisk_riscv_compliant_program_bus`
-    produces.  For the 22 op-bus ALU arms the `OpEnvelope` is CONSTRUCTED from the
-    trace inside each `stepStrong_<op>` (no caller-supplied envelope); for the
-    control-flow + U-type + store + load + M-ext-unsigned arms the conclusion is
-    the channel-balance lift of each `construction_<op>_sound` over the real trace
-    row; the 7 signed-M arms (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW) and FENCE CONSTRUCT
-    their `OpEnvelope.<op>` (= `<op>EnvOf`) from the trace row.  The 6 M-ext-unsigned
-    arms (MULW/MULHU/DIVU/DIVUW/REMU/REMUW) lift the FAITHFUL loose-bound (`<983041`)
-    construction, NEVER the canonical equiv's tight (`<131072`) carry bound, so they
-    are non-vacuous and sound.  This is strictly stronger
-    than the `bus_effect`-form `zisk_compliant_of_accepted_trace`: every
-    conclusion it yields is `state_effect_via_channels …`, defeq-implying the
-    `bus_effect`-form, over the committed trace.
-
-    ## Threaded defect-exclusion hypothesis (`h_known_bugs`)
-
-    The `h_known_bugs` premise is the per-row defect-exclusion obligation
-    (`StepNoKnownDefect`).  It is threaded — via `stepComplianceStrong_of_rowData`
-    — to each OpEnvelope-route `stepStrong_<op>`, which feeds it to the old global
-    theorem `zisk_riscv_compliant_program_bus` in place of an internally-proved
-    `NoKnownDefect`.  For the non-defect arms (op-bus ALU + M-ext-unsigned +
-    control-flow / U-type / store / load) the obligation is `EnvNoKnownDefectFor` on
-    a non-defect constructor (or `True` for the direct-lift arms), so it is TRIVIALLY
-    satisfiable — see `envNoKnownDefectFor_of_nondefect` — and this theorem is
-    therefore NOT vacuous.
-
-    The FENCE arm and the 7 signed-M arms (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW) are the
-    defect/gap ops landed on the OpEnvelope route: each one's `StepNoKnownDefect`
-    obligation is the GENUINE `NoKnownDefect (<op>EnvOf …)` of the SPECIFIC honest env
-    it constructs, NOT the (false) `EnvNoKnownDefectFor` selector-∀ and NOT a
-    contradictory `False`-binder.
-
-    The 7 signed-M arms ARE landed because their defect predicates were NARROWED from
-    the old opcode-wide `| .mul .. => True` form to the EXACT witness-conditional forge
-    shapes: MUL/MULH/MULHSU exclude only `np=0 ∧ na⊕nb=1`
-    (`MaliciousSignedMulWitnessShape`); DIV/REM/DIVW/REMW exclude only the `|r|=|d|`
-    `LT_ABS_NP` false positive (`ArithDivDynamicWitnessShape`, codygunton/zisk#5).
-    Honest rows are NEVER excluded, so each arm's `NoKnownDefect` is SATISFIABLE for a
-    real honest signed-M row (anti-vacuity witnesses `honest_<op>_witness_not_forge`).
-    A documented sign-range residual `na = MSB` is carried per row (the real circuit
-    enforces it; the FV model collapsed it to FULL — dischargeable, issue #114).  The
-    FENCE arm is likewise SATISFIABLE for an honest FENCE row (`fm=0, rs1=x0, rd=x0`)
-    — the malicious shapes excluded exactly by the honest pins (`RowData_fence`). -/
-theorem zisk_compliant_of_accepted_trace_strong
+    From an accepted full-ensemble trace, a program binding, a per-row
+    classification of all 63 RV64IM archetypes, and a per-row defect-exclusion
+    hypothesis (`h_known_bugs`), every row satisfies the canonical channel-balance
+    conclusion (`= state_effect_via_channels …`). The per-row `OpEnvelope` is
+    constructed from the trace inside each `stepStrong_<op>` — nothing is
+    caller-supplied beyond the trace itself. -/
+theorem root_soundness
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
     (rowData : ∀ i : Fin trace.length, StrongRowConstructionData trace binding i)

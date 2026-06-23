@@ -107,7 +107,7 @@ if [ -d .lake/build ]; then
     echo "# kernel axioms and Sail-translated module axioms excluded) of the"
     echo "# strengthened trace-level export theorem"
     echo "#"
-    echo "#   ZiskFv.Compliance.zisk_compliant_of_accepted_trace_strong"
+    echo "#   ZiskFv.Compliance.root_soundness"
     echo "#"
     echo "# This is the #61 channel-balance trace-level export (63/63 RV64IM arms on"
     echo "# the OpEnvelope route). Its project-trust footprint is audited here exactly"

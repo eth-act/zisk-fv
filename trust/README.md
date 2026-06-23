@@ -74,7 +74,7 @@ still tracks wrapper lemma binders as an internal audit surface.
 ## RV64IM Acceptance Completeness
 
 The checked-in endpoint
-`ZiskFv.Completeness.Rv64im.rv64im_completeness` states acceptance/coverage
+`ZiskFv.Completeness.Rv64im.root_completeness` states acceptance/coverage
 completeness for the RV64IM decoder layer: every Sail-executable RV64IM raw
 word, except the recorded `ZISK-DEFECT-FENCE-INCOMPLETE` decode gap, is covered
 by the pinned production ZisK decode/lower/materialize path and yields the
@@ -94,7 +94,7 @@ regenerates it from the pinned inputs and fails on any non-zero diff.
 This does not revive Clean prover completeness. The Clean
 `GeneralFormalCircuit.Completeness` fields demoted after the false/circular
 axiom audit remain explicit non-claims with `ProverAssumptions := False`; the
-global soundness theorem and the `rv64im_completeness` acceptance theorem do
+global soundness theorem and the `root_completeness` acceptance theorem do
 not consume those non-claims.
 
 ## PR Policy

@@ -33,7 +33,7 @@ The narrative trust ledger is
 The checked-in RV64IM acceptance-completeness endpoint is:
 
 ```lean
-ZiskFv.Completeness.Rv64im.rv64im_completeness
+ZiskFv.Completeness.Rv64im.root_completeness
 ```
 
 It is a decoder/lowering/materialization coverage theorem: under ZisK-side
@@ -107,7 +107,7 @@ The current extraction batch covers the production-backed U/control-flow,
 Binary/BinaryExtension, load/store, branch, MUL, and DIV/REM row-shape helper
 families. The full `nix run .#test` gate additionally runs this harness with
 `AENEAS_CHECK_RV_COMPLETENESS=1`, checking the ZisK-side premises for
-`ZiskFv.Completeness.Rv64im.rv64im_completeness`.
+`ZiskFv.Completeness.Rv64im.root_completeness`.
 
 The proof-side migration target is
 `ZiskFv.Compliance.MainRowProvenance`: it ties selected Main/ROM rows to

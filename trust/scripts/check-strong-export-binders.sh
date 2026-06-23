@@ -2,7 +2,7 @@
 # check-strong-export-binders.sh — V2: assert that the strengthened trace-level
 # export theorem
 #
-#   ZiskFv.Compliance.zisk_compliant_of_accepted_trace_strong
+#   ZiskFv.Compliance.root_soundness
 #
 # has the EXACT parameter-binder list committed in
 # trust/generated/baseline-strong-export-binders.txt AND that no binder type

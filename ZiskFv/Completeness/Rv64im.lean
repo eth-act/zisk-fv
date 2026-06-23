@@ -5916,7 +5916,7 @@ Sail is the source of valid raw instructions.  For every Sail-executable
 RV64IM raw word, outside explicitly known ZisK decode gaps, the production
 ZisK decode/lower/materialize path covers the instruction and provides the
 row-local soundness input expected by the opcode soundness theorems. -/
-theorem rv64im_completeness
+theorem root_completeness
     (iface : Rv.Interface)
     (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
     (h_supported : SupportedDecodeAvoidKnownDecodeBugs iface)
@@ -5938,7 +5938,7 @@ theorem rv64im_completeness
 
 This is only a helper for the generated route aggregation: each family proves
 its own production-row soundness-input contract, and this theorem assembles
-those contracts into the uniform `rv64im_completeness` endpoint. -/
+those contracts into the uniform `root_completeness` endpoint. -/
 theorem rv64im_global_completeness_with_family_soundness_inputs_avoiding_known_decode_bugs
     (iface : Rv.Interface)
     (h_sail_subset : SailExecutableContainedInSupportedDecode iface)
@@ -5956,7 +5956,7 @@ theorem rv64im_global_completeness_with_family_soundness_inputs_avoiding_known_d
     (h_jump_soundness : JumpRegisterImmediateSoundnessInputComplete iface)
     (h_fence_soundness : SupportedFencePredSuccSoundnessInputComplete iface) :
     Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
-  rv64im_completeness
+  root_completeness
     iface
     h_sail_subset
     h_supported

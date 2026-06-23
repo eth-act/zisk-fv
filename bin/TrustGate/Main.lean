@@ -239,7 +239,7 @@ Audited by the strong-export closure + binder gates exactly as
 `zisk_riscv_compliant_program_bus` is audited by `check-closure-vs-baseline` /
 `check-global-theorem-binders`. -/
 def strongExportTheorem : Name :=
-  `ZiskFv.Compliance.zisk_compliant_of_accepted_trace_strong
+  `ZiskFv.Compliance.root_soundness
 
 /-- Subcommand: check that the `ZiskFv.*` project-axiom closure of the strong
 trace-level export theorem exactly matches the fully-qualified Names committed in

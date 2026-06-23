@@ -4,7 +4,7 @@
 # kernel axioms and Sail-translated module axioms excluded) of the
 # strengthened trace-level export theorem
 #
-#   ZiskFv.Compliance.zisk_compliant_of_accepted_trace_strong
+#   ZiskFv.Compliance.root_soundness
 #
 # This is the #61 channel-balance trace-level export (63/63 RV64IM arms on
 # the OpEnvelope route). Its project-trust footprint is audited here exactly
