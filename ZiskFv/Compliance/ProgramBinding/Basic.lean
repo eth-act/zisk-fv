@@ -14,9 +14,6 @@ Sail-binding residuals are supplied separately as honest top-level binders (see
 
 namespace ZiskFv.Compliance
 
-open Goldilocks
-open ZiskFv.AirsClean.FullEnsemble
-
 /-- The named program-binding premise for the P4 construction (table skeleton).
 
 It supplies the Sail state sequence, the selected Main table, and the table's

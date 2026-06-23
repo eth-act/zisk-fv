@@ -16,7 +16,6 @@ built on top lives in `ZiskFv/Compliance/ConstructionSub.lean`.
 
 namespace ZiskFv.Compliance
 
-open Goldilocks
 open ZiskFv.AirsClean.FullEnsemble
 
 theorem exists_staticBinary_provider_row_matches_logic_from_binding
