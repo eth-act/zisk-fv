@@ -100,18 +100,18 @@ set_option maxHeartbeats 2000000
 /-- The honest unified Main+ROM row at trace index `i` for a store, drawn from
     the real Main table. Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
-def mainRowWithRomSt
+noncomputable def mainRowWithRomSt
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    trace.program binding.mainTable i.val
+    trace.program trace.mainTable i.val
 
 /-- The store's memory-bus write entry: the real Clean Main `c` memory-bus
     emission (`cMemMessage`) of the honest unified row, tagged with
     multiplicity `1` and address-space `2` (memory side). The
     `S*CleanWitness.main_c_match` is then `matches_memory_entry_refl`. -/
 @[reducible]
-def eRdSt
+noncomputable def eRdSt
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     Interaction.MemoryBusEntry FGL :=
   ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
@@ -122,7 +122,7 @@ def eRdSt
     and `c` (the memory store write, `as = 2`). The `StorePromises` `m0..m2`
     mult/as shape facts are then `rfl`. -/
 @[reducible]
-def busSt
+noncomputable def busSt
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (execRow : List (Interaction.ExecutionBusEntry FGL)) :
     ZiskFv.Compliance.BusRows where
@@ -139,10 +139,10 @@ theorem mainRowWithRomSt_core
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
     (mainRowWithRomSt trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt
-        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
         i.val := by
   have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-    trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+    trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
   simpa [mainRowWithRomSt,
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
 
@@ -162,16 +162,16 @@ theorem construction_sb_sound_claimed_dead
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) decode pins
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 0)
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_COPYB)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     (h_main_ind_width :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
         i.val = 1)
     -- (b) Sail-side opcode assumptions
     (h_opcode_assumptions : PureSpec.sb_state_assumptions sb_input (binding.stateAt i))
@@ -180,10 +180,10 @@ theorem construction_sb_sound_claimed_dead
       (mainRowWithRomSt trace binding i).rom.addr2.toNat =
         (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat)
     (h_b0_value :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo sb_input.r2_val)
     (h_b1_value :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi sb_input.r2_val)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -222,7 +222,7 @@ theorem construction_sb_sound_claimed_dead
           , (busSt trace binding i execRow).e1
           , (busSt trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
   -- abbreviations
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSt trace binding i execRow
   -- (a) Main row provenance + per-row Spec + store_pc lifted to the row.
@@ -296,16 +296,16 @@ theorem construction_sh_sound_claimed_dead
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) decode pins
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 0)
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_COPYB)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     (h_main_ind_width :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
         i.val = 2)
     -- (b) Sail-side opcode assumptions
     (h_opcode_assumptions : PureSpec.sh_state_assumptions sh_input (binding.stateAt i))
@@ -314,10 +314,10 @@ theorem construction_sh_sound_claimed_dead
       (mainRowWithRomSt trace binding i).rom.addr2.toNat =
         (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat)
     (h_b0_value :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo sh_input.r2_val)
     (h_b1_value :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi sh_input.r2_val)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -353,7 +353,7 @@ theorem construction_sh_sound_claimed_dead
           [ (busSt trace binding i execRow).e0
           , (busSt trace binding i execRow).e1
           , (busSt trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSt trace binding i execRow
   have h_core : (mainRowWithRomSt trace binding i).core =
@@ -419,16 +419,16 @@ theorem construction_sw_sound_claimed_dead
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) decode pins
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 0)
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_COPYB)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     (h_main_ind_width :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
         i.val = 4)
     -- (b) Sail-side opcode assumptions
     (h_opcode_assumptions : PureSpec.sw_state_assumptions sw_input (binding.stateAt i))
@@ -437,10 +437,10 @@ theorem construction_sw_sound_claimed_dead
       (mainRowWithRomSt trace binding i).rom.addr2.toNat =
         (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat)
     (h_b0_value :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo sw_input.r2_val)
     (h_b1_value :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi sw_input.r2_val)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -472,7 +472,7 @@ theorem construction_sw_sound_claimed_dead
           [ (busSt trace binding i execRow).e0
           , (busSt trace binding i execRow).e1
           , (busSt trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSt trace binding i execRow
   have h_core : (mainRowWithRomSt trace binding i).core =
@@ -537,13 +537,13 @@ theorem construction_sd_sound_claimed_dead
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- (b) decode pins
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 0)
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_COPYB)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     -- (b) Sail-side opcode assumptions
     (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input (binding.stateAt i))
@@ -552,10 +552,10 @@ theorem construction_sd_sound_claimed_dead
       (mainRowWithRomSt trace binding i).rom.addr2.toNat =
         (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat)
     (h_b0_value :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo sd_input.r2_val)
     (h_b1_value :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi sd_input.r2_val)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -578,7 +578,7 @@ theorem construction_sd_sound_claimed_dead
           [ (busSt trace binding i execRow).e0
           , (busSt trace binding i execRow).e1
           , (busSt trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSt trace binding i execRow
   have h_core : (mainRowWithRomSt trace binding i).core =
