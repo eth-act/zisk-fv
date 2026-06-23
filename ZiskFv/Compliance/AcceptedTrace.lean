@@ -24,10 +24,8 @@ witness "accepted" — exactly what a real ZisK proof certifies:
   permutation argument). This is what stops a table from fabricating or dropping
   a bus message, gluing the otherwise-independent AIRs into one sound machine.
 
-The per-AIR *spec* (each table really computes its intended relation) is no
-longer an assumed field: `AcceptedTrace.spec_holds` *derives* `witness.Spec`
-from `constraints_hold` and `channels_balanced` via the ensemble's
-table-soundness.
+The per-AIR *spec* is not an assumed field: it is derived from these two by
+`AcceptedTrace.spec_holds` (in `AcceptedTrace/Spec.lean`).
 
 It is the single object the soundness development quantifies over; everything
 downstream (`ProgramBinding`, the provider-match wrappers, the per-op
@@ -45,14 +43,5 @@ structure AcceptedTrace where
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble numInstructions program).ensemble
   constraints_hold : witness.Constraints
   channels_balanced : witness.BalancedChannels
-
-/-- `spec_holds` is **derived**, not assumed: the spec each AIR encodes follows
-    from the accepted `constraints_hold` and `channels_balanced` via the
-    ensemble's table-soundness (`witness_spec_of_constraints`). It is
-    `@[reducible]` so every consumer (and the trust gate's `whnfR`) sees through
-    it exactly as it did the former struct field. -/
-@[reducible] def AcceptedTrace.spec_holds (trace : AcceptedTrace) : trace.witness.Spec :=
-  ZiskFv.AirsClean.FullEnsemble.witness_spec_of_constraints
-    trace.witness trace.constraints_hold trace.channels_balanced
 
 end ZiskFv.Compliance
