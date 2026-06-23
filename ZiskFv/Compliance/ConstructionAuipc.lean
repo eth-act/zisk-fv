@@ -85,30 +85,30 @@ theorem construction_auipc_sound_claimed_dead
     (rd : regidx)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_FLAG)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 0)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_set_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
         i.val = 0)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 1)
     -- (b) Sail-value bridges
     (h_input_imm : auipc_input.imm = imm)
     (h_input_rd : auipc_input.rd = regidx_to_fin rd)
     (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some auipc_input.PC)
     (h_offset_bridge :
-      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
           i.val).val
         = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
     (h_pc_bridge :
-      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).pc i.val).val
+      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
         = auipc_input.PC.toNat)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -132,7 +132,7 @@ theorem construction_auipc_sound_claimed_dead
         < 4294967296) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) (binding.stateAt i)
       = (bus_effect execRow [eRdLui trace binding i] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the AUIPC Main constraint subset.
@@ -162,7 +162,7 @@ theorem construction_auipc_sound_claimed_dead
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
