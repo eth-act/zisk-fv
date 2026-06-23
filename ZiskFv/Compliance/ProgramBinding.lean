@@ -2,19 +2,11 @@ import ZiskFv.Compliance.AcceptedTrace.Spec
 import ZiskFv.SailSpec.Auxiliaries
 
 /-!
-# Program binding
-
-An `AcceptedTrace` is just an abstract bundle of constraint-satisfying tables; it
-doesn't say which of those tables holds the per-instruction execution, or what
-machine states the program passes through. A `ProgramBinding` ties a trace to a
-concrete run, supplying the sequence of Sail machine states the program steps
-through (`stateAt`) and a choice of which witness table is the Main execution
-table (`mainTable`) — with the facts pinning that table down: that it really
-occurs in the witness (`mainTable_mem`), really is the Main component
-(`mainTable_component`), and has one row per instruction (`mainTable_index`).
-
-The per-row decode — which opcode each row is, and that the circuit's inputs for
-that row match the Sail state — is not here; it's supplied per row by `rowData`.
+A `ProgramBinding` ties a trace to a concrete run, supplying the sequence of Sail machine states the
+program steps through (`stateAt`) and a choice of which witness table is the Main execution table
+(`mainTable`) — with the facts pinning that table down : that it really occurs in the witness
+(`mainTable_mem`), really is the Main component (`mainTable_component`), and has one row per
+instruction (`mainTable_index`).
 -/
 
 namespace ZiskFv.Compliance
