@@ -16,7 +16,7 @@ EITHER of two distinct providers with two distinct `opBusMessage` shapes:
 * the dedicated `BinaryAdd` provider (`BinaryAdd.component`).
 
 The salvaged Layer-A wrapper `exists_add_provider_row_matches_from_binding`
-(`AcceptedTrace.lean`) RESOLVES the op-bus from `trace.balanced` into the
+(`AcceptedTrace.lean`) RESOLVES the op-bus from `trace.channels_balanced` into the
 conjunction
 
 ```
@@ -85,7 +85,7 @@ set_option maxHeartbeats 2000000
 
     From the accepted trace + honest residual binders, conclude the canonical
     `execute (RTYPE ADD) = (bus_effect …).2`. The op-bus provider is resolved from
-    `trace.balanced` into a `staticLookup ∨ BinaryAdd` disjunction; BOTH arms are
+    `trace.channels_balanced` into a `staticLookup ∨ BinaryAdd` disjunction; BOTH arms are
     discharged, each deriving the rd data effect from the corresponding provider's
     Clean `Spec`. The `add_subset_holds` conjunct and the provider match are
     DERIVED (bucket-(a)), so the residual budget matches SUB: 17 + `execRow`.
@@ -102,7 +102,7 @@ set_option maxHeartbeats 2000000
 theorem construction_add_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -173,7 +173,7 @@ theorem construction_add_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider RESOLUTION, derived from `trace.balanced`: the
+  -- (a) op-bus provider RESOLUTION, derived from `trace.channels_balanced`: the
   -- `add_subset_holds` conjunct + a `staticLookup ∨ BinaryAdd` DISJUNCTION.
   obtain ⟨h_add_subset, h_disj⟩ :=
     exists_add_provider_row_matches_from_binding
@@ -310,7 +310,7 @@ theorem construction_add_sound_claimed_dead
 theorem construction_addi_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx)
     (imm : BitVec 12)
@@ -377,7 +377,7 @@ theorem construction_addi_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider RESOLUTION, derived from `trace.balanced`: the
+  -- (a) op-bus provider RESOLUTION, derived from `trace.channels_balanced`: the
   -- `add_subset_holds` conjunct + a `staticLookup ∨ BinaryAdd` DISJUNCTION
   -- (the op-bus match is operand-source-agnostic, so the SAME wrapper serves ADDI).
   obtain ⟨h_add_subset, h_disj⟩ :=

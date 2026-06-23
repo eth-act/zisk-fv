@@ -76,13 +76,13 @@ set_option maxHeartbeats 2000000
       genuine `execRow` ∀-binder.
 
     Derived inside the body (NOT binders): op-bus provider match (from
-    `trace.balanced`, via the salvaged compare wrapper), row shape, circuit-internal
+    `trace.channels_balanced`, via the salvaged compare wrapper), row shape, circuit-internal
     rd arithmetic (incl. the signed-compare polarity, inside `equiv_SLT`), the
     MemBus `m0..m2` shape, `h_lane_rd`, and the lane→Sail binding facts. -/
 theorem construction_slt_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (slt_input : PureSpec.SltInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -153,7 +153,7 @@ theorem construction_slt_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced` via the salvaged
+  -- (a) op-bus provider match, derived from `trace.channels_balanced` via the salvaged
   -- compare wrapper (serves SLT / SLTU; op pin given as the SLT disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -277,7 +277,7 @@ theorem construction_slt_sound_claimed_dead
 theorem construction_sltu_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sltu_input : PureSpec.SltuInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -348,7 +348,7 @@ theorem construction_sltu_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced` via the salvaged
+  -- (a) op-bus provider match, derived from `trace.channels_balanced` via the salvaged
   -- compare wrapper (serves SLT / SLTU; op pin given as the SLTU disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=

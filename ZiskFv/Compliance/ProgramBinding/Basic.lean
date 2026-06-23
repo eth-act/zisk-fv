@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.AcceptedTrace.Spec
 import ZiskFv.SailSpec.Auxiliaries
 
 /-!
@@ -20,14 +20,14 @@ It supplies the Sail state sequence, the selected Main table, and the table's
 membership / component / index facts. -/
 structure ProgramBinding (trace : AcceptedTrace) where
   stateAt :
-    Fin trace.length →
+    Fin trace.numInstructions →
       PreSail.SequentialState RegisterType Sail.trivialChoiceSource
   mainTable : Air.Flat.Table FGL
   mainTable_mem : mainTable ∈ trace.witness.allTables
   mainTable_component :
     mainTable.component =
       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        trace.length trace.program
-  mainTable_index : ∀ i : Fin trace.length, i.val < mainTable.table.length
+        trace.numInstructions trace.program
+  mainTable_index : ∀ i : Fin trace.numInstructions, i.val < mainTable.table.length
 
 end ZiskFv.Compliance

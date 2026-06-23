@@ -24,7 +24,7 @@ construction reads that `FullSpec` straight off the balance-derived provider row
 ## The honest decomposition
 
 * **(a) derived** — proven inside the body, NOT a binder:
-  - op-bus provider match (from `trace.balanced`, via the Layer-A wrapper
+  - op-bus provider match (from `trace.channels_balanced`, via the Layer-A wrapper
     `exists_arithMul_provider_row_matches_primary_of_mulw_from_binding`,
     bottoming in the axiom-free keep-arithMul balance theorem),
   - the row-native `Valid_ArithMul` view `vOfMulwRow (mulwArow …)` of the
@@ -57,7 +57,7 @@ construction reads that `FullSpec` straight off the balance-derived provider row
 `execRow` MUST be a genuine top-level ∀-binder (the bus consumed by the exec
 hypotheses is `busSub`, built from the real trace row, NOT chosen to trivialize
 a hypothesis). The Arith witnesses are NOT binders — they are derived from
-`trace.balanced` / `trace.spec`, matching the ALU constructions' shape.
+`trace.channels_balanced` / `trace.spec_holds`, matching the ALU constructions' shape.
 
 ## Axioms
 
@@ -144,7 +144,7 @@ def vOfMulwRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
     `vOfMulwRow (mulwArow …)`. The Arith witnesses for this row are derived
     inside `construction_mulw_sound`; nothing about the row is caller-supplied. -/
 noncomputable def mulwArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -170,7 +170,7 @@ theorem fullSpec_rowAt_vOfMulwRow
     underlying `mulwArow` matches the one this proof picks — keeping the defeq
     cheap for the construction body. -/
 theorem mulwArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -188,7 +188,7 @@ theorem mulwArow_fullSpec_row
 
 /-- `FullSpec` of the balance-selected MULW provider row view. -/
 theorem mulwArow_fullSpec
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -230,7 +230,7 @@ theorem match_opBus_row_Arith_vOfMulwRow
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. Cheap: the row
     is a free `ArithMulRow`, so no `vOfMulwRow`/`opBus_row_Arith` whnf. -/
 theorem mulwArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -261,7 +261,7 @@ theorem mulwArow_match_row
     op-bus match via the CHEAP `rfl`-projection lemma `primaryOpBusMessage_toEntry_op`
     (a rewrite, not a reduction). -/
 theorem mulwArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -290,7 +290,7 @@ theorem mulwArow_mode_pins
     Main row's emission, in `opBus_row_Arith` form. The MUL/MULW mode pins
     needed to reduce the faithful mux are DERIVED via `mulwArow_mode_pins`. -/
 theorem mulwArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.length)
+    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -309,12 +309,12 @@ theorem mulwArow_match
 
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
-    `trace.balanced` / `trace.spec` via the provider's lookup-aware
+    `trace.channels_balanced` / `trace.spec_holds` via the provider's lookup-aware
     `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
 theorem construction_mulw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -390,7 +390,7 @@ theorem construction_mulw_sound_claimed_dead
   -- The balance-selected provider row view.  Kept as the explicit syntactic
   -- term `vOfMulwRow (mulwArow …)` (NOT `set`/`let`) so it matches the residual
   -- operand binders verbatim, avoiding any `mulwArow` whnf in the delegation.
-  -- (a) Arith witnesses, derived from `trace.balanced` / `trace.spec`:
+  -- (a) Arith witnesses, derived from `trace.channels_balanced` / `trace.spec_holds`:
   --   FullSpec (carry-chain + ArithTable + c46 + chunk/carry ranges) from the
   --   provider component's proven soundness.
   have h_full :

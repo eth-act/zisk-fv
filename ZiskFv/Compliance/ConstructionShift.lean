@@ -308,13 +308,13 @@ theorem shift_imm_shift_pin_row_of_facts
       genuine `execRow` ∀-binder.
 
     Derived inside the body (NOT binders): op-bus provider match (from
-    `trace.balanced`, via the salvaged shift Layer-A wrapper), the BinaryExtension
+    `trace.channels_balanced`, via the salvaged shift Layer-A wrapper), the BinaryExtension
     wf/byte facts, `op_is_shift = 1`, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the lane→Sail bindings `h_input_r1_row` / `h_shift_pin_row` (m32 = 0 route). -/
 theorem construction_sll_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -381,7 +381,7 @@ theorem construction_sll_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced`
+  -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     exists_binaryExtension_provider_row_matches_shift_from_binding
@@ -474,13 +474,13 @@ theorem construction_sll_sound_claimed_dead
       genuine `execRow` ∀-binder.
 
     Derived inside the body (NOT binders): op-bus provider match (from
-    `trace.balanced`, via the salvaged shift Layer-A wrapper), the BinaryExtension
+    `trace.channels_balanced`, via the salvaged shift Layer-A wrapper), the BinaryExtension
     wf/byte facts, `op_is_shift = 1`, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the lane→Sail bindings `h_input_r1_row` / `h_shift_pin_row` (m32 = 0 route). -/
 theorem construction_srl_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (srl_input : PureSpec.SrlInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -547,7 +547,7 @@ theorem construction_srl_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced`
+  -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     exists_binaryExtension_provider_row_matches_shift_from_binding
@@ -640,13 +640,13 @@ theorem construction_srl_sound_claimed_dead
       genuine `execRow` ∀-binder.
 
     Derived inside the body (NOT binders): op-bus provider match (from
-    `trace.balanced`, via the salvaged shift Layer-A wrapper), the BinaryExtension
+    `trace.channels_balanced`, via the salvaged shift Layer-A wrapper), the BinaryExtension
     wf/byte facts, `op_is_shift = 1`, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the lane→Sail bindings `h_input_r1_row` / `h_shift_pin_row` (m32 = 0 route). -/
 theorem construction_sra_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -713,7 +713,7 @@ theorem construction_sra_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced`
+  -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     exists_binaryExtension_provider_row_matches_shift_from_binding
@@ -808,7 +808,7 @@ theorem construction_sra_sound_claimed_dead
 theorem construction_slli_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (slli_input : PureSpec.SlliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
     -- (b) decode pins
@@ -954,7 +954,7 @@ theorem construction_slli_sound_claimed_dead
 theorem construction_srli_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (srli_input : PureSpec.SrliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
     -- (b) decode pins
@@ -1100,7 +1100,7 @@ theorem construction_srli_sound_claimed_dead
 theorem construction_srai_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (srai_input : PureSpec.SraiInput)
     (r1 rd : regidx) (shamt : BitVec 6)
     -- (b) decode pins
@@ -1414,7 +1414,7 @@ theorem shift_m32_1_imm_shift_pin_row_of_facts
 theorem construction_sllw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sllw_input : PureSpec.SllwInput)
     (r1 r2 rd : regidx)
     -- (b) decode pins
@@ -1481,7 +1481,7 @@ theorem construction_sllw_sound_claimed_dead
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
-  -- (a) op-bus provider match, derived from `trace.balanced`. SLLW = 4th
+  -- (a) op-bus provider match, derived from `trace.channels_balanced`. SLLW = 4th
   -- disjunct of the shared shift Layer-A wrapper.
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1568,7 +1568,7 @@ theorem construction_sllw_sound_claimed_dead
 theorem construction_srlw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (srlw_input : PureSpec.SrlwInput)
     (r1 r2 rd : regidx)
     (h_main_op :
@@ -1708,7 +1708,7 @@ theorem construction_srlw_sound_claimed_dead
 theorem construction_sraw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sraw_input : PureSpec.SrawInput)
     (r1 r2 rd : regidx)
     (h_main_op :
@@ -1859,7 +1859,7 @@ theorem construction_sraw_sound_claimed_dead
 theorem construction_slliw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (slliw_input : PureSpec.SlliwInput)
     (r1 rd : regidx)
     -- (b) decode pins
@@ -1990,7 +1990,7 @@ theorem construction_slliw_sound_claimed_dead
 theorem construction_srliw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)
     (h_main_op :
@@ -2117,7 +2117,7 @@ theorem construction_srliw_sound_claimed_dead
 theorem construction_sraiw_sound_claimed_dead
     (trace : AcceptedTrace)
     (binding : ProgramBinding trace)
-    (i : Fin trace.length)
+    (i : Fin trace.numInstructions)
     (sraiw_input : PureSpec.SraiwInput)
     (r1 rd : regidx)
     (h_main_op :
