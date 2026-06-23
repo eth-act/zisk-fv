@@ -3,7 +3,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -39,7 +38,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -75,7 +73,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -111,7 +108,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -147,7 +143,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -183,7 +178,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -219,7 +213,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -254,7 +247,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -289,7 +281,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -324,7 +315,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -359,7 +349,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -394,7 +383,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -430,7 +418,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -466,7 +453,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -502,7 +488,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -537,7 +522,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -572,7 +556,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -607,7 +590,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -643,7 +625,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -679,7 +660,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -715,7 +695,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -748,7 +727,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -781,7 +759,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -814,7 +791,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -850,7 +826,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -886,7 +861,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -922,7 +896,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -958,7 +931,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -993,7 +965,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1026,7 +997,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1061,7 +1031,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1097,7 +1066,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1138,7 +1106,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1258,7 +1225,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1381,7 +1347,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1501,7 +1466,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1624,7 +1588,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1664,7 +1627,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1703,7 +1665,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1740,7 +1701,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1772,7 +1732,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1832,7 +1791,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -1954,7 +1912,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2076,7 +2033,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2198,7 +2154,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2298,7 +2253,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2398,7 +2352,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2498,7 +2451,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2530,7 +2482,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2562,7 +2513,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2594,7 +2544,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2626,7 +2575,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2658,7 +2606,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2690,7 +2637,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
@@ -2732,7 +2678,6 @@ trace.numInstructions :: Nat
 trace.program :: ZiskFv.AirsClean.ZiskInstructionRom.Program trace.1
 trace.witness :: Air.Flat.EnsembleWitness (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble trace.1 trace.2).ensemble
 trace.constraints_hold :: trace.3.Constraints
-trace.spec_holds :: trace.3.Spec
 trace.channels_balanced :: trace.3.BalancedChannels
 binding.stateAt :: Fin trace.numInstructions → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 binding.mainTable :: Air.Flat.Table (Fin 18446744069414584321)
