@@ -4,20 +4,23 @@ import ZiskFv.SailSpec.Auxiliaries
 /-!
 # Program binding
 
-The table-skeleton premise an `AcceptedTrace` is interpreted against: a Sail
-state sequence over the trace, the selected Main table, and the facts pinning
-that table into the witness (membership, component identity, per-row index
-bound). It is the bucket-(b) input to the per-op constructions; the decode and
-Sail-binding residuals are supplied separately as honest top-level binders (see
-`ZiskFv/Compliance/ConstructionSub.lean`), not as projections of this record.
+An `AcceptedTrace` is just an abstract bundle of constraint-satisfying tables; it
+doesn't say which of those tables holds the per-instruction execution, or what
+machine states the program passes through. A `ProgramBinding` ties a trace to a
+concrete run, supplying the sequence of Sail machine states the program steps
+through (`stateAt`) and a choice of which witness table is the Main execution
+table (`mainTable`) — with the facts pinning that table down: that it really
+occurs in the witness (`mainTable_mem`), really is the Main component
+(`mainTable_component`), and has one row per instruction (`mainTable_index`).
+
+The per-row decode — which opcode each row is, and that the circuit's inputs for
+that row match the Sail state — is not here; it's supplied per row by `rowData`.
 -/
 
 namespace ZiskFv.Compliance
 
-/-- The named program-binding premise for the P4 construction (table skeleton).
-
-It supplies the Sail state sequence, the selected Main table, and the table's
-membership / component / index facts. -/
+/-- Binds an `AcceptedTrace` to a concrete program run: the per-instruction Sail
+    state sequence and the chosen Main execution table inside the witness. -/
 structure ProgramBinding (trace : AcceptedTrace) where
   stateAt :
     Fin trace.numInstructions →
