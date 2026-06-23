@@ -13,9 +13,6 @@ of these.
 
 namespace ZiskFv.Compliance
 
-open Goldilocks
-open ZiskFv.AirsClean.FullEnsemble
-
 /-- Accepted committed trace for the full RV64IM Clean ensemble. -/
 structure AcceptedTrace where
   length : Nat
