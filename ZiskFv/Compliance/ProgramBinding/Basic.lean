@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.AcceptedTrace.Spec
 import ZiskFv.SailSpec.Auxiliaries
 
 /-!

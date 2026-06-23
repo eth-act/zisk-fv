@@ -4,13 +4,26 @@ import ZiskFv.Compliance.TraceLevelExport
 # Root soundness
 
 The headline soundness statement of the project, factored out of the
-trace-level export development for visibility.  It sits parallel to
+trace-level export development for visibility. It sits parallel to
 `ZiskFv.Compliance` and re-exports the single endpoint theorem.
 -/
 
 namespace ZiskFv.Compliance
 
-/-- **Root soundness — trace-level export (#61).**
+/-- ** The top-level global soundness theorem: given a satisfying assignment of circuits
+    that does not involve any explicitly enumerated bugs, the zisk machine state transition
+    agrees with the Sail machine state transition.
+
+    An AcceptedTrace is a set of constraints, and a witness that satisfies those constraints and the
+    channel balancing constraint enfoced in the proving system through a lookup argument.
+
+    A ProgramBinding is a choice of which table in the witness is the Main execution table, together
+    with the sequence of Sail machine states the program steps through and the facts that pin that
+    table into the witness : that it really occurs in it, that it really is the Main component, and
+    that it has one row per instruction.
+
+    rowData is the assumption that, for each instruction, ZisK's inputs match the Sail model's
+    inputs — same opcode, same operand and PC values.
 
     From an accepted full-ensemble trace, a program binding, a per-row
     classification of all 63 RV64IM archetypes, and a per-row defect-exclusion

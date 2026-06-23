@@ -53,7 +53,7 @@ theorem component_mem_fullRv64im_cases
       ∨ component = ZiskFv.AirsClean.BinaryAdd.component
       ∨ component =
         ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program := by
-  simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+  simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
     SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
     at h_mem
   rcases h_mem with
@@ -84,7 +84,7 @@ theorem exists_mem_table_of_fullRv64im_witness
   have h_component_mem :
       ZiskFv.AirsClean.Mem.componentWithDualMemBus ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
-    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+    simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
       SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
   have h_in_map :
       ZiskFv.AirsClean.Mem.componentWithDualMemBus ∈
@@ -106,7 +106,7 @@ theorem exists_main_table_of_fullRv64im_witness
   have h_component_mem :
       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
-    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+    simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
       SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
   have h_in_map :
       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program ∈
@@ -127,7 +127,7 @@ theorem exists_binary_table_of_fullRv64im_witness
   have h_component_mem :
       ZiskFv.AirsClean.Binary.staticLookupComponent ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
-    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+    simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
       SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
   have h_in_map :
       ZiskFv.AirsClean.Binary.staticLookupComponent ∈
@@ -149,7 +149,7 @@ theorem exists_binaryExtension_table_of_fullRv64im_witness
   have h_component_mem :
       shiftStaticLookupComponent ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
-    simp [fullRv64imEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
+    simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
       SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
   have h_in_map :
       shiftStaticLookupComponent ∈
@@ -165,7 +165,7 @@ theorem verifierTable_interactionsWith_opBus_nil
     (length : ℕ) (program : Program length) :
     (fullRv64imEnsemble length program).ensemble.verifierTable.operations.interactionsWith
       OpBusChannel.toRaw = [] := by
-  simp [fullRv64imEnsemble, SoundEnsemble.toFormal,
+  simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
     Ensemble.verifierTable_interactionsWith, Ensemble.verifierOperations,
     GeneralFormalCircuit.empty, circuit_norm]
 
@@ -175,7 +175,7 @@ theorem verifierTable_interactionsWith_memBus_nil
     (length : ℕ) (program : Program length) :
     (fullRv64imEnsemble length program).ensemble.verifierTable.operations.interactionsWith
       MemBusChannel.toRaw = [] := by
-  simp [fullRv64imEnsemble, SoundEnsemble.toFormal,
+  simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
     Ensemble.verifierTable_interactionsWith, Ensemble.verifierOperations,
     GeneralFormalCircuit.empty, circuit_norm]
 
