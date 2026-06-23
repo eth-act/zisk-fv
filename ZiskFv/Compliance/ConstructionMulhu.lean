@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.ProgramBinding.Wrappers
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.EquivCore.MulHU
 import ZiskFv.EquivCore.Promises.ArithHelpers

@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedTrace
+import ZiskFv.Compliance.ProgramBinding.Wrappers
 import ZiskFv.Compliance.Wrappers.Beq
 import ZiskFv.Compliance.Wrappers.Bne
 import ZiskFv.Compliance.Wrappers.Blt
