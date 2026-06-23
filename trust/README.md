@@ -74,7 +74,7 @@ still tracks wrapper lemma binders as an internal audit surface.
 ## RV64IM Acceptance Completeness
 
 The checked-in endpoint
-`ZiskFv.Completeness.Rv64im.root_completeness` states acceptance/coverage
+`ZiskFv.Completeness.root_completeness` states acceptance/coverage
 completeness for the RV64IM decoder layer: every Sail-executable RV64IM raw
 word, except the recorded `ZISK-DEFECT-FENCE-INCOMPLETE` decode gap, is covered
 by the pinned production ZisK decode/lower/materialize path and yields the

@@ -14,7 +14,7 @@ Plan: `docs/ai/plan/PLAN_RV64IM_COMPLETENESS_RESTACK.md`. PR #68 is the active
 review PR for the Sail-first RV64IM acceptance/coverage completeness restack,
 after accidental merge #67 was removed by resetting `main` back to `6aa01c3e`.
 The public endpoint is
-`ZiskFv.Completeness.Rv64im.root_completeness`, with the FENCE decode gap
+`ZiskFv.Completeness.root_completeness`, with the FENCE decode gap
 explicitly tied to `ZISK-DEFECT-FENCE-INCOMPLETE` and ZisK-side premises checked
 through the Aeneas extraction gate; do not merge #68 without explicit approval.
 

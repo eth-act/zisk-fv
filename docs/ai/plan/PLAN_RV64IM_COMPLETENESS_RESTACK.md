@@ -5,7 +5,7 @@
 Land the Sail-first RV64IM acceptance-completeness surface from branch
 `rv64im-completeness` (open PR #60) on current main as a fresh, minimal
 branch. The public endpoint is
-`ZiskFv.Completeness.Rv64im.root_completeness`: every Sail-executable
+`ZiskFv.Completeness.root_completeness`: every Sail-executable
 RV64IM raw word — outside the recorded FENCE decode gap
 (`ZISK-DEFECT-FENCE-INCOMPLETE` in `trust/defects.md`) — is covered by the
 pinned production ZisK decode/lower/materialize path AND yields the
