@@ -22,7 +22,7 @@ ensemble (channels = OpBus + MemBus only; per-row component model):
 
 * **(a) derived** — proven inside the body, NOT a binder:
   - op-bus provider match (from `trace.channels_balanced`, via the salvaged Layer-A
-    `exists_staticBinary_provider_row_matches_sub`, bottoming in an
+    `main_request_sub_provided`, bottoming in an
     axiom-free Layer-B permutation theorem),
   - row shape (`mainOfTable` / `rowAt_mainOfTable`),
   - circuit-internal rd arithmetic (the already-proven packed byte-chain lemmas),
@@ -238,7 +238,7 @@ theorem construction_sub_sound_claimed_dead
   -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_sub
+    main_request_sub_provided
       trace i h_main_active h_main_op
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB :=

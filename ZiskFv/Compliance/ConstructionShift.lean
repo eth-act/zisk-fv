@@ -29,7 +29,7 @@ The shifts are a **separate template instantiation**, not the
 
 1. **BinaryExtension provider, not staticBinary.** The op-bus provider match is
    derived from the salvaged shift Layer-A wrapper
-   `exists_binaryExtension_provider_row_matches_shift` (which serves
+   `main_request_shift_provided` (which serves
    all twelve shifts; it takes the op pin as the 6-way disjunction
    `OP_SLL ∨ OP_SRL ∨ OP_SRA ∨ OP_SLL_W ∨ OP_SRL_W ∨ OP_SRA_W`, here discharged
    by the appropriate disjunct per family). The provider is
@@ -384,7 +384,7 @@ theorem construction_sll_sound_claimed_dead
   -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inl h_main_op)
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
@@ -550,7 +550,7 @@ theorem construction_srl_sound_claimed_dead
   -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inr (Or.inl h_main_op))
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
@@ -716,7 +716,7 @@ theorem construction_sra_sound_claimed_dead
   -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inr (Or.inr (Or.inl h_main_op)))
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
@@ -867,7 +867,7 @@ theorem construction_slli_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inl h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
     ⟨h_main_active, h_main_op⟩
@@ -1013,7 +1013,7 @@ theorem construction_srli_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inr (Or.inl h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
     ⟨h_main_active, h_main_op⟩
@@ -1159,7 +1159,7 @@ theorem construction_srai_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inr (Or.inr (Or.inl h_main_op)))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
     ⟨h_main_active, h_main_op⟩
@@ -1485,7 +1485,7 @@ theorem construction_sllw_sound_claimed_dead
   -- disjunct of the shared shift Layer-A wrapper.
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inr (Or.inr (Or.inr (Or.inl h_main_op))))
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
@@ -1632,7 +1632,7 @@ theorem construction_srlw_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨h_main_active, h_main_op⟩
@@ -1772,7 +1772,7 @@ theorem construction_sraw_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
@@ -1918,7 +1918,7 @@ theorem construction_slliw_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inr (Or.inr (Or.inr (Or.inl h_main_op))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
     ⟨h_main_active, h_main_op⟩
@@ -2045,7 +2045,7 @@ theorem construction_srliw_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨h_main_active, h_main_op⟩
@@ -2172,7 +2172,7 @@ theorem construction_sraiw_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift
+    main_request_shift_provided
       trace i h_main_active
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=

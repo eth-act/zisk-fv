@@ -37,8 +37,8 @@ program binding. So relative to the R-type sibling each construction:
 
 The op-bus provider match is operand-source-agnostic, so the SAME salvaged
 Layer-A wrapper as the R-type sibling is reused verbatim
-(`exists_staticBinary_provider_row_matches_logic` for ANDI/ORI/XORI,
-`exists_staticBinary_provider_row_matches_compare` for SLTI/SLTIU,
+(`main_request_logic_provided` for ANDI/ORI/XORI,
+`main_request_compare_provided` for SLTI/SLTIU,
 with the SAME op-pin disjunct shape). The op-agnostic infra `busSub` /
 `mainRowWithRomSub` (`ConstructionSub.lean`) and the lane-rd / row-shape / MemBus
 derivations are reused verbatim.
@@ -194,7 +194,7 @@ theorem construction_andi_sound_claimed_dead
   -- logic wrapper (serves AND/ANDI / OR/ORI / XOR/XORI; op pin = AND disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic
+    main_request_logic_provided
       trace i h_main_active (Or.inl h_main_op)
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
@@ -381,7 +381,7 @@ theorem construction_ori_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic
+    main_request_logic_provided
       trace i h_main_active (Or.inr (Or.inl h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨h_main_active, h_main_op⟩
@@ -562,7 +562,7 @@ theorem construction_xori_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic
+    main_request_logic_provided
       trace i h_main_active (Or.inr (Or.inr h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨h_main_active, h_main_op⟩
@@ -670,7 +670,7 @@ theorem construction_xori_sound_claimed_dead
 
     Residual budget identical to ANDI/ORI/XORI (16 + `imm` + `execRow`). Mirrors
     `construction_slt_sound` (compare Layer-A wrapper
-    `exists_staticBinary_provider_row_matches_compare`, `OP_LT = 7 < 16`
+    `main_request_compare_provided`, `OP_LT = 7 < 16`
     so the in-body `h_matches` reuses the `_op_lt_16` + `_64` route) through the
     uniform I-type immediate DELTA. `equiv_SLTI` consumes the Main-form
     `h_slti_subset` + `m32 = 0` directly and re-derives the 8-byte immediate form
@@ -744,7 +744,7 @@ theorem construction_slti_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_compare
+    main_request_compare_provided
       trace i h_main_active (Or.inl h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
     ⟨h_main_active, h_main_op⟩
@@ -919,7 +919,7 @@ theorem construction_sltiu_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_compare
+    main_request_compare_provided
       trace i h_main_active (Or.inr h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
     ⟨h_main_active, h_main_op⟩

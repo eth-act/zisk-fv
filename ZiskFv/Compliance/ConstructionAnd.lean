@@ -14,7 +14,7 @@ plus an explicit, named, top-level set of residual binders — with **no**
 The only structural differences from `construction_sub_sound` are:
 
 * the op-bus provider match is derived from the **salvaged logic Layer-A**
-  wrapper `exists_staticBinary_provider_row_matches_logic`
+  wrapper `main_request_logic_provided`
   (which serves AND / OR / XOR; it takes the op pin as the disjunction
   `op = OP_AND ∨ op = OP_OR ∨ op = OP_XOR`, here discharged by `Or.inl`),
 * the op literal is `OP_AND` (`14`, still `< 16`, so the same
@@ -186,7 +186,7 @@ theorem construction_and_sound_claimed_dead
   -- logic wrapper (serves AND / OR / XOR; op pin given as the AND disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic
+    main_request_logic_provided
       trace i h_main_active (Or.inl h_main_op)
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=

@@ -14,7 +14,7 @@ any fact.
 
 Both reuse the op-agnostic infra `busSub` / `mainRowWithRomSub`
 (`ZiskFv/Compliance/ConstructionSub.lean`) and the salvaged compare Layer-A wrapper
-`exists_staticBinary_provider_row_matches_compare` (which serves
+`main_request_compare_provided` (which serves
 SLT / SLTU, taking the op pin as the disjunction `op = OP_LT ∨ op = OP_LTU`).
 The residual budget is identical to SUB/AND: EXACTLY `4 + 5 + 4 + 1 + 3 = 17`
 hypothesis binders plus the genuine `execRow` ∀-binder.
@@ -157,7 +157,7 @@ theorem construction_slt_sound_claimed_dead
   -- compare wrapper (serves SLT / SLTU; op pin given as the SLT disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_compare
+    main_request_compare_provided
       trace i h_main_active (Or.inl h_main_op)
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
@@ -352,7 +352,7 @@ theorem construction_sltu_sound_claimed_dead
   -- compare wrapper (serves SLT / SLTU; op pin given as the SLTU disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_compare
+    main_request_compare_provided
       trace i h_main_active (Or.inr h_main_op)
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
