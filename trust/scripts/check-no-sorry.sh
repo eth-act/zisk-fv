@@ -16,15 +16,15 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-# grep for `sorry` as a Lean tactic / term, excluding:
+# grep for `sorry` as a Lean tactic / term in all non-generated project
+# sources, excluding:
 #   - `-- sorry`             (line comments)
 #   - ``sorry``              (backtick prose in doc comments)
 #   - `"sorry"`              (string literals)
-hits=$(grep -rnE '(^|[^a-zA-Z_`])sorry([^a-zA-Z_`]|$)' \
-  --include='*.lean' \
-  ZiskFv/Fundamentals ZiskFv/Airs ZiskFv/ZiskCircuit ZiskFv/Equivalence \
-  ZiskFv/EquivCore ZiskFv/Compliance ZiskFv/Completeness ZiskFv/Tactics \
-  ZiskFv/SailSpec 2>/dev/null \
+hits=$(find ZiskFv \
+  -path 'ZiskFv/Extraction' -prune -o \
+  -name '*.lean' -print0 \
+  | xargs -0 grep -nE '(^|[^a-zA-Z_`])sorry([^a-zA-Z_`]|$)' 2>/dev/null \
   | grep -v ':[[:space:]]*--' \
   | grep -v ':[[:space:]]*///' \
   | grep -v '"sorry"' \
@@ -36,4 +36,4 @@ if [ -n "$hits" ]; then
   exit 1
 fi
 
-echo "trust-gate: zero sorry — every proof in Fundamentals/Airs/Circuit/Equivalence/EquivCore/Compliance/Completeness/Tactics/SailSpec is complete."
+echo "trust-gate: zero sorry — every non-generated ZiskFv Lean source is complete."
