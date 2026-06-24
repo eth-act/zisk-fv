@@ -606,7 +606,7 @@ theorem main_request_shift_provided
     `arithMulProviderComponent` (= `ArithMul.componentWithArithTable`), so
     `providerTable.Spec` is `FullSpec (rowInput …)` and the match is against the
     ArithMul primary op-bus message. -/
-theorem main_request_mulw_limb1_provided
+theorem main_request_mulw_provided
     (trace : AcceptedZiskTrace)
     (i : Fin trace.numInstructions)
     (h_main_active :
@@ -693,14 +693,14 @@ theorem main_request_mulw_limb1_provided
 
 /-- Layer-A op-bus provider-match wrapper for the Arith MULHU operation
     (`OP_MULUH = 177`).  Mirrors
-    `main_request_mulw_limb1_provided`, but
+    `main_request_mulw_provided`, but
     delegates to the MULHU keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_secondary_of_mulhu_active_main_row_interaction`.
 
     The returned match is still against the muxed `primaryOpBusMessage`; the
     MULHU-mode bridge in `ArithMul/Bridge.lean` later reduces it to the
     secondary d-lane `opBus_row_ArithMulSecondary`. -/
-theorem main_request_mulhu_limb2_provided
+theorem main_request_mulhu_provided
     (trace : AcceptedZiskTrace)
     (i : Fin trace.numInstructions)
     (h_main_active :
@@ -787,7 +787,7 @@ theorem main_request_mulhu_limb2_provided
 
 /-- Layer-A op-bus provider-match wrapper for the Arith DIVU operation
     (`OP_DIVU = 184`).  Mirrors
-    `main_request_mulw_limb1_provided`, but
+    `main_request_mulw_provided`, but
     delegates to the DIVU keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_interaction`.
 
@@ -796,7 +796,7 @@ theorem main_request_mulhu_limb2_provided
     against the muxed `primaryOpBusMessage`.  The DIVU-mode bridge in
     `ArithMul/Bridge.lean` later reduces it to the div quotient-lane
     `opBus_row_ArithDiv`. -/
-theorem main_request_divu_limb1_provided
+theorem main_request_divu_provided
     (trace : AcceptedZiskTrace)
     (i : Fin trace.numInstructions)
     (h_main_active :
@@ -883,7 +883,7 @@ theorem main_request_divu_limb1_provided
 
 /-- Layer-A op-bus provider-match wrapper for the Arith DIVUW operation
     (`OP_DIVU_W = 188`, W-mode `m32 = 1`).  Mirrors
-    `main_request_divu_limb1_provided`, but
+    `main_request_divu_provided`, but
     delegates to the DIVUW keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_primary_of_divuw_active_main_row_interaction`.
 
@@ -891,7 +891,7 @@ theorem main_request_divu_limb1_provided
     ArithDiv component carries no op-bus in the ensemble); the returned match is
     against the muxed `primaryOpBusMessage`.  The DIVU-mode op-bus bridge later
     reduces it to the div quotient-lane `opBus_row_ArithDiv`. -/
-theorem main_request_divuw_limb1_provided
+theorem main_request_divuw_provided
     (trace : AcceptedZiskTrace)
     (i : Fin trace.numInstructions)
     (h_main_active :
@@ -978,7 +978,7 @@ theorem main_request_divuw_limb1_provided
 
 /-- Layer-A op-bus provider-match wrapper for the Arith REMU operation
     (`OP_REMU = 185`).  Mirrors
-    `main_request_divu_limb1_provided`, but
+    `main_request_divu_provided`, but
     delegates to the REMU keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_primary_of_remu_active_main_row_interaction`.
 
@@ -987,7 +987,7 @@ theorem main_request_divuw_limb1_provided
     against the muxed `primaryOpBusMessage`.  The REMU-mode bridge in
     `ConstructionRemu.lean` later reduces it (at `div = 1`, `main_div = 0`,
     `main_mul = 0`) to the div remainder-lane `opBus_row_ArithDivSecondary`. -/
-theorem main_request_remu_limb1_provided
+theorem main_request_remu_provided
     (trace : AcceptedZiskTrace)
     (i : Fin trace.numInstructions)
     (h_main_active :
@@ -1074,7 +1074,7 @@ theorem main_request_remu_limb1_provided
 
 /-- Layer-A op-bus provider-match wrapper for the Arith REMUW operation
     (`OP_REMU_W = 189`, W-mode `m32 = 1`).  Mirrors
-    `main_request_remu_limb1_provided`, but
+    `main_request_remu_provided`, but
     delegates to the REMUW keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_primary_of_remuw_active_main_row_interaction`.
 
@@ -1084,7 +1084,7 @@ theorem main_request_remu_limb1_provided
     `ConstructionRemu.lean` later reduces it (at `div = 1`, `main_div = 0`,
     `main_mul = 0`) to the div remainder-lane `opBus_row_ArithDivSecondary`; the
     `m32` flag plays no role in the mux. -/
-theorem main_request_remuw_limb1_provided
+theorem main_request_remuw_provided
     (trace : AcceptedZiskTrace)
     (i : Fin trace.numInstructions)
     (h_main_active :

@@ -26,7 +26,7 @@ construction reads that `FullSpec` straight off the balance-derived provider row
 
 * **(a) derived** — proven inside the body, NOT a binder:
   - op-bus provider match (from `trace.channels_balanced`, via the Layer-A wrapper
-    `main_request_mulw_limb1_provided`,
+    `main_request_mulw_provided`,
     bottoming in the axiom-free keep-arithMul balance theorem),
   - the row-native `Valid_ArithMul` view `vOfMulwRow (mulwArow …)` of the
     balance-selected provider row,
@@ -138,7 +138,7 @@ def vOfMulwRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
 /-- The balance-selected Arith-Mul provider row at trace index `i`, as a concrete
     `ArithMulRow`. It is the `componentWithArithTable.rowInput` of the provider
     row chosen by the keep-arithMul balance wrapper
-    `main_request_mulw_limb1_provided`.
+    `main_request_mulw_provided`.
 
     This is a deterministic handle on the balance-selected row, used to phrase
     the residual operand bridges over its row-native view
@@ -151,7 +151,7 @@ noncomputable def mulwArow
     (h_main_op :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
-  let h := main_request_mulw_limb1_provided
+  let h := main_request_mulw_provided
     trace i h_main_active h_main_op
   componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
 
@@ -178,7 +178,7 @@ theorem mulwArow_fullSpec_row
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
     ZiskFv.AirsClean.ArithMul.FullSpec (mulwArow trace binding i h_main_active h_main_op) := by
   unfold mulwArow
-  set H := main_request_mulw_limb1_provided
+  set H := main_request_mulw_provided
     trace i h_main_active h_main_op with hH
   obtain ⟨_h_pt_mem, h_rest⟩ := H.choose_spec
   obtain ⟨h_pr_mem, h_component, h_spec, _h_match⟩ := h_rest.choose_spec
@@ -242,7 +242,7 @@ theorem mulwArow_match_row
         (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
           (mulwArow trace binding i h_main_active h_main_op)) 1) := by
   unfold mulwArow
-  set H := main_request_mulw_limb1_provided
+  set H := main_request_mulw_provided
     trace i h_main_active h_main_op with hH
   -- Use direct `.choose_spec` projections (NOT `obtain`, which introduces a
   -- fresh fvar for the row that the muxed message would force `exact` to
