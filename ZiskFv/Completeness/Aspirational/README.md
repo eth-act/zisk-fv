@@ -13,7 +13,7 @@ only through `ZiskFv.lean` (so it stays built and verified) via the
 
 `ZiskFv/Completeness.lean`:
 
-- `root_completeness_sail` — **proven, unconditional.** Sail-executable RV64IM
+- `sail_executable_within_supported_decode_shape` — **proven, unconditional.** Sail-executable RV64IM
   raw words land in `SupportedDecodeShape` (re-exports the `SailDecode`
   containment proof, which computes against the real generated Sail decoder).
 - `eventual_zisk_coverage` — **conditional** on the ZisK coverage obligations

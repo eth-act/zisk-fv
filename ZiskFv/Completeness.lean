@@ -8,10 +8,9 @@ known decode gaps, is covered by the production ZisK decode/lower/row/opcode
 pipeline" — is split here into the two halves that have genuinely different
 status, plus their composition:
 
-* `root_completeness_sail` — **PROVEN, unconditional.** The Sail half: every raw
-  word the Sail model executes lands in the production decode domain
-  `SupportedDecodeShape`. Discharged by `SailDecode`, computing against the real
-  generated Sail decoder/encoder.
+* `sail_executable_within_supported_decode_shape` — **PROVEN, unconditional.** A
+  Sail-only containment fact: every RV64IM-class word Sail's decoder accepts lands
+  in the hand-written `SupportedDecodeShape` enumeration. Says nothing about ZisK.
 * `eventual_zisk_coverage` — **CONDITIONAL.** The ZisK half: given the
   production-coverage obligations (decoder accepts → lowering → row → opcode,
   plus the soundness-row contract) over `SupportedDecodeShape`, in-domain words
@@ -37,12 +36,21 @@ namespace ZiskFv.Completeness
 open ZiskFv.Completeness.Rv64imShapes (SupportedDecodeShape)
 open ZiskFv.Completeness.SailDecode
 
-/-- **PROVEN (unconditional).** The Sail half of completeness: every raw word the
-Sail RV64IM model executes in an RV64IM-enabled state lies in the production
-decode domain `SupportedDecodeShape`. This is discharged outright — it computes
-against the real generated Sail decoder/encoder (`LeanRV64D.Functions.ext_decode`
-/ `encdec_forwards`), covering all eleven instruction families. -/
-theorem root_completeness_sail :
+/-- **PROVEN (unconditional), Sail-side only.** For an RV64IM-enabled state, every
+raw word that round-trips through Sail's real decoder/encoder to one of the eleven
+enumerated RV64IM instruction classes has a bit-layout in `SupportedDecodeShape`.
+
+Discharged by evaluating the generated Sail `ext_decode` / `encdec_forwards`, so
+the containment is genuine. But note the scope:
+* It says **nothing about ZisK** — `SupportedDecodeShape` is a hand-written
+  bit-pattern predicate (`Rv64im/Shapes.lean`), not ZisK's decoder. Whether it
+  matches ZisK's actual supported set is a separate, unproven claim.
+* The domain is self-gated: it only quantifies over words Sail decodes to an
+  instruction we already enumerate as RV64IM, in canonical (decode∘encode) form.
+
+This is the Sail→shape coverage bridge — the domain premise consumed by
+`eventual_root_completeness`, nothing more. -/
+theorem sail_executable_within_supported_decode_shape :
     ∀ state raw, Rv64imEnabledSailState state →
       SailRv64imExecutableRawIn state raw → SupportedDecodeShape raw :=
   sail_rv64im_executable_contained_in_supported_decode_in
@@ -85,7 +93,7 @@ theorem eventual_zisk_coverage
       h_soundness_contract raw h_shape h_lower⟩
 
 /-- **CONDITIONAL on the ZisK obligations only.** End-to-end completeness:
-composing the proven Sail half (`root_completeness_sail`) with the ZisK half
+composing the proven Sail half (`sail_executable_within_supported_decode_shape`) with the ZisK half
 (`eventual_zisk_coverage`), every Sail-executable RV64IM raw word, outside the
 known decode gaps, clears the production pipeline and carries the soundness
 contract. The Sail bridge is discharged; the only open premises are the ZisK
@@ -117,6 +125,6 @@ theorem eventual_root_completeness
     ziskRowSoundnessContract knownDecodeGap
     h_decoder_accepts_outside_gaps h_lowering_total h_row_materialization_total
     h_opcode_coverage_total h_soundness_contract
-    raw (root_completeness_sail state raw h_state h_sail) h_not_gap
+    raw (sail_executable_within_supported_decode_shape state raw h_state h_sail) h_not_gap
 
 end ZiskFv.Completeness

@@ -34,12 +34,12 @@ The checked-in RV64IM acceptance-completeness surface is three honest endpoints
 (see `ZiskFv/Completeness.lean`):
 
 ```lean
-ZiskFv.Completeness.root_completeness_sail      -- PROVEN, unconditional
+ZiskFv.Completeness.sail_executable_within_supported_decode_shape      -- PROVEN, unconditional
 ZiskFv.Completeness.eventual_zisk_coverage      -- conditional on the ZisK obligations
 ZiskFv.Completeness.eventual_root_completeness  -- composition; conditional on ZisK only
 ```
 
-`root_completeness_sail` is discharged outright: every Sail-executable RV64IM raw
+`sail_executable_within_supported_decode_shape` is discharged outright: every Sail-executable RV64IM raw
 word lands in the production decode domain `SupportedDecodeShape` (it computes
 against the real generated Sail decoder). The ZisK-coverage half is stated
 *conditionally* on the decoder/lowering/row/opcode obligations, which are proved

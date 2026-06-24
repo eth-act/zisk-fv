@@ -32,7 +32,7 @@ per-class in `trust/trusted-base.md`. All 63 RV64IM opcodes are covered as
 `ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 63-arm
 `OpEnvelope` sum type.
 The RV64IM acceptance/coverage completeness surface is checked in as three
-honest endpoints in `ZiskFv/Completeness.lean`: `root_completeness_sail`
+honest endpoints in `ZiskFv/Completeness.lean`: `sail_executable_within_supported_decode_shape`
 (PROVEN — Sail-executable raw words land in `SupportedDecodeShape`),
 `eventual_zisk_coverage` (CONDITIONAL on the ZisK coverage obligations), and
 `eventual_root_completeness` (their composition, conditional on the ZisK

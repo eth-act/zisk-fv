@@ -70,7 +70,7 @@ EquivCore routes are implementation details.
 
 The checked-in endpoints (`ZiskFv/Completeness.lean`) state acceptance/coverage
 completeness for the RV64IM decoder layer as three honest theorems:
-`root_completeness_sail` (PROVEN — Sail-executable raw words land in
+`sail_executable_within_supported_decode_shape` (PROVEN — Sail-executable raw words land in
 `SupportedDecodeShape`), `eventual_zisk_coverage` (CONDITIONAL on the ZisK
 coverage obligations), and `eventual_root_completeness` (their composition,
 conditional on the ZisK obligations only). The recorded
