@@ -46,17 +46,13 @@ when they are not trust policy or trust evidence.
 | `generated/baseline-axioms.txt`                | `trust/scripts/regenerate.py`                                 | Hash-pinned source ledger for allowed Lean trust declarations. |
 | `generated/baseline-zisk-riscv-compliant.txt`  | `lake exe trust-gate print-axiom-closure` via `regenerate.sh` | Active project-axiom closure of the global compliance theorem. |
 | `generated/baseline-global-theorem-binders.txt` | `lake exe trust-gate print-global-binders` via `regenerate.sh` | Elaborated binder list for the global compliance theorem.      |
-| `generated/baseline-construction-theorem-binders.txt` | `lake exe trust-gate print-construction-binders-deep` via `regenerate.sh` | DEEP (recursive) binder-leaf render of the sound P4 construction theorem `construction_sub_sound`: recurses into every `ZiskFv.*` project structure (library structures are leaves), so any future `*RowBinding`/`MainRowProvenance`-style smuggling surfaces as new dotted leaf lines. |
 | `generated/baseline-equiv-axiom-deps.txt`      | `lake exe trust-gate regenerate-deps`                         | Per-canonical-theorem axiom closures.                          |
-| `generated/baseline-hypothesis-count.txt`      | `trust/scripts/count-hypotheses.py`                           | Anti-laundering metric for canonical theorem binder counts.    |
-| `generated/baseline-caller-burden.txt`         | `trust/scripts/regenerate-caller-burden.py`                   | Caller-burden ledger for canonical theorem binders.            |
-| `generated/baseline-wrapper-caller-burden.txt` | `trust/scripts/regenerate-wrapper-caller-burden.py`           | Caller-burden ledger for compliance-wrapper binders.           |
 | `generated/baseline-arith-table-op-axioms.txt` | hand/refreshed retirement queue                               | Guardrail preventing new opcode-shaped ArithTable trust facts. |
 | `generated/axiom-index.md`                     | `tools/trust-ledger-index.py`                                 | Generated flat index of source trust declarations.             |
 
 Policy/configuration files remain in `trust/` root: `allowed-axiom-files.txt`,
 `forbidden-param-shapes.txt`, `forbidden-types.txt`,
-`tolerated-completeness-axioms.txt`, `structural-unpacking-exceptions.txt`,
+`tolerated-completeness-axioms.txt`,
 `theorem-keep-list.txt`, `dead-code-entry-points.txt`,
 `op-envelope-route-constructors.txt`, and `.shrinkage-floor`.
 
@@ -68,8 +64,7 @@ soundness closure; canonical active dispatch targets, public-looking
 variants are also checked.
 The intended public theorem API is `zisk_riscv_compliant_program_bus` plus the
 63 canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems. Wrapper and
-EquivCore routes are implementation details; the wrapper caller-burden gate
-still tracks wrapper lemma binders as an internal audit surface.
+EquivCore routes are implementation details.
 
 ## RV64IM Acceptance Completeness
 
@@ -109,10 +104,14 @@ caller/envelope proof field must be either discharged or represented by a named
 source axiom in the global closure. A known bug must update the defect ledger
 and theorem claim boundary together.
 
-The anti-laundering rule is unchanged: promise discharge must visibly reduce
-the generated hypothesis-count and caller-burden ledgers, unless a documented
-structural-unpacking exception explains why a local increase collapses at the
-global theorem.
+The anti-laundering *principle* remains as authoring/review guidance:
+promise discharge should visibly reduce the project's caller-supplied promise
+hypotheses. The mechanical *metric* checks that once enforced this — the
+generated hypothesis-count and caller-burden ledgers and the DEEP
+construction-binder baseline — were **retired** once the discharge campaign
+concluded at 0 project axioms; the kept axiom-closure baselines
+(`baseline-equiv-axiom-deps.txt`, `baseline-zisk-riscv-compliant.txt`)
+mechanically prevent any soundness regression.
 
 ## Commands
 

@@ -50,8 +50,8 @@ discharge) → `ZiskFv/Equivalence/<Op>.lean` (the canonical
 ten per-family dispatchers in `ZiskFv/Compliance/Dispatch/`. The principal "promise hypothesis"
 soundness gap surveyed in
 [`trust/README.md`](trust/README.md) is closed at the
-global theorem: V3 trust gates
-(`check-closure-vs-baseline` + wrapper caller-burden ledger)
+global theorem: the semantic trust gates
+(`check-closure-vs-baseline` + the per-theorem axiom-closure baseline)
 mechanically prevent regression. The 63 canonical `equiv_<OP>`
 theorems remain OUTPUT-EQ-free, enforced uniformly by
 `trust/scripts/check-no-output-eq.sh` against
@@ -157,7 +157,11 @@ runs after `lake build`). Both must pass.
 
 ### Layer 1 — V1 syntactic (`trust/scripts/check-all.sh`, no build)
 
-Eight checks; if you break any, CI fails:
+`check-all.sh` runs 15 checks; if you break any, CI fails. The
+soundness-load-bearing core is described below (the script also runs
+ArithTable-axiom, Clean-integration, CODEOWNERS, retired-row-shape,
+Aeneas-artifact/manifest/boundary, generated-axiom-allowlist, and
+shrinkage-floor checks):
 
 1. **Locality.** Lean trust-leak constructs (`axiom`, `opaque`,
    `constant`, `unsafe def`, `partial def`, `@[extern]`,
@@ -182,45 +186,36 @@ Eight checks; if you break any, CI fails:
 5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,ZiskCircuit,Equivalence,Tactics,Sail}`.
 6. **Uniformity.** Every one of 63 RV64IM opcodes has a canonical
    `equiv_<OP>` theorem.
-7. **Hypothesis-count anti-laundering metric.**
-   `trust/scripts/check-hypothesis-count.sh` reads
-   `trust/generated/baseline-hypothesis-count.txt` (one line per canonical
-   `equiv_<OP>` with `total=<N> hypothesis=<M>`). Per-theorem counts
-   must match the baseline exactly. **Reductions** are allowed —
-   refresh the baseline alongside the refactor. **Growth** fails
-   the gate. This catches the "split one promise hypothesis into
-   N smaller ones" laundering pattern that the OUTPUT-EQ retirement
-   and V2 binder-classifier do not detect.
-8. **Caller-burden ledger drift.**
-   `trust/scripts/check-caller-burden.sh` reads
-   `trust/baseline-caller-burden.txt` (one line per parameter binder
-   on every canonical `equiv_<OP>` with name, category, and type
-   snippet). The diff IS the audit surface — a reviewer reads it to
-   confirm a refactor SHRANK the trust surface (lines removed) and
-   did not RENAME it (lines added of the same shape as removed).
-   Categories: `validator | state | entry | range | match | bridge
-   | bus_shape | transpile | byte_chain | loose | row | instance |
-   other`. Refresh with
-   `python3 trust/scripts/regenerate-caller-burden.py >
-   trust/baseline-caller-burden.txt`.
+
+> **Retired (2026-06):** the V1 hypothesis-count and caller-burden
+> ledger checks — the per-theorem binder-count / caller-burden
+> *anti-laundering metrics* — have been removed now that the discharge
+> campaign concluded at **0 project axioms**. They only churned on
+> benign refactors; the soundness-load-bearing checks above plus the
+> Layer-2 axiom-closure baselines fully cover regression.
 
 ### Layer 2 — V2 semantic (`trust/scripts/check-all-semantic.sh`, requires `lake build`)
 
-Two checks; runs via the `lake exe trust-gate` Lake exe at
-`bin/TrustGate/`:
+`check-all-semantic.sh` runs 13 checks via the `lake exe trust-gate`
+Lake exe at `bin/TrustGate/` plus consistency/instantiation witnesses.
+The two core baseline gates are:
 
-7. **Per-theorem axiom-closure baseline.**
+1. **Per-theorem axiom-closure baseline.**
    `trust/baseline-equiv-axiom-deps.txt` records the transitive
    non-kernel axiom dependencies of each canonical `equiv_<OP>`
    theorem (computed via `Lean.collectAxioms`). Any silent change
    to a theorem's trust footprint — additions OR removals — fails
    the gate. Run `trust/scripts/regenerate.sh` (with oleans
    present) and review the diff before committing.
-8. **Forbidden binder types.** Walks each canonical theorem's
+2. **Forbidden binder types.** Walks each canonical theorem's
    parameter binders via `forallTelescope` + `whnfR` (which unfolds
    `abbrev` / `@[reducible] def` chains) and fails on any reference
    to Names listed in `trust/forbidden-types.txt`. Closes the
    `abbrev`-aliasing dodge that V1's textual regex cannot see.
+
+> **Retired (2026-06):** the V2 DEEP construction-theorem-binder gate
+> (`baseline-construction-theorem-binders.txt`) was removed alongside
+> the V1 anti-laundering metrics for the same reason.
 
 **Run `trust/scripts/check-all.sh` locally before pushing** (V1,
 seconds, no build). Run `trust/scripts/check-all-semantic.sh` after
@@ -241,6 +236,17 @@ Don't try to bypass the gate by editing `trust/forbidden-param-shapes.txt`
 or `trust/allowed-axiom-files.txt` directly — both are CODEOWNER-protected.
 
 ### Anti-laundering principle (READ THIS — for any agent or human doing promise discharge)
+
+> **Status (2026-06): guidance, not gate-enforced.** The mechanical
+> *anti-laundering metric* checks — the V1 hypothesis-count and
+> caller-burden ledger baselines and the V2 DEEP construction-binder
+> baseline — have been **retired** now that the discharge campaign
+> concluded at **0 project axioms**. The operational "every PR must
+> reduce/hold the hypothesis-count and caller-burden columns" metric
+> below is therefore no longer enforced by CI; the principle remains as
+> authoring guidance. Soundness regression is still gated mechanically
+> by the kept checks (zero-sorry, locality, axiom-closure baselines,
+> headline closure/binder baselines, Aeneas-trust, and floors).
 
 **Vocabulary.** This section uses **promise hypothesis**, **promise
 discharge**, **discharge bridge**, **trust ledger**, **caller-burden
@@ -265,11 +271,12 @@ rearranging the trust:
    protocol-soundness theorem. New trust *kinds* are a separate
    prior PR with explicit justification.
 2. **Hypothesis splitting / renaming.** One promise becomes N
-   smaller promises. The V3 binder classifier may pass; the trust
-   surface stays the same or grows. **Refusal:** the
-   `check-hypothesis-count.sh` gate (above, check #7) and
-   `check-caller-burden.sh` gate (check #8) detect this. A PR
-   whose net per-theorem count holds steady or grows fails.
+   smaller promises. The trust surface stays the same or grows.
+   **Refusal:** this was formerly detected mechanically by the
+   hypothesis-count and caller-burden gates (now retired). It is now
+   an authoring/review discipline — a PR whose net per-theorem binder
+   burden holds steady or grows did not discharge anything and should
+   be rescoped.
 3. **Universalizing too eagerly.** Replacing `(h_x : P r)` with
    `(h_univ : ∀ r, P r)` *moves* the trust to a stronger
    caller-supplied universal — usually still undischarged.
@@ -292,38 +299,37 @@ rearranging the trust:
    reviewed for whether it could hide a hypothesis. If unsure, mark
    it `@[reducible]` so V2 unfolds it.
 
-The single operational metric is: **every plan PR must reduce or
-hold both `total` and `hypothesis` columns of
-`trust/generated/baseline-hypothesis-count.txt`, and every PR's caller-burden
-diff must visibly REMOVE more lines than it adds**. A PR that is
-"net zero" on these metrics did not discharge anything; it just
-moved the trust around. Such a PR should be either rescoped or
-abandoned.
+The former operational metric — *every plan PR must reduce or hold
+both the `total` and `hypothesis` per-theorem binder columns, and every
+PR's caller-burden diff must visibly REMOVE more lines than it adds* —
+**is retired** (its backing baselines were removed). It survives only
+as the intuition behind the guidance above: a PR that is "net zero" on
+trust surface did not discharge anything; it just moved the trust
+around. Such a PR should be either rescoped or abandoned.
 
-**Exception class — structural unpacking.** There is one narrow
-exception to the "metric must shrink" rule:
+**Exception class — structural unpacking (historical).** While the
+metric was enforced, one narrow exception applied:
 *structural-unpacking refactors* that replace a single compressed
 *promise hypothesis* with the explicit validator + universal-row-
 constraint + structural-pin parameters needed to derive it. The
-per-opcode metric apparently grows but the global-theorem trust
-footprint provably does not — because the added validator and
+per-opcode metric apparently grew but the global-theorem trust
+footprint provably did not — because the added validator and
 universal-row-constraint parameters collapse into shared parameters
 of `Compliance.lean`, which already takes one set of those per
-provider AIR. The opcodes that legitimately qualify are listed in
-`trust/structural-unpacking-exceptions.txt`, with rationale and the
-shape of binders the refactor is allowed to add. Refactors of
-opcodes on that list may grow their per-theorem `total=` / `hypothesis=`
-counts; the reviewer regenerates the baseline alongside the
-refactor. **This exception is NOT a general-purpose backdoor** —
-opcodes not on the list still face the strict metric.
+provider AIR. (The exception list `structural-unpacking-exceptions.txt`
+was removed with the metric.) This nuance is retained here only as
+authoring guidance for reasoning about whether a refactor genuinely
+reduces global trust.
 
 When delegating to a sub-agent for any plan step, **include this
 anti-laundering principle verbatim in the prompt AND require the
 agent to read [`trust/README.md`](trust/README.md#anti-laundering-terms)
 before starting**. The agent must explicitly check, before
 declaring a *promise discharge* step complete, that:
-* the *anti-laundering metric* shrank — both the hypothesis-count
-  baseline and the *caller-burden ledger* show net REDUCTIONS, AND
+* the trust surface shrank — the refactor shows a net REDUCTION in
+  caller-supplied promise hypotheses (the hypothesis-count and
+  caller-burden baselines that once measured this are retired, so this
+  is now a review-and-author discipline), AND
 * any new *trust-ledger* axiom fits an existing class with
   citation, AND
 * any new `Valid_<AIR>` constraint or top-level `def` was reviewed
@@ -333,9 +339,12 @@ declaring a *promise discharge* step complete, that:
   from the glossary (no ad-hoc synonyms).
 
 Skip any of these and the refactor failed at its stated goal even
-if the build is green and `lake build` typechecks. Trust gate
-checks #7 and #8 enforce the anti-laundering metric mechanically;
-the agent's self-check above enforces the spirit.
+if the build is green and `lake build` typechecks. The mechanical
+*anti-laundering metric* gates (hypothesis-count + caller-burden +
+construction-binder baselines) have been retired now that the
+discharge campaign concluded at 0 axioms; the agent's self-check above
+and reviewer discipline now enforce this principle, while the kept
+axiom-closure baselines mechanically prevent any soundness regression.
 
 ## Traps to avoid (don't re-discover these)
 
