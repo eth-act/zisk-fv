@@ -6,6 +6,13 @@ import ZiskFv.Completeness.Rv64im.MemoryRefinedAndImmediateEdges
 import ZiskFv.Completeness.Rv64im.SupportedDecodeRefinedFamilies
 import ZiskFv.Completeness.Rv64im.GlobalTargets
 
+/- ⚠ ASPIRATIONAL / QUARANTINED — aggregator for the abstract `Rv.Interface`
+   completeness route. None of the modules below are used by the live endpoints
+   in `ZiskFv.Completeness` (`root_completeness_sail`, `eventual_zisk_coverage`,
+   `eventual_root_completeness`). This aggregator is imported only by `ZiskFv.lean`
+   so the route stays built and verified for preservation, not because anything
+   depends on it. See `ZiskFv/Completeness/Rv64im/ASPIRATIONAL.md`. -/
+
 /-!
 # RV64IM completeness
 

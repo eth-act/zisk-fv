@@ -16,6 +16,14 @@ namespace ZiskFv.Completeness.Rv
 /-- Raw 32-bit instruction word. Kept as `BitVec 32` to match Sail decoding. -/
 abbrev RawInstruction := BitVec 32
 
+/- ⚠ ASPIRATIONAL KERNEL — everything below (`Stage` / `Pipeline` / `Interface`
+   and its composition lemmas) is the intended *eventual* completeness-composition
+   machinery. No concrete `Interface` is ever instantiated, and the live endpoints
+   in `ZiskFv.Completeness` (`root_completeness_sail`, `eventual_zisk_coverage`,
+   `eventual_root_completeness`) do not use it. (`RawInstruction` above IS live —
+   it is used by `Shapes` and the Sail containment proof.)
+   See `ZiskFv/Completeness/Rv64im/ASPIRATIONAL.md`. -/
+
 /-- One stage of the extracted ZisK production path: `reached` says production
 ZisK gets this far on a raw word; `knownGap` is the explicitly recorded, honest
 carve-out that excuses non-coverage at this stage (e.g. FENCE). -/
