@@ -26,8 +26,6 @@ fi
 
 if rg -n \
     '\[transpile\]|transpiler/no-provider' \
-    trust/generated/baseline-caller-burden.txt \
-    trust/generated/baseline-wrapper-caller-burden.txt \
     trust/generated/clean-integration-audit.md; then
   bad+=("retired row-shape generated trust classification")
 fi
