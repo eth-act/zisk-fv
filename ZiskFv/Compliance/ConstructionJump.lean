@@ -89,27 +89,27 @@ theorem construction_jal_sound_claimed_dead
     (nextPC_val : BitVec 64)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_FLAG)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 0)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_set_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
         i.val = 0)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 1)
     -- (b) jump-target pin
     (h_jmp2 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
         i.val = 4)
     -- (b) intra-row PC bridge
     (h_pc_bridge :
-      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).pc i.val).val
+      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
         = jal_input.PC.toNat)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -136,7 +136,7 @@ theorem construction_jal_sound_claimed_dead
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) :
     execute_instruction (instruction.JAL (imm, rd)) (binding.stateAt i)
       = (bus_effect execRow [eRdLui trace binding i] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the JAL Main constraint subset.
@@ -160,7 +160,7 @@ theorem construction_jal_sound_claimed_dead
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
@@ -220,22 +220,22 @@ theorem construction_jalr_sound_claimed_dead
     (nextPC_val : BitVec 64)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_AND)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 1)
     (h_flag :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).flag
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).flag
         i.val = 0)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_set_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
         i.val = 1)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 1)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -264,8 +264,8 @@ theorem construction_jalr_sound_claimed_dead
       = EStateM.Result.ok mseccfg (binding.stateAt i))
     -- (b) link bridge (computed target)
     (h_link_bridge :
-      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).pc i.val
-        + (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val
+        + (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
             i.val).val
         = (jalr_input.PC + 4#64).toNat)
     -- (b) RANGE pins
@@ -275,7 +275,7 @@ theorem construction_jalr_sound_claimed_dead
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) (binding.stateAt i)
       = (bus_effect execRow [eRdLui trace binding i] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the JALR Main constraint subset.
@@ -302,7 +302,7 @@ theorem construction_jalr_sound_claimed_dead
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=

@@ -132,16 +132,16 @@ theorem construction_andi_sound_claimed_dead
     (imm : BitVec 12)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_AND)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 1)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     -- (b) Sail read + operands
     (h_input_r1 :
@@ -152,18 +152,18 @@ theorem construction_andi_sound_claimed_dead
     (h_input_rd : andi_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
     (h_a_lo_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     -- (b) immediate-routing pin (NAMED top-level binder, program/decode residual)
     (h_andi_subset : itype_imm_subset_holds_main
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       i.val andi_input.imm)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -187,7 +187,7 @@ theorem construction_andi_sound_claimed_dead
           , (busSub trace binding i execRow).e1
           , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
   -- abbreviations
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
   -- (a) op-bus provider match, derived from `trace.channels_balanced` via the salvaged
@@ -206,7 +206,7 @@ theorem construction_andi_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -220,7 +220,7 @@ theorem construction_andi_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -322,16 +322,16 @@ theorem construction_ori_sound_claimed_dead
     (imm : BitVec 12)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_OR)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 1)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     -- (b) Sail read + operands
     (h_input_r1 :
@@ -342,18 +342,18 @@ theorem construction_ori_sound_claimed_dead
     (h_input_rd : ori_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
     (h_a_lo_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     -- (b) immediate-routing pin (NAMED top-level binder, program/decode residual)
     (h_ori_subset : itype_imm_subset_holds_main
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       i.val ori_input.imm)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -376,7 +376,7 @@ theorem construction_ori_sound_claimed_dead
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
           , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -391,7 +391,7 @@ theorem construction_ori_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -405,7 +405,7 @@ theorem construction_ori_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -503,16 +503,16 @@ theorem construction_xori_sound_claimed_dead
     (imm : BitVec 12)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_XOR)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 1)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     -- (b) Sail read + operands
     (h_input_r1 :
@@ -523,18 +523,18 @@ theorem construction_xori_sound_claimed_dead
     (h_input_rd : xori_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
     (h_a_lo_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     -- (b) immediate-routing pin (NAMED top-level binder, program/decode residual)
     (h_xori_subset : itype_imm_subset_holds_main
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       i.val xori_input.imm)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -557,7 +557,7 @@ theorem construction_xori_sound_claimed_dead
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
           , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -572,7 +572,7 @@ theorem construction_xori_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -586,7 +586,7 @@ theorem construction_xori_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -685,16 +685,16 @@ theorem construction_slti_sound_claimed_dead
     (imm : BitVec 12)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_LT)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 1)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     -- (b) Sail read + operands
     (h_input_r1 :
@@ -705,18 +705,18 @@ theorem construction_slti_sound_claimed_dead
     (h_input_rd : slti_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
     (h_a_lo_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     -- (b) immediate-routing pin (NAMED top-level binder, program/decode residual)
     (h_slti_subset : itype_imm_subset_holds_main
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       i.val slti_input.imm)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -739,7 +739,7 @@ theorem construction_slti_sound_claimed_dead
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
           , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -754,7 +754,7 @@ theorem construction_slti_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -768,7 +768,7 @@ theorem construction_slti_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -860,16 +860,16 @@ theorem construction_sltiu_sound_claimed_dead
     (imm : BitVec 12)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_LTU)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 1)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     -- (b) Sail read + operands
     (h_input_r1 :
@@ -880,18 +880,18 @@ theorem construction_sltiu_sound_claimed_dead
     (h_input_rd : sltiu_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
     (h_a_lo_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     -- (b) immediate-routing pin (NAMED top-level binder, program/decode residual)
     (h_sltiu_subset : itype_imm_subset_holds_main
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       i.val sltiu_input.imm)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -914,7 +914,7 @@ theorem construction_sltiu_sound_claimed_dead
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
           , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -929,7 +929,7 @@ theorem construction_sltiu_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -943,7 +943,7 @@ theorem construction_sltiu_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h

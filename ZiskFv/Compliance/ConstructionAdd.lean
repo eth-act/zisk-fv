@@ -107,16 +107,16 @@ theorem construction_add_sound_claimed_dead
     (r1 r2 rd : regidx)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_ADD)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 1)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     -- (b) Sail reads + operands
     (h_input_r1 :
@@ -129,22 +129,22 @@ theorem construction_add_sound_claimed_dead
     (h_input_rd : add_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
     (h_a_lo_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     (h_b_lo_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r2)))
     (h_b_hi_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r2)))
@@ -170,7 +170,7 @@ theorem construction_add_sound_claimed_dead
           , (busSub trace binding i execRow).e1
           , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
   -- abbreviations
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
   -- (a) op-bus provider RESOLUTION, derived from `trace.channels_balanced`: the
@@ -188,7 +188,7 @@ theorem construction_add_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -202,7 +202,7 @@ theorem construction_add_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -316,19 +316,19 @@ theorem construction_addi_sound_claimed_dead
     (imm : BitVec 12)
     -- (b) decode pins
     (h_main_op :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
         i.val = ZiskFv.Trusted.OP_ADD)
     (h_main_active :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
         i.val = 1)
     (h_m32 :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
         i.val = 0)
     (h_store_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     (h_set_pc :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
         i.val = 0)
     -- (b) Sail read + operands
     (h_input_r1 :
@@ -339,18 +339,18 @@ theorem construction_addi_sound_claimed_dead
     (h_input_rd : addi_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
     (h_a_lo_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
             (regidx_to_fin r1)))
     -- (b) immediate-routing pin (NAMED top-level binder, program/decode residual)
     (h_addi_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       i.val addi_input.imm)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -374,7 +374,7 @@ theorem construction_addi_sound_claimed_dead
           , (busSub trace binding i execRow).e1
           , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
   -- abbreviations
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i execRow
   -- (a) op-bus provider RESOLUTION, derived from `trace.channels_balanced`: the
@@ -393,7 +393,7 @@ theorem construction_addi_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -407,7 +407,7 @@ theorem construction_addi_sound_claimed_dead
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h

@@ -120,7 +120,7 @@ vacuous):
 
 The hypotheses are SATISFIABLE for a real trace.  `trace : AcceptedTrace` is the
 committed full-ensemble witness; each `rowData i` carries TRUE facts of the real
-row `mainOfTable trace.program binding.mainTable` at index `i` (decode pins, lane
+row `mainOfTable trace.program trace.mainTable` at index `i` (decode pins, lane
 bridges, Sail reads of `binding.stateAt i`), and `execRow` is a genuine
 top-level ∀-binder inside each arm (the real execution-bus row).  No arm contains
 a contradictory hypothesis pair; no `False.elim` is used.
@@ -396,16 +396,16 @@ structure RowData_sub
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SUB
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -416,22 +416,22 @@ structure RowData_sub
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sub_input.PC
   h_input_rd : sub_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -456,16 +456,16 @@ structure RowData_and
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_AND
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -476,22 +476,22 @@ structure RowData_and
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some and_input.PC
   h_input_rd : and_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -516,16 +516,16 @@ structure RowData_or
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_OR
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -536,22 +536,22 @@ structure RowData_or
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some or_input.PC
   h_input_rd : or_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -576,16 +576,16 @@ structure RowData_xor
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_XOR
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -596,22 +596,22 @@ structure RowData_xor
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some xor_input.PC
   h_input_rd : xor_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -636,16 +636,16 @@ structure RowData_slt
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_LT
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -656,22 +656,22 @@ structure RowData_slt
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slt_input.PC
   h_input_rd : slt_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -696,16 +696,16 @@ structure RowData_sltu
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_LTU
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -716,22 +716,22 @@ structure RowData_sltu
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sltu_input.PC
   h_input_rd : sltu_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -756,16 +756,16 @@ structure RowData_andi
   rd : regidx
   imm : BitVec 12
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_AND
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -774,17 +774,17 @@ structure RowData_andi
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some andi_input.PC
   h_input_rd : andi_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_andi_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val andi_input.imm
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -807,16 +807,16 @@ structure RowData_ori
   rd : regidx
   imm : BitVec 12
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_OR
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -825,17 +825,17 @@ structure RowData_ori
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some ori_input.PC
   h_input_rd : ori_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_ori_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val ori_input.imm
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -858,16 +858,16 @@ structure RowData_xori
   rd : regidx
   imm : BitVec 12
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_XOR
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -876,17 +876,17 @@ structure RowData_xori
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some xori_input.PC
   h_input_rd : xori_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_xori_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val xori_input.imm
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -909,16 +909,16 @@ structure RowData_slti
   rd : regidx
   imm : BitVec 12
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_LT
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -927,17 +927,17 @@ structure RowData_slti
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slti_input.PC
   h_input_rd : slti_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_slti_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val slti_input.imm
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -960,16 +960,16 @@ structure RowData_sltiu
   rd : regidx
   imm : BitVec 12
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_LTU
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -978,17 +978,17 @@ structure RowData_sltiu
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sltiu_input.PC
   h_input_rd : sltiu_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_sltiu_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val sltiu_input.imm
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1011,16 +1011,16 @@ structure RowData_sll
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SLL
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1031,22 +1031,22 @@ structure RowData_sll
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sll_input.PC
   h_input_rd : sll_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -1071,16 +1071,16 @@ structure RowData_srl
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SRL
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1091,22 +1091,22 @@ structure RowData_srl
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srl_input.PC
   h_input_rd : srl_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -1131,16 +1131,16 @@ structure RowData_sra
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SRA
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1151,22 +1151,22 @@ structure RowData_sra
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sra_input.PC
   h_input_rd : sra_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -1191,16 +1191,16 @@ structure RowData_slli
   rd : regidx
   shamt : BitVec 6
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SLL
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1209,17 +1209,17 @@ structure RowData_slli
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slli_input.PC
   h_input_rd : slli_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_b_lo shamt
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1242,16 +1242,16 @@ structure RowData_srli
   rd : regidx
   shamt : BitVec 6
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SRL
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1260,17 +1260,17 @@ structure RowData_srli
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srli_input.PC
   h_input_rd : srli_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_b_lo shamt
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1293,16 +1293,16 @@ structure RowData_srai
   rd : regidx
   shamt : BitVec 6
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SRA
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1311,17 +1311,17 @@ structure RowData_srai
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srai_input.PC
   h_input_rd : srai_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_b_lo shamt
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1344,16 +1344,16 @@ structure RowData_sllw
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SLL_W
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1364,22 +1364,22 @@ structure RowData_sllw
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sllw_input.PC
   h_input_rd : sllw_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -1404,16 +1404,16 @@ structure RowData_srlw
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SRL_W
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1424,22 +1424,22 @@ structure RowData_srlw
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srlw_input.PC
   h_input_rd : srlw_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -1464,16 +1464,16 @@ structure RowData_sraw
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SRA_W
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1484,22 +1484,22 @@ structure RowData_sraw
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sraw_input.PC
   h_input_rd : sraw_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -1523,16 +1523,16 @@ structure RowData_slliw
   r1 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SLL_W
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1540,17 +1540,17 @@ structure RowData_slliw
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slliw_input.PC
   h_input_rd : slliw_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_w_b_lo slliw_input.shamt
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1572,16 +1572,16 @@ structure RowData_srliw
   r1 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SRL_W
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1589,17 +1589,17 @@ structure RowData_srliw
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srliw_input.PC
   h_input_rd : srliw_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_w_b_lo srliw_input.shamt
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1621,16 +1621,16 @@ structure RowData_sraiw
   r1 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SRA_W
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1638,17 +1638,17 @@ structure RowData_sraiw
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sraiw_input.PC
   h_input_rd : sraiw_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_w_b_lo sraiw_input.shamt
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1671,16 +1671,16 @@ structure RowData_add
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_ADD
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1691,22 +1691,22 @@ structure RowData_add
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some add_input.PC
   h_input_rd : add_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -1731,19 +1731,19 @@ structure RowData_addi
   rd : regidx
   imm : BitVec 12
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_ADD
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1752,17 +1752,17 @@ structure RowData_addi
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some addi_input.PC
   h_input_rd : addi_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_addi_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val addi_input.imm
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1785,16 +1785,16 @@ structure RowData_subw
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SUB_W
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1805,22 +1805,22 @@ structure RowData_subw
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some subw_input.PC
   h_input_rd : subw_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -1845,16 +1845,16 @@ structure RowData_addw
   r2 : regidx
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_ADD_W
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1865,22 +1865,22 @@ structure RowData_addw
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some addw_input.PC
   h_input_rd : addw_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r2))
@@ -1905,16 +1905,16 @@ structure RowData_addiw
   rd : regidx
   imm : BitVec 12
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_ADD_W
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -1923,17 +1923,17 @@ structure RowData_addiw
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some addiw_input.PC
   h_input_rd : addiw_input.rd = regidx_to_fin rd
   h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).a_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
           (regidx_to_fin r1))
   h_addiw_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val addiw_input.imm
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1955,28 +1955,28 @@ structure RowData_lui
   imm : BitVec 20
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_COPYB
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_imm : lui_input.imm = imm
   h_input_rd : lui_input.rd = regidx_to_fin rd
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some lui_input.PC
   h_imm_lo_nat :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val).val
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val).val
       = (imm ++ (0 : BitVec 12)).toNat
   h_imm_hi_nat :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val).val
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val).val
       = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 4294967296
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : execRow.length = 2
@@ -1997,29 +1997,29 @@ structure RowData_auipc
   imm : BitVec 20
   rd : regidx
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_FLAG
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 1
   h_input_imm : auipc_input.imm = imm
   h_input_rd : auipc_input.rd = regidx_to_fin rd
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some auipc_input.PC
   h_offset_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
         i.val).val
       = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
   h_pc_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).pc i.val).val
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = auipc_input.PC.toNat
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : execRow.length = 2
@@ -2047,19 +2047,19 @@ structure RowData_mulw
   r2 : regidx
   rd : regidx
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 1
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok mulw_input.r1_val (binding.stateAt i)
@@ -2145,31 +2145,31 @@ structure RowData_mul
   -- Decode pins (the two facts the FENCE-style `aeneasBridgeTrust` consumes), plus
   -- the four Main-row mode pins the ArithMul `aeneasBridgeTrust` reads.
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 0
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   -- `OpEnvelope.mul` ingredients, carried as honest residual binders.
   h_match_primary :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (mainOfTable trace.program binding.mainTable) i.val)
+        (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithMul.opBus_row_Arith v r_a)
   promises : ZiskFv.EquivCore.Promises.RTypePromises
       (binding.stateAt i) mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
       (PureSpec.execute_MULH_mul_pure mul_input).nextPC
       r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
@@ -2207,30 +2207,30 @@ structure RowData_mulh
   v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL
   r_a : ℕ
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MULH
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULH
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 0
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_match_secondary :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (mainOfTable trace.program binding.mainTable) i.val)
+        (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r_a)
   promises : ZiskFv.EquivCore.Promises.RTypePromises
       (binding.stateAt i) mulh_input.r1_val mulh_input.r2_val mulh_input.rd mulh_input.PC
       (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
       r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
@@ -2268,30 +2268,30 @@ structure RowData_mulhsu
   v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL
   r_a : ℕ
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MULSUH
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULSUH
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 0
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_match_secondary :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (mainOfTable trace.program binding.mainTable) i.val)
+        (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r_a)
   promises : ZiskFv.EquivCore.Promises.RTypePromises
       (binding.stateAt i) mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
       (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
       r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
@@ -2351,33 +2351,33 @@ structure RowData_div
   r_a : ℕ
   -- Decode pins (the FENCE-style `aeneasBridgeTrust` 7-tuple).
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_DIV
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 0
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   -- `OpEnvelope.div` ingredients, carried as honest residual binders.
   pins : ZiskFv.Compliance.MainRowPins
-    (mainOfTable trace.program binding.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV
+    (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV
   h_match_primary :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (mainOfTable trace.program binding.mainTable) i.val)
+        (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a)
   promises : ZiskFv.EquivCore.Promises.RTypePromises
       (binding.stateAt i) div_input.r1_val div_input.r2_val div_input.rd div_input.PC
       (PureSpec.execute_DIVREM_div_pure div_input).nextPC
       r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
@@ -2447,32 +2447,32 @@ structure RowData_rem
   v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
   r_a : ℕ
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REM
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REM
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 0
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   pins : ZiskFv.Compliance.MainRowPins
-    (mainOfTable trace.program binding.mainTable) i.val 1 ZiskFv.Trusted.OP_REM
+    (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_REM
   h_match_secondary :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (mainOfTable trace.program binding.mainTable) i.val)
+        (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a)
   promises : ZiskFv.EquivCore.Promises.RTypePromises
       (binding.stateAt i) rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
       (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
       r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
@@ -2536,32 +2536,32 @@ structure RowData_divw
   v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
   r_a : ℕ
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_DIV_W
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV_W
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 1
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   pins : ZiskFv.Compliance.MainRowPins
-    (mainOfTable trace.program binding.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV_W
+    (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV_W
   h_match_primary :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (mainOfTable trace.program binding.mainTable) i.val)
+        (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a)
   promises : ZiskFv.EquivCore.Promises.RTypePromises
       (binding.stateAt i) divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
       (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
       r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
@@ -2641,32 +2641,32 @@ structure RowData_remw
   v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
   r_a : ℕ
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REM_W
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REM_W
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 1
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   pins : ZiskFv.Compliance.MainRowPins
-    (mainOfTable trace.program binding.mainTable) i.val 1 ZiskFv.Trusted.OP_REM_W
+    (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_REM_W
   h_match_secondary :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (mainOfTable trace.program binding.mainTable) i.val)
+        (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a)
   promises : ZiskFv.EquivCore.Promises.RTypePromises
       (binding.stateAt i) remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
       (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
       r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program binding.mainTable) i.val bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val bus.e2
   bounds : ZiskFv.Compliance.ByteBounds bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
@@ -2739,19 +2739,19 @@ structure RowData_mulhu
   r2 : regidx
   rd : regidx
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 0
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok mulhu_input.r1_val (binding.stateAt i)
@@ -2794,19 +2794,19 @@ structure RowData_divu
   r2 : regidx
   rd : regidx
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 0
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok divu_input.r1_val (binding.stateAt i)
@@ -2852,19 +2852,19 @@ structure RowData_divuw
   r2 : regidx
   rd : regidx
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 1
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok divuw_input.r1_val (binding.stateAt i)
@@ -2925,19 +2925,19 @@ structure RowData_remu
   r2 : regidx
   rd : regidx
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 0
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 0
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok remu_input.r1_val (binding.stateAt i)
@@ -2983,19 +2983,19 @@ structure RowData_remuw
   r2 : regidx
   rd : regidx
   h_main_op :
-    (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W
   h_main_active :
-    (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
-    (mainOfTable trace.program binding.mainTable).store_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
-    (mainOfTable trace.program binding.mainTable).m32 i.val = 1
+    (mainOfTable trace.program trace.mainTable).m32 i.val = 1
   h_set_pc :
-    (mainOfTable trace.program binding.mainTable).set_pc i.val = 0
+    (mainOfTable trace.program trace.mainTable).set_pc i.val = 0
   h_jmp_offset1 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset1 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
-    (mainOfTable trace.program binding.mainTable).jmp_offset2 i.val = 4
+    (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_input_r1 :
     read_xreg (regidx_to_fin r1) (binding.stateAt i)
       = EStateM.Result.ok remuw_input.r1_val (binding.stateAt i)
@@ -3054,26 +3054,26 @@ structure RowData_sb
   sb_input : PureSpec.SbInput
   regs : ZiskFv.Compliance.ModeRegsFull
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_COPYB
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_main_ind_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = 1
   h_opcode_assumptions : PureSpec.sb_state_assumptions sb_input (binding.stateAt i)
   h_addr2 :
     (mainRowWithRomSt trace binding i).rom.addr2.toNat =
       (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat
   h_b0_value :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo sb_input.r2_val
   h_b1_value :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi sb_input.r2_val
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_risc_v_assumptions :
@@ -3107,26 +3107,26 @@ structure RowData_sh
   sh_input : PureSpec.ShInput
   regs : ZiskFv.Compliance.ModeRegsFull
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_COPYB
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_main_ind_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = 2
   h_opcode_assumptions : PureSpec.sh_state_assumptions sh_input (binding.stateAt i)
   h_addr2 :
     (mainRowWithRomSt trace binding i).rom.addr2.toNat =
       (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat
   h_b0_value :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo sh_input.r2_val
   h_b1_value :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi sh_input.r2_val
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_risc_v_assumptions :
@@ -3158,26 +3158,26 @@ structure RowData_sw
   sw_input : PureSpec.SwInput
   regs : ZiskFv.Compliance.ModeRegsFull
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_COPYB
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_main_ind_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = 4
   h_opcode_assumptions : PureSpec.sw_state_assumptions sw_input (binding.stateAt i)
   h_addr2 :
     (mainRowWithRomSt trace binding i).rom.addr2.toNat =
       (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat
   h_b0_value :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo sw_input.r2_val
   h_b1_value :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi sw_input.r2_val
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_risc_v_assumptions :
@@ -3205,23 +3205,23 @@ structure RowData_sd
   sd_input : PureSpec.SdInput
   regs : ZiskFv.Compliance.ModeRegsFull
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_COPYB
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input (binding.stateAt i)
   h_addr2 :
     (mainRowWithRomSt trace binding i).rom.addr2.toNat =
       (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat
   h_b0_value :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_0 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo sd_input.r2_val
   h_b1_value :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).b_1 i.val =
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi sd_input.r2_val
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_risc_v_assumptions :
@@ -3243,16 +3243,16 @@ structure RowData_ld
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_COPYB
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (8 : FGL)
   h_opcode_assumptions : PureSpec.ld_state_assumptions ld_input (binding.stateAt i)
   h_addr1 :
@@ -3293,19 +3293,19 @@ structure RowData_lbu
   r_mem : ℕ
   execRow : List (Interaction.ExecutionBusEntry FGL)
   align : ZiskFv.Compliance.MemAlignWitness
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val (busLd trace binding i execRow).e1
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_COPYB
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (1 : FGL)
   h_opcode_assumptions : PureSpec.lbu_state_assumptions lbu_input (binding.stateAt i)
   h_addr1 :
@@ -3345,19 +3345,19 @@ structure RowData_lhu
   r_mem : ℕ
   execRow : List (Interaction.ExecutionBusEntry FGL)
   align : ZiskFv.Compliance.MemAlignWitness
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val (busLd trace binding i execRow).e1
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_COPYB
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (2 : FGL)
   h_opcode_assumptions : PureSpec.lhu_state_assumptions lhu_input (binding.stateAt i)
   h_addr1 :
@@ -3397,19 +3397,19 @@ structure RowData_lwu
   r_mem : ℕ
   execRow : List (Interaction.ExecutionBusEntry FGL)
   align : ZiskFv.Compliance.MemAlignWitness
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val (busLd trace binding i execRow).e1
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_COPYB
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (4 : FGL)
   h_opcode_assumptions : PureSpec.lwu_state_assumptions lwu_input (binding.stateAt i)
   h_addr1 :
@@ -3455,20 +3455,20 @@ structure RowData_lb
   h_match :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
         i.val)
       (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SIGNEXTEND_B
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (1 : FGL)
   h_opcode_assumptions : PureSpec.lb_state_assumptions lb_input (binding.stateAt i)
   h_addr1 :
@@ -3515,20 +3515,20 @@ structure RowData_lh
   h_match :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
         i.val)
       (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SIGNEXTEND_H
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (2 : FGL)
   h_opcode_assumptions : PureSpec.lh_state_assumptions lh_input (binding.stateAt i)
   h_addr1 :
@@ -3575,20 +3575,20 @@ structure RowData_lw
   h_match :
     ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
         i.val)
       (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_SIGNEXTEND_W
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_width :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).ind_width
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (4 : FGL)
   h_opcode_assumptions : PureSpec.lw_state_assumptions lw_input (binding.stateAt i)
   h_addr1 :
@@ -3631,22 +3631,22 @@ structure RowData_beq
   exec_row : List (Interaction.ExecutionBusEntry FGL)
   -- Decode pins (genuine trace residuals consumed by the BEQ `aeneasBridgeTrust`).
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_EQ
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_jmp_offset2 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_input_imm : beq_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -3677,22 +3677,22 @@ structure RowData_bne
   exec_row : List (Interaction.ExecutionBusEntry FGL)
   -- Decode pins (genuine trace residuals consumed by the BNE `aeneasBridgeTrust`).
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_EQ
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_jmp_offset1 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset1
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
   h_input_imm : bne_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -3723,22 +3723,22 @@ structure RowData_blt
   exec_row : List (Interaction.ExecutionBusEntry FGL)
   -- Decode pins (genuine trace residuals consumed by the BLT `aeneasBridgeTrust`).
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_LT
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_jmp_offset2 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_input_imm : blt_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -3769,22 +3769,22 @@ structure RowData_bge
   exec_row : List (Interaction.ExecutionBusEntry FGL)
   -- Decode pins (genuine trace residuals consumed by the BGE `aeneasBridgeTrust`).
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_LT
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_jmp_offset1 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset1
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
   h_input_imm : bge_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -3815,22 +3815,22 @@ structure RowData_bltu
   exec_row : List (Interaction.ExecutionBusEntry FGL)
   -- Decode pins (genuine trace residuals consumed by the BLTU `aeneasBridgeTrust`).
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_LTU
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_jmp_offset2 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_input_imm : bltu_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -3861,22 +3861,22 @@ structure RowData_bgeu
   exec_row : List (Interaction.ExecutionBusEntry FGL)
   -- Decode pins (genuine trace residuals consumed by the BGEU `aeneasBridgeTrust`).
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_LTU
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_jmp_offset1 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset1
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
   h_input_imm : bgeu_input.imm = imm
   h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -3905,25 +3905,25 @@ structure RowData_jal
   misa_val : RegisterType Register.misa
   nextPC_val : BitVec 64
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_FLAG
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 1
   h_jmp2 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_pc_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).pc i.val).val
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = jal_input.PC.toNat
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : execRow.length = 2
@@ -3956,22 +3956,22 @@ structure RowData_jalr
   mseccfg : RegisterType Register.mseccfg
   nextPC_val : BitVec 64
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_AND
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
   h_flag :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).flag
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).flag
       i.val = 0
   h_m32 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).m32
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
       i.val = 0
   h_set_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).set_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 1
   h_store_pc :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).store_pc
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 1
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : execRow.length = 2
@@ -3995,8 +3995,8 @@ structure RowData_jalr
   h_mseccfg : Sail.readReg Register.mseccfg (binding.stateAt i)
     = EStateM.Result.ok mseccfg (binding.stateAt i)
   h_link_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).pc i.val
-      + (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).jmp_offset2
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val
+      + (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
           i.val).val
       = (jalr_input.PC + 4#64).toNat
   h_pc_bound : jalr_input.PC.toNat < GL_prime - 4
@@ -4028,10 +4028,10 @@ structure RowData_fence
   exec_row : List (Interaction.ExecutionBusEntry FGL)
   -- Decode pins (the two facts the FENCE `aeneasBridgeTrust` consumes).
   h_main_active :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).is_external_op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable).op
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_FLAG
   -- FENCE `FencePromises` residuals (the six structural binders).
   h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some fence_input.PC
@@ -4057,7 +4057,7 @@ noncomputable def fenceEnvOf
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i) :
     OpEnvelope (binding.stateAt i)
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.fence d.fence_input d.fm d.fenceP d.fenceS d.rs d.rd d.exec_row
     ⟨d.h_main_active, d.h_main_op⟩
     { input_pc_eq := d.h_input_pc
@@ -4076,7 +4076,7 @@ noncomputable def mulEnvOf
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i) :
     OpEnvelope (binding.stateAt i)
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.mul d.mul_input d.r1 d.r2 d.rd d.srs1 d.srs2 d.bus d.v d.r_a
     ⟨d.h_main_active, d.h_main_op⟩
     d.h_match_primary d.promises d.arith_mem d.bounds d.h_row_constraints
@@ -4114,7 +4114,7 @@ noncomputable def mulhEnvOf
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i) :
     OpEnvelope (binding.stateAt i)
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.mulh d.mulh_input d.r1 d.r2 d.rd d.bus d.v d.r_a
     ⟨d.h_main_active, d.h_main_op⟩
     d.h_match_secondary d.promises d.arith_mem d.bounds d.h_row_constraints
@@ -4127,7 +4127,7 @@ noncomputable def mulhsuEnvOf
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i) :
     OpEnvelope (binding.stateAt i)
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.mulhsu d.mulhsu_input d.r1 d.r2 d.rd d.bus d.v d.r_a
     ⟨d.h_main_active, d.h_main_op⟩
     d.h_match_secondary d.promises d.arith_mem d.bounds d.h_row_constraints
@@ -4178,7 +4178,7 @@ noncomputable def divEnvOf
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i) :
     OpEnvelope (binding.stateAt i)
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.div d.div_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
     d.h_match_primary d.promises d.arith_mem d.bounds d.h_row_constraints d.h_boundary
     d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
@@ -4190,7 +4190,7 @@ noncomputable def remEnvOf
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i) :
     OpEnvelope (binding.stateAt i)
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.rem d.rem_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
     d.h_match_secondary d.promises d.arith_mem d.bounds d.h_row_constraints
     d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
@@ -4202,7 +4202,7 @@ noncomputable def divwEnvOf
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i) :
     OpEnvelope (binding.stateAt i)
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.divw d.divw_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
     d.h_match_primary d.promises d.arith_mem d.bounds
     d.h_row_constraints d.h_boundary d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
@@ -4215,7 +4215,7 @@ noncomputable def remwEnvOf
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (d : RowData_remw trace binding i) :
     OpEnvelope (binding.stateAt i)
-      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable) i.val :=
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.remw d.remw_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
     d.h_match_secondary d.promises d.arith_mem d.bounds
     d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
@@ -4329,7 +4329,7 @@ theorem stepStrong_sub
     (d : RowData_sub trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sub .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -4341,7 +4341,7 @@ theorem stepStrong_sub
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -4356,7 +4356,7 @@ theorem stepStrong_sub
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4370,7 +4370,7 @@ theorem stepStrong_sub
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -4465,7 +4465,7 @@ theorem stepStrong_and
     (d : RowData_and trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .and .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -4477,7 +4477,7 @@ theorem stepStrong_and
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -4492,7 +4492,7 @@ theorem stepStrong_and
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4506,7 +4506,7 @@ theorem stepStrong_and
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -4601,7 +4601,7 @@ theorem stepStrong_or
     (d : RowData_or trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .or .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -4613,7 +4613,7 @@ theorem stepStrong_or
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -4628,7 +4628,7 @@ theorem stepStrong_or
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4642,7 +4642,7 @@ theorem stepStrong_or
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -4737,7 +4737,7 @@ theorem stepStrong_xor
     (d : RowData_xor trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .xor .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -4749,7 +4749,7 @@ theorem stepStrong_xor
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -4764,7 +4764,7 @@ theorem stepStrong_xor
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4778,7 +4778,7 @@ theorem stepStrong_xor
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -4874,7 +4874,7 @@ theorem stepStrong_slt
     (d : RowData_slt trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slt .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -4886,7 +4886,7 @@ theorem stepStrong_slt
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -4901,7 +4901,7 @@ theorem stepStrong_slt
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4915,7 +4915,7 @@ theorem stepStrong_slt
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5010,7 +5010,7 @@ theorem stepStrong_sltu
     (d : RowData_sltu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sltu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -5022,7 +5022,7 @@ theorem stepStrong_sltu
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -5037,7 +5037,7 @@ theorem stepStrong_sltu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5051,7 +5051,7 @@ theorem stepStrong_sltu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5145,7 +5145,7 @@ theorem stepStrong_andi
     (d : RowData_andi trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .andi .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -5157,7 +5157,7 @@ theorem stepStrong_andi
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -5172,7 +5172,7 @@ theorem stepStrong_andi
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5186,7 +5186,7 @@ theorem stepStrong_andi
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5280,7 +5280,7 @@ theorem stepStrong_ori
     (d : RowData_ori trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .ori .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -5292,7 +5292,7 @@ theorem stepStrong_ori
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -5307,7 +5307,7 @@ theorem stepStrong_ori
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5321,7 +5321,7 @@ theorem stepStrong_ori
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5415,7 +5415,7 @@ theorem stepStrong_xori
     (d : RowData_xori trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .xori .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -5427,7 +5427,7 @@ theorem stepStrong_xori
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -5442,7 +5442,7 @@ theorem stepStrong_xori
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5456,7 +5456,7 @@ theorem stepStrong_xori
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5548,7 +5548,7 @@ theorem stepStrong_slti
     (d : RowData_slti trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slti .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -5560,7 +5560,7 @@ theorem stepStrong_slti
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -5575,7 +5575,7 @@ theorem stepStrong_slti
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5589,7 +5589,7 @@ theorem stepStrong_slti
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5676,7 +5676,7 @@ theorem stepStrong_sltiu
     (d : RowData_sltiu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sltiu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -5688,7 +5688,7 @@ theorem stepStrong_sltiu
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -5703,7 +5703,7 @@ theorem stepStrong_sltiu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5717,7 +5717,7 @@ theorem stepStrong_sltiu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5805,7 +5805,7 @@ theorem stepStrong_sll
     (d : RowData_sll trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sll .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -5817,7 +5817,7 @@ theorem stepStrong_sll
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -5832,7 +5832,7 @@ theorem stepStrong_sll
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5846,7 +5846,7 @@ theorem stepStrong_sll
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5904,7 +5904,7 @@ theorem stepStrong_srl
     (d : RowData_srl trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srl .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -5916,7 +5916,7 @@ theorem stepStrong_srl
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -5931,7 +5931,7 @@ theorem stepStrong_srl
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5945,7 +5945,7 @@ theorem stepStrong_srl
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6003,7 +6003,7 @@ theorem stepStrong_sra
     (d : RowData_sra trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sra .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -6015,7 +6015,7 @@ theorem stepStrong_sra
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -6030,7 +6030,7 @@ theorem stepStrong_sra
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6044,7 +6044,7 @@ theorem stepStrong_sra
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6102,7 +6102,7 @@ theorem stepStrong_slli
     (d : RowData_slli trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slli .. => True | _ => False)) :
     execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SLLI)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
@@ -6110,7 +6110,7 @@ theorem stepStrong_slli
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -6125,7 +6125,7 @@ theorem stepStrong_slli
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6139,7 +6139,7 @@ theorem stepStrong_slli
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6201,7 +6201,7 @@ theorem stepStrong_srli
     (d : RowData_srli trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srli .. => True | _ => False)) :
     execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRLI)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
@@ -6209,7 +6209,7 @@ theorem stepStrong_srli
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -6224,7 +6224,7 @@ theorem stepStrong_srli
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6238,7 +6238,7 @@ theorem stepStrong_srli
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6300,7 +6300,7 @@ theorem stepStrong_srai
     (d : RowData_srai trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srai .. => True | _ => False)) :
     execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRAI)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
@@ -6308,7 +6308,7 @@ theorem stepStrong_srai
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -6323,7 +6323,7 @@ theorem stepStrong_srai
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6337,7 +6337,7 @@ theorem stepStrong_srai
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6401,7 +6401,7 @@ theorem stepStrong_subw
     (d : RowData_subw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .subw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -6413,7 +6413,7 @@ theorem stepStrong_subw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -6428,7 +6428,7 @@ theorem stepStrong_subw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6442,7 +6442,7 @@ theorem stepStrong_subw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6531,7 +6531,7 @@ theorem stepStrong_addw
     (d : RowData_addw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .addw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -6543,7 +6543,7 @@ theorem stepStrong_addw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -6558,7 +6558,7 @@ theorem stepStrong_addw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6572,7 +6572,7 @@ theorem stepStrong_addw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6661,7 +6661,7 @@ theorem stepStrong_addiw
     (d : RowData_addiw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .addiw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
@@ -6673,7 +6673,7 @@ theorem stepStrong_addiw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -6688,7 +6688,7 @@ theorem stepStrong_addiw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6702,7 +6702,7 @@ theorem stepStrong_addiw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6781,7 +6781,7 @@ theorem stepStrong_sllw
     (d : RowData_sllw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sllw .. => True | _ => False)) :
     execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
@@ -6789,7 +6789,7 @@ theorem stepStrong_sllw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -6804,7 +6804,7 @@ theorem stepStrong_sllw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6818,7 +6818,7 @@ theorem stepStrong_sllw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6879,7 +6879,7 @@ theorem stepStrong_srlw
     (d : RowData_srlw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srlw .. => True | _ => False)) :
     execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
@@ -6887,7 +6887,7 @@ theorem stepStrong_srlw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -6902,7 +6902,7 @@ theorem stepStrong_srlw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6916,7 +6916,7 @@ theorem stepStrong_srlw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6977,7 +6977,7 @@ theorem stepStrong_sraw
     (d : RowData_sraw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraw .. => True | _ => False)) :
     execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
@@ -6985,7 +6985,7 @@ theorem stepStrong_sraw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -7001,7 +7001,7 @@ theorem stepStrong_sraw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7015,7 +7015,7 @@ theorem stepStrong_sraw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7076,7 +7076,7 @@ theorem stepStrong_slliw
     (d : RowData_slliw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slliw .. => True | _ => False)) :
     execute_instruction
       (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (binding.stateAt i)
@@ -7085,7 +7085,7 @@ theorem stepStrong_slliw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -7100,7 +7100,7 @@ theorem stepStrong_slliw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7114,7 +7114,7 @@ theorem stepStrong_slliw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7170,7 +7170,7 @@ theorem stepStrong_srliw
     (d : RowData_srliw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srliw .. => True | _ => False)) :
     execute_instruction
       (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (binding.stateAt i)
@@ -7179,7 +7179,7 @@ theorem stepStrong_srliw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -7194,7 +7194,7 @@ theorem stepStrong_srliw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7208,7 +7208,7 @@ theorem stepStrong_srliw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7264,7 +7264,7 @@ theorem stepStrong_sraiw
     (d : RowData_sraiw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraiw .. => True | _ => False)) :
     execute_instruction
       (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (binding.stateAt i)
@@ -7273,7 +7273,7 @@ theorem stepStrong_sraiw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -7289,7 +7289,7 @@ theorem stepStrong_sraiw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7303,7 +7303,7 @@ theorem stepStrong_sraiw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7363,7 +7363,7 @@ theorem stepStrong_add
     (d : RowData_add trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with
         | .add_via_binary .. => True | .add_via_binaryadd .. => True | _ => False)) :
@@ -7377,7 +7377,7 @@ theorem stepStrong_add
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
@@ -7391,7 +7391,7 @@ theorem stepStrong_add
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7405,7 +7405,7 @@ theorem stepStrong_add
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7515,7 +7515,7 @@ theorem stepStrong_addi
     (d : RowData_addi trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with
         | .addi_via_binary .. => True | .addi_via_binaryadd .. => True | _ => False)) :
@@ -7529,7 +7529,7 @@ theorem stepStrong_addi
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
@@ -7543,7 +7543,7 @@ theorem stepStrong_addi
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7557,7 +7557,7 @@ theorem stepStrong_addi
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7691,11 +7691,11 @@ theorem stepStrong_beq
     (d : RowData_beq trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .beq .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BEQ)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
@@ -7732,11 +7732,11 @@ theorem stepStrong_bne
     (d : RowData_bne trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bne .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BNE)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
@@ -7773,11 +7773,11 @@ theorem stepStrong_blt
     (d : RowData_blt trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .blt .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLT)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
@@ -7814,11 +7814,11 @@ theorem stepStrong_bge
     (d : RowData_bge trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bge .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGE)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
@@ -7855,11 +7855,11 @@ theorem stepStrong_bltu
     (d : RowData_bltu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bltu .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLTU)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
@@ -7896,11 +7896,11 @@ theorem stepStrong_bgeu
     (d : RowData_bgeu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bgeu .. => True | _ => False)) :
     execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGEU)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨d.imm, d.r1, d.r2, d.misa_val, d.exec_row⟩
@@ -7948,12 +7948,12 @@ theorem stepStrong_lui
     (d : RowData_lui trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lui .. => True | _ => False)) :
     execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.LUI)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the LUI Main constraint subset.
@@ -7989,7 +7989,7 @@ theorem stepStrong_lui
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
@@ -8036,12 +8036,12 @@ theorem stepStrong_auipc
     (d : RowData_auipc trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .auipc .. => True | _ => False)) :
     execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.AUIPC)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the AUIPC Main constraint subset.
@@ -8075,7 +8075,7 @@ theorem stepStrong_auipc
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
@@ -8124,12 +8124,12 @@ theorem stepStrong_jal
     (d : RowData_jal trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .jal .. => True | _ => False)) :
     execute_instruction (instruction.JAL (d.imm, d.rd)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the JAL Main constraint subset.
@@ -8163,7 +8163,7 @@ theorem stepStrong_jal
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
@@ -8212,14 +8212,14 @@ theorem stepStrong_jalr
     (d : RowData_jalr trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .jalr .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.JALR (d.imm, d.rs1, d.rd))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the JALR Main constraint subset.
@@ -8246,7 +8246,7 @@ theorem stepStrong_jalr
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
@@ -8321,7 +8321,7 @@ theorem stepStrong_sb
     (d : RowData_sb trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sb .. => True | _ => False)) :
     execute_instruction (instruction.STORE
         (d.sb_input.imm, regidx.Regidx d.sb_input.r2, regidx.Regidx d.sb_input.r1, 1))
@@ -8331,7 +8331,7 @@ theorem stepStrong_sb
            [ (busSt trace binding i d.execRow).e0
            , (busSt trace binding i d.execRow).e1
            , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSt trace binding i d.execRow
   have h_core : (mainRowWithRomSt trace binding i).core =
@@ -8387,7 +8387,7 @@ theorem stepStrong_sh
     (d : RowData_sh trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sh .. => True | _ => False)) :
     execute_instruction (instruction.STORE
         (d.sh_input.imm, regidx.Regidx d.sh_input.r2, regidx.Regidx d.sh_input.r1, 2))
@@ -8397,7 +8397,7 @@ theorem stepStrong_sh
            [ (busSt trace binding i d.execRow).e0
            , (busSt trace binding i d.execRow).e1
            , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSt trace binding i d.execRow
   have h_core : (mainRowWithRomSt trace binding i).core =
@@ -8453,7 +8453,7 @@ theorem stepStrong_sw
     (d : RowData_sw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sw .. => True | _ => False)) :
     execute_instruction (instruction.STORE
         (d.sw_input.imm, regidx.Regidx d.sw_input.r2, regidx.Regidx d.sw_input.r1, 4))
@@ -8463,7 +8463,7 @@ theorem stepStrong_sw
            [ (busSt trace binding i d.execRow).e0
            , (busSt trace binding i d.execRow).e1
            , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSt trace binding i d.execRow
   have h_core : (mainRowWithRomSt trace binding i).core =
@@ -8519,7 +8519,7 @@ theorem stepStrong_sd
     (d : RowData_sd trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sd .. => True | _ => False)) :
     execute_instruction (instruction.STORE
         (d.sd_input.imm, regidx.Regidx d.sd_input.r2, regidx.Regidx d.sd_input.r1, 8))
@@ -8529,7 +8529,7 @@ theorem stepStrong_sd
            [ (busSt trace binding i d.execRow).e0
            , (busSt trace binding i d.execRow).e1
            , (busSt trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busSt trace binding i d.execRow
   have h_core : (mainRowWithRomSt trace binding i).core =
@@ -8602,7 +8602,7 @@ theorem stepStrong_ld
     (d : RowData_ld trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .ld .. => True | _ => False)) :
     execute_instruction (instruction.LOAD
         (d.ld_input.imm, regidx.Regidx d.ld_input.r1, regidx.Regidx d.ld_input.rd, false, 8))
@@ -8612,7 +8612,7 @@ theorem stepStrong_ld
            [ (busLd trace binding i d.execRow).e0
            , (busLd trace binding i d.execRow).e1
            , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busLd trace binding i d.execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
@@ -8680,7 +8680,7 @@ theorem stepStrong_lbu
     (d : RowData_lbu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lbu .. => True | _ => False)) :
     execute_instruction (instruction.LOAD
         (d.lbu_input.imm, regidx.Regidx d.lbu_input.r1, regidx.Regidx d.lbu_input.rd, true, 1))
@@ -8690,7 +8690,7 @@ theorem stepStrong_lbu
            [ (busLd trace binding i d.execRow).e0
            , (busLd trace binding i d.execRow).e1
            , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busLd trace binding i d.execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
@@ -8758,7 +8758,7 @@ theorem stepStrong_lhu
     (d : RowData_lhu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lhu .. => True | _ => False)) :
     execute_instruction (instruction.LOAD
         (d.lhu_input.imm, regidx.Regidx d.lhu_input.r1, regidx.Regidx d.lhu_input.rd, true, 2))
@@ -8768,7 +8768,7 @@ theorem stepStrong_lhu
            [ (busLd trace binding i d.execRow).e0
            , (busLd trace binding i d.execRow).e1
            , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busLd trace binding i d.execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
@@ -8836,7 +8836,7 @@ theorem stepStrong_lwu
     (d : RowData_lwu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lwu .. => True | _ => False)) :
     execute_instruction (instruction.LOAD
         (d.lwu_input.imm, regidx.Regidx d.lwu_input.r1, regidx.Regidx d.lwu_input.rd, true, 4))
@@ -8846,7 +8846,7 @@ theorem stepStrong_lwu
            [ (busLd trace binding i d.execRow).e0
            , (busLd trace binding i d.execRow).e1
            , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busLd trace binding i d.execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
@@ -8914,7 +8914,7 @@ theorem stepStrong_lb
     (d : RowData_lb trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lb_via_static_match .. => True | _ => False)) :
     execute_instruction (instruction.LOAD
         (d.lb_input.imm, regidx.Regidx d.lb_input.r1, regidx.Regidx d.lb_input.rd, false, 1))
@@ -8924,7 +8924,7 @@ theorem stepStrong_lb
            [ (busLd trace binding i d.execRow).e0
            , (busLd trace binding i d.execRow).e1
            , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busLd trace binding i d.execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
@@ -8993,7 +8993,7 @@ theorem stepStrong_lh
     (d : RowData_lh trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lh_via_static_match .. => True | _ => False)) :
     execute_instruction (instruction.LOAD
         (d.lh_input.imm, regidx.Regidx d.lh_input.r1, regidx.Regidx d.lh_input.rd, false, 2))
@@ -9003,7 +9003,7 @@ theorem stepStrong_lh
            [ (busLd trace binding i d.execRow).e0
            , (busLd trace binding i d.execRow).e1
            , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busLd trace binding i d.execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
@@ -9072,7 +9072,7 @@ theorem stepStrong_lw
     (d : RowData_lw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lw_via_static_match .. => True | _ => False)) :
     execute_instruction (instruction.LOAD
         (d.lw_input.imm, regidx.Regidx d.lw_input.r1, regidx.Regidx d.lw_input.rd, false, 4))
@@ -9082,7 +9082,7 @@ theorem stepStrong_lw
            [ (busLd trace binding i d.execRow).e0
            , (busLd trace binding i d.execRow).e1
            , (busLd trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let bus := busLd trace binding i d.execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
@@ -9178,7 +9178,7 @@ theorem stepStrong_mulw
     (d : RowData_mulw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .mulw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -9188,7 +9188,7 @@ theorem stepStrong_mulw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   set v := vOfMulwRow (mulwArow trace binding i d.h_main_active d.h_main_op) with hv
   have h_full : ZiskFv.AirsClean.ArithMul.FullSpec (ZiskFv.AirsClean.ArithMul.rowAt v 0) :=
@@ -9215,7 +9215,7 @@ theorem stepStrong_mulw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9226,7 +9226,7 @@ theorem stepStrong_mulw
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9284,7 +9284,7 @@ theorem stepStrong_mulhu
     (d : RowData_mulhu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .mulhu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -9299,7 +9299,7 @@ theorem stepStrong_mulhu
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   -- Balance-selected SHARED-ArithMul provider row + its FullSpec (ArithMul view).
   set v := vOfMulwRow (mulhuArow trace binding i d.h_main_active d.h_main_op) with hv
@@ -9330,7 +9330,7 @@ theorem stepStrong_mulhu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9341,7 +9341,7 @@ theorem stepStrong_mulhu
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9396,7 +9396,7 @@ theorem stepStrong_divu
     (d : RowData_divu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .divu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -9406,7 +9406,7 @@ theorem stepStrong_divu
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   set arow := divuArow trace binding i d.h_main_active d.h_main_op with harow
   set v := vOfDivuRow arow with hv
@@ -9443,7 +9443,7 @@ theorem stepStrong_divu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9454,7 +9454,7 @@ theorem stepStrong_divu
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9504,7 +9504,7 @@ theorem stepStrong_divuw
     (d : RowData_divuw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .divuw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -9514,7 +9514,7 @@ theorem stepStrong_divuw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   set arow := divuwArow trace binding i d.h_main_active d.h_main_op with harow
   set v := vOfDivuRow arow with hv
@@ -9547,7 +9547,7 @@ theorem stepStrong_divuw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9558,7 +9558,7 @@ theorem stepStrong_divuw
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9607,7 +9607,7 @@ theorem stepStrong_remu
     (d : RowData_remu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .remu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -9617,7 +9617,7 @@ theorem stepStrong_remu
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   set arow := remuArow trace binding i d.h_main_active d.h_main_op with harow
   set v := vOfDivuRow arow with hv
@@ -9650,7 +9650,7 @@ theorem stepStrong_remu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9661,7 +9661,7 @@ theorem stepStrong_remu
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9709,7 +9709,7 @@ theorem stepStrong_remuw
     (d : RowData_remuw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .remuw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -9719,7 +9719,7 @@ theorem stepStrong_remuw
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
            , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   set arow := remuwArow trace binding i d.h_main_active d.h_main_op with harow
   set v := vOfDivuRow arow with hv
@@ -9752,7 +9752,7 @@ theorem stepStrong_remuw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9763,7 +9763,7 @@ theorem stepStrong_remuw
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9835,7 +9835,7 @@ theorem stepStrong_mul
              signed_rs2 := d.srs2 }))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let env : OpEnvelope state m i.val := mulEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
@@ -9868,7 +9868,7 @@ theorem stepStrong_mulh
              signed_rs2 := .Signed }))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let env : OpEnvelope state m i.val := mulhEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
@@ -9894,7 +9894,7 @@ theorem stepStrong_mulhsu
              signed_rs2 := .Unsigned }))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let env : OpEnvelope state m i.val := mulhsuEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
@@ -9932,7 +9932,7 @@ theorem stepStrong_div
       LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let env : OpEnvelope state m i.val := divEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
@@ -9955,7 +9955,7 @@ theorem stepStrong_rem
       LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let env : OpEnvelope state m i.val := remEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
@@ -9979,7 +9979,7 @@ theorem stepStrong_divw
       LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let env : OpEnvelope state m i.val := divwEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
@@ -10000,7 +10000,7 @@ theorem stepStrong_remw
       LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let env : OpEnvelope state m i.val := remwEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
@@ -10031,7 +10031,7 @@ theorem stepStrong_fence
     (h_known : Defects.NoKnownDefect (fenceEnvOf trace binding i d)) :
     execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding.stateAt i)
       = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable with hm
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding.stateAt i with hstate
   let env : OpEnvelope state m i.val := fenceEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust := ⟨d.h_main_active, d.h_main_op⟩
@@ -10134,145 +10134,145 @@ def StepNoKnownDefect
     StrongRowConstructionData trace binding i → Prop
   | .sub _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sub .. => True | _ => False)
   | .and _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .and .. => True | _ => False)
   | .or _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .or .. => True | _ => False)
   | .xor _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .xor .. => True | _ => False)
   | .slt _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slt .. => True | _ => False)
   | .sltu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sltu .. => True | _ => False)
   | .andi _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .andi .. => True | _ => False)
   | .ori _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .ori .. => True | _ => False)
   | .xori _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .xori .. => True | _ => False)
   | .slti _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slti .. => True | _ => False)
   | .sltiu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sltiu .. => True | _ => False)
   | .sll _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sll .. => True | _ => False)
   | .srl _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srl .. => True | _ => False)
   | .sra _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sra .. => True | _ => False)
   | .slli _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slli .. => True | _ => False)
   | .srli _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srli .. => True | _ => False)
   | .srai _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srai .. => True | _ => False)
   | .add _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .add_via_binary .. => True | .add_via_binaryadd .. => True | _ => False)
   | .addi _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .addi_via_binary .. => True | .addi_via_binaryadd .. => True | _ => False)
   | .subw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .subw .. => True | _ => False)
   | .addw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .addw .. => True | _ => False)
   | .addiw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .addiw .. => True | _ => False)
   | .sllw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sllw .. => True | _ => False)
   | .srlw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srlw .. => True | _ => False)
   | .sraw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraw .. => True | _ => False)
   | .slliw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slliw .. => True | _ => False)
   | .srliw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srliw .. => True | _ => False)
   | .sraiw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraiw .. => True | _ => False)
   | .jalr _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .jalr .. => True | _ => False)
   | .beq _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .beq .. => True | _ => False)
   | .bne _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bne .. => True | _ => False)
   | .blt _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .blt .. => True | _ => False)
   | .bge _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bge .. => True | _ => False)
   | .bltu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bltu .. => True | _ => False)
   | .bgeu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bgeu .. => True | _ => False)
   | .mul d => Defects.NoKnownDefect (mulEnvOf trace binding i d)
   | .mulh d => Defects.NoKnownDefect (mulhEnvOf trace binding i d)
@@ -10286,85 +10286,85 @@ def StepNoKnownDefect
   | .remw d => Defects.NoKnownDefect (remwEnvOf trace binding i d)
   | .mulw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .mulw .. => True | _ => False)
   | .mulhu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .mulhu .. => True | _ => False)
   | .divu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .divu .. => True | _ => False)
   | .divuw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .divuw .. => True | _ => False)
   | .remu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .remu .. => True | _ => False)
   | .remuw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .remuw .. => True | _ => False)
   | .lui _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lui .. => True | _ => False)
   | .auipc _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .auipc .. => True | _ => False)
   | .jal _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .jal .. => True | _ => False)
   | .sb _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sb .. => True | _ => False)
   | .sh _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sh .. => True | _ => False)
   | .sw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sw .. => True | _ => False)
   | .sd _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sd .. => True | _ => False)
   | .ld _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .ld .. => True | _ => False)
   | .lbu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lbu .. => True | _ => False)
   | .lhu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lhu .. => True | _ => False)
   | .lwu _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lwu .. => True | _ => False)
   | .lb _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .lb_via_static_match .. => True | _ => False)
   | .lh _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .lh_via_static_match .. => True | _ => False)
   | .lw _ => EnvNoKnownDefectFor
       (state := binding.stateAt i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program binding.mainTable)
+      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .lw_via_static_match .. => True | _ => False)
   -- FENCE: the GENUINE `NoKnownDefect` of the SPECIFIC honest env, NOT the

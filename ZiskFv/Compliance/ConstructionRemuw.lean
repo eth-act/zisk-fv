@@ -301,9 +301,9 @@ private lemma remuw_carry_bounds_claimed_dead
 noncomputable def remuwArow
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := exists_arithMul_provider_row_matches_primary_of_remuw_from_binding
     trace binding i h_main_active h_main_op
@@ -314,9 +314,9 @@ noncomputable def remuwArow
 theorem remuwArow_fullSpec_row
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
     ZiskFv.AirsClean.ArithMul.FullSpec
       (remuwArow trace binding i h_main_active h_main_op) := by
   unfold remuwArow
@@ -332,11 +332,11 @@ theorem remuwArow_fullSpec_row
 theorem remuwArow_match_row
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
     matches_entry
-      (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val)
+      (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
           (remuwArow trace binding i h_main_active h_main_op)) 1) := by
@@ -353,9 +353,9 @@ theorem remuwArow_match_row
 theorem remuwArow_mode_pins
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
     (remuwArow trace binding i h_main_active h_main_op).flags.na = 0
       ∧ (remuwArow trace binding i h_main_active h_main_op).flags.nb = 0
       ∧ (remuwArow trace binding i h_main_active h_main_op).flags.np = 0
@@ -369,8 +369,8 @@ theorem remuwArow_mode_pins
     have h_match := remuwArow_match_row trace binding i h_main_active h_main_op
     have h_op := h_match.2.1
     rw [ZiskFv.AirsClean.ArithMul.primaryOpBusMessage_toEntry_op,
-        show (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val).op
-          = (mainOfTable trace.program binding.mainTable).op i.val from rfl,
+        show (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val).op
+          = (mainOfTable trace.program trace.mainTable).op i.val from rfl,
         h_main_op] at h_op
     simpa [OP_REMU_W] using h_op.symm
   exact ZiskFv.AirsClean.ArithTableProjections.Mul.remuw_mode_pins_of_row
@@ -385,11 +385,11 @@ theorem remuwArow_mode_pins
 theorem remuwArow_match
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
     matches_entry
-      (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val)
+      (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary
         (vOfDivuRow (remuwArow trace binding i h_main_active h_main_op)) 0) := by
   obtain ⟨_, _, _, _, _, h_div, h_main_div, h_main_mul⟩ :=
@@ -640,11 +640,11 @@ theorem construction_remuw_sound_claimed_dead
     (r1 r2 rd : regidx)
     -- (b) decode pins
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W)
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_store_pc :
-      (mainOfTable trace.program binding.mainTable).store_pc i.val = 0)
+      (mainOfTable trace.program trace.mainTable).store_pc i.val = 0)
     -- (b) Sail reads + operands
     (h_input_r1 :
       read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -722,35 +722,35 @@ theorem construction_remuw_sound_claimed_dead
     remuwArow_fullSpec_row trace binding i h_main_active h_main_op
   -- (a) primary op-bus match against `opBus_row_ArithDivSecondary (vOfDivuRow …) 0`.
   have h_match_primary :
-      matches_entry (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val)
+      matches_entry (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
         (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary
           (vOfDivuRow (remuwArow trace binding i h_main_active h_main_op)) 0) :=
     remuwArow_match trace binding i h_main_active h_main_op
   -- decode pins bundle
   let pins :
       ZiskFv.Compliance.MainRowPins
-        (mainOfTable trace.program binding.mainTable) i.val 1 OP_REMU_W :=
+        (mainOfTable trace.program trace.mainTable) i.val 1 OP_REMU_W :=
     ⟨h_main_active, h_main_op⟩
   -- (a) Main rd-write memory witness, from `store_pc = 0`.
   have h_core_store_pc :
       (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
     have h_row :
         (mainRowWithRomSub trace binding i).core =
-          ZiskFv.AirsClean.Main.rowAt (mainOfTable trace.program binding.mainTable) i.val := by
+          ZiskFv.AirsClean.Main.rowAt (mainOfTable trace.program trace.mainTable) i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_store_pc
   let arith_mem :
       ZiskFv.Compliance.ExternalArithMemoryWitness
-        (mainOfTable trace.program binding.mainTable) i.val
+        (mainOfTable trace.program trace.mainTable) i.val
         (busSub trace binding i execRow).e2 :=
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -779,7 +779,7 @@ theorem construction_remuw_sound_claimed_dead
   -- Delegate to the F4 fullSpec bridge.
   exact equiv_REMUW_of_fullSpec_claimed_dead
     (binding.stateAt i) remuw_input r1 r2 rd (busSub trace binding i execRow)
-    (mainOfTable trace.program binding.mainTable) i.val
+    (mainOfTable trace.program trace.mainTable) i.val
     (remuwArow trace binding i h_main_active h_main_op)
     pins h_match_primary promises arith_mem bounds
     h_full remainder_bound h_b23 h_c23 h_sext_choice h_rs1_value h_rs2_value

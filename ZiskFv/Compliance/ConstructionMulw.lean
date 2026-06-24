@@ -146,9 +146,9 @@ def vOfMulwRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
 noncomputable def mulwArow
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := exists_arithMul_provider_row_matches_primary_of_mulw_from_binding
     trace binding i h_main_active h_main_op
@@ -172,9 +172,9 @@ theorem fullSpec_rowAt_vOfMulwRow
 theorem mulwArow_fullSpec_row
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
     ZiskFv.AirsClean.ArithMul.FullSpec (mulwArow trace binding i h_main_active h_main_op) := by
   unfold mulwArow
   set H := exists_arithMul_provider_row_matches_primary_of_mulw_from_binding
@@ -190,9 +190,9 @@ theorem mulwArow_fullSpec_row
 theorem mulwArow_fullSpec
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
     ZiskFv.AirsClean.ArithMul.FullSpec
       (rowAt (vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)) 0) :=
   fullSpec_rowAt_vOfMulwRow
@@ -232,11 +232,11 @@ theorem match_opBus_row_Arith_vOfMulwRow
 theorem mulwArow_match_row
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
     matches_entry
-      (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val)
+      (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
           (mulwArow trace binding i h_main_active h_main_op)) 1) := by
@@ -263,9 +263,9 @@ theorem mulwArow_match_row
 theorem mulwArow_mode_pins
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
     (mulwArow trace binding i h_main_active h_main_op).flags.div = 0
       ∧ (mulwArow trace binding i h_main_active h_main_op).flags.main_mul = 1
       ∧ (mulwArow trace binding i h_main_active h_main_op).flags.main_div = 0 := by
@@ -279,8 +279,8 @@ theorem mulwArow_mode_pins
     have h_match := mulwArow_match_row trace binding i h_main_active h_main_op
     have h_op := h_match.2.1
     rw [ZiskFv.AirsClean.ArithMul.primaryOpBusMessage_toEntry_op,
-        show (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val).op
-          = (mainOfTable trace.program binding.mainTable).op i.val from rfl,
+        show (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val).op
+          = (mainOfTable trace.program trace.mainTable).op i.val from rfl,
         h_main_op] at h_op
     exact h_op.symm
   exact ZiskFv.AirsClean.ArithTableProjections.Mul.mulw_mode_pins_of_row
@@ -292,11 +292,11 @@ theorem mulwArow_mode_pins
 theorem mulwArow_match
     (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W) :
     matches_entry
-      (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val)
+      (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithMul.opBus_row_Arith
         (vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)) 0) := by
   obtain ⟨h_div, h_main_mul, h_main_div⟩ :=
@@ -319,11 +319,11 @@ theorem construction_mulw_sound_claimed_dead
     (r1 r2 rd : regidx)
     -- (b) decode pins
     (h_main_op :
-      (mainOfTable trace.program binding.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W)
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W)
     (h_main_active :
-      (mainOfTable trace.program binding.mainTable).is_external_op i.val = 1)
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_store_pc :
-      (mainOfTable trace.program binding.mainTable).store_pc i.val = 0)
+      (mainOfTable trace.program trace.mainTable).store_pc i.val = 0)
     -- (b) Sail reads + operands
     (h_input_r1 :
       read_xreg (regidx_to_fin r1) (binding.stateAt i)
@@ -400,35 +400,35 @@ theorem construction_mulw_sound_claimed_dead
   -- (a) op-bus match against `opBus_row_Arith v 0`, derived via the Layer-A
   -- keep-arithMul balance wrapper.
   have h_match_primary :
-      matches_entry (opBus_row_Main (mainOfTable trace.program binding.mainTable) i.val)
+      matches_entry (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
         (ZiskFv.Airs.ArithMul.opBus_row_Arith
           (vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)) 0) :=
     mulwArow_match trace binding i h_main_active h_main_op
   -- decode pins bundle
   let pins :
       ZiskFv.Compliance.MainRowPins
-        (mainOfTable trace.program binding.mainTable) i.val 1 OP_MUL_W :=
+        (mainOfTable trace.program trace.mainTable) i.val 1 OP_MUL_W :=
     ⟨h_main_active, h_main_op⟩
   -- (a) Main rd-write memory witness, from `store_pc = 0`.
   have h_core_store_pc :
       (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
     have h_row :
         (mainRowWithRomSub trace binding i).core =
-          ZiskFv.AirsClean.Main.rowAt (mainOfTable trace.program binding.mainTable) i.val := by
+          ZiskFv.AirsClean.Main.rowAt (mainOfTable trace.program trace.mainTable) i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_store_pc
   let arith_mem :
       ZiskFv.Compliance.ExternalArithMemoryWitness
-        (mainOfTable trace.program binding.mainTable) i.val
+        (mainOfTable trace.program trace.mainTable) i.val
         (busSub trace binding i execRow).e2 :=
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program binding.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -457,7 +457,7 @@ theorem construction_mulw_sound_claimed_dead
   -- Delegate to the F4 fullSpec wrapper.
   exact equiv_MULW_of_fullSpec
     (binding.stateAt i) mulw_input r1 r2 rd (busSub trace binding i execRow)
-    (mainOfTable trace.program binding.mainTable) i.val
+    (mainOfTable trace.program trace.mainTable) i.val
     (vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)) 0
     pins h_match_primary promises arith_mem
     h_full h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value
