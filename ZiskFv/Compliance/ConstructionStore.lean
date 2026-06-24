@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.ProgramBinding.Wrappers
+import ZiskFv.Compliance.ProviderFromBinding
 import ZiskFv.Compliance.Wrappers.Sb
 import ZiskFv.Compliance.Wrappers.Sh
 import ZiskFv.Compliance.Wrappers.Sw

@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.ProgramBinding.Wrappers
+import ZiskFv.Compliance.ProviderFromBinding
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.Compliance.ConstructionMulhu
 import ZiskFv.Compliance.ConstructionDivu
