@@ -32,11 +32,11 @@ namespace ZiskFv.Compliance
     constructed from the trace inside each `stepStrong_<op>` — nothing is
     caller-supplied beyond the trace itself. -/
 theorem root_soundness
-    (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
-    (rowData : ∀ i : Fin trace.numInstructions, StrongRowConstructionData trace binding i)
-    (h_known_bugs : ∀ i : Fin trace.numInstructions, StepNoKnownDefect trace binding i (rowData i)) :
-    ∀ i : Fin trace.numInstructions, StepComplianceStrong trace binding i (rowData i) :=
-  fun i => stepComplianceStrong_of_rowData trace binding i (rowData i) (h_known_bugs i)
+    (ziskTrace : AcceptedZiskTrace)
+    (sailTrace : SailTrace ziskTrace)
+    (rowData : ∀ i : Fin ziskTrace.numInstructions, StrongRowConstructionData ziskTrace sailTrace i)
+    (h_known_bugs : ∀ i : Fin ziskTrace.numInstructions, StepNoKnownDefect ziskTrace sailTrace i (rowData i)) :
+    ∀ i : Fin ziskTrace.numInstructions, StepComplianceStrong ziskTrace sailTrace i (rowData i) :=
+  fun i => stepComplianceStrong_of_rowData ziskTrace sailTrace i (rowData i) (h_known_bugs i)
 
 end ZiskFv.Compliance
