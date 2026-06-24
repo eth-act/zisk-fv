@@ -1,4 +1,5 @@
-import ZiskFv.Compliance.ProviderFromBinding
+import ZiskFv.Compliance.OpBusProviderMatch
+import ZiskFv.Compliance.SailTrace
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.EquivCore.MulHU
 import ZiskFv.EquivCore.Promises.ArithHelpers
@@ -613,7 +614,7 @@ lemma equiv_MULHU_of_fullSpec_claimed_dead
     operation, as a concrete `ArithMulRow`.  It is the
     `componentWithArithTable.rowInput` of the provider row chosen by the MULHU
     keep-arithMul balance wrapper
-    `exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding`.
+    `exists_arithMul_provider_row_matches_secondary_of_mulhu`.
     Mirrors `mulwArow`. -/
 noncomputable def mulhuArow
     (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
@@ -622,8 +623,8 @@ noncomputable def mulhuArow
     (h_main_op :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
-  let h := exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding
-    trace binding i h_main_active h_main_op
+  let h := exists_arithMul_provider_row_matches_secondary_of_mulhu
+    trace i h_main_active h_main_op
   componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 /-- `FullSpec` of the balance-selected MULHU provider row, derived from the
@@ -636,8 +637,8 @@ theorem mulhuArow_fullSpec_row
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH) :
     ZiskFv.AirsClean.ArithMul.FullSpec (mulhuArow trace binding i h_main_active h_main_op) := by
   unfold mulhuArow
-  set H := exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding
-    trace binding i h_main_active h_main_op with hH
+  set H := exists_arithMul_provider_row_matches_secondary_of_mulhu
+    trace i h_main_active h_main_op with hH
   obtain ⟨_h_pt_mem, h_rest⟩ := H.choose_spec
   obtain ⟨h_pr_mem, h_component, h_spec, _h_match⟩ := h_rest.choose_spec
   exact ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
@@ -690,8 +691,8 @@ theorem mulhuArow_match_row
         (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
           (mulhuArow trace binding i h_main_active h_main_op)) 1) := by
   unfold mulhuArow
-  set H := exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding
-    trace binding i h_main_active h_main_op with hH
+  set H := exists_arithMul_provider_row_matches_secondary_of_mulhu
+    trace i h_main_active h_main_op with hH
   exact H.choose_spec.2.choose_spec.2.2.2
 
 /-- MULHU secondary mode pins on the balance-selected provider row, DERIVED from

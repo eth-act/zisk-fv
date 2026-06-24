@@ -14,7 +14,7 @@ any fact.
 
 Both reuse the op-agnostic infra `busSub` / `mainRowWithRomSub`
 (`ZiskFv/Compliance/ConstructionSub.lean`) and the salvaged logic Layer-A wrapper
-`exists_staticBinary_provider_row_matches_logic_from_binding` (which serves
+`exists_staticBinary_provider_row_matches_logic` (which serves
 AND / OR / XOR, taking the op pin as the disjunction
 `op = OP_AND ∨ op = OP_OR ∨ op = OP_XOR`). The residual budget is identical to
 SUB/AND: EXACTLY `4 + 5 + 4 + 1 + 3 = 17` hypothesis binders plus the genuine
@@ -165,8 +165,8 @@ theorem construction_or_sound_claimed_dead
   -- logic wrapper (serves AND / OR / XOR; op pin given as the OR disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic_from_binding
-      trace binding i h_main_active (Or.inr (Or.inl h_main_op))
+    exists_staticBinary_provider_row_matches_logic
+      trace i h_main_active (Or.inr (Or.inl h_main_op))
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨h_main_active, h_main_op⟩
@@ -360,8 +360,8 @@ theorem construction_xor_sound_claimed_dead
   -- logic wrapper (serves AND / OR / XOR; op pin given as the XOR disjunct).
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic_from_binding
-      trace binding i h_main_active (Or.inr (Or.inr h_main_op))
+    exists_staticBinary_provider_row_matches_logic
+      trace i h_main_active (Or.inr (Or.inr h_main_op))
   -- decode pins bundle
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨h_main_active, h_main_op⟩

@@ -1,4 +1,5 @@
-import ZiskFv.Compliance.ProviderFromBinding
+import ZiskFv.Compliance.OpBusProviderMatch
+import ZiskFv.Compliance.SailTrace
 import ZiskFv.Compliance.ConstructionSub
 import ZiskFv.Compliance.Wrappers.Addw
 import ZiskFv.Compliance.Wrappers.Subw
@@ -26,7 +27,7 @@ The W families differ from the 64-bit SUB construction on exactly these points:
    lanes collapse to `0` (provider high bytes pinned zero); the 32-bit operand is
    sourced from the `a_lo`/`b_lo` conjunct only.
 2. **op-bus provider match** via the salvaged W Layer-A wrapper
-   `exists_staticBinary_provider_row_matches_w_from_binding` (op pin disjunction
+   `exists_staticBinary_provider_row_matches_w` (op pin disjunction
    `OP_ADD_W ∨ OP_SUB_W`).
 3. **lane → Sail binding** via the new m32 = 1 lane lemmas, producing the 32-bit
    `extractLsb _ 31 0` form `binaryRowA32 row % 2^32` (NOT the 64-bit
@@ -153,8 +154,8 @@ theorem construction_subw_sound_claimed_dead
   -- (a) op-bus provider match, derived from `trace.channels_balanced`. SUBW = `Or.inr`.
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_w_from_binding
-      trace binding i h_main_active (Or.inr h_main_op)
+    exists_staticBinary_provider_row_matches_w
+      trace i h_main_active (Or.inr h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB_W :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
@@ -328,8 +329,8 @@ theorem construction_addw_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_w_from_binding
-      trace binding i h_main_active (Or.inl h_main_op)
+    exists_staticBinary_provider_row_matches_w
+      trace i h_main_active (Or.inl h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
@@ -500,8 +501,8 @@ theorem construction_addiw_sound_claimed_dead
   let bus := busSub trace binding i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_w_from_binding
-      trace binding i h_main_active (Or.inl h_main_op)
+    exists_staticBinary_provider_row_matches_w
+      trace i h_main_active (Or.inl h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
