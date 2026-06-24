@@ -79,8 +79,8 @@ set_option maxHeartbeats 2000000
     * (b) RANGE pins (2): `h_pc_bound`, `h_pc_offset_lt_2_32`
     * (c) exec artifacts: the `execRow` ∀-binder + its shape fields. -/
 theorem construction_jal_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
@@ -122,8 +122,8 @@ theorem construction_jal_sound_claimed_dead
         = nextPC_val)
     -- (b) Sail-value bridges + bundle facts
     (h_input_rd : jal_input.rd = regidx_to_fin rd)
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some jal_input.PC)
-    (h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val)
+    (h_input_pc : (binding i).regs.get? Register.PC = .some jal_input.PC)
+    (h_input_misa : (binding i).regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
     (h_nextPC_option : (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
@@ -134,10 +134,10 @@ theorem construction_jal_sound_claimed_dead
     -- (b) RANGE pins
     (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) :
-    execute_instruction (instruction.JAL (imm, rd)) (binding.stateAt i)
-      = (bus_effect execRow [eRdLui trace binding i] (binding.stateAt i)).2 := by
+    execute_instruction (instruction.JAL (imm, rd)) (binding i)
+      = (bus_effect execRow [eRdLui trace binding i] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the JAL Main constraint subset.
   have h_spec := mainSpec_at trace binding i
@@ -209,8 +209,8 @@ theorem construction_jal_sound_claimed_dead
     * (b) RANGE pins (2): `h_pc_bound`, `h_pc_offset_lt_2_32`
     * (c) exec artifacts: the `execRow` ∀-binder + its shape fields. -/
 theorem construction_jalr_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (jalr_input : PureSpec.JalrInput)
     (imm : BitVec 12)
@@ -248,20 +248,20 @@ theorem construction_jalr_sound_claimed_dead
         = nextPC_val)
     -- (b) Sail-value bridges + bundle facts
     (h_input_rd : jalr_input.rd = regidx_to_fin rd)
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some jalr_input.PC)
-    (h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val)
+    (h_input_pc : (binding i).regs.get? Register.PC = .some jalr_input.PC)
+    (h_input_misa : (binding i).regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
     (h_nextPC_option : (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
     (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr)
     -- (b) Sail reads
     (h_input_imm : jalr_input.imm = imm)
-    (h_input_rs1 : read_xreg (regidx_to_fin rs1) (binding.stateAt i)
-      = EStateM.Result.ok jalr_input.rs1_val (binding.stateAt i))
-    (h_cur_privilege : Sail.readReg Register.cur_privilege (binding.stateAt i)
-      = EStateM.Result.ok Privilege.Machine (binding.stateAt i))
-    (h_mseccfg : Sail.readReg Register.mseccfg (binding.stateAt i)
-      = EStateM.Result.ok mseccfg (binding.stateAt i))
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) (binding i)
+      = EStateM.Result.ok jalr_input.rs1_val (binding i))
+    (h_cur_privilege : Sail.readReg Register.cur_privilege (binding i)
+      = EStateM.Result.ok Privilege.Machine (binding i))
+    (h_mseccfg : Sail.readReg Register.mseccfg (binding i)
+      = EStateM.Result.ok mseccfg (binding i))
     -- (b) link bridge (computed target)
     (h_link_bridge :
       ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val
@@ -273,10 +273,10 @@ theorem construction_jalr_sound_claimed_dead
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
     (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) (binding.stateAt i)
-      = (bus_effect execRow [eRdLui trace binding i] (binding.stateAt i)).2 := by
+        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) (binding i)
+      = (bus_effect execRow [eRdLui trace binding i] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the JALR Main constraint subset.
   have h_spec := mainSpec_at trace binding i

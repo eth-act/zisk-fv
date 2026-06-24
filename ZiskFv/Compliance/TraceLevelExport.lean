@@ -106,10 +106,10 @@ vacuous):
 
 ## Non-vacuity
 
-The hypotheses are SATISFIABLE for a real trace.  `trace : AcceptedTrace` is the
+The hypotheses are SATISFIABLE for a real trace.  `trace : AcceptedZiskTrace` is the
 committed full-ensemble witness; each `rowData i` carries TRUE facts of the real
 row `mainOfTable trace.program trace.mainTable` at index `i` (decode pins, lane
-bridges, Sail reads of `binding.stateAt i`), and `execRow` is a genuine
+bridges, Sail reads of `binding i`), and `execRow` is a genuine
 top-level ∀-binder inside each arm (the real execution-bus row).  No arm contains
 a contradictory hypothesis pair; no `False.elim` is used.
 

@@ -299,7 +299,7 @@ private lemma remuw_carry_bounds_claimed_dead
     `exists_arithMul_provider_row_matches_primary_of_remuw_from_binding`.
     Mirrors `remuArow` / `divuwArow`. -/
 noncomputable def remuwArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -312,7 +312,7 @@ noncomputable def remuwArow
 /-- `FullSpec` of the balance-selected REMUW provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem remuwArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -330,7 +330,7 @@ theorem remuwArow_fullSpec_row
 /-- The op-bus match of the balance-selected REMUW provider row against the Main
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. -/
 theorem remuwArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -351,7 +351,7 @@ theorem remuwArow_match_row
     off the BARE provider `ArithMulRow` via `remuw_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem remuwArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -383,7 +383,7 @@ theorem remuwArow_mode_pins
     `m32`-agnostic, so the REMU secondary bridge
     `match_opBus_row_ArithDivSecondary_vOfDivuRow` applies verbatim). -/
 theorem remuwArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -633,8 +633,8 @@ lemma equiv_REMUW_of_fullSpec_claimed_dead
     encoding on bytes 4..7, class #4 — the same residuals the canonical
     `equiv_REMUW` carries). -/
 theorem construction_remuw_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (remuw_input : PureSpec.RemuwInput)
     (r1 r2 rd : regidx)
@@ -647,12 +647,12 @@ theorem construction_remuw_sound_claimed_dead
       (mainOfTable trace.program trace.mainTable).store_pc i.val = 0)
     -- (b) Sail reads + operands
     (h_input_r1 :
-      read_xreg (regidx_to_fin r1) (binding.stateAt i)
-        = EStateM.Result.ok remuw_input.r1_val (binding.stateAt i))
+      read_xreg (regidx_to_fin r1) (binding i)
+        = EStateM.Result.ok remuw_input.r1_val (binding i))
     (h_input_r2 :
-      read_xreg (regidx_to_fin r2) (binding.stateAt i)
-        = EStateM.Result.ok remuw_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some remuw_input.PC)
+      read_xreg (regidx_to_fin r2) (binding i)
+        = EStateM.Result.ok remuw_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some remuw_input.PC)
     (h_input_rd : remuw_input.rd = regidx_to_fin rd)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -710,11 +710,11 @@ theorem construction_remuw_sound_claimed_dead
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) (binding i)
       = (bus_effect (busSub trace binding i execRow).exec_row
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
   -- (a) Arith witnesses derived from balance: FullSpec.
   have h_full :
       ZiskFv.AirsClean.ArithMul.FullSpec
@@ -757,7 +757,7 @@ theorem construction_remuw_sound_claimed_dead
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- promises bundle: Sail reads + exec artifacts as binders; MemBus shape by rfl.
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      (binding.stateAt i) remuw_input.r1_val remuw_input.r2_val remuw_input.rd remuw_input.PC
+      (binding i) remuw_input.r1_val remuw_input.r2_val remuw_input.rd remuw_input.PC
       (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
       r1 r2 rd (busSub trace binding i execRow).exec_row (busSub trace binding i execRow).e0
       (busSub trace binding i execRow).e1 (busSub trace binding i execRow).e2 :=
@@ -778,7 +778,7 @@ theorem construction_remuw_sound_claimed_dead
       rd_idx := h_rd_idx }
   -- Delegate to the F4 fullSpec bridge.
   exact equiv_REMUW_of_fullSpec_claimed_dead
-    (binding.stateAt i) remuw_input r1 r2 rd (busSub trace binding i execRow)
+    (binding i) remuw_input r1 r2 rd (busSub trace binding i execRow)
     (mainOfTable trace.program trace.mainTable) i.val
     (remuwArow trace binding i h_main_active h_main_op)
     pins h_match_primary promises arith_mem bounds

@@ -1,5 +1,5 @@
-0 :: trace :: ZiskFv.Compliance.AcceptedTrace
-1 :: binding :: ZiskFv.Compliance.ProgramBinding trace
+0 :: trace :: ZiskFv.Compliance.AcceptedZiskTrace
+1 :: binding :: ZiskFv.Compliance.SailTrace trace
 2 :: rowData :: (i : Fin trace.numInstructions) → ZiskFv.Compliance.StrongRowConstructionData trace binding i
 3 :: h_known_bugs :: ∀ (i : Fin trace.numInstructions), ZiskFv.Compliance.StepNoKnownDefect trace binding i (rowData i)
 4 :: i :: Fin trace.numInstructions

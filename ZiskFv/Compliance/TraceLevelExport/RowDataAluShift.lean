@@ -44,7 +44,7 @@ set_option maxHeartbeats 8000000
 /-- Irreducible per-row residuals for the `sub` archetype — the binders of
     `construction_sub_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sub
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   sub_input : PureSpec.SubInput
   r1 : regidx
   r2 : regidx
@@ -62,32 +62,32 @@ structure RowData_sub
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok sub_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok sub_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok sub_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sub_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok sub_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some sub_input.PC
   h_input_rd : sub_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -104,7 +104,7 @@ structure RowData_sub
 /-- Irreducible per-row residuals for the `and` archetype — the binders of
     `construction_and_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_and
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   and_input : PureSpec.AndInput
   r1 : regidx
   r2 : regidx
@@ -122,32 +122,32 @@ structure RowData_and
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok and_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok and_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok and_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some and_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok and_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some and_input.PC
   h_input_rd : and_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -164,7 +164,7 @@ structure RowData_and
 /-- Irreducible per-row residuals for the `or` archetype — the binders of
     `construction_or_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_or
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   or_input : PureSpec.OrInput
   r1 : regidx
   r2 : regidx
@@ -182,32 +182,32 @@ structure RowData_or
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok or_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok or_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok or_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some or_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok or_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some or_input.PC
   h_input_rd : or_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -224,7 +224,7 @@ structure RowData_or
 /-- Irreducible per-row residuals for the `xor` archetype — the binders of
     `construction_xor_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_xor
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   xor_input : PureSpec.XorInput
   r1 : regidx
   r2 : regidx
@@ -242,32 +242,32 @@ structure RowData_xor
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok xor_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok xor_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok xor_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some xor_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok xor_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some xor_input.PC
   h_input_rd : xor_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -284,7 +284,7 @@ structure RowData_xor
 /-- Irreducible per-row residuals for the `slt` archetype — the binders of
     `construction_slt_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   slt_input : PureSpec.SltInput
   r1 : regidx
   r2 : regidx
@@ -302,32 +302,32 @@ structure RowData_slt
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok slt_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok slt_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok slt_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slt_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok slt_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some slt_input.PC
   h_input_rd : slt_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -344,7 +344,7 @@ structure RowData_slt
 /-- Irreducible per-row residuals for the `sltu` archetype — the binders of
     `construction_sltu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sltu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   sltu_input : PureSpec.SltuInput
   r1 : regidx
   r2 : regidx
@@ -362,32 +362,32 @@ structure RowData_sltu
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok sltu_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok sltu_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok sltu_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sltu_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok sltu_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some sltu_input.PC
   h_input_rd : sltu_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -404,7 +404,7 @@ structure RowData_sltu
 /-- Irreducible per-row residuals for the `andi` archetype — the binders of
     `construction_andi_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_andi
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   andi_input : PureSpec.AndiInput
   r1 : regidx
   rd : regidx
@@ -422,20 +422,20 @@ structure RowData_andi
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok andi_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok andi_input.r1_val (binding i)
   h_input_imm : andi_input.imm = imm
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some andi_input.PC
+  h_input_pc : (binding i).regs.get? Register.PC = .some andi_input.PC
   h_input_rd : andi_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_andi_subset : itype_imm_subset_holds_main
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -455,7 +455,7 @@ structure RowData_andi
 /-- Irreducible per-row residuals for the `ori` archetype — the binders of
     `construction_ori_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_ori
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   ori_input : PureSpec.OriInput
   r1 : regidx
   rd : regidx
@@ -473,20 +473,20 @@ structure RowData_ori
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok ori_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok ori_input.r1_val (binding i)
   h_input_imm : ori_input.imm = imm
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some ori_input.PC
+  h_input_pc : (binding i).regs.get? Register.PC = .some ori_input.PC
   h_input_rd : ori_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_ori_subset : itype_imm_subset_holds_main
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -506,7 +506,7 @@ structure RowData_ori
 /-- Irreducible per-row residuals for the `xori` archetype — the binders of
     `construction_xori_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_xori
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   xori_input : PureSpec.XoriInput
   r1 : regidx
   rd : regidx
@@ -524,20 +524,20 @@ structure RowData_xori
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok xori_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok xori_input.r1_val (binding i)
   h_input_imm : xori_input.imm = imm
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some xori_input.PC
+  h_input_pc : (binding i).regs.get? Register.PC = .some xori_input.PC
   h_input_rd : xori_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_xori_subset : itype_imm_subset_holds_main
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -557,7 +557,7 @@ structure RowData_xori
 /-- Irreducible per-row residuals for the `slti` archetype — the binders of
     `construction_slti_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slti
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   slti_input : PureSpec.SltiInput
   r1 : regidx
   rd : regidx
@@ -575,20 +575,20 @@ structure RowData_slti
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok slti_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok slti_input.r1_val (binding i)
   h_input_imm : slti_input.imm = imm
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slti_input.PC
+  h_input_pc : (binding i).regs.get? Register.PC = .some slti_input.PC
   h_input_rd : slti_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_slti_subset : itype_imm_subset_holds_main
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -608,7 +608,7 @@ structure RowData_slti
 /-- Irreducible per-row residuals for the `sltiu` archetype — the binders of
     `construction_sltiu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sltiu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   sltiu_input : PureSpec.SltiuInput
   r1 : regidx
   rd : regidx
@@ -626,20 +626,20 @@ structure RowData_sltiu
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok sltiu_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok sltiu_input.r1_val (binding i)
   h_input_imm : sltiu_input.imm = imm
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sltiu_input.PC
+  h_input_pc : (binding i).regs.get? Register.PC = .some sltiu_input.PC
   h_input_rd : sltiu_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_sltiu_subset : itype_imm_subset_holds_main
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -659,7 +659,7 @@ structure RowData_sltiu
 /-- Irreducible per-row residuals for the `sll` archetype — the binders of
     `construction_sll_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sll
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   sll_input : PureSpec.SllInput
   r1 : regidx
   r2 : regidx
@@ -677,32 +677,32 @@ structure RowData_sll
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok sll_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok sll_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok sll_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sll_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok sll_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some sll_input.PC
   h_input_rd : sll_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -719,7 +719,7 @@ structure RowData_sll
 /-- Irreducible per-row residuals for the `srl` archetype — the binders of
     `construction_srl_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srl
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   srl_input : PureSpec.SrlInput
   r1 : regidx
   r2 : regidx
@@ -737,32 +737,32 @@ structure RowData_srl
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok srl_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok srl_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok srl_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srl_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok srl_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some srl_input.PC
   h_input_rd : srl_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -779,7 +779,7 @@ structure RowData_srl
 /-- Irreducible per-row residuals for the `sra` archetype — the binders of
     `construction_sra_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sra
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   sra_input : PureSpec.SraInput
   r1 : regidx
   r2 : regidx
@@ -797,32 +797,32 @@ structure RowData_sra
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok sra_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok sra_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok sra_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sra_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok sra_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some sra_input.PC
   h_input_rd : sra_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -839,7 +839,7 @@ structure RowData_sra
 /-- Irreducible per-row residuals for the `slli` archetype — the binders of
     `construction_slli_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slli
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   slli_input : PureSpec.SlliInput
   r1 : regidx
   rd : regidx
@@ -857,20 +857,20 @@ structure RowData_slli
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok slli_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok slli_input.r1_val (binding i)
   h_input_shamt : slli_input.shamt = shamt
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slli_input.PC
+  h_input_pc : (binding i).regs.get? Register.PC = .some slli_input.PC
   h_input_rd : slli_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -890,7 +890,7 @@ structure RowData_slli
 /-- Irreducible per-row residuals for the `srli` archetype — the binders of
     `construction_srli_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srli
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   srli_input : PureSpec.SrliInput
   r1 : regidx
   rd : regidx
@@ -908,20 +908,20 @@ structure RowData_srli
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok srli_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok srli_input.r1_val (binding i)
   h_input_shamt : srli_input.shamt = shamt
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srli_input.PC
+  h_input_pc : (binding i).regs.get? Register.PC = .some srli_input.PC
   h_input_rd : srli_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -941,7 +941,7 @@ structure RowData_srli
 /-- Irreducible per-row residuals for the `srai` archetype — the binders of
     `construction_srai_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srai
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   srai_input : PureSpec.SraiInput
   r1 : regidx
   rd : regidx
@@ -959,20 +959,20 @@ structure RowData_srai
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok srai_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok srai_input.r1_val (binding i)
   h_input_shamt : srai_input.shamt = shamt
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srai_input.PC
+  h_input_pc : (binding i).regs.get? Register.PC = .some srai_input.PC
   h_input_rd : srai_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -992,7 +992,7 @@ structure RowData_srai
 /-- Irreducible per-row residuals for the `sllw` archetype — the binders of
     `construction_sllw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sllw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   sllw_input : PureSpec.SllwInput
   r1 : regidx
   r2 : regidx
@@ -1010,32 +1010,32 @@ structure RowData_sllw
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok sllw_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok sllw_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok sllw_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sllw_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok sllw_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some sllw_input.PC
   h_input_rd : sllw_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1052,7 +1052,7 @@ structure RowData_sllw
 /-- Irreducible per-row residuals for the `srlw` archetype — the binders of
     `construction_srlw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srlw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   srlw_input : PureSpec.SrlwInput
   r1 : regidx
   r2 : regidx
@@ -1070,32 +1070,32 @@ structure RowData_srlw
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok srlw_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok srlw_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok srlw_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srlw_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok srlw_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some srlw_input.PC
   h_input_rd : srlw_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1112,7 +1112,7 @@ structure RowData_srlw
 /-- Irreducible per-row residuals for the `sraw` archetype — the binders of
     `construction_sraw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sraw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   sraw_input : PureSpec.SrawInput
   r1 : regidx
   r2 : regidx
@@ -1130,32 +1130,32 @@ structure RowData_sraw
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok sraw_input.r1_val (binding.stateAt i)
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok sraw_input.r1_val (binding i)
   h_input_r2 :
-    read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok sraw_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sraw_input.PC
+    read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok sraw_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some sraw_input.PC
   h_input_rd : sraw_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   h_b_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r2))
   execRow : List (Interaction.ExecutionBusEntry FGL)
   h_exec_len : (busSub trace binding i execRow).exec_row.length = 2
@@ -1172,7 +1172,7 @@ structure RowData_sraw
 /-- Irreducible per-row residuals for the `slliw` archetype — the binders of
     `construction_slliw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slliw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   slliw_input : PureSpec.SlliwInput
   r1 : regidx
   rd : regidx
@@ -1189,19 +1189,19 @@ structure RowData_slliw
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok slliw_input.r1_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some slliw_input.PC
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok slliw_input.r1_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some slliw_input.PC
   h_input_rd : slliw_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -1221,7 +1221,7 @@ structure RowData_slliw
 /-- Irreducible per-row residuals for the `srliw` archetype — the binders of
     `construction_srliw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srliw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   srliw_input : PureSpec.SrliwInput
   r1 : regidx
   rd : regidx
@@ -1238,19 +1238,19 @@ structure RowData_srliw
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok srliw_input.r1_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some srliw_input.PC
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok srliw_input.r1_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some srliw_input.PC
   h_input_rd : srliw_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -1270,7 +1270,7 @@ structure RowData_srliw
 /-- Irreducible per-row residuals for the `sraiw` archetype — the binders of
     `construction_sraiw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sraiw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   sraiw_input : PureSpec.SraiwInput
   r1 : regidx
   rd : regidx
@@ -1287,19 +1287,19 @@ structure RowData_sraiw
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   h_input_r1 :
-    read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok sraiw_input.r1_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sraiw_input.PC
+    read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok sraiw_input.r1_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some sraiw_input.PC
   h_input_rd : sraiw_input.rd = regidx_to_fin rd
   h_a_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =

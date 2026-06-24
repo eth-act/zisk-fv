@@ -77,7 +77,7 @@ set_option maxHeartbeats 2000000
 /-- Standalone projection over the public byte-chain lemmas.
 
     This was a `private` helper inside the (now-stripped) `construction_<op>`
-    block of `AcceptedTrace.lean`; it survives here because the sound
+    block of `AcceptedZiskTrace.lean`; it survives here because the sound
     construction below is the only remaining consumer. It is a pure projection
     (`rcases`/`exact`) over a public structure — no trust content. -/
 theorem consumerByteMatchOfChainWf_local
@@ -119,7 +119,7 @@ theorem allByteMatchesOfStaticOut64_local
     real Main table.  Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 noncomputable def mainRowWithRomSub
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program trace.mainTable i.val
@@ -129,7 +129,7 @@ noncomputable def mainRowWithRomSub
     `m0..m2` shape facts are then `rfl`. -/
 @[reducible]
 noncomputable def busSub
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (execRow : List (Interaction.ExecutionBusEntry FGL)) :
     ZiskFv.Compliance.BusRows where
   exec_row := execRow
@@ -158,8 +158,8 @@ noncomputable def busSub
     `trace.channels_balanced`), row shape, circuit-internal rd arithmetic, the MemBus
     `m0..m2` shape, `h_lane_rd`, and the lane→Sail binding facts. -/
 theorem construction_sub_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
@@ -178,33 +178,33 @@ theorem construction_sub_sound_claimed_dead
         i.val = 0)
     -- (b) Sail reads + operands
     (h_input_r1 :
-      read_xreg (regidx_to_fin r1) (binding.stateAt i)
-        = EStateM.Result.ok sub_input.r1_val (binding.stateAt i))
+      read_xreg (regidx_to_fin r1) (binding i)
+        = EStateM.Result.ok sub_input.r1_val (binding i))
     (h_input_r2 :
-      read_xreg (regidx_to_fin r2) (binding.stateAt i)
-        = EStateM.Result.ok sub_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some sub_input.PC)
+      read_xreg (regidx_to_fin r2) (binding i)
+        = EStateM.Result.ok sub_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some sub_input.PC)
     (h_input_rd : sub_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
     (h_a_lo_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
     (h_b_lo_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
     (h_b_hi_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
     -- (c) exec artifacts: the exec row is a genuine top-level binder
     -- (foreign `bus_effect`/`ExecutionBusEntry` bookkeeping, no ZisK
@@ -225,14 +225,14 @@ theorem construction_sub_sound_claimed_dead
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (r2, r1, rd, rop.SUB))) (binding.stateAt i)
+        (instruction.RTYPE (r2, r1, rd, rop.SUB))) (binding i)
       = (bus_effect (busSub trace binding i execRow).exec_row
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
   -- abbreviations
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i execRow
   -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,

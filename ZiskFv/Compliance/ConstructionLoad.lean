@@ -100,7 +100,7 @@ set_option maxHeartbeats 2000000
     the real Main table. Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 noncomputable def mainRowWithRomLd
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program trace.mainTable i.val
@@ -112,7 +112,7 @@ noncomputable def mainRowWithRomLd
     `matches_memory_entry_refl`. -/
 @[reducible]
 noncomputable def busLd
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (execRow : List (Interaction.ExecutionBusEntry FGL)) :
     ZiskFv.Compliance.BusRows where
   exec_row := execRow
@@ -126,7 +126,7 @@ noncomputable def busLd
 /-- The Main row provenance at trace index `i`: `mainRowWithRomLd`'s `.core`
     equals the honest `rowAt (mainOfTable …) i`. Shared by all seven loads. -/
 theorem mainRowWithRomLd_core
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
     (mainRowWithRomLd trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -152,8 +152,8 @@ theorem mainRowWithRomLd_core
       provider row backing the read. Not balance-derivable here (the
       Mem-channel balance leaves a 5-way provider disjunction). -/
 theorem construction_ld_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (ld_input : PureSpec.LdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -171,7 +171,7 @@ theorem construction_ld_sound_claimed_dead
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     -- (b) Sail-side opcode assumptions
-    (h_opcode_assumptions : PureSpec.ld_state_assumptions ld_input (binding.stateAt i))
+    (h_opcode_assumptions : PureSpec.ld_state_assumptions ld_input (binding i))
     -- (b) operand bridges (load address + rd index)
     (h_addr1 :
       (mainRowWithRomLd trace binding i).rom.addr1.toNat =
@@ -185,7 +185,7 @@ theorem construction_ld_sound_claimed_dead
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
     (h_risc_v_assumptions :
-      RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+      RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
     (h_exec_len : (busLd trace binding i execRow).exec_row.length = 2)
     (h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1)
     (h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1)
@@ -195,7 +195,7 @@ theorem construction_ld_sound_claimed_dead
         = (PureSpec.execute_LOADD_pure ld_input).nextPC)
     -- (b) #76 memory residual: loaded bytes ↔ Sail memory (irreducible).
     (h_memory_timeline :
-      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding i)
         (busLd trace binding i execRow).e1)
     -- (b) #76 Mem-AIR provider row facts (irreducible).
     (h_mem_match :
@@ -210,13 +210,13 @@ theorem construction_ld_sound_claimed_dead
       regidx.Regidx ld_input.rd,
       false,
       8
-    )) (binding.stateAt i)
+    )) (binding i)
       = (bus_effect (busLd trace binding i execRow).exec_row
           [ (busLd trace binding i execRow).e0
           , (busLd trace binding i execRow).e1
-          , (busLd trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busLd trace binding i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busLd trace binding i execRow
   -- (a) Main row provenance + per-row Spec + store_pc lifted to the row.
   have h_core : (mainRowWithRomLd trace binding i).core =
@@ -296,8 +296,8 @@ theorem construction_ld_sound_claimed_dead
       backing the narrow read (3 MemAlign validators + core/lookup + the
       `SubdoublewordLoadProviderWitness`). Not balance-derivable here. -/
 theorem construction_lbu_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -324,7 +324,7 @@ theorem construction_lbu_sound_claimed_dead
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
         i.val = (1 : FGL))
     -- (b) Sail-side opcode assumptions
-    (h_opcode_assumptions : PureSpec.lbu_state_assumptions lbu_input (binding.stateAt i))
+    (h_opcode_assumptions : PureSpec.lbu_state_assumptions lbu_input (binding i))
     -- (b) operand bridges (load address + rd index)
     (h_addr1 :
       (mainRowWithRomLd trace binding i).rom.addr1.toNat =
@@ -336,7 +336,7 @@ theorem construction_lbu_sound_claimed_dead
       lbu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val)
     (h_risc_v_assumptions :
-      RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+      RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
     (h_exec_len : (busLd trace binding i execRow).exec_row.length = 2)
     (h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1)
     (h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1)
@@ -346,7 +346,7 @@ theorem construction_lbu_sound_claimed_dead
         = (PureSpec.execute_LOADBU_pure lbu_input).nextPC)
     -- (b) #76 memory residual: loaded bytes ↔ Sail memory (irreducible).
     (h_memory_timeline :
-      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding i)
         (busLd trace binding i execRow).e1)
     -- (b) #76 Mem-AIR provider row facts (irreducible).
     (h_mem_match :
@@ -361,13 +361,13 @@ theorem construction_lbu_sound_claimed_dead
       regidx.Regidx lbu_input.rd,
       true,
       1
-    )) (binding.stateAt i)
+    )) (binding i)
       = (bus_effect (busLd trace binding i execRow).exec_row
           [ (busLd trace binding i execRow).e0
           , (busLd trace binding i execRow).e1
-          , (busLd trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busLd trace binding i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busLd trace binding i execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
@@ -430,8 +430,8 @@ theorem construction_lbu_sound_claimed_dead
     `construction_lbu_sound`: width literal `2`; `h_width = 2`; `LbuInput →
     LhuInput`; `LOADBU → LOADHU`. Same #76 residual budget. -/
 theorem construction_lhu_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (lhu_input : PureSpec.LhuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -453,7 +453,7 @@ theorem construction_lhu_sound_claimed_dead
     (h_width :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
         i.val = (2 : FGL))
-    (h_opcode_assumptions : PureSpec.lhu_state_assumptions lhu_input (binding.stateAt i))
+    (h_opcode_assumptions : PureSpec.lhu_state_assumptions lhu_input (binding i))
     (h_addr1 :
       (mainRowWithRomLd trace binding i).rom.addr1.toNat =
         lhu_input.r1_val.toNat + (BitVec.signExtend 64 lhu_input.imm).toNat)
@@ -464,7 +464,7 @@ theorem construction_lhu_sound_claimed_dead
       lhu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val)
     (h_risc_v_assumptions :
-      RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+      RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
     (h_exec_len : (busLd trace binding i execRow).exec_row.length = 2)
     (h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1)
     (h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1)
@@ -473,7 +473,7 @@ theorem construction_lhu_sound_claimed_dead
           (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_LOADHU_pure lhu_input).nextPC)
     (h_memory_timeline :
-      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding i)
         (busLd trace binding i execRow).e1)
     (h_mem_match :
       ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
@@ -487,13 +487,13 @@ theorem construction_lhu_sound_claimed_dead
       regidx.Regidx lhu_input.rd,
       true,
       2
-    )) (binding.stateAt i)
+    )) (binding i)
       = (bus_effect (busLd trace binding i execRow).exec_row
           [ (busLd trace binding i execRow).e0
           , (busLd trace binding i execRow).e1
-          , (busLd trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busLd trace binding i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busLd trace binding i execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
@@ -556,8 +556,8 @@ theorem construction_lhu_sound_claimed_dead
     `construction_lhu_sound`: width literal `4`; `h_width = 4`; `LhuInput →
     LwuInput`; `LOADHU → LOADWU`. Same #76 residual budget. -/
 theorem construction_lwu_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (lwu_input : PureSpec.LwuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -579,7 +579,7 @@ theorem construction_lwu_sound_claimed_dead
     (h_width :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
         i.val = (4 : FGL))
-    (h_opcode_assumptions : PureSpec.lwu_state_assumptions lwu_input (binding.stateAt i))
+    (h_opcode_assumptions : PureSpec.lwu_state_assumptions lwu_input (binding i))
     (h_addr1 :
       (mainRowWithRomLd trace binding i).rom.addr1.toNat =
         lwu_input.r1_val.toNat + (BitVec.signExtend 64 lwu_input.imm).toNat)
@@ -590,7 +590,7 @@ theorem construction_lwu_sound_claimed_dead
       lwu_input.rd.toNat =
         (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val)
     (h_risc_v_assumptions :
-      RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+      RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
     (h_exec_len : (busLd trace binding i execRow).exec_row.length = 2)
     (h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1)
     (h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1)
@@ -599,7 +599,7 @@ theorem construction_lwu_sound_claimed_dead
           (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_LOADWU_pure lwu_input).nextPC)
     (h_memory_timeline :
-      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding i)
         (busLd trace binding i execRow).e1)
     (h_mem_match :
       ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
@@ -613,13 +613,13 @@ theorem construction_lwu_sound_claimed_dead
       regidx.Regidx lwu_input.rd,
       true,
       4
-    )) (binding.stateAt i)
+    )) (binding i)
       = (bus_effect (busLd trace binding i execRow).exec_row
           [ (busLd trace binding i execRow).e0
           , (busLd trace binding i execRow).e1
-          , (busLd trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busLd trace binding i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busLd trace binding i execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
@@ -693,8 +693,8 @@ theorem construction_lwu_sound_claimed_dead
     exists; not derivable at this layer — FLAGGED):**
     * `v`, `r_binary`, `offset`, `env`, `h_static`, `h_match`. -/
 theorem construction_lb_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -722,7 +722,7 @@ theorem construction_lb_sound_claimed_dead
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
     -- (b) Sail-side opcode assumptions
-    (h_opcode_assumptions : PureSpec.lb_state_assumptions lb_input (binding.stateAt i))
+    (h_opcode_assumptions : PureSpec.lb_state_assumptions lb_input (binding i))
     -- (b) operand bridges (load address + rd index)
     (h_addr1 :
       (mainRowWithRomLd trace binding i).rom.addr1.toNat =
@@ -736,7 +736,7 @@ theorem construction_lb_sound_claimed_dead
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
     (h_risc_v_assumptions :
-      RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+      RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
     (h_exec_len : (busLd trace binding i execRow).exec_row.length = 2)
     (h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1)
     (h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1)
@@ -746,7 +746,7 @@ theorem construction_lb_sound_claimed_dead
         = (PureSpec.execute_LOADB_pure lb_input).nextPC)
     -- (b) #76 memory residual: loaded bytes ↔ Sail memory (irreducible).
     (h_memory_timeline :
-      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding i)
         (busLd trace binding i execRow).e1)
     -- (b) #76 Mem-AIR provider row facts (irreducible).
     (h_mem_match :
@@ -761,13 +761,13 @@ theorem construction_lb_sound_claimed_dead
       regidx.Regidx lb_input.rd,
       false,
       1
-    )) (binding.stateAt i)
+    )) (binding i)
       = (bus_effect (busLd trace binding i execRow).exec_row
           [ (busLd trace binding i execRow).e0
           , (busLd trace binding i execRow).e1
-          , (busLd trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busLd trace binding i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busLd trace binding i execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
@@ -831,8 +831,8 @@ theorem construction_lb_sound_claimed_dead
     `construction_lb_sound`: `OP_SIGNEXTEND_H`; `LbInput → LhInput`; width
     literal `2`; `LOADB → LOADH`. Same residual budget. -/
 theorem construction_lh_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -856,7 +856,7 @@ theorem construction_lh_sound_claimed_dead
     (h_store_pc :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
-    (h_opcode_assumptions : PureSpec.lh_state_assumptions lh_input (binding.stateAt i))
+    (h_opcode_assumptions : PureSpec.lh_state_assumptions lh_input (binding i))
     (h_addr1 :
       (mainRowWithRomLd trace binding i).rom.addr1.toNat =
         lh_input.r1_val.toNat + (BitVec.signExtend 64 lh_input.imm).toNat)
@@ -868,7 +868,7 @@ theorem construction_lh_sound_claimed_dead
         (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val)
     (execRow : List (Interaction.ExecutionBusEntry FGL))
     (h_risc_v_assumptions :
-      RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+      RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
     (h_exec_len : (busLd trace binding i execRow).exec_row.length = 2)
     (h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1)
     (h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1)
@@ -877,7 +877,7 @@ theorem construction_lh_sound_claimed_dead
           (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_LOADH_pure lh_input).nextPC)
     (h_memory_timeline :
-      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding i)
         (busLd trace binding i execRow).e1)
     (h_mem_match :
       ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
@@ -891,13 +891,13 @@ theorem construction_lh_sound_claimed_dead
       regidx.Regidx lh_input.rd,
       false,
       2
-    )) (binding.stateAt i)
+    )) (binding i)
       = (bus_effect (busLd trace binding i execRow).exec_row
           [ (busLd trace binding i execRow).e0
           , (busLd trace binding i execRow).e1
-          , (busLd trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busLd trace binding i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busLd trace binding i execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
@@ -961,8 +961,8 @@ theorem construction_lh_sound_claimed_dead
     `OP_SIGNEXTEND_W`; `LhInput → LwInput`; width literal `4`; `LOADH → LOADW`.
     Same residual budget. -/
 theorem construction_lw_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -986,7 +986,7 @@ theorem construction_lw_sound_claimed_dead
     (h_store_pc :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
         i.val = 0)
-    (h_opcode_assumptions : PureSpec.lw_state_assumptions lw_input (binding.stateAt i))
+    (h_opcode_assumptions : PureSpec.lw_state_assumptions lw_input (binding i))
     (h_addr1 :
       (mainRowWithRomLd trace binding i).rom.addr1.toNat =
         lw_input.r1_val.toNat + (BitVec.signExtend 64 lw_input.imm).toNat)
@@ -998,7 +998,7 @@ theorem construction_lw_sound_claimed_dead
         (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val)
     (execRow : List (Interaction.ExecutionBusEntry FGL))
     (h_risc_v_assumptions :
-      RISC_V_assumptions (binding.stateAt i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+      RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
     (h_exec_len : (busLd trace binding i execRow).exec_row.length = 2)
     (h_e0_mult : (busLd trace binding i execRow).exec_row[0]!.multiplicity = -1)
     (h_e1_mult : (busLd trace binding i execRow).exec_row[1]!.multiplicity = 1)
@@ -1007,7 +1007,7 @@ theorem construction_lw_sound_claimed_dead
           (BitVec.ofNat 64 ((busLd trace binding i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_LOADW_pure lw_input).nextPC)
     (h_memory_timeline :
-      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding.stateAt i)
+      ZiskFv.ZiskCircuit.MemTrace.MemoryTimelineEvidence (binding i)
         (busLd trace binding i execRow).e1)
     (h_mem_match :
       ZiskFv.Airs.MemoryBus.matches_memory_payload (busLd trace binding i execRow).e1
@@ -1021,13 +1021,13 @@ theorem construction_lw_sound_claimed_dead
       regidx.Regidx lw_input.rd,
       false,
       4
-    )) (binding.stateAt i)
+    )) (binding i)
       = (bus_effect (busLd trace binding i execRow).exec_row
           [ (busLd trace binding i execRow).e0
           , (busLd trace binding i execRow).e1
-          , (busLd trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busLd trace binding i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busLd trace binding i execRow
   have h_core : (mainRowWithRomLd trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i

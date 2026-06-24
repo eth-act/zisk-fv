@@ -14,10 +14,10 @@ namespace ZiskFv.Compliance
     that does not involve any explicitly enumerated bugs, the zisk machine state transition
     agrees with the Sail machine state transition.
 
-    An AcceptedTrace is a set of constraints, and a witness that satisfies those constraints and the
+    An AcceptedZiskTrace is a set of constraints, and a witness that satisfies those constraints and the
     channel balancing constraint enfoced in the proving system through a lookup argument.
 
-    A ProgramBinding is a choice of which table in the witness is the Main execution table, together
+    A SailTrace is a choice of which table in the witness is the Main execution table, together
     with the sequence of Sail machine states the program steps through and the facts that pin that
     table into the witness : that it really occurs in it, that it really is the Main component, and
     that it has one row per instruction.
@@ -32,8 +32,8 @@ namespace ZiskFv.Compliance
     constructed from the trace inside each `stepStrong_<op>` — nothing is
     caller-supplied beyond the trace itself. -/
 theorem root_soundness
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (rowData : ∀ i : Fin trace.numInstructions, StrongRowConstructionData trace binding i)
     (h_known_bugs : ∀ i : Fin trace.numInstructions, StepNoKnownDefect trace binding i (rowData i)) :
     ∀ i : Fin trace.numInstructions, StepComplianceStrong trace binding i (rowData i) :=

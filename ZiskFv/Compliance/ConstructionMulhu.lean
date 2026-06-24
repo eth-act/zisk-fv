@@ -616,7 +616,7 @@ lemma equiv_MULHU_of_fullSpec_claimed_dead
     `exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding`.
     Mirrors `mulwArow`. -/
 noncomputable def mulhuArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -629,7 +629,7 @@ noncomputable def mulhuArow
 /-- `FullSpec` of the balance-selected MULHU provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem mulhuArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -645,7 +645,7 @@ theorem mulhuArow_fullSpec_row
 
 /-- `FullSpec` of the balance-selected MULHU provider row view. -/
 theorem mulhuArow_fullSpec
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -679,7 +679,7 @@ theorem match_opBus_row_ArithMulSecondary_vOfMulwRow
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form (cheap: free
     `ArithMulRow`, no `vOfMulwRow`/`opBus_row_*` whnf). -/
 theorem mulhuArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -700,7 +700,7 @@ theorem mulhuArow_match_row
     off the BARE provider `ArithMulRow` via `mulhu_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem mulhuArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -724,7 +724,7 @@ theorem mulhuArow_mode_pins
     Main row's emission, in `opBus_row_ArithMulSecondary` form.  The MULHU mode
     pins needed to reduce the faithful mux are DERIVED via `mulhuArow_mode_pins`. -/
 theorem mulhuArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -747,8 +747,8 @@ theorem mulhuArow_match
     `trace.channels_balanced` / `trace.spec_holds` via the provider's lookup-aware
     `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
 theorem construction_mulhu_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)
@@ -761,12 +761,12 @@ theorem construction_mulhu_sound_claimed_dead
       (mainOfTable trace.program trace.mainTable).store_pc i.val = 0)
     -- (b) Sail reads + operands
     (h_input_r1 :
-      read_xreg (regidx_to_fin r1) (binding.stateAt i)
-        = EStateM.Result.ok mulhu_input.r1_val (binding.stateAt i))
+      read_xreg (regidx_to_fin r1) (binding i)
+        = EStateM.Result.ok mulhu_input.r1_val (binding i))
     (h_input_r2 :
-      read_xreg (regidx_to_fin r2) (binding.stateAt i)
-        = EStateM.Result.ok mulhu_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some mulhu_input.PC)
+      read_xreg (regidx_to_fin r2) (binding i)
+        = EStateM.Result.ok mulhu_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some mulhu_input.PC)
     (h_input_rd : mulhu_input.rd = regidx_to_fin rd)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -804,11 +804,11 @@ theorem construction_mulhu_sound_claimed_dead
           (r2, r1, rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Unsigned
-             signed_rs2 := .Unsigned }))) (binding.stateAt i)
+             signed_rs2 := .Unsigned }))) (binding i)
       = (bus_effect (busSub trace binding i execRow).exec_row
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
   -- (a) Arith witnesses derived from balance: FullSpec.
   have h_full :
       ZiskFv.AirsClean.ArithMul.FullSpec
@@ -851,7 +851,7 @@ theorem construction_mulhu_sound_claimed_dead
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- promises bundle: Sail reads + exec artifacts as binders; MemBus shape by rfl.
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      (binding.stateAt i) mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
+      (binding i) mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
       (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
       r1 r2 rd (busSub trace binding i execRow).exec_row (busSub trace binding i execRow).e0
       (busSub trace binding i execRow).e1 (busSub trace binding i execRow).e2 :=
@@ -872,7 +872,7 @@ theorem construction_mulhu_sound_claimed_dead
       rd_idx := h_rd_idx }
   -- Delegate to the F4 fullSpec bridge.
   exact equiv_MULHU_of_fullSpec_claimed_dead
-    (binding.stateAt i) mulhu_input r1 r2 rd (busSub trace binding i execRow)
+    (binding i) mulhu_input r1 r2 rd (busSub trace binding i execRow)
     (mainOfTable trace.program trace.mainTable) i.val
     (vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)) 0
     pins h_match_secondary promises arith_mem bounds

@@ -72,24 +72,24 @@ no `False.elim` or contradictory pair is used.
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.sub`. -/
 theorem stepStrong_sub
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_sub trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sub .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SUB))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SUB))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -208,24 +208,24 @@ theorem stepStrong_sub
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.and`. -/
 theorem stepStrong_and
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_and trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .and .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.AND))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.AND))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -344,24 +344,24 @@ theorem stepStrong_and
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.or`. -/
 theorem stepStrong_or
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_or trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .or .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.OR))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.OR))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -480,24 +480,24 @@ theorem stepStrong_or
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.xor`. -/
 theorem stepStrong_xor
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_xor trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .xor .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.XOR))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.XOR))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -617,24 +617,24 @@ theorem stepStrong_xor
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.slt`. -/
 theorem stepStrong_slt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_slt trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slt .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLT))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLT))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -753,24 +753,24 @@ theorem stepStrong_slt
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.sltu`. -/
 theorem stepStrong_sltu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_sltu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sltu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLTU))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLTU))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -888,24 +888,24 @@ theorem stepStrong_sltu
     `OpEnvelope.andi` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.andi`. -/
 theorem stepStrong_andi
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_andi trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .andi .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ANDI))) (binding.stateAt i)
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ANDI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1023,24 +1023,24 @@ theorem stepStrong_andi
     `OpEnvelope.ori` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.ori`. -/
 theorem stepStrong_ori
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_ori trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .ori .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ORI))) (binding.stateAt i)
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ORI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1158,24 +1158,24 @@ theorem stepStrong_ori
     `OpEnvelope.xori` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.xori`. -/
 theorem stepStrong_xori
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_xori trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .xori .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.XORI))) (binding.stateAt i)
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.XORI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1291,24 +1291,24 @@ theorem stepStrong_xori
     `OpEnvelope.slti` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.slti`. -/
 theorem stepStrong_slti
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_slti trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slti .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTI))) (binding.stateAt i)
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1419,24 +1419,24 @@ theorem stepStrong_slti
     `OpEnvelope.sltiu` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.sltiu`. -/
 theorem stepStrong_sltiu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_sltiu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sltiu .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTIU))) (binding.stateAt i)
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTIU))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1548,24 +1548,24 @@ theorem stepStrong_sltiu
 /-- Strengthened `sll` step: channel-balance via constructed `OpEnvelope.sll`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sll`. -/
 theorem stepStrong_sll
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_sll trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sll .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLL))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLL))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1647,24 +1647,24 @@ theorem stepStrong_sll
 /-- Strengthened `srl` step: channel-balance via constructed `OpEnvelope.srl`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srl`. -/
 theorem stepStrong_srl
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_srl trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srl .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRL))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRL))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1746,24 +1746,24 @@ theorem stepStrong_srl
 /-- Strengthened `sra` step: channel-balance via constructed `OpEnvelope.sra`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sra`. -/
 theorem stepStrong_sra
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_sra trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sra .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRA))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRA))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1845,20 +1845,20 @@ theorem stepStrong_sra
 /-- Strengthened `slli` step: channel-balance via constructed `OpEnvelope.slli`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.slli`. -/
 theorem stepStrong_slli
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_slli trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slli .. => True | _ => False)) :
-    execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SLLI)) (binding.stateAt i)
+    execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SLLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -1944,20 +1944,20 @@ theorem stepStrong_slli
 /-- Strengthened `srli` step: channel-balance via constructed `OpEnvelope.srli`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srli`. -/
 theorem stepStrong_srli
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_srli trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srli .. => True | _ => False)) :
-    execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRLI)) (binding.stateAt i)
+    execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -2043,20 +2043,20 @@ theorem stepStrong_srli
 /-- Strengthened `srai` step: channel-balance via constructed `OpEnvelope.srai`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srai`. -/
 theorem stepStrong_srai
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_srai trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srai .. => True | _ => False)) :
-    execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRAI)) (binding.stateAt i)
+    execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRAI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -2144,24 +2144,24 @@ theorem stepStrong_srai
 /-- Strengthened `subw` step: channel-balance via constructed `OpEnvelope.subw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.subw`. -/
 theorem stepStrong_subw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_subw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .subw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SUBW))) (binding.stateAt i)
+        (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SUBW))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -2274,24 +2274,24 @@ theorem stepStrong_subw
 /-- Strengthened `addw` step: channel-balance via constructed `OpEnvelope.addw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.addw`. -/
 theorem stepStrong_addw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_addw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .addw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.ADDW))) (binding.stateAt i)
+        (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.ADDW))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -2404,24 +2404,24 @@ theorem stepStrong_addw
 /-- Strengthened `addiw` step: channel-balance via constructed `OpEnvelope.addiw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.addiw`. -/
 theorem stepStrong_addiw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_addiw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .addiw .. => True | _ => False)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ADDIW (d.imm, d.r1, d.rd))) (binding.stateAt i)
+        (instruction.ADDIW (d.imm, d.r1, d.rd))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -2524,20 +2524,20 @@ real BinaryExtension Spec row from the committed trace. -/
 /-- Strengthened `sllw` step: channel-balance via constructed `OpEnvelope.sllw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sllw`. -/
 theorem stepStrong_sllw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_sllw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sllw .. => True | _ => False)) :
-    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (binding.stateAt i)
+    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -2622,20 +2622,20 @@ theorem stepStrong_sllw
 /-- Strengthened `srlw` step: channel-balance via constructed `OpEnvelope.srlw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srlw`. -/
 theorem stepStrong_srlw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_srlw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srlw .. => True | _ => False)) :
-    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (binding.stateAt i)
+    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -2720,20 +2720,20 @@ theorem stepStrong_srlw
 /-- Strengthened `sraw` step: channel-balance via constructed `OpEnvelope.sraw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sraw`. -/
 theorem stepStrong_sraw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_sraw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraw .. => True | _ => False)) :
-    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (binding.stateAt i)
+    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -2819,21 +2819,21 @@ theorem stepStrong_sraw
 /-- Strengthened `slliw` step: channel-balance via constructed `OpEnvelope.slliw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.slliw`. -/
 theorem stepStrong_slliw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_slliw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slliw .. => True | _ => False)) :
     execute_instruction
-      (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (binding.stateAt i)
+      (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -2913,21 +2913,21 @@ theorem stepStrong_slliw
 /-- Strengthened `srliw` step: channel-balance via constructed `OpEnvelope.srliw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srliw`. -/
 theorem stepStrong_srliw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_srliw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srliw .. => True | _ => False)) :
     execute_instruction
-      (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (binding.stateAt i)
+      (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -3007,21 +3007,21 @@ theorem stepStrong_srliw
 /-- Strengthened `sraiw` step: channel-balance via constructed `OpEnvelope.sraiw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sraiw`. -/
 theorem stepStrong_sraiw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_sraiw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraiw .. => True | _ => False)) :
     execute_instruction
-      (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (binding.stateAt i)
+      (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -3106,10 +3106,10 @@ theorem stepStrong_sraiw
     BinaryAdd provider) + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.add`. -/
 theorem stepStrong_add
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_add trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with
@@ -3118,14 +3118,14 @@ theorem stepStrong_add
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.ADD))) (binding.stateAt i)
+        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.ADD))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
     exists_add_provider_row_matches_from_binding
@@ -3258,10 +3258,10 @@ theorem stepStrong_add
     (`addi_via_binary` / `addi_via_binaryadd`) + `zisk_riscv_compliant_program_bus`.
     Dominates `StepCompliance.addi`. -/
 theorem stepStrong_addi
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_addi trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with
@@ -3270,14 +3270,14 @@ theorem stepStrong_addi
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ADDI))) (binding.stateAt i)
+        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ADDI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [ (busSub trace binding i d.execRow).e0
            , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding.stateAt i) := by
+           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
     exists_add_provider_row_matches_from_binding

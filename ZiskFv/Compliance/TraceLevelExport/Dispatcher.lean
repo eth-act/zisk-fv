@@ -61,7 +61,7 @@ set_option maxHeartbeats 8000000
     the exact forge witness (so honest rows are never excluded).  No arm is omitted —
     the export is 63/63 on the OpEnvelope route. -/
 inductive StrongRowConstructionData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   | sub (d : RowData_sub trace binding i) : StrongRowConstructionData trace binding i
   | and (d : RowData_and trace binding i) : StrongRowConstructionData trace binding i
   | or (d : RowData_or trace binding i) : StrongRowConstructionData trace binding i
@@ -141,148 +141,148 @@ inductive StrongRowConstructionData
     obligation is SATISFIABLE for an honest FENCE row (see `RowData_fence` /
     `stepStrong_fence`). -/
 def StepNoKnownDefect
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
     StrongRowConstructionData trace binding i → Prop
   | .sub _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sub .. => True | _ => False)
   | .and _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .and .. => True | _ => False)
   | .or _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .or .. => True | _ => False)
   | .xor _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .xor .. => True | _ => False)
   | .slt _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slt .. => True | _ => False)
   | .sltu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sltu .. => True | _ => False)
   | .andi _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .andi .. => True | _ => False)
   | .ori _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .ori .. => True | _ => False)
   | .xori _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .xori .. => True | _ => False)
   | .slti _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slti .. => True | _ => False)
   | .sltiu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sltiu .. => True | _ => False)
   | .sll _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sll .. => True | _ => False)
   | .srl _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srl .. => True | _ => False)
   | .sra _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sra .. => True | _ => False)
   | .slli _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slli .. => True | _ => False)
   | .srli _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srli .. => True | _ => False)
   | .srai _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srai .. => True | _ => False)
   | .add _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .add_via_binary .. => True | .add_via_binaryadd .. => True | _ => False)
   | .addi _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .addi_via_binary .. => True | .addi_via_binaryadd .. => True | _ => False)
   | .subw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .subw .. => True | _ => False)
   | .addw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .addw .. => True | _ => False)
   | .addiw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .addiw .. => True | _ => False)
   | .sllw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sllw .. => True | _ => False)
   | .srlw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srlw .. => True | _ => False)
   | .sraw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraw .. => True | _ => False)
   | .slliw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slliw .. => True | _ => False)
   | .srliw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srliw .. => True | _ => False)
   | .sraiw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraiw .. => True | _ => False)
   | .jalr _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .jalr .. => True | _ => False)
   | .beq _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .beq .. => True | _ => False)
   | .bne _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bne .. => True | _ => False)
   | .blt _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .blt .. => True | _ => False)
   | .bge _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bge .. => True | _ => False)
   | .bltu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bltu .. => True | _ => False)
   | .bgeu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .bgeu .. => True | _ => False)
   | .mul d => Defects.NoKnownDefect (mulEnvOf trace binding i d)
@@ -296,85 +296,85 @@ def StepNoKnownDefect
   | .divw d => Defects.NoKnownDefect (divwEnvOf trace binding i d)
   | .remw d => Defects.NoKnownDefect (remwEnvOf trace binding i d)
   | .mulw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .mulw .. => True | _ => False)
   | .mulhu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .mulhu .. => True | _ => False)
   | .divu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .divu .. => True | _ => False)
   | .divuw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .divuw .. => True | _ => False)
   | .remu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .remu .. => True | _ => False)
   | .remuw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .remuw .. => True | _ => False)
   | .lui _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lui .. => True | _ => False)
   | .auipc _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .auipc .. => True | _ => False)
   | .jal _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .jal .. => True | _ => False)
   | .sb _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sb .. => True | _ => False)
   | .sh _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sh .. => True | _ => False)
   | .sw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sw .. => True | _ => False)
   | .sd _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sd .. => True | _ => False)
   | .ld _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .ld .. => True | _ => False)
   | .lbu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lbu .. => True | _ => False)
   | .lhu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lhu .. => True | _ => False)
   | .lwu _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .lwu .. => True | _ => False)
   | .lb _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .lb_via_static_match .. => True | _ => False)
   | .lh _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .lh_via_static_match .. => True | _ => False)
   | .lw _ => EnvNoKnownDefectFor
-      (state := binding.stateAt i)
+      (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val)
       (fun env => match env with | .lw_via_static_match .. => True | _ => False)
@@ -386,227 +386,227 @@ def StepNoKnownDefect
     (`state_effect_via_channels`) form — the OLD global theorem's per-arm
     conclusion — keyed on the row archetype. -/
 def StepComplianceStrong
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
     StrongRowConstructionData trace binding i → Prop
   | .sub d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SUB))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SUB))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .and d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.AND))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.AND))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .or d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.OR))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.OR))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .xor d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.XOR))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.XOR))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .slt d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLT))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLT))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .sltu d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLTU))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLTU))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .andi d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ANDI))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ANDI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .ori d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ORI))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ORI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .xori d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.XORI))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.XORI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .slti d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTI))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .sltiu d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTIU))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTIU))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .sll d =>
-      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLL)) (binding.stateAt i)
+      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLL)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .srl d =>
-      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRL)) (binding.stateAt i)
+      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRL)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .sra d =>
-      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRA)) (binding.stateAt i)
+      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRA)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .slli d =>
-      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SLLI)) (binding.stateAt i)
+      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SLLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .srli d =>
-      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRLI)) (binding.stateAt i)
+      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .srai d =>
-      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRAI)) (binding.stateAt i)
+      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRAI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .add d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.ADD))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.ADD))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .addi d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ADDI))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ADDI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .subw d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SUBW))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SUBW))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .addw d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.ADDW))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.ADDW))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .addiw d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ADDIW (d.imm, d.r1, d.rd))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.ADDIW (d.imm, d.r1, d.rd))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .sllw d =>
-      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (binding.stateAt i)
+      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .srlw d =>
-      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (binding.stateAt i)
+      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .sraw d =>
-      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (binding.stateAt i)
+      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .slliw d =>
       execute_instruction
-        (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (binding.stateAt i)
+        (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .srliw d =>
       execute_instruction
-        (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (binding.stateAt i)
+        (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .sraiw d =>
       execute_instruction
-        (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (binding.stateAt i)
+        (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .mul d =>
       (do
       Sail.writeReg Register.nextPC
@@ -616,9 +616,9 @@ def StepComplianceStrong
           (d.r2, d.r1, d.rd,
            { result_part := VectorHalf.Low
              signed_rs1 := d.srs1
-             signed_rs2 := d.srs2 }))) (binding.stateAt i)
+             signed_rs2 := d.srs2 }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i)
   | .mulh d =>
       (do
       Sail.writeReg Register.nextPC
@@ -628,9 +628,9 @@ def StepComplianceStrong
           (d.r2, d.r1, d.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Signed
-             signed_rs2 := .Signed }))) (binding.stateAt i)
+             signed_rs2 := .Signed }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i)
   | .mulhsu d =>
       (do
       Sail.writeReg Register.nextPC
@@ -640,46 +640,46 @@ def StepComplianceStrong
           (d.r2, d.r1, d.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Signed
-             signed_rs2 := .Unsigned }))) (binding.stateAt i)
+             signed_rs2 := .Unsigned }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i)
   | .div d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i)
   | .rem d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i)
   | .divw d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i)
   | .remw d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i)
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i)
   | .mulw d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.MULW (d.r2, d.r1, d.rd))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.MULW (d.r2, d.r1, d.rd))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .mulhu d =>
       (do
       Sail.writeReg Register.nextPC
@@ -689,174 +689,174 @@ def StepComplianceStrong
           (d.r2, d.r1, d.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Unsigned
-             signed_rs2 := .Unsigned }))) (binding.stateAt i)
+             signed_rs2 := .Unsigned }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .divu d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, true))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .divuw d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, true))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .remu d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, true))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .remuw d =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, true))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, true))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace binding i d.execRow).exec_row,
            [(busSub trace binding i d.execRow).e0, (busSub trace binding i d.execRow).e1,
-            (busSub trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSub trace binding i d.execRow).e2]⟩ (binding i)
   | .beq d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BEQ)) (binding.stateAt i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BEQ)) (binding i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding i)
   | .bne d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BNE)) (binding.stateAt i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BNE)) (binding i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding i)
   | .blt d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLT)) (binding.stateAt i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLT)) (binding i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding i)
   | .bge d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGE)) (binding.stateAt i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGE)) (binding i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding i)
   | .bltu d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLTU)) (binding.stateAt i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLTU)) (binding i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding i)
   | .bgeu d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGEU)) (binding.stateAt i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGEU)) (binding i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding i)
   | .lui d =>
-      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.LUI)) (binding.stateAt i)
+      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.LUI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i)
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding i)
   | .auipc d =>
-      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.AUIPC)) (binding.stateAt i)
+      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.AUIPC)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i)
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding i)
   | .jal d =>
-      execute_instruction (instruction.JAL (d.imm, d.rd)) (binding.stateAt i)
+      execute_instruction (instruction.JAL (d.imm, d.rd)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i)
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding i)
   | .jalr d =>
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-        LeanRV64D.Functions.execute (instruction.JALR (d.imm, d.rs1, d.rd))) (binding.stateAt i)
+        LeanRV64D.Functions.execute (instruction.JALR (d.imm, d.rs1, d.rd))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding.stateAt i)
+          ⟨d.execRow, [eRdLui trace binding i]⟩ (binding i)
   | .sb d =>
       execute_instruction (instruction.STORE
           (d.sb_input.imm, regidx.Regidx d.sb_input.r2, regidx.Regidx d.sb_input.r1, 1))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt trace binding i d.execRow).exec_row,
            [(busSt trace binding i d.execRow).e0, (busSt trace binding i d.execRow).e1,
-            (busSt trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSt trace binding i d.execRow).e2]⟩ (binding i)
   | .sh d =>
       execute_instruction (instruction.STORE
           (d.sh_input.imm, regidx.Regidx d.sh_input.r2, regidx.Regidx d.sh_input.r1, 2))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt trace binding i d.execRow).exec_row,
            [(busSt trace binding i d.execRow).e0, (busSt trace binding i d.execRow).e1,
-            (busSt trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSt trace binding i d.execRow).e2]⟩ (binding i)
   | .sw d =>
       execute_instruction (instruction.STORE
           (d.sw_input.imm, regidx.Regidx d.sw_input.r2, regidx.Regidx d.sw_input.r1, 4))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt trace binding i d.execRow).exec_row,
            [(busSt trace binding i d.execRow).e0, (busSt trace binding i d.execRow).e1,
-            (busSt trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSt trace binding i d.execRow).e2]⟩ (binding i)
   | .sd d =>
       execute_instruction (instruction.STORE
           (d.sd_input.imm, regidx.Regidx d.sd_input.r2, regidx.Regidx d.sd_input.r1, 8))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt trace binding i d.execRow).exec_row,
            [(busSt trace binding i d.execRow).e0, (busSt trace binding i d.execRow).e1,
-            (busSt trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busSt trace binding i d.execRow).e2]⟩ (binding i)
   | .ld d =>
       execute_instruction (instruction.LOAD
           (d.ld_input.imm, regidx.Regidx d.ld_input.r1, regidx.Regidx d.ld_input.rd, false, 8))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace binding i d.execRow).exec_row,
            [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
-            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busLd trace binding i d.execRow).e2]⟩ (binding i)
   | .lbu d =>
       execute_instruction (instruction.LOAD
           (d.lbu_input.imm, regidx.Regidx d.lbu_input.r1, regidx.Regidx d.lbu_input.rd, true, 1))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace binding i d.execRow).exec_row,
            [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
-            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busLd trace binding i d.execRow).e2]⟩ (binding i)
   | .lhu d =>
       execute_instruction (instruction.LOAD
           (d.lhu_input.imm, regidx.Regidx d.lhu_input.r1, regidx.Regidx d.lhu_input.rd, true, 2))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace binding i d.execRow).exec_row,
            [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
-            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busLd trace binding i d.execRow).e2]⟩ (binding i)
   | .lwu d =>
       execute_instruction (instruction.LOAD
           (d.lwu_input.imm, regidx.Regidx d.lwu_input.r1, regidx.Regidx d.lwu_input.rd, true, 4))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace binding i d.execRow).exec_row,
            [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
-            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busLd trace binding i d.execRow).e2]⟩ (binding i)
   | .lb d =>
       execute_instruction (instruction.LOAD
           (d.lb_input.imm, regidx.Regidx d.lb_input.r1, regidx.Regidx d.lb_input.rd, false, 1))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace binding i d.execRow).exec_row,
            [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
-            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busLd trace binding i d.execRow).e2]⟩ (binding i)
   | .lh d =>
       execute_instruction (instruction.LOAD
           (d.lh_input.imm, regidx.Regidx d.lh_input.r1, regidx.Regidx d.lh_input.rd, false, 2))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace binding i d.execRow).exec_row,
            [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
-            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busLd trace binding i d.execRow).e2]⟩ (binding i)
   | .lw d =>
       execute_instruction (instruction.LOAD
           (d.lw_input.imm, regidx.Regidx d.lw_input.r1, regidx.Regidx d.lw_input.rd, false, 4))
-          (binding.stateAt i)
+          (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace binding i d.execRow).exec_row,
            [(busLd trace binding i d.execRow).e0, (busLd trace binding i d.execRow).e1,
-            (busLd trace binding i d.execRow).e2]⟩ (binding.stateAt i)
+            (busLd trace binding i d.execRow).e2]⟩ (binding i)
   | .fence d =>
-      execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding.stateAt i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i)
+      execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding i)
 
 /-- Per-row dispatch to the matching strengthened step theorem.
 
@@ -867,7 +867,7 @@ def StepComplianceStrong
     `zisk_riscv_compliant_program_bus`.  For the direct-lift arms (which never call
     the old theorem) the obligation is `True` and is ignored. -/
 theorem stepComplianceStrong_of_rowData
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : StrongRowConstructionData trace binding i)
     (h_known : StepNoKnownDefect trace binding i d) :
     StepComplianceStrong trace binding i d := by
