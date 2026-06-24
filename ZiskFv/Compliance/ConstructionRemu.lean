@@ -1,4 +1,5 @@
-import ZiskFv.Compliance.ProviderFromBinding
+import ZiskFv.Compliance.OpBusProviderMatch
+import ZiskFv.Compliance.SailTrace
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.Compliance.ConstructionMulhu
 import ZiskFv.Compliance.ConstructionDivu
@@ -134,7 +135,7 @@ theorem match_opBus_row_ArithDivSecondary_vOfDivuRow
     operation, as a concrete `ArithMulRow`.  It is the
     `componentWithArithTable.rowInput` of the provider row chosen by the REMU
     keep-arithMul balance wrapper
-    `exists_arithMul_provider_row_matches_primary_of_remu_from_binding`.
+    `main_request_remu_provided`.
     Mirrors `divuArow`. -/
 noncomputable def remuArow
     (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
@@ -143,8 +144,8 @@ noncomputable def remuArow
     (h_main_op :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
-  let h := exists_arithMul_provider_row_matches_primary_of_remu_from_binding
-    trace binding i h_main_active h_main_op
+  let h := main_request_remu_provided
+    trace i h_main_active h_main_op
   componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 /-- `FullSpec` of the balance-selected REMU provider row, derived from the
@@ -158,8 +159,8 @@ theorem remuArow_fullSpec_row
     ZiskFv.AirsClean.ArithMul.FullSpec
       (remuArow trace binding i h_main_active h_main_op) := by
   unfold remuArow
-  set H := exists_arithMul_provider_row_matches_primary_of_remu_from_binding
-    trace binding i h_main_active h_main_op with hH
+  set H := main_request_remu_provided
+    trace i h_main_active h_main_op with hH
   obtain ⟨_h_pt_mem, h_rest⟩ := H.choose_spec
   obtain ⟨h_pr_mem, h_component, h_spec, _h_match⟩ := h_rest.choose_spec
   exact ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
@@ -179,8 +180,8 @@ theorem remuArow_match_row
         (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
           (remuArow trace binding i h_main_active h_main_op)) 1) := by
   unfold remuArow
-  set H := exists_arithMul_provider_row_matches_primary_of_remu_from_binding
-    trace binding i h_main_active h_main_op with hH
+  set H := main_request_remu_provided
+    trace i h_main_active h_main_op with hH
   exact H.choose_spec.2.choose_spec.2.2.2
 
 /-- REMU mode pins on the balance-selected provider row, DERIVED from its

@@ -1,4 +1,5 @@
-import ZiskFv.Compliance.ProviderFromBinding
+import ZiskFv.Compliance.OpBusProviderMatch
+import ZiskFv.Compliance.SailTrace
 import ZiskFv.Compliance.Wrappers.Sb
 import ZiskFv.Compliance.Wrappers.Sh
 import ZiskFv.Compliance.Wrappers.Sw
@@ -19,8 +20,8 @@ side** instead of the operation bus.
 
 ALU/M-ext ops READ their operands off register-bus MemBus entries and write
 `rd`; their op-bus `equiv_<OP>` is resolved against a *separate* provider AIR
-(Binary / Arith / …) via a Layer-A `exists_*_provider_row_matches_*_from_binding`
-wrapper that consumes `trace.channels_balanced`.
+(Binary / Arith / …) via a Layer-A `exists_*_provider_row_matches_*`
+lemma that consumes `trace.channels_balanced`.
 
 Stores WRITE memory. The store's memory-bus write entry (`bus.e2`, address-space
 `as = 2`) is the Main row's **own** c/store emission `cMemMessage`. The

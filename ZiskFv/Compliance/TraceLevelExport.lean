@@ -39,7 +39,7 @@ reads, operand/lane bridges, the `execRow` ∀-binder + exec facts,
 `h_nextPC_matches`; for loads also `MemoryTimelineEvidence` + the Mem-AIR
 provider linkage).  It does NOT package the bucket-(a) op-bus provider-match
 evidence: that is derived INSIDE each construction from `trace.channels_balanced` (via the
-`exists_*_from_binding` Layer-A wrappers).
+`exists_*_provider_row_matches_*` Layer-A lemmas).
 
 ## Coverage (stated explicitly — NOT hidden)
 
@@ -50,8 +50,8 @@ global theorem produces:
 1. **Env-constructed route (22 op-bus ALU arms)** — `SUB AND OR XOR SLT SLTU`,
    `ANDI ORI XORI SLTI SLTIU`, `SLL SRL SRA SLLI SRLI SRAI`, `ADD ADDI`,
    `SUBW ADDW ADDIW`.  The matching `OpEnvelope.<op>` arm is **constructed from
-   the accepted trace** per row (re-running each construction's `*_from_binding`
-   provider-match + input-packing derivations) and fed to
+   the accepted trace** per row (re-running each construction's
+   `exists_*_provider_row_matches_*` + input-packing derivations) and fed to
    `zisk_riscv_compliant_program_bus`.  Its three hypotheses are discharged in
    place: `aeneasBridgeTrust` from the derived row-binding facts,
    `memoryTimelineConstructionEvidence` trivially (non-load arms), and

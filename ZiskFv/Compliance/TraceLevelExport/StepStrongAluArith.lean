@@ -93,8 +93,8 @@ theorem stepStrong_sub
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_sub_from_binding
-      trace binding i d.h_main_active d.h_main_op
+    main_request_sub_provided
+      trace i d.h_main_active d.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -229,8 +229,8 @@ theorem stepStrong_and
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic_from_binding
-      trace binding i d.h_main_active (Or.inl d.h_main_op)
+    main_request_logic_provided
+      trace i d.h_main_active (Or.inl d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -365,8 +365,8 @@ theorem stepStrong_or
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inl d.h_main_op))
+    main_request_logic_provided
+      trace i d.h_main_active (Or.inr (Or.inl d.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -501,8 +501,8 @@ theorem stepStrong_xor
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inr d.h_main_op))
+    main_request_logic_provided
+      trace i d.h_main_active (Or.inr (Or.inr d.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -638,8 +638,8 @@ theorem stepStrong_slt
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_compare_from_binding
-      trace binding i d.h_main_active (Or.inl d.h_main_op)
+    main_request_compare_provided
+      trace i d.h_main_active (Or.inl d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -774,8 +774,8 @@ theorem stepStrong_sltu
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_compare_from_binding
-      trace binding i d.h_main_active (Or.inr d.h_main_op)
+    main_request_compare_provided
+      trace i d.h_main_active (Or.inr d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -909,8 +909,8 @@ theorem stepStrong_andi
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic_from_binding
-      trace binding i d.h_main_active (Or.inl d.h_main_op)
+    main_request_logic_provided
+      trace i d.h_main_active (Or.inl d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -1044,8 +1044,8 @@ theorem stepStrong_ori
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inl d.h_main_op))
+    main_request_logic_provided
+      trace i d.h_main_active (Or.inr (Or.inl d.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -1179,8 +1179,8 @@ theorem stepStrong_xori
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_logic_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inr d.h_main_op))
+    main_request_logic_provided
+      trace i d.h_main_active (Or.inr (Or.inr d.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -1312,8 +1312,8 @@ theorem stepStrong_slti
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_compare_from_binding
-      trace binding i d.h_main_active (Or.inl d.h_main_op)
+    main_request_compare_provided
+      trace i d.h_main_active (Or.inl d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -1440,8 +1440,8 @@ theorem stepStrong_sltiu
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_compare_from_binding
-      trace binding i d.h_main_active (Or.inr d.h_main_op)
+    main_request_compare_provided
+      trace i d.h_main_active (Or.inr d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -1569,8 +1569,8 @@ theorem stepStrong_sll
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inl d.h_main_op)
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inl d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -1668,8 +1668,8 @@ theorem stepStrong_srl
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inl d.h_main_op))
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inr (Or.inl d.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -1767,8 +1767,8 @@ theorem stepStrong_sra
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inl d.h_main_op)))
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inr (Or.inr (Or.inl d.h_main_op)))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -1862,8 +1862,8 @@ theorem stepStrong_slli
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inl d.h_main_op)
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inl d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -1961,8 +1961,8 @@ theorem stepStrong_srli
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inl d.h_main_op))
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inr (Or.inl d.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -2060,8 +2060,8 @@ theorem stepStrong_srai
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inl d.h_main_op)))
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inr (Or.inr (Or.inl d.h_main_op)))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -2165,8 +2165,8 @@ theorem stepStrong_subw
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_w_from_binding
-      trace binding i d.h_main_active (Or.inr d.h_main_op)
+    main_request_w_provided
+      trace i d.h_main_active (Or.inr d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB_W :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -2295,8 +2295,8 @@ theorem stepStrong_addw
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_w_from_binding
-      trace binding i d.h_main_active (Or.inl d.h_main_op)
+    main_request_w_provided
+      trace i d.h_main_active (Or.inl d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -2425,8 +2425,8 @@ theorem stepStrong_addiw
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_staticBinary_provider_row_matches_w_from_binding
-      trace binding i d.h_main_active (Or.inl d.h_main_op)
+    main_request_w_provided
+      trace i d.h_main_active (Or.inl d.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -2541,8 +2541,8 @@ theorem stepStrong_sllw
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op))))
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -2639,8 +2639,8 @@ theorem stepStrong_srlw
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op)))))
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -2737,8 +2737,8 @@ theorem stepStrong_sraw
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active
+    main_request_shift_provided
+      trace i d.h_main_active
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
     ⟨d.h_main_active, d.h_main_op⟩
@@ -2837,8 +2837,8 @@ theorem stepStrong_slliw
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op))))
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -2931,8 +2931,8 @@ theorem stepStrong_srliw
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op)))))
+    main_request_shift_provided
+      trace i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -3025,8 +3025,8 @@ theorem stepStrong_sraiw
   let bus := busSub trace binding i d.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    exists_binaryExtension_provider_row_matches_shift_from_binding
-      trace binding i d.h_main_active
+    main_request_shift_provided
+      trace i d.h_main_active
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
     ⟨d.h_main_active, d.h_main_op⟩
@@ -3128,8 +3128,8 @@ theorem stepStrong_add
   set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
-    exists_add_provider_row_matches_from_binding
-      trace binding i d.h_main_active d.h_main_op
+    main_request_add_provided
+      trace i d.h_main_active d.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :
@@ -3280,8 +3280,8 @@ theorem stepStrong_addi
   set state := binding i with hstate
   let bus := busSub trace binding i d.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
-    exists_add_provider_row_matches_from_binding
-      trace binding i d.h_main_active d.h_main_op
+    main_request_add_provided
+      trace i d.h_main_active d.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
     ⟨d.h_main_active, d.h_main_op⟩
   have h_core_store_pc :

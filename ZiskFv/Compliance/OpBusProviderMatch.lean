@@ -1,26 +1,26 @@
-import ZiskFv.Compliance.SailTrace
+import ZiskFv.Compliance.AcceptedZiskTrace.MainTable
 import ZiskFv.AirsClean.FullEnsemble.Balance
 import ZiskFv.AirsClean.FullEnsemble.ArithBalance
 
 /-!
-# Layer-A op-bus provider-match wrappers
+# Layer-A op-bus request lemmas
 
-The `exists_*_provider_row_matches_*_from_binding` wrappers: for an active Main
-op row selected by a `SailTrace`, they build the Main op-bus interaction,
-prove its membership and `mult = -1`, and discharge the op-bus provider match by
-delegating to the axiom-free Layer-B permutation theorems in
-`AirsClean/FullEnsemble/{Balance,ArithBalance}.lean`. They are the only consumers
-of `trace.channels_balanced` in the construction spine; the honest sound construction
-built on top lives in `ZiskFv/Compliance/ConstructionSub.lean`.
+The `main_request_<op>_provided` lemmas: for an active Main op row, they prove
+Main's op-bus request (the interaction with `mult = -1`) is matched by a provider
+push in the witness — building the Main interaction, proving its membership and
+`mult = -1`, and discharging the match via the axiom-free Layer-B permutation
+theorems in `AirsClean/FullEnsemble/{Balance,ArithBalance}.lean`.
+They are the only consumers of `trace.channels_balanced` in the construction
+spine; the honest sound construction built on top lives in
+`ZiskFv/Compliance/ConstructionSub.lean`.
 -/
 
 namespace ZiskFv.Compliance
 
 open ZiskFv.AirsClean.FullEnsemble
 
-theorem exists_staticBinary_provider_row_matches_logic_from_binding
+theorem main_request_logic_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -110,9 +110,8 @@ theorem exists_staticBinary_provider_row_matches_logic_from_binding
         h_main_row h_main_active h_mainInteraction_mem
         h_mainInteraction_eval h_active h_main_op
 
-theorem exists_staticBinary_provider_row_matches_sub_from_binding
+theorem main_request_sub_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -196,9 +195,8 @@ theorem exists_staticBinary_provider_row_matches_sub_from_binding
         h_main_row h_main_active h_mainInteraction_mem
         h_mainInteraction_eval h_active h_main_op
 
-theorem exists_add_provider_row_matches_from_binding
+theorem main_request_add_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -320,9 +318,8 @@ theorem exists_add_provider_row_matches_from_binding
         h_main_row h_main_active h_mainInteraction_mem
         h_mainInteraction_eval h_active h_main_op⟩
 
-theorem exists_staticBinary_provider_row_matches_compare_from_binding
+theorem main_request_compare_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -409,9 +406,8 @@ theorem exists_staticBinary_provider_row_matches_compare_from_binding
         h_main_row h_main_active h_mainInteraction_mem
         h_mainInteraction_eval h_active h_main_op
 
-theorem exists_staticBinary_provider_row_matches_w_from_binding
+theorem main_request_w_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -498,9 +494,8 @@ theorem exists_staticBinary_provider_row_matches_w_from_binding
         h_main_row h_main_active h_mainInteraction_mem
         h_mainInteraction_eval h_active h_main_op
 
-theorem exists_binaryExtension_provider_row_matches_shift_from_binding
+theorem main_request_shift_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -602,7 +597,7 @@ theorem exists_binaryExtension_provider_row_matches_shift_from_binding
 
 /-- Layer-A op-bus provider-match wrapper for the Arith MULW operation
     (`OP_MUL_W = 182`).  Mirrors
-    `exists_staticBinary_provider_row_matches_sub_from_binding`: it builds the
+    `main_request_sub_provided`: it builds the
     Main op-bus interaction, proves membership + `mult = -1`, and delegates to
     the keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_primary_of_mulw_active_main_row_interaction`.
@@ -611,9 +606,8 @@ theorem exists_binaryExtension_provider_row_matches_shift_from_binding
     `arithMulProviderComponent` (= `ArithMul.componentWithArithTable`), so
     `providerTable.Spec` is `FullSpec (rowInput …)` and the match is against the
     ArithMul primary op-bus message. -/
-theorem exists_arithMul_provider_row_matches_primary_of_mulw_from_binding
+theorem main_request_mulw_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -699,16 +693,15 @@ theorem exists_arithMul_provider_row_matches_primary_of_mulw_from_binding
 
 /-- Layer-A op-bus provider-match wrapper for the Arith MULHU operation
     (`OP_MULUH = 177`).  Mirrors
-    `exists_arithMul_provider_row_matches_primary_of_mulw_from_binding`, but
+    `main_request_mulw_provided`, but
     delegates to the MULHU keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_secondary_of_mulhu_active_main_row_interaction`.
 
     The returned match is still against the muxed `primaryOpBusMessage`; the
     MULHU-mode bridge in `ArithMul/Bridge.lean` later reduces it to the
     secondary d-lane `opBus_row_ArithMulSecondary`. -/
-theorem exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding
+theorem main_request_mulhu_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -794,7 +787,7 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding
 
 /-- Layer-A op-bus provider-match wrapper for the Arith DIVU operation
     (`OP_DIVU = 184`).  Mirrors
-    `exists_arithMul_provider_row_matches_primary_of_mulw_from_binding`, but
+    `main_request_mulw_provided`, but
     delegates to the DIVU keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_interaction`.
 
@@ -803,9 +796,8 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding
     against the muxed `primaryOpBusMessage`.  The DIVU-mode bridge in
     `ArithMul/Bridge.lean` later reduces it to the div quotient-lane
     `opBus_row_ArithDiv`. -/
-theorem exists_arithMul_provider_row_matches_primary_of_divu_from_binding
+theorem main_request_divu_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -891,7 +883,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_from_binding
 
 /-- Layer-A op-bus provider-match wrapper for the Arith DIVUW operation
     (`OP_DIVU_W = 188`, W-mode `m32 = 1`).  Mirrors
-    `exists_arithMul_provider_row_matches_primary_of_divu_from_binding`, but
+    `main_request_divu_provided`, but
     delegates to the DIVUW keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_primary_of_divuw_active_main_row_interaction`.
 
@@ -899,9 +891,8 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_from_binding
     ArithDiv component carries no op-bus in the ensemble); the returned match is
     against the muxed `primaryOpBusMessage`.  The DIVU-mode op-bus bridge later
     reduces it to the div quotient-lane `opBus_row_ArithDiv`. -/
-theorem exists_arithMul_provider_row_matches_primary_of_divuw_from_binding
+theorem main_request_divuw_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -987,7 +978,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divuw_from_binding
 
 /-- Layer-A op-bus provider-match wrapper for the Arith REMU operation
     (`OP_REMU = 185`).  Mirrors
-    `exists_arithMul_provider_row_matches_primary_of_divu_from_binding`, but
+    `main_request_divu_provided`, but
     delegates to the REMU keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_primary_of_remu_active_main_row_interaction`.
 
@@ -996,9 +987,8 @@ theorem exists_arithMul_provider_row_matches_primary_of_divuw_from_binding
     against the muxed `primaryOpBusMessage`.  The REMU-mode bridge in
     `ConstructionRemu.lean` later reduces it (at `div = 1`, `main_div = 0`,
     `main_mul = 0`) to the div remainder-lane `opBus_row_ArithDivSecondary`. -/
-theorem exists_arithMul_provider_row_matches_primary_of_remu_from_binding
+theorem main_request_remu_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
@@ -1084,7 +1074,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remu_from_binding
 
 /-- Layer-A op-bus provider-match wrapper for the Arith REMUW operation
     (`OP_REMU_W = 189`, W-mode `m32 = 1`).  Mirrors
-    `exists_arithMul_provider_row_matches_primary_of_remu_from_binding`, but
+    `main_request_remu_provided`, but
     delegates to the REMUW keep-arithMul balance theorem
     `exists_arithMul_provider_row_matches_primary_of_remuw_active_main_row_interaction`.
 
@@ -1094,9 +1084,8 @@ theorem exists_arithMul_provider_row_matches_primary_of_remu_from_binding
     `ConstructionRemu.lean` later reduces it (at `div = 1`, `main_div = 0`,
     `main_mul = 0`) to the div remainder-lane `opBus_row_ArithDivSecondary`; the
     `m32` flag plays no role in the mux. -/
-theorem exists_arithMul_provider_row_matches_primary_of_remuw_from_binding
+theorem main_request_remuw_provided
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op

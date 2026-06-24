@@ -1,4 +1,5 @@
-import ZiskFv.Compliance.ProviderFromBinding
+import ZiskFv.Compliance.OpBusProviderMatch
+import ZiskFv.Compliance.SailTrace
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.Compliance.ConstructionMulhu
 import ZiskFv.Compliance.ConstructionDivu
@@ -296,7 +297,7 @@ private lemma remuw_carry_bounds_claimed_dead
     operation, as a concrete `ArithMulRow`.  It is the
     `componentWithArithTable.rowInput` of the provider row chosen by the REMUW
     keep-arithMul balance wrapper
-    `exists_arithMul_provider_row_matches_primary_of_remuw_from_binding`.
+    `main_request_remuw_provided`.
     Mirrors `remuArow` / `divuwArow`. -/
 noncomputable def remuwArow
     (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
@@ -305,8 +306,8 @@ noncomputable def remuwArow
     (h_main_op :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
-  let h := exists_arithMul_provider_row_matches_primary_of_remuw_from_binding
-    trace binding i h_main_active h_main_op
+  let h := main_request_remuw_provided
+    trace i h_main_active h_main_op
   componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 /-- `FullSpec` of the balance-selected REMUW provider row, derived from the
@@ -320,8 +321,8 @@ theorem remuwArow_fullSpec_row
     ZiskFv.AirsClean.ArithMul.FullSpec
       (remuwArow trace binding i h_main_active h_main_op) := by
   unfold remuwArow
-  set H := exists_arithMul_provider_row_matches_primary_of_remuw_from_binding
-    trace binding i h_main_active h_main_op with hH
+  set H := main_request_remuw_provided
+    trace i h_main_active h_main_op with hH
   obtain ⟨_h_pt_mem, h_rest⟩ := H.choose_spec
   obtain ⟨h_pr_mem, h_component, h_spec, _h_match⟩ := h_rest.choose_spec
   exact ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
@@ -341,8 +342,8 @@ theorem remuwArow_match_row
         (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
           (remuwArow trace binding i h_main_active h_main_op)) 1) := by
   unfold remuwArow
-  set H := exists_arithMul_provider_row_matches_primary_of_remuw_from_binding
-    trace binding i h_main_active h_main_op with hH
+  set H := main_request_remuw_provided
+    trace i h_main_active h_main_op with hH
   exact H.choose_spec.2.choose_spec.2.2.2
 
 /-- REMUW mode pins on the balance-selected provider row, DERIVED from its

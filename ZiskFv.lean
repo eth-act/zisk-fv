@@ -135,7 +135,7 @@ import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance.AcceptedZiskTrace
 import ZiskFv.Compliance.AcceptedZiskTrace.Spec
 import ZiskFv.Compliance.SailTrace
-import ZiskFv.Compliance.ProviderFromBinding
+import ZiskFv.Compliance.OpBusProviderMatch
 import ZiskFv.Compliance.ConstructionSub
 import ZiskFv.Compliance.ConstructionAnd
 import ZiskFv.Compliance.ConstructionLogic

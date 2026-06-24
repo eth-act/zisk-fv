@@ -15,7 +15,7 @@ EITHER of two distinct providers with two distinct `opBusMessage` shapes:
 * the lookup-aware Binary provider (`staticLookupComponent`), or
 * the dedicated `BinaryAdd` provider (`BinaryAdd.component`).
 
-The salvaged Layer-A wrapper `exists_add_provider_row_matches_from_binding`
+The salvaged Layer-A wrapper `main_request_add_provided`
 (`AcceptedZiskTrace.lean`) RESOLVES the op-bus from `trace.channels_balanced` into the
 conjunction
 
@@ -176,8 +176,8 @@ theorem construction_add_sound_claimed_dead
   -- (a) op-bus provider RESOLUTION, derived from `trace.channels_balanced`: the
   -- `add_subset_holds` conjunct + a `staticLookup ∨ BinaryAdd` DISJUNCTION.
   obtain ⟨h_add_subset, h_disj⟩ :=
-    exists_add_provider_row_matches_from_binding
-      trace binding i h_main_active h_main_op
+    main_request_add_provided
+      trace i h_main_active h_main_op
   -- decode pins bundle (shared by both arms)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
     ⟨h_main_active, h_main_op⟩
@@ -381,8 +381,8 @@ theorem construction_addi_sound_claimed_dead
   -- `add_subset_holds` conjunct + a `staticLookup ∨ BinaryAdd` DISJUNCTION
   -- (the op-bus match is operand-source-agnostic, so the SAME wrapper serves ADDI).
   obtain ⟨h_add_subset, h_disj⟩ :=
-    exists_add_provider_row_matches_from_binding
-      trace binding i h_main_active h_main_op
+    main_request_add_provided
+      trace i h_main_active h_main_op
   -- decode pins bundle (shared by both arms)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
     ⟨h_main_active, h_main_op⟩
