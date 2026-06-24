@@ -16,95 +16,114 @@ namespace ZiskFv.Completeness.Rv
 /-- Raw 32-bit instruction word. Kept as `BitVec 32` to match Sail decoding. -/
 abbrev RawInstruction := BitVec 32
 
+/-- One stage of the extracted ZisK production path: `reached` says production
+ZisK gets this far on a raw word; `knownGap` is the explicitly recorded, honest
+carve-out that excuses non-coverage at this stage (e.g. FENCE). -/
+structure Stage where
+  reached : RawInstruction → Prop
+  knownGap : RawInstruction → Prop
+
+/-- The extracted ZisK production coverage pipeline. Field order is pipeline
+order: a supported `decode` lowers to an opcode (`lower`) and lands in the
+covered opcode set (`opcode`); a lowered word materializes a circuit `row`.
+Only the `decode` and `row` stages carry recorded gaps today. -/
+structure Pipeline where
+  decode : Stage
+  lower : RawInstruction → Prop
+  row : Stage
+  opcode : RawInstruction → Prop
+
 /-- Abstract RV-completeness interface between Sail and extracted production
-ZisK. The fields are predicates because their concrete implementations live in
-different generated Lean worlds today: Sail in the main Lean 4.28 build,
-Aeneas in its generated Lean workspace. -/
+ZisK, grouped by responsibility. The predicates are abstract because their
+concrete implementations live in different generated Lean worlds today: Sail in
+the main Lean 4.28 build, Aeneas in its generated Lean workspace.
+
+* `sail` — the spec side: which raw words the Sail model executes (the domain
+  the completeness claim covers).
+* `zisk` — the ZisK production coverage pipeline (decode → lower / row / opcode)
+  with its honest known-gap carve-outs.
+* `soundness` — the static per-row contract handed to the opcode soundness
+  theorems. -/
 structure Interface where
-  sailExecutable : RawInstruction → Prop
-  ziskDecodeSupported : RawInstruction → Prop
-  ziskLowerable : RawInstruction → Prop
-  ziskRowMaterialized : RawInstruction → Prop
-  ziskOpcodeCovered : RawInstruction → Prop
-  ziskSoundnessInput : RawInstruction → Prop
-  knownDecodeGap : RawInstruction → Prop
-  knownRowMaterializationGap : RawInstruction → Prop
+  sail : RawInstruction → Prop
+  zisk : Pipeline
+  soundness : RawInstruction → Prop
 
 namespace Interface
 
 def knownGap (iface : Interface) (raw : RawInstruction) : Prop :=
-  iface.knownDecodeGap raw ∨ iface.knownRowMaterializationGap raw
+  iface.zisk.decode.knownGap raw ∨ iface.zisk.row.knownGap raw
 
 def ziskCircuitCovered (iface : Interface) (raw : RawInstruction) : Prop :=
-  iface.ziskDecodeSupported raw ∧
-  iface.ziskLowerable raw ∧
-  iface.ziskRowMaterialized raw ∧
-  iface.ziskOpcodeCovered raw
+  iface.zisk.decode.reached raw ∧
+  iface.zisk.lower raw ∧
+  iface.zisk.row.reached raw ∧
+  iface.zisk.opcode raw
 
 def ziskCircuitCoveredWithSoundnessInput
     (iface : Interface) (raw : RawInstruction) : Prop :=
-  iface.ziskCircuitCovered raw ∧ iface.ziskSoundnessInput raw
+  iface.ziskCircuitCovered raw ∧ iface.soundness raw
 
 /-- ZisK-internal stage proved in the generated Aeneas harness:
 decoder-supported raw words have a lowering opcode. -/
 def LoweringComplete (iface : Interface) : Prop :=
-  ∀ raw, iface.ziskDecodeSupported raw → iface.ziskLowerable raw
+  ∀ raw, iface.zisk.decode.reached raw → iface.zisk.lower raw
 
 /-- ZisK-internal stage proved in the generated Aeneas harness:
 decoder-supported raw words land in the currently covered opcode surface. -/
 def OpcodeCoverageComplete (iface : Interface) : Prop :=
-  ∀ raw, iface.ziskDecodeSupported raw → iface.ziskOpcodeCovered raw
+  ∀ raw, iface.zisk.decode.reached raw → iface.zisk.opcode raw
 
 /-- Row materialization strengthening target. The generated Aeneas harness has
 representative and edge-grid checks today; the universal proof remains open. -/
 def RowMaterializationComplete (iface : Interface) : Prop :=
-  ∀ raw, iface.ziskLowerable raw → iface.ziskRowMaterialized raw
+  ∀ raw, iface.zisk.lower raw → iface.zisk.row.reached raw
 
 /-- Row materialization after excluding known materialization gaps. This is
 the proof shape used by the extraction harness today: once decode/lowering are
 established, a row can be supplied either by a direct family proof or by the
-fact that `knownRowMaterializationGap` has ruled out the rejected production
+fact that the `row` stage's `knownGap` has ruled out the rejected production
 case. -/
 def RowMaterializationCompleteAvoidingKnownBugs (iface : Interface) : Prop :=
-  ∀ raw, iface.ziskDecodeSupported raw →
-    ¬ iface.knownRowMaterializationGap raw →
-      iface.ziskRowMaterialized raw
+  ∀ raw, iface.zisk.decode.reached raw →
+    ¬ iface.zisk.row.knownGap raw →
+      iface.zisk.row.reached raw
 
 /-- Boundary obligation for the Sail bridge: after excluding known ZisK gaps,
 Sail-executable raw words must be accepted by the production ZisK decoder. -/
 def AvoidKnownBugs (iface : Interface) : Prop :=
-  ∀ raw, iface.sailExecutable raw → ¬ iface.knownGap raw →
-    iface.ziskDecodeSupported raw
+  ∀ raw, iface.sail raw → ¬ iface.knownGap raw →
+    iface.zisk.decode.reached raw
 
 def ShapeAvoidKnownBugs
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownGap raw →
-    iface.ziskDecodeSupported raw
+  ∀ raw, shape raw → iface.sail raw → ¬ iface.knownGap raw →
+    iface.zisk.decode.reached raw
 
 /-- Boundary obligation after excluding only known decode gaps. This is the
 acceptance-focused RV completeness boundary: row materialization is handled by
 the ZisK-side row theorem rather than by weakening the Sail acceptance domain. -/
 def ShapeAvoidKnownDecodeBugs
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
-    iface.ziskDecodeSupported raw
+  ∀ raw, shape raw → iface.sail raw → ¬ iface.zisk.decode.knownGap raw →
+    iface.zisk.decode.reached raw
 
 def CompletenessAvoidingKnownBugs (iface : Interface) : Prop :=
-  ∀ raw, iface.sailExecutable raw → ¬ iface.knownGap raw →
+  ∀ raw, iface.sail raw → ¬ iface.knownGap raw →
     iface.ziskCircuitCovered raw
 
 def CompletenessAvoidingKnownDecodeBugs (iface : Interface) : Prop :=
-  ∀ raw, iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
+  ∀ raw, iface.sail raw → ¬ iface.zisk.decode.knownGap raw →
     iface.ziskCircuitCovered raw
 
 def ShapeCompletenessAvoidingKnownBugs
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownGap raw →
+  ∀ raw, shape raw → iface.sail raw → ¬ iface.knownGap raw →
     iface.ziskCircuitCovered raw
 
 def ShapeCompletenessAvoidingKnownDecodeBugs
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
+  ∀ raw, shape raw → iface.sail raw → ¬ iface.zisk.decode.knownGap raw →
     iface.ziskCircuitCovered raw
 
 /-- Sail-side domain bridge: every Sail-executable raw instruction is in the
@@ -112,14 +131,14 @@ shape currently being proved against the extracted ZisK production path. For
 RV64IM this is intended to be discharged from Sail's decoder. -/
 def SailExecutableContainedIn
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, iface.sailExecutable raw → shape raw
+  ∀ raw, iface.sail raw → shape raw
 
 /-- Shape-local Sail validity: every raw word in this shape is executable by
 the Sail-side predicate. This is useful for deriving direct known-good circuit
 coverage from an avoid-known-bugs decoder bridge. -/
 def ShapeSailExecutable
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.sailExecutable raw
+  ∀ raw, shape raw → iface.sail raw
 
 /-- Direct shape coverage. This is the checked-in counterpart of the generated
 finite-grid Aeneas checks: for every raw word in a generated shape family, the
@@ -138,23 +157,23 @@ family can be closed before the full universal row-builder theorem is
 available. -/
 def ShapeRowMaterializationComplete
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.ziskLowerable raw → iface.ziskRowMaterialized raw
+  ∀ raw, shape raw → iface.zisk.lower raw → iface.zisk.row.reached raw
 
 def SoundnessInputComplete (iface : Interface) : Prop :=
-  ∀ raw, iface.ziskLowerable raw → iface.ziskSoundnessInput raw
+  ∀ raw, iface.zisk.lower raw → iface.soundness raw
 
 def ShapeSoundnessInputComplete
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.ziskLowerable raw → iface.ziskSoundnessInput raw
+  ∀ raw, shape raw → iface.zisk.lower raw → iface.soundness raw
 
 def CompletenessWithSoundnessInputAvoidingKnownDecodeBugs
     (iface : Interface) : Prop :=
-  ∀ raw, iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
+  ∀ raw, iface.sail raw → ¬ iface.zisk.decode.knownGap raw →
     iface.ziskCircuitCoveredWithSoundnessInput raw
 
 def ShapeCompletenessWithSoundnessInputAvoidingKnownDecodeBugs
     (iface : Interface) (shape : RawInstruction → Prop) : Prop :=
-  ∀ raw, shape raw → iface.sailExecutable raw → ¬ iface.knownDecodeGap raw →
+  ∀ raw, shape raw → iface.sail raw → ¬ iface.zisk.decode.knownGap raw →
     iface.ziskCircuitCoveredWithSoundnessInput raw
 
 /-- Main abstract composition theorem for the current plan.
@@ -207,7 +226,7 @@ theorem completeness_avoiding_known_bugs_of_row_gap
   intro raw h_sail h_not_gap
   have h_supported := h_avoid raw h_sail h_not_gap
   have h_lowerable := h_lower raw h_supported
-  have h_not_row_gap : ¬ iface.knownRowMaterializationGap raw := by
+  have h_not_row_gap : ¬ iface.zisk.row.knownGap raw := by
     intro h_row_gap
     exact h_not_gap (.inr h_row_gap)
   exact ⟨h_supported, h_lowerable,
