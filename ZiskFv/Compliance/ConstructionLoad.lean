@@ -132,7 +132,7 @@ theorem mainRowWithRomLd_core
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
         i.val := by
   have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-    trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+    trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
   simpa [mainRowWithRomLd,
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
 

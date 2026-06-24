@@ -7,8 +7,9 @@ import ZiskFv.AirsClean.FullEnsemble.Balance
 Selecting the Main execution table out of the witness is **derived**, not
 assumed: `exists_main_table_of_fullRv64im_witness` already produces one from
 `trace.witness` alone. These accessors expose that choice so it no longer needs
-to be supplied as `ProgramBinding` fields. The only genuine external assumption
-about the Main table — its row count — stays on `ProgramBinding.mainTable_index`.
+to be supplied as `ProgramBinding` fields. The one genuine external assumption
+about the Main table — its row count — lives on `AcceptedTrace.main_height`;
+`mainTable_index` below specializes it to the derived `mainTable`.
 -/
 
 namespace ZiskFv.Compliance
@@ -33,5 +34,11 @@ theorem AcceptedTrace.mainTable_component (trace : AcceptedTrace) :
         trace.numInstructions trace.program :=
   (ZiskFv.AirsClean.FullEnsemble.exists_main_table_of_fullRv64im_witness
     trace.witness).choose_spec.2
+
+/-- The derived Main table has a row for every instruction — `main_height`
+    specialized to `mainTable` via its membership and component facts. -/
+theorem AcceptedTrace.mainTable_index (trace : AcceptedTrace) :
+    ∀ i : Fin trace.numInstructions, i.val < trace.mainTable.table.length :=
+  trace.main_height trace.mainTable trace.mainTable_mem trace.mainTable_component
 
 end ZiskFv.Compliance

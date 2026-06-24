@@ -43,5 +43,13 @@ structure AcceptedTrace where
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble numInstructions program).ensemble
   constraints_hold : witness.Constraints
   channels_balanced : witness.BalancedChannels
+  /-- The Main execution table covers every instruction: any witness table with
+      the Main component has a row for each instruction. This is the one genuine
+      row-count assumption — the witness pins table count and component, but never
+      row count — specialized to the derived `mainTable` by `mainTable_index`. -/
+  main_height : ∀ table ∈ witness.allTables,
+      table.component =
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions program →
+        ∀ i : Fin numInstructions, i.val < table.table.length
 
 end ZiskFv.Compliance

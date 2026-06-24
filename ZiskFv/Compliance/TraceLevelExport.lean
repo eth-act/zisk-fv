@@ -4356,7 +4356,7 @@ theorem stepStrong_sub
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4370,7 +4370,7 @@ theorem stepStrong_sub
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -4492,7 +4492,7 @@ theorem stepStrong_and
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4506,7 +4506,7 @@ theorem stepStrong_and
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -4628,7 +4628,7 @@ theorem stepStrong_or
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4642,7 +4642,7 @@ theorem stepStrong_or
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -4764,7 +4764,7 @@ theorem stepStrong_xor
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4778,7 +4778,7 @@ theorem stepStrong_xor
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -4901,7 +4901,7 @@ theorem stepStrong_slt
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -4915,7 +4915,7 @@ theorem stepStrong_slt
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5037,7 +5037,7 @@ theorem stepStrong_sltu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5051,7 +5051,7 @@ theorem stepStrong_sltu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5172,7 +5172,7 @@ theorem stepStrong_andi
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5186,7 +5186,7 @@ theorem stepStrong_andi
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5307,7 +5307,7 @@ theorem stepStrong_ori
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5321,7 +5321,7 @@ theorem stepStrong_ori
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5442,7 +5442,7 @@ theorem stepStrong_xori
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5456,7 +5456,7 @@ theorem stepStrong_xori
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5575,7 +5575,7 @@ theorem stepStrong_slti
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5589,7 +5589,7 @@ theorem stepStrong_slti
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5703,7 +5703,7 @@ theorem stepStrong_sltiu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5717,7 +5717,7 @@ theorem stepStrong_sltiu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5832,7 +5832,7 @@ theorem stepStrong_sll
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5846,7 +5846,7 @@ theorem stepStrong_sll
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -5931,7 +5931,7 @@ theorem stepStrong_srl
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -5945,7 +5945,7 @@ theorem stepStrong_srl
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6030,7 +6030,7 @@ theorem stepStrong_sra
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6044,7 +6044,7 @@ theorem stepStrong_sra
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6125,7 +6125,7 @@ theorem stepStrong_slli
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6139,7 +6139,7 @@ theorem stepStrong_slli
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6224,7 +6224,7 @@ theorem stepStrong_srli
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6238,7 +6238,7 @@ theorem stepStrong_srli
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6323,7 +6323,7 @@ theorem stepStrong_srai
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6337,7 +6337,7 @@ theorem stepStrong_srai
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6428,7 +6428,7 @@ theorem stepStrong_subw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6442,7 +6442,7 @@ theorem stepStrong_subw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6558,7 +6558,7 @@ theorem stepStrong_addw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6572,7 +6572,7 @@ theorem stepStrong_addw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6688,7 +6688,7 @@ theorem stepStrong_addiw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6702,7 +6702,7 @@ theorem stepStrong_addiw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6804,7 +6804,7 @@ theorem stepStrong_sllw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6818,7 +6818,7 @@ theorem stepStrong_sllw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -6902,7 +6902,7 @@ theorem stepStrong_srlw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -6916,7 +6916,7 @@ theorem stepStrong_srlw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7001,7 +7001,7 @@ theorem stepStrong_sraw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7015,7 +7015,7 @@ theorem stepStrong_sraw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7100,7 +7100,7 @@ theorem stepStrong_slliw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7114,7 +7114,7 @@ theorem stepStrong_slliw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7194,7 +7194,7 @@ theorem stepStrong_srliw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7208,7 +7208,7 @@ theorem stepStrong_srliw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7289,7 +7289,7 @@ theorem stepStrong_sraiw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7303,7 +7303,7 @@ theorem stepStrong_sraiw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7391,7 +7391,7 @@ theorem stepStrong_add
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7405,7 +7405,7 @@ theorem stepStrong_add
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7543,7 +7543,7 @@ theorem stepStrong_addi
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -7557,7 +7557,7 @@ theorem stepStrong_addi
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row] at h
@@ -7989,7 +7989,7 @@ theorem stepStrong_lui
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
@@ -8075,7 +8075,7 @@ theorem stepStrong_auipc
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
@@ -8163,7 +8163,7 @@ theorem stepStrong_jal
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
@@ -8246,7 +8246,7 @@ theorem stepStrong_jalr
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
@@ -9215,7 +9215,7 @@ theorem stepStrong_mulw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9226,7 +9226,7 @@ theorem stepStrong_mulw
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9330,7 +9330,7 @@ theorem stepStrong_mulhu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9341,7 +9341,7 @@ theorem stepStrong_mulhu
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9443,7 +9443,7 @@ theorem stepStrong_divu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9454,7 +9454,7 @@ theorem stepStrong_divu
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9547,7 +9547,7 @@ theorem stepStrong_divuw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9558,7 +9558,7 @@ theorem stepStrong_divuw
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9650,7 +9650,7 @@ theorem stepStrong_remu
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9661,7 +9661,7 @@ theorem stepStrong_remu
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
@@ -9752,7 +9752,7 @@ theorem stepStrong_remuw
         (mainRowWithRomSub trace binding i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
     rw [h_row]
@@ -9763,7 +9763,7 @@ theorem stepStrong_remuw
     { row := mainRowWithRomSub trace binding i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-          trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+          trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
           ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
       store_pc_zero := h_core_store_pc
