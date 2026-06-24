@@ -72,10 +72,11 @@ h_bridge : env.aeneasBridgeTrust
 ```
 
 The existing wrapper and `OpEnvelope` signatures still expose those fields
-because the dispatch proofs pass them to the current wrapper layer. The
-generated caller-burden ledgers remain the mechanical inventory for the later
+because the dispatch proofs pass them to the current wrapper layer. The wrapper
+and canonical theorem signatures themselves are the inventory for the later
 refactor that removes those parameters after generated Aeneas Lean supplies
-proofs inside Lake.
+proofs inside Lake (the generated caller-burden ledgers that previously tracked
+this were retired with the anti-laundering metric — see "Active Caller Burden").
 
 First proof-slice progress: the staged Aeneas harness now checks that
 `extract_lui_from_inst` computes the LUI row-shape constants needed for
@@ -434,30 +435,25 @@ The active defect boundaries and retirement criteria are in
 
 ## Active Caller Burden
 
-The generated anti-laundering ledgers are:
+The live per-canonical-theorem trust footprint is the axiom-closure ledger:
 
-- [`generated/baseline-hypothesis-count.txt`](generated/baseline-hypothesis-count.txt)
-- [`generated/baseline-caller-burden.txt`](generated/baseline-caller-burden.txt)
-- [`generated/baseline-wrapper-caller-burden.txt`](generated/baseline-wrapper-caller-burden.txt)
 - [`generated/baseline-equiv-axiom-deps.txt`](generated/baseline-equiv-axiom-deps.txt)
 
-Promise discharge must visibly reduce caller burden, unless a documented
-structural-unpacking exception explains why added structural witnesses collapse
-into shared global-theorem evidence.
+> **Retired (2026-06):** the generated anti-laundering ledgers
+> (`baseline-hypothesis-count.txt`, `baseline-caller-burden.txt`,
+> `baseline-wrapper-caller-burden.txt`) and the DEEP
+> construction-binder baseline were removed once the discharge campaign
+> concluded at 0 project axioms. They measured per-binder churn that no
+> longer tracks a real trust change; the axiom-closure baselines above
+> (plus `baseline-zisk-riscv-compliant.txt`) remain the mechanically
+> gated audit surface. Promise discharge should still visibly reduce
+> caller-supplied promise hypotheses, but this is now authoring/review
+> guidance rather than a gated metric.
 
-Current caller-burden summary:
-
-- Canonical total rows: 1100 (was 1082; +18 from the DIV/REM vacuous→real
-  signed-remainder-bound residual binders, see `defects.md`; the prior +20 was
-  the MULH/MULHSU sign-range residual).
-- Wrapper total rows: 1135 (was 1130; +5 net from the DIV/REM real-discharge
-  wrappers replacing the `False` binder with structural residuals).
-- `bridge`: 122 in both ledgers.
-- `row_shape`: 18 canonical, 22 wrapper.
-- `bus_shape`: 0 in both ledgers.
-
-The remaining `bridge` and `row_shape` entries are documented as generated or
-full-ensemble integration boundaries, not as hidden global axioms.
+For historical context, at retirement the canonical ledger held 1100 binder
+rows and the wrapper ledger 1135, with `bridge` (122) and `row_shape`
+(18 canonical / 22 wrapper) the dominant remaining categories — documented as
+generated or full-ensemble integration boundaries, not hidden global axioms.
 
 ## Not In This Ledger
 
