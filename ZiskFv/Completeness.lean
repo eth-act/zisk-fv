@@ -3,10 +3,10 @@ import ZiskFv.Completeness.Rv64im
 /-!
 # Root completeness
 
-The headline completeness statement of the project, factored out of the
-RV64IM completeness development for visibility.  It sits parallel to
-`ZiskFv.Soundness` / `ZiskFv.Compliance` and re-exports the single endpoint
-theorem.
+The headline completeness statement of the project. It sits parallel to
+`ZiskFv.Soundness` / `ZiskFv.Compliance` and applies the abstract RV
+completeness composition (`Rv.Interface.completeness_with_soundness_input_…`)
+at the concrete RV64IM decode domain (`Rv64imShapes.SupportedDecodeShape`).
 -/
 
 namespace ZiskFv.Completeness
@@ -28,8 +28,9 @@ theorem root_completeness
     (h_opcode : Rv.Interface.OpcodeCoverageComplete iface)
     (h_soundness : SupportedDecodeSoundnessInputComplete iface) :
     Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
-  rv64im_global_completeness_with_soundness_input_avoiding_known_decode_bugs
+  Rv.Interface.completeness_with_soundness_input_avoiding_known_decode_bugs
     iface
+    Rv64imShapes.SupportedDecodeShape
     h_sail_subset
     h_supported
     h_lower
