@@ -3,10 +3,10 @@ import ZiskFv.Completeness.Rv64im
 /-!
 # Root completeness
 
-The headline completeness statement of the project. It sits parallel to
-`ZiskFv.Soundness` / `ZiskFv.Compliance` and applies the abstract RV
-completeness composition (`Rv.Interface.completeness_with_soundness_input_…`)
-at the concrete RV64IM decode domain (`Rv64imShapes.SupportedDecodeShape`).
+The headline completeness statement of the project, parallel to
+`ZiskFv.Soundness` / `ZiskFv.Compliance`.  This is the actual RV completeness
+composition (decode-support → lowering → row materialization + soundness
+input), specialized to the RV64IM decode domain.
 -/
 
 namespace ZiskFv.Completeness
@@ -27,15 +27,16 @@ theorem root_completeness
     (h_rows : Rv.Interface.RowMaterializationComplete iface)
     (h_opcode : Rv.Interface.OpcodeCoverageComplete iface)
     (h_soundness : SupportedDecodeSoundnessInputComplete iface) :
-    Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface :=
-  Rv.Interface.completeness_with_soundness_input_avoiding_known_decode_bugs
-    iface
-    Rv64imShapes.SupportedDecodeShape
-    h_sail_subset
-    h_supported
-    h_lower
-    h_rows
-    h_opcode
-    h_soundness
+    Rv64imCompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface := by
+  intro raw h_sail h_not_decode_gap
+  have h_shape := h_sail_subset raw h_sail
+  have h_decode := h_supported raw h_shape h_sail h_not_decode_gap
+  have h_lowerable := h_lower raw h_decode
+  exact
+    ⟨⟨h_decode,
+        h_lowerable,
+        h_rows raw h_lowerable,
+        h_opcode raw h_decode⟩,
+      h_soundness raw h_shape h_lowerable⟩
 
 end ZiskFv.Completeness

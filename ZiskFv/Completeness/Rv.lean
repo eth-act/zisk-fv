@@ -194,31 +194,6 @@ theorem completeness_avoiding_known_decode_bugs
   exact ⟨h_supported, h_lowerable, h_rows raw h_lowerable,
     h_opcode raw h_supported⟩
 
-/-- Acceptance-focused completeness plus the static row contract expected by
-the opcode soundness interface.  The Sail predicate remains the public raw-word
-domain; the shape is only the bridge used to discharge generated ZisK-side
-obligations. -/
-theorem completeness_with_soundness_input_avoiding_known_decode_bugs
-    (iface : Interface)
-    (shape : RawInstruction → Prop)
-    (h_sail_subset : SailExecutableContainedIn iface shape)
-    (h_avoid : ShapeAvoidKnownDecodeBugs iface shape)
-    (h_lower : LoweringComplete iface)
-    (h_rows : RowMaterializationComplete iface)
-    (h_opcode : OpcodeCoverageComplete iface)
-    (h_soundness : ShapeSoundnessInputComplete iface shape) :
-    CompletenessWithSoundnessInputAvoidingKnownDecodeBugs iface := by
-  intro raw h_sail h_not_decode_gap
-  have h_shape := h_sail_subset raw h_sail
-  have h_supported := h_avoid raw h_shape h_sail h_not_decode_gap
-  have h_lowerable := h_lower raw h_supported
-  exact
-    ⟨⟨h_supported,
-        h_lowerable,
-        h_rows raw h_lowerable,
-        h_opcode raw h_supported⟩,
-      h_soundness raw h_shape h_lowerable⟩
-
 /-- Main abstract composition theorem for the generated Aeneas proof shape:
 known decode gaps are excluded before decode support, and known row gaps are
 excluded before row materialization. -/
