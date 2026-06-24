@@ -89,7 +89,7 @@ endpoint (hence `eventual_`). The direct Aeneas extraction artifact is tracked a
 regenerates it from the pinned inputs and fails on any non-zero diff.
 
 The abstract `Rv.Interface`-parametrized completeness route under
-`ZiskFv/Completeness/Rv64im/` is quarantined (see that dir's `ASPIRATIONAL.md`):
+`ZiskFv/Completeness/Aspirational/` is quarantined (see that dir's `README.md`):
 it is not consumed by these endpoints.
 
 This does not revive Clean prover completeness. The Clean

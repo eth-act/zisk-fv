@@ -454,21 +454,6 @@ theorem sail_add_executable_contained :
     Rv64imShapes.add_raw_shape_subset_r_type_register_shape
       (sail_add_executable_contained_in_add_shape raw h_sail)
 
-def AddCompleteness (iface : Rv.Interface) : Prop :=
-  ∀ raw, SailAddExecutableRaw raw → Rv.Interface.ziskCircuitCovered iface raw
-
-theorem add_completeness_of_shape_circuit_covered_known_good
-    (iface : Rv.Interface)
-    (h_covered :
-      Rv.Interface.ShapeCircuitCoveredKnownGood
-        iface
-        Rv64imShapes.AddRawShape) :
-    AddCompleteness iface := by
-  intro raw h_sail
-  exact
-    (h_covered raw
-      (sail_add_executable_contained_in_add_shape raw h_sail)).left
-
 theorem sail_register_pilot_executable_contained :
     ∀ raw inst,
       SailDecodesTo raw inst →

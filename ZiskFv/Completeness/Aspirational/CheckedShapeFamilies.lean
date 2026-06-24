@@ -1,4 +1,4 @@
-import ZiskFv.Completeness.Rv64im.CoreAndShapeFamilies
+import ZiskFv.Completeness.Aspirational.CoreAndShapeFamilies
 
 /- ⚠ ASPIRATIONAL / QUARANTINED — not wired to any live completeness endpoint.
    Abstract `Rv.Interface`-parametrized route; no concrete `Interface` is ever
@@ -7,7 +7,7 @@ import ZiskFv.Completeness.Rv64im.CoreAndShapeFamilies
    do not depend on it. Intended *eventual* composition machinery for when the
    Aeneas-extracted ZisK coverage proofs can be imported into this build. Kept
    compiling via `ZiskFv.lean` for preservation only.
-   See `ZiskFv/Completeness/Rv64im/ASPIRATIONAL.md`. -/
+   See `ZiskFv/Completeness/Aspirational/README.md`. -/
 
 /-!
 # RV64IM completeness — exhaustive/edge/wide checked shape families and circuit-covered-known-good

@@ -49,9 +49,9 @@ stays conditional on those ZisK obligations until that bridge lands. This is not
 Clean prover completeness; the demoted `GeneralFormalCircuit.Completeness`
 non-claims with `ProverAssumptions := False` remain untouched.
 
-The abstract `Rv.Interface`-parametrized route under `ZiskFv/Completeness/Rv64im/`
+The abstract `Rv.Interface`-parametrized route under `ZiskFv/Completeness/Aspirational/`
 is quarantined — kept built for preservation but used by none of these endpoints.
-See `ZiskFv/Completeness/Rv64im/ASPIRATIONAL.md`.
+See `ZiskFv/Completeness/Aspirational/README.md`.
 
 ## Build And Verify
 

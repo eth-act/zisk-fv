@@ -27,9 +27,9 @@ is actually proven (it took the Sail bridge as a free premise). This split makes
 the state legible — one endpoint is green, two wear their conditionality openly.
 
 The abstract `Rv.Interface`-parametrized completeness route under
-`ZiskFv/Completeness/Rv64im/{Defs,*Families,GlobalTargets}.lean` is the intended
+`ZiskFv/Completeness/Aspirational/` is the intended
 *eventual* composition machinery; it is quarantined and not used by any endpoint
-here. See `ZiskFv/Completeness/Rv64im/ASPIRATIONAL.md`.
+here. See `ZiskFv/Completeness/Aspirational/README.md`.
 -/
 
 namespace ZiskFv.Completeness

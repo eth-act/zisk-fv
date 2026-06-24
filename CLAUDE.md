@@ -39,8 +39,8 @@ honest endpoints in `ZiskFv/Completeness.lean`: `root_completeness_sail`
 obligations only; the recorded FENCE decode gap is its `knownDecodeGap` premise).
 The ZisK obligations are interface-mediated through the Aeneas extraction gate
 (documentary link only — this build cannot import that workspace). The abstract
-`Rv.Interface` route under `ZiskFv/Completeness/Rv64im/` is quarantined (see its
-`ASPIRATIONAL.md`). This does not revive Clean prover completeness non-claims.
+`Rv.Interface` route under `ZiskFv/Completeness/Aspirational/` is quarantined
+(see its `README.md`). This does not revive Clean prover completeness non-claims.
 The Clean completeness side is no longer a set of vacuous non-claims: all
 17 fields now have honest-row constructibility proofs with gate-checked
 witnesses. The documented scope is row-local constructibility only, with
