@@ -30,19 +30,28 @@ The narrative trust ledger is
 [`trust/trusted-base.md`](trust/trusted-base.md). The generated flat index is
 [`trust/generated/axiom-index.md`](trust/generated/axiom-index.md).
 
-The checked-in RV64IM acceptance-completeness endpoint is:
+The checked-in RV64IM acceptance-completeness surface is three honest endpoints
+(see `ZiskFv/Completeness.lean`):
 
 ```lean
-ZiskFv.Completeness.root_completeness
+ZiskFv.Completeness.root_completeness_sail      -- PROVEN, unconditional
+ZiskFv.Completeness.eventual_zisk_coverage      -- conditional on the ZisK obligations
+ZiskFv.Completeness.eventual_root_completeness  -- composition; conditional on ZisK only
 ```
 
-It is a decoder/lowering/materialization coverage theorem: under ZisK-side
-interface premises checked by the Aeneas extraction harness, every
-Sail-executable RV64IM raw word outside the recorded FENCE decode gap is
-accepted by the production ZisK path and supplies the row-local soundness
-inputs consumed by the opcode theorems. This is not Clean prover completeness;
-the demoted `GeneralFormalCircuit.Completeness` non-claims with
-`ProverAssumptions := False` remain untouched.
+`root_completeness_sail` is discharged outright: every Sail-executable RV64IM raw
+word lands in the production decode domain `SupportedDecodeShape` (it computes
+against the real generated Sail decoder). The ZisK-coverage half is stated
+*conditionally* on the decoder/lowering/row/opcode obligations, which are proved
+for the real extracted decoder only in the separate Aeneas extraction workspace
+that this build cannot import; `eventual_root_completeness` composes the two and
+stays conditional on those ZisK obligations until that bridge lands. This is not
+Clean prover completeness; the demoted `GeneralFormalCircuit.Completeness`
+non-claims with `ProverAssumptions := False` remain untouched.
+
+The abstract `Rv.Interface`-parametrized route under `ZiskFv/Completeness/Rv64im/`
+is quarantined — kept built for preservation but used by none of these endpoints.
+See `ZiskFv/Completeness/Rv64im/ASPIRATIONAL.md`.
 
 ## Build And Verify
 
@@ -106,8 +115,11 @@ for Lean translation of 159 declarations.
 The current extraction batch covers the production-backed U/control-flow,
 Binary/BinaryExtension, load/store, branch, MUL, and DIV/REM row-shape helper
 families. The full `nix run .#test` gate additionally runs this harness with
-`AENEAS_CHECK_RV_COMPLETENESS=1`, checking the ZisK-side premises for
-`ZiskFv.Completeness.root_completeness`.
+`AENEAS_CHECK_RV_COMPLETENESS=1`, checking — in that separate workspace — the
+ZisK-side coverage obligations that `ZiskFv.Completeness.eventual_zisk_coverage`
+takes as hypotheses. The link is documentary: this build cannot import the
+Aeneas workspace, so those obligations are not yet substituted into the Lean
+endpoint (hence the `eventual_` prefix).
 
 The proof-side migration target is
 `ZiskFv.Compliance.MainRowProvenance`: it ties selected Main/ROM rows to

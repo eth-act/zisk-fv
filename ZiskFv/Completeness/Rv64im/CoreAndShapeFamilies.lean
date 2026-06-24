@@ -1,5 +1,14 @@
 import ZiskFv.Completeness.Rv64im.Defs
 
+/- ⚠ ASPIRATIONAL / QUARANTINED — not wired to any live completeness endpoint.
+   Abstract `Rv.Interface`-parametrized route; no concrete `Interface` is ever
+   built, and the live endpoints in `ZiskFv.Completeness`
+   (`root_completeness_sail`, `eventual_zisk_coverage`, `eventual_root_completeness`)
+   do not depend on it. Intended *eventual* composition machinery for when the
+   Aeneas-extracted ZisK coverage proofs can be imported into this build. Kept
+   compiling via `ZiskFv.lean` for preservation only.
+   See `ZiskFv/Completeness/Rv64im/ASPIRATIONAL.md`. -/
+
 /-!
 # RV64IM completeness — core forwarding lemmas and per-family shape completeness
 
