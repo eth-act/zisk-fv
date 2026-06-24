@@ -87,7 +87,7 @@ theorem mainSpec_at
       (ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
         i.val) := by
-  let mainIdx : Fin trace.mainTable.table.length := ⟨i.val, binding.mainTable_index i⟩
+  let mainIdx : Fin trace.mainTable.table.length := ⟨i.val, trace.mainTable_index i⟩
   let mainRow := trace.mainTable.table.get mainIdx
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by simp [mainRow]
   have h_main_component_spec :
@@ -194,7 +194,7 @@ theorem construction_lui_sound_claimed_dead
       (mainRowWithRomLui trace binding i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-      trace.program trace.mainTable ⟨i.val, binding.mainTable_index i⟩
+      trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=

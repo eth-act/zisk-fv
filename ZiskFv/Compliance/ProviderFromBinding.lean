@@ -49,7 +49,7 @@ theorem exists_staticBinary_provider_row_matches_logic_from_binding
                 (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -135,7 +135,7 @@ theorem exists_staticBinary_provider_row_matches_sub_from_binding
                 (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -238,7 +238,7 @@ theorem exists_add_provider_row_matches_from_binding
                   (ZiskFv.AirsClean.BinaryAdd.component.rowInput
                     (providerTable.environment providerRow))) 1))) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -348,7 +348,7 @@ theorem exists_staticBinary_provider_row_matches_compare_from_binding
                 (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -437,7 +437,7 @@ theorem exists_staticBinary_provider_row_matches_w_from_binding
                 (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -539,7 +539,7 @@ theorem exists_binaryExtension_provider_row_matches_shift_from_binding
                 (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -636,7 +636,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_mulw_from_binding
                 (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -731,7 +731,7 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhu_from_binding
                 (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -828,7 +828,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_from_binding
                 (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -924,7 +924,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divuw_from_binding
                 (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -1021,7 +1021,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remu_from_binding
                 (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
@@ -1119,7 +1119,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remuw_from_binding
                 (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    binding.mainTable_index i
+    trace.mainTable_index i
   let mainIdx : Fin trace.mainTable.table.length :=
     ⟨i.val, h_mainIdx_lt⟩
   let mainRow := trace.mainTable.table.get mainIdx
