@@ -3,7 +3,7 @@ import ZiskFv.AirsClean.FullEnsemble
 /-!
 # Accepted trace
 
-An `AcceptedTrace` is one fully-populated, verifier-accepted run of the RV64IM
+An `AcceptedZiskTrace` is one fully-populated, verifier-accepted run of the RV64IM
 circuit for a fixed `program` of `length` instructions.
 
 The circuit is an **Air.Flat ensemble**: a collection of AIRs (the Main table
@@ -25,17 +25,17 @@ witness "accepted" — exactly what a real ZisK proof certifies:
   a bus message, gluing the otherwise-independent AIRs into one sound machine.
 
 The per-AIR *spec* is not an assumed field: it is derived from these two by
-`AcceptedTrace.spec_holds` (in `AcceptedTrace/Spec.lean`).
+`AcceptedZiskTrace.spec_holds` (in `AcceptedZiskTrace/Spec.lean`).
 
 It is the single object the soundness development quantifies over; everything
-downstream (`ProgramBinding`, the provider-match wrappers, the per-op
+downstream (`SailTrace`, the provider-match wrappers, the per-op
 constructions) is built relative to one of these.
 -/
 
 namespace ZiskFv.Compliance
 
 /-- Accepted committed trace for the full RV64IM Clean ensemble. -/
-structure AcceptedTrace where
+structure AcceptedZiskTrace where
   numInstructions : Nat
   program : ZiskFv.AirsClean.ZiskInstructionRom.Program numInstructions
   witness :

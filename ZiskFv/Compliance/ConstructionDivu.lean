@@ -437,7 +437,7 @@ private lemma divu_carry_bounds_claimed_dead
     `exists_arithMul_provider_row_matches_primary_of_divu_from_binding`.
     Mirrors `mulwArow`. -/
 noncomputable def divuArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -450,7 +450,7 @@ noncomputable def divuArow
 /-- `FullSpec` of the balance-selected DIVU provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem divuArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -468,7 +468,7 @@ theorem divuArow_fullSpec_row
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form (cheap: free
     `ArithMulRow`, no view whnf). -/
 theorem divuArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -489,7 +489,7 @@ theorem divuArow_match_row
     off the BARE provider `ArithMulRow` via `divu_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem divuArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -519,7 +519,7 @@ theorem divuArow_mode_pins
     Main row's emission, in `opBus_row_ArithDiv` form.  The DIVU mode pins
     needed to reduce the faithful mux are DERIVED via `divuArow_mode_pins`. -/
 theorem divuArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -732,8 +732,8 @@ lemma equiv_DIVU_of_fullSpec_claimed_dead
     `arithDiv_table_interactionsWith_opBus_nil`), so it is carried explicitly,
     exactly as the canonical `equiv_DIVU` carries it. -/
 theorem construction_divu_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)
@@ -746,12 +746,12 @@ theorem construction_divu_sound_claimed_dead
       (mainOfTable trace.program trace.mainTable).store_pc i.val = 0)
     -- (b) Sail reads + operands
     (h_input_r1 :
-      read_xreg (regidx_to_fin r1) (binding.stateAt i)
-        = EStateM.Result.ok divu_input.r1_val (binding.stateAt i))
+      read_xreg (regidx_to_fin r1) (binding i)
+        = EStateM.Result.ok divu_input.r1_val (binding i))
     (h_input_r2 :
-      read_xreg (regidx_to_fin r2) (binding.stateAt i)
-        = EStateM.Result.ok divu_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some divu_input.PC)
+      read_xreg (regidx_to_fin r2) (binding i)
+        = EStateM.Result.ok divu_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some divu_input.PC)
     (h_input_rd : divu_input.rd = regidx_to_fin rd)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -790,11 +790,11 @@ theorem construction_divu_sound_claimed_dead
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, true))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, true))) (binding i)
       = (bus_effect (busSub trace binding i execRow).exec_row
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
   -- (a) Arith witnesses derived from balance: FullSpec.
   have h_full :
       ZiskFv.AirsClean.ArithMul.FullSpec
@@ -837,7 +837,7 @@ theorem construction_divu_sound_claimed_dead
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- promises bundle: Sail reads + exec artifacts as binders; MemBus shape by rfl.
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      (binding.stateAt i) divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC
+      (binding i) divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC
       (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
       r1 r2 rd (busSub trace binding i execRow).exec_row (busSub trace binding i execRow).e0
       (busSub trace binding i execRow).e1 (busSub trace binding i execRow).e2 :=
@@ -858,7 +858,7 @@ theorem construction_divu_sound_claimed_dead
       rd_idx := h_rd_idx }
   -- Delegate to the F4 fullSpec bridge.
   exact equiv_DIVU_of_fullSpec_claimed_dead
-    (binding.stateAt i) divu_input r1 r2 rd (busSub trace binding i execRow)
+    (binding i) divu_input r1 r2 rd (busSub trace binding i execRow)
     (mainOfTable trace.program trace.mainTable) i.val
     (divuArow trace binding i h_main_active h_main_op)
     pins h_match_primary promises arith_mem bounds

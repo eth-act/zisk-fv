@@ -144,7 +144,7 @@ def vOfMulwRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
     `vOfMulwRow (mulwArow …)`. The Arith witnesses for this row are derived
     inside `construction_mulw_sound`; nothing about the row is caller-supplied. -/
 noncomputable def mulwArow
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -170,7 +170,7 @@ theorem fullSpec_rowAt_vOfMulwRow
     underlying `mulwArow` matches the one this proof picks — keeping the defeq
     cheap for the construction body. -/
 theorem mulwArow_fullSpec_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -188,7 +188,7 @@ theorem mulwArow_fullSpec_row
 
 /-- `FullSpec` of the balance-selected MULW provider row view. -/
 theorem mulwArow_fullSpec
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -230,7 +230,7 @@ theorem match_opBus_row_Arith_vOfMulwRow
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. Cheap: the row
     is a free `ArithMulRow`, so no `vOfMulwRow`/`opBus_row_Arith` whnf. -/
 theorem mulwArow_match_row
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -261,7 +261,7 @@ theorem mulwArow_match_row
     op-bus match via the CHEAP `rfl`-projection lemma `primaryOpBusMessage_toEntry_op`
     (a rewrite, not a reduction). -/
 theorem mulwArow_mode_pins
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -290,7 +290,7 @@ theorem mulwArow_mode_pins
     Main row's emission, in `opBus_row_Arith` form. The MUL/MULW mode pins
     needed to reduce the faithful mux are DERIVED via `mulwArow_mode_pins`. -/
 theorem mulwArow_match
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -312,8 +312,8 @@ theorem mulwArow_match
     `trace.channels_balanced` / `trace.spec_holds` via the provider's lookup-aware
     `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
 theorem construction_mulw_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)
@@ -326,12 +326,12 @@ theorem construction_mulw_sound_claimed_dead
       (mainOfTable trace.program trace.mainTable).store_pc i.val = 0)
     -- (b) Sail reads + operands
     (h_input_r1 :
-      read_xreg (regidx_to_fin r1) (binding.stateAt i)
-        = EStateM.Result.ok mulw_input.r1_val (binding.stateAt i))
+      read_xreg (regidx_to_fin r1) (binding i)
+        = EStateM.Result.ok mulw_input.r1_val (binding i))
     (h_input_r2 :
-      read_xreg (regidx_to_fin r2) (binding.stateAt i)
-        = EStateM.Result.ok mulw_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some mulw_input.PC)
+      read_xreg (regidx_to_fin r2) (binding i)
+        = EStateM.Result.ok mulw_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some mulw_input.PC)
     (h_input_rd : mulw_input.rd = regidx_to_fin rd)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -382,11 +382,11 @@ theorem construction_mulw_sound_claimed_dead
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.MULW (r2, r1, rd))) (binding.stateAt i)
+        (instruction.MULW (r2, r1, rd))) (binding i)
       = (bus_effect (busSub trace binding i execRow).exec_row
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
   -- The balance-selected provider row view.  Kept as the explicit syntactic
   -- term `vOfMulwRow (mulwArow …)` (NOT `set`/`let`) so it matches the residual
   -- operand binders verbatim, avoiding any `mulwArow` whnf in the delegation.
@@ -435,7 +435,7 @@ theorem construction_mulw_sound_claimed_dead
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- promises bundle: Sail reads + exec artifacts as binders; MemBus shape by rfl.
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      (binding.stateAt i) mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
+      (binding i) mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
       (PureSpec.execute_MULW_pure mulw_input).nextPC
       r1 r2 rd (busSub trace binding i execRow).exec_row (busSub trace binding i execRow).e0
       (busSub trace binding i execRow).e1 (busSub trace binding i execRow).e2 :=
@@ -456,7 +456,7 @@ theorem construction_mulw_sound_claimed_dead
       rd_idx := h_rd_idx }
   -- Delegate to the F4 fullSpec wrapper.
   exact equiv_MULW_of_fullSpec
-    (binding.stateAt i) mulw_input r1 r2 rd (busSub trace binding i execRow)
+    (binding i) mulw_input r1 r2 rd (busSub trace binding i execRow)
     (mainOfTable trace.program trace.mainTable) i.val
     (vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)) 0
     pins h_match_primary promises arith_mem

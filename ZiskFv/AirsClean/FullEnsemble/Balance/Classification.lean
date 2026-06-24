@@ -82,7 +82,7 @@ theorem exists_mem_table_of_fullRv64im_witness
 
 /-- Every concrete witness for the full RV64IM ensemble contains the unified
     Main table. This is only table selection; row-level decode/provenance is
-    supplied separately by `ProgramBinding`. -/
+    supplied separately by `SailTrace`. -/
 theorem exists_main_table_of_fullRv64im_witness
     {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :

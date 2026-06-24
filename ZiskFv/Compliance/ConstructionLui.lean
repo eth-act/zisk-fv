@@ -64,7 +64,7 @@ set_option maxHeartbeats 2000000
     table.  Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 noncomputable def mainRowWithRomLui
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program trace.mainTable i.val
@@ -74,7 +74,7 @@ noncomputable def mainRowWithRomLui
     match is then `matches_memory_entry_refl`. -/
 @[reducible]
 noncomputable def eRdLui
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
     Interaction.MemoryBusEntry FGL :=
   ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
     (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomLui trace binding i)) 1 1
@@ -82,7 +82,7 @@ noncomputable def eRdLui
 /-- The Main per-row `Spec` at trace index `i`, derived from `trace.spec_holds`.
     (Standalone version of the in-wrapper `h_main_spec` derivation.) -/
 theorem mainSpec_at
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.Spec
       (ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -117,8 +117,8 @@ theorem mainSpec_at
     LUI constraint subset, the `StorePcMemoryWitness`, the rd-write MemBus shape,
     the pure-spec `nextPC_eq`, and the circuit-internal rd arithmetic. -/
 theorem construction_lui_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
@@ -142,7 +142,7 @@ theorem construction_lui_sound_claimed_dead
     -- (b) Sail-value bridges
     (h_input_imm : lui_input.imm = imm)
     (h_input_rd : lui_input.rd = regidx_to_fin rd)
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some lui_input.PC)
+    (h_input_pc : (binding i).regs.get? Register.PC = .some lui_input.PC)
     (h_imm_lo_nat :
       ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val).val
         = (imm ++ (0 : BitVec 12)).toNat)
@@ -162,10 +162,10 @@ theorem construction_lui_sound_claimed_dead
     (h_rd_idx :
       lui_input.rd =
         Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr) :
-    execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) (binding.stateAt i)
-      = (bus_effect execRow [eRdLui trace binding i] (binding.stateAt i)).2 := by
+    execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) (binding i)
+      = (bus_effect execRow [eRdLui trace binding i] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the LUI Main constraint subset.
   have h_spec := mainSpec_at trace binding i

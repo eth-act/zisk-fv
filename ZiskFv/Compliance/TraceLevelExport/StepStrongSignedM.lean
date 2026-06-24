@@ -65,7 +65,7 @@ set_option maxHeartbeats 8000000
     the two exceptional product-sign shapes the ArithTable admits for op 180, so an
     honest signed MUL row supplies all binders. -/
 theorem stepStrong_mul
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i)
     (h_known : Defects.NoKnownDefect (mulEnvOf trace binding i d)) :
     (do
@@ -75,11 +75,11 @@ theorem stepStrong_mul
           (d.r2, d.r1, d.rd,
            { result_part := VectorHalf.Low
              signed_rs1 := d.srs1
-             signed_rs2 := d.srs2 }))) (binding.stateAt i)
+             signed_rs2 := d.srs2 }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let env : OpEnvelope state m i.val := mulEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
@@ -98,7 +98,7 @@ theorem stepStrong_mul
     consumes the documented SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b` carried by
     `RowData_mulh`.  Non-vacuous. -/
 theorem stepStrong_mulh
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i)
     (h_known : Defects.NoKnownDefect (mulhEnvOf trace binding i d)) :
     (do
@@ -108,11 +108,11 @@ theorem stepStrong_mulh
           (d.r2, d.r1, d.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Signed
-             signed_rs2 := .Signed }))) (binding.stateAt i)
+             signed_rs2 := .Signed }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let env : OpEnvelope state m i.val := mulhEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
@@ -124,7 +124,7 @@ theorem stepStrong_mulh
     Companion of `stepStrong_mulh` for the signed × unsigned high multiply
     (op 179).  Carries ONE sign-range residual `h_sign_a` (op2 unsigned). -/
 theorem stepStrong_mulhsu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i)
     (h_known : Defects.NoKnownDefect (mulhsuEnvOf trace binding i d)) :
     (do
@@ -134,11 +134,11 @@ theorem stepStrong_mulhsu
           (d.r2, d.r1, d.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Signed
-             signed_rs2 := .Unsigned }))) (binding.stateAt i)
+             signed_rs2 := .Unsigned }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let env : OpEnvelope state m i.val := mulhsuEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
@@ -167,16 +167,16 @@ theorem stepStrong_mulhsu
     forge (codygunton/zisk#5), and divisor-zero rows are handled by
     `h_boundary`; signed overflow is handled by the signed DIV bridge. -/
 theorem stepStrong_div
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i)
     (h_known : Defects.NoKnownDefect (divEnvOf trace binding i d)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let env : OpEnvelope state m i.val := divEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
@@ -190,16 +190,16 @@ theorem stepStrong_div
     `h_known` is the GENUINE `NoKnownDefect (remEnvOf …)`, SATISFIABLE for an honest
     signed REM row (`RowData_rem.h_not_forge`).  Non-vacuous. -/
 theorem stepStrong_rem
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i)
     (h_known : Defects.NoKnownDefect (remEnvOf trace binding i d)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let env : OpEnvelope state m i.val := remEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
@@ -214,16 +214,16 @@ theorem stepStrong_rem
     `NoKnownDefect (divwEnvOf …)`, SATISFIABLE for an honest signed DIVW row
     (`RowData_divw.h_not_forge`, `|r₃₂| ≠ |op2₃₂|`).  Non-vacuous. -/
 theorem stepStrong_divw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i)
     (h_known : Defects.NoKnownDefect (divwEnvOf trace binding i d)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let env : OpEnvelope state m i.val := divwEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
@@ -235,16 +235,16 @@ theorem stepStrong_divw
     W-mode analogue of `stepStrong_rem` (signed 32-bit remainder, op `189`,
     `m32 = 1`, secondary lane).  Non-vacuous (`RowData_remw.h_not_forge`). -/
 theorem stepStrong_remw
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_remw trace binding i)
     (h_known : Defects.NoKnownDefect (remwEnvOf trace binding i d)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, false))) (binding.stateAt i)
+      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding.stateAt i) := by
+          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let env : OpEnvelope state m i.val := remwEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
@@ -269,13 +269,13 @@ theorem stepStrong_remw
     proves it.  Non-vacuous: the malicious FENCE shapes are excluded exactly by the
     honest-shape pins the caller supplies, as the FENCE defect ledger documents. -/
 theorem stepStrong_fence
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i)
     (h_known : Defects.NoKnownDefect (fenceEnvOf trace binding i d)) :
-    execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding.stateAt i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding.stateAt i) := by
+    execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let env : OpEnvelope state m i.val := fenceEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust := ⟨d.h_main_active, d.h_main_op⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial

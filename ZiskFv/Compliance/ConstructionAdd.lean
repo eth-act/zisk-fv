@@ -16,7 +16,7 @@ EITHER of two distinct providers with two distinct `opBusMessage` shapes:
 * the dedicated `BinaryAdd` provider (`BinaryAdd.component`).
 
 The salvaged Layer-A wrapper `exists_add_provider_row_matches_from_binding`
-(`AcceptedTrace.lean`) RESOLVES the op-bus from `trace.channels_balanced` into the
+(`AcceptedZiskTrace.lean`) RESOLVES the op-bus from `trace.channels_balanced` into the
 conjunction
 
 ```
@@ -100,8 +100,8 @@ set_option maxHeartbeats 2000000
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder. -/
 theorem construction_add_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -120,33 +120,33 @@ theorem construction_add_sound_claimed_dead
         i.val = 0)
     -- (b) Sail reads + operands
     (h_input_r1 :
-      read_xreg (regidx_to_fin r1) (binding.stateAt i)
-        = EStateM.Result.ok add_input.r1_val (binding.stateAt i))
+      read_xreg (regidx_to_fin r1) (binding i)
+        = EStateM.Result.ok add_input.r1_val (binding i))
     (h_input_r2 :
-      read_xreg (regidx_to_fin r2) (binding.stateAt i)
-        = EStateM.Result.ok add_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some add_input.PC)
+      read_xreg (regidx_to_fin r2) (binding i)
+        = EStateM.Result.ok add_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some add_input.PC)
     (h_input_rd : add_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
     (h_a_lo_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
     (h_b_lo_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
     (h_b_hi_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -164,14 +164,14 @@ theorem construction_add_sound_claimed_dead
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (r2, r1, rd, rop.ADD))) (binding.stateAt i)
+        (instruction.RTYPE (r2, r1, rd, rop.ADD))) (binding i)
       = (bus_effect (busSub trace binding i execRow).exec_row
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
   -- abbreviations
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i execRow
   -- (a) op-bus provider RESOLUTION, derived from `trace.channels_balanced`: the
   -- `add_subset_holds` conjunct + a `staticLookup ∨ BinaryAdd` DISJUNCTION.
@@ -308,8 +308,8 @@ theorem construction_add_sound_claimed_dead
     Residual budget = ADD's, minus the 2 r2 lane bridges (`h_b_lo_t`/`h_b_hi_t`)
     and `h_input_r2`, plus `imm`, `h_input_imm`, `h_addi_subset`, `h_set_pc`. -/
 theorem construction_addi_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx)
@@ -332,21 +332,21 @@ theorem construction_addi_sound_claimed_dead
         i.val = 0)
     -- (b) Sail read + operands
     (h_input_r1 :
-      read_xreg (regidx_to_fin r1) (binding.stateAt i)
-        = EStateM.Result.ok addi_input.r1_val (binding.stateAt i))
+      read_xreg (regidx_to_fin r1) (binding i)
+        = EStateM.Result.ok addi_input.r1_val (binding i))
     (h_input_imm : addi_input.imm = imm)
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some addi_input.PC)
+    (h_input_pc : (binding i).regs.get? Register.PC = .some addi_input.PC)
     (h_input_rd : addi_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
     (h_a_lo_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
     (h_a_hi_t :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
-          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding.stateAt i)).xreg
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
     -- (b) immediate-routing pin (NAMED top-level binder, program/decode residual)
     (h_addi_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
@@ -368,14 +368,14 @@ theorem construction_addi_sound_claimed_dead
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (imm, r1, rd, iop.ADDI))) (binding.stateAt i)
+        (instruction.ITYPE (imm, r1, rd, iop.ADDI))) (binding i)
       = (bus_effect (busSub trace binding i execRow).exec_row
           [ (busSub trace binding i execRow).e0
           , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding.stateAt i)).2 := by
+          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
   -- abbreviations
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let bus := busSub trace binding i execRow
   -- (a) op-bus provider RESOLUTION, derived from `trace.channels_balanced`: the
   -- `add_subset_holds` conjunct + a `staticLookup ∨ BinaryAdd` DISJUNCTION

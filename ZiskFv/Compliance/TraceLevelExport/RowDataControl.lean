@@ -44,7 +44,7 @@ set_option maxHeartbeats 8000000
 /-- Irreducible per-row residuals for the `beq` archetype — the binders of
     `construction_beq_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_beq
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   beq_input : PureSpec.BeqInput
   imm : BitVec 13
   r1 : regidx
@@ -71,12 +71,12 @@ structure RowData_beq
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_input_imm : beq_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-    = EStateM.Result.ok beq_input.r1_val (binding.stateAt i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-    = EStateM.Result.ok beq_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some beq_input.PC
-  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+    = EStateM.Result.ok beq_input.r1_val (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+    = EStateM.Result.ok beq_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some beq_input.PC
+  h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_exec_len : exec_row.length = 2
   h_e0_mult : exec_row[0]!.multiplicity = -1
@@ -90,7 +90,7 @@ structure RowData_beq
 /-- Irreducible per-row residuals for the `bne` archetype — the binders of
     `construction_bne_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bne
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   bne_input : PureSpec.BneInput
   imm : BitVec 13
   r1 : regidx
@@ -117,12 +117,12 @@ structure RowData_bne
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
   h_input_imm : bne_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-    = EStateM.Result.ok bne_input.r1_val (binding.stateAt i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-    = EStateM.Result.ok bne_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bne_input.PC
-  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+    = EStateM.Result.ok bne_input.r1_val (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+    = EStateM.Result.ok bne_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some bne_input.PC
+  h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_exec_len : exec_row.length = 2
   h_e0_mult : exec_row[0]!.multiplicity = -1
@@ -136,7 +136,7 @@ structure RowData_bne
 /-- Irreducible per-row residuals for the `blt` archetype — the binders of
     `construction_blt_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_blt
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   blt_input : PureSpec.BltInput
   imm : BitVec 13
   r1 : regidx
@@ -163,12 +163,12 @@ structure RowData_blt
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_input_imm : blt_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-    = EStateM.Result.ok blt_input.r1_val (binding.stateAt i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-    = EStateM.Result.ok blt_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some blt_input.PC
-  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+    = EStateM.Result.ok blt_input.r1_val (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+    = EStateM.Result.ok blt_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some blt_input.PC
+  h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_exec_len : exec_row.length = 2
   h_e0_mult : exec_row[0]!.multiplicity = -1
@@ -182,7 +182,7 @@ structure RowData_blt
 /-- Irreducible per-row residuals for the `bge` archetype — the binders of
     `construction_bge_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bge
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   bge_input : PureSpec.BgeInput
   imm : BitVec 13
   r1 : regidx
@@ -209,12 +209,12 @@ structure RowData_bge
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
   h_input_imm : bge_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-    = EStateM.Result.ok bge_input.r1_val (binding.stateAt i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-    = EStateM.Result.ok bge_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bge_input.PC
-  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+    = EStateM.Result.ok bge_input.r1_val (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+    = EStateM.Result.ok bge_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some bge_input.PC
+  h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_exec_len : exec_row.length = 2
   h_e0_mult : exec_row[0]!.multiplicity = -1
@@ -228,7 +228,7 @@ structure RowData_bge
 /-- Irreducible per-row residuals for the `bltu` archetype — the binders of
     `construction_bltu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bltu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   bltu_input : PureSpec.BltuInput
   imm : BitVec 13
   r1 : regidx
@@ -255,12 +255,12 @@ structure RowData_bltu
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_input_imm : bltu_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-    = EStateM.Result.ok bltu_input.r1_val (binding.stateAt i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-    = EStateM.Result.ok bltu_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bltu_input.PC
-  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+    = EStateM.Result.ok bltu_input.r1_val (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+    = EStateM.Result.ok bltu_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some bltu_input.PC
+  h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_exec_len : exec_row.length = 2
   h_e0_mult : exec_row[0]!.multiplicity = -1
@@ -274,7 +274,7 @@ structure RowData_bltu
 /-- Irreducible per-row residuals for the `bgeu` archetype — the binders of
     `construction_bgeu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bgeu
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   bgeu_input : PureSpec.BgeuInput
   imm : BitVec 13
   r1 : regidx
@@ -301,12 +301,12 @@ structure RowData_bgeu
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
   h_input_imm : bgeu_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-    = EStateM.Result.ok bgeu_input.r1_val (binding.stateAt i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-    = EStateM.Result.ok bgeu_input.r2_val (binding.stateAt i)
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bgeu_input.PC
-  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+    = EStateM.Result.ok bgeu_input.r1_val (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+    = EStateM.Result.ok bgeu_input.r2_val (binding i)
+  h_input_pc : (binding i).regs.get? Register.PC = .some bgeu_input.PC
+  h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_exec_len : exec_row.length = 2
   h_e0_mult : exec_row[0]!.multiplicity = -1
@@ -320,7 +320,7 @@ structure RowData_bgeu
 /-- Irreducible per-row residuals for the `jal` archetype — the binders of
     `construction_jal_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_jal
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   jal_input : PureSpec.JalInput
   imm : BitVec 21
   rd : regidx
@@ -355,8 +355,8 @@ structure RowData_jal
     (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
       = nextPC_val
   h_input_rd : jal_input.rd = regidx_to_fin rd
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some jal_input.PC
-  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_input_pc : (binding i).regs.get? Register.PC = .some jal_input.PC
+  h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
   h_nextPC_option : (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
@@ -369,7 +369,7 @@ structure RowData_jal
 /-- Irreducible per-row residuals for the `jalr` archetype — the binders of
     `construction_jalr_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_jalr
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   jalr_input : PureSpec.JalrInput
   imm : BitVec 12
   rs1 : regidx
@@ -403,19 +403,19 @@ structure RowData_jalr
     (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
       = nextPC_val
   h_input_rd : jalr_input.rd = regidx_to_fin rd
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some jalr_input.PC
-  h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val
+  h_input_pc : (binding i).regs.get? Register.PC = .some jalr_input.PC
+  h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JALR_pure jalr_input).success = true
   h_nextPC_option : (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
   h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
   h_input_imm : jalr_input.imm = imm
-  h_input_rs1 : read_xreg (regidx_to_fin rs1) (binding.stateAt i)
-    = EStateM.Result.ok jalr_input.rs1_val (binding.stateAt i)
-  h_cur_privilege : Sail.readReg Register.cur_privilege (binding.stateAt i)
-    = EStateM.Result.ok Privilege.Machine (binding.stateAt i)
-  h_mseccfg : Sail.readReg Register.mseccfg (binding.stateAt i)
-    = EStateM.Result.ok mseccfg (binding.stateAt i)
+  h_input_rs1 : read_xreg (regidx_to_fin rs1) (binding i)
+    = EStateM.Result.ok jalr_input.rs1_val (binding i)
+  h_cur_privilege : Sail.readReg Register.cur_privilege (binding i)
+    = EStateM.Result.ok Privilege.Machine (binding i)
+  h_mseccfg : Sail.readReg Register.mseccfg (binding i)
+    = EStateM.Result.ok mseccfg (binding i)
   h_link_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val
       + (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
@@ -440,7 +440,7 @@ structure RowData_jalr
     documents.  Non-vacuous: a real trace with a generic `fm=0,rs1=x0,rd=x0` FENCE
     row supplies all binders and proves the `NoKnownDefect` obligation. -/
 structure RowData_fence
-    (trace : AcceptedTrace) (binding : ProgramBinding trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
   fence_input : PureSpec.FenceInput
   fm : BitVec 4
   fenceP : BitVec 4
@@ -456,9 +456,9 @@ structure RowData_fence
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_FLAG
   -- FENCE `FencePromises` residuals (the six structural binders).
-  h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some fence_input.PC
+  h_input_pc : (binding i).regs.get? Register.PC = .some fence_input.PC
   h_input_priv :
-    (binding.stateAt i).regs.get? Register.cur_privilege = .some Privilege.Machine
+    (binding i).regs.get? Register.cur_privilege = .some Privilege.Machine
   h_exec_len : exec_row.length = 2
   h_e0_mult : exec_row[0]!.multiplicity = -1
   h_e1_mult : exec_row[1]!.multiplicity = 1

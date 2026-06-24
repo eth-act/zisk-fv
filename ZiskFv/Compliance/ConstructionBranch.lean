@@ -106,8 +106,8 @@ set_option maxHeartbeats 2000000
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `exec_row` ∀-binder (with `misa_val`). -/
 theorem construction_beq_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (beq_input : PureSpec.BeqInput)
     (imm : BitVec 13)
@@ -116,13 +116,13 @@ theorem construction_beq_sound_claimed_dead
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     -- (b) operand bridges
     (h_input_imm : beq_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok beq_input.r1_val (binding.stateAt i))
-    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok beq_input.r2_val (binding.stateAt i))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok beq_input.r1_val (binding i))
+    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok beq_input.r2_val (binding i))
     -- (b) Sail mode facts
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some beq_input.PC)
-    (h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val)
+    (h_input_pc : (binding i).regs.get? Register.PC = .some beq_input.PC)
+    (h_input_misa : (binding i).regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (h_exec_len : exec_row.length = 2)
@@ -135,9 +135,9 @@ theorem construction_beq_sound_claimed_dead
     -- (b) branch-outcome (happy path)
     (h_not_throws : (PureSpec.execute_BEQ_pure beq_input).throws = false)
     (h_success : (PureSpec.execute_BEQ_pure beq_input).success = true) :
-    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) (binding.stateAt i)
-      = (bus_effect exec_row [] (binding.stateAt i)).2 := by
-  set state := binding.stateAt i with hstate
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) (binding i)
+      = (bus_effect exec_row [] (binding i)).2 := by
+  set state := binding i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨imm, r1, r2, misa_val, exec_row⟩
   let promises : ZiskFv.EquivCore.Promises.BranchPromises
@@ -167,8 +167,8 @@ theorem construction_beq_sound_claimed_dead
     The conditional next-PC residual `h_nextPC_matches` is the #100 cross-row
     obligation. -/
 theorem construction_bne_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (bne_input : PureSpec.BneInput)
     (imm : BitVec 13)
@@ -176,12 +176,12 @@ theorem construction_bne_sound_claimed_dead
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (h_input_imm : bne_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok bne_input.r1_val (binding.stateAt i))
-    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok bne_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bne_input.PC)
-    (h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok bne_input.r1_val (binding i))
+    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok bne_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some bne_input.PC)
+    (h_input_misa : (binding i).regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
@@ -191,9 +191,9 @@ theorem construction_bne_sound_claimed_dead
         = (PureSpec.execute_BNE_pure bne_input).nextPC)
     (h_not_throws : (PureSpec.execute_BNE_pure bne_input).throws = false)
     (h_success : (PureSpec.execute_BNE_pure bne_input).success = true) :
-    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BNE)) (binding.stateAt i)
-      = (bus_effect exec_row [] (binding.stateAt i)).2 := by
-  set state := binding.stateAt i with hstate
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BNE)) (binding i)
+      = (bus_effect exec_row [] (binding i)).2 := by
+  set state := binding i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨imm, r1, r2, misa_val, exec_row⟩
   let promises : ZiskFv.EquivCore.Promises.BranchPromises
@@ -219,8 +219,8 @@ theorem construction_bne_sound_claimed_dead
 
 /-- Sound BLT construction (signed less-than). See `construction_beq_sound`. -/
 theorem construction_blt_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (blt_input : PureSpec.BltInput)
     (imm : BitVec 13)
@@ -228,12 +228,12 @@ theorem construction_blt_sound_claimed_dead
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (h_input_imm : blt_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok blt_input.r1_val (binding.stateAt i))
-    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok blt_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some blt_input.PC)
-    (h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok blt_input.r1_val (binding i))
+    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok blt_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some blt_input.PC)
+    (h_input_misa : (binding i).regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
@@ -243,9 +243,9 @@ theorem construction_blt_sound_claimed_dead
         = (PureSpec.execute_BLT_pure blt_input).nextPC)
     (h_not_throws : (PureSpec.execute_BLT_pure blt_input).throws = false)
     (h_success : (PureSpec.execute_BLT_pure blt_input).success = true) :
-    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLT)) (binding.stateAt i)
-      = (bus_effect exec_row [] (binding.stateAt i)).2 := by
-  set state := binding.stateAt i with hstate
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLT)) (binding i)
+      = (bus_effect exec_row [] (binding i)).2 := by
+  set state := binding i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨imm, r1, r2, misa_val, exec_row⟩
   let promises : ZiskFv.EquivCore.Promises.BranchPromises
@@ -271,8 +271,8 @@ theorem construction_blt_sound_claimed_dead
 
 /-- Sound BGE construction (signed greater-or-equal). See `construction_beq_sound`. -/
 theorem construction_bge_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (bge_input : PureSpec.BgeInput)
     (imm : BitVec 13)
@@ -280,12 +280,12 @@ theorem construction_bge_sound_claimed_dead
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (h_input_imm : bge_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok bge_input.r1_val (binding.stateAt i))
-    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok bge_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bge_input.PC)
-    (h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok bge_input.r1_val (binding i))
+    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok bge_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some bge_input.PC)
+    (h_input_misa : (binding i).regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
@@ -295,9 +295,9 @@ theorem construction_bge_sound_claimed_dead
         = (PureSpec.execute_BGE_pure bge_input).nextPC)
     (h_not_throws : (PureSpec.execute_BGE_pure bge_input).throws = false)
     (h_success : (PureSpec.execute_BGE_pure bge_input).success = true) :
-    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGE)) (binding.stateAt i)
-      = (bus_effect exec_row [] (binding.stateAt i)).2 := by
-  set state := binding.stateAt i with hstate
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGE)) (binding i)
+      = (bus_effect exec_row [] (binding i)).2 := by
+  set state := binding i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨imm, r1, r2, misa_val, exec_row⟩
   let promises : ZiskFv.EquivCore.Promises.BranchPromises
@@ -323,8 +323,8 @@ theorem construction_bge_sound_claimed_dead
 
 /-- Sound BLTU construction (unsigned less-than). See `construction_beq_sound`. -/
 theorem construction_bltu_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (bltu_input : PureSpec.BltuInput)
     (imm : BitVec 13)
@@ -332,12 +332,12 @@ theorem construction_bltu_sound_claimed_dead
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (h_input_imm : bltu_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok bltu_input.r1_val (binding.stateAt i))
-    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok bltu_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bltu_input.PC)
-    (h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok bltu_input.r1_val (binding i))
+    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok bltu_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some bltu_input.PC)
+    (h_input_misa : (binding i).regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
@@ -347,9 +347,9 @@ theorem construction_bltu_sound_claimed_dead
         = (PureSpec.execute_BLTU_pure bltu_input).nextPC)
     (h_not_throws : (PureSpec.execute_BLTU_pure bltu_input).throws = false)
     (h_success : (PureSpec.execute_BLTU_pure bltu_input).success = true) :
-    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLTU)) (binding.stateAt i)
-      = (bus_effect exec_row [] (binding.stateAt i)).2 := by
-  set state := binding.stateAt i with hstate
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLTU)) (binding i)
+      = (bus_effect exec_row [] (binding i)).2 := by
+  set state := binding i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨imm, r1, r2, misa_val, exec_row⟩
   let promises : ZiskFv.EquivCore.Promises.BranchPromises
@@ -375,8 +375,8 @@ theorem construction_bltu_sound_claimed_dead
 
 /-- Sound BGEU construction (unsigned greater-or-equal). See `construction_beq_sound`. -/
 theorem construction_bgeu_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (bgeu_input : PureSpec.BgeuInput)
     (imm : BitVec 13)
@@ -384,12 +384,12 @@ theorem construction_bgeu_sound_claimed_dead
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (h_input_imm : bgeu_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding.stateAt i)
-      = EStateM.Result.ok bgeu_input.r1_val (binding.stateAt i))
-    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding.stateAt i)
-      = EStateM.Result.ok bgeu_input.r2_val (binding.stateAt i))
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some bgeu_input.PC)
-    (h_input_misa : (binding.stateAt i).regs.get? Register.misa = .some misa_val)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+      = EStateM.Result.ok bgeu_input.r1_val (binding i))
+    (h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+      = EStateM.Result.ok bgeu_input.r2_val (binding i))
+    (h_input_pc : (binding i).regs.get? Register.PC = .some bgeu_input.PC)
+    (h_input_misa : (binding i).regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
@@ -399,9 +399,9 @@ theorem construction_bgeu_sound_claimed_dead
         = (PureSpec.execute_BGEU_pure bgeu_input).nextPC)
     (h_not_throws : (PureSpec.execute_BGEU_pure bgeu_input).throws = false)
     (h_success : (PureSpec.execute_BGEU_pure bgeu_input).success = true) :
-    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGEU)) (binding.stateAt i)
-      = (bus_effect exec_row [] (binding.stateAt i)).2 := by
-  set state := binding.stateAt i with hstate
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGEU)) (binding i)
+      = (bus_effect exec_row [] (binding i)).2 := by
+  set state := binding i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
     ⟨imm, r1, r2, misa_val, exec_row⟩
   let promises : ZiskFv.EquivCore.Promises.BranchPromises

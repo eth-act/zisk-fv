@@ -77,8 +77,8 @@ set_option maxHeartbeats 2000000
     AUIPC constraint subset, the `StorePcMemoryWitness`, the rd-write MemBus
     shape, the pure-spec `nextPC_eq`, and the circuit-internal rd arithmetic. -/
 theorem construction_auipc_sound_claimed_dead
-    (trace : AcceptedTrace)
-    (binding : ProgramBinding trace)
+    (trace : AcceptedZiskTrace)
+    (binding : SailTrace trace)
     (i : Fin trace.numInstructions)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)
@@ -102,7 +102,7 @@ theorem construction_auipc_sound_claimed_dead
     -- (b) Sail-value bridges
     (h_input_imm : auipc_input.imm = imm)
     (h_input_rd : auipc_input.rd = regidx_to_fin rd)
-    (h_input_pc : (binding.stateAt i).regs.get? Register.PC = .some auipc_input.PC)
+    (h_input_pc : (binding i).regs.get? Register.PC = .some auipc_input.PC)
     (h_offset_bridge :
       ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
           i.val).val
@@ -130,10 +130,10 @@ theorem construction_auipc_sound_claimed_dead
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) :
-    execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) (binding.stateAt i)
-      = (bus_effect execRow [eRdLui trace binding i] (binding.stateAt i)).2 := by
+    execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) (binding i)
+      = (bus_effect execRow [eRdLui trace binding i] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding.stateAt i with hstate
+  set state := binding i with hstate
   let e_rd := eRdLui trace binding i
   -- (a) Main per-row Spec ⇒ the AUIPC Main constraint subset.
   have h_spec := mainSpec_at trace binding i

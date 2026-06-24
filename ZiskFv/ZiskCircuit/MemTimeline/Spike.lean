@@ -29,7 +29,7 @@ The Sail↔circuit memory connection is *conserved*: the replay engine only
 * **The named residual (`RowTraceCoherence`):** at each consumed prefix row the
   Sail state at the next execution cursor must be the row's memory transition of
   the Sail state at the current cursor. This is the *trace-coherence* premise
-  (`stateAt (i+1)` is the execution successor of `stateAt i`); `ProgramBinding`
+  (`stateAt (i+1)` is the execution successor of `stateAt i`); `SailTrace`
   carries no field for it, so it stands as **external trust**, exactly like
   channel-balance. It is NOT removed by this reduction — it is named, exposed as a
   binder, and is *strictly smaller* than the original whole-state
@@ -84,7 +84,7 @@ memory. Stores transport the map via `writeMemoryOfEntry`; reads / inactive /
 non-memory rows leave it unchanged. **Only `.mem` is constrained** — `regs`, PC,
 `cycleCount`, etc. are free, so this never freezes the whole Sail state.
 
-This is the trace-coherence premise that `ProgramBinding` does not supply; it is
+This is the trace-coherence premise that `SailTrace` does not supply; it is
 carried as explicit external trust (like channel-balance), NOT derived here. -/
 def RowTraceCoherence
     (stateAt : List (MemoryBusEntry FGL) → SailState) :
