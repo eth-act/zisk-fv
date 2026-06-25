@@ -300,7 +300,7 @@ private lemma remuw_carry_bounds_claimed_dead
     `main_request_remuw_provided`.
     Mirrors `remuArow` / `divuwArow`. -/
 noncomputable def remuwArow
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -313,7 +313,7 @@ noncomputable def remuwArow
 /-- `FullSpec` of the balance-selected REMUW provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem remuwArow_fullSpec_row
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -331,7 +331,7 @@ theorem remuwArow_fullSpec_row
 /-- The op-bus match of the balance-selected REMUW provider row against the Main
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. -/
 theorem remuwArow_match_row
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -352,7 +352,7 @@ theorem remuwArow_match_row
     off the BARE provider `ArithMulRow` via `remuw_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem remuwArow_mode_pins
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -384,7 +384,7 @@ theorem remuwArow_mode_pins
     `m32`-agnostic, so the REMU secondary bridge
     `match_opBus_row_ArithDivSecondary_vOfDivuRow` applies verbatim). -/
 theorem remuwArow_match
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -634,7 +634,7 @@ lemma equiv_REMUW_of_fullSpec_claimed_dead
     encoding on bytes 4..7, class #4 — the same residuals the canonical
     `equiv_REMUW` carries). -/
 theorem construction_remuw_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (remuw_input : PureSpec.RemuwInput)
@@ -741,7 +741,7 @@ theorem construction_remuw_sound_claimed_dead
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_store_pc
   let arith_mem :
@@ -753,7 +753,7 @@ theorem construction_remuw_sound_claimed_dead
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub,
-          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
       store_pc_zero := h_core_store_pc
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- promises bundle: Sail reads + exec artifacts as binders; MemBus shape by rfl.

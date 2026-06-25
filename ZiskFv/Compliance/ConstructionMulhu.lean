@@ -617,7 +617,7 @@ lemma equiv_MULHU_of_fullSpec_claimed_dead
     `main_request_mulhu_provided`.
     Mirrors `mulwArow`. -/
 noncomputable def mulhuArow
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -630,7 +630,7 @@ noncomputable def mulhuArow
 /-- `FullSpec` of the balance-selected MULHU provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem mulhuArow_fullSpec_row
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -646,7 +646,7 @@ theorem mulhuArow_fullSpec_row
 
 /-- `FullSpec` of the balance-selected MULHU provider row view. -/
 theorem mulhuArow_fullSpec
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -680,7 +680,7 @@ theorem match_opBus_row_ArithMulSecondary_vOfMulwRow
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form (cheap: free
     `ArithMulRow`, no `vOfMulwRow`/`opBus_row_*` whnf). -/
 theorem mulhuArow_match_row
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -701,7 +701,7 @@ theorem mulhuArow_match_row
     off the BARE provider `ArithMulRow` via `mulhu_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem mulhuArow_mode_pins
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -725,7 +725,7 @@ theorem mulhuArow_mode_pins
     Main row's emission, in `opBus_row_ArithMulSecondary` form.  The MULHU mode
     pins needed to reduce the faithful mux are DERIVED via `mulhuArow_mode_pins`. -/
 theorem mulhuArow_match
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -748,7 +748,7 @@ theorem mulhuArow_match
     `trace.channels_balanced` / `trace.spec_holds` via the provider's lookup-aware
     `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
 theorem construction_mulhu_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (mulhu_input : PureSpec.MulhuInput)
@@ -835,7 +835,7 @@ theorem construction_mulhu_sound_claimed_dead
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_store_pc
   let arith_mem :
@@ -847,7 +847,7 @@ theorem construction_mulhu_sound_claimed_dead
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub,
-          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
       store_pc_zero := h_core_store_pc
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- promises bundle: Sail reads + exec artifacts as binders; MemBus shape by rfl.

@@ -72,7 +72,7 @@ no `False.elim` or contradictory pair is used.
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.sub`. -/
 theorem stepStrong_sub
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sub trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -105,7 +105,7 @@ theorem stepStrong_sub
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -119,7 +119,7 @@ theorem stepStrong_sub
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -208,7 +208,7 @@ theorem stepStrong_sub
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.and`. -/
 theorem stepStrong_and
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_and trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -241,7 +241,7 @@ theorem stepStrong_and
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -255,7 +255,7 @@ theorem stepStrong_and
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -344,7 +344,7 @@ theorem stepStrong_and
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.or`. -/
 theorem stepStrong_or
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_or trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -377,7 +377,7 @@ theorem stepStrong_or
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -391,7 +391,7 @@ theorem stepStrong_or
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -480,7 +480,7 @@ theorem stepStrong_or
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.xor`. -/
 theorem stepStrong_xor
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_xor trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -513,7 +513,7 @@ theorem stepStrong_xor
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -527,7 +527,7 @@ theorem stepStrong_xor
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -617,7 +617,7 @@ theorem stepStrong_xor
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.slt`. -/
 theorem stepStrong_slt
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_slt trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -650,7 +650,7 @@ theorem stepStrong_slt
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -664,7 +664,7 @@ theorem stepStrong_slt
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -753,7 +753,7 @@ theorem stepStrong_slt
     derivations) and invoking `zisk_riscv_compliant_program_bus`. Dominates the
     `bus_effect`-form `StepCompliance.sltu`. -/
 theorem stepStrong_sltu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sltu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -786,7 +786,7 @@ theorem stepStrong_sltu
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -800,7 +800,7 @@ theorem stepStrong_sltu
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -888,7 +888,7 @@ theorem stepStrong_sltu
     `OpEnvelope.andi` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.andi`. -/
 theorem stepStrong_andi
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_andi trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -921,7 +921,7 @@ theorem stepStrong_andi
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -935,7 +935,7 @@ theorem stepStrong_andi
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -1023,7 +1023,7 @@ theorem stepStrong_andi
     `OpEnvelope.ori` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.ori`. -/
 theorem stepStrong_ori
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_ori trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1056,7 +1056,7 @@ theorem stepStrong_ori
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -1070,7 +1070,7 @@ theorem stepStrong_ori
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -1158,7 +1158,7 @@ theorem stepStrong_ori
     `OpEnvelope.xori` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.xori`. -/
 theorem stepStrong_xori
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_xori trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1191,7 +1191,7 @@ theorem stepStrong_xori
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -1205,7 +1205,7 @@ theorem stepStrong_xori
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -1291,7 +1291,7 @@ theorem stepStrong_xori
     `OpEnvelope.slti` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.slti`. -/
 theorem stepStrong_slti
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_slti trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1324,7 +1324,7 @@ theorem stepStrong_slti
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -1338,7 +1338,7 @@ theorem stepStrong_slti
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -1419,7 +1419,7 @@ theorem stepStrong_slti
     `OpEnvelope.sltiu` + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.sltiu`. -/
 theorem stepStrong_sltiu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sltiu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1452,7 +1452,7 @@ theorem stepStrong_sltiu
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -1466,7 +1466,7 @@ theorem stepStrong_sltiu
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -1548,7 +1548,7 @@ theorem stepStrong_sltiu
 /-- Strengthened `sll` step: channel-balance via constructed `OpEnvelope.sll`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sll`. -/
 theorem stepStrong_sll
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sll trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1581,7 +1581,7 @@ theorem stepStrong_sll
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -1595,7 +1595,7 @@ theorem stepStrong_sll
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -1647,7 +1647,7 @@ theorem stepStrong_sll
 /-- Strengthened `srl` step: channel-balance via constructed `OpEnvelope.srl`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srl`. -/
 theorem stepStrong_srl
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_srl trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1680,7 +1680,7 @@ theorem stepStrong_srl
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -1694,7 +1694,7 @@ theorem stepStrong_srl
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -1746,7 +1746,7 @@ theorem stepStrong_srl
 /-- Strengthened `sra` step: channel-balance via constructed `OpEnvelope.sra`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sra`. -/
 theorem stepStrong_sra
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sra trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1779,7 +1779,7 @@ theorem stepStrong_sra
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -1793,7 +1793,7 @@ theorem stepStrong_sra
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -1845,7 +1845,7 @@ theorem stepStrong_sra
 /-- Strengthened `slli` step: channel-balance via constructed `OpEnvelope.slli`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.slli`. -/
 theorem stepStrong_slli
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_slli trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1874,7 +1874,7 @@ theorem stepStrong_slli
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -1888,7 +1888,7 @@ theorem stepStrong_slli
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -1944,7 +1944,7 @@ theorem stepStrong_slli
 /-- Strengthened `srli` step: channel-balance via constructed `OpEnvelope.srli`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srli`. -/
 theorem stepStrong_srli
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_srli trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1973,7 +1973,7 @@ theorem stepStrong_srli
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -1987,7 +1987,7 @@ theorem stepStrong_srli
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -2043,7 +2043,7 @@ theorem stepStrong_srli
 /-- Strengthened `srai` step: channel-balance via constructed `OpEnvelope.srai`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srai`. -/
 theorem stepStrong_srai
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_srai trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -2072,7 +2072,7 @@ theorem stepStrong_srai
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -2086,7 +2086,7 @@ theorem stepStrong_srai
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -2144,7 +2144,7 @@ theorem stepStrong_srai
 /-- Strengthened `subw` step: channel-balance via constructed `OpEnvelope.subw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.subw`. -/
 theorem stepStrong_subw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_subw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -2177,7 +2177,7 @@ theorem stepStrong_subw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -2191,7 +2191,7 @@ theorem stepStrong_subw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -2274,7 +2274,7 @@ theorem stepStrong_subw
 /-- Strengthened `addw` step: channel-balance via constructed `OpEnvelope.addw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.addw`. -/
 theorem stepStrong_addw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_addw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -2307,7 +2307,7 @@ theorem stepStrong_addw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -2321,7 +2321,7 @@ theorem stepStrong_addw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -2404,7 +2404,7 @@ theorem stepStrong_addw
 /-- Strengthened `addiw` step: channel-balance via constructed `OpEnvelope.addiw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.addiw`. -/
 theorem stepStrong_addiw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_addiw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -2437,7 +2437,7 @@ theorem stepStrong_addiw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -2451,7 +2451,7 @@ theorem stepStrong_addiw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -2524,7 +2524,7 @@ real BinaryExtension Spec row from the committed trace. -/
 /-- Strengthened `sllw` step: channel-balance via constructed `OpEnvelope.sllw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sllw`. -/
 theorem stepStrong_sllw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sllw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -2553,7 +2553,7 @@ theorem stepStrong_sllw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -2567,7 +2567,7 @@ theorem stepStrong_sllw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -2622,7 +2622,7 @@ theorem stepStrong_sllw
 /-- Strengthened `srlw` step: channel-balance via constructed `OpEnvelope.srlw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srlw`. -/
 theorem stepStrong_srlw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_srlw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -2651,7 +2651,7 @@ theorem stepStrong_srlw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -2665,7 +2665,7 @@ theorem stepStrong_srlw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -2720,7 +2720,7 @@ theorem stepStrong_srlw
 /-- Strengthened `sraw` step: channel-balance via constructed `OpEnvelope.sraw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sraw`. -/
 theorem stepStrong_sraw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sraw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -2750,7 +2750,7 @@ theorem stepStrong_sraw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -2764,7 +2764,7 @@ theorem stepStrong_sraw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -2819,7 +2819,7 @@ theorem stepStrong_sraw
 /-- Strengthened `slliw` step: channel-balance via constructed `OpEnvelope.slliw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.slliw`. -/
 theorem stepStrong_slliw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_slliw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -2849,7 +2849,7 @@ theorem stepStrong_slliw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -2863,7 +2863,7 @@ theorem stepStrong_slliw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -2913,7 +2913,7 @@ theorem stepStrong_slliw
 /-- Strengthened `srliw` step: channel-balance via constructed `OpEnvelope.srliw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.srliw`. -/
 theorem stepStrong_srliw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_srliw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -2943,7 +2943,7 @@ theorem stepStrong_srliw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -2957,7 +2957,7 @@ theorem stepStrong_srliw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -3007,7 +3007,7 @@ theorem stepStrong_srliw
 /-- Strengthened `sraiw` step: channel-balance via constructed `OpEnvelope.sraiw`
     + `zisk_riscv_compliant_program_bus`. Dominates `StepCompliance.sraiw`. -/
 theorem stepStrong_sraiw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sraiw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -3038,7 +3038,7 @@ theorem stepStrong_sraiw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -3052,7 +3052,7 @@ theorem stepStrong_sraiw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -3106,7 +3106,7 @@ theorem stepStrong_sraiw
     BinaryAdd provider) + `zisk_riscv_compliant_program_bus`. Dominates
     `StepCompliance.add`. -/
 theorem stepStrong_add
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_add trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -3140,7 +3140,7 @@ theorem stepStrong_add
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -3154,7 +3154,7 @@ theorem stepStrong_add
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -3258,7 +3258,7 @@ theorem stepStrong_add
     (`addi_via_binary` / `addi_via_binaryadd`) + `zisk_riscv_compliant_program_bus`.
     Dominates `StepCompliance.addi`. -/
 theorem stepStrong_addi
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_addi trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -3292,7 +3292,7 @@ theorem stepStrong_addi
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   have h_lane_rd :
@@ -3306,7 +3306,7 @@ theorem stepStrong_addi
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h

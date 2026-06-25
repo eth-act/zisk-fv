@@ -34,9 +34,14 @@ constructions) is built relative to one of these.
 
 namespace ZiskFv.Compliance
 
-/-- Accepted committed trace for the full RV64IM Clean ensemble. -/
-structure AcceptedZiskTrace where
-  numInstructions : Nat
+/-- Accepted committed trace for the full RV64IM Clean ensemble.
+
+    `numInstructions` is a **structure parameter** (not a field) so that
+    `root_soundness` can share one instruction count across the ZisK and Sail
+    sides (issue #144). The `AcceptedZiskTrace.numInstructions` accessor below
+    recovers it, so the many `trace.numInstructions` uses keep working
+    unchanged. -/
+structure AcceptedZiskTrace (numInstructions : Nat) where
   program : ZiskFv.AirsClean.ZiskInstructionRom.Program numInstructions
   witness :
     Air.Flat.EnsembleWitness
@@ -51,5 +56,14 @@ structure AcceptedZiskTrace where
       table.component =
           ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions program →
         ∀ i : Fin numInstructions, i.val < table.table.length
+
+/-- Recover the instruction count from a parameterized `AcceptedZiskTrace`.
+    `numInstructions` is now a structure parameter rather than a field; this
+    accessor keeps the many value-level `trace.numInstructions` projections
+    working. Type-level uses inside the heavy provider-match lemmas instead
+    reference the structure parameter directly (the autobound `numInstructions`
+    / `n`), so this accessor never has to unfold into the heavy
+    `componentWithRomMemAndOpBus …` subterms during `whnf` (issue #144). -/
+def AcceptedZiskTrace.numInstructions {n : Nat} (_ : AcceptedZiskTrace n) : Nat := n
 
 end ZiskFv.Compliance

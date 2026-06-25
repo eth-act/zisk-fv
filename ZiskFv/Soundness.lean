@@ -34,17 +34,15 @@ namespace ZiskFv.Compliance
     from the trace inside each `stepStrong_<op>` — nothing is caller-supplied
     beyond the trace itself. -/
 theorem root_soundness
-    (ziskTrace : AcceptedZiskTrace)
-    -- Ideally `numInstructions` is a shared top-level arg so this reads
-    -- `SailTrace numInstructions` (and `ziskTrace : AcceptedZiskTrace numInstructions`);
-    -- blocked on a `mainOfTable` whnf runaway under structure parameterization — see #144.
-    (sailTrace : SailTrace ziskTrace.numInstructions)
-    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
-    (rowDecodes : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace sailTrace i (ziskStep i))
-    (inputsAgree : ∀ i : Fin ziskTrace.numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
-    (h_known_bugs : ∀ i : Fin ziskTrace.numInstructions,
+    (numInstructions : Nat)
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (sailTrace : SailTrace numInstructions)
+    (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
+    (rowDecodes : ∀ i : Fin numInstructions, RowDecode ziskTrace sailTrace i (ziskStep i))
+    (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
+    (h_known_bugs : ∀ i : Fin numInstructions,
       StepNoKnownDefect ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i)) :
-    ∀ i : Fin ziskTrace.numInstructions, StepFaithful ziskTrace sailTrace i (ziskStep i) :=
+    ∀ i : Fin numInstructions, StepFaithful ziskTrace sailTrace i (ziskStep i) :=
   fun i =>
     stepFaithful_of_evidence ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i) (h_known_bugs i)
 

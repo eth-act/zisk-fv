@@ -79,7 +79,7 @@ set_option maxHeartbeats 2000000
 /-- Sound SUBW construction (m32 = 1 word ALU). Unique opcode `OP_SUB_W`
     (`Or.inr` of the shared W Layer-A wrapper). -/
 theorem construction_subw_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (subw_input : PureSpec.SubwInput)
@@ -166,7 +166,7 @@ theorem construction_subw_sound_claimed_dead
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_store_pc
   have h_lane_rd :
@@ -180,7 +180,7 @@ theorem construction_subw_sound_claimed_dead
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -259,7 +259,7 @@ theorem construction_subw_sound_claimed_dead
     `construction_subw_sound`: op pin `OP_ADD_W` (`Or.inl` of the shared W
     Layer-A wrapper), `ropw.ADDW`, `execute_RTYPE_addw_pure`, `equiv_ADDW`. -/
 theorem construction_addw_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (addw_input : PureSpec.AddwInput)
@@ -341,7 +341,7 @@ theorem construction_addw_sound_claimed_dead
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_store_pc
   have h_lane_rd :
@@ -355,7 +355,7 @@ theorem construction_addw_sound_claimed_dead
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
@@ -438,7 +438,7 @@ theorem construction_addw_sound_claimed_dead
     derives the immediate byte decomposition internally from `h_addiw_subset` +
     `h_match`, so the construction supplies only the r1 lane extract. -/
 theorem construction_addiw_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (addiw_input : PureSpec.AddiwInput)
@@ -513,7 +513,7 @@ theorem construction_addiw_sound_claimed_dead
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_store_pc
   have h_lane_rd :
@@ -527,7 +527,7 @@ theorem construction_addiw_sound_claimed_dead
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row] at h
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h

@@ -79,7 +79,7 @@ set_option maxHeartbeats 2000000
     * (b) RANGE pins (2): `h_pc_bound`, `h_pc_offset_lt_2_32`
     * (c) exec artifacts: the `execRow` ∀-binder + its shape fields. -/
 theorem construction_jal_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (jal_input : PureSpec.JalInput)
@@ -162,7 +162,7 @@ theorem construction_jal_sound_claimed_dead
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
-      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
     { row := mainRowWithRomLui trace binding i
       row_eq := h_row_core
@@ -209,7 +209,7 @@ theorem construction_jal_sound_claimed_dead
     * (b) RANGE pins (2): `h_pc_bound`, `h_pc_offset_lt_2_32`
     * (c) exec artifacts: the `execRow` ∀-binder + its shape fields. -/
 theorem construction_jalr_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (jalr_input : PureSpec.JalrInput)
@@ -304,7 +304,7 @@ theorem construction_jalr_sound_claimed_dead
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
-      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
     { row := mainRowWithRomLui trace binding i
       row_eq := h_row_core

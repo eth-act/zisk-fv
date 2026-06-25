@@ -16,7 +16,7 @@ namespace ZiskFv.Compliance
     ensemble's table-soundness (`witness_spec_of_constraints`). It is
     `@[reducible]` so every consumer (and the trust gate's `whnfR`) sees through
     it exactly as it did the former struct field. -/
-@[reducible] def AcceptedZiskTrace.spec_holds (trace : AcceptedZiskTrace) : trace.witness.Spec :=
+@[reducible] def AcceptedZiskTrace.spec_holds (trace : AcceptedZiskTrace n) : trace.witness.Spec :=
   ZiskFv.AirsClean.FullEnsemble.witness_spec_of_constraints
     trace.witness trace.constraints_hold trace.channels_balanced
 

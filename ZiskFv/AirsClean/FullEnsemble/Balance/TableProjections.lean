@@ -78,8 +78,15 @@ def mainTableRowAtOrZero
   else
     zeroMainRowWithRom
 
-/-- Named-column Main view obtained from the concrete Clean unified Main table. -/
-@[reducible]
+/-- Named-column Main view obtained from the concrete Clean unified Main table.
+
+    **Semireducible (not `@[reducible]`).** Marking it reducible used to make
+    elaboration whnf-expand this 16-field `Valid_Main` structure instance over
+    the heavy noncomputable `mainTable`, which tips into a non-terminating
+    `whnf` once `AcceptedZiskTrace` is parameterized by `numInstructions`
+    (issue #144). Consumers rewrite via the `@[simp]` projection lemmas below
+    (`mainOfTable_op`, `mainOfTable_is_external_op`, …) instead of unfolding the
+    instance directly. -/
 def mainOfTable
     {length : ℕ}
     (program : Program length)
@@ -107,6 +114,85 @@ def mainOfTable
   store_pc := fun row => (mainTableRowAtOrZero program table row).core.store_pc
   im_high_degree_2 := fun row => (mainTableRowAtOrZero program table row).core.im_high_degree_2
   segment_l1 := fun row => (mainTableRowAtOrZero program table row).core.segment_l1
+
+section MainOfTableProjections
+
+variable {length : ℕ} (program : Program length) (table : Table FGL)
+
+/-! ### `mainOfTable` field projections
+
+Since `mainOfTable` is no longer `@[reducible]`, every `Valid_Main` field
+access on it goes through these `@[simp]` lemmas instead of whnf-unfolding the
+16-field structure instance. Each is a definitional `rfl`. -/
+
+@[simp] theorem mainOfTable_a_0 :
+    (mainOfTable program table).a_0 =
+      fun row => (mainTableRowAtOrZero program table row).core.a_0 := rfl
+@[simp] theorem mainOfTable_a_1 :
+    (mainOfTable program table).a_1 =
+      fun row => (mainTableRowAtOrZero program table row).core.a_1 := rfl
+@[simp] theorem mainOfTable_b_0 :
+    (mainOfTable program table).b_0 =
+      fun row => (mainTableRowAtOrZero program table row).core.b_0 := rfl
+@[simp] theorem mainOfTable_b_1 :
+    (mainOfTable program table).b_1 =
+      fun row => (mainTableRowAtOrZero program table row).core.b_1 := rfl
+@[simp] theorem mainOfTable_c_0 :
+    (mainOfTable program table).c_0 =
+      fun row => (mainTableRowAtOrZero program table row).core.c_0 := rfl
+@[simp] theorem mainOfTable_c_1 :
+    (mainOfTable program table).c_1 =
+      fun row => (mainTableRowAtOrZero program table row).core.c_1 := rfl
+@[simp] theorem mainOfTable_flag :
+    (mainOfTable program table).flag =
+      fun row => (mainTableRowAtOrZero program table row).core.flag := rfl
+@[simp] theorem mainOfTable_pc :
+    (mainOfTable program table).pc =
+      fun row => (mainTableRowAtOrZero program table row).core.pc := rfl
+@[simp] theorem mainOfTable_is_external_op :
+    (mainOfTable program table).is_external_op =
+      fun row => (mainTableRowAtOrZero program table row).core.is_external_op := rfl
+@[simp] theorem mainOfTable_op :
+    (mainOfTable program table).op =
+      fun row => (mainTableRowAtOrZero program table row).core.op := rfl
+@[simp] theorem mainOfTable_b_src_imm :
+    (mainOfTable program table).b_src_imm =
+      fun row => (mainTableRowAtOrZero program table row).rom.b_src_imm := rfl
+@[simp] theorem mainOfTable_b_src_mem :
+    (mainOfTable program table).b_src_mem =
+      fun row => (mainTableRowAtOrZero program table row).rom.b_src_mem := rfl
+@[simp] theorem mainOfTable_b_src_ind :
+    (mainOfTable program table).b_src_ind =
+      fun row => (mainTableRowAtOrZero program table row).rom.b_src_ind := rfl
+@[simp] theorem mainOfTable_b_src_reg :
+    (mainOfTable program table).b_src_reg =
+      fun row => (mainTableRowAtOrZero program table row).rom.b_src_reg := rfl
+@[simp] theorem mainOfTable_m32 :
+    (mainOfTable program table).m32 =
+      fun row => (mainTableRowAtOrZero program table row).core.m32 := rfl
+@[simp] theorem mainOfTable_ind_width :
+    (mainOfTable program table).ind_width =
+      fun row => (mainTableRowAtOrZero program table row).core.ind_width := rfl
+@[simp] theorem mainOfTable_set_pc :
+    (mainOfTable program table).set_pc =
+      fun row => (mainTableRowAtOrZero program table row).core.set_pc := rfl
+@[simp] theorem mainOfTable_jmp_offset1 :
+    (mainOfTable program table).jmp_offset1 =
+      fun row => (mainTableRowAtOrZero program table row).core.jmp_offset1 := rfl
+@[simp] theorem mainOfTable_jmp_offset2 :
+    (mainOfTable program table).jmp_offset2 =
+      fun row => (mainTableRowAtOrZero program table row).core.jmp_offset2 := rfl
+@[simp] theorem mainOfTable_store_pc :
+    (mainOfTable program table).store_pc =
+      fun row => (mainTableRowAtOrZero program table row).core.store_pc := rfl
+@[simp] theorem mainOfTable_im_high_degree_2 :
+    (mainOfTable program table).im_high_degree_2 =
+      fun row => (mainTableRowAtOrZero program table row).core.im_high_degree_2 := rfl
+@[simp] theorem mainOfTable_segment_l1 :
+    (mainOfTable program table).segment_l1 =
+      fun row => (mainTableRowAtOrZero program table row).core.segment_l1 := rfl
+
+end MainOfTableProjections
 
 /-- In-range concrete table projection agrees with `List.get`. -/
 theorem mainTableRowAtOrZero_get

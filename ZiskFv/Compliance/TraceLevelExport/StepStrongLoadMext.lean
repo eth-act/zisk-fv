@@ -64,7 +64,7 @@ records are real `Valid_Mem`/`Valid_BinaryExtension` rows. -/
 
 /-- Strengthened `ld` step (channel-balance form). -/
 theorem stepStrong_ld
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_ld trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -142,7 +142,7 @@ theorem stepStrong_ld
 
 /-- Strengthened `lbu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lbu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lbu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -220,7 +220,7 @@ theorem stepStrong_lbu
 
 /-- Strengthened `lhu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lhu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lhu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -298,7 +298,7 @@ theorem stepStrong_lhu
 
 /-- Strengthened `lwu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lwu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lwu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -376,7 +376,7 @@ theorem stepStrong_lwu
 
 /-- Strengthened `lb` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lb
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lb trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -455,7 +455,7 @@ theorem stepStrong_lb
 
 /-- Strengthened `lh` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lh
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lh trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -534,7 +534,7 @@ theorem stepStrong_lh
 
 /-- Strengthened `lw` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -640,7 +640,7 @@ the real `busSub` row.  These are strictly stronger than the corresponding
     pins carried as `RowData_mulw` residuals (`m32 = 1` for W-mode); `NoKnownDefect`
     comes from the threaded `h_known_arm`.  Non-vacuous (real provider FullSpec). -/
 theorem stepStrong_mulw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -683,7 +683,7 @@ theorem stepStrong_mulw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   let arith_mem :
@@ -694,7 +694,7 @@ theorem stepStrong_mulw
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
-          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
       store_pc_zero := h_core_store_pc
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
@@ -746,7 +746,7 @@ theorem stepStrong_mulw
     projections derived from `trace.channels_balanced` / `trace.spec_holds`, not a fabricated
     environment; `execRow` remains a genuine ∀-binder. -/
 theorem stepStrong_mulhu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulhu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -798,7 +798,7 @@ theorem stepStrong_mulhu
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   let arith_mem :
@@ -809,7 +809,7 @@ theorem stepStrong_mulhu
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
-          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
       store_pc_zero := h_core_store_pc
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- Promises bundle: Sail reads + exec artifacts as binders; MemBus shape by rfl.
@@ -858,7 +858,7 @@ theorem stepStrong_mulhu
     `NoKnownDefect` comes from the threaded `h_known_arm`.  Non-vacuous (real
     provider FullSpec; the witnesses' substance is the balance-derived facts). -/
 theorem stepStrong_divu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -911,7 +911,7 @@ theorem stepStrong_divu
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   let arith_mem :
@@ -922,7 +922,7 @@ theorem stepStrong_divu
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
-          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
       store_pc_zero := h_core_store_pc
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
@@ -966,7 +966,7 @@ theorem stepStrong_divu
     (`equiv_DIVUW`).  Adds the W-mode residuals `h_b23`/`h_c23`/`h_sext_choice`
     carried by `RowData_divuw`.  Non-vacuous (real provider FullSpec). -/
 theorem stepStrong_divuw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divuw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1015,7 +1015,7 @@ theorem stepStrong_divuw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   let arith_mem :
@@ -1026,7 +1026,7 @@ theorem stepStrong_divuw
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
-          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
       store_pc_zero := h_core_store_pc
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
@@ -1069,7 +1069,7 @@ theorem stepStrong_divuw
     secondary d-lane (`opBus_row_ArithDivSecondary`, REMU mode `main_div = 0`).
     Non-vacuous (real provider FullSpec; witnesses' substance is balance-derived). -/
 theorem stepStrong_remu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1118,7 +1118,7 @@ theorem stepStrong_remu
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   let arith_mem :
@@ -1129,7 +1129,7 @@ theorem stepStrong_remu
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
-          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
       store_pc_zero := h_core_store_pc
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
@@ -1171,7 +1171,7 @@ theorem stepStrong_remu
     (`m32 = 1`), secondary d-lane match (`opBus_row_ArithDivSecondary`), routing
     to the `exec_eq_remaining` conjunct (`equiv_REMUW`).  Non-vacuous. -/
 theorem stepStrong_remuw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remuw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -1220,7 +1220,7 @@ theorem stepStrong_remuw
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
   let arith_mem :
@@ -1231,7 +1231,7 @@ theorem stepStrong_remuw
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub, m,
-          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
       store_pc_zero := h_core_store_pc
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let promises : ZiskFv.EquivCore.Promises.RTypePromises

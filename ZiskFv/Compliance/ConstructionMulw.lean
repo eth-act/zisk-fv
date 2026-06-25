@@ -145,7 +145,7 @@ def vOfMulwRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
     `vOfMulwRow (mulwArow …)`. The Arith witnesses for this row are derived
     inside `construction_mulw_sound`; nothing about the row is caller-supplied. -/
 noncomputable def mulwArow
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -171,7 +171,7 @@ theorem fullSpec_rowAt_vOfMulwRow
     underlying `mulwArow` matches the one this proof picks — keeping the defeq
     cheap for the construction body. -/
 theorem mulwArow_fullSpec_row
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -189,7 +189,7 @@ theorem mulwArow_fullSpec_row
 
 /-- `FullSpec` of the balance-selected MULW provider row view. -/
 theorem mulwArow_fullSpec
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -231,7 +231,7 @@ theorem match_opBus_row_Arith_vOfMulwRow
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. Cheap: the row
     is a free `ArithMulRow`, so no `vOfMulwRow`/`opBus_row_Arith` whnf. -/
 theorem mulwArow_match_row
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -262,7 +262,7 @@ theorem mulwArow_match_row
     op-bus match via the CHEAP `rfl`-projection lemma `primaryOpBusMessage_toEntry_op`
     (a rewrite, not a reduction). -/
 theorem mulwArow_mode_pins
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -291,7 +291,7 @@ theorem mulwArow_mode_pins
     Main row's emission, in `opBus_row_Arith` form. The MUL/MULW mode pins
     needed to reduce the faithful mux are DERIVED via `mulwArow_mode_pins`. -/
 theorem mulwArow_match
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -313,7 +313,7 @@ theorem mulwArow_match
     `trace.channels_balanced` / `trace.spec_holds` via the provider's lookup-aware
     `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
 theorem construction_mulw_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (mulw_input : PureSpec.MulwInput)
@@ -419,7 +419,7 @@ theorem construction_mulw_sound_claimed_dead
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_store_pc
   let arith_mem :
@@ -431,7 +431,7 @@ theorem construction_mulw_sound_claimed_dead
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
         simpa [mainRowWithRomSub,
-          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
       store_pc_zero := h_core_store_pc
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- promises bundle: Sail reads + exec artifacts as binders; MemBus shape by rfl.

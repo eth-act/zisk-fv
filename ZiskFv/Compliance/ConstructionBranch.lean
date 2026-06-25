@@ -107,7 +107,7 @@ set_option maxHeartbeats 2000000
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `exec_row` ∀-binder (with `misa_val`). -/
 theorem construction_beq_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (beq_input : PureSpec.BeqInput)
@@ -168,7 +168,7 @@ theorem construction_beq_sound_claimed_dead
     The conditional next-PC residual `h_nextPC_matches` is the #100 cross-row
     obligation. -/
 theorem construction_bne_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (bne_input : PureSpec.BneInput)
@@ -220,7 +220,7 @@ theorem construction_bne_sound_claimed_dead
 
 /-- Sound BLT construction (signed less-than). See `construction_beq_sound`. -/
 theorem construction_blt_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (blt_input : PureSpec.BltInput)
@@ -272,7 +272,7 @@ theorem construction_blt_sound_claimed_dead
 
 /-- Sound BGE construction (signed greater-or-equal). See `construction_beq_sound`. -/
 theorem construction_bge_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (bge_input : PureSpec.BgeInput)
@@ -324,7 +324,7 @@ theorem construction_bge_sound_claimed_dead
 
 /-- Sound BLTU construction (unsigned less-than). See `construction_beq_sound`. -/
 theorem construction_bltu_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (bltu_input : PureSpec.BltuInput)
@@ -376,7 +376,7 @@ theorem construction_bltu_sound_claimed_dead
 
 /-- Sound BGEU construction (unsigned greater-or-equal). See `construction_beq_sound`. -/
 theorem construction_bgeu_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (bgeu_input : PureSpec.BgeuInput)
