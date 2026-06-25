@@ -2,7 +2,7 @@ Stream: GitHub Issue Refresh.
 Plan: docs/ai/plan/PLAN_GITHUB_ISSUE_REFRESH.md.
 
 Current focus:
-- GitHub issue refresh complete; local trail commit pending.
+- GitHub issue refresh complete.
 
 Known refactor facts in scope:
 - AcceptedTrace -> AcceptedZiskTrace; ProgramBinding -> SailTrace abbreviation.
@@ -18,12 +18,13 @@ Progress:
 - Verified live names/files for root_soundness, AcceptedZiskTrace, SailTrace, OpBusProviderMatch, TraceLevelExport parts, AeneasBridgeTrust parts, native_decide sites, and dead-code tooling.
 - Edited stale issue bodies/comments/titles on GitHub for #61, #74, #75, #78, #100, #101, #108, #111, #115, #116, #118, and #119.
 - Re-scanned open issue bodies/comments; targeted stale-name/file pattern scan returned no hits.
+- Local trail committed in 3d1f2bc (`docs: record GitHub issue refresh`).
 
 Blocking:
 - Nothing currently.
 
 Next step:
-- Commit STATUS.md, docs/ai/PROJECTS.md, and docs/ai/plan/PLAN_GITHUB_ISSUE_REFRESH.md.
+- None for this stream.
 
 Digression:
 - Previous STATUS content described a completed endgame opcode stream and referenced a missing PLAN_ENDGAME.md; preserved context remains in docs/ai/PROJECTS.md / endgame plans.
