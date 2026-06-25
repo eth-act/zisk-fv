@@ -155,16 +155,16 @@ on a concrete `z` from eth-act/zisk-fv#74) and this is `EventualCompleteness
 state z` unconditionally.
 
 * `state` — the Sail machine state decoding is evaluated against.
-* `h_state` — evidence `state` is RV64IM-configured (`M` on, `Zmmul` off).
+* `sailIsa` — evidence `state` is RV64IM-configured (`M` on, `Zmmul` off).
 * `z` — the ZisK surface (the abstract predicates).
 * `assumptions` — the per-stage coverage facts about `z` (the plan items). -/
 theorem skeletal_root_completeness
-    (state : SailState) (h_state : IsaExtensionsEnabled state)
+    (state : SailState) (sailIsa : IsaExtensionsEnabled state)
     (z : ZiskSurface) (assumptions : z.CoverageAssumptions) :
     EventualCompleteness state z := by
   intro raw h_sail h_not_gap
   have h_shape :=
-    sail_executable_within_supported_decode_shape state raw h_state h_sail
+    sail_executable_within_supported_decode_shape state raw sailIsa h_sail
   have h_decode := assumptions.decoderAcceptsInShape raw h_shape h_not_gap
   have h_lower := assumptions.loweringTotal raw h_decode
   exact
