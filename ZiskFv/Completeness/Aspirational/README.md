@@ -16,7 +16,7 @@ only through `ZiskFv.lean` (so it stays built and verified) via the
 - `sail_executable_within_supported_decode_shape` — **proven, unconditional.** Sail-executable RV64IM
   raw words land in `SupportedDecodeShape` (re-exports the `SailDecode`
   containment proof, which computes against the real generated Sail decoder).
-- `eventual_zisk_coverage` — **conditional** on the ZisK coverage obligations
+- `eventual_supported_shape_coverage` — **conditional** on the ZisK coverage obligations
   over `SupportedDecodeShape`.
 - `eventual_root_completeness` — the composition; conditional on the ZisK
   obligations only (the Sail half is discharged).

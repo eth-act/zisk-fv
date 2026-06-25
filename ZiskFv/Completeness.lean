@@ -11,7 +11,7 @@ status, plus their composition:
 * `sail_executable_within_supported_decode_shape` — **PROVEN, unconditional.** A
   Sail-only containment fact: every RV64IM-class word Sail's decoder accepts lands
   in the hand-written `SupportedDecodeShape` enumeration. Says nothing about ZisK.
-* `eventual_zisk_coverage` — **CONDITIONAL.** The ZisK half: given the
+* `eventual_supported_shape_coverage` — **CONDITIONAL.** The ZisK half: given the
   production-coverage obligations (decoder accepts → lowering → row → opcode,
   plus the soundness-row contract) over `SupportedDecodeShape`, in-domain words
   clear the pipeline. These obligations are proved only in the separate Aeneas
@@ -63,7 +63,7 @@ known decode gaps clears the pipeline and carries the soundness contract.
 
 The obligations are hypotheses here; they are discharged (for the real extracted
 decoder) only in the separate Aeneas workspace, which this build cannot import. -/
-theorem eventual_zisk_coverage
+theorem eventual_supported_shape_coverage
     (ziskDecoderAccepts ziskLoweringSucceeds : BitVec 32 → Prop)
     (ziskRowMaterializes ziskOpcodeProven : BitVec 32 → Prop)
     (ziskRowSoundnessContract knownDecodeGap : BitVec 32 → Prop)
@@ -94,7 +94,7 @@ theorem eventual_zisk_coverage
 
 /-- **CONDITIONAL on the ZisK obligations only.** End-to-end completeness:
 composing the proven Sail half (`sail_executable_within_supported_decode_shape`) with the ZisK half
-(`eventual_zisk_coverage`), every Sail-executable RV64IM raw word, outside the
+(`eventual_supported_shape_coverage`), every Sail-executable RV64IM raw word, outside the
 known decode gaps, clears the production pipeline and carries the soundness
 contract. The Sail bridge is discharged; the only open premises are the ZisK
 coverage obligations. When the Aeneas coverage proofs reach this build, this
@@ -120,7 +120,7 @@ theorem eventual_root_completeness
         ziskRowMaterializes raw ∧ ziskOpcodeProven raw) ∧
       ziskRowSoundnessContract raw := by
   intro raw h_sail h_not_gap
-  exact eventual_zisk_coverage
+  exact eventual_supported_shape_coverage
     ziskDecoderAccepts ziskLoweringSucceeds ziskRowMaterializes ziskOpcodeProven
     ziskRowSoundnessContract knownDecodeGap
     h_decoder_accepts_outside_gaps h_lowering_total h_row_materialization_total

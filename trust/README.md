@@ -71,13 +71,13 @@ EquivCore routes are implementation details.
 The checked-in endpoints (`ZiskFv/Completeness.lean`) state acceptance/coverage
 completeness for the RV64IM decoder layer as three honest theorems:
 `sail_executable_within_supported_decode_shape` (PROVEN — Sail-executable raw words land in
-`SupportedDecodeShape`), `eventual_zisk_coverage` (CONDITIONAL on the ZisK
+`SupportedDecodeShape`), `eventual_supported_shape_coverage` (CONDITIONAL on the ZisK
 coverage obligations), and `eventual_root_completeness` (their composition,
 conditional on the ZisK obligations only). The recorded
 `ZISK-DEFECT-FENCE-INCOMPLETE` decode gap enters as the `knownDecodeGap` premise.
 
 The ZisK half is interface-mediated. The coverage obligations
-`eventual_zisk_coverage` takes as hypotheses (decoder-accepts, lowering, row
+`eventual_supported_shape_coverage` takes as hypotheses (decoder-accepts, lowering, row
 materialization, opcode coverage, soundness contract) are checked in the
 regenerated Aeneas extraction workspace, not by importing generated Aeneas Lean
 into the main Lake tree. The standing `nix run .#test` gate runs

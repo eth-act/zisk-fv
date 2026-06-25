@@ -35,7 +35,7 @@ The checked-in RV64IM acceptance-completeness surface is three honest endpoints
 
 ```lean
 ZiskFv.Completeness.sail_executable_within_supported_decode_shape      -- PROVEN, unconditional
-ZiskFv.Completeness.eventual_zisk_coverage      -- conditional on the ZisK obligations
+ZiskFv.Completeness.eventual_supported_shape_coverage      -- conditional on the ZisK obligations
 ZiskFv.Completeness.eventual_root_completeness  -- composition; conditional on ZisK only
 ```
 
@@ -116,7 +116,7 @@ The current extraction batch covers the production-backed U/control-flow,
 Binary/BinaryExtension, load/store, branch, MUL, and DIV/REM row-shape helper
 families. The full `nix run .#test` gate additionally runs this harness with
 `AENEAS_CHECK_RV_COMPLETENESS=1`, checking — in that separate workspace — the
-ZisK-side coverage obligations that `ZiskFv.Completeness.eventual_zisk_coverage`
+ZisK-side coverage obligations that `ZiskFv.Completeness.eventual_supported_shape_coverage`
 takes as hypotheses. The link is documentary: this build cannot import the
 Aeneas workspace, so those obligations are not yet substituted into the Lean
 endpoint (hence the `eventual_` prefix).

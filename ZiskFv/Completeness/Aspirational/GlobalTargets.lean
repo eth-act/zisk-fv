@@ -3,7 +3,7 @@ import ZiskFv.Completeness.Aspirational.SupportedDecodeRefinedFamilies
 /- ⚠ ASPIRATIONAL / QUARANTINED — not wired to any live completeness endpoint.
    These `rv64im_global_completeness_*` theorems are the OLD `iface : Rv.Interface`
    headlines, superseded by the inlined endpoints in `ZiskFv.Completeness`
-   (`sail_executable_within_supported_decode_shape`, `eventual_zisk_coverage`, `eventual_root_completeness`),
+   (`sail_executable_within_supported_decode_shape`, `eventual_supported_shape_coverage`, `eventual_root_completeness`),
    which do not depend on this file. No concrete `Interface` is ever built.
    Intended *eventual* composition machinery; kept compiling via `ZiskFv.lean`
    for preservation only. See `ZiskFv/Completeness/Aspirational/README.md`. -/
