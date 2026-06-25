@@ -27,7 +27,7 @@ namespace ZiskFv.Compliance
     indices + committed bus row); `rowDecodes` is the circuit-checkable fact that
     the row is a well-formed instance of that op; and `inputsAgree` is the
     cross-world fact that ZisK's inputs equal the Sail model's register / PC /
-    memory state. `hAvoidKnownBugs` excludes the enumerated forge defects.
+    memory state. `rowsOutsideDefects` excludes the enumerated forge defects.
 
     Every row then satisfies the canonical channel-balance conclusion
     (`= state_effect_via_channels …`). The per-row `OpEnvelope` is constructed
@@ -40,10 +40,10 @@ theorem root_soundness
     (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
     (rowDecodes : ∀ i : Fin numInstructions, RowDecode ziskTrace i (ziskStep i))
     (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
-    (hAvoidKnownBugs : ∀ i : Fin numInstructions,
-      StepNoKnownDefect ziskTrace sailTrace i (ziskStep i) (inputsAgree i)) :
-    ∀ i : Fin numInstructions, StepFaithful ziskTrace sailTrace i (ziskStep i) :=
+    (rowsOutsideDefects : ∀ i : Fin numInstructions,
+      RowOutsideDefectRegion ziskTrace sailTrace i (ziskStep i) (inputsAgree i)) :
+    ∀ i : Fin numInstructions, StepSound ziskTrace sailTrace i (ziskStep i) :=
   fun i =>
-    stepFaithful_of_evidence ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i) (hAvoidKnownBugs i)
+    stepSound_of_evidence ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i) (rowsOutsideDefects i)
 
 end ZiskFv.Compliance

@@ -45,7 +45,7 @@ seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 set_option maxHeartbeats 8000000
 
 /-- The `OpEnvelope.fence` env CONSTRUCTED from a `RowData_fence`.  Both the
-    `StepNoKnownDefect` fence obligation AND `stepStrong_fence` reference THIS env,
+    `RowOutsideDefectRegion` fence obligation AND `stepStrong_fence` reference THIS env,
     so the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
     exact env the proof feeds to `zisk_riscv_compliant_program_bus`. -/
 noncomputable def fenceEnvOf
@@ -63,7 +63,7 @@ noncomputable def fenceEnvOf
       nextPC_matches := d.toInputs.h_nextPC_matches }
 
 /-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Both the
-    `StepNoKnownDefect` mul obligation AND `stepStrong_mul` reference THIS env, so
+    `RowOutsideDefectRegion` mul obligation AND `stepStrong_mul` reference THIS env, so
     the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
     exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
     `fenceEnvOf`: a specific-env obligation, SATISFIABLE for an honest row.) -/
@@ -79,7 +79,7 @@ noncomputable def mulEnvOf
 
 /-- **Satisfiability / non-vacuity witness for the threaded MUL obligation.**
 
-    The `StepNoKnownDefect (.mul d)` obligation — `Defects.NoKnownDefect (mulEnvOf
+    The `RowOutsideDefectRegion (.mul d)` obligation — `Defects.NoKnownDefect (mulEnvOf
     …)` — is DISCHARGED from `RowData_mul.h_not_forge` (the honest product-sign
     shape).  Concretely: for the `.mul` env, the arith-div defect predicate is
     `False` and the FENCE defect predicate's negation is `True`, while the
@@ -164,7 +164,7 @@ theorem mulhsu_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhsuEnvOf]
 
 /-- The `OpEnvelope.div` env CONSTRUCTED from a `RowData_div`.  Both the
-    `StepNoKnownDefect` div obligation AND `stepStrong_div` reference THIS env, so
+    `RowOutsideDefectRegion` div obligation AND `stepStrong_div` reference THIS env, so
     the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
     exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
     `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed DIV
@@ -220,7 +220,7 @@ noncomputable def remwEnvOf
 
 /-- **Non-vacuity / satisfiability witness for the threaded DIV obligation.**
 
-    The `StepNoKnownDefect (.div d)` obligation — `Defects.NoKnownDefect (divEnvOf
+    The `RowOutsideDefectRegion (.div d)` obligation — `Defects.NoKnownDefect (divEnvOf
     …)` — is DISCHARGED from `RowData_div.h_not_forge` (the narrowed honest shape
     nonzero-divisor `|r| ≠ |op2|` shape).  Concretely: for the `.div` env the
     arith-MUL defect predicate is `False` (not a mul env) and the FENCE defect
@@ -298,7 +298,7 @@ theorem remw_noKnownDefect_of_rowData
 Each bridge is `Iff.rfl`: the row-data predicate (over the `Inputs_<op>` arith
 witness / `Claim_<op>` fields) and the `OpEnvelope`-based defect shape at the
 corresponding `<op>EnvOf` env are DEFINITIONALLY the same proposition.  These are
-the faithfulness audit for the `StepNoKnownDefect` re-expression (plan step B):
+the faithfulness audit for the `RowOutsideDefectRegion` re-expression (plan step B):
 they witness that lifting the three known-defect conditions off `OpEnvelope`
 onto the row data changed no meaning — the `Iff.rfl` proofs would fail if the
 re-expressed predicate were even slightly weaker or stronger than the original

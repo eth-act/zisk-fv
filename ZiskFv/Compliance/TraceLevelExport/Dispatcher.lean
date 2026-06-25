@@ -270,7 +270,7 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : Sai
     `OpEnvelope` defect shape (the `Iff.rfl` bridge lemmas in `EnvOf`), so the
     re-expression off `OpEnvelope` carries no change of meaning.  Every other
     (non-defect) arm carries no defect obligation (`True`). -/
-def StepNoKnownDefect (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
+def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (ia : InputsAgree ziskTrace sailTrace i zs) : Prop :=
   match zs, ia with
@@ -284,7 +284,7 @@ def StepNoKnownDefect (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace
   | .fence c, _ => Defects.FenceKnownGood c.fm c.rs c.rd
   | _, _ => True
 
-def StepFaithful
+def StepSound
     (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
     ZiskStep ziskTrace i → Prop
   | .sub c =>
@@ -760,7 +760,7 @@ def StepFaithful
 /-- Per-row dispatch to the matching strengthened step theorem.
 
     The `h_known` parameter carries the per-row defect-exclusion obligation
-    (`StepNoKnownDefect`), stated directly over the row data.  For the 8
+    (`RowOutsideDefectRegion`), stated directly over the row data.  For the 8
     defect-capable arms it is the row-data forge-negation / FENCE-known-good
     fact; the dispatcher hands it straight to the corresponding `stepStrong_<op>`,
     which assembles `NoKnownDefect (<op>EnvOf …)` from it (via
@@ -768,11 +768,11 @@ def StepFaithful
     `zisk_riscv_compliant_program_bus`.  For every other (non-defect) arm the
     obligation is `True` and is ignored — the arm builds its own `NoKnownDefect`. -/
 
-theorem stepFaithful_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
+theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
-    (h_known : StepNoKnownDefect ziskTrace sailTrace i zs ia) :
-    StepFaithful ziskTrace sailTrace i zs := by
+    (h_known : RowOutsideDefectRegion ziskTrace sailTrace i zs ia) :
+    StepSound ziskTrace sailTrace i zs := by
   cases zs with
   | sub c => exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia) h_known
   | and c => exact stepStrong_and ziskTrace sailTrace i (toRowData_and c rd ia) h_known
