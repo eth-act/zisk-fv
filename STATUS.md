@@ -1,44 +1,38 @@
-Stream: root_soundness signature refactor (legible 3-way split).
-Branch: clarity/root-soundness-shape. Plan: docs/ai/plan/PLAN_ROOT_SOUNDNESS_SHAPE.md
+Stream: lift known-defect predicates off OpEnvelope onto row data.
+Branch: clarity/defects-on-rowdata. Plan: docs/ai/plan/PLAN_DEFECTS_ON_ROWDATA.md
 
-Goal: replace root_soundness's single `rowData` hypothesis with three named,
-honest binders — ziskStep / rowDecodes / inputsAgree — and rename the conclusion
-(StepComplianceStrong→StepFaithful) and derivation (…_of_rowData→
-stepFaithful_of_evidence). The split surfaces, in the signature itself, the
-dischargeable circuit facts (rowDecodes, owed by #141) vs the fundamental
-cross-world assumption (inputsAgree).
+Goal: re-express the three known-defect predicates over the Inputs_<op>/Claim_<op>
+row data instead of the legacy OpEnvelope sum, collapsing StepNoKnownDefect to one
+8-arm + wildcard `match`. Semantics-preserving re-expression — trust footprint
+byte-identical (NOT a discharge).
 
-Target signature:
-  (ziskStep    : ∀ i, ZiskStep    ziskTrace          i)
-  (rowDecodes  : ∀ i, RowDecode   ziskTrace          i (ziskStep i))
-  (inputsAgree : ∀ i, InputsAgree ziskTrace sailTrace i (ziskStep i))
-  (h_known_bugs: ∀ i, StepNoKnownDefect ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i))
-  : ∀ i, StepFaithful ziskTrace sailTrace i (ziskStep i)
+Status: COMPLETE. Committed 97b3841e, pushed origin/clarity/defects-on-rowdata
+(no PR). Steps A–F all done.
 
-Decisions:
-- StepNoKnownDefect TAKES THE EVIDENCE (user-confirmed). The 8 signed-M/FENCE
-  defect arms build their env from arith-witness/operand data (see mulEnvOf), so
-  claim-only is an endpoint property (defects→empty), not achievable now.
-- nextPC fact is cross-world → lives in inputsAgree, keeping rowDecodes
-  sailTrace-free. Circuit-only nextPC (→ rowDecodes) is a #141 follow-up.
+- A Defects.lean: SignedMulForge / DivRemForge / DivRemForgeW / FenceKnownGood
+  (same conditions as the OpEnvelope shapes).
+- B EnvOf.lean: 8 PROVED `Iff.rfl` bridge lemmas (faithfulness audit).
+- C Dispatcher.lean: StepNoKnownDefect = direct `match zs, ia`; deleted
+  EnvNoKnownDefectFor / envNoKnownDefectFor_of_nondefect / toFull /
+  StrongRowConstructionData / StepNoKnownDefectOn + 55 selector arms.
+  Base.lean: added general `noKnownDefect_of_shapes` helper.
+- D 63 stepStrong rewired: 55 non-defect take (_h_known : True) + build
+  NoKnownDefect locally; 8 defect consume row-data forge-negation via the helper.
+- E Soundness.lean: h_known_bugs drops (rowDecodes i). Sole sanctioned baseline
+  churn = the h_known_bugs binder line in baseline-strong-export-binders.txt.
+- F TraceLevelExport.lean module doc + dead-code-entry-points.txt comment refreshed.
 
-Stages:
-- A (rename): StepComplianceStrong→StepFaithful, …_of_rowData→
-  stepFaithful_of_evidence. DONE — committed 4555d095, pushed, build+V1 green.
-- B (structural split): DONE. RowDataSplit.lean (63× Claim/Decode/Inputs/
-  toRowData, workflow wwvvvytoj). Dispatcher rewritten: ZiskStep inductive +
-  RowDecode/InputsAgree + toFull; StrongRowConstructionData kept internal; old
-  StepNoKnownDefect body kept verbatim as StepNoKnownDefectOn; new
-  StepNoKnownDefect routes through toFull; StepFaithful transformed d→c over the
-  claim; stepFaithful_of_evidence dispatches to the UNTOUCHED stepStrong_<op>.
-  root_soundness rewritten with the 3 binders. 63 stepStrong proofs unchanged.
-- C: DONE. baselines regenerated; full build 8760; V1 15/15; V2 13/13; 0 axioms.
-  KEY: baseline-equiv-axiom-deps.txt + baseline-axioms.txt UNCHANGED → trust
-  footprint byte-identical (pure re-packaging, no proof-strategy change).
+Verification: lake build green (8760); V1 (incl. RowData-partition check 16) +
+V2 both PASS; 0 project axioms; no axiom/sorry/native_decide/bare decide added.
+baseline-equiv-axiom-deps.txt + baseline-axioms.txt byte-identical to origin/main.
 
-Blocking: none.
-Next step: commit + push Stage B; then update #141 / docs as wanted.
+Open questions (resolved empirically):
+- 55 non-defect proofs needed no content change beyond binder/`have` rewiring —
+  noKnownDefect_of_shapes closes the vacuous shapes definitionally.
+- Dropping rowDecodes from h_known_bugs threads cleanly through the 8 defect
+  proofs (they take rowDecodes from their own `d` binder to build the env).
 
-Digression: motivated by issue #141 (placement assumed, not derived from Main AIR).
-Note: a prior GitHub-issue-refresh (codex) stream's uncommitted STATUS/PLAN
-notes were reset by this branch switch; per user, discarded (not restored).
+Blocking: none. Next: the metaprogramming/macro pass is a separate later phase.
+
+Env note: build/ symlinked to /home/cody/zisk-fv/build; zisk submodule inited.
+Both are env-only, never committed.
