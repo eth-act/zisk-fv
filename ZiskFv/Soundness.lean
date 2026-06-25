@@ -35,6 +35,9 @@ namespace ZiskFv.Compliance
     beyond the trace itself. -/
 theorem root_soundness
     (ziskTrace : AcceptedZiskTrace)
+    -- Ideally `numInstructions` is a shared top-level arg so this reads
+    -- `SailTrace numInstructions` (and `ziskTrace : AcceptedZiskTrace numInstructions`);
+    -- blocked on a `mainOfTable` whnf runaway under structure parameterization — see #144.
     (sailTrace : SailTrace ziskTrace.numInstructions)
     (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
     (rowDecodes : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace sailTrace i (ziskStep i))
