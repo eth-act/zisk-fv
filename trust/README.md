@@ -69,22 +69,21 @@ EquivCore routes are implementation details.
 ## RV64IM Acceptance Completeness
 
 The checked-in endpoints (`ZiskFv/Completeness.lean`) state acceptance/coverage
-completeness for the RV64IM decoder layer as three honest theorems:
+completeness for the RV64IM decoder layer as two honest theorems:
 `sail_executable_within_supported_decode_shape` (PROVEN — Sail-executable raw words land in
-`SupportedDecodeShape`), `eventual_supported_shape_coverage` (CONDITIONAL on the ZisK
-coverage obligations), and `eventual_root_completeness` (their composition,
-conditional on the ZisK obligations only). The recorded
+`SupportedDecodeShape`) and `root_completeness` (the end-to-end coverage
+statement, CONDITIONAL on the ZisK coverage obligations only). The recorded
 `ZISK-DEFECT-FENCE-INCOMPLETE` decode gap enters as the `knownDecodeGap` premise.
 
 The ZisK half is interface-mediated. The coverage obligations
-`eventual_supported_shape_coverage` takes as hypotheses (decoder-accepts, lowering, row
+`root_completeness` takes as hypotheses (decoder-accepts, lowering, row
 materialization, opcode coverage, soundness contract) are checked in the
 regenerated Aeneas extraction workspace, not by importing generated Aeneas Lean
 into the main Lake tree. The standing `nix run .#test` gate runs
 `scripts/aeneas-production-extract.sh` with `AENEAS_CHECK_RV_COMPLETENESS=1` so
 those obligations are rechecked there. The link is documentary: this build cannot
 import the Aeneas workspace, so the obligations are not substituted into the Lean
-endpoint (hence `eventual_`). The direct Aeneas extraction artifact is tracked at
+endpoint — `root_completeness` stays conditional on them. The direct Aeneas extraction artifact is tracked at
 [`aeneas/ProductionM2.lean`](aeneas/ProductionM2.lean), and CI separately
 regenerates it from the pinned inputs and fails on any non-zero diff.
 

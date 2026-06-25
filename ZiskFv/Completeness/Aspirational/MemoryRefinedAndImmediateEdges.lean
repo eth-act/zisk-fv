@@ -3,7 +3,7 @@ import ZiskFv.Completeness.Aspirational.SupportedDecodeShape
 /- ⚠ ASPIRATIONAL / QUARANTINED — not wired to any live completeness endpoint.
    Abstract `Rv.Interface`-parametrized route; no concrete `Interface` is ever
    built, and the live endpoints in `ZiskFv.Completeness`
-   (`sail_executable_within_supported_decode_shape`, `eventual_supported_shape_coverage`, `eventual_root_completeness`)
+   (`sail_executable_within_supported_decode_shape`, `root_completeness`)
    do not depend on it. Intended *eventual* composition machinery for when the
    Aeneas-extracted ZisK coverage proofs can be imported into this build. Kept
    compiling via `ZiskFv.lean` for preservation only.
