@@ -145,7 +145,7 @@ theorem mainRowWithRomSt_core
   have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
     trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
   simpa [mainRowWithRomSt,
-    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
 
 /-- Sound SB construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute_instruction (.STORE … width 1) = (bus_effect …).2`.
