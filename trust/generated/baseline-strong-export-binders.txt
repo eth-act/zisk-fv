@@ -1,5 +1,7 @@
 0 :: ziskTrace :: ZiskFv.Compliance.AcceptedZiskTrace
 1 :: sailTrace :: ZiskFv.Compliance.SailTrace ziskTrace
-2 :: rowData :: (i : Fin ziskTrace.numInstructions) → ZiskFv.Compliance.StrongRowConstructionData ziskTrace sailTrace i
-3 :: h_known_bugs :: ∀ (i : Fin ziskTrace.numInstructions), ZiskFv.Compliance.StepNoKnownDefect ziskTrace sailTrace i (rowData i)
-4 :: i :: Fin ziskTrace.numInstructions
+2 :: ziskStep :: (i : Fin ziskTrace.numInstructions) → ZiskFv.Compliance.ZiskStep ziskTrace i
+3 :: rowDecodes :: (i : Fin ziskTrace.numInstructions) → ZiskFv.Compliance.RowDecode ziskTrace sailTrace i (ziskStep i)
+4 :: inputsAgree :: (i : Fin ziskTrace.numInstructions) → ZiskFv.Compliance.InputsAgree ziskTrace sailTrace i (ziskStep i)
+5 :: h_known_bugs :: ∀ (i : Fin ziskTrace.numInstructions), ZiskFv.Compliance.StepNoKnownDefect ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i)
+6 :: i :: Fin ziskTrace.numInstructions
