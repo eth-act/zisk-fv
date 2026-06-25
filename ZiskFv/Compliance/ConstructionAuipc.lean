@@ -78,7 +78,7 @@ set_option maxHeartbeats 2000000
     shape, the pure-spec `nextPC_eq`, and the circuit-internal rd arithmetic. -/
 theorem construction_auipc_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)

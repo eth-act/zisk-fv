@@ -81,7 +81,7 @@ set_option maxHeartbeats 2000000
     MemBus `m0..m2` shape, `h_lane_rd`, and the lane→Sail binding facts. -/
 theorem construction_slt_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (slt_input : PureSpec.SltInput)
     (r1 r2 rd : regidx)
@@ -276,7 +276,7 @@ theorem construction_slt_sound_claimed_dead
     inside `equiv_SLTU`. -/
 theorem construction_sltu_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sltu_input : PureSpec.SltuInput)
     (r1 r2 rd : regidx)

@@ -35,7 +35,7 @@ namespace ZiskFv.Compliance
     beyond the trace itself. -/
 theorem root_soundness
     (ziskTrace : AcceptedZiskTrace)
-    (sailTrace : SailTrace ziskTrace)
+    (sailTrace : SailTrace ziskTrace.numInstructions)
     (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
     (rowDecodes : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace sailTrace i (ziskStep i))
     (inputsAgree : ∀ i : Fin ziskTrace.numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))

@@ -63,7 +63,7 @@ set_option maxHeartbeats 8000000
     the export is 63/63 on the OpEnvelope route. -/
 
 inductive StrongRowConstructionData
-    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace) (i : Fin ziskTrace.numInstructions) where
+    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) where
   | sub (d : RowData_sub ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
   | and (d : RowData_and ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
   | or (d : RowData_or ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
@@ -208,7 +208,7 @@ inductive ZiskStep (ziskTrace : AcceptedZiskTrace) (i : Fin ziskTrace.numInstruc
   | lw (c : Claim_lw ziskTrace i) : ZiskStep ziskTrace i
   | fence (c : Claim_fence ziskTrace i) : ZiskStep ziskTrace i
 
-def RowDecode (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace)
+def RowDecode (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Type
   | .sub c => Decode_sub ziskTrace sailTrace i c
   | .and c => Decode_and ziskTrace sailTrace i c
@@ -274,7 +274,7 @@ def RowDecode (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace)
   | .lw c => Decode_lw ziskTrace sailTrace i c
   | .fence c => Decode_fence ziskTrace sailTrace i c
 
-def InputsAgree (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace)
+def InputsAgree (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Type
   | .sub c => Inputs_sub ziskTrace sailTrace i c
   | .and c => Inputs_and ziskTrace sailTrace i c
@@ -340,7 +340,7 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace
   | .lw c => Inputs_lw ziskTrace sailTrace i c
   | .fence c => Inputs_fence ziskTrace sailTrace i c
 
-def toFull (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace)
+def toFull (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace sailTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs) :
     StrongRowConstructionData ziskTrace sailTrace i :=
@@ -410,7 +410,7 @@ def toFull (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace)
   | .fence c, rd, ia => .fence (toRowData_fence c rd ia)
 
 def StepNoKnownDefectOn
-    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace) (i : Fin ziskTrace.numInstructions) :
+    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
     StrongRowConstructionData ziskTrace sailTrace i → Prop
   | .sub _ => EnvNoKnownDefectFor
       (state := sailTrace i)
@@ -655,13 +655,13 @@ def StepNoKnownDefectOn
     (`state_effect_via_channels`) form — the OLD global theorem's per-arm
     conclusion — keyed on the row archetype. -/
 
-def StepNoKnownDefect (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace)
+def StepNoKnownDefect (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace sailTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs) : Prop :=
   StepNoKnownDefectOn ziskTrace sailTrace i (toFull ziskTrace sailTrace i zs rd ia)
 
 def StepFaithful
-    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace) (i : Fin ziskTrace.numInstructions) :
+    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
     ZiskStep ziskTrace i → Prop
   | .sub c =>
       (do
@@ -1142,7 +1142,7 @@ def StepFaithful
     `zisk_riscv_compliant_program_bus`.  For the direct-lift arms (which never call
     the old theorem) the obligation is `True` and is ignored. -/
 
-theorem stepFaithful_of_evidence (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace)
+theorem stepFaithful_of_evidence (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace sailTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
     (h_known : StepNoKnownDefect ziskTrace sailTrace i zs rd ia) :

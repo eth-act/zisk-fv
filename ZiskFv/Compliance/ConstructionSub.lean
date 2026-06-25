@@ -120,7 +120,7 @@ theorem allByteMatchesOfStaticOut64_local
     real Main table.  Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 noncomputable def mainRowWithRomSub
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program trace.mainTable i.val
@@ -130,7 +130,7 @@ noncomputable def mainRowWithRomSub
     `m0..m2` shape facts are then `rfl`. -/
 @[reducible]
 noncomputable def busSub
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (execRow : List (Interaction.ExecutionBusEntry FGL)) :
     ZiskFv.Compliance.BusRows where
   exec_row := execRow
@@ -160,7 +160,7 @@ noncomputable def busSub
     `m0..m2` shape, `h_lane_rd`, and the lane→Sail binding facts. -/
 theorem construction_sub_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)

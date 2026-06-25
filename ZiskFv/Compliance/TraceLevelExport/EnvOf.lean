@@ -49,7 +49,7 @@ set_option maxHeartbeats 8000000
     so the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
     exact env the proof feeds to `zisk_riscv_compliant_program_bus`. -/
 noncomputable def fenceEnvOf
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
@@ -68,7 +68,7 @@ noncomputable def fenceEnvOf
     exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
     `fenceEnvOf`: a specific-env obligation, SATISFIABLE for an honest row.) -/
 noncomputable def mulEnvOf
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
@@ -89,7 +89,7 @@ noncomputable def mulEnvOf
     is NON-VACUOUS (it is not discharged by a contradictory binder).  This lemma is
     the Lean-checked anti-vacuity guard for the strong-export MUL arm. -/
 theorem mul_noKnownDefect_of_rowData
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i) :
     Defects.NoKnownDefect (mulEnvOf trace binding i d) := by
   intro id
@@ -106,7 +106,7 @@ theorem mul_noKnownDefect_of_rowData
     `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed MULH
     row.  Carries the SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b`. -/
 noncomputable def mulhEnvOf
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
@@ -119,7 +119,7 @@ noncomputable def mulhEnvOf
 /-- The `OpEnvelope.mulhsu` env CONSTRUCTED from a `RowData_mulhsu`.  Only ONE
     sign-range residual `h_sign_a` (op2 unsigned, table-pinned `nb = 0`). -/
 noncomputable def mulhsuEnvOf
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
@@ -134,7 +134,7 @@ noncomputable def mulhsuEnvOf
     narrowed `MaliciousSignedMulWitnessShape` admits for op 181, so
     `NoKnownDefect (mulhEnvOf …)` is TRUE — the `.mulh` strong arm is NON-VACUOUS. -/
 theorem mulh_noKnownDefect_of_rowData
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i) :
     Defects.NoKnownDefect (mulhEnvOf trace binding i d) := by
   intro id
@@ -150,7 +150,7 @@ theorem mulh_noKnownDefect_of_rowData
 /-- Satisfiability witness for the threaded MULHSU obligation (companion of
     `mulh_noKnownDefect_of_rowData`). -/
 theorem mulhsu_noKnownDefect_of_rowData
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i) :
     Defects.NoKnownDefect (mulhsuEnvOf trace binding i d) := by
   intro id
@@ -170,7 +170,7 @@ theorem mulhsu_noKnownDefect_of_rowData
     `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed DIV
     row whose `|r| ≠ |op2|`.) -/
 noncomputable def divEnvOf
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
@@ -182,7 +182,7 @@ noncomputable def divEnvOf
 
 /-- The `OpEnvelope.rem` env CONSTRUCTED from a `RowData_rem` (secondary lane). -/
 noncomputable def remEnvOf
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
@@ -194,7 +194,7 @@ noncomputable def remEnvOf
 
 /-- The `OpEnvelope.divw` env CONSTRUCTED from a `RowData_divw` (W-mode primary). -/
 noncomputable def divwEnvOf
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
@@ -207,7 +207,7 @@ noncomputable def divwEnvOf
 
 /-- The `OpEnvelope.remw` env CONSTRUCTED from a `RowData_remw` (W-mode secondary). -/
 noncomputable def remwEnvOf
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remw trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
@@ -230,7 +230,7 @@ noncomputable def remwEnvOf
     including divisor-zero rows handled by the boundary constraints.  This is the
     Lean-checked anti-vacuity guard for the strong-export DIV arm. -/
 theorem div_noKnownDefect_of_rowData
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i) :
     Defects.NoKnownDefect (divEnvOf trace binding i d) := by
   intro id
@@ -246,7 +246,7 @@ theorem div_noKnownDefect_of_rowData
 /-- Satisfiability witness for the threaded REM obligation (companion of
     `div_noKnownDefect_of_rowData`; secondary remainder lane). -/
 theorem rem_noKnownDefect_of_rowData
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i) :
     Defects.NoKnownDefect (remEnvOf trace binding i d) := by
   intro id
@@ -264,7 +264,7 @@ theorem rem_noKnownDefect_of_rowData
 /-- Satisfiability witness for the threaded DIVW obligation (W-mode analogue of
     `div_noKnownDefect_of_rowData`; narrowed shape `|r₃₂| ≠ |op2₃₂|`). -/
 theorem divw_noKnownDefect_of_rowData
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i) :
     Defects.NoKnownDefect (divwEnvOf trace binding i d) := by
   intro id
@@ -280,7 +280,7 @@ theorem divw_noKnownDefect_of_rowData
 /-- Satisfiability witness for the threaded REMW obligation (companion of
     `divw_noKnownDefect_of_rowData`; W-mode secondary remainder lane). -/
 theorem remw_noKnownDefect_of_rowData
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remw trace binding i) :
     Defects.NoKnownDefect (remwEnvOf trace binding i d) := by
   intro id

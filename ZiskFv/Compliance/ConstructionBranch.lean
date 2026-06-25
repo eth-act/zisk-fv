@@ -108,7 +108,7 @@ set_option maxHeartbeats 2000000
       genuine `exec_row` ∀-binder (with `misa_val`). -/
 theorem construction_beq_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (beq_input : PureSpec.BeqInput)
     (imm : BitVec 13)
@@ -169,7 +169,7 @@ theorem construction_beq_sound_claimed_dead
     obligation. -/
 theorem construction_bne_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (bne_input : PureSpec.BneInput)
     (imm : BitVec 13)
@@ -221,7 +221,7 @@ theorem construction_bne_sound_claimed_dead
 /-- Sound BLT construction (signed less-than). See `construction_beq_sound`. -/
 theorem construction_blt_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (blt_input : PureSpec.BltInput)
     (imm : BitVec 13)
@@ -273,7 +273,7 @@ theorem construction_blt_sound_claimed_dead
 /-- Sound BGE construction (signed greater-or-equal). See `construction_beq_sound`. -/
 theorem construction_bge_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (bge_input : PureSpec.BgeInput)
     (imm : BitVec 13)
@@ -325,7 +325,7 @@ theorem construction_bge_sound_claimed_dead
 /-- Sound BLTU construction (unsigned less-than). See `construction_beq_sound`. -/
 theorem construction_bltu_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (bltu_input : PureSpec.BltuInput)
     (imm : BitVec 13)
@@ -377,7 +377,7 @@ theorem construction_bltu_sound_claimed_dead
 /-- Sound BGEU construction (unsigned greater-or-equal). See `construction_beq_sound`. -/
 theorem construction_bgeu_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (bgeu_input : PureSpec.BgeuInput)
     (imm : BitVec 13)

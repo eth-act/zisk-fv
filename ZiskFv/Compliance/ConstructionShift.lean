@@ -313,7 +313,7 @@ theorem shift_imm_shift_pin_row_of_facts
     the lane→Sail bindings `h_input_r1_row` / `h_shift_pin_row` (m32 = 0 route). -/
 theorem construction_sll_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
@@ -479,7 +479,7 @@ theorem construction_sll_sound_claimed_dead
     the lane→Sail bindings `h_input_r1_row` / `h_shift_pin_row` (m32 = 0 route). -/
 theorem construction_srl_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (srl_input : PureSpec.SrlInput)
     (r1 r2 rd : regidx)
@@ -645,7 +645,7 @@ theorem construction_srl_sound_claimed_dead
     the lane→Sail bindings `h_input_r1_row` / `h_shift_pin_row` (m32 = 0 route). -/
 theorem construction_sra_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
@@ -807,7 +807,7 @@ theorem construction_sra_sound_claimed_dead
     `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo_t`. -/
 theorem construction_slli_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (slli_input : PureSpec.SlliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
@@ -953,7 +953,7 @@ theorem construction_slli_sound_claimed_dead
     `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo_t`. -/
 theorem construction_srli_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (srli_input : PureSpec.SrliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
@@ -1099,7 +1099,7 @@ theorem construction_srli_sound_claimed_dead
     `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo_t`. -/
 theorem construction_srai_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (srai_input : PureSpec.SraiInput)
     (r1 rd : regidx) (shamt : BitVec 6)
@@ -1413,7 +1413,7 @@ theorem shift_m32_1_imm_shift_pin_row_of_facts
     `execute_RTYPE_sllw_pure`. -/
 theorem construction_sllw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sllw_input : PureSpec.SllwInput)
     (r1 r2 rd : regidx)
@@ -1567,7 +1567,7 @@ theorem construction_sllw_sound_claimed_dead
     m32 = 1 lane (`ring`) + `% 32` register shift-pin route. -/
 theorem construction_srlw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (srlw_input : PureSpec.SrlwInput)
     (r1 r2 rd : regidx)
@@ -1707,7 +1707,7 @@ theorem construction_srlw_sound_claimed_dead
     m32 = 1 lane (`ring`) + `% 32` register shift-pin route. -/
 theorem construction_sraw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sraw_input : PureSpec.SrawInput)
     (r1 r2 rd : regidx)
@@ -1858,7 +1858,7 @@ theorem construction_sraw_sound_claimed_dead
     rides inside `slliw_input`, so it is NOT a separate top-level binder. -/
 theorem construction_slliw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (slliw_input : PureSpec.SlliwInput)
     (r1 rd : regidx)
@@ -1989,7 +1989,7 @@ theorem construction_slliw_sound_claimed_dead
     `execute_SHIFTIWOP_srliw_pure`. -/
 theorem construction_srliw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)
@@ -2116,7 +2116,7 @@ theorem construction_srliw_sound_claimed_dead
     `execute_SHIFTIWOP_sraiw_pure`. -/
 theorem construction_sraiw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sraiw_input : PureSpec.SraiwInput)
     (r1 rd : regidx)

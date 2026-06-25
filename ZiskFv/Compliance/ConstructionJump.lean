@@ -80,7 +80,7 @@ set_option maxHeartbeats 2000000
     * (c) exec artifacts: the `execRow` ∀-binder + its shape fields. -/
 theorem construction_jal_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
@@ -210,7 +210,7 @@ theorem construction_jal_sound_claimed_dead
     * (c) exec artifacts: the `execRow` ∀-binder + its shape fields. -/
 theorem construction_jalr_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (jalr_input : PureSpec.JalrInput)
     (imm : BitVec 12)

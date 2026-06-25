@@ -44,7 +44,7 @@ set_option maxHeartbeats 8000000
 /-- Irreducible per-row residuals for the `sub` archetype — the binders of
     `construction_sub_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sub
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   sub_input : PureSpec.SubInput
   r1 : regidx
   r2 : regidx
@@ -104,7 +104,7 @@ structure RowData_sub
 /-- Irreducible per-row residuals for the `and` archetype — the binders of
     `construction_and_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_and
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   and_input : PureSpec.AndInput
   r1 : regidx
   r2 : regidx
@@ -164,7 +164,7 @@ structure RowData_and
 /-- Irreducible per-row residuals for the `or` archetype — the binders of
     `construction_or_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_or
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   or_input : PureSpec.OrInput
   r1 : regidx
   r2 : regidx
@@ -224,7 +224,7 @@ structure RowData_or
 /-- Irreducible per-row residuals for the `xor` archetype — the binders of
     `construction_xor_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_xor
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   xor_input : PureSpec.XorInput
   r1 : regidx
   r2 : regidx
@@ -284,7 +284,7 @@ structure RowData_xor
 /-- Irreducible per-row residuals for the `slt` archetype — the binders of
     `construction_slt_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slt
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   slt_input : PureSpec.SltInput
   r1 : regidx
   r2 : regidx
@@ -344,7 +344,7 @@ structure RowData_slt
 /-- Irreducible per-row residuals for the `sltu` archetype — the binders of
     `construction_sltu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sltu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   sltu_input : PureSpec.SltuInput
   r1 : regidx
   r2 : regidx
@@ -404,7 +404,7 @@ structure RowData_sltu
 /-- Irreducible per-row residuals for the `andi` archetype — the binders of
     `construction_andi_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_andi
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   andi_input : PureSpec.AndiInput
   r1 : regidx
   rd : regidx
@@ -455,7 +455,7 @@ structure RowData_andi
 /-- Irreducible per-row residuals for the `ori` archetype — the binders of
     `construction_ori_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_ori
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   ori_input : PureSpec.OriInput
   r1 : regidx
   rd : regidx
@@ -506,7 +506,7 @@ structure RowData_ori
 /-- Irreducible per-row residuals for the `xori` archetype — the binders of
     `construction_xori_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_xori
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   xori_input : PureSpec.XoriInput
   r1 : regidx
   rd : regidx
@@ -557,7 +557,7 @@ structure RowData_xori
 /-- Irreducible per-row residuals for the `slti` archetype — the binders of
     `construction_slti_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slti
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   slti_input : PureSpec.SltiInput
   r1 : regidx
   rd : regidx
@@ -608,7 +608,7 @@ structure RowData_slti
 /-- Irreducible per-row residuals for the `sltiu` archetype — the binders of
     `construction_sltiu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sltiu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   sltiu_input : PureSpec.SltiuInput
   r1 : regidx
   rd : regidx
@@ -659,7 +659,7 @@ structure RowData_sltiu
 /-- Irreducible per-row residuals for the `sll` archetype — the binders of
     `construction_sll_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sll
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   sll_input : PureSpec.SllInput
   r1 : regidx
   r2 : regidx
@@ -719,7 +719,7 @@ structure RowData_sll
 /-- Irreducible per-row residuals for the `srl` archetype — the binders of
     `construction_srl_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srl
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   srl_input : PureSpec.SrlInput
   r1 : regidx
   r2 : regidx
@@ -779,7 +779,7 @@ structure RowData_srl
 /-- Irreducible per-row residuals for the `sra` archetype — the binders of
     `construction_sra_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sra
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   sra_input : PureSpec.SraInput
   r1 : regidx
   r2 : regidx
@@ -839,7 +839,7 @@ structure RowData_sra
 /-- Irreducible per-row residuals for the `slli` archetype — the binders of
     `construction_slli_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slli
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   slli_input : PureSpec.SlliInput
   r1 : regidx
   rd : regidx
@@ -890,7 +890,7 @@ structure RowData_slli
 /-- Irreducible per-row residuals for the `srli` archetype — the binders of
     `construction_srli_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srli
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   srli_input : PureSpec.SrliInput
   r1 : regidx
   rd : regidx
@@ -941,7 +941,7 @@ structure RowData_srli
 /-- Irreducible per-row residuals for the `srai` archetype — the binders of
     `construction_srai_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srai
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   srai_input : PureSpec.SraiInput
   r1 : regidx
   rd : regidx
@@ -992,7 +992,7 @@ structure RowData_srai
 /-- Irreducible per-row residuals for the `sllw` archetype — the binders of
     `construction_sllw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sllw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   sllw_input : PureSpec.SllwInput
   r1 : regidx
   r2 : regidx
@@ -1052,7 +1052,7 @@ structure RowData_sllw
 /-- Irreducible per-row residuals for the `srlw` archetype — the binders of
     `construction_srlw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srlw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   srlw_input : PureSpec.SrlwInput
   r1 : regidx
   r2 : regidx
@@ -1112,7 +1112,7 @@ structure RowData_srlw
 /-- Irreducible per-row residuals for the `sraw` archetype — the binders of
     `construction_sraw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sraw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   sraw_input : PureSpec.SrawInput
   r1 : regidx
   r2 : regidx
@@ -1172,7 +1172,7 @@ structure RowData_sraw
 /-- Irreducible per-row residuals for the `slliw` archetype — the binders of
     `construction_slliw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_slliw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   slliw_input : PureSpec.SlliwInput
   r1 : regidx
   rd : regidx
@@ -1221,7 +1221,7 @@ structure RowData_slliw
 /-- Irreducible per-row residuals for the `srliw` archetype — the binders of
     `construction_srliw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_srliw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   srliw_input : PureSpec.SrliwInput
   r1 : regidx
   rd : regidx
@@ -1270,7 +1270,7 @@ structure RowData_srliw
 /-- Irreducible per-row residuals for the `sraiw` archetype — the binders of
     `construction_sraiw_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_sraiw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   sraiw_input : PureSpec.SraiwInput
   r1 : regidx
   rd : regidx

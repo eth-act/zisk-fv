@@ -1,5 +1,5 @@
 0 :: ziskTrace :: ZiskFv.Compliance.AcceptedZiskTrace
-1 :: sailTrace :: ZiskFv.Compliance.SailTrace ziskTrace
+1 :: sailTrace :: ZiskFv.Compliance.SailTrace ziskTrace.numInstructions
 2 :: ziskStep :: (i : Fin ziskTrace.numInstructions) → ZiskFv.Compliance.ZiskStep ziskTrace i
 3 :: rowDecodes :: (i : Fin ziskTrace.numInstructions) → ZiskFv.Compliance.RowDecode ziskTrace sailTrace i (ziskStep i)
 4 :: inputsAgree :: (i : Fin ziskTrace.numInstructions) → ZiskFv.Compliance.InputsAgree ziskTrace sailTrace i (ziskStep i)

@@ -125,7 +125,7 @@ set_option maxHeartbeats 2000000
     the r1 lane→Sail binding fact. -/
 theorem construction_andi_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (andi_input : PureSpec.AndiInput)
     (r1 rd : regidx)
@@ -315,7 +315,7 @@ theorem construction_andi_sound_claimed_dead
     same `_op_lt_16` + `_64` data-effect route applies. -/
 theorem construction_ori_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (ori_input : PureSpec.OriInput)
     (r1 rd : regidx)
@@ -496,7 +496,7 @@ theorem construction_ori_sound_claimed_dead
     ANDI/ORI; route via `equiv_XORI`. -/
 theorem construction_xori_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (xori_input : PureSpec.XoriInput)
     (r1 rd : regidx)
@@ -678,7 +678,7 @@ theorem construction_xori_sound_claimed_dead
     inside the wrapper. -/
 theorem construction_slti_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (slti_input : PureSpec.SltiInput)
     (r1 rd : regidx)
@@ -853,7 +853,7 @@ theorem construction_slti_sound_claimed_dead
     `BitVec.signExtend 64 imm` Main-form pin. -/
 theorem construction_sltiu_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx)

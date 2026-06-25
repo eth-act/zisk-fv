@@ -89,7 +89,7 @@ set_option maxHeartbeats 2000000
     binding facts. -/
 theorem construction_or_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)
@@ -284,7 +284,7 @@ theorem construction_or_sound_claimed_dead
     NOT the `_op_lt_16` + `_64` pair. -/
 theorem construction_xor_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (xor_input : PureSpec.XorInput)
     (r1 r2 rd : regidx)
