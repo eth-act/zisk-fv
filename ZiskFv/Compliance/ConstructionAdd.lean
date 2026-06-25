@@ -101,7 +101,7 @@ set_option maxHeartbeats 2000000
       genuine `execRow` ∀-binder. -/
 theorem construction_add_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -309,7 +309,7 @@ theorem construction_add_sound_claimed_dead
     and `h_input_r2`, plus `imm`, `h_input_imm`, `h_addi_subset`, `h_set_pc`. -/
 theorem construction_addi_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx)

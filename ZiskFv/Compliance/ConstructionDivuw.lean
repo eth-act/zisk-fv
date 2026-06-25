@@ -302,7 +302,7 @@ private lemma divuw_carry_bounds_claimed_dead
     `main_request_divuw_provided`.
     Mirrors `divuArow`. -/
 noncomputable def divuwArow
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -315,7 +315,7 @@ noncomputable def divuwArow
 /-- `FullSpec` of the balance-selected DIVUW provider row, derived from the
     provider component's proven soundness (`componentWithArithTable.Spec`). -/
 theorem divuwArow_fullSpec_row
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -333,7 +333,7 @@ theorem divuwArow_fullSpec_row
 /-- The op-bus match of the balance-selected DIVUW provider row against the Main
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. -/
 theorem divuwArow_match_row
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -354,7 +354,7 @@ theorem divuwArow_match_row
     off the BARE provider `ArithMulRow` via `divuw_mode_pins_of_row`, never
     forcing the heavy `Classical.choose` row's whnf. -/
 theorem divuwArow_mode_pins
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -385,7 +385,7 @@ theorem divuwArow_mode_pins
     faithful mux are DERIVED via `divuwArow_mode_pins` (they are `m32`-agnostic,
     so the DIVU-mode bridge `match_opBus_row_ArithDiv_vOfDivuRow` applies). -/
 theorem divuwArow_match
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -636,7 +636,7 @@ lemma equiv_DIVUW_of_fullSpec_claimed_dead
     the canonical `equiv_DIVUW` carries). -/
 theorem construction_divuw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (divuw_input : PureSpec.DivuwInput)
     (r1 r2 rd : regidx)

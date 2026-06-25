@@ -107,7 +107,7 @@ set_option maxHeartbeats 2000000
     the lane→Sail binding facts. -/
 theorem construction_and_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)

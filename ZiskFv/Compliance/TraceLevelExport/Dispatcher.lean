@@ -29,6 +29,7 @@ import ZiskFv.Compliance.TraceLevelExport.StepStrongAluArith
 import ZiskFv.Compliance.TraceLevelExport.StepStrongControlStore
 import ZiskFv.Compliance.TraceLevelExport.StepStrongLoadMext
 import ZiskFv.Compliance.TraceLevelExport.StepStrongSignedM
+import ZiskFv.Compliance.TraceLevelExport.RowDataSplit
 
 namespace ZiskFv.Compliance
 
@@ -60,8 +61,9 @@ set_option maxHeartbeats 8000000
     a GENUINE per-row `NoKnownDefect` obligation whose defect predicate is narrowed to
     the exact forge witness (so honest rows are never excluded).  No arm is omitted —
     the export is 63/63 on the OpEnvelope route. -/
+
 inductive StrongRowConstructionData
-    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace) (i : Fin ziskTrace.numInstructions) where
+    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) where
   | sub (d : RowData_sub ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
   | and (d : RowData_and ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
   | or (d : RowData_or ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
@@ -140,8 +142,275 @@ inductive StrongRowConstructionData
     honest `OpEnvelope.fence` env built from the row's honest-shape pins.  That
     obligation is SATISFIABLE for an honest FENCE row (see `RowData_fence` /
     `stepStrong_fence`). -/
-def StepNoKnownDefect
-    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace) (i : Fin ziskTrace.numInstructions) :
+
+inductive ZiskStep (ziskTrace : AcceptedZiskTrace) (i : Fin ziskTrace.numInstructions) where
+  | sub (c : Claim_sub ziskTrace i) : ZiskStep ziskTrace i
+  | and (c : Claim_and ziskTrace i) : ZiskStep ziskTrace i
+  | or (c : Claim_or ziskTrace i) : ZiskStep ziskTrace i
+  | xor (c : Claim_xor ziskTrace i) : ZiskStep ziskTrace i
+  | slt (c : Claim_slt ziskTrace i) : ZiskStep ziskTrace i
+  | sltu (c : Claim_sltu ziskTrace i) : ZiskStep ziskTrace i
+  | andi (c : Claim_andi ziskTrace i) : ZiskStep ziskTrace i
+  | ori (c : Claim_ori ziskTrace i) : ZiskStep ziskTrace i
+  | xori (c : Claim_xori ziskTrace i) : ZiskStep ziskTrace i
+  | slti (c : Claim_slti ziskTrace i) : ZiskStep ziskTrace i
+  | sltiu (c : Claim_sltiu ziskTrace i) : ZiskStep ziskTrace i
+  | sll (c : Claim_sll ziskTrace i) : ZiskStep ziskTrace i
+  | srl (c : Claim_srl ziskTrace i) : ZiskStep ziskTrace i
+  | sra (c : Claim_sra ziskTrace i) : ZiskStep ziskTrace i
+  | slli (c : Claim_slli ziskTrace i) : ZiskStep ziskTrace i
+  | srli (c : Claim_srli ziskTrace i) : ZiskStep ziskTrace i
+  | srai (c : Claim_srai ziskTrace i) : ZiskStep ziskTrace i
+  | add (c : Claim_add ziskTrace i) : ZiskStep ziskTrace i
+  | addi (c : Claim_addi ziskTrace i) : ZiskStep ziskTrace i
+  | subw (c : Claim_subw ziskTrace i) : ZiskStep ziskTrace i
+  | addw (c : Claim_addw ziskTrace i) : ZiskStep ziskTrace i
+  | addiw (c : Claim_addiw ziskTrace i) : ZiskStep ziskTrace i
+  | sllw (c : Claim_sllw ziskTrace i) : ZiskStep ziskTrace i
+  | srlw (c : Claim_srlw ziskTrace i) : ZiskStep ziskTrace i
+  | sraw (c : Claim_sraw ziskTrace i) : ZiskStep ziskTrace i
+  | slliw (c : Claim_slliw ziskTrace i) : ZiskStep ziskTrace i
+  | srliw (c : Claim_srliw ziskTrace i) : ZiskStep ziskTrace i
+  | sraiw (c : Claim_sraiw ziskTrace i) : ZiskStep ziskTrace i
+  | mul (c : Claim_mul ziskTrace i) : ZiskStep ziskTrace i
+  | mulh (c : Claim_mulh ziskTrace i) : ZiskStep ziskTrace i
+  | mulhsu (c : Claim_mulhsu ziskTrace i) : ZiskStep ziskTrace i
+  | mulw (c : Claim_mulw ziskTrace i) : ZiskStep ziskTrace i
+  | mulhu (c : Claim_mulhu ziskTrace i) : ZiskStep ziskTrace i
+  | div (c : Claim_div ziskTrace i) : ZiskStep ziskTrace i
+  | rem (c : Claim_rem ziskTrace i) : ZiskStep ziskTrace i
+  | divw (c : Claim_divw ziskTrace i) : ZiskStep ziskTrace i
+  | remw (c : Claim_remw ziskTrace i) : ZiskStep ziskTrace i
+  | divu (c : Claim_divu ziskTrace i) : ZiskStep ziskTrace i
+  | divuw (c : Claim_divuw ziskTrace i) : ZiskStep ziskTrace i
+  | remu (c : Claim_remu ziskTrace i) : ZiskStep ziskTrace i
+  | remuw (c : Claim_remuw ziskTrace i) : ZiskStep ziskTrace i
+  | beq (c : Claim_beq ziskTrace i) : ZiskStep ziskTrace i
+  | bne (c : Claim_bne ziskTrace i) : ZiskStep ziskTrace i
+  | blt (c : Claim_blt ziskTrace i) : ZiskStep ziskTrace i
+  | bge (c : Claim_bge ziskTrace i) : ZiskStep ziskTrace i
+  | bltu (c : Claim_bltu ziskTrace i) : ZiskStep ziskTrace i
+  | bgeu (c : Claim_bgeu ziskTrace i) : ZiskStep ziskTrace i
+  | lui (c : Claim_lui ziskTrace i) : ZiskStep ziskTrace i
+  | auipc (c : Claim_auipc ziskTrace i) : ZiskStep ziskTrace i
+  | jal (c : Claim_jal ziskTrace i) : ZiskStep ziskTrace i
+  | jalr (c : Claim_jalr ziskTrace i) : ZiskStep ziskTrace i
+  | sb (c : Claim_sb ziskTrace i) : ZiskStep ziskTrace i
+  | sh (c : Claim_sh ziskTrace i) : ZiskStep ziskTrace i
+  | sw (c : Claim_sw ziskTrace i) : ZiskStep ziskTrace i
+  | sd (c : Claim_sd ziskTrace i) : ZiskStep ziskTrace i
+  | ld (c : Claim_ld ziskTrace i) : ZiskStep ziskTrace i
+  | lbu (c : Claim_lbu ziskTrace i) : ZiskStep ziskTrace i
+  | lhu (c : Claim_lhu ziskTrace i) : ZiskStep ziskTrace i
+  | lwu (c : Claim_lwu ziskTrace i) : ZiskStep ziskTrace i
+  | lb (c : Claim_lb ziskTrace i) : ZiskStep ziskTrace i
+  | lh (c : Claim_lh ziskTrace i) : ZiskStep ziskTrace i
+  | lw (c : Claim_lw ziskTrace i) : ZiskStep ziskTrace i
+  | fence (c : Claim_fence ziskTrace i) : ZiskStep ziskTrace i
+
+def RowDecode (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Type
+  | .sub c => Decode_sub ziskTrace sailTrace i c
+  | .and c => Decode_and ziskTrace sailTrace i c
+  | .or c => Decode_or ziskTrace sailTrace i c
+  | .xor c => Decode_xor ziskTrace sailTrace i c
+  | .slt c => Decode_slt ziskTrace sailTrace i c
+  | .sltu c => Decode_sltu ziskTrace sailTrace i c
+  | .andi c => Decode_andi ziskTrace sailTrace i c
+  | .ori c => Decode_ori ziskTrace sailTrace i c
+  | .xori c => Decode_xori ziskTrace sailTrace i c
+  | .slti c => Decode_slti ziskTrace sailTrace i c
+  | .sltiu c => Decode_sltiu ziskTrace sailTrace i c
+  | .sll c => Decode_sll ziskTrace sailTrace i c
+  | .srl c => Decode_srl ziskTrace sailTrace i c
+  | .sra c => Decode_sra ziskTrace sailTrace i c
+  | .slli c => Decode_slli ziskTrace sailTrace i c
+  | .srli c => Decode_srli ziskTrace sailTrace i c
+  | .srai c => Decode_srai ziskTrace sailTrace i c
+  | .add c => Decode_add ziskTrace sailTrace i c
+  | .addi c => Decode_addi ziskTrace sailTrace i c
+  | .subw c => Decode_subw ziskTrace sailTrace i c
+  | .addw c => Decode_addw ziskTrace sailTrace i c
+  | .addiw c => Decode_addiw ziskTrace sailTrace i c
+  | .sllw c => Decode_sllw ziskTrace sailTrace i c
+  | .srlw c => Decode_srlw ziskTrace sailTrace i c
+  | .sraw c => Decode_sraw ziskTrace sailTrace i c
+  | .slliw c => Decode_slliw ziskTrace sailTrace i c
+  | .srliw c => Decode_srliw ziskTrace sailTrace i c
+  | .sraiw c => Decode_sraiw ziskTrace sailTrace i c
+  | .mul c => Decode_mul ziskTrace sailTrace i c
+  | .mulh c => Decode_mulh ziskTrace sailTrace i c
+  | .mulhsu c => Decode_mulhsu ziskTrace sailTrace i c
+  | .mulw c => Decode_mulw ziskTrace sailTrace i c
+  | .mulhu c => Decode_mulhu ziskTrace sailTrace i c
+  | .div c => Decode_div ziskTrace sailTrace i c
+  | .rem c => Decode_rem ziskTrace sailTrace i c
+  | .divw c => Decode_divw ziskTrace sailTrace i c
+  | .remw c => Decode_remw ziskTrace sailTrace i c
+  | .divu c => Decode_divu ziskTrace sailTrace i c
+  | .divuw c => Decode_divuw ziskTrace sailTrace i c
+  | .remu c => Decode_remu ziskTrace sailTrace i c
+  | .remuw c => Decode_remuw ziskTrace sailTrace i c
+  | .beq c => Decode_beq ziskTrace sailTrace i c
+  | .bne c => Decode_bne ziskTrace sailTrace i c
+  | .blt c => Decode_blt ziskTrace sailTrace i c
+  | .bge c => Decode_bge ziskTrace sailTrace i c
+  | .bltu c => Decode_bltu ziskTrace sailTrace i c
+  | .bgeu c => Decode_bgeu ziskTrace sailTrace i c
+  | .lui c => Decode_lui ziskTrace sailTrace i c
+  | .auipc c => Decode_auipc ziskTrace sailTrace i c
+  | .jal c => Decode_jal ziskTrace sailTrace i c
+  | .jalr c => Decode_jalr ziskTrace sailTrace i c
+  | .sb c => Decode_sb ziskTrace sailTrace i c
+  | .sh c => Decode_sh ziskTrace sailTrace i c
+  | .sw c => Decode_sw ziskTrace sailTrace i c
+  | .sd c => Decode_sd ziskTrace sailTrace i c
+  | .ld c => Decode_ld ziskTrace sailTrace i c
+  | .lbu c => Decode_lbu ziskTrace sailTrace i c
+  | .lhu c => Decode_lhu ziskTrace sailTrace i c
+  | .lwu c => Decode_lwu ziskTrace sailTrace i c
+  | .lb c => Decode_lb ziskTrace sailTrace i c
+  | .lh c => Decode_lh ziskTrace sailTrace i c
+  | .lw c => Decode_lw ziskTrace sailTrace i c
+  | .fence c => Decode_fence ziskTrace sailTrace i c
+
+def InputsAgree (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Type
+  | .sub c => Inputs_sub ziskTrace sailTrace i c
+  | .and c => Inputs_and ziskTrace sailTrace i c
+  | .or c => Inputs_or ziskTrace sailTrace i c
+  | .xor c => Inputs_xor ziskTrace sailTrace i c
+  | .slt c => Inputs_slt ziskTrace sailTrace i c
+  | .sltu c => Inputs_sltu ziskTrace sailTrace i c
+  | .andi c => Inputs_andi ziskTrace sailTrace i c
+  | .ori c => Inputs_ori ziskTrace sailTrace i c
+  | .xori c => Inputs_xori ziskTrace sailTrace i c
+  | .slti c => Inputs_slti ziskTrace sailTrace i c
+  | .sltiu c => Inputs_sltiu ziskTrace sailTrace i c
+  | .sll c => Inputs_sll ziskTrace sailTrace i c
+  | .srl c => Inputs_srl ziskTrace sailTrace i c
+  | .sra c => Inputs_sra ziskTrace sailTrace i c
+  | .slli c => Inputs_slli ziskTrace sailTrace i c
+  | .srli c => Inputs_srli ziskTrace sailTrace i c
+  | .srai c => Inputs_srai ziskTrace sailTrace i c
+  | .add c => Inputs_add ziskTrace sailTrace i c
+  | .addi c => Inputs_addi ziskTrace sailTrace i c
+  | .subw c => Inputs_subw ziskTrace sailTrace i c
+  | .addw c => Inputs_addw ziskTrace sailTrace i c
+  | .addiw c => Inputs_addiw ziskTrace sailTrace i c
+  | .sllw c => Inputs_sllw ziskTrace sailTrace i c
+  | .srlw c => Inputs_srlw ziskTrace sailTrace i c
+  | .sraw c => Inputs_sraw ziskTrace sailTrace i c
+  | .slliw c => Inputs_slliw ziskTrace sailTrace i c
+  | .srliw c => Inputs_srliw ziskTrace sailTrace i c
+  | .sraiw c => Inputs_sraiw ziskTrace sailTrace i c
+  | .mul c => Inputs_mul ziskTrace sailTrace i c
+  | .mulh c => Inputs_mulh ziskTrace sailTrace i c
+  | .mulhsu c => Inputs_mulhsu ziskTrace sailTrace i c
+  | .mulw c => Inputs_mulw ziskTrace sailTrace i c
+  | .mulhu c => Inputs_mulhu ziskTrace sailTrace i c
+  | .div c => Inputs_div ziskTrace sailTrace i c
+  | .rem c => Inputs_rem ziskTrace sailTrace i c
+  | .divw c => Inputs_divw ziskTrace sailTrace i c
+  | .remw c => Inputs_remw ziskTrace sailTrace i c
+  | .divu c => Inputs_divu ziskTrace sailTrace i c
+  | .divuw c => Inputs_divuw ziskTrace sailTrace i c
+  | .remu c => Inputs_remu ziskTrace sailTrace i c
+  | .remuw c => Inputs_remuw ziskTrace sailTrace i c
+  | .beq c => Inputs_beq ziskTrace sailTrace i c
+  | .bne c => Inputs_bne ziskTrace sailTrace i c
+  | .blt c => Inputs_blt ziskTrace sailTrace i c
+  | .bge c => Inputs_bge ziskTrace sailTrace i c
+  | .bltu c => Inputs_bltu ziskTrace sailTrace i c
+  | .bgeu c => Inputs_bgeu ziskTrace sailTrace i c
+  | .lui c => Inputs_lui ziskTrace sailTrace i c
+  | .auipc c => Inputs_auipc ziskTrace sailTrace i c
+  | .jal c => Inputs_jal ziskTrace sailTrace i c
+  | .jalr c => Inputs_jalr ziskTrace sailTrace i c
+  | .sb c => Inputs_sb ziskTrace sailTrace i c
+  | .sh c => Inputs_sh ziskTrace sailTrace i c
+  | .sw c => Inputs_sw ziskTrace sailTrace i c
+  | .sd c => Inputs_sd ziskTrace sailTrace i c
+  | .ld c => Inputs_ld ziskTrace sailTrace i c
+  | .lbu c => Inputs_lbu ziskTrace sailTrace i c
+  | .lhu c => Inputs_lhu ziskTrace sailTrace i c
+  | .lwu c => Inputs_lwu ziskTrace sailTrace i c
+  | .lb c => Inputs_lb ziskTrace sailTrace i c
+  | .lh c => Inputs_lh ziskTrace sailTrace i c
+  | .lw c => Inputs_lw ziskTrace sailTrace i c
+  | .fence c => Inputs_fence ziskTrace sailTrace i c
+
+def toFull (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
+    (rd : RowDecode ziskTrace sailTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs) :
+    StrongRowConstructionData ziskTrace sailTrace i :=
+  match zs, rd, ia with
+  | .sub c, rd, ia => .sub (toRowData_sub c rd ia)
+  | .and c, rd, ia => .and (toRowData_and c rd ia)
+  | .or c, rd, ia => .or (toRowData_or c rd ia)
+  | .xor c, rd, ia => .xor (toRowData_xor c rd ia)
+  | .slt c, rd, ia => .slt (toRowData_slt c rd ia)
+  | .sltu c, rd, ia => .sltu (toRowData_sltu c rd ia)
+  | .andi c, rd, ia => .andi (toRowData_andi c rd ia)
+  | .ori c, rd, ia => .ori (toRowData_ori c rd ia)
+  | .xori c, rd, ia => .xori (toRowData_xori c rd ia)
+  | .slti c, rd, ia => .slti (toRowData_slti c rd ia)
+  | .sltiu c, rd, ia => .sltiu (toRowData_sltiu c rd ia)
+  | .sll c, rd, ia => .sll (toRowData_sll c rd ia)
+  | .srl c, rd, ia => .srl (toRowData_srl c rd ia)
+  | .sra c, rd, ia => .sra (toRowData_sra c rd ia)
+  | .slli c, rd, ia => .slli (toRowData_slli c rd ia)
+  | .srli c, rd, ia => .srli (toRowData_srli c rd ia)
+  | .srai c, rd, ia => .srai (toRowData_srai c rd ia)
+  | .add c, rd, ia => .add (toRowData_add c rd ia)
+  | .addi c, rd, ia => .addi (toRowData_addi c rd ia)
+  | .subw c, rd, ia => .subw (toRowData_subw c rd ia)
+  | .addw c, rd, ia => .addw (toRowData_addw c rd ia)
+  | .addiw c, rd, ia => .addiw (toRowData_addiw c rd ia)
+  | .sllw c, rd, ia => .sllw (toRowData_sllw c rd ia)
+  | .srlw c, rd, ia => .srlw (toRowData_srlw c rd ia)
+  | .sraw c, rd, ia => .sraw (toRowData_sraw c rd ia)
+  | .slliw c, rd, ia => .slliw (toRowData_slliw c rd ia)
+  | .srliw c, rd, ia => .srliw (toRowData_srliw c rd ia)
+  | .sraiw c, rd, ia => .sraiw (toRowData_sraiw c rd ia)
+  | .mul c, rd, ia => .mul (toRowData_mul c rd ia)
+  | .mulh c, rd, ia => .mulh (toRowData_mulh c rd ia)
+  | .mulhsu c, rd, ia => .mulhsu (toRowData_mulhsu c rd ia)
+  | .mulw c, rd, ia => .mulw (toRowData_mulw c rd ia)
+  | .mulhu c, rd, ia => .mulhu (toRowData_mulhu c rd ia)
+  | .div c, rd, ia => .div (toRowData_div c rd ia)
+  | .rem c, rd, ia => .rem (toRowData_rem c rd ia)
+  | .divw c, rd, ia => .divw (toRowData_divw c rd ia)
+  | .remw c, rd, ia => .remw (toRowData_remw c rd ia)
+  | .divu c, rd, ia => .divu (toRowData_divu c rd ia)
+  | .divuw c, rd, ia => .divuw (toRowData_divuw c rd ia)
+  | .remu c, rd, ia => .remu (toRowData_remu c rd ia)
+  | .remuw c, rd, ia => .remuw (toRowData_remuw c rd ia)
+  | .beq c, rd, ia => .beq (toRowData_beq c rd ia)
+  | .bne c, rd, ia => .bne (toRowData_bne c rd ia)
+  | .blt c, rd, ia => .blt (toRowData_blt c rd ia)
+  | .bge c, rd, ia => .bge (toRowData_bge c rd ia)
+  | .bltu c, rd, ia => .bltu (toRowData_bltu c rd ia)
+  | .bgeu c, rd, ia => .bgeu (toRowData_bgeu c rd ia)
+  | .lui c, rd, ia => .lui (toRowData_lui c rd ia)
+  | .auipc c, rd, ia => .auipc (toRowData_auipc c rd ia)
+  | .jal c, rd, ia => .jal (toRowData_jal c rd ia)
+  | .jalr c, rd, ia => .jalr (toRowData_jalr c rd ia)
+  | .sb c, rd, ia => .sb (toRowData_sb c rd ia)
+  | .sh c, rd, ia => .sh (toRowData_sh c rd ia)
+  | .sw c, rd, ia => .sw (toRowData_sw c rd ia)
+  | .sd c, rd, ia => .sd (toRowData_sd c rd ia)
+  | .ld c, rd, ia => .ld (toRowData_ld c rd ia)
+  | .lbu c, rd, ia => .lbu (toRowData_lbu c rd ia)
+  | .lhu c, rd, ia => .lhu (toRowData_lhu c rd ia)
+  | .lwu c, rd, ia => .lwu (toRowData_lwu c rd ia)
+  | .lb c, rd, ia => .lb (toRowData_lb c rd ia)
+  | .lh c, rd, ia => .lh (toRowData_lh c rd ia)
+  | .lw c, rd, ia => .lw (toRowData_lw c rd ia)
+  | .fence c, rd, ia => .fence (toRowData_fence c rd ia)
+
+def StepNoKnownDefectOn
+    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
     StrongRowConstructionData ziskTrace sailTrace i → Prop
   | .sub _ => EnvNoKnownDefectFor
       (state := sailTrace i)
@@ -385,478 +654,484 @@ def StepNoKnownDefect
 /-- The strengthened per-step conclusion: the channel-balance
     (`state_effect_via_channels`) form — the OLD global theorem's per-arm
     conclusion — keyed on the row archetype. -/
-def StepComplianceStrong
-    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace) (i : Fin ziskTrace.numInstructions) :
-    StrongRowConstructionData ziskTrace sailTrace i → Prop
-  | .sub d =>
+
+def StepNoKnownDefect (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
+    (rd : RowDecode ziskTrace sailTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs) : Prop :=
+  StepNoKnownDefectOn ziskTrace sailTrace i (toFull ziskTrace sailTrace i zs rd ia)
+
+def StepFaithful
+    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
+    ZiskStep ziskTrace i → Prop
+  | .sub c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SUB))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (c.r2, c.r1, c.rd, rop.SUB))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .and d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .and c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.AND))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (c.r2, c.r1, c.rd, rop.AND))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .or d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .or c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.OR))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (c.r2, c.r1, c.rd, rop.OR))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .xor d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .xor c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.XOR))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (c.r2, c.r1, c.rd, rop.XOR))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .slt d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .slt c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLT))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (c.r2, c.r1, c.rd, rop.SLT))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sltu d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sltu c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLTU))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (c.r2, c.r1, c.rd, rop.SLTU))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .andi d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .andi c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ANDI))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (c.imm, c.r1, c.rd, iop.ANDI))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .ori d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .ori c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ORI))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (c.imm, c.r1, c.rd, iop.ORI))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .xori d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .xori c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.XORI))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (c.imm, c.r1, c.rd, iop.XORI))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .slti d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .slti c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTI))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (c.imm, c.r1, c.rd, iop.SLTI))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sltiu d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sltiu c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTIU))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (c.imm, c.r1, c.rd, iop.SLTIU))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sll d =>
-      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLL)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sll c =>
+      execute_instruction (instruction.RTYPE (c.r2, c.r1, c.rd, rop.SLL)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .srl d =>
-      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRL)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .srl c =>
+      execute_instruction (instruction.RTYPE (c.r2, c.r1, c.rd, rop.SRL)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sra d =>
-      execute_instruction (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRA)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sra c =>
+      execute_instruction (instruction.RTYPE (c.r2, c.r1, c.rd, rop.SRA)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .slli d =>
-      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SLLI)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .slli c =>
+      execute_instruction (instruction.SHIFTIOP (c.shamt, c.r1, c.rd, sop.SLLI)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .srli d =>
-      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRLI)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .srli c =>
+      execute_instruction (instruction.SHIFTIOP (c.shamt, c.r1, c.rd, sop.SRLI)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .srai d =>
-      execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRAI)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .srai c =>
+      execute_instruction (instruction.SHIFTIOP (c.shamt, c.r1, c.rd, sop.SRAI)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .add d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .add c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPE (d.r2, d.r1, d.rd, rop.ADD))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.RTYPE (c.r2, c.r1, c.rd, rop.ADD))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .addi d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .addi c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ADDI))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.ITYPE (c.imm, c.r1, c.rd, iop.ADDI))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .subw d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .subw c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SUBW))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.RTYPEW (c.r2, c.r1, c.rd, ropw.SUBW))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .addw d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .addw c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.ADDW))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.RTYPEW (c.r2, c.r1, c.rd, ropw.ADDW))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .addiw d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .addiw c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.ADDIW (d.imm, d.r1, d.rd))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.ADDIW (c.imm, c.r1, c.rd))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sllw d =>
-      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sllw c =>
+      execute_instruction (instruction.RTYPEW (c.r2, c.r1, c.rd, ropw.SLLW)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .srlw d =>
-      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .srlw c =>
+      execute_instruction (instruction.RTYPEW (c.r2, c.r1, c.rd, ropw.SRLW)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sraw d =>
-      execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sraw c =>
+      execute_instruction (instruction.RTYPEW (c.r2, c.r1, c.rd, ropw.SRAW)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .slliw d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .slliw c =>
       execute_instruction
-        (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (sailTrace i)
+        (instruction.SHIFTIWOP (c.slliw_input.shamt, c.r1, c.rd, sopw.SLLIW)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .srliw d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .srliw c =>
       execute_instruction
-        (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (sailTrace i)
+        (instruction.SHIFTIWOP (c.srliw_input.shamt, c.r1, c.rd, sopw.SRLIW)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sraiw d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sraiw c =>
       execute_instruction
-        (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (sailTrace i)
+        (instruction.SHIFTIWOP (c.sraiw_input.shamt, c.r1, c.rd, sopw.SRAIW)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .mul d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .mul c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MUL
-          (d.r2, d.r1, d.rd,
+          (c.r2, c.r1, c.rd,
            { result_part := VectorHalf.Low
-             signed_rs1 := d.srs1
-             signed_rs2 := d.srs2 }))) (sailTrace i)
+             signed_rs1 := c.srs1
+             signed_rs2 := c.srs2 }))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (sailTrace i)
-  | .mulh d =>
+          ⟨c.bus.exec_row, [c.bus.e0, c.bus.e1, c.bus.e2]⟩ (sailTrace i)
+  | .mulh c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MUL
-          (d.r2, d.r1, d.rd,
+          (c.r2, c.r1, c.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Signed
              signed_rs2 := .Signed }))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (sailTrace i)
-  | .mulhsu d =>
+          ⟨c.bus.exec_row, [c.bus.e0, c.bus.e1, c.bus.e2]⟩ (sailTrace i)
+  | .mulhsu c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MUL
-          (d.r2, d.r1, d.rd,
+          (c.r2, c.r1, c.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Signed
              signed_rs2 := .Unsigned }))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (sailTrace i)
-  | .div d =>
+          ⟨c.bus.exec_row, [c.bus.e0, c.bus.e1, c.bus.e2]⟩ (sailTrace i)
+  | .div c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, false))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.DIV (c.r2, c.r1, c.rd, false))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (sailTrace i)
-  | .rem d =>
+          ⟨c.bus.exec_row, [c.bus.e0, c.bus.e1, c.bus.e2]⟩ (sailTrace i)
+  | .rem c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, false))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.REM (c.r2, c.r1, c.rd, false))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (sailTrace i)
-  | .divw d =>
+          ⟨c.bus.exec_row, [c.bus.e0, c.bus.e1, c.bus.e2]⟩ (sailTrace i)
+  | .divw c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, false))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.DIVW (c.r2, c.r1, c.rd, false))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (sailTrace i)
-  | .remw d =>
+          ⟨c.bus.exec_row, [c.bus.e0, c.bus.e1, c.bus.e2]⟩ (sailTrace i)
+  | .remw c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, false))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.REMW (c.r2, c.r1, c.rd, false))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (sailTrace i)
-  | .mulw d =>
+          ⟨c.bus.exec_row, [c.bus.e0, c.bus.e1, c.bus.e2]⟩ (sailTrace i)
+  | .mulw c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.MULW (d.r2, d.r1, d.rd))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.MULW (c.r2, c.r1, c.rd))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .mulhu d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .mulhu c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MUL
-          (d.r2, d.r1, d.rd,
+          (c.r2, c.r1, c.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Unsigned
              signed_rs2 := .Unsigned }))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .divu d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .divu c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, true))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.DIV (c.r2, c.r1, c.rd, true))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .divuw d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .divuw c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, true))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.DIVW (c.r2, c.r1, c.rd, true))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .remu d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .remu c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, true))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.REM (c.r2, c.r1, c.rd, true))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .remuw d =>
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .remuw c =>
       (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, true))) (sailTrace i)
+      LeanRV64D.Functions.execute (instruction.REMW (c.r2, c.r1, c.rd, true))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSub ziskTrace sailTrace i d.execRow).e0, (busSub ziskTrace sailTrace i d.execRow).e1,
-            (busSub ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .beq d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BEQ)) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (sailTrace i)
-  | .bne d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BNE)) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (sailTrace i)
-  | .blt d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLT)) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (sailTrace i)
-  | .bge d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGE)) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (sailTrace i)
-  | .bltu d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BLTU)) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (sailTrace i)
-  | .bgeu d =>
-      execute_instruction (instruction.BTYPE (d.imm, d.r2, d.r1, bop.BGEU)) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (sailTrace i)
-  | .lui d =>
-      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.LUI)) (sailTrace i)
+          ⟨(busSub ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSub ziskTrace sailTrace i c.execRow).e0, (busSub ziskTrace sailTrace i c.execRow).e1,
+            (busSub ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .beq c =>
+      execute_instruction (instruction.BTYPE (c.imm, c.r2, c.r1, bop.BEQ)) (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
+  | .bne c =>
+      execute_instruction (instruction.BTYPE (c.imm, c.r2, c.r1, bop.BNE)) (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
+  | .blt c =>
+      execute_instruction (instruction.BTYPE (c.imm, c.r2, c.r1, bop.BLT)) (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
+  | .bge c =>
+      execute_instruction (instruction.BTYPE (c.imm, c.r2, c.r1, bop.BGE)) (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
+  | .bltu c =>
+      execute_instruction (instruction.BTYPE (c.imm, c.r2, c.r1, bop.BLTU)) (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
+  | .bgeu c =>
+      execute_instruction (instruction.BTYPE (c.imm, c.r2, c.r1, bop.BGEU)) (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
+  | .lui c =>
+      execute_instruction (instruction.UTYPE (c.imm, c.rd, uop.LUI)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.execRow, [eRdLui ziskTrace sailTrace i]⟩ (sailTrace i)
-  | .auipc d =>
-      execute_instruction (instruction.UTYPE (d.imm, d.rd, uop.AUIPC)) (sailTrace i)
+          ⟨c.execRow, [eRdLui ziskTrace sailTrace i]⟩ (sailTrace i)
+  | .auipc c =>
+      execute_instruction (instruction.UTYPE (c.imm, c.rd, uop.AUIPC)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.execRow, [eRdLui ziskTrace sailTrace i]⟩ (sailTrace i)
-  | .jal d =>
-      execute_instruction (instruction.JAL (d.imm, d.rd)) (sailTrace i)
+          ⟨c.execRow, [eRdLui ziskTrace sailTrace i]⟩ (sailTrace i)
+  | .jal c =>
+      execute_instruction (instruction.JAL (c.imm, c.rd)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.execRow, [eRdLui ziskTrace sailTrace i]⟩ (sailTrace i)
-  | .jalr d =>
+          ⟨c.execRow, [eRdLui ziskTrace sailTrace i]⟩ (sailTrace i)
+  | .jalr c =>
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-        LeanRV64D.Functions.execute (instruction.JALR (d.imm, d.rs1, d.rd))) (sailTrace i)
+        LeanRV64D.Functions.execute (instruction.JALR (c.imm, c.rs1, c.rd))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.execRow, [eRdLui ziskTrace sailTrace i]⟩ (sailTrace i)
-  | .sb d =>
+          ⟨c.execRow, [eRdLui ziskTrace sailTrace i]⟩ (sailTrace i)
+  | .sb c =>
       execute_instruction (instruction.STORE
-          (d.sb_input.imm, regidx.Regidx d.sb_input.r2, regidx.Regidx d.sb_input.r1, 1))
+          (c.sb_input.imm, regidx.Regidx c.sb_input.r2, regidx.Regidx c.sb_input.r1, 1))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSt ziskTrace sailTrace i d.execRow).e0, (busSt ziskTrace sailTrace i d.execRow).e1,
-            (busSt ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sh d =>
+          ⟨(busSt ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSt ziskTrace sailTrace i c.execRow).e0, (busSt ziskTrace sailTrace i c.execRow).e1,
+            (busSt ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sh c =>
       execute_instruction (instruction.STORE
-          (d.sh_input.imm, regidx.Regidx d.sh_input.r2, regidx.Regidx d.sh_input.r1, 2))
+          (c.sh_input.imm, regidx.Regidx c.sh_input.r2, regidx.Regidx c.sh_input.r1, 2))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSt ziskTrace sailTrace i d.execRow).e0, (busSt ziskTrace sailTrace i d.execRow).e1,
-            (busSt ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sw d =>
+          ⟨(busSt ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSt ziskTrace sailTrace i c.execRow).e0, (busSt ziskTrace sailTrace i c.execRow).e1,
+            (busSt ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sw c =>
       execute_instruction (instruction.STORE
-          (d.sw_input.imm, regidx.Regidx d.sw_input.r2, regidx.Regidx d.sw_input.r1, 4))
+          (c.sw_input.imm, regidx.Regidx c.sw_input.r2, regidx.Regidx c.sw_input.r1, 4))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSt ziskTrace sailTrace i d.execRow).e0, (busSt ziskTrace sailTrace i d.execRow).e1,
-            (busSt ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .sd d =>
+          ⟨(busSt ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSt ziskTrace sailTrace i c.execRow).e0, (busSt ziskTrace sailTrace i c.execRow).e1,
+            (busSt ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .sd c =>
       execute_instruction (instruction.STORE
-          (d.sd_input.imm, regidx.Regidx d.sd_input.r2, regidx.Regidx d.sd_input.r1, 8))
+          (c.sd_input.imm, regidx.Regidx c.sd_input.r2, regidx.Regidx c.sd_input.r1, 8))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt ziskTrace sailTrace i d.execRow).exec_row,
-           [(busSt ziskTrace sailTrace i d.execRow).e0, (busSt ziskTrace sailTrace i d.execRow).e1,
-            (busSt ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .ld d =>
+          ⟨(busSt ziskTrace sailTrace i c.execRow).exec_row,
+           [(busSt ziskTrace sailTrace i c.execRow).e0, (busSt ziskTrace sailTrace i c.execRow).e1,
+            (busSt ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .ld c =>
       execute_instruction (instruction.LOAD
-          (d.ld_input.imm, regidx.Regidx d.ld_input.r1, regidx.Regidx d.ld_input.rd, false, 8))
+          (c.ld_input.imm, regidx.Regidx c.ld_input.r1, regidx.Regidx c.ld_input.rd, false, 8))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd ziskTrace sailTrace i d.execRow).exec_row,
-           [(busLd ziskTrace sailTrace i d.execRow).e0, (busLd ziskTrace sailTrace i d.execRow).e1,
-            (busLd ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .lbu d =>
+          ⟨(busLd ziskTrace sailTrace i c.execRow).exec_row,
+           [(busLd ziskTrace sailTrace i c.execRow).e0, (busLd ziskTrace sailTrace i c.execRow).e1,
+            (busLd ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .lbu c =>
       execute_instruction (instruction.LOAD
-          (d.lbu_input.imm, regidx.Regidx d.lbu_input.r1, regidx.Regidx d.lbu_input.rd, true, 1))
+          (c.lbu_input.imm, regidx.Regidx c.lbu_input.r1, regidx.Regidx c.lbu_input.rd, true, 1))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd ziskTrace sailTrace i d.execRow).exec_row,
-           [(busLd ziskTrace sailTrace i d.execRow).e0, (busLd ziskTrace sailTrace i d.execRow).e1,
-            (busLd ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .lhu d =>
+          ⟨(busLd ziskTrace sailTrace i c.execRow).exec_row,
+           [(busLd ziskTrace sailTrace i c.execRow).e0, (busLd ziskTrace sailTrace i c.execRow).e1,
+            (busLd ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .lhu c =>
       execute_instruction (instruction.LOAD
-          (d.lhu_input.imm, regidx.Regidx d.lhu_input.r1, regidx.Regidx d.lhu_input.rd, true, 2))
+          (c.lhu_input.imm, regidx.Regidx c.lhu_input.r1, regidx.Regidx c.lhu_input.rd, true, 2))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd ziskTrace sailTrace i d.execRow).exec_row,
-           [(busLd ziskTrace sailTrace i d.execRow).e0, (busLd ziskTrace sailTrace i d.execRow).e1,
-            (busLd ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .lwu d =>
+          ⟨(busLd ziskTrace sailTrace i c.execRow).exec_row,
+           [(busLd ziskTrace sailTrace i c.execRow).e0, (busLd ziskTrace sailTrace i c.execRow).e1,
+            (busLd ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .lwu c =>
       execute_instruction (instruction.LOAD
-          (d.lwu_input.imm, regidx.Regidx d.lwu_input.r1, regidx.Regidx d.lwu_input.rd, true, 4))
+          (c.lwu_input.imm, regidx.Regidx c.lwu_input.r1, regidx.Regidx c.lwu_input.rd, true, 4))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd ziskTrace sailTrace i d.execRow).exec_row,
-           [(busLd ziskTrace sailTrace i d.execRow).e0, (busLd ziskTrace sailTrace i d.execRow).e1,
-            (busLd ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .lb d =>
+          ⟨(busLd ziskTrace sailTrace i c.execRow).exec_row,
+           [(busLd ziskTrace sailTrace i c.execRow).e0, (busLd ziskTrace sailTrace i c.execRow).e1,
+            (busLd ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .lb c =>
       execute_instruction (instruction.LOAD
-          (d.lb_input.imm, regidx.Regidx d.lb_input.r1, regidx.Regidx d.lb_input.rd, false, 1))
+          (c.lb_input.imm, regidx.Regidx c.lb_input.r1, regidx.Regidx c.lb_input.rd, false, 1))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd ziskTrace sailTrace i d.execRow).exec_row,
-           [(busLd ziskTrace sailTrace i d.execRow).e0, (busLd ziskTrace sailTrace i d.execRow).e1,
-            (busLd ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .lh d =>
+          ⟨(busLd ziskTrace sailTrace i c.execRow).exec_row,
+           [(busLd ziskTrace sailTrace i c.execRow).e0, (busLd ziskTrace sailTrace i c.execRow).e1,
+            (busLd ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .lh c =>
       execute_instruction (instruction.LOAD
-          (d.lh_input.imm, regidx.Regidx d.lh_input.r1, regidx.Regidx d.lh_input.rd, false, 2))
+          (c.lh_input.imm, regidx.Regidx c.lh_input.r1, regidx.Regidx c.lh_input.rd, false, 2))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd ziskTrace sailTrace i d.execRow).exec_row,
-           [(busLd ziskTrace sailTrace i d.execRow).e0, (busLd ziskTrace sailTrace i d.execRow).e1,
-            (busLd ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .lw d =>
+          ⟨(busLd ziskTrace sailTrace i c.execRow).exec_row,
+           [(busLd ziskTrace sailTrace i c.execRow).e0, (busLd ziskTrace sailTrace i c.execRow).e1,
+            (busLd ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .lw c =>
       execute_instruction (instruction.LOAD
-          (d.lw_input.imm, regidx.Regidx d.lw_input.r1, regidx.Regidx d.lw_input.rd, false, 4))
+          (c.lw_input.imm, regidx.Regidx c.lw_input.r1, regidx.Regidx c.lw_input.rd, false, 4))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd ziskTrace sailTrace i d.execRow).exec_row,
-           [(busLd ziskTrace sailTrace i d.execRow).e0, (busLd ziskTrace sailTrace i d.execRow).e1,
-            (busLd ziskTrace sailTrace i d.execRow).e2]⟩ (sailTrace i)
-  | .fence d =>
-      execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (sailTrace i)
+          ⟨(busLd ziskTrace sailTrace i c.execRow).exec_row,
+           [(busLd ziskTrace sailTrace i c.execRow).e0, (busLd ziskTrace sailTrace i c.execRow).e1,
+            (busLd ziskTrace sailTrace i c.execRow).e2]⟩ (sailTrace i)
+  | .fence c =>
+      execute_instruction (instruction.FENCE (c.fm, c.fenceP, c.fenceS, c.rs, c.rd)) (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
 
 /-- Per-row dispatch to the matching strengthened step theorem.
 
@@ -866,74 +1141,75 @@ def StepComplianceStrong
     straight to the corresponding `stepStrong_<op>`, which feeds it to
     `zisk_riscv_compliant_program_bus`.  For the direct-lift arms (which never call
     the old theorem) the obligation is `True` and is ignored. -/
-theorem stepComplianceStrong_of_rowData
-    (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace) (i : Fin ziskTrace.numInstructions)
-    (d : StrongRowConstructionData ziskTrace sailTrace i)
-    (h_known : StepNoKnownDefect ziskTrace sailTrace i d) :
-    StepComplianceStrong ziskTrace sailTrace i d := by
-  cases d with
-  | sub d => exact stepStrong_sub ziskTrace sailTrace i d h_known
-  | and d => exact stepStrong_and ziskTrace sailTrace i d h_known
-  | or d => exact stepStrong_or ziskTrace sailTrace i d h_known
-  | xor d => exact stepStrong_xor ziskTrace sailTrace i d h_known
-  | slt d => exact stepStrong_slt ziskTrace sailTrace i d h_known
-  | sltu d => exact stepStrong_sltu ziskTrace sailTrace i d h_known
-  | andi d => exact stepStrong_andi ziskTrace sailTrace i d h_known
-  | ori d => exact stepStrong_ori ziskTrace sailTrace i d h_known
-  | xori d => exact stepStrong_xori ziskTrace sailTrace i d h_known
-  | slti d => exact stepStrong_slti ziskTrace sailTrace i d h_known
-  | sltiu d => exact stepStrong_sltiu ziskTrace sailTrace i d h_known
-  | sll d => exact stepStrong_sll ziskTrace sailTrace i d h_known
-  | srl d => exact stepStrong_srl ziskTrace sailTrace i d h_known
-  | sra d => exact stepStrong_sra ziskTrace sailTrace i d h_known
-  | slli d => exact stepStrong_slli ziskTrace sailTrace i d h_known
-  | srli d => exact stepStrong_srli ziskTrace sailTrace i d h_known
-  | srai d => exact stepStrong_srai ziskTrace sailTrace i d h_known
-  | add d => exact stepStrong_add ziskTrace sailTrace i d h_known
-  | addi d => exact stepStrong_addi ziskTrace sailTrace i d h_known
-  | subw d => exact stepStrong_subw ziskTrace sailTrace i d h_known
-  | addw d => exact stepStrong_addw ziskTrace sailTrace i d h_known
-  | addiw d => exact stepStrong_addiw ziskTrace sailTrace i d h_known
-  | sllw d => exact stepStrong_sllw ziskTrace sailTrace i d h_known
-  | srlw d => exact stepStrong_srlw ziskTrace sailTrace i d h_known
-  | sraw d => exact stepStrong_sraw ziskTrace sailTrace i d h_known
-  | slliw d => exact stepStrong_slliw ziskTrace sailTrace i d h_known
-  | srliw d => exact stepStrong_srliw ziskTrace sailTrace i d h_known
-  | sraiw d => exact stepStrong_sraiw ziskTrace sailTrace i d h_known
-  | mul d => exact stepStrong_mul ziskTrace sailTrace i d h_known
-  | mulh d => exact stepStrong_mulh ziskTrace sailTrace i d h_known
-  | mulhsu d => exact stepStrong_mulhsu ziskTrace sailTrace i d h_known
-  | div d => exact stepStrong_div ziskTrace sailTrace i d h_known
-  | rem d => exact stepStrong_rem ziskTrace sailTrace i d h_known
-  | divw d => exact stepStrong_divw ziskTrace sailTrace i d h_known
-  | remw d => exact stepStrong_remw ziskTrace sailTrace i d h_known
-  | mulw d => exact stepStrong_mulw ziskTrace sailTrace i d h_known
-  | mulhu d => exact stepStrong_mulhu ziskTrace sailTrace i d h_known
-  | divu d => exact stepStrong_divu ziskTrace sailTrace i d h_known
-  | divuw d => exact stepStrong_divuw ziskTrace sailTrace i d h_known
-  | remu d => exact stepStrong_remu ziskTrace sailTrace i d h_known
-  | remuw d => exact stepStrong_remuw ziskTrace sailTrace i d h_known
-  | beq d => exact stepStrong_beq ziskTrace sailTrace i d h_known
-  | bne d => exact stepStrong_bne ziskTrace sailTrace i d h_known
-  | blt d => exact stepStrong_blt ziskTrace sailTrace i d h_known
-  | bge d => exact stepStrong_bge ziskTrace sailTrace i d h_known
-  | bltu d => exact stepStrong_bltu ziskTrace sailTrace i d h_known
-  | bgeu d => exact stepStrong_bgeu ziskTrace sailTrace i d h_known
-  | lui d => exact stepStrong_lui ziskTrace sailTrace i d h_known
-  | auipc d => exact stepStrong_auipc ziskTrace sailTrace i d h_known
-  | jal d => exact stepStrong_jal ziskTrace sailTrace i d h_known
-  | jalr d => exact stepStrong_jalr ziskTrace sailTrace i d h_known
-  | sb d => exact stepStrong_sb ziskTrace sailTrace i d h_known
-  | sh d => exact stepStrong_sh ziskTrace sailTrace i d h_known
-  | sw d => exact stepStrong_sw ziskTrace sailTrace i d h_known
-  | sd d => exact stepStrong_sd ziskTrace sailTrace i d h_known
-  | ld d => exact stepStrong_ld ziskTrace sailTrace i d h_known
-  | lbu d => exact stepStrong_lbu ziskTrace sailTrace i d h_known
-  | lhu d => exact stepStrong_lhu ziskTrace sailTrace i d h_known
-  | lwu d => exact stepStrong_lwu ziskTrace sailTrace i d h_known
-  | lb d => exact stepStrong_lb ziskTrace sailTrace i d h_known
-  | lh d => exact stepStrong_lh ziskTrace sailTrace i d h_known
-  | lw d => exact stepStrong_lw ziskTrace sailTrace i d h_known
-  | fence d => exact stepStrong_fence ziskTrace sailTrace i d h_known
+
+theorem stepFaithful_of_evidence (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
+    (rd : RowDecode ziskTrace sailTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
+    (h_known : StepNoKnownDefect ziskTrace sailTrace i zs rd ia) :
+    StepFaithful ziskTrace sailTrace i zs := by
+  cases zs with
+  | sub c => exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia) h_known
+  | and c => exact stepStrong_and ziskTrace sailTrace i (toRowData_and c rd ia) h_known
+  | or c => exact stepStrong_or ziskTrace sailTrace i (toRowData_or c rd ia) h_known
+  | xor c => exact stepStrong_xor ziskTrace sailTrace i (toRowData_xor c rd ia) h_known
+  | slt c => exact stepStrong_slt ziskTrace sailTrace i (toRowData_slt c rd ia) h_known
+  | sltu c => exact stepStrong_sltu ziskTrace sailTrace i (toRowData_sltu c rd ia) h_known
+  | andi c => exact stepStrong_andi ziskTrace sailTrace i (toRowData_andi c rd ia) h_known
+  | ori c => exact stepStrong_ori ziskTrace sailTrace i (toRowData_ori c rd ia) h_known
+  | xori c => exact stepStrong_xori ziskTrace sailTrace i (toRowData_xori c rd ia) h_known
+  | slti c => exact stepStrong_slti ziskTrace sailTrace i (toRowData_slti c rd ia) h_known
+  | sltiu c => exact stepStrong_sltiu ziskTrace sailTrace i (toRowData_sltiu c rd ia) h_known
+  | sll c => exact stepStrong_sll ziskTrace sailTrace i (toRowData_sll c rd ia) h_known
+  | srl c => exact stepStrong_srl ziskTrace sailTrace i (toRowData_srl c rd ia) h_known
+  | sra c => exact stepStrong_sra ziskTrace sailTrace i (toRowData_sra c rd ia) h_known
+  | slli c => exact stepStrong_slli ziskTrace sailTrace i (toRowData_slli c rd ia) h_known
+  | srli c => exact stepStrong_srli ziskTrace sailTrace i (toRowData_srli c rd ia) h_known
+  | srai c => exact stepStrong_srai ziskTrace sailTrace i (toRowData_srai c rd ia) h_known
+  | add c => exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia) h_known
+  | addi c => exact stepStrong_addi ziskTrace sailTrace i (toRowData_addi c rd ia) h_known
+  | subw c => exact stepStrong_subw ziskTrace sailTrace i (toRowData_subw c rd ia) h_known
+  | addw c => exact stepStrong_addw ziskTrace sailTrace i (toRowData_addw c rd ia) h_known
+  | addiw c => exact stepStrong_addiw ziskTrace sailTrace i (toRowData_addiw c rd ia) h_known
+  | sllw c => exact stepStrong_sllw ziskTrace sailTrace i (toRowData_sllw c rd ia) h_known
+  | srlw c => exact stepStrong_srlw ziskTrace sailTrace i (toRowData_srlw c rd ia) h_known
+  | sraw c => exact stepStrong_sraw ziskTrace sailTrace i (toRowData_sraw c rd ia) h_known
+  | slliw c => exact stepStrong_slliw ziskTrace sailTrace i (toRowData_slliw c rd ia) h_known
+  | srliw c => exact stepStrong_srliw ziskTrace sailTrace i (toRowData_srliw c rd ia) h_known
+  | sraiw c => exact stepStrong_sraiw ziskTrace sailTrace i (toRowData_sraiw c rd ia) h_known
+  | mul c => exact stepStrong_mul ziskTrace sailTrace i (toRowData_mul c rd ia) h_known
+  | mulh c => exact stepStrong_mulh ziskTrace sailTrace i (toRowData_mulh c rd ia) h_known
+  | mulhsu c => exact stepStrong_mulhsu ziskTrace sailTrace i (toRowData_mulhsu c rd ia) h_known
+  | mulw c => exact stepStrong_mulw ziskTrace sailTrace i (toRowData_mulw c rd ia) h_known
+  | mulhu c => exact stepStrong_mulhu ziskTrace sailTrace i (toRowData_mulhu c rd ia) h_known
+  | div c => exact stepStrong_div ziskTrace sailTrace i (toRowData_div c rd ia) h_known
+  | rem c => exact stepStrong_rem ziskTrace sailTrace i (toRowData_rem c rd ia) h_known
+  | divw c => exact stepStrong_divw ziskTrace sailTrace i (toRowData_divw c rd ia) h_known
+  | remw c => exact stepStrong_remw ziskTrace sailTrace i (toRowData_remw c rd ia) h_known
+  | divu c => exact stepStrong_divu ziskTrace sailTrace i (toRowData_divu c rd ia) h_known
+  | divuw c => exact stepStrong_divuw ziskTrace sailTrace i (toRowData_divuw c rd ia) h_known
+  | remu c => exact stepStrong_remu ziskTrace sailTrace i (toRowData_remu c rd ia) h_known
+  | remuw c => exact stepStrong_remuw ziskTrace sailTrace i (toRowData_remuw c rd ia) h_known
+  | beq c => exact stepStrong_beq ziskTrace sailTrace i (toRowData_beq c rd ia) h_known
+  | bne c => exact stepStrong_bne ziskTrace sailTrace i (toRowData_bne c rd ia) h_known
+  | blt c => exact stepStrong_blt ziskTrace sailTrace i (toRowData_blt c rd ia) h_known
+  | bge c => exact stepStrong_bge ziskTrace sailTrace i (toRowData_bge c rd ia) h_known
+  | bltu c => exact stepStrong_bltu ziskTrace sailTrace i (toRowData_bltu c rd ia) h_known
+  | bgeu c => exact stepStrong_bgeu ziskTrace sailTrace i (toRowData_bgeu c rd ia) h_known
+  | lui c => exact stepStrong_lui ziskTrace sailTrace i (toRowData_lui c rd ia) h_known
+  | auipc c => exact stepStrong_auipc ziskTrace sailTrace i (toRowData_auipc c rd ia) h_known
+  | jal c => exact stepStrong_jal ziskTrace sailTrace i (toRowData_jal c rd ia) h_known
+  | jalr c => exact stepStrong_jalr ziskTrace sailTrace i (toRowData_jalr c rd ia) h_known
+  | sb c => exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) h_known
+  | sh c => exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) h_known
+  | sw c => exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) h_known
+  | sd c => exact stepStrong_sd ziskTrace sailTrace i (toRowData_sd c rd ia) h_known
+  | ld c => exact stepStrong_ld ziskTrace sailTrace i (toRowData_ld c rd ia) h_known
+  | lbu c => exact stepStrong_lbu ziskTrace sailTrace i (toRowData_lbu c rd ia) h_known
+  | lhu c => exact stepStrong_lhu ziskTrace sailTrace i (toRowData_lhu c rd ia) h_known
+  | lwu c => exact stepStrong_lwu ziskTrace sailTrace i (toRowData_lwu c rd ia) h_known
+  | lb c => exact stepStrong_lb ziskTrace sailTrace i (toRowData_lb c rd ia) h_known
+  | lh c => exact stepStrong_lh ziskTrace sailTrace i (toRowData_lh c rd ia) h_known
+  | lw c => exact stepStrong_lw ziskTrace sailTrace i (toRowData_lw c rd ia) h_known
+  | fence c => exact stepStrong_fence ziskTrace sailTrace i (toRowData_fence c rd ia) h_known
 
 end ZiskFv.Compliance

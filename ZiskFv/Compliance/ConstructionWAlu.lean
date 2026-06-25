@@ -80,7 +80,7 @@ set_option maxHeartbeats 2000000
     (`Or.inr` of the shared W Layer-A wrapper). -/
 theorem construction_subw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)
@@ -260,7 +260,7 @@ theorem construction_subw_sound_claimed_dead
     Layer-A wrapper), `ropw.ADDW`, `execute_RTYPE_addw_pure`, `equiv_ADDW`. -/
 theorem construction_addw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (addw_input : PureSpec.AddwInput)
     (r1 r2 rd : regidx)
@@ -439,7 +439,7 @@ theorem construction_addw_sound_claimed_dead
     `h_match`, so the construction supplies only the r1 lane extract. -/
 theorem construction_addiw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx)

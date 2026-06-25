@@ -1,53 +1,44 @@
-Stream: Uniform-63 OpEnvelope-route export (#61 endgame). Worktree p4-mext,
-branch p4-loads-stores (PR #112, stacked on PR #110). Metaplan: docs/ai/plan/PLAN_ENDGAME.md.
-Gate V1 18/18 + V2 12/12 throughout. 0 new ZiskFv.* axioms.
+Stream: root_soundness signature refactor (legible 3-way split).
+Branch: clarity/root-soundness-shape. Plan: docs/ai/plan/PLAN_ROOT_SOUNDNESS_SHAPE.md
 
-=== DONE: 63/63 on the OpEnvelope-route ===
-root_soundness: for ALL 63 RV64IM opcodes, construct OpEnvelope.<op>
-from the trace + invoke zisk_riscv_compliant_program_bus + thread h_known_bugs. NO OpEnvelope
-input (takes rowData), NO direct-lift. Non-vacuous (63 stepStrong arms, no False.elim, execRow real
-∀-binder). NO main-theorem refactor (canonical/OpEnvelope/old-theorem intact — every arm built from
-the trace via mainConstVar/memConstVar + trace-Environment lookup-witness pattern). All 63 canonical
-equiv_<OP> are non-vacuous (all 7 signed-M retired this session).
+Goal: replace root_soundness's single `rowData` hypothesis with three named,
+honest binders — ziskStep / rowDecodes / inputsAgree — and rename the conclusion
+(StepComplianceStrong→StepFaithful) and derivation (…_of_rowData→
+stepFaithful_of_evidence). The split surfaces, in the signature itself, the
+dischargeable circuit facts (rowDecodes, owed by #141) vs the fundamental
+cross-world assumption (inputsAgree).
 
-h_known_bugs carries ONLY the exact witness-conditional defects (NOT opcode-wide):
-- MUL/MULH/MULHSU: the np-forge shape (np=0 ∧ na⊕nb=1) — the genuine malicious forge.
-- DIV/REM/DIVW/REMW: the |r|=|d| LT_ABS_NP false-positive shape (codygunton/zisk#5) — malicious-only
-  (honest division always has |r|<|d|).
-Honest inputs are NEVER excluded; honest_<op>_witness_not_forge witnesses confirm satisfiability.
+Target signature:
+  (ziskStep    : ∀ i, ZiskStep    ziskTrace          i)
+  (rowDecodes  : ∀ i, RowDecode   ziskTrace          i (ziskStep i))
+  (inputsAgree : ∀ i, InputsAgree ziskTrace sailTrace i (ziskStep i))
+  (h_known_bugs: ∀ i, StepNoKnownDefect ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i))
+  : ∀ i, StepFaithful ziskTrace sailTrace i (ziskStep i)
 
-Documented residuals (all honest, named, dischargeable):
-- na=MSB sign-range residual (MULH/MULHSU/DIV/REM/DIVW/REMW): the real circuit enforces it
-  (arith.pil:286/289/303 indexed range lookup); FV model collapsed to FULL. Dischargeable by
-  composing ArithRangeTable (issue #114 category D).
-- h_op2_ne (div-by-zero) + h_no_overflow (INT_MIN/-1) on DIV/REM/DIVW/REMW: circuit computes these
-  CORRECTLY (investigation a50efb5f, all 15 cases match Sail); dischargeable in-model by extracting
-  arith.pil:54,64-95 (issue #114 category A — the Main/Arith --only curation omits them).
-- aeneasBridgeTrust decode residuals (#111): held, carried in rowData.
+Decisions:
+- StepNoKnownDefect TAKES THE EVIDENCE (user-confirmed). The 8 signed-M/FENCE
+  defect arms build their env from arith-witness/operand data (see mulEnvOf), so
+  claim-only is an endpoint property (defects→empty), not achievable now.
+- nextPC fact is cross-world → lives in inputsAgree, keeping rowDecodes
+  sailTrace-free. Circuit-only nextPC (→ rowDecodes) is a #141 follow-up.
 
-=== Two real ZisK findings surfaced by this goal ===
-- eth-act/zisk-fv#114: Main/Arith extracted with hand-curated --only subsets → silently omit F-clean
-  circuit constraints (e.g. div-by-zero/overflow). Asks: audit all AIRs + completeness gate.
-- codygunton/zisk#7: DIVW INT_MIN/-1 overflow — emulator op_div_w returns 0x0000_0000_8000_0000
-  (zero-ext) vs Arith SM's correct sext 0xFFFF_FFFF_8000_0000 → completeness bug (program unprovable),
-  NOT soundness. Masked by ZisK's own unit test. Second FV-found bug after #5.
+Stages:
+- A (rename): StepComplianceStrong→StepFaithful, …_of_rowData→
+  stepFaithful_of_evidence. DONE — committed 4555d095, pushed, build+V1 green.
+- B (structural split): DONE. RowDataSplit.lean (63× Claim/Decode/Inputs/
+  toRowData, workflow wwvvvytoj). Dispatcher rewritten: ZiskStep inductive +
+  RowDecode/InputsAgree + toFull; StrongRowConstructionData kept internal; old
+  StepNoKnownDefect body kept verbatim as StepNoKnownDefectOn; new
+  StepNoKnownDefect routes through toFull; StepFaithful transformed d→c over the
+  claim; stepFaithful_of_evidence dispatches to the UNTOUCHED stepStrong_<op>.
+  root_soundness rewritten with the 3 binders. 63 stepStrong proofs unchanged.
+- C: DONE. baselines regenerated; full build 8760; V1 15/15; V2 13/13; 0 axioms.
+  KEY: baseline-equiv-axiom-deps.txt + baseline-axioms.txt UNCHANGED → trust
+  footprint byte-identical (pure re-packaging, no proof-strategy change).
 
-=== Commits (on top of e3a71967) ===
-ba8b61d1 thread h_known_bugs · debd3bd7 (a) M-ext de-vacuity · 141b44fe branches+JALR ·
-7cf4c280 6 M-ext · 55cbc02e LUI/AUIPC/JAL · 009123ee W-shifts+stores · e8264ff3 7 loads ·
-8b763d61 FENCE · 8b541c46 MUL defect-retire · 03fb00ea MUL trace-arm · b90b3bb0 MULH/MULHSU ·
-ee4f29ff DIV/REM canonical · 9f4bae1d DIVW/REMW canonical (all 63 canonical non-vacuous) ·
-<this> DIV/REM/DIVW/REMW trace-arms → 63/63 arms.
+Blocking: none.
+Next step: commit + push Stage B; then update #141 / docs as wanted.
 
-=== Deferred (non-blocking, orthogonal) ===
-- div-by-zero/overflow discharge (#114 cat A): extract arith.pil:64-95 → drop h_op2_ne/h_no_overflow.
-- na=MSB discharge (#114 cat D): compose ArithRangeTable → drop the sign-range residual.
-- (d) memory reduction: DONE (loads). Fold-B (Spike.lean ported) reduces the 7 loads'
-  h_memory_timeline from whole-SailState MemoryPrefixStateAlignment → memory-only
-  LoadMemoryTimelineCoherenceEvidence (RowTraceCoherence + seed + load-state pin) in the LIVE
-  old theorem; byte-local agreement DERIVED via stateBytesAtPrefix_of_rowTraceCoherence. All 63
-  build, 0 new ZiskFv.* axioms, gate V1 18/18 + V2 12/12, LD non-vacuity instantiation rebuilt to
-  coherence shape. Strict shrink proven by Spike.witness_nondegenerate (regs+cycleCount differ).
-  Stores DEFERRED: h_m1..h_m7 are positional OpEnvelope.sb/sh/sw constructor fields (not a keyed
-  reducible def) → reducing needs an OpEnvelope inductive refactor of the store arms. NOT committed.
-- aeneas (#111): held.
+Digression: motivated by issue #141 (placement assumed, not derived from Main AIR).
+Note: a prior GitHub-issue-refresh (codex) stream's uncommitted STATUS/PLAN
+notes were reset by this branch switch; per user, discarded (not restored).

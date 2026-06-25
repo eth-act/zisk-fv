@@ -102,7 +102,7 @@ set_option maxHeartbeats 2000000
     the real Main table. Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 noncomputable def mainRowWithRomSt
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program trace.mainTable i.val
@@ -113,7 +113,7 @@ noncomputable def mainRowWithRomSt
     `S*CleanWitness.main_c_match` is then `matches_memory_entry_refl`. -/
 @[reducible]
 noncomputable def eRdSt
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
     Interaction.MemoryBusEntry FGL :=
   ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
     (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2
@@ -124,7 +124,7 @@ noncomputable def eRdSt
     mult/as shape facts are then `rfl`. -/
 @[reducible]
 noncomputable def busSt
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (execRow : List (Interaction.ExecutionBusEntry FGL)) :
     ZiskFv.Compliance.BusRows where
   exec_row := execRow
@@ -137,7 +137,7 @@ noncomputable def busSt
 /-- The Main row provenance at trace index `i`: `mainRowWithRomSt`'s `.core`
     equals the honest `rowAt (mainOfTable …) i`. Shared by all four stores. -/
 theorem mainRowWithRomSt_core
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
     (mainRowWithRomSt trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -157,7 +157,7 @@ theorem mainRowWithRomSt_core
     memory-side residual (named binders). -/
 theorem construction_sb_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sb_input : PureSpec.SbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -291,7 +291,7 @@ theorem construction_sb_sound_claimed_dead
     written low half-word — `m2..m7` instead of `m1..m7`; width literal `2`. -/
 theorem construction_sh_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sh_input : PureSpec.ShInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -414,7 +414,7 @@ theorem construction_sh_sound_claimed_dead
     written low word — `m4..m7` instead of `m2..m7`; width literal `4`. -/
 theorem construction_sw_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sw_input : PureSpec.SwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -532,7 +532,7 @@ theorem construction_sw_sound_claimed_dead
     width literal `8`. -/
 theorem construction_sd_sound_claimed_dead
     (trace : AcceptedZiskTrace)
-    (binding : SailTrace trace)
+    (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sd_input : PureSpec.SdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
