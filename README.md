@@ -35,13 +35,13 @@ The checked-in RV64IM acceptance-completeness surface is two honest endpoints
 
 ```lean
 ZiskFv.Completeness.sail_executable_within_supported_decode_shape  -- PROVEN, unconditional
-ZiskFv.Completeness.root_completeness                             -- CONDITIONAL on the ZisK obligations
+ZiskFv.Completeness.skeletal_root_completeness                             -- CONDITIONAL on the ZisK obligations
 ```
 
 `sail_executable_within_supported_decode_shape` is discharged outright: every
 Sail-executable RV64IM raw word lands in the hand-written `SupportedDecodeShape`
 enumeration (it computes against the real generated Sail decoder; it asserts
-nothing about ZisK). `root_completeness` is the end-to-end acceptance statement,
+nothing about ZisK). `skeletal_root_completeness` is the end-to-end acceptance statement,
 stated *conditionally* on the decoder/lowering/row/opcode obligations — proved
 for the real extracted decoder only in the separate Aeneas extraction workspace
 this build cannot import — so it stays conditional on them until that bridge
@@ -116,10 +116,10 @@ The current extraction batch covers the production-backed U/control-flow,
 Binary/BinaryExtension, load/store, branch, MUL, and DIV/REM row-shape helper
 families. The full `nix run .#test` gate additionally runs this harness with
 `AENEAS_CHECK_RV_COMPLETENESS=1`, checking — in that separate workspace — the
-ZisK-side coverage obligations that `ZiskFv.Completeness.root_completeness`
+ZisK-side coverage obligations that `ZiskFv.Completeness.skeletal_root_completeness`
 takes as hypotheses. The link is documentary: this build cannot import the
 Aeneas workspace, so those obligations are not yet substituted into the Lean
-endpoint — `root_completeness` stays conditional on them.
+endpoint — `skeletal_root_completeness` stays conditional on them.
 
 The proof-side migration target is
 `ZiskFv.Compliance.MainRowProvenance`: it ties selected Main/ROM rows to

@@ -34,7 +34,7 @@ per-class in `trust/trusted-base.md`. All 63 RV64IM opcodes are covered as
 The RV64IM acceptance/coverage completeness surface is checked in as two
 honest endpoints in `ZiskFv/Completeness.lean`: `sail_executable_within_supported_decode_shape`
 (PROVEN — Sail-executable raw words land in `SupportedDecodeShape`) and
-`root_completeness` (the end-to-end coverage statement, CONDITIONAL on the ZisK
+`skeletal_root_completeness` (the end-to-end coverage statement, CONDITIONAL on the ZisK
 coverage obligations only; the recorded FENCE decode gap is its `knownDecodeGap`
 premise).
 The ZisK obligations are interface-mediated through the Aeneas extraction gate

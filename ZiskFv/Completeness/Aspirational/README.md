@@ -16,7 +16,7 @@ only through `ZiskFv.lean` (so it stays built and verified) via the
 - `sail_executable_within_supported_decode_shape` — **proven, unconditional.** Sail-executable RV64IM
   raw words land in `SupportedDecodeShape` (re-exports the `SailDecode`
   containment proof, which computes against the real generated Sail decoder).
-- `root_completeness` — **conditional** on the ZisK coverage obligations; the
+- `skeletal_root_completeness` — **conditional** on the ZisK coverage obligations; the
   end-to-end acceptance statement, with the Sail half discharged inline.
 
 Their dependency cone is `Rv64im/SailDecode/*` + `Rv64im/Shapes.lean` +
@@ -30,7 +30,7 @@ separate Lean workspace this build cannot import — see
 `scripts/aeneas-production-extract.sh` under `AENEAS_CHECK_RV_COMPLETENESS`), the
 plan is: instantiate a concrete `Interface` with those harness predicates,
 discharge the per-stage obligations, and assemble the global theorem via the
-per-family composition lemmas here — then `root_completeness` becomes
+per-family composition lemmas here — then `skeletal_root_completeness` becomes
 unconditional.
 
 It is imported only by `ZiskFv.lean`, so it stays compiled and type-checked for
