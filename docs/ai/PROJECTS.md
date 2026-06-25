@@ -2,7 +2,7 @@
 
 ## GitHub Issue Refresh
 
-Plan: `docs/ai/plan/PLAN_GITHUB_ISSUE_REFRESH.md`. COMPLETE — audited all 17 open `eth-act/zisk-fv` issues against the June 22-24 refactor window and edited stale filenames, declaration names, status claims, and misleading status comments directly on GitHub. Updated issues: #61, #74, #75, #78, #100, #101, #108, #111, #115, #116, #118, and #119; #77, #117, #127, #128, and #141 checked out as current for their scopes. Final stale-pattern scan over open issue bodies/comments returned no hits for the targeted pre-refresh names/files.
+Plan: `docs/ai/plan/PLAN_GITHUB_ISSUE_REFRESH.md`. COMPLETE — audited all 21 `eth-act/zisk-fv` issues (17 open, 4 closed) against the June 22-24 refactor window and edited stale filenames, declaration names, status claims, branch-local paths, and misleading status comments directly on GitHub. Updated open issues: #61, #74, #75, #78, #100, #101, #108, #111, #115, #116, #117, #118, and #119; #77, #127, #128, and #141 checked out as current for their scopes. Updated closed issues: #76, #103, #109, and #114. Final all-issue retired-name scan returned no hits for the targeted pre-refresh names/files.
 
 ## Endgame
 
