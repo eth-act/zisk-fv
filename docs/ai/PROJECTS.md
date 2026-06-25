@@ -1,5 +1,9 @@
 # Projects
 
+## GitHub Issue Refresh
+
+Plan: `docs/ai/plan/PLAN_GITHUB_ISSUE_REFRESH.md`. COMPLETE — audited all 17 open `eth-act/zisk-fv` issues against the June 22-24 refactor window and edited stale filenames, declaration names, status claims, and misleading status comments directly on GitHub. Updated issues: #61, #74, #75, #78, #100, #101, #108, #111, #115, #116, #118, and #119; #77, #117, #127, #128, and #141 checked out as current for their scopes. Final stale-pattern scan over open issue bodies/comments returned no hits for the targeted pre-refresh names/files.
+
 ## Endgame
 
 Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — campaign from the current envelope-conditional global theorem to a trace-level public statement, with P1 complete on main via #89 and P3 complete on main via #90/#91. Active stream: `docs/ai/plan/PLAN_ENDGAME_P4.md`, the first trust-reducing phase: build `AcceptedTrace -> OpEnvelope`, discharge bucket-(a) evidence, and leave only `aeneasBridgeTrust`, `ProgramBinding`/boot, and `NoKnownDefect`. Current focus is stacked P4 PR2/PR2a work in `.worktrees/endgame-p4-pr2` on rebased PR1 `da0dfc2c`; extractor, provider-free breadth, lookup-aware ArithMul wrapper, full-ensemble ArithMul provider swap, ArithMul opcode-exclusion, full-ensemble XOR provider selector, XOR bus/promise construction, XOR Binary provider input-row derivation, balance-fed XOR construction, and balance-fed AND construction are pushed through `5c261c7`. Cody's latest 2026-06-14 pull/rebase request was a no-op: `main` stayed `236449c9`, PR1 stayed `da0dfc2c`, and PR2 stayed `f31bbc6`; local AND/logical-Binary edits were preserved by autostash. The current changeset adds verified balance-fed OR construction; next is continuing Binary-family breadth beyond AND/OR/XOR.
