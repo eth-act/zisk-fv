@@ -47,7 +47,7 @@ structure Claim_add (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_add (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_add (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_add trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
@@ -61,9 +61,9 @@ structure Decode_add (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_add (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_add trace i) : Type where
@@ -98,23 +98,23 @@ structure Inputs_add (trace : AcceptedZiskTrace numInstructions) (binding : Sail
           (regidx_to_fin c.r2))
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_RTYPE_add_pure add_input).nextPC
   h_rd_idx :
     add_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
 
 /-- Per-op residual bundle for the `add` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_add` bundles them. -/
 structure RowData_add
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_add trace i
-  toDecode : Decode_add trace binding i toClaim
+  toDecode : Decode_add trace i toClaim
   toInputs : Inputs_add trace binding i toClaim
 
 def toRowData_add {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_add trace i) (dec : Decode_add trace binding i c)
+    (c : Claim_add trace i) (dec : Decode_add trace i c)
     (ia : Inputs_add trace binding i c) : RowData_add trace binding i where
   toClaim := c
   toDecode := dec
@@ -126,7 +126,7 @@ structure Claim_addi (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   imm : BitVec 12
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_addi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_addi (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addi trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
@@ -143,9 +143,9 @@ structure Decode_addi (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_set_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addi trace i) : Type where
@@ -171,23 +171,23 @@ structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     i.val addi_input.imm
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
   h_rd_idx :
     addi_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
 
 /-- Per-op residual bundle for the `addi` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_addi` bundles them. -/
 structure RowData_addi
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_addi trace i
-  toDecode : Decode_addi trace binding i toClaim
+  toDecode : Decode_addi trace i toClaim
   toInputs : Inputs_addi trace binding i toClaim
 
 def toRowData_addi {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_addi trace i) (dec : Decode_addi trace binding i c)
+    (c : Claim_addi trace i) (dec : Decode_addi trace i c)
     (ia : Inputs_addi trace binding i c) : RowData_addi trace binding i where
   toClaim := c
   toDecode := dec
@@ -199,7 +199,7 @@ structure Claim_subw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_subw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_subw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_subw trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
@@ -213,9 +213,9 @@ structure Decode_subw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_subw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_subw trace i) : Type where
@@ -250,23 +250,23 @@ structure Inputs_subw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
           (regidx_to_fin c.r2))
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
   h_rd_idx :
     subw_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
 
 /-- Per-op residual bundle for the `subw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_subw` bundles them. -/
 structure RowData_subw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_subw trace i
-  toDecode : Decode_subw trace binding i toClaim
+  toDecode : Decode_subw trace i toClaim
   toInputs : Inputs_subw trace binding i toClaim
 
 def toRowData_subw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_subw trace i) (dec : Decode_subw trace binding i c)
+    (c : Claim_subw trace i) (dec : Decode_subw trace i c)
     (ia : Inputs_subw trace binding i c) : RowData_subw trace binding i where
   toClaim := c
   toDecode := dec
@@ -278,7 +278,7 @@ structure Claim_addw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_addw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_addw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addw trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
@@ -292,9 +292,9 @@ structure Decode_addw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_addw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addw trace i) : Type where
@@ -329,23 +329,23 @@ structure Inputs_addw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
           (regidx_to_fin c.r2))
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC
   h_rd_idx :
     addw_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
 
 /-- Per-op residual bundle for the `addw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_addw` bundles them. -/
 structure RowData_addw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_addw trace i
-  toDecode : Decode_addw trace binding i toClaim
+  toDecode : Decode_addw trace i toClaim
   toInputs : Inputs_addw trace binding i toClaim
 
 def toRowData_addw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_addw trace i) (dec : Decode_addw trace binding i c)
+    (c : Claim_addw trace i) (dec : Decode_addw trace i c)
     (ia : Inputs_addw trace binding i c) : RowData_addw trace binding i where
   toClaim := c
   toDecode := dec
@@ -357,7 +357,7 @@ structure Claim_addiw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
   imm : BitVec 12
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_addiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_addiw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addiw trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
@@ -371,9 +371,9 @@ structure Decode_addiw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_addiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addiw trace i) : Type where
@@ -399,23 +399,23 @@ structure Inputs_addiw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     i.val addiw_input.imm
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
   h_rd_idx :
     addiw_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
 
 /-- Per-op residual bundle for the `addiw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_addiw` bundles them. -/
 structure RowData_addiw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_addiw trace i
-  toDecode : Decode_addiw trace binding i toClaim
+  toDecode : Decode_addiw trace i toClaim
   toInputs : Inputs_addiw trace binding i toClaim
 
 def toRowData_addiw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_addiw trace i) (dec : Decode_addiw trace binding i c)
+    (c : Claim_addiw trace i) (dec : Decode_addiw trace i c)
     (ia : Inputs_addiw trace binding i c) : RowData_addiw trace binding i where
   toClaim := c
   toDecode := dec
@@ -426,7 +426,7 @@ structure Claim_lui (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_lui (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_lui (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lui trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
@@ -464,19 +464,19 @@ structure Inputs_lui (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       = (PureSpec.execute_LUI_pure lui_input).nextPC
   h_rd_idx :
     lui_input.rd =
-      Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
+      Transpiler.wrap_to_regidx (eRdLui trace i).ptr
 
 /-- Per-op residual bundle for the `lui` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lui` bundles them. -/
 structure RowData_lui
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_lui trace i
-  toDecode : Decode_lui trace binding i toClaim
+  toDecode : Decode_lui trace i toClaim
   toInputs : Inputs_lui trace binding i toClaim
 
 def toRowData_lui {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_lui trace i) (dec : Decode_lui trace binding i c)
+    (c : Claim_lui trace i) (dec : Decode_lui trace i c)
     (ia : Inputs_lui trace binding i c) : RowData_lui trace binding i where
   toClaim := c
   toDecode := dec
@@ -487,7 +487,7 @@ structure Claim_auipc (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_auipc (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_auipc (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_auipc trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
@@ -526,7 +526,7 @@ structure Inputs_auipc (trace : AcceptedZiskTrace numInstructions) (binding : Sa
       = (PureSpec.execute_AUIPC_pure auipc_input).nextPC
   h_rd_idx :
     auipc_input.rd =
-      Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
+      Transpiler.wrap_to_regidx (eRdLui trace i).ptr
   h_no_wrap : auipc_input.PC.toNat
     + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
       < GL_prime
@@ -539,12 +539,12 @@ structure Inputs_auipc (trace : AcceptedZiskTrace numInstructions) (binding : Sa
 structure RowData_auipc
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_auipc trace i
-  toDecode : Decode_auipc trace binding i toClaim
+  toDecode : Decode_auipc trace i toClaim
   toInputs : Inputs_auipc trace binding i toClaim
 
 def toRowData_auipc {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_auipc trace i) (dec : Decode_auipc trace binding i c)
+    (c : Claim_auipc trace i) (dec : Decode_auipc trace i c)
     (ia : Inputs_auipc trace binding i c) : RowData_auipc trace binding i where
   toClaim := c
   toDecode := dec
@@ -556,7 +556,7 @@ structure Claim_mulw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_mulw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_mulw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulw trace i) : Type where
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
@@ -568,9 +568,9 @@ structure Decode_mulw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulw trace i) : Type where
@@ -589,11 +589,11 @@ structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_input_rd : mulw_input.rd = regidx_to_fin c.rd
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_MULW_pure mulw_input).nextPC
   h_rd_idx :
     mulw_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   h_a23 :
     ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_2 0).val = 0
       ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_3 0).val = 0
@@ -601,17 +601,17 @@ structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_2 0).val = 0
       ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_3 0).val = 0
   h_sext_choice :
-    ((((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 4).val = 0
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 5).val = 0
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 6).val = 0
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 7).val = 0)
+    ((((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 0
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 0
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 0
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 0)
         ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_0 0).val
             + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_1 0).val * 65536
               < 2147483648)
-      ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 4).val = 255
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 5).val = 255
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 6).val = 255
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 7).val = 255)
+      ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 255
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 255
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 255
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 255)
         ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_0 0).val
             + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_1 0).val * 65536
               ≥ 2147483648))
@@ -631,12 +631,12 @@ structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
 structure RowData_mulw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_mulw trace i
-  toDecode : Decode_mulw trace binding i toClaim
+  toDecode : Decode_mulw trace i toClaim
   toInputs : Inputs_mulw trace binding i toClaim
 
 def toRowData_mulw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_mulw trace i) (dec : Decode_mulw trace binding i c)
+    (c : Claim_mulw trace i) (dec : Decode_mulw trace i c)
     (ia : Inputs_mulw trace binding i c) : RowData_mulw trace binding i where
   toClaim := c
   toDecode := dec
@@ -650,7 +650,7 @@ structure Claim_mul (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   srs2 : Signedness
   bus : ZiskFv.Compliance.BusRows
 
-structure Decode_mul (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_mul (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mul trace i) : Type where
   h_main_op :
     (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL
@@ -704,12 +704,12 @@ structure Inputs_mul (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_mul
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_mul trace i
-  toDecode : Decode_mul trace binding i toClaim
+  toDecode : Decode_mul trace i toClaim
   toInputs : Inputs_mul trace binding i toClaim
 
 def toRowData_mul {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_mul trace i) (dec : Decode_mul trace binding i c)
+    (c : Claim_mul trace i) (dec : Decode_mul trace i c)
     (ia : Inputs_mul trace binding i c) : RowData_mul trace binding i where
   toClaim := c
   toDecode := dec
@@ -721,7 +721,7 @@ structure Claim_mulh (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   rd : regidx
   bus : ZiskFv.Compliance.BusRows
 
-structure Decode_mulh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_mulh (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulh trace i) : Type where
   h_main_op :
     (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULH
@@ -781,12 +781,12 @@ structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : Sai
 structure RowData_mulh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_mulh trace i
-  toDecode : Decode_mulh trace binding i toClaim
+  toDecode : Decode_mulh trace i toClaim
   toInputs : Inputs_mulh trace binding i toClaim
 
 def toRowData_mulh {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_mulh trace i) (dec : Decode_mulh trace binding i c)
+    (c : Claim_mulh trace i) (dec : Decode_mulh trace i c)
     (ia : Inputs_mulh trace binding i c) : RowData_mulh trace binding i where
   toClaim := c
   toDecode := dec
@@ -798,7 +798,7 @@ structure Claim_mulhsu (trace : AcceptedZiskTrace numInstructions) (i : Fin trac
   rd : regidx
   bus : ZiskFv.Compliance.BusRows
 
-structure Decode_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_mulhsu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhsu trace i) : Type where
   h_main_op :
     (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULSUH
@@ -855,12 +855,12 @@ structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : S
 structure RowData_mulhsu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_mulhsu trace i
-  toDecode : Decode_mulhsu trace binding i toClaim
+  toDecode : Decode_mulhsu trace i toClaim
   toInputs : Inputs_mulhsu trace binding i toClaim
 
 def toRowData_mulhsu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_mulhsu trace i) (dec : Decode_mulhsu trace binding i c)
+    (c : Claim_mulhsu trace i) (dec : Decode_mulhsu trace i c)
     (ia : Inputs_mulhsu trace binding i c) : RowData_mulhsu trace binding i where
   toClaim := c
   toDecode := dec
@@ -872,7 +872,7 @@ structure Claim_div (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   rd : regidx
   bus : ZiskFv.Compliance.BusRows
 
-structure Decode_div (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_div (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_div trace i) : Type where
   h_main_op :
     (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV
@@ -962,12 +962,12 @@ structure Inputs_div (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_div
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_div trace i
-  toDecode : Decode_div trace binding i toClaim
+  toDecode : Decode_div trace i toClaim
   toInputs : Inputs_div trace binding i toClaim
 
 def toRowData_div {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_div trace i) (dec : Decode_div trace binding i c)
+    (c : Claim_div trace i) (dec : Decode_div trace i c)
     (ia : Inputs_div trace binding i c) : RowData_div trace binding i where
   toClaim := c
   toDecode := dec
@@ -979,7 +979,7 @@ structure Claim_rem (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   rd : regidx
   bus : ZiskFv.Compliance.BusRows
 
-structure Decode_rem (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_rem (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_rem trace i) : Type where
   h_main_op :
     (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REM
@@ -1066,12 +1066,12 @@ structure Inputs_rem (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_rem
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_rem trace i
-  toDecode : Decode_rem trace binding i toClaim
+  toDecode : Decode_rem trace i toClaim
   toInputs : Inputs_rem trace binding i toClaim
 
 def toRowData_rem {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_rem trace i) (dec : Decode_rem trace binding i c)
+    (c : Claim_rem trace i) (dec : Decode_rem trace i c)
     (ia : Inputs_rem trace binding i c) : RowData_rem trace binding i where
   toClaim := c
   toDecode := dec
@@ -1083,7 +1083,7 @@ structure Claim_divw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   rd : regidx
   bus : ZiskFv.Compliance.BusRows
 
-structure Decode_divw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_divw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divw trace i) : Type where
   h_main_op :
     (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV_W
@@ -1188,12 +1188,12 @@ structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
 structure RowData_divw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_divw trace i
-  toDecode : Decode_divw trace binding i toClaim
+  toDecode : Decode_divw trace i toClaim
   toInputs : Inputs_divw trace binding i toClaim
 
 def toRowData_divw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_divw trace i) (dec : Decode_divw trace binding i c)
+    (c : Claim_divw trace i) (dec : Decode_divw trace i c)
     (ia : Inputs_divw trace binding i c) : RowData_divw trace binding i where
   toClaim := c
   toDecode := dec
@@ -1205,7 +1205,7 @@ structure Claim_remw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   rd : regidx
   bus : ZiskFv.Compliance.BusRows
 
-structure Decode_remw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_remw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remw trace i) : Type where
   h_main_op :
     (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REM_W
@@ -1308,12 +1308,12 @@ structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
 structure RowData_remw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_remw trace i
-  toDecode : Decode_remw trace binding i toClaim
+  toDecode : Decode_remw trace i toClaim
   toInputs : Inputs_remw trace binding i toClaim
 
 def toRowData_remw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_remw trace i) (dec : Decode_remw trace binding i c)
+    (c : Claim_remw trace i) (dec : Decode_remw trace i c)
     (ia : Inputs_remw trace binding i c) : RowData_remw trace binding i where
   toClaim := c
   toDecode := dec
@@ -1325,7 +1325,7 @@ structure Claim_mulhu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_mulhu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhu trace i) : Type where
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
@@ -1337,10 +1337,10 @@ structure Decode_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
-  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i c.execRow).e2
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i c.execRow).e2
 
 structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhu trace i) : Type where
@@ -1359,11 +1359,11 @@ structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_input_rd : mulhu_input.rd = regidx_to_fin c.rd
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
   h_rd_idx :
     mulhu_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   h_rs1_value : mulhu_input.r1_val.toNat
     = ZiskFv.PackedBitVec.MulNoWrap.packed4
         ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).a_0 0).val
@@ -1382,12 +1382,12 @@ structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : Sa
 structure RowData_mulhu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_mulhu trace i
-  toDecode : Decode_mulhu trace binding i toClaim
+  toDecode : Decode_mulhu trace i toClaim
   toInputs : Inputs_mulhu trace binding i toClaim
 
 def toRowData_mulhu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_mulhu trace i) (dec : Decode_mulhu trace binding i c)
+    (c : Claim_mulhu trace i) (dec : Decode_mulhu trace i c)
     (ia : Inputs_mulhu trace binding i c) : RowData_mulhu trace binding i where
   toClaim := c
   toDecode := dec
@@ -1399,7 +1399,7 @@ structure Claim_divu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_divu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_divu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divu trace i) : Type where
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
@@ -1411,10 +1411,10 @@ structure Decode_divu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
-  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i c.execRow).e2
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i c.execRow).e2
 
 structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divu trace i) : Type where
@@ -1433,11 +1433,11 @@ structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_input_rd : divu_input.rd = regidx_to_fin c.rd
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
   h_rd_idx :
     divu_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   remainder_bound :
     ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
       (vOfDivuRow (divuArow trace binding i h_main_active h_main_op)) 0
@@ -1459,12 +1459,12 @@ structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
 structure RowData_divu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_divu trace i
-  toDecode : Decode_divu trace binding i toClaim
+  toDecode : Decode_divu trace i toClaim
   toInputs : Inputs_divu trace binding i toClaim
 
 def toRowData_divu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_divu trace i) (dec : Decode_divu trace binding i c)
+    (c : Claim_divu trace i) (dec : Decode_divu trace i c)
     (ia : Inputs_divu trace binding i c) : RowData_divu trace binding i where
   toClaim := c
   toDecode := dec
@@ -1476,7 +1476,7 @@ structure Claim_divuw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_divuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_divuw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divuw trace i) : Type where
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
@@ -1488,10 +1488,10 @@ structure Decode_divuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
-  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i c.execRow).e2
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i c.execRow).e2
 
 structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divuw trace i) : Type where
@@ -1510,11 +1510,11 @@ structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_input_rd : divuw_input.rd = regidx_to_fin c.rd
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
   h_rd_idx :
     divuw_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   remainder_bound :
     ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
       (vOfDivuRow (divuwArow trace binding i h_main_active h_main_op)) 0
@@ -1525,17 +1525,17 @@ structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     ((divuwArow trace binding i h_main_active h_main_op).chunks.c_2).val = 0
       ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.c_3).val = 0
   h_sext_choice :
-    ((((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 4).val = 0
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 5).val = 0
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 6).val = 0
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 7).val = 0)
+    ((((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 0
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 0
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 0
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 0)
         ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.a_0).val
             + ((divuwArow trace binding i h_main_active h_main_op).chunks.a_1).val * 65536
               < 2147483648)
-      ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 4).val = 255
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 5).val = 255
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 6).val = 255
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 7).val = 255)
+      ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 255
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 255
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 255
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 255)
         ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.a_0).val
             + ((divuwArow trace binding i h_main_active h_main_op).chunks.a_1).val * 65536
               ≥ 2147483648))
@@ -1551,12 +1551,12 @@ structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
 structure RowData_divuw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_divuw trace i
-  toDecode : Decode_divuw trace binding i toClaim
+  toDecode : Decode_divuw trace i toClaim
   toInputs : Inputs_divuw trace binding i toClaim
 
 def toRowData_divuw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_divuw trace i) (dec : Decode_divuw trace binding i c)
+    (c : Claim_divuw trace i) (dec : Decode_divuw trace i c)
     (ia : Inputs_divuw trace binding i c) : RowData_divuw trace binding i where
   toClaim := c
   toDecode := dec
@@ -1568,7 +1568,7 @@ structure Claim_remu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_remu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_remu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remu trace i) : Type where
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
@@ -1580,10 +1580,10 @@ structure Decode_remu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
-  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i c.execRow).e2
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i c.execRow).e2
 
 structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remu trace i) : Type where
@@ -1602,11 +1602,11 @@ structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_input_rd : remu_input.rd = regidx_to_fin c.rd
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
   h_rd_idx :
     remu_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   remainder_bound :
     ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
       (vOfDivuRow (remuArow trace binding i h_main_active h_main_op)) 0
@@ -1628,12 +1628,12 @@ structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
 structure RowData_remu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_remu trace i
-  toDecode : Decode_remu trace binding i toClaim
+  toDecode : Decode_remu trace i toClaim
   toInputs : Inputs_remu trace binding i toClaim
 
 def toRowData_remu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_remu trace i) (dec : Decode_remu trace binding i c)
+    (c : Claim_remu trace i) (dec : Decode_remu trace i c)
     (ia : Inputs_remu trace binding i c) : RowData_remu trace binding i where
   toClaim := c
   toDecode := dec
@@ -1645,7 +1645,7 @@ structure Claim_remuw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_remuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_remuw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remuw trace i) : Type where
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
@@ -1657,10 +1657,10 @@ structure Decode_remuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
-  h_exec_len : (busSub trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace binding i c.execRow).exec_row[1]!.multiplicity = 1
-  bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i c.execRow).e2
+  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i c.execRow).e2
 
 structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remuw trace i) : Type where
@@ -1679,11 +1679,11 @@ structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_input_rd : remuw_input.rd = regidx_to_fin c.rd
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
   h_rd_idx :
     remuw_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace binding i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   remainder_bound :
     ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
       (vOfDivuRow (remuwArow trace binding i h_main_active h_main_op)) 0
@@ -1694,17 +1694,17 @@ structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     ((remuwArow trace binding i h_main_active h_main_op).chunks.c_2).val = 0
       ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.c_3).val = 0
   h_sext_choice :
-    ((((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 4).val = 0
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 5).val = 0
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 6).val = 0
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 7).val = 0)
+    ((((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 0
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 0
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 0
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 0)
         ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.d_0).val
             + ((remuwArow trace binding i h_main_active h_main_op).chunks.d_1).val * 65536
               < 2147483648)
-      ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 4).val = 255
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 5).val = 255
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 6).val = 255
-          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace binding i c.execRow).e2 7).val = 255)
+      ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 255
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 255
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 255
+          ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 255)
         ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.d_0).val
             + ((remuwArow trace binding i h_main_active h_main_op).chunks.d_1).val * 65536
               ≥ 2147483648))
@@ -1720,12 +1720,12 @@ structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
 structure RowData_remuw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_remuw trace i
-  toDecode : Decode_remuw trace binding i toClaim
+  toDecode : Decode_remuw trace i toClaim
   toInputs : Inputs_remuw trace binding i toClaim
 
 def toRowData_remuw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_remuw trace i) (dec : Decode_remuw trace binding i c)
+    (c : Claim_remuw trace i) (dec : Decode_remuw trace i c)
     (ia : Inputs_remuw trace binding i c) : RowData_remuw trace binding i where
   toClaim := c
   toDecode := dec
@@ -1735,7 +1735,7 @@ structure Claim_sb (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
   sb_input : PureSpec.SbInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_sb (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sb trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -1749,16 +1749,16 @@ structure Decode_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_main_ind_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = 1
-  h_exec_len : (busSt trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSt trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSt trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSt trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSt trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSt trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sb trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sb_state_assumptions c.sb_input (binding i)
   h_addr2 :
-    (mainRowWithRomSt trace binding i).rom.addr2.toNat =
+    (mainRowWithRomSt trace i).rom.addr2.toNat =
       (c.sb_input.r1_val + BitVec.signExtend 64 c.sb_input.imm).toNat
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -1770,34 +1770,34 @@ structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSt trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSt trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_STOREB_pure c.sb_input).nextPC
-  h_m1 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 1]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 1 : BitVec 8)
-  h_m2 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 2]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 2 : BitVec 8)
-  h_m3 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 3]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 3 : BitVec 8)
-  h_m4 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 4]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 4 : BitVec 8)
-  h_m5 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 5]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 5 : BitVec 8)
-  h_m6 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 6]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 6 : BitVec 8)
-  h_m7 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 7]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 7 : BitVec 8)
+  h_m1 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 1]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 1 : BitVec 8)
+  h_m2 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 2]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 2 : BitVec 8)
+  h_m3 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 3]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 3 : BitVec 8)
+  h_m4 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 4]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 4 : BitVec 8)
+  h_m5 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 5]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 5 : BitVec 8)
+  h_m6 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 6]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 6 : BitVec 8)
+  h_m7 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 7]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 7 : BitVec 8)
 
 /-- Per-op residual bundle for the `sb` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sb` bundles them. -/
 structure RowData_sb
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_sb trace i
-  toDecode : Decode_sb trace binding i toClaim
+  toDecode : Decode_sb trace i toClaim
   toInputs : Inputs_sb trace binding i toClaim
 
 def toRowData_sb {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_sb trace i) (dec : Decode_sb trace binding i c)
+    (c : Claim_sb trace i) (dec : Decode_sb trace i c)
     (ia : Inputs_sb trace binding i c) : RowData_sb trace binding i where
   toClaim := c
   toDecode := dec
@@ -1807,7 +1807,7 @@ structure Claim_sh (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
   sh_input : PureSpec.ShInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_sh (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sh trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -1821,16 +1821,16 @@ structure Decode_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_main_ind_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = 2
-  h_exec_len : (busSt trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSt trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSt trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSt trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSt trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSt trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sh trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sh_state_assumptions c.sh_input (binding i)
   h_addr2 :
-    (mainRowWithRomSt trace binding i).rom.addr2.toNat =
+    (mainRowWithRomSt trace i).rom.addr2.toNat =
       (c.sh_input.r1_val + BitVec.signExtend 64 c.sh_input.imm).toNat
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -1842,32 +1842,32 @@ structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSt trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSt trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_STOREH_pure c.sh_input).nextPC
-  h_m2 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 2]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 2 : BitVec 8)
-  h_m3 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 3]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 3 : BitVec 8)
-  h_m4 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 4]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 4 : BitVec 8)
-  h_m5 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 5]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 5 : BitVec 8)
-  h_m6 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 6]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 6 : BitVec 8)
-  h_m7 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 7]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 7 : BitVec 8)
+  h_m2 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 2]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 2 : BitVec 8)
+  h_m3 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 3]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 3 : BitVec 8)
+  h_m4 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 4]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 4 : BitVec 8)
+  h_m5 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 5]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 5 : BitVec 8)
+  h_m6 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 6]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 6 : BitVec 8)
+  h_m7 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 7]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 7 : BitVec 8)
 
 /-- Per-op residual bundle for the `sh` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sh` bundles them. -/
 structure RowData_sh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_sh trace i
-  toDecode : Decode_sh trace binding i toClaim
+  toDecode : Decode_sh trace i toClaim
   toInputs : Inputs_sh trace binding i toClaim
 
 def toRowData_sh {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_sh trace i) (dec : Decode_sh trace binding i c)
+    (c : Claim_sh trace i) (dec : Decode_sh trace i c)
     (ia : Inputs_sh trace binding i c) : RowData_sh trace binding i where
   toClaim := c
   toDecode := dec
@@ -1877,7 +1877,7 @@ structure Claim_sw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
   sw_input : PureSpec.SwInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_sw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sw trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -1891,16 +1891,16 @@ structure Decode_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_main_ind_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = 4
-  h_exec_len : (busSt trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSt trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSt trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSt trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSt trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSt trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sw trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sw_state_assumptions c.sw_input (binding i)
   h_addr2 :
-    (mainRowWithRomSt trace binding i).rom.addr2.toNat =
+    (mainRowWithRomSt trace i).rom.addr2.toNat =
       (c.sw_input.r1_val + BitVec.signExtend 64 c.sw_input.imm).toNat
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -1912,28 +1912,28 @@ structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSt trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSt trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_STOREW_pure c.sw_input).nextPC
-  h_m4 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 4]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 4 : BitVec 8)
-  h_m5 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 5]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 5 : BitVec 8)
-  h_m6 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 6]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 6 : BitVec 8)
-  h_m7 : (binding i).mem[(busSt trace binding i c.execRow).e2.ptr.toNat + 7]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace binding i c.execRow).e2 7 : BitVec 8)
+  h_m4 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 4]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 4 : BitVec 8)
+  h_m5 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 5]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 5 : BitVec 8)
+  h_m6 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 6]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 6 : BitVec 8)
+  h_m7 : (binding i).mem[(busSt trace i c.execRow).e2.ptr.toNat + 7]?
+    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i c.execRow).e2 7 : BitVec 8)
 
 /-- Per-op residual bundle for the `sw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sw` bundles them. -/
 structure RowData_sw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_sw trace i
-  toDecode : Decode_sw trace binding i toClaim
+  toDecode : Decode_sw trace i toClaim
   toInputs : Inputs_sw trace binding i toClaim
 
 def toRowData_sw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_sw trace i) (dec : Decode_sw trace binding i c)
+    (c : Claim_sw trace i) (dec : Decode_sw trace i c)
     (ia : Inputs_sw trace binding i c) : RowData_sw trace binding i where
   toClaim := c
   toDecode := dec
@@ -1943,7 +1943,7 @@ structure Claim_sd (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
   sd_input : PureSpec.SdInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_sd (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sd trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -1954,16 +1954,16 @@ structure Decode_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
-  h_exec_len : (busSt trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSt trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSt trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busSt trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busSt trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busSt trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sd trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sd_state_assumptions c.sd_input (binding i)
   h_addr2 :
-    (mainRowWithRomSt trace binding i).rom.addr2.toNat =
+    (mainRowWithRomSt trace i).rom.addr2.toNat =
       (c.sd_input.r1_val + BitVec.signExtend 64 c.sd_input.imm).toNat
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -1975,7 +1975,7 @@ structure Inputs_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSt trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busSt trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_STORED_pure c.sd_input).nextPC
 
 /-- Per-op residual bundle for the `sd` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -1983,12 +1983,12 @@ structure Inputs_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailT
 structure RowData_sd
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_sd trace i
-  toDecode : Decode_sd trace binding i toClaim
+  toDecode : Decode_sd trace i toClaim
   toInputs : Inputs_sd trace binding i toClaim
 
 def toRowData_sd {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_sd trace i) (dec : Decode_sd trace binding i c)
+    (c : Claim_sd trace i) (dec : Decode_sd trace i c)
     (ia : Inputs_sd trace binding i c) : RowData_sd trace binding i where
   toClaim := c
   toDecode := dec
@@ -1998,7 +1998,7 @@ structure Claim_ld (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
   ld_input : PureSpec.LdInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_ld (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_ld trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -2012,9 +2012,9 @@ structure Decode_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (8 : FGL)
-  h_exec_len : (busLd trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busLd trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busLd trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busLd trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_ld trace i) : Type where
@@ -2023,26 +2023,26 @@ structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   r_mem : ℕ
   h_opcode_assumptions : PureSpec.ld_state_assumptions c.ld_input (binding i)
   h_addr1 :
-    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+    (mainRowWithRomLd trace i).rom.addr1.toNat =
       c.ld_input.r1_val.toNat + (BitVec.signExtend 64 c.ld_input.imm).toNat
   h_addr2_zero_iff :
-    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2 = 0 ↔
       c.ld_input.rd = 0
   h_addr2_idx :
     c.ld_input.rd.toNat =
-      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2).val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busLd trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busLd trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADD_pure c.ld_input).nextPC
   h_memory_timeline :
     LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace binding i c.execRow).e1
+      (busLd trace i c.execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
-      loadMainMsg (mainRowWithRomLd trace binding i)
+      loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
 
@@ -2051,12 +2051,12 @@ structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailT
 structure RowData_ld
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_ld trace i
-  toDecode : Decode_ld trace binding i toClaim
+  toDecode : Decode_ld trace i toClaim
   toInputs : Inputs_ld trace binding i toClaim
 
 def toRowData_ld {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_ld trace i) (dec : Decode_ld trace binding i c)
+    (c : Claim_ld trace i) (dec : Decode_ld trace i c)
     (ia : Inputs_ld trace binding i c) : RowData_ld trace binding i where
   toClaim := c
   toDecode := dec
@@ -2066,7 +2066,7 @@ structure Claim_lbu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   lbu_input : PureSpec.LbuInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_lbu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_lbu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lbu trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -2080,9 +2080,9 @@ structure Decode_lbu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (1 : FGL)
-  h_exec_len : (busLd trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busLd trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busLd trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busLd trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lbu trace i) : Type where
@@ -2091,29 +2091,29 @@ structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   r_mem : ℕ
   align : ZiskFv.Compliance.MemAlignWitness
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val (busLd trace binding i c.execRow).e1
+    i.val (busLd trace i c.execRow).e1
   h_opcode_assumptions : PureSpec.lbu_state_assumptions c.lbu_input (binding i)
   h_addr1 :
-    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+    (mainRowWithRomLd trace i).rom.addr1.toNat =
       c.lbu_input.r1_val.toNat + (BitVec.signExtend 64 c.lbu_input.imm).toNat
   h_addr2_zero_iff :
-    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2 = 0 ↔
       c.lbu_input.rd = 0
   h_addr2_idx :
     c.lbu_input.rd.toNat =
-      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2).val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busLd trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busLd trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADBU_pure c.lbu_input).nextPC
   h_memory_timeline :
     LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace binding i c.execRow).e1
+      (busLd trace i c.execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
-      loadMainMsg (mainRowWithRomLd trace binding i)
+      loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
 
@@ -2122,12 +2122,12 @@ structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_lbu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_lbu trace i
-  toDecode : Decode_lbu trace binding i toClaim
+  toDecode : Decode_lbu trace i toClaim
   toInputs : Inputs_lbu trace binding i toClaim
 
 def toRowData_lbu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_lbu trace i) (dec : Decode_lbu trace binding i c)
+    (c : Claim_lbu trace i) (dec : Decode_lbu trace i c)
     (ia : Inputs_lbu trace binding i c) : RowData_lbu trace binding i where
   toClaim := c
   toDecode := dec
@@ -2137,7 +2137,7 @@ structure Claim_lhu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   lhu_input : PureSpec.LhuInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_lhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_lhu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lhu trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -2151,9 +2151,9 @@ structure Decode_lhu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (2 : FGL)
-  h_exec_len : (busLd trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busLd trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busLd trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busLd trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lhu trace i) : Type where
@@ -2162,29 +2162,29 @@ structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   r_mem : ℕ
   align : ZiskFv.Compliance.MemAlignWitness
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val (busLd trace binding i c.execRow).e1
+    i.val (busLd trace i c.execRow).e1
   h_opcode_assumptions : PureSpec.lhu_state_assumptions c.lhu_input (binding i)
   h_addr1 :
-    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+    (mainRowWithRomLd trace i).rom.addr1.toNat =
       c.lhu_input.r1_val.toNat + (BitVec.signExtend 64 c.lhu_input.imm).toNat
   h_addr2_zero_iff :
-    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2 = 0 ↔
       c.lhu_input.rd = 0
   h_addr2_idx :
     c.lhu_input.rd.toNat =
-      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2).val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busLd trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busLd trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADHU_pure c.lhu_input).nextPC
   h_memory_timeline :
     LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace binding i c.execRow).e1
+      (busLd trace i c.execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
-      loadMainMsg (mainRowWithRomLd trace binding i)
+      loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
 
@@ -2193,12 +2193,12 @@ structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_lhu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_lhu trace i
-  toDecode : Decode_lhu trace binding i toClaim
+  toDecode : Decode_lhu trace i toClaim
   toInputs : Inputs_lhu trace binding i toClaim
 
 def toRowData_lhu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_lhu trace i) (dec : Decode_lhu trace binding i c)
+    (c : Claim_lhu trace i) (dec : Decode_lhu trace i c)
     (ia : Inputs_lhu trace binding i c) : RowData_lhu trace binding i where
   toClaim := c
   toDecode := dec
@@ -2208,7 +2208,7 @@ structure Claim_lwu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   lwu_input : PureSpec.LwuInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_lwu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_lwu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lwu trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -2222,9 +2222,9 @@ structure Decode_lwu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (4 : FGL)
-  h_exec_len : (busLd trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busLd trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busLd trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busLd trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lwu trace i) : Type where
@@ -2233,29 +2233,29 @@ structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   r_mem : ℕ
   align : ZiskFv.Compliance.MemAlignWitness
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val (busLd trace binding i c.execRow).e1
+    i.val (busLd trace i c.execRow).e1
   h_opcode_assumptions : PureSpec.lwu_state_assumptions c.lwu_input (binding i)
   h_addr1 :
-    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+    (mainRowWithRomLd trace i).rom.addr1.toNat =
       c.lwu_input.r1_val.toNat + (BitVec.signExtend 64 c.lwu_input.imm).toNat
   h_addr2_zero_iff :
-    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2 = 0 ↔
       c.lwu_input.rd = 0
   h_addr2_idx :
     c.lwu_input.rd.toNat =
-      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2).val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busLd trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busLd trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADWU_pure c.lwu_input).nextPC
   h_memory_timeline :
     LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace binding i c.execRow).e1
+      (busLd trace i c.execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
-      loadMainMsg (mainRowWithRomLd trace binding i)
+      loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
 
@@ -2264,12 +2264,12 @@ structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_lwu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_lwu trace i
-  toDecode : Decode_lwu trace binding i toClaim
+  toDecode : Decode_lwu trace i toClaim
   toInputs : Inputs_lwu trace binding i toClaim
 
 def toRowData_lwu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_lwu trace i) (dec : Decode_lwu trace binding i c)
+    (c : Claim_lwu trace i) (dec : Decode_lwu trace i c)
     (ia : Inputs_lwu trace binding i c) : RowData_lwu trace binding i where
   toClaim := c
   toDecode := dec
@@ -2279,7 +2279,7 @@ structure Claim_lb (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
   lb_input : PureSpec.LbInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_lb (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lb trace i) : Type where
   v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
   r_binary : ℕ
@@ -2304,9 +2304,9 @@ structure Decode_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (1 : FGL)
-  h_exec_len : (busLd trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busLd trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busLd trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busLd trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lb trace i) : Type where
@@ -2315,26 +2315,26 @@ structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   r_mem : ℕ
   h_opcode_assumptions : PureSpec.lb_state_assumptions c.lb_input (binding i)
   h_addr1 :
-    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+    (mainRowWithRomLd trace i).rom.addr1.toNat =
       c.lb_input.r1_val.toNat + (BitVec.signExtend 64 c.lb_input.imm).toNat
   h_addr2_zero_iff :
-    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2 = 0 ↔
       c.lb_input.rd = 0
   h_addr2_idx :
     c.lb_input.rd.toNat =
-      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2).val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busLd trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busLd trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADB_pure c.lb_input).nextPC
   h_memory_timeline :
     LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace binding i c.execRow).e1
+      (busLd trace i c.execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
-      loadMainMsg (mainRowWithRomLd trace binding i)
+      loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
 
@@ -2343,12 +2343,12 @@ structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
 structure RowData_lb
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_lb trace i
-  toDecode : Decode_lb trace binding i toClaim
+  toDecode : Decode_lb trace i toClaim
   toInputs : Inputs_lb trace binding i toClaim
 
 def toRowData_lb {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_lb trace i) (dec : Decode_lb trace binding i c)
+    (c : Claim_lb trace i) (dec : Decode_lb trace i c)
     (ia : Inputs_lb trace binding i c) : RowData_lb trace binding i where
   toClaim := c
   toDecode := dec
@@ -2358,7 +2358,7 @@ structure Claim_lh (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
   lh_input : PureSpec.LhInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_lh (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lh trace i) : Type where
   v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
   r_binary : ℕ
@@ -2383,9 +2383,9 @@ structure Decode_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (2 : FGL)
-  h_exec_len : (busLd trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busLd trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busLd trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busLd trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lh trace i) : Type where
@@ -2394,26 +2394,26 @@ structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   r_mem : ℕ
   h_opcode_assumptions : PureSpec.lh_state_assumptions c.lh_input (binding i)
   h_addr1 :
-    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+    (mainRowWithRomLd trace i).rom.addr1.toNat =
       c.lh_input.r1_val.toNat + (BitVec.signExtend 64 c.lh_input.imm).toNat
   h_addr2_zero_iff :
-    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2 = 0 ↔
       c.lh_input.rd = 0
   h_addr2_idx :
     c.lh_input.rd.toNat =
-      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2).val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busLd trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busLd trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADH_pure c.lh_input).nextPC
   h_memory_timeline :
     LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace binding i c.execRow).e1
+      (busLd trace i c.execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
-      loadMainMsg (mainRowWithRomLd trace binding i)
+      loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
 
@@ -2422,12 +2422,12 @@ structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
 structure RowData_lh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_lh trace i
-  toDecode : Decode_lh trace binding i toClaim
+  toDecode : Decode_lh trace i toClaim
   toInputs : Inputs_lh trace binding i toClaim
 
 def toRowData_lh {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_lh trace i) (dec : Decode_lh trace binding i c)
+    (c : Claim_lh trace i) (dec : Decode_lh trace i c)
     (ia : Inputs_lh trace binding i c) : RowData_lh trace binding i where
   toClaim := c
   toDecode := dec
@@ -2437,7 +2437,7 @@ structure Claim_lw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
   lw_input : PureSpec.LwInput
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_lw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lw trace i) : Type where
   v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
   r_binary : ℕ
@@ -2462,9 +2462,9 @@ structure Decode_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = (4 : FGL)
-  h_exec_len : (busLd trace binding i c.execRow).exec_row.length = 2
-  h_e0_mult : (busLd trace binding i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busLd trace binding i c.execRow).exec_row[1]!.multiplicity = 1
+  h_exec_len : (busLd trace i c.execRow).exec_row.length = 2
+  h_e0_mult : (busLd trace i c.execRow).exec_row[0]!.multiplicity = -1
+  h_e1_mult : (busLd trace i c.execRow).exec_row[1]!.multiplicity = 1
 
 structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lw trace i) : Type where
@@ -2473,26 +2473,26 @@ structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   r_mem : ℕ
   h_opcode_assumptions : PureSpec.lw_state_assumptions c.lw_input (binding i)
   h_addr1 :
-    (mainRowWithRomLd trace binding i).rom.addr1.toNat =
+    (mainRowWithRomLd trace i).rom.addr1.toNat =
       c.lw_input.r1_val.toNat + (BitVec.signExtend 64 c.lw_input.imm).toNat
   h_addr2_zero_iff :
-    Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2 = 0 ↔
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2 = 0 ↔
       c.lw_input.rd = 0
   h_addr2_idx :
     c.lw_input.rd.toNat =
-      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace binding i).rom.addr2).val
+      (Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2).val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_nextPC_matches :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busLd trace binding i c.execRow).exec_row[1]!.pc).val))
+        (BitVec.ofNat 64 ((busLd trace i c.execRow).exec_row[1]!.pc).val))
       = (PureSpec.execute_LOADW_pure c.lw_input).nextPC
   h_memory_timeline :
     LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace binding i c.execRow).e1
+      (busLd trace i c.execRow).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
-      loadMainMsg (mainRowWithRomLd trace binding i)
+      loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
 
@@ -2501,12 +2501,12 @@ structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
 structure RowData_lw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_lw trace i
-  toDecode : Decode_lw trace binding i toClaim
+  toDecode : Decode_lw trace i toClaim
   toInputs : Inputs_lw trace binding i toClaim
 
 def toRowData_lw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_lw trace i) (dec : Decode_lw trace binding i c)
+    (c : Claim_lw trace i) (dec : Decode_lw trace i c)
     (ia : Inputs_lw trace binding i c) : RowData_lw trace binding i where
   toClaim := c
   toDecode := dec

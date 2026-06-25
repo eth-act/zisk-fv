@@ -47,7 +47,7 @@ structure Claim_beq (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   r2 : regidx
   exec_row : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_beq (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_beq (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_beq trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -94,12 +94,12 @@ structure Inputs_beq (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_beq
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_beq trace i
-  toDecode : Decode_beq trace binding i toClaim
+  toDecode : Decode_beq trace i toClaim
   toInputs : Inputs_beq trace binding i toClaim
 
 def toRowData_beq {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_beq trace i) (dec : Decode_beq trace binding i c)
+    (c : Claim_beq trace i) (dec : Decode_beq trace i c)
     (ia : Inputs_beq trace binding i c) : RowData_beq trace binding i where
   toClaim := c
   toDecode := dec
@@ -111,7 +111,7 @@ structure Claim_bne (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   r2 : regidx
   exec_row : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_bne (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_bne (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bne trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -158,12 +158,12 @@ structure Inputs_bne (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_bne
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_bne trace i
-  toDecode : Decode_bne trace binding i toClaim
+  toDecode : Decode_bne trace i toClaim
   toInputs : Inputs_bne trace binding i toClaim
 
 def toRowData_bne {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_bne trace i) (dec : Decode_bne trace binding i c)
+    (c : Claim_bne trace i) (dec : Decode_bne trace i c)
     (ia : Inputs_bne trace binding i c) : RowData_bne trace binding i where
   toClaim := c
   toDecode := dec
@@ -175,7 +175,7 @@ structure Claim_blt (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   r2 : regidx
   exec_row : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_blt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_blt (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_blt trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -222,12 +222,12 @@ structure Inputs_blt (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_blt
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_blt trace i
-  toDecode : Decode_blt trace binding i toClaim
+  toDecode : Decode_blt trace i toClaim
   toInputs : Inputs_blt trace binding i toClaim
 
 def toRowData_blt {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_blt trace i) (dec : Decode_blt trace binding i c)
+    (c : Claim_blt trace i) (dec : Decode_blt trace i c)
     (ia : Inputs_blt trace binding i c) : RowData_blt trace binding i where
   toClaim := c
   toDecode := dec
@@ -239,7 +239,7 @@ structure Claim_bge (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   r2 : regidx
   exec_row : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_bge (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_bge (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bge trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -286,12 +286,12 @@ structure Inputs_bge (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_bge
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_bge trace i
-  toDecode : Decode_bge trace binding i toClaim
+  toDecode : Decode_bge trace i toClaim
   toInputs : Inputs_bge trace binding i toClaim
 
 def toRowData_bge {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_bge trace i) (dec : Decode_bge trace binding i c)
+    (c : Claim_bge trace i) (dec : Decode_bge trace i c)
     (ia : Inputs_bge trace binding i c) : RowData_bge trace binding i where
   toClaim := c
   toDecode := dec
@@ -303,7 +303,7 @@ structure Claim_bltu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   r2 : regidx
   exec_row : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_bltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_bltu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bltu trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -350,12 +350,12 @@ structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
 structure RowData_bltu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_bltu trace i
-  toDecode : Decode_bltu trace binding i toClaim
+  toDecode : Decode_bltu trace i toClaim
   toInputs : Inputs_bltu trace binding i toClaim
 
 def toRowData_bltu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_bltu trace i) (dec : Decode_bltu trace binding i c)
+    (c : Claim_bltu trace i) (dec : Decode_bltu trace i c)
     (ia : Inputs_bltu trace binding i c) : RowData_bltu trace binding i where
   toClaim := c
   toDecode := dec
@@ -367,7 +367,7 @@ structure Claim_bgeu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   r2 : regidx
   exec_row : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bgeu trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -414,12 +414,12 @@ structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
 structure RowData_bgeu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_bgeu trace i
-  toDecode : Decode_bgeu trace binding i toClaim
+  toDecode : Decode_bgeu trace i toClaim
   toInputs : Inputs_bgeu trace binding i toClaim
 
 def toRowData_bgeu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_bgeu trace i) (dec : Decode_bgeu trace binding i c)
+    (c : Claim_bgeu trace i) (dec : Decode_bgeu trace i c)
     (ia : Inputs_bgeu trace binding i c) : RowData_bgeu trace binding i where
   toClaim := c
   toDecode := dec
@@ -430,7 +430,7 @@ structure Claim_jal (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_jal (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jal trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
@@ -471,7 +471,7 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
   h_nextPC_option : (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
-  h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
+  h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx (eRdLui trace i).ptr
   h_input_imm : jal_input.imm = c.imm
   h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false
   h_pc_bound : jal_input.PC.toNat < GL_prime - 4
@@ -482,12 +482,12 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
 structure RowData_jal
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_jal trace i
-  toDecode : Decode_jal trace binding i toClaim
+  toDecode : Decode_jal trace i toClaim
   toInputs : Inputs_jal trace binding i toClaim
 
 def toRowData_jal {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_jal trace i) (dec : Decode_jal trace binding i c)
+    (c : Claim_jal trace i) (dec : Decode_jal trace i c)
     (ia : Inputs_jal trace binding i c) : RowData_jal trace binding i where
   toClaim := c
   toDecode := dec
@@ -499,7 +499,7 @@ structure Claim_jalr (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   rd : regidx
   execRow : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_jalr (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
@@ -538,7 +538,7 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JALR_pure jalr_input).success = true
   h_nextPC_option : (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
-  h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
+  h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx (eRdLui trace i).ptr
   h_input_imm : jalr_input.imm = c.imm
   h_input_rs1 : read_xreg (regidx_to_fin c.rs1) (binding i)
     = EStateM.Result.ok jalr_input.rs1_val (binding i)
@@ -559,12 +559,12 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
 structure RowData_jalr
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_jalr trace i
-  toDecode : Decode_jalr trace binding i toClaim
+  toDecode : Decode_jalr trace i toClaim
   toInputs : Inputs_jalr trace binding i toClaim
 
 def toRowData_jalr {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_jalr trace i) (dec : Decode_jalr trace binding i c)
+    (c : Claim_jalr trace i) (dec : Decode_jalr trace i c)
     (ia : Inputs_jalr trace binding i c) : RowData_jalr trace binding i where
   toClaim := c
   toDecode := dec
@@ -578,7 +578,7 @@ structure Claim_fence (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
   rd : regidx
   exec_row : List (Interaction.ExecutionBusEntry FGL)
 
-structure Decode_fence (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure Decode_fence (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_fence trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
@@ -608,12 +608,12 @@ structure Inputs_fence (trace : AcceptedZiskTrace numInstructions) (binding : Sa
 structure RowData_fence
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   toClaim : Claim_fence trace i
-  toDecode : Decode_fence trace binding i toClaim
+  toDecode : Decode_fence trace i toClaim
   toInputs : Inputs_fence trace binding i toClaim
 
 def toRowData_fence {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
     {i : Fin trace.numInstructions}
-    (c : Claim_fence trace i) (dec : Decode_fence trace binding i c)
+    (c : Claim_fence trace i) (dec : Decode_fence trace i c)
     (ia : Inputs_fence trace binding i c) : RowData_fence trace binding i where
   toClaim := c
   toDecode := dec

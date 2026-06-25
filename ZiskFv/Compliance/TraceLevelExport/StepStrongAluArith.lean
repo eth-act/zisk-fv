@@ -84,13 +84,13 @@ theorem stepStrong_sub
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SUB))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_sub_provided
@@ -98,9 +98,9 @@ theorem stepStrong_sub
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -112,9 +112,9 @@ theorem stepStrong_sub
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -220,13 +220,13 @@ theorem stepStrong_and
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.AND))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
@@ -234,9 +234,9 @@ theorem stepStrong_and
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -248,9 +248,9 @@ theorem stepStrong_and
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -356,13 +356,13 @@ theorem stepStrong_or
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.OR))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
@@ -370,9 +370,9 @@ theorem stepStrong_or
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -384,9 +384,9 @@ theorem stepStrong_or
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -492,13 +492,13 @@ theorem stepStrong_xor
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.XOR))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
@@ -506,9 +506,9 @@ theorem stepStrong_xor
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -520,9 +520,9 @@ theorem stepStrong_xor
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -629,13 +629,13 @@ theorem stepStrong_slt
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SLT))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_compare_provided
@@ -643,9 +643,9 @@ theorem stepStrong_slt
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -657,9 +657,9 @@ theorem stepStrong_slt
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -765,13 +765,13 @@ theorem stepStrong_sltu
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SLTU))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_compare_provided
@@ -779,9 +779,9 @@ theorem stepStrong_sltu
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -793,9 +793,9 @@ theorem stepStrong_sltu
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -900,13 +900,13 @@ theorem stepStrong_andi
       LeanRV64D.Functions.execute
         (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.ANDI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
@@ -914,9 +914,9 @@ theorem stepStrong_andi
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -928,9 +928,9 @@ theorem stepStrong_andi
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1035,13 +1035,13 @@ theorem stepStrong_ori
       LeanRV64D.Functions.execute
         (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.ORI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
@@ -1049,9 +1049,9 @@ theorem stepStrong_ori
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1063,9 +1063,9 @@ theorem stepStrong_ori
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1170,13 +1170,13 @@ theorem stepStrong_xori
       LeanRV64D.Functions.execute
         (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.XORI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
@@ -1184,9 +1184,9 @@ theorem stepStrong_xori
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1198,9 +1198,9 @@ theorem stepStrong_xori
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1303,13 +1303,13 @@ theorem stepStrong_slti
       LeanRV64D.Functions.execute
         (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.SLTI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_compare_provided
@@ -1317,9 +1317,9 @@ theorem stepStrong_slti
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1331,9 +1331,9 @@ theorem stepStrong_slti
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1431,13 +1431,13 @@ theorem stepStrong_sltiu
       LeanRV64D.Functions.execute
         (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.SLTIU))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_compare_provided
@@ -1445,9 +1445,9 @@ theorem stepStrong_sltiu
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1459,9 +1459,9 @@ theorem stepStrong_sltiu
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1560,13 +1560,13 @@ theorem stepStrong_sll
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SLL))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1574,9 +1574,9 @@ theorem stepStrong_sll
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1588,9 +1588,9 @@ theorem stepStrong_sll
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1659,13 +1659,13 @@ theorem stepStrong_srl
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SRL))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1673,9 +1673,9 @@ theorem stepStrong_srl
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1687,9 +1687,9 @@ theorem stepStrong_srl
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1758,13 +1758,13 @@ theorem stepStrong_sra
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SRA))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1772,9 +1772,9 @@ theorem stepStrong_sra
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1786,9 +1786,9 @@ theorem stepStrong_sra
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1853,13 +1853,13 @@ theorem stepStrong_slli
       (r := i.val) (fun env => match env with | .slli .. => True | _ => False)) :
     execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SLLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1867,9 +1867,9 @@ theorem stepStrong_slli
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1881,9 +1881,9 @@ theorem stepStrong_slli
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1952,13 +1952,13 @@ theorem stepStrong_srli
       (r := i.val) (fun env => match env with | .srli .. => True | _ => False)) :
     execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SRLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1966,9 +1966,9 @@ theorem stepStrong_srli
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1980,9 +1980,9 @@ theorem stepStrong_srli
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2051,13 +2051,13 @@ theorem stepStrong_srai
       (r := i.val) (fun env => match env with | .srai .. => True | _ => False)) :
     execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SRAI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2065,9 +2065,9 @@ theorem stepStrong_srai
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2079,9 +2079,9 @@ theorem stepStrong_srai
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2156,13 +2156,13 @@ theorem stepStrong_subw
       LeanRV64D.Functions.execute
         (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SUBW))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_w_provided
@@ -2170,9 +2170,9 @@ theorem stepStrong_subw
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2184,9 +2184,9 @@ theorem stepStrong_subw
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2286,13 +2286,13 @@ theorem stepStrong_addw
       LeanRV64D.Functions.execute
         (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.ADDW))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_w_provided
@@ -2300,9 +2300,9 @@ theorem stepStrong_addw
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2314,9 +2314,9 @@ theorem stepStrong_addw
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2416,13 +2416,13 @@ theorem stepStrong_addiw
       LeanRV64D.Functions.execute
         (instruction.ADDIW (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_w_provided
@@ -2430,9 +2430,9 @@ theorem stepStrong_addiw
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2444,9 +2444,9 @@ theorem stepStrong_addiw
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2532,13 +2532,13 @@ theorem stepStrong_sllw
       (r := i.val) (fun env => match env with | .sllw .. => True | _ => False)) :
     execute_instruction (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SLLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2546,9 +2546,9 @@ theorem stepStrong_sllw
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2560,9 +2560,9 @@ theorem stepStrong_sllw
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2630,13 +2630,13 @@ theorem stepStrong_srlw
       (r := i.val) (fun env => match env with | .srlw .. => True | _ => False)) :
     execute_instruction (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SRLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2644,9 +2644,9 @@ theorem stepStrong_srlw
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2658,9 +2658,9 @@ theorem stepStrong_srlw
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2728,13 +2728,13 @@ theorem stepStrong_sraw
       (r := i.val) (fun env => match env with | .sraw .. => True | _ => False)) :
     execute_instruction (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SRAW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2743,9 +2743,9 @@ theorem stepStrong_sraw
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2757,9 +2757,9 @@ theorem stepStrong_sraw
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2828,13 +2828,13 @@ theorem stepStrong_slliw
     execute_instruction
       (instruction.SHIFTIWOP (d.toClaim.slliw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SLLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2842,9 +2842,9 @@ theorem stepStrong_slliw
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2856,9 +2856,9 @@ theorem stepStrong_slliw
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2922,13 +2922,13 @@ theorem stepStrong_srliw
     execute_instruction
       (instruction.SHIFTIWOP (d.toClaim.srliw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2936,9 +2936,9 @@ theorem stepStrong_srliw
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2950,9 +2950,9 @@ theorem stepStrong_srliw
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -3016,13 +3016,13 @@ theorem stepStrong_sraiw
     execute_instruction
       (instruction.SHIFTIWOP (d.toClaim.sraiw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRAIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -3031,9 +3031,9 @@ theorem stepStrong_sraiw
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -3045,9 +3045,9 @@ theorem stepStrong_sraiw
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -3120,22 +3120,22 @@ theorem stepStrong_add
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.ADD))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
     main_request_add_provided
       trace i d.toDecode.h_main_active d.toDecode.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -3147,9 +3147,9 @@ theorem stepStrong_add
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -3272,22 +3272,22 @@ theorem stepStrong_addi
       LeanRV64D.Functions.execute
         (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.ADDI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.toClaim.execRow).exec_row,
-           [ (busSub trace binding i d.toClaim.execRow).e0
-           , (busSub trace binding i d.toClaim.execRow).e1
-           , (busSub trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.toClaim.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
     main_request_add_provided
       trace i d.toDecode.h_main_active d.toDecode.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -3299,9 +3299,9 @@ theorem stepStrong_addi
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩

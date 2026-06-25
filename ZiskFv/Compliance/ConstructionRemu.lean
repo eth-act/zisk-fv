@@ -640,18 +640,18 @@ theorem construction_remu_sound_claimed_dead
     (h_input_rd : remu_input.rd = regidx_to_fin rd)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC)
     (h_rd_idx :
       remu_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr)
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr)
     -- (c) byte range bounds on the rd-write entry
-    (bounds : ZiskFv.Compliance.ByteBounds (busSub trace binding i execRow).e2)
+    (bounds : ZiskFv.Compliance.ByteBounds (busSub trace i execRow).e2)
     -- (b) RESIDUAL: remainder-bound witness (the ONE non-balance-derived
     -- binder — the ArithDiv `assumes_operation` LTU consumer edge is a
     -- finished-channel self-edge absent from the ensemble).
@@ -676,10 +676,10 @@ theorem construction_remu_sound_claimed_dead
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, true))) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   -- (a) Arith witnesses derived from balance: FullSpec.
   have h_full :
       ZiskFv.AirsClean.ArithMul.FullSpec
@@ -698,9 +698,9 @@ theorem construction_remu_sound_claimed_dead
     ⟨h_main_active, h_main_op⟩
   -- (a) Main rd-write memory witness, from `store_pc = 0`.
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt (mainOfTable trace.program trace.mainTable) i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -711,8 +711,8 @@ theorem construction_remu_sound_claimed_dead
   let arith_mem :
       ZiskFv.Compliance.ExternalArithMemoryWitness
         (mainOfTable trace.program trace.mainTable) i.val
-        (busSub trace binding i execRow).e2 :=
-    { row := mainRowWithRomSub trace binding i
+        (busSub trace i execRow).e2 :=
+    { row := mainRowWithRomSub trace i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
           trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -724,8 +724,8 @@ theorem construction_remu_sound_claimed_dead
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       (binding i) remu_input.r1_val remu_input.r2_val remu_input.rd remu_input.PC
       (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
-      r1 r2 rd (busSub trace binding i execRow).exec_row (busSub trace binding i execRow).e0
-      (busSub trace binding i execRow).e1 (busSub trace binding i execRow).e2 :=
+      r1 r2 rd (busSub trace i execRow).exec_row (busSub trace i execRow).e0
+      (busSub trace i execRow).e1 (busSub trace i execRow).e2 :=
     { input_r1_eq := h_input_r1
       input_r2_eq := h_input_r2
       input_rd_eq := h_input_rd
@@ -743,7 +743,7 @@ theorem construction_remu_sound_claimed_dead
       rd_idx := h_rd_idx }
   -- Delegate to the F4 fullSpec bridge.
   exact equiv_REMU_of_fullSpec_claimed_dead
-    (binding i) remu_input r1 r2 rd (busSub trace binding i execRow)
+    (binding i) remu_input r1 r2 rd (busSub trace i execRow)
     (mainOfTable trace.program trace.mainTable) i.val
     (remuArow trace binding i h_main_active h_main_op)
     pins h_match_primary promises arith_mem bounds

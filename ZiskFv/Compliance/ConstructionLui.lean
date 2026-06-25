@@ -65,7 +65,7 @@ set_option maxHeartbeats 2000000
     table.  Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 noncomputable def mainRowWithRomLui
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program trace.mainTable i.val
@@ -75,10 +75,10 @@ noncomputable def mainRowWithRomLui
     match is then `matches_memory_entry_refl`. -/
 @[reducible]
 noncomputable def eRdLui
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) :
     Interaction.MemoryBusEntry FGL :=
   ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-    (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomLui trace binding i)) 1 1
+    (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomLui trace i)) 1 1
 
 /-- The Main per-row `Spec` at trace index `i`, derived from `trace.spec_holds`.
     (Standalone version of the in-wrapper `h_main_spec` derivation.) -/
@@ -162,12 +162,12 @@ theorem construction_lui_sound_claimed_dead
     -- (b) rd-write entry ↔ register-index alignment
     (h_rd_idx :
       lui_input.rd =
-        Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr) :
+        Transpiler.wrap_to_regidx (eRdLui trace i).ptr) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) (binding i)
-      = (bus_effect execRow [eRdLui trace binding i] (binding i)).2 := by
+      = (bus_effect execRow [eRdLui trace i] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let e_rd := eRdLui trace binding i
+  let e_rd := eRdLui trace i
   -- (a) Main per-row Spec ⇒ the LUI Main constraint subset.
   have h_spec := mainSpec_at trace binding i
   have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
@@ -192,14 +192,14 @@ theorem construction_lui_sound_claimed_dead
       h_lui_subset
   -- (a) `StorePcMemoryWitness` from the real Clean Main `c` message row.
   have h_row_core :
-      (mainRowWithRomLui trace binding i).core =
+      (mainRowWithRomLui trace i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
-    { row := mainRowWithRomLui trace binding i
+    { row := mainRowWithRomLui trace i
       row_eq := h_row_core
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- (a) the rd-write MemBus shape (`rd_mult`, `rd_as`) is `rfl`; the pure-spec

@@ -335,10 +335,10 @@ theorem stepStrong_lui
       (r := i.val) (fun env => match env with | .lui .. => True | _ => False)) :
     execute_instruction (instruction.UTYPE (d.toClaim.imm, d.toClaim.rd, uop.LUI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.execRow, [eRdLui trace binding i]⟩ (binding i) := by
+          ⟨d.toClaim.execRow, [eRdLui trace i]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let e_rd := eRdLui trace binding i
+  let e_rd := eRdLui trace i
   -- (a) Main per-row Spec ⇒ the LUI Main constraint subset.
   have h_spec := mainSpec_at trace binding i
   have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
@@ -369,14 +369,14 @@ theorem stepStrong_lui
     { op_eq := rfl, internal_eq := rfl, m32_eq := rfl, set_pc_eq := rfl, store_pc_eq := rfl }
   -- (a) `StorePcMemoryWitness` from the real Clean Main `c` message row.
   have h_row_core :
-      (mainRowWithRomLui trace binding i).core =
+      (mainRowWithRomLui trace i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
-    { row := mainRowWithRomLui trace binding i
+    { row := mainRowWithRomLui trace i
       row_eq := h_row_core
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let promises : ZiskFv.EquivCore.Promises.UTypePromises
@@ -423,10 +423,10 @@ theorem stepStrong_auipc
       (r := i.val) (fun env => match env with | .auipc .. => True | _ => False)) :
     execute_instruction (instruction.UTYPE (d.toClaim.imm, d.toClaim.rd, uop.AUIPC)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.execRow, [eRdLui trace binding i]⟩ (binding i) := by
+          ⟨d.toClaim.execRow, [eRdLui trace i]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let e_rd := eRdLui trace binding i
+  let e_rd := eRdLui trace i
   -- (a) Main per-row Spec ⇒ the AUIPC Main constraint subset.
   have h_spec := mainSpec_at trace binding i
   have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
@@ -455,14 +455,14 @@ theorem stepStrong_auipc
   let row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance :=
     { op_eq := rfl, internal_eq := rfl, m32_eq := rfl, set_pc_eq := rfl, store_pc_eq := rfl }
   have h_row_core :
-      (mainRowWithRomLui trace binding i).core =
+      (mainRowWithRomLui trace i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
-    { row := mainRowWithRomLui trace binding i
+    { row := mainRowWithRomLui trace i
       row_eq := h_row_core
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let promises : ZiskFv.EquivCore.Promises.UTypePromises
@@ -511,10 +511,10 @@ theorem stepStrong_jal
       (r := i.val) (fun env => match env with | .jal .. => True | _ => False)) :
     execute_instruction (instruction.JAL (d.toClaim.imm, d.toClaim.rd)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.execRow, [eRdLui trace binding i]⟩ (binding i) := by
+          ⟨d.toClaim.execRow, [eRdLui trace i]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let e_rd := eRdLui trace binding i
+  let e_rd := eRdLui trace i
   -- (a) Main per-row Spec ⇒ the JAL Main constraint subset.
   have h_spec := mainSpec_at trace binding i
   have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
@@ -543,14 +543,14 @@ theorem stepStrong_jal
   let row_mode : ZiskFv.Compliance.MainRowProvenance.JalRowMode provenance :=
     { op_eq := rfl, internal_eq := rfl, m32_eq := rfl, set_pc_eq := rfl, store_pc_eq := rfl }
   have h_row_core :
-      (mainRowWithRomLui trace binding i).core =
+      (mainRowWithRomLui trace i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
-    { row := mainRowWithRomLui trace binding i
+    { row := mainRowWithRomLui trace i
       row_eq := h_row_core
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let promises : ZiskFv.EquivCore.Promises.JumpPromises
@@ -601,10 +601,10 @@ theorem stepStrong_jalr
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.JALR (d.toClaim.imm, d.toClaim.rs1, d.toClaim.rd))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.execRow, [eRdLui trace binding i]⟩ (binding i) := by
+          ⟨d.toClaim.execRow, [eRdLui trace i]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let e_rd := eRdLui trace binding i
+  let e_rd := eRdLui trace i
   -- (a) Main per-row Spec ⇒ the JALR Main constraint subset.
   have h_spec := mainSpec_at trace binding i
   have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
@@ -626,14 +626,14 @@ theorem stepStrong_jalr
     ⟨h_flag_bool, h_ext_bool, h_disjoint, h_handshake⟩
   -- (a) `StorePcMemoryWitness` from the real Clean Main `c` message row.
   have h_row_core :
-      (mainRowWithRomLui trace binding i).core =
+      (mainRowWithRomLui trace i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
-    { row := mainRowWithRomLui trace binding i
+    { row := mainRowWithRomLui trace i
       row_eq := h_row_core
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
@@ -680,7 +680,7 @@ MainRowWithRom}` / `{mainEnv : Environment}` implicit binders whose `eval mainEn
 mainRowVar` appears in five hypotheses (`h_main_row`/`h_main_spec`/`h_store_pc`/
 `h_main_c_match`/`h_addr2`).  We instantiate `mainRowVar := mainConstVar
 (mainRowWithRomSt …)` and `mainEnv := emptyEnv`; by `eval_mainConstVar` this
-`eval` reduces to the concrete trace row `mainRowWithRomSt trace binding i`, so the
+`eval` reduces to the concrete trace row `mainRowWithRomSt trace i`, so the
 five hypotheses become exactly the facts `construction_<store>_sound` already
 proves (Spec at the row, `store_pc = 0`, the self-referential `c`-emission match,
 the `addr2` bridge).  This `mainConstVar`-of-the-real-row pattern is the analogue
@@ -710,26 +710,26 @@ theorem stepStrong_sb
         (d.toClaim.sb_input.imm, regidx.Regidx d.toClaim.sb_input.r2, regidx.Regidx d.toClaim.sb_input.r1, 1))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt trace binding i d.toClaim.execRow).exec_row,
-           [ (busSt trace binding i d.toClaim.execRow).e0
-           , (busSt trace binding i d.toClaim.execRow).e1
-           , (busSt trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSt trace i d.toClaim.execRow).exec_row,
+           [ (busSt trace i d.toClaim.execRow).e0
+           , (busSt trace i d.toClaim.execRow).e1
+           , (busSt trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSt trace binding i d.toClaim.execRow
-  have h_core : (mainRowWithRomSt trace binding i).core =
+  let bus := busSt trace i d.toClaim.execRow
+  have h_core : (mainRowWithRomSt trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomSt_core trace binding i
   have h_main_spec :
-      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace binding i).core := by
+      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace i).core := by
     rw [h_core]; exact mainSpec_at trace binding i
-  have h_core_store_pc : (mainRowWithRomSt trace binding i).core.store_pc = 0 := by
+  have h_core_store_pc : (mainRowWithRomSt trace i).core.store_pc = 0 := by
     rw [h_core]; simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let pins : ZiskFv.Compliance.MainRowPins m i.val 0 OP_COPYB :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_main_c_match :
       ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2) :=
+          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)) 1 2) :=
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toClaim.sb_input.r2_val := d.toInputs.h_b0_value
   have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toClaim.sb_input.r2_val := d.toInputs.h_b1_value
@@ -752,7 +752,7 @@ theorem stepStrong_sb
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sb d.toClaim.sb_input d.toInputs.regs bus pins d.toDecode.h_main_ind_width d.toInputs.h_opcode_assumptions promises
-      (mainRowVar := mainConstVar (mainRowWithRomSt trace binding i)) (mainEnv := emptyMainEnv)
+      (mainRowVar := mainConstVar (mainRowWithRomSt trace i)) (mainEnv := emptyMainEnv)
       (by simpa only [eval_mainConstVar] using h_core)
       (by simpa only [eval_mainConstVar] using h_main_spec)
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
@@ -776,26 +776,26 @@ theorem stepStrong_sh
         (d.toClaim.sh_input.imm, regidx.Regidx d.toClaim.sh_input.r2, regidx.Regidx d.toClaim.sh_input.r1, 2))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt trace binding i d.toClaim.execRow).exec_row,
-           [ (busSt trace binding i d.toClaim.execRow).e0
-           , (busSt trace binding i d.toClaim.execRow).e1
-           , (busSt trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSt trace i d.toClaim.execRow).exec_row,
+           [ (busSt trace i d.toClaim.execRow).e0
+           , (busSt trace i d.toClaim.execRow).e1
+           , (busSt trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSt trace binding i d.toClaim.execRow
-  have h_core : (mainRowWithRomSt trace binding i).core =
+  let bus := busSt trace i d.toClaim.execRow
+  have h_core : (mainRowWithRomSt trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomSt_core trace binding i
   have h_main_spec :
-      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace binding i).core := by
+      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace i).core := by
     rw [h_core]; exact mainSpec_at trace binding i
-  have h_core_store_pc : (mainRowWithRomSt trace binding i).core.store_pc = 0 := by
+  have h_core_store_pc : (mainRowWithRomSt trace i).core.store_pc = 0 := by
     rw [h_core]; simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let pins : ZiskFv.Compliance.MainRowPins m i.val 0 OP_COPYB :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_main_c_match :
       ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2) :=
+          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)) 1 2) :=
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toClaim.sh_input.r2_val := d.toInputs.h_b0_value
   have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toClaim.sh_input.r2_val := d.toInputs.h_b1_value
@@ -818,7 +818,7 @@ theorem stepStrong_sh
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sh d.toClaim.sh_input d.toInputs.regs bus pins d.toDecode.h_main_ind_width d.toInputs.h_opcode_assumptions promises
-      (mainRowVar := mainConstVar (mainRowWithRomSt trace binding i)) (mainEnv := emptyMainEnv)
+      (mainRowVar := mainConstVar (mainRowWithRomSt trace i)) (mainEnv := emptyMainEnv)
       (by simpa only [eval_mainConstVar] using h_core)
       (by simpa only [eval_mainConstVar] using h_main_spec)
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
@@ -842,26 +842,26 @@ theorem stepStrong_sw
         (d.toClaim.sw_input.imm, regidx.Regidx d.toClaim.sw_input.r2, regidx.Regidx d.toClaim.sw_input.r1, 4))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt trace binding i d.toClaim.execRow).exec_row,
-           [ (busSt trace binding i d.toClaim.execRow).e0
-           , (busSt trace binding i d.toClaim.execRow).e1
-           , (busSt trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSt trace i d.toClaim.execRow).exec_row,
+           [ (busSt trace i d.toClaim.execRow).e0
+           , (busSt trace i d.toClaim.execRow).e1
+           , (busSt trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSt trace binding i d.toClaim.execRow
-  have h_core : (mainRowWithRomSt trace binding i).core =
+  let bus := busSt trace i d.toClaim.execRow
+  have h_core : (mainRowWithRomSt trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomSt_core trace binding i
   have h_main_spec :
-      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace binding i).core := by
+      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace i).core := by
     rw [h_core]; exact mainSpec_at trace binding i
-  have h_core_store_pc : (mainRowWithRomSt trace binding i).core.store_pc = 0 := by
+  have h_core_store_pc : (mainRowWithRomSt trace i).core.store_pc = 0 := by
     rw [h_core]; simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let pins : ZiskFv.Compliance.MainRowPins m i.val 0 OP_COPYB :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_main_c_match :
       ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2) :=
+          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)) 1 2) :=
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toClaim.sw_input.r2_val := d.toInputs.h_b0_value
   have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toClaim.sw_input.r2_val := d.toInputs.h_b1_value
@@ -884,7 +884,7 @@ theorem stepStrong_sw
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sw d.toClaim.sw_input d.toInputs.regs bus pins d.toDecode.h_main_ind_width d.toInputs.h_opcode_assumptions promises
-      (mainRowVar := mainConstVar (mainRowWithRomSt trace binding i)) (mainEnv := emptyMainEnv)
+      (mainRowVar := mainConstVar (mainRowWithRomSt trace i)) (mainEnv := emptyMainEnv)
       (by simpa only [eval_mainConstVar] using h_core)
       (by simpa only [eval_mainConstVar] using h_main_spec)
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
@@ -908,26 +908,26 @@ theorem stepStrong_sd
         (d.toClaim.sd_input.imm, regidx.Regidx d.toClaim.sd_input.r2, regidx.Regidx d.toClaim.sd_input.r1, 8))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt trace binding i d.toClaim.execRow).exec_row,
-           [ (busSt trace binding i d.toClaim.execRow).e0
-           , (busSt trace binding i d.toClaim.execRow).e1
-           , (busSt trace binding i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSt trace i d.toClaim.execRow).exec_row,
+           [ (busSt trace i d.toClaim.execRow).e0
+           , (busSt trace i d.toClaim.execRow).e1
+           , (busSt trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSt trace binding i d.toClaim.execRow
-  have h_core : (mainRowWithRomSt trace binding i).core =
+  let bus := busSt trace i d.toClaim.execRow
+  have h_core : (mainRowWithRomSt trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomSt_core trace binding i
   have h_main_spec :
-      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace binding i).core := by
+      ZiskFv.AirsClean.Main.Spec (mainRowWithRomSt trace i).core := by
     rw [h_core]; exact mainSpec_at trace binding i
-  have h_core_store_pc : (mainRowWithRomSt trace binding i).core.store_pc = 0 := by
+  have h_core_store_pc : (mainRowWithRomSt trace i).core.store_pc = 0 := by
     rw [h_core]; simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let pins : ZiskFv.Compliance.MainRowPins m i.val 0 OP_COPYB :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_main_c_match :
       ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace binding i)) 1 2) :=
+          (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)) 1 2) :=
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toClaim.sd_input.r2_val := d.toInputs.h_b0_value
   have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toClaim.sd_input.r2_val := d.toInputs.h_b1_value
@@ -950,7 +950,7 @@ theorem stepStrong_sd
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sd d.toClaim.sd_input d.toInputs.regs bus pins d.toInputs.h_opcode_assumptions promises
-      (mainRowVar := mainConstVar (mainRowWithRomSt trace binding i)) (mainEnv := emptyMainEnv)
+      (mainRowVar := mainConstVar (mainRowWithRomSt trace i)) (mainEnv := emptyMainEnv)
       (by simpa only [eval_mainConstVar] using h_core)
       (by simpa only [eval_mainConstVar] using h_main_spec)
       (by simpa only [eval_mainConstVar] using h_core_store_pc)

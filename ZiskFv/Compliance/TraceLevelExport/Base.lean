@@ -169,7 +169,7 @@ noncomputable def mainRowProvenance_of_pins
     `eval_mainConstVar`).  This lets the store `OpEnvelope` arms supply the
     `{mainRowVar}`/`{mainEnv}` implicit binders the constructor requires while
     keeping the `eval mainEnv mainRowVar`-shaped hypotheses equal to the concrete
-    trace row `mainRowWithRomSt trace binding i` — the same facts
+    trace row `mainRowWithRomSt trace i` — the same facts
     `construction_<store>_sound` proves.  Repackaging only: carries no trust. -/
 @[reducible]
 noncomputable def mainConstVar (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
