@@ -1,25 +1,36 @@
 import ZiskFv.Completeness.Rv64im.SailDecode
 
 /-!
-# Completeness endpoints
+# Completeness — blueprint
 
-The RV64IM acceptance/completeness surface, as two theorems with different status.
+Read top to bottom; the whole point is to make "the eventual theorem" and "what
+we currently assume" each a single named object.
 
-* `sail_executable_within_supported_decode_shape` — PROVEN, unconditional. A
-  Sail-only fact: every word Sail decodes to an RV64IM instruction has a
-  bit-layout in the `SupportedDecodeShape` enumeration. Mentions no ZisK.
-* `root_completeness` — CONDITIONAL. The end-to-end acceptance claim, stated over
-  abstract ZisK-pipeline predicates the caller (the Aeneas extraction harness)
-  must supply. This build cannot import that harness, so the predicates stay
-  abstract and the theorem stays conditional on them.
+* `ZiskSurface` — ZisK's production decode/lower/circuit surface as abstract
+  predicates on a raw word. Placeholders for the *real* ZisK predicates, which
+  live in the Aeneas-extracted world this build cannot import.
+* `ZiskSurface.Covers raw` — what "ZisK fully handles `raw`" means: the whole
+  pipeline succeeds and the soundness-row contract holds.
+* `EventualCompleteness state z` — **THE GOAL.** Every Sail-executable RV64IM word
+  outside the known decode gaps is covered by ZisK. This is what we want
+  *unconditionally*.
+* `ZiskSurface.CoverageAssumptions z` — **WHAT WE CURRENTLY ASSUME.** One field per
+  pipeline stage; each field is a plan item the Aeneas harness must discharge.
+* `sail_executable_within_supported_decode_shape` — PROVEN, and the *only* piece
+  actually established in this build: Sail-executable words land in
+  `SupportedDecodeShape`.
+* `root_completeness` — proves `CoverageAssumptions → EventualCompleteness`. The
+  ZisK content is carried entirely by the assumptions; the lone proven step is the
+  Sail→shape bridge.
 
-Both are *acceptance/coverage* claims (ZisK does not reject what Sail accepts),
-NOT correctness claims (that ZisK matches Sail when it runs) — correctness is the
-soundness axis (`ZiskFv.Compliance`).
+So the gap between today and the unconditional theorem is *exactly* the fields of
+`CoverageAssumptions`: discharge them (against ZisK's real surface, via the Aeneas
+bridge) and `root_completeness` yields `EventualCompleteness` outright.
 
-The abstract `Rv.Interface`-parametrized route under
-`ZiskFv/Completeness/Aspirational/` is quarantined and unused by either endpoint
-here; see that directory's `README.md`.
+Everything here is an *acceptance/coverage* claim (ZisK does not reject what Sail
+accepts), NOT a correctness claim (correctness is the soundness axis,
+`ZiskFv.Compliance`). The abstract `Rv.Interface` route under
+`ZiskFv/Completeness/Aspirational/` is quarantined and unused here.
 -/
 
 namespace ZiskFv.Completeness
@@ -30,107 +41,105 @@ open ZiskFv.Completeness.SailDecode
 /-- The Sail-side containment bridge (PROVEN, unconditional).
 
 Every Sail-executable RV64IM word has a bit-layout inside the
-`SupportedDecodeShape` enumeration. Proven by evaluating the real generated Sail
+`SupportedDecodeShape` enumeration, proven by evaluating the real generated Sail
 decoder/encoder (`LeanRV64D.Functions.ext_decode` / `encdec_forwards`).
 
-Universally quantified over:
-* `state` — a Sail machine state. The Sail decoder consults extension state, so
-  the claim is made relative to a fixed `state`.
-* `raw` — the 32-bit instruction word under consideration.
+* `state` / `raw` — a Sail machine state (the decoder consults extension state)
+  and the 32-bit word.
+* premise `Rv64imEnabledSailState state` — `state` has `M` enabled, `Zmmul`
+  disabled.
+* premise `SailRv64imExecutableRawIn state raw` — `raw` round-trips through Sail
+  to one of the eleven enumerated RV64IM instruction classes.
+* conclusion `SupportedDecodeShape raw` — `raw` matches one of the seven shape
+  families.
 
-Premises (the antecedents of the inner implications):
-* `Rv64imEnabledSailState state` — `state` is configured for RV64IM: the `M`
-  extension is enabled and `Zmmul` is disabled.
-* `SailRv64imExecutableRawIn state raw` — `raw` round-trips through Sail in
-  `state`: it decodes to some instruction that re-encodes back to `raw`, and that
-  instruction is one of the eleven enumerated RV64IM classes.
-
-Conclusion `SupportedDecodeShape raw` — `raw`'s bit-layout matches one of the
-seven structural shape families.
-
-Scope caveats: `SupportedDecodeShape` is a hand-written predicate
-(`Rv64im/Shapes.lean`), NOT ZisK's decoder — this proves nothing about ZisK; and
-the domain is self-gated, ranging only over words that already decode to an
-enumerated RV64IM instruction in canonical form. -/
+Caveat: `SupportedDecodeShape` is a hand-written predicate (`Rv64im/Shapes.lean`),
+NOT ZisK's decoder — this says nothing about ZisK. -/
 theorem sail_executable_within_supported_decode_shape :
     ∀ state raw, Rv64imEnabledSailState state →
       SailRv64imExecutableRawIn state raw → SupportedDecodeShape raw :=
   sail_rv64im_executable_contained_in_supported_decode_in
 
-/-- End-to-end RV64IM acceptance completeness (CONDITIONAL on the ZisK coverage
-obligations).
+/-- ZisK's production decode/lower/circuit surface, as abstract predicates on a
+raw 32-bit word. Each field is a placeholder for the corresponding *real* ZisK
+predicate that the Aeneas extraction would instantiate it with. -/
+structure ZiskSurface where
+  /-- ZisK's production decoder accepts (supports) the word. -/
+  decoderAccepts : BitVec 32 → Prop
+  /-- Lowering assigns the word an internal ZisK opcode. -/
+  loweringSucceeds : BitVec 32 → Prop
+  /-- ZisK builds a satisfying circuit row for the word. -/
+  rowMaterializes : BitVec 32 → Prop
+  /-- The word's opcode is in the set ZisK has proven sound per-opcode. -/
+  opcodeProven : BitVec 32 → Prop
+  /-- The static per-row input the soundness theorems consume. -/
+  rowSoundnessContract : BitVec 32 → Prop
+  /-- Explicitly recorded decode carve-outs (e.g. the FENCE subset ZisK rejects);
+  these words are excluded from any coverage claim. -/
+  knownDecodeGap : BitVec 32 → Prop
 
-For a fixed RV64IM-enabled Sail state, every Sail-executable raw word that is not
-a known decode gap is shown to clear ZisK's production pipeline (decode → lower →
-row → opcode) and to carry the soundness-row contract — *given* the per-stage
-coverage obligations below as hypotheses. The Sail half is discharged inline via
-`sail_executable_within_supported_decode_shape`.
+/-- "ZisK fully covers `raw`": the whole pipeline succeeds (decoder accepts →
+lowering → row → opcode) and the soundness-row contract holds. -/
+def ZiskSurface.Covers (z : ZiskSurface) (raw : BitVec 32) : Prop :=
+  (z.decoderAccepts raw ∧ z.loweringSucceeds raw ∧
+    z.rowMaterializes raw ∧ z.opcodeProven raw) ∧ z.rowSoundnessContract raw
 
-This is an *acceptance* claim (ZisK accepts and processes the word), NOT a
-correctness claim (correctness is the soundness axis). The ZisK predicates are
-abstract and supplied by the caller — concretely the Aeneas extraction harness,
-which this build cannot import, so the theorem stays conditional.
+/-- **THE GOAL.** Every Sail-executable RV64IM word (in an RV64IM-enabled state),
+outside ZisK's known decode gaps, is fully covered by ZisK. This is the eventual
+*unconditional* completeness theorem; `root_completeness` delivers it once the
+`CoverageAssumptions` are discharged. -/
+def EventualCompleteness (state : SailState) (z : ZiskSurface) : Prop :=
+  ∀ raw, SailRv64imExecutableRawIn state raw → ¬ z.knownDecodeGap raw → z.Covers raw
 
-State parameters:
+/-- **WHAT WE CURRENTLY ASSUME.** The per-stage coverage facts about ZisK's real
+surface, to be discharged by the Aeneas extraction harness. Each field is one
+item on the plan; discharging all of them closes the gap to
+`EventualCompleteness`. -/
+structure ZiskSurface.CoverageAssumptions (z : ZiskSurface) : Prop where
+  /-- PLAN ITEM (the only one touching the Sail-derived shape domain): every
+  in-shape word that is not a known gap is accepted by ZisK's decoder. -/
+  decoderAcceptsInShape :
+    ∀ raw, SupportedDecodeShape raw → ¬ z.knownDecodeGap raw → z.decoderAccepts raw
+  /-- PLAN ITEM: every accepted word lowers. -/
+  loweringTotal : ∀ raw, z.decoderAccepts raw → z.loweringSucceeds raw
+  /-- PLAN ITEM: every lowered word materializes a row. -/
+  rowTotal : ∀ raw, z.loweringSucceeds raw → z.rowMaterializes raw
+  /-- PLAN ITEM: every accepted word's opcode is proven. -/
+  opcodeTotal : ∀ raw, z.decoderAccepts raw → z.opcodeProven raw
+  /-- PLAN ITEM: every in-shape, lowered word satisfies the soundness contract. -/
+  soundnessContract :
+    ∀ raw, SupportedDecodeShape raw → z.loweringSucceeds raw →
+      z.rowSoundnessContract raw
+
+/-- Completeness, as `CoverageAssumptions → EventualCompleteness`.
+
+Blueprint reading: GIVEN an RV64IM-enabled Sail `state`, ZisK's (abstract)
+surface `z`, and the coverage `assumptions` about it, THEN every Sail-executable
+RV64IM word outside the known gaps is covered by ZisK.
+
+The lone step proven outright is the Sail→shape bridge
+(`sail_executable_within_supported_decode_shape`); all ZisK content is carried by
+`assumptions`. Discharge `assumptions` and this is `EventualCompleteness state z`
+unconditionally.
+
 * `state` — the Sail machine state decoding is evaluated against.
-* `h_state` — evidence `state` is RV64IM-configured (`M` enabled, `Zmmul`
-  disabled).
-
-ZisK-side predicates (abstract; each a property of a 32-bit raw word, to be
-instantiated by the harness):
-* `ziskDecoderAccepts` — ZisK's production decoder supports the word.
-* `ziskLoweringSucceeds` — lowering assigns the word an internal ZisK opcode.
-* `ziskRowMaterializes` — ZisK builds a circuit row for the word. (NB: in the
-  current harness this is defined as merely "decoder accepted", not a satisfying
-  row — the name is stronger than what backs it.)
-* `ziskOpcodeProven` — the word's opcode is in the set proven sound per-opcode.
-* `ziskRowSoundnessContract` — the static per-row input the soundness theorems
-  consume holds for the word.
-* `knownDecodeGap` — the explicitly recorded decode carve-outs (e.g. the FENCE
-  subset ZisK rejects); such words are excluded from the conclusion.
-
-Coverage obligations (the conditional content — discharged elsewhere, not here):
-* `h_decoder_accepts_outside_gaps` — every in-shape word that is not a known gap
-  is accepted by the decoder.
-* `h_lowering_total` — every accepted word lowers.
-* `h_row_materialization_total` — every lowered word materializes a row.
-* `h_opcode_coverage_total` — every accepted word lands in the proven-opcode set.
-* `h_soundness_contract` — every in-shape, lowered word satisfies the
-  soundness-row contract.
-
-Conclusion: for every `raw` that is Sail-executable in `state` and not a known
-decode gap, ZisK accepts it, lowers it, materializes a row, its opcode is proven,
-and the soundness-row contract holds. -/
+* `h_state` — evidence `state` is RV64IM-configured (`M` on, `Zmmul` off).
+* `z` — the ZisK surface (the abstract predicates).
+* `assumptions` — the per-stage coverage facts about `z` (the plan items). -/
 theorem root_completeness
     (state : SailState) (h_state : Rv64imEnabledSailState state)
-    (ziskDecoderAccepts ziskLoweringSucceeds : BitVec 32 → Prop)
-    (ziskRowMaterializes ziskOpcodeProven : BitVec 32 → Prop)
-    (ziskRowSoundnessContract knownDecodeGap : BitVec 32 → Prop)
-    (h_decoder_accepts_outside_gaps :
-      ∀ raw, SupportedDecodeShape raw → ¬ knownDecodeGap raw → ziskDecoderAccepts raw)
-    (h_lowering_total :
-      ∀ raw, ziskDecoderAccepts raw → ziskLoweringSucceeds raw)
-    (h_row_materialization_total :
-      ∀ raw, ziskLoweringSucceeds raw → ziskRowMaterializes raw)
-    (h_opcode_coverage_total :
-      ∀ raw, ziskDecoderAccepts raw → ziskOpcodeProven raw)
-    (h_soundness_contract :
-      ∀ raw, SupportedDecodeShape raw → ziskLoweringSucceeds raw →
-        ziskRowSoundnessContract raw) :
-    ∀ raw, SailRv64imExecutableRawIn state raw → ¬ knownDecodeGap raw →
-      (ziskDecoderAccepts raw ∧ ziskLoweringSucceeds raw ∧
-        ziskRowMaterializes raw ∧ ziskOpcodeProven raw) ∧
-      ziskRowSoundnessContract raw := by
+    (z : ZiskSurface) (assumptions : z.CoverageAssumptions) :
+    EventualCompleteness state z := by
   intro raw h_sail h_not_gap
   have h_shape :=
     sail_executable_within_supported_decode_shape state raw h_state h_sail
-  have h_decode := h_decoder_accepts_outside_gaps raw h_shape h_not_gap
-  have h_lower := h_lowering_total raw h_decode
+  have h_decode := assumptions.decoderAcceptsInShape raw h_shape h_not_gap
+  have h_lower := assumptions.loweringTotal raw h_decode
   exact
     ⟨⟨h_decode,
         h_lower,
-        h_row_materialization_total raw h_lower,
-        h_opcode_coverage_total raw h_decode⟩,
-      h_soundness_contract raw h_shape h_lower⟩
+        assumptions.rowTotal raw h_lower,
+        assumptions.opcodeTotal raw h_decode⟩,
+      assumptions.soundnessContract raw h_shape h_lower⟩
 
 end ZiskFv.Completeness
