@@ -79,7 +79,7 @@ set_option maxHeartbeats 2000000
 /-- Sound SUBW construction (m32 = 1 word ALU). Unique opcode `OP_SUB_W`
     (`Or.inr` of the shared W Layer-A wrapper). -/
 theorem construction_subw_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (subw_input : PureSpec.SubwInput)
@@ -259,7 +259,7 @@ theorem construction_subw_sound_claimed_dead
     `construction_subw_sound`: op pin `OP_ADD_W` (`Or.inl` of the shared W
     Layer-A wrapper), `ropw.ADDW`, `execute_RTYPE_addw_pure`, `equiv_ADDW`. -/
 theorem construction_addw_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (addw_input : PureSpec.AddwInput)
@@ -438,7 +438,7 @@ theorem construction_addw_sound_claimed_dead
     derives the immediate byte decomposition internally from `h_addiw_subset` +
     `h_match`, so the construction supplies only the r1 lane extract. -/
 theorem construction_addiw_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (addiw_input : PureSpec.AddiwInput)

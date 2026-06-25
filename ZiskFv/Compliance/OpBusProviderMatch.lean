@@ -20,8 +20,8 @@ namespace ZiskFv.Compliance
 open ZiskFv.AirsClean.FullEnsemble
 
 theorem main_request_logic_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -56,17 +56,17 @@ theorem main_request_logic_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -79,28 +79,28 @@ theorem main_request_logic_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     exists_staticBinary_provider_row_matches_legacy_main_of_logic_active_main_row_interaction
@@ -111,8 +111,8 @@ theorem main_request_logic_provided
         h_mainInteraction_eval h_active h_main_op
 
 theorem main_request_sub_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -141,17 +141,17 @@ theorem main_request_sub_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -164,28 +164,28 @@ theorem main_request_sub_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     exists_staticBinary_provider_row_matches_legacy_main_of_sub_active_main_row_interaction
@@ -196,8 +196,8 @@ theorem main_request_sub_provided
         h_mainInteraction_eval h_active h_main_op
 
 theorem main_request_add_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -243,17 +243,17 @@ theorem main_request_add_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -266,28 +266,28 @@ theorem main_request_add_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   have h_main_component_spec :
       trace.mainTable.component.Spec
@@ -319,8 +319,8 @@ theorem main_request_add_provided
         h_mainInteraction_eval h_active h_main_op⟩
 
 theorem main_request_compare_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -352,17 +352,17 @@ theorem main_request_compare_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -375,28 +375,28 @@ theorem main_request_compare_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     exists_staticBinary_provider_row_matches_legacy_main_of_compare_active_main_row_interaction
@@ -407,8 +407,8 @@ theorem main_request_compare_provided
         h_mainInteraction_eval h_active h_main_op
 
 theorem main_request_w_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -440,17 +440,17 @@ theorem main_request_w_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -463,28 +463,28 @@ theorem main_request_w_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     exists_staticBinary_provider_row_matches_legacy_main_of_w_active_main_row_interaction
@@ -495,8 +495,8 @@ theorem main_request_w_provided
         h_mainInteraction_eval h_active h_main_op
 
 theorem main_request_shift_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -541,17 +541,17 @@ theorem main_request_shift_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -564,28 +564,28 @@ theorem main_request_shift_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     exists_binaryExtension_provider_row_matches_legacy_main_of_shift_active_main_row_interaction
@@ -607,8 +607,8 @@ theorem main_request_shift_provided
     `providerTable.Spec` is `FullSpec (rowInput …)` and the match is against the
     ArithMul primary op-bus message. -/
 theorem main_request_mulw_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -637,17 +637,17 @@ theorem main_request_mulw_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -660,28 +660,28 @@ theorem main_request_mulw_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     ZiskFv.AirsClean.FullEnsemble.exists_arithMul_provider_row_matches_primary_of_mulw_active_main_row_interaction
@@ -701,8 +701,8 @@ theorem main_request_mulw_provided
     MULHU-mode bridge in `ArithMul/Bridge.lean` later reduces it to the
     secondary d-lane `opBus_row_ArithMulSecondary`. -/
 theorem main_request_mulhu_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -731,17 +731,17 @@ theorem main_request_mulhu_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -754,28 +754,28 @@ theorem main_request_mulhu_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     ZiskFv.AirsClean.FullEnsemble.exists_arithMul_provider_row_matches_secondary_of_mulhu_active_main_row_interaction
@@ -797,8 +797,8 @@ theorem main_request_mulhu_provided
     `ArithMul/Bridge.lean` later reduces it to the div quotient-lane
     `opBus_row_ArithDiv`. -/
 theorem main_request_divu_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -827,17 +827,17 @@ theorem main_request_divu_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -850,28 +850,28 @@ theorem main_request_divu_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     ZiskFv.AirsClean.FullEnsemble.exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_interaction
@@ -892,8 +892,8 @@ theorem main_request_divu_provided
     against the muxed `primaryOpBusMessage`.  The DIVU-mode op-bus bridge later
     reduces it to the div quotient-lane `opBus_row_ArithDiv`. -/
 theorem main_request_divuw_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -922,17 +922,17 @@ theorem main_request_divuw_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -945,28 +945,28 @@ theorem main_request_divuw_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     ZiskFv.AirsClean.FullEnsemble.exists_arithMul_provider_row_matches_primary_of_divuw_active_main_row_interaction
@@ -988,8 +988,8 @@ theorem main_request_divuw_provided
     `ConstructionRemu.lean` later reduces it (at `div = 1`, `main_div = 0`,
     `main_mul = 0`) to the div remainder-lane `opBus_row_ArithDivSecondary`. -/
 theorem main_request_remu_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -1018,17 +1018,17 @@ theorem main_request_remu_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -1041,28 +1041,28 @@ theorem main_request_remu_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     ZiskFv.AirsClean.FullEnsemble.exists_arithMul_provider_row_matches_primary_of_remu_active_main_row_interaction
@@ -1085,8 +1085,8 @@ theorem main_request_remu_provided
     `main_mul = 0`) to the div remainder-lane `opBus_row_ArithDivSecondary`; the
     `m32` flag plays no role in the mux. -/
 theorem main_request_remuw_provided
-    (trace : AcceptedZiskTrace)
-    (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -1115,17 +1115,17 @@ theorem main_request_remuw_provided
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
       (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+          numInstructions trace.program).rowInputVar.core.is_external_op)
       (ZiskFv.AirsClean.Main.opBusMessageExpr
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+          numInstructions trace.program).rowInputVar.core)).toRaw).eval
       (trace.mainTable.environment mainRow)
   have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by
     simp [mainRow]
   have h_main_row :
       eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core =
+          numInstructions trace.program).rowInputVar.core =
         ZiskFv.AirsClean.Main.rowAt
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
           i.val := by
@@ -1138,28 +1138,28 @@ theorem main_request_remuw_provided
           ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
     simpa [mainInteraction, mainRow] using
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mem_interactionsWith
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         trace.mainTable_component h_mainRow_mem
   have h_mainInteraction_eval :
       mainInteraction =
         ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
           (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core.is_external_op)
+              numInstructions trace.program).rowInputVar.core.is_external_op)
           (ZiskFv.AirsClean.Main.opBusMessageExpr
             (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-              trace.numInstructions trace.program).rowInputVar.core)).toRaw).eval
+              numInstructions trace.program).rowInputVar.core)).toRaw).eval
           (trace.mainTable.environment mainRow) := rfl
   have h_active_row :
       (eval (trace.mainTable.environment mainRow)
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
+          numInstructions trace.program).rowInputVar.core).is_external_op = 1 := by
     rw [h_main_row]
     simpa [ZiskFv.AirsClean.Main.rowAt] using h_main_active
   have h_active : mainInteraction.mult = -1 := by
     rw [h_mainInteraction_eval]
     exact
       ZiskFv.AirsClean.FullEnsemble.main_op_row_eval_mult_neg_one_of_active
-        (length := trace.numInstructions) (program := trace.program)
+        (length := numInstructions) (program := trace.program)
         (trace.mainTable.environment mainRow) h_active_row
   exact
     ZiskFv.AirsClean.FullEnsemble.exists_arithMul_provider_row_matches_primary_of_remuw_active_main_row_interaction

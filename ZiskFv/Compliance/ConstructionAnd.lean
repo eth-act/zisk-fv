@@ -106,7 +106,7 @@ set_option maxHeartbeats 2000000
     circuit-internal rd arithmetic, the MemBus `m0..m2` shape, `h_lane_rd`, and
     the lane→Sail binding facts. -/
 theorem construction_and_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (and_input : PureSpec.AndInput)

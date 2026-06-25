@@ -101,7 +101,7 @@ set_option maxHeartbeats 2000000
     the real Main table. Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
 noncomputable def mainRowWithRomLd
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program trace.mainTable i.val
@@ -113,7 +113,7 @@ noncomputable def mainRowWithRomLd
     `matches_memory_entry_refl`. -/
 @[reducible]
 noncomputable def busLd
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (execRow : List (Interaction.ExecutionBusEntry FGL)) :
     ZiskFv.Compliance.BusRows where
   exec_row := execRow
@@ -127,7 +127,7 @@ noncomputable def busLd
 /-- The Main row provenance at trace index `i`: `mainRowWithRomLd`'s `.core`
     equals the honest `rowAt (mainOfTable …) i`. Shared by all seven loads. -/
 theorem mainRowWithRomLd_core
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
     (mainRowWithRomLd trace binding i).core =
       ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -153,7 +153,7 @@ theorem mainRowWithRomLd_core
       provider row backing the read. Not balance-derivable here (the
       Mem-channel balance leaves a 5-way provider disjunction). -/
 theorem construction_ld_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (ld_input : PureSpec.LdInput)
@@ -297,7 +297,7 @@ theorem construction_ld_sound_claimed_dead
       backing the narrow read (3 MemAlign validators + core/lookup + the
       `SubdoublewordLoadProviderWitness`). Not balance-derivable here. -/
 theorem construction_lbu_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (lbu_input : PureSpec.LbuInput)
@@ -431,7 +431,7 @@ theorem construction_lbu_sound_claimed_dead
     `construction_lbu_sound`: width literal `2`; `h_width = 2`; `LbuInput →
     LhuInput`; `LOADBU → LOADHU`. Same #76 residual budget. -/
 theorem construction_lhu_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (lhu_input : PureSpec.LhuInput)
@@ -557,7 +557,7 @@ theorem construction_lhu_sound_claimed_dead
     `construction_lhu_sound`: width literal `4`; `h_width = 4`; `LhuInput →
     LwuInput`; `LOADHU → LOADWU`. Same #76 residual budget. -/
 theorem construction_lwu_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (lwu_input : PureSpec.LwuInput)
@@ -694,7 +694,7 @@ theorem construction_lwu_sound_claimed_dead
     exists; not derivable at this layer — FLAGGED):**
     * `v`, `r_binary`, `offset`, `env`, `h_static`, `h_match`. -/
 theorem construction_lb_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (lb_input : PureSpec.LbInput)
@@ -832,7 +832,7 @@ theorem construction_lb_sound_claimed_dead
     `construction_lb_sound`: `OP_SIGNEXTEND_H`; `LbInput → LhInput`; width
     literal `2`; `LOADB → LOADH`. Same residual budget. -/
 theorem construction_lh_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (lh_input : PureSpec.LhInput)
@@ -962,7 +962,7 @@ theorem construction_lh_sound_claimed_dead
     `OP_SIGNEXTEND_W`; `LhInput → LwInput`; width literal `4`; `LOADH → LOADW`.
     Same residual budget. -/
 theorem construction_lw_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (lw_input : PureSpec.LwInput)

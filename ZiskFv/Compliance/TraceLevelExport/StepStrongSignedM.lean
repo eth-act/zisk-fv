@@ -65,7 +65,7 @@ set_option maxHeartbeats 8000000
     the two exceptional product-sign shapes the ArithTable admits for op 180, so an
     honest signed MUL row supplies all binders. -/
 theorem stepStrong_mul
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i)
     (h_known : Defects.NoKnownDefect (mulEnvOf trace binding i d)) :
     (do
@@ -98,7 +98,7 @@ theorem stepStrong_mul
     consumes the documented SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b` carried by
     `RowData_mulh`.  Non-vacuous. -/
 theorem stepStrong_mulh
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i)
     (h_known : Defects.NoKnownDefect (mulhEnvOf trace binding i d)) :
     (do
@@ -124,7 +124,7 @@ theorem stepStrong_mulh
     Companion of `stepStrong_mulh` for the signed × unsigned high multiply
     (op 179).  Carries ONE sign-range residual `h_sign_a` (op2 unsigned). -/
 theorem stepStrong_mulhsu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i)
     (h_known : Defects.NoKnownDefect (mulhsuEnvOf trace binding i d)) :
     (do
@@ -167,7 +167,7 @@ theorem stepStrong_mulhsu
     forge (codygunton/zisk#5), and divisor-zero rows are handled by
     `h_boundary`; signed overflow is handled by the signed DIV bridge. -/
 theorem stepStrong_div
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i)
     (h_known : Defects.NoKnownDefect (divEnvOf trace binding i d)) :
     (do
@@ -190,7 +190,7 @@ theorem stepStrong_div
     `h_known` is the GENUINE `NoKnownDefect (remEnvOf …)`, SATISFIABLE for an honest
     signed REM row (`RowData_rem.h_not_forge`).  Non-vacuous. -/
 theorem stepStrong_rem
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i)
     (h_known : Defects.NoKnownDefect (remEnvOf trace binding i d)) :
     (do
@@ -214,7 +214,7 @@ theorem stepStrong_rem
     `NoKnownDefect (divwEnvOf …)`, SATISFIABLE for an honest signed DIVW row
     (`RowData_divw.h_not_forge`, `|r₃₂| ≠ |op2₃₂|`).  Non-vacuous. -/
 theorem stepStrong_divw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i)
     (h_known : Defects.NoKnownDefect (divwEnvOf trace binding i d)) :
     (do
@@ -235,7 +235,7 @@ theorem stepStrong_divw
     W-mode analogue of `stepStrong_rem` (signed 32-bit remainder, op `189`,
     `m32 = 1`, secondary lane).  Non-vacuous (`RowData_remw.h_not_forge`). -/
 theorem stepStrong_remw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remw trace binding i)
     (h_known : Defects.NoKnownDefect (remwEnvOf trace binding i d)) :
     (do
@@ -269,7 +269,7 @@ theorem stepStrong_remw
     proves it.  Non-vacuous: the malicious FENCE shapes are excluded exactly by the
     honest-shape pins the caller supplies, as the FENCE defect ledger documents. -/
 theorem stepStrong_fence
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i)
     (h_known : Defects.NoKnownDefect (fenceEnvOf trace binding i d)) :
     execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding i)

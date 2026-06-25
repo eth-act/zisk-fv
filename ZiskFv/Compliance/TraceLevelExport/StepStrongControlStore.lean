@@ -70,7 +70,7 @@ the corresponding `bus_effect`-form arms (channel-balance form, same data). -/
     conjunct.  `aeneasBridgeTrust` is flat decode pins carried as `RowData_beq`
     residuals; `NoKnownDefect` comes from the threaded `h_known_arm`. -/
 theorem stepStrong_beq
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_beq trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -111,7 +111,7 @@ theorem stepStrong_beq
 
 /-- Strengthened `bne` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bne
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_bne trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -152,7 +152,7 @@ theorem stepStrong_bne
 
 /-- Strengthened `blt` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_blt
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_blt trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -193,7 +193,7 @@ theorem stepStrong_blt
 
 /-- Strengthened `bge` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bge
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_bge trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -234,7 +234,7 @@ theorem stepStrong_bge
 
 /-- Strengthened `bltu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bltu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_bltu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -275,7 +275,7 @@ theorem stepStrong_bltu
 
 /-- Strengthened `bgeu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_bgeu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_bgeu trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -327,7 +327,7 @@ theorem stepStrong_bgeu
     `⟨⟨provenance⟩, row_mode, h_imm_lo_nat, h_imm_hi_nat⟩`; `memoryTimeline`
     trivially; `NoKnownDefect` from the threaded `h_known_arm` (non-defect). -/
 theorem stepStrong_lui
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lui trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -415,7 +415,7 @@ theorem stepStrong_lui
     `⟨⟨provenance⟩, row_mode, h_offset_bridge, h_pc_bridge⟩`; `NoKnownDefect` from
     the threaded `h_known_arm` (non-defect). -/
 theorem stepStrong_auipc
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_auipc trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -503,7 +503,7 @@ theorem stepStrong_auipc
     `⟨⟨provenance⟩, row_mode, h_jmp2, h_pc_bridge⟩`; `NoKnownDefect` from the
     threaded `h_known_arm` (non-defect). -/
 theorem stepStrong_jal
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_jal trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -591,7 +591,7 @@ theorem stepStrong_jal
     `NoKnownDefect`.  JALR's `aeneasBridgeTrust` is flat decode pins already in
     `RowData_jalr` (no `MainRowProvenance`). -/
 theorem stepStrong_jalr
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_jalr trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -700,7 +700,7 @@ private def emptyMainEnv : Environment FGL :=
 
 /-- Strengthened `sb` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sb
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sb trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -766,7 +766,7 @@ theorem stepStrong_sb
 
 /-- Strengthened `sh` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sh
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sh trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -832,7 +832,7 @@ theorem stepStrong_sh
 
 /-- Strengthened `sw` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sw
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sw trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
@@ -898,7 +898,7 @@ theorem stepStrong_sw
 
 /-- Strengthened `sd` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_sd
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sd trace binding i)
     (h_known_arm : EnvNoKnownDefectFor
       (state := binding i)
