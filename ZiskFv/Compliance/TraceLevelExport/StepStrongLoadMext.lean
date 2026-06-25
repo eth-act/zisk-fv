@@ -656,14 +656,14 @@ theorem stepStrong_mulw
            , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  set v := vOfMulwRow (mulwArow trace binding i d.toInputs.h_main_active d.toInputs.h_main_op) with hv
+  set v := vOfMulwRow (mulwArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op) with hv
   have h_full : ZiskFv.AirsClean.ArithMul.FullSpec (ZiskFv.AirsClean.ArithMul.rowAt v 0) :=
-    mulwArow_fullSpec trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    mulwArow_fullSpec trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   have h_match_primary :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
         (ZiskFv.Airs.ArithMul.opBus_row_Arith v 0) :=
-    mulwArow_match trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    mulwArow_match trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩ := h_full
   let arith_table : ZiskFv.Compliance.ArithMulTableWitness v 0 :=
     arithMulTableWitness_of_fullSpec ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩
@@ -674,7 +674,7 @@ theorem stepStrong_mulw
   have h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v 0 := ⟨h_spec, h_c46⟩
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_MUL_W :=
-    ⟨d.toInputs.h_main_active, d.toInputs.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
       (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
@@ -722,9 +722,9 @@ theorem stepStrong_mulw
     OpEnvelope.mulw d.toInputs.mulw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
       pins h_match_primary promises arith_mem h_row_constraints
       arith_table arith_chunk_ranges arith_carry_ranges
-      d.toInputs.h_a23 d.toInputs.h_b23 d.toInputs.h_sext_choice d.toInputs.h_rs1_value d.toInputs.h_rs2_value
+      (d.toInputs.h_a23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_b23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_sext_choice d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
   have h_bridge : env.aeneasBridgeTrust := by
-    refine ⟨d.toInputs.h_main_active, d.toInputs.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+    refine ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
@@ -768,14 +768,14 @@ theorem stepStrong_mulhu
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   -- Balance-selected SHARED-ArithMul provider row + its FullSpec (ArithMul view).
-  set v := vOfMulwRow (mulhuArow trace binding i d.toInputs.h_main_active d.toInputs.h_main_op) with hv
+  set v := vOfMulwRow (mulhuArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op) with hv
   have h_full : ZiskFv.AirsClean.ArithMul.FullSpec (ZiskFv.AirsClean.ArithMul.rowAt v 0) :=
-    mulhuArow_fullSpec trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    mulhuArow_fullSpec trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   have h_match_secondary :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
         (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v 0) :=
-    mulhuArow_match trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    mulhuArow_match trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   -- The three lookup-witnesses, BUILT from FullSpec.
   obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩ := h_full
   let arith_table : ZiskFv.Compliance.ArithMulTableWitness v 0 :=
@@ -788,7 +788,7 @@ theorem stepStrong_mulhu
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v 0 := ⟨h_spec, h_c46⟩
   -- Decode pins bundle.
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_MULUH :=
-    ⟨d.toInputs.h_main_active, d.toInputs.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   -- Main rd-write memory witness, from `store_pc = 0`.
   have h_core_store_pc :
       (mainRowWithRomSub trace i).core.store_pc = 0 := by
@@ -837,9 +837,9 @@ theorem stepStrong_mulhu
   let env : OpEnvelope state m i.val :=
     OpEnvelope.mulhu d.toInputs.mulhu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
-      arith_table arith_chunk_ranges arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
+      arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
   have h_bridge : env.aeneasBridgeTrust := by
-    refine ⟨d.toInputs.h_main_active, d.toInputs.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+    refine ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
@@ -874,16 +874,16 @@ theorem stepStrong_divu
            , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  set arow := divuArow trace binding i d.toInputs.h_main_active d.toInputs.h_main_op with harow
+  set arow := divuArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op with harow
   set v := vOfDivuRow arow with hv
   -- SHARED-ArithMul provider FullSpec of the selected row.
   have h_full_mul : ZiskFv.AirsClean.ArithMul.FullSpec arow :=
-    divuArow_fullSpec_row trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    divuArow_fullSpec_row trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   have h_match_primary :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
         (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v 0) :=
-    divuArow_match trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    divuArow_match trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   -- ArithDiv-view FullSpec + the four lookup-witnesses, BUILT from it.
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
@@ -901,7 +901,7 @@ theorem stepStrong_divu
       ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
   -- Decode pins bundle.
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_DIVU :=
-    ⟨d.toInputs.h_main_active, d.toInputs.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   -- Main rd-write memory witness, from `store_pc = 0`.
   have h_core_store_pc :
       (mainRowWithRomSub trace i).core.store_pc = 0 := by
@@ -949,10 +949,10 @@ theorem stepStrong_divu
   let env : OpEnvelope state m i.val :=
     OpEnvelope.divu d.toInputs.divu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
       pins h_match_primary promises arith_mem d.toDecode.bounds h_row_constraints
-      arith_table arith_chunk_ranges arith_carry_ranges d.toInputs.remainder_bound
-      d.toInputs.h_rs1_value d.toInputs.h_rs2_value
+      arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.remainder_bound d.toDecode.h_main_active d.toDecode.h_main_op)
+      (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
   have h_bridge : env.aeneasBridgeTrust := by
-    refine ⟨d.toInputs.h_main_active, d.toInputs.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+    refine ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
@@ -982,15 +982,15 @@ theorem stepStrong_divuw
            , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  set arow := divuwArow trace binding i d.toInputs.h_main_active d.toInputs.h_main_op with harow
+  set arow := divuwArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op with harow
   set v := vOfDivuRow arow with hv
   have h_full_mul : ZiskFv.AirsClean.ArithMul.FullSpec arow :=
-    divuwArow_fullSpec_row trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    divuwArow_fullSpec_row trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   have h_match_primary :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
         (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v 0) :=
-    divuwArow_match trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    divuwArow_match trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
@@ -1006,7 +1006,7 @@ theorem stepStrong_divuw
     divu_row_constraints_of_arithMul_fullSpec arow
       ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_DIVU_W :=
-    ⟨d.toInputs.h_main_active, d.toInputs.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
       (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
@@ -1053,10 +1053,10 @@ theorem stepStrong_divuw
   let env : OpEnvelope state m i.val :=
     OpEnvelope.divuw d.toInputs.divuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
       pins h_match_primary promises arith_mem d.toDecode.bounds h_row_constraints
-      arith_table arith_chunk_ranges arith_carry_ranges d.toInputs.remainder_bound
-      d.toInputs.h_b23 d.toInputs.h_c23 d.toInputs.h_sext_choice d.toInputs.h_rs1_value d.toInputs.h_rs2_value
+      arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.remainder_bound d.toDecode.h_main_active d.toDecode.h_main_op)
+      (d.toInputs.h_b23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_c23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_sext_choice d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
   have h_bridge : env.aeneasBridgeTrust := by
-    refine ⟨d.toInputs.h_main_active, d.toInputs.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+    refine ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
@@ -1085,15 +1085,15 @@ theorem stepStrong_remu
            , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  set arow := remuArow trace binding i d.toInputs.h_main_active d.toInputs.h_main_op with harow
+  set arow := remuArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op with harow
   set v := vOfDivuRow arow with hv
   have h_full_mul : ZiskFv.AirsClean.ArithMul.FullSpec arow :=
-    remuArow_fullSpec_row trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    remuArow_fullSpec_row trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   have h_match_secondary :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
         (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v 0) :=
-    remuArow_match trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    remuArow_match trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
@@ -1109,7 +1109,7 @@ theorem stepStrong_remu
     divu_row_constraints_of_arithMul_fullSpec arow
       ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_REMU :=
-    ⟨d.toInputs.h_main_active, d.toInputs.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
       (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
@@ -1156,10 +1156,10 @@ theorem stepStrong_remu
   let env : OpEnvelope state m i.val :=
     OpEnvelope.remu d.toInputs.remu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
-      arith_table arith_chunk_ranges arith_carry_ranges d.toInputs.remainder_bound
-      d.toInputs.h_rs1_value d.toInputs.h_rs2_value
+      arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.remainder_bound d.toDecode.h_main_active d.toDecode.h_main_op)
+      (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
   have h_bridge : env.aeneasBridgeTrust := by
-    refine ⟨d.toInputs.h_main_active, d.toInputs.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+    refine ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
@@ -1187,15 +1187,15 @@ theorem stepStrong_remuw
            , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  set arow := remuwArow trace binding i d.toInputs.h_main_active d.toInputs.h_main_op with harow
+  set arow := remuwArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op with harow
   set v := vOfDivuRow arow with hv
   have h_full_mul : ZiskFv.AirsClean.ArithMul.FullSpec arow :=
-    remuwArow_fullSpec_row trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    remuwArow_fullSpec_row trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   have h_match_secondary :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
         (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v 0) :=
-    remuwArow_match trace binding i d.toInputs.h_main_active d.toInputs.h_main_op
+    remuwArow_match trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
@@ -1211,7 +1211,7 @@ theorem stepStrong_remuw
     divu_row_constraints_of_arithMul_fullSpec arow
       ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_REMU_W :=
-    ⟨d.toInputs.h_main_active, d.toInputs.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
       (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
@@ -1258,10 +1258,10 @@ theorem stepStrong_remuw
   let env : OpEnvelope state m i.val :=
     OpEnvelope.remuw d.toInputs.remuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
-      arith_table arith_chunk_ranges arith_carry_ranges d.toInputs.remainder_bound
-      d.toInputs.h_b23 d.toInputs.h_c23 d.toInputs.h_sext_choice d.toInputs.h_rs1_value d.toInputs.h_rs2_value
+      arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.remainder_bound d.toDecode.h_main_active d.toDecode.h_main_op)
+      (d.toInputs.h_b23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_c23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_sext_choice d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
   have h_bridge : env.aeneasBridgeTrust := by
-    refine ⟨d.toInputs.h_main_active, d.toInputs.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+    refine ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=

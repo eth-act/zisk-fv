@@ -558,6 +558,10 @@ structure Claim_mulw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
 
 structure Decode_mulw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulw trace i) : Type where
+  h_main_op :
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W
+  h_main_active :
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
@@ -575,10 +579,6 @@ structure Decode_mulw (trace : AcceptedZiskTrace numInstructions)
 structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulw trace i) : Type where
   mulw_input : PureSpec.MulwInput
-  h_main_op :
-    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W
-  h_main_active :
-    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_input_r1 :
     read_xreg (regidx_to_fin c.r1) (binding i)
       = EStateM.Result.ok mulw_input.r1_val (binding i)
@@ -595,36 +595,46 @@ structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     mulw_input.rd =
       Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   h_a23 :
-    ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_2 0).val = 0
-      ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_3 0).val = 0
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W),
+    ((vOfMulwRow (mulwArow trace binding i ha ho)).a_2 0).val = 0
+      ∧ ((vOfMulwRow (mulwArow trace binding i ha ho)).a_3 0).val = 0
   h_b23 :
-    ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_2 0).val = 0
-      ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_3 0).val = 0
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W),
+    ((vOfMulwRow (mulwArow trace binding i ha ho)).b_2 0).val = 0
+      ∧ ((vOfMulwRow (mulwArow trace binding i ha ho)).b_3 0).val = 0
   h_sext_choice :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W),
     ((((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 0
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 0
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 0
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 0)
-        ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_0 0).val
-            + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_1 0).val * 65536
+        ∧ ((vOfMulwRow (mulwArow trace binding i ha ho)).c_0 0).val
+            + ((vOfMulwRow (mulwArow trace binding i ha ho)).c_1 0).val * 65536
               < 2147483648)
       ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 255
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 255
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 255
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 255)
-        ∧ ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_0 0).val
-            + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).c_1 0).val * 65536
+        ∧ ((vOfMulwRow (mulwArow trace binding i ha ho)).c_0 0).val
+            + ((vOfMulwRow (mulwArow trace binding i ha ho)).c_1 0).val * 65536
               ≥ 2147483648))
   h_rs1_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W),
     (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
-      = (((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_0 0).val
-            + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).a_1 0).val * 65536 : ℤ)
-          - ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).na 0).val * (2:ℤ)^32
+      = (((vOfMulwRow (mulwArow trace binding i ha ho)).a_0 0).val
+            + ((vOfMulwRow (mulwArow trace binding i ha ho)).a_1 0).val * 65536 : ℤ)
+          - ((vOfMulwRow (mulwArow trace binding i ha ho)).na 0).val * (2:ℤ)^32
   h_rs2_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W),
     (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
-      = (((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_0 0).val
-            + ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).b_1 0).val * 65536 : ℤ)
-          - ((vOfMulwRow (mulwArow trace binding i h_main_active h_main_op)).nb 0).val * (2:ℤ)^32
+      = (((vOfMulwRow (mulwArow trace binding i ha ho)).b_0 0).val
+            + ((vOfMulwRow (mulwArow trace binding i ha ho)).b_1 0).val * 65536 : ℤ)
+          - ((vOfMulwRow (mulwArow trace binding i ha ho)).nb 0).val * (2:ℤ)^32
 
 /-- Per-op residual bundle for the `mulw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mulw` bundles them. -/
@@ -1327,6 +1337,10 @@ structure Claim_mulhu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
 
 structure Decode_mulhu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhu trace i) : Type where
+  h_main_op :
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH
+  h_main_active :
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
@@ -1345,10 +1359,6 @@ structure Decode_mulhu (trace : AcceptedZiskTrace numInstructions)
 structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhu trace i) : Type where
   mulhu_input : PureSpec.MulhuInput
-  h_main_op :
-    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH
-  h_main_active :
-    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_input_r1 :
     read_xreg (regidx_to_fin c.r1) (binding i)
       = EStateM.Result.ok mulhu_input.r1_val (binding i)
@@ -1364,18 +1374,24 @@ structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_rd_idx :
     mulhu_input.rd =
       Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
-  h_rs1_value : mulhu_input.r1_val.toNat
+  h_rs1_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH),
+    mulhu_input.r1_val.toNat
     = ZiskFv.PackedBitVec.MulNoWrap.packed4
-        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).a_0 0).val
-        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).a_1 0).val
-        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).a_2 0).val
-        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).a_3 0).val
-  h_rs2_value : mulhu_input.r2_val.toNat
+        ((vOfMulwRow (mulhuArow trace binding i ha ho)).a_0 0).val
+        ((vOfMulwRow (mulhuArow trace binding i ha ho)).a_1 0).val
+        ((vOfMulwRow (mulhuArow trace binding i ha ho)).a_2 0).val
+        ((vOfMulwRow (mulhuArow trace binding i ha ho)).a_3 0).val
+  h_rs2_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH),
+    mulhu_input.r2_val.toNat
     = ZiskFv.PackedBitVec.MulNoWrap.packed4
-        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).b_0 0).val
-        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).b_1 0).val
-        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).b_2 0).val
-        ((vOfMulwRow (mulhuArow trace binding i h_main_active h_main_op)).b_3 0).val
+        ((vOfMulwRow (mulhuArow trace binding i ha ho)).b_0 0).val
+        ((vOfMulwRow (mulhuArow trace binding i ha ho)).b_1 0).val
+        ((vOfMulwRow (mulhuArow trace binding i ha ho)).b_2 0).val
+        ((vOfMulwRow (mulhuArow trace binding i ha ho)).b_3 0).val
 
 /-- Per-op residual bundle for the `mulhu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mulhu` bundles them. -/
@@ -1401,6 +1417,10 @@ structure Claim_divu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
 
 structure Decode_divu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divu trace i) : Type where
+  h_main_op :
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU
+  h_main_active :
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
@@ -1419,10 +1439,6 @@ structure Decode_divu (trace : AcceptedZiskTrace numInstructions)
 structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divu trace i) : Type where
   divu_input : PureSpec.DivuInput
-  h_main_op :
-    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU
-  h_main_active :
-    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_input_r1 :
     read_xreg (regidx_to_fin c.r1) (binding i)
       = EStateM.Result.ok divu_input.r1_val (binding i)
@@ -1439,20 +1455,28 @@ structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     divu_input.rd =
       Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   remainder_bound :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU),
     ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
-      (vOfDivuRow (divuArow trace binding i h_main_active h_main_op)) 0
-  h_rs1_value : divu_input.r1_val.toNat
+      (vOfDivuRow (divuArow trace binding i ha ho)) 0
+  h_rs1_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU),
+    divu_input.r1_val.toNat
     = ZiskFv.PackedBitVec.MulNoWrap.packed4
-        ((divuArow trace binding i h_main_active h_main_op).chunks.c_0).val
-        ((divuArow trace binding i h_main_active h_main_op).chunks.c_1).val
-        ((divuArow trace binding i h_main_active h_main_op).chunks.c_2).val
-        ((divuArow trace binding i h_main_active h_main_op).chunks.c_3).val
-  h_rs2_value : divu_input.r2_val.toNat
+        ((divuArow trace binding i ha ho).chunks.c_0).val
+        ((divuArow trace binding i ha ho).chunks.c_1).val
+        ((divuArow trace binding i ha ho).chunks.c_2).val
+        ((divuArow trace binding i ha ho).chunks.c_3).val
+  h_rs2_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU),
+    divu_input.r2_val.toNat
     = ZiskFv.PackedBitVec.MulNoWrap.packed4
-        ((divuArow trace binding i h_main_active h_main_op).chunks.b_0).val
-        ((divuArow trace binding i h_main_active h_main_op).chunks.b_1).val
-        ((divuArow trace binding i h_main_active h_main_op).chunks.b_2).val
-        ((divuArow trace binding i h_main_active h_main_op).chunks.b_3).val
+        ((divuArow trace binding i ha ho).chunks.b_0).val
+        ((divuArow trace binding i ha ho).chunks.b_1).val
+        ((divuArow trace binding i ha ho).chunks.b_2).val
+        ((divuArow trace binding i ha ho).chunks.b_3).val
 
 /-- Per-op residual bundle for the `divu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_divu` bundles them. -/
@@ -1478,6 +1502,10 @@ structure Claim_divuw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
 
 structure Decode_divuw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divuw trace i) : Type where
+  h_main_op :
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W
+  h_main_active :
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
@@ -1496,10 +1524,6 @@ structure Decode_divuw (trace : AcceptedZiskTrace numInstructions)
 structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divuw trace i) : Type where
   divuw_input : PureSpec.DivuwInput
-  h_main_op :
-    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W
-  h_main_active :
-    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_input_r1 :
     read_xreg (regidx_to_fin c.r1) (binding i)
       = EStateM.Result.ok divuw_input.r1_val (binding i)
@@ -1516,35 +1540,49 @@ structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     divuw_input.rd =
       Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   remainder_bound :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W),
     ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
-      (vOfDivuRow (divuwArow trace binding i h_main_active h_main_op)) 0
+      (vOfDivuRow (divuwArow trace binding i ha ho)) 0
   h_b23 :
-    ((divuwArow trace binding i h_main_active h_main_op).chunks.b_2).val = 0
-      ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.b_3).val = 0
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W),
+    ((divuwArow trace binding i ha ho).chunks.b_2).val = 0
+      ∧ ((divuwArow trace binding i ha ho).chunks.b_3).val = 0
   h_c23 :
-    ((divuwArow trace binding i h_main_active h_main_op).chunks.c_2).val = 0
-      ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.c_3).val = 0
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W),
+    ((divuwArow trace binding i ha ho).chunks.c_2).val = 0
+      ∧ ((divuwArow trace binding i ha ho).chunks.c_3).val = 0
   h_sext_choice :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W),
     ((((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 0
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 0
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 0
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 0)
-        ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.a_0).val
-            + ((divuwArow trace binding i h_main_active h_main_op).chunks.a_1).val * 65536
+        ∧ ((divuwArow trace binding i ha ho).chunks.a_0).val
+            + ((divuwArow trace binding i ha ho).chunks.a_1).val * 65536
               < 2147483648)
       ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 255
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 255
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 255
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 255)
-        ∧ ((divuwArow trace binding i h_main_active h_main_op).chunks.a_0).val
-            + ((divuwArow trace binding i h_main_active h_main_op).chunks.a_1).val * 65536
+        ∧ ((divuwArow trace binding i ha ho).chunks.a_0).val
+            + ((divuwArow trace binding i ha ho).chunks.a_1).val * 65536
               ≥ 2147483648))
-  h_rs1_value : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
-    = ((divuwArow trace binding i h_main_active h_main_op).chunks.c_0).val
-        + ((divuwArow trace binding i h_main_active h_main_op).chunks.c_1).val * 65536
-  h_rs2_value : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
-    = ((divuwArow trace binding i h_main_active h_main_op).chunks.b_0).val
-        + ((divuwArow trace binding i h_main_active h_main_op).chunks.b_1).val * 65536
+  h_rs1_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W),
+    (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
+    = ((divuwArow trace binding i ha ho).chunks.c_0).val
+        + ((divuwArow trace binding i ha ho).chunks.c_1).val * 65536
+  h_rs2_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W),
+    (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
+    = ((divuwArow trace binding i ha ho).chunks.b_0).val
+        + ((divuwArow trace binding i ha ho).chunks.b_1).val * 65536
 
 /-- Per-op residual bundle for the `divuw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_divuw` bundles them. -/
@@ -1570,6 +1608,10 @@ structure Claim_remu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
 
 structure Decode_remu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remu trace i) : Type where
+  h_main_op :
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU
+  h_main_active :
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
@@ -1588,10 +1630,6 @@ structure Decode_remu (trace : AcceptedZiskTrace numInstructions)
 structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remu trace i) : Type where
   remu_input : PureSpec.RemuInput
-  h_main_op :
-    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU
-  h_main_active :
-    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_input_r1 :
     read_xreg (regidx_to_fin c.r1) (binding i)
       = EStateM.Result.ok remu_input.r1_val (binding i)
@@ -1608,20 +1646,28 @@ structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     remu_input.rd =
       Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   remainder_bound :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU),
     ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
-      (vOfDivuRow (remuArow trace binding i h_main_active h_main_op)) 0
-  h_rs1_value : remu_input.r1_val.toNat
+      (vOfDivuRow (remuArow trace binding i ha ho)) 0
+  h_rs1_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU),
+    remu_input.r1_val.toNat
     = ZiskFv.PackedBitVec.MulNoWrap.packed4
-        ((remuArow trace binding i h_main_active h_main_op).chunks.c_0).val
-        ((remuArow trace binding i h_main_active h_main_op).chunks.c_1).val
-        ((remuArow trace binding i h_main_active h_main_op).chunks.c_2).val
-        ((remuArow trace binding i h_main_active h_main_op).chunks.c_3).val
-  h_rs2_value : remu_input.r2_val.toNat
+        ((remuArow trace binding i ha ho).chunks.c_0).val
+        ((remuArow trace binding i ha ho).chunks.c_1).val
+        ((remuArow trace binding i ha ho).chunks.c_2).val
+        ((remuArow trace binding i ha ho).chunks.c_3).val
+  h_rs2_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU),
+    remu_input.r2_val.toNat
     = ZiskFv.PackedBitVec.MulNoWrap.packed4
-        ((remuArow trace binding i h_main_active h_main_op).chunks.b_0).val
-        ((remuArow trace binding i h_main_active h_main_op).chunks.b_1).val
-        ((remuArow trace binding i h_main_active h_main_op).chunks.b_2).val
-        ((remuArow trace binding i h_main_active h_main_op).chunks.b_3).val
+        ((remuArow trace binding i ha ho).chunks.b_0).val
+        ((remuArow trace binding i ha ho).chunks.b_1).val
+        ((remuArow trace binding i ha ho).chunks.b_2).val
+        ((remuArow trace binding i ha ho).chunks.b_3).val
 
 /-- Per-op residual bundle for the `remu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_remu` bundles them. -/
@@ -1647,6 +1693,10 @@ structure Claim_remuw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
 
 structure Decode_remuw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remuw trace i) : Type where
+  h_main_op :
+    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W
+  h_main_active :
+    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_store_pc :
     (mainOfTable trace.program trace.mainTable).store_pc i.val = 0
   h_m32 :
@@ -1665,10 +1715,6 @@ structure Decode_remuw (trace : AcceptedZiskTrace numInstructions)
 structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remuw trace i) : Type where
   remuw_input : PureSpec.RemuwInput
-  h_main_op :
-    (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W
-  h_main_active :
-    (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1
   h_input_r1 :
     read_xreg (regidx_to_fin c.r1) (binding i)
       = EStateM.Result.ok remuw_input.r1_val (binding i)
@@ -1685,35 +1731,49 @@ structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     remuw_input.rd =
       Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
   remainder_bound :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W),
     ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
-      (vOfDivuRow (remuwArow trace binding i h_main_active h_main_op)) 0
+      (vOfDivuRow (remuwArow trace binding i ha ho)) 0
   h_b23 :
-    ((remuwArow trace binding i h_main_active h_main_op).chunks.b_2).val = 0
-      ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.b_3).val = 0
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W),
+    ((remuwArow trace binding i ha ho).chunks.b_2).val = 0
+      ∧ ((remuwArow trace binding i ha ho).chunks.b_3).val = 0
   h_c23 :
-    ((remuwArow trace binding i h_main_active h_main_op).chunks.c_2).val = 0
-      ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.c_3).val = 0
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W),
+    ((remuwArow trace binding i ha ho).chunks.c_2).val = 0
+      ∧ ((remuwArow trace binding i ha ho).chunks.c_3).val = 0
   h_sext_choice :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W),
     ((((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 0
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 0
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 0
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 0)
-        ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.d_0).val
-            + ((remuwArow trace binding i h_main_active h_main_op).chunks.d_1).val * 65536
+        ∧ ((remuwArow trace binding i ha ho).chunks.d_0).val
+            + ((remuwArow trace binding i ha ho).chunks.d_1).val * 65536
               < 2147483648)
       ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 4).val = 255
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 5).val = 255
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 6).val = 255
           ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt (busSub trace i c.execRow).e2 7).val = 255)
-        ∧ ((remuwArow trace binding i h_main_active h_main_op).chunks.d_0).val
-            + ((remuwArow trace binding i h_main_active h_main_op).chunks.d_1).val * 65536
+        ∧ ((remuwArow trace binding i ha ho).chunks.d_0).val
+            + ((remuwArow trace binding i ha ho).chunks.d_1).val * 65536
               ≥ 2147483648))
-  h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
-    = ((remuwArow trace binding i h_main_active h_main_op).chunks.c_0).val
-        + ((remuwArow trace binding i h_main_active h_main_op).chunks.c_1).val * 65536
-  h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
-    = ((remuwArow trace binding i h_main_active h_main_op).chunks.b_0).val
-        + ((remuwArow trace binding i h_main_active h_main_op).chunks.b_1).val * 65536
+  h_rs1_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W),
+    (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
+    = ((remuwArow trace binding i ha ho).chunks.c_0).val
+        + ((remuwArow trace binding i ha ho).chunks.c_1).val * 65536
+  h_rs2_value :
+    ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W),
+    (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
+    = ((remuwArow trace binding i ha ho).chunks.b_0).val
+        + ((remuwArow trace binding i ha ho).chunks.b_1).val * 65536
 
 /-- Per-op residual bundle for the `remuw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_remuw` bundles them. -/
