@@ -162,7 +162,7 @@ theorem construction_jal_sound_claimed_dead
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
-      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
     { row := mainRowWithRomLui trace binding i
       row_eq := h_row_core
@@ -304,7 +304,7 @@ theorem construction_jalr_sound_claimed_dead
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
-      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
     { row := mainRowWithRomLui trace binding i
       row_eq := h_row_core

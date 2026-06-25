@@ -135,7 +135,7 @@ theorem mainRowWithRomLd_core
   have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
     trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
   simpa [mainRowWithRomLd,
-    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
 
 /-- Sound LD construction: the doubleword load, the cleanest of the seven (no
     sub-doubleword width pin, no BinaryExtension sign chain). From the accepted

@@ -374,7 +374,7 @@ theorem stepStrong_lui
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
-      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
     { row := mainRowWithRomLui trace binding i
       row_eq := h_row_core
@@ -460,7 +460,7 @@ theorem stepStrong_auipc
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
-      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
     { row := mainRowWithRomLui trace binding i
       row_eq := h_row_core
@@ -548,7 +548,7 @@ theorem stepStrong_jal
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
-      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
     { row := mainRowWithRomLui trace binding i
       row_eq := h_row_core
@@ -631,7 +631,7 @@ theorem stepStrong_jalr
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
-      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get] using this.symm
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
     { row := mainRowWithRomLui trace binding i
       row_eq := h_row_core
