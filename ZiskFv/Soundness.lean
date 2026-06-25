@@ -38,7 +38,7 @@ theorem root_soundness
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (sailTrace : SailTrace numInstructions)
     (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
-    (rowDecodes : ∀ i : Fin numInstructions, RowDecode ziskTrace sailTrace i (ziskStep i))
+    (rowDecodes : ∀ i : Fin numInstructions, RowDecode ziskTrace i (ziskStep i))
     (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
     (h_known_bugs : ∀ i : Fin numInstructions,
       StepNoKnownDefect ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i)) :

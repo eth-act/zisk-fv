@@ -41,17 +41,14 @@ seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
 
-/-- Irreducible per-row residuals for the `beq` archetype — the binders of
-    `construction_beq_sound` after `(trace) (binding) (i)`, verbatim. -/
-structure RowData_beq
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  beq_input : PureSpec.BeqInput
+structure Claim_beq (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 13
   r1 : regidx
   r2 : regidx
-  misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
-  -- Decode pins (genuine trace residuals consumed by the BEQ `aeneasBridgeTrust`).
+
+structure Decode_beq (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_beq trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
@@ -70,34 +67,52 @@ structure RowData_beq
   h_jmp_offset2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
-  h_input_imm : beq_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+  h_exec_len : c.exec_row.length = 2
+  h_e0_mult : c.exec_row[0]!.multiplicity = -1
+  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+
+structure Inputs_beq (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_beq trace i) : Type where
+  beq_input : PureSpec.BeqInput
+  misa_val : RegisterType Register.misa
+  h_input_imm : beq_input.imm = c.imm
+  h_input_r1 : read_xreg (regidx_to_fin c.r1) (binding i)
     = EStateM.Result.ok beq_input.r1_val (binding i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin c.r2) (binding i)
     = EStateM.Result.ok beq_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some beq_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
-  h_exec_len : exec_row.length = 2
-  h_e0_mult : exec_row[0]!.multiplicity = -1
-  h_e1_mult : exec_row[1]!.multiplicity = 1
   h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
       = (PureSpec.execute_BEQ_pure beq_input).nextPC
   h_not_throws : (PureSpec.execute_BEQ_pure beq_input).throws = false
   h_success : (PureSpec.execute_BEQ_pure beq_input).success = true
 
-/-- Irreducible per-row residuals for the `bne` archetype — the binders of
-    `construction_bne_sound` after `(trace) (binding) (i)`, verbatim. -/
-structure RowData_bne
+/-- Per-op residual bundle for the `beq` archetype: the 3-way `Claim`/`Decode`/`Inputs`
+    split is the single declaration site for every field; `RowData_beq` bundles them. -/
+structure RowData_beq
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  bne_input : PureSpec.BneInput
+  toClaim : Claim_beq trace i
+  toDecode : Decode_beq trace i toClaim
+  toInputs : Inputs_beq trace binding i toClaim
+
+def toRowData_beq {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions}
+    (c : Claim_beq trace i) (dec : Decode_beq trace i c)
+    (ia : Inputs_beq trace binding i c) : RowData_beq trace binding i where
+  toClaim := c
+  toDecode := dec
+  toInputs := ia
+
+structure Claim_bne (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 13
   r1 : regidx
   r2 : regidx
-  misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
-  -- Decode pins (genuine trace residuals consumed by the BNE `aeneasBridgeTrust`).
+
+structure Decode_bne (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bne trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
@@ -116,34 +131,52 @@ structure RowData_bne
   h_jmp_offset1 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
-  h_input_imm : bne_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+  h_exec_len : c.exec_row.length = 2
+  h_e0_mult : c.exec_row[0]!.multiplicity = -1
+  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+
+structure Inputs_bne (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bne trace i) : Type where
+  bne_input : PureSpec.BneInput
+  misa_val : RegisterType Register.misa
+  h_input_imm : bne_input.imm = c.imm
+  h_input_r1 : read_xreg (regidx_to_fin c.r1) (binding i)
     = EStateM.Result.ok bne_input.r1_val (binding i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin c.r2) (binding i)
     = EStateM.Result.ok bne_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some bne_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
-  h_exec_len : exec_row.length = 2
-  h_e0_mult : exec_row[0]!.multiplicity = -1
-  h_e1_mult : exec_row[1]!.multiplicity = 1
   h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
       = (PureSpec.execute_BNE_pure bne_input).nextPC
   h_not_throws : (PureSpec.execute_BNE_pure bne_input).throws = false
   h_success : (PureSpec.execute_BNE_pure bne_input).success = true
 
-/-- Irreducible per-row residuals for the `blt` archetype — the binders of
-    `construction_blt_sound` after `(trace) (binding) (i)`, verbatim. -/
-structure RowData_blt
+/-- Per-op residual bundle for the `bne` archetype: the 3-way `Claim`/`Decode`/`Inputs`
+    split is the single declaration site for every field; `RowData_bne` bundles them. -/
+structure RowData_bne
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  blt_input : PureSpec.BltInput
+  toClaim : Claim_bne trace i
+  toDecode : Decode_bne trace i toClaim
+  toInputs : Inputs_bne trace binding i toClaim
+
+def toRowData_bne {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions}
+    (c : Claim_bne trace i) (dec : Decode_bne trace i c)
+    (ia : Inputs_bne trace binding i c) : RowData_bne trace binding i where
+  toClaim := c
+  toDecode := dec
+  toInputs := ia
+
+structure Claim_blt (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 13
   r1 : regidx
   r2 : regidx
-  misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
-  -- Decode pins (genuine trace residuals consumed by the BLT `aeneasBridgeTrust`).
+
+structure Decode_blt (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_blt trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
@@ -162,34 +195,52 @@ structure RowData_blt
   h_jmp_offset2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
-  h_input_imm : blt_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+  h_exec_len : c.exec_row.length = 2
+  h_e0_mult : c.exec_row[0]!.multiplicity = -1
+  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+
+structure Inputs_blt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_blt trace i) : Type where
+  blt_input : PureSpec.BltInput
+  misa_val : RegisterType Register.misa
+  h_input_imm : blt_input.imm = c.imm
+  h_input_r1 : read_xreg (regidx_to_fin c.r1) (binding i)
     = EStateM.Result.ok blt_input.r1_val (binding i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin c.r2) (binding i)
     = EStateM.Result.ok blt_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some blt_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
-  h_exec_len : exec_row.length = 2
-  h_e0_mult : exec_row[0]!.multiplicity = -1
-  h_e1_mult : exec_row[1]!.multiplicity = 1
   h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
       = (PureSpec.execute_BLT_pure blt_input).nextPC
   h_not_throws : (PureSpec.execute_BLT_pure blt_input).throws = false
   h_success : (PureSpec.execute_BLT_pure blt_input).success = true
 
-/-- Irreducible per-row residuals for the `bge` archetype — the binders of
-    `construction_bge_sound` after `(trace) (binding) (i)`, verbatim. -/
-structure RowData_bge
+/-- Per-op residual bundle for the `blt` archetype: the 3-way `Claim`/`Decode`/`Inputs`
+    split is the single declaration site for every field; `RowData_blt` bundles them. -/
+structure RowData_blt
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  bge_input : PureSpec.BgeInput
+  toClaim : Claim_blt trace i
+  toDecode : Decode_blt trace i toClaim
+  toInputs : Inputs_blt trace binding i toClaim
+
+def toRowData_blt {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions}
+    (c : Claim_blt trace i) (dec : Decode_blt trace i c)
+    (ia : Inputs_blt trace binding i c) : RowData_blt trace binding i where
+  toClaim := c
+  toDecode := dec
+  toInputs := ia
+
+structure Claim_bge (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 13
   r1 : regidx
   r2 : regidx
-  misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
-  -- Decode pins (genuine trace residuals consumed by the BGE `aeneasBridgeTrust`).
+
+structure Decode_bge (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bge trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
@@ -208,34 +259,52 @@ structure RowData_bge
   h_jmp_offset1 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
-  h_input_imm : bge_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+  h_exec_len : c.exec_row.length = 2
+  h_e0_mult : c.exec_row[0]!.multiplicity = -1
+  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+
+structure Inputs_bge (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bge trace i) : Type where
+  bge_input : PureSpec.BgeInput
+  misa_val : RegisterType Register.misa
+  h_input_imm : bge_input.imm = c.imm
+  h_input_r1 : read_xreg (regidx_to_fin c.r1) (binding i)
     = EStateM.Result.ok bge_input.r1_val (binding i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin c.r2) (binding i)
     = EStateM.Result.ok bge_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some bge_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
-  h_exec_len : exec_row.length = 2
-  h_e0_mult : exec_row[0]!.multiplicity = -1
-  h_e1_mult : exec_row[1]!.multiplicity = 1
   h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
       = (PureSpec.execute_BGE_pure bge_input).nextPC
   h_not_throws : (PureSpec.execute_BGE_pure bge_input).throws = false
   h_success : (PureSpec.execute_BGE_pure bge_input).success = true
 
-/-- Irreducible per-row residuals for the `bltu` archetype — the binders of
-    `construction_bltu_sound` after `(trace) (binding) (i)`, verbatim. -/
-structure RowData_bltu
+/-- Per-op residual bundle for the `bge` archetype: the 3-way `Claim`/`Decode`/`Inputs`
+    split is the single declaration site for every field; `RowData_bge` bundles them. -/
+structure RowData_bge
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  bltu_input : PureSpec.BltuInput
+  toClaim : Claim_bge trace i
+  toDecode : Decode_bge trace i toClaim
+  toInputs : Inputs_bge trace binding i toClaim
+
+def toRowData_bge {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions}
+    (c : Claim_bge trace i) (dec : Decode_bge trace i c)
+    (ia : Inputs_bge trace binding i c) : RowData_bge trace binding i where
+  toClaim := c
+  toDecode := dec
+  toInputs := ia
+
+structure Claim_bltu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 13
   r1 : regidx
   r2 : regidx
-  misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
-  -- Decode pins (genuine trace residuals consumed by the BLTU `aeneasBridgeTrust`).
+
+structure Decode_bltu (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bltu trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
@@ -254,34 +323,52 @@ structure RowData_bltu
   h_jmp_offset2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
-  h_input_imm : bltu_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+  h_exec_len : c.exec_row.length = 2
+  h_e0_mult : c.exec_row[0]!.multiplicity = -1
+  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+
+structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bltu trace i) : Type where
+  bltu_input : PureSpec.BltuInput
+  misa_val : RegisterType Register.misa
+  h_input_imm : bltu_input.imm = c.imm
+  h_input_r1 : read_xreg (regidx_to_fin c.r1) (binding i)
     = EStateM.Result.ok bltu_input.r1_val (binding i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin c.r2) (binding i)
     = EStateM.Result.ok bltu_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some bltu_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
-  h_exec_len : exec_row.length = 2
-  h_e0_mult : exec_row[0]!.multiplicity = -1
-  h_e1_mult : exec_row[1]!.multiplicity = 1
   h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
       = (PureSpec.execute_BLTU_pure bltu_input).nextPC
   h_not_throws : (PureSpec.execute_BLTU_pure bltu_input).throws = false
   h_success : (PureSpec.execute_BLTU_pure bltu_input).success = true
 
-/-- Irreducible per-row residuals for the `bgeu` archetype — the binders of
-    `construction_bgeu_sound` after `(trace) (binding) (i)`, verbatim. -/
-structure RowData_bgeu
+/-- Per-op residual bundle for the `bltu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
+    split is the single declaration site for every field; `RowData_bltu` bundles them. -/
+structure RowData_bltu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  bgeu_input : PureSpec.BgeuInput
+  toClaim : Claim_bltu trace i
+  toDecode : Decode_bltu trace i toClaim
+  toInputs : Inputs_bltu trace binding i toClaim
+
+def toRowData_bltu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions}
+    (c : Claim_bltu trace i) (dec : Decode_bltu trace i c)
+    (ia : Inputs_bltu trace binding i c) : RowData_bltu trace binding i where
+  toClaim := c
+  toDecode := dec
+  toInputs := ia
+
+structure Claim_bgeu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 13
   r1 : regidx
   r2 : regidx
-  misa_val : RegisterType Register.misa
   exec_row : List (Interaction.ExecutionBusEntry FGL)
-  -- Decode pins (genuine trace residuals consumed by the BGEU `aeneasBridgeTrust`).
+
+structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bgeu trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 1
@@ -300,32 +387,51 @@ structure RowData_bgeu
   h_jmp_offset1 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
-  h_input_imm : bgeu_input.imm = imm
-  h_input_r1 : read_xreg (regidx_to_fin r1) (binding i)
+  h_exec_len : c.exec_row.length = 2
+  h_e0_mult : c.exec_row[0]!.multiplicity = -1
+  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+
+structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bgeu trace i) : Type where
+  bgeu_input : PureSpec.BgeuInput
+  misa_val : RegisterType Register.misa
+  h_input_imm : bgeu_input.imm = c.imm
+  h_input_r1 : read_xreg (regidx_to_fin c.r1) (binding i)
     = EStateM.Result.ok bgeu_input.r1_val (binding i)
-  h_input_r2 : read_xreg (regidx_to_fin r2) (binding i)
+  h_input_r2 : read_xreg (regidx_to_fin c.r2) (binding i)
     = EStateM.Result.ok bgeu_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some bgeu_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
-  h_exec_len : exec_row.length = 2
-  h_e0_mult : exec_row[0]!.multiplicity = -1
-  h_e1_mult : exec_row[1]!.multiplicity = 1
   h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
       = (PureSpec.execute_BGEU_pure bgeu_input).nextPC
   h_not_throws : (PureSpec.execute_BGEU_pure bgeu_input).throws = false
   h_success : (PureSpec.execute_BGEU_pure bgeu_input).success = true
 
-/-- Irreducible per-row residuals for the `jal` archetype — the binders of
-    `construction_jal_sound` after `(trace) (binding) (i)`, verbatim. -/
-structure RowData_jal
+/-- Per-op residual bundle for the `bgeu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
+    split is the single declaration site for every field; `RowData_bgeu` bundles them. -/
+structure RowData_bgeu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  jal_input : PureSpec.JalInput
+  toClaim : Claim_bgeu trace i
+  toDecode : Decode_bgeu trace i toClaim
+  toInputs : Inputs_bgeu trace binding i toClaim
+
+def toRowData_bgeu {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions}
+    (c : Claim_bgeu trace i) (dec : Decode_bgeu trace i c)
+    (ia : Inputs_bgeu trace binding i c) : RowData_bgeu trace binding i where
+  toClaim := c
+  toDecode := dec
+  toInputs := ia
+
+structure Claim_jal (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 21
   rd : regidx
-  misa_val : RegisterType Register.misa
-  nextPC_val : BitVec 64
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+
+structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_jal trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_FLAG
@@ -344,39 +450,57 @@ structure RowData_jal
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_exec_len : c.execRow.length = 2
+  h_e0_mult : c.execRow[0]!.multiplicity = -1
+  h_e1_mult : c.execRow[1]!.multiplicity = 1
+
+structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_jal trace i) : Type where
+  jal_input : PureSpec.JalInput
+  misa_val : RegisterType Register.misa
+  nextPC_val : BitVec 64
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = jal_input.PC.toNat
-  execRow : List (Interaction.ExecutionBusEntry FGL)
-  h_exec_len : execRow.length = 2
-  h_e0_mult : execRow[0]!.multiplicity = -1
-  h_e1_mult : execRow[1]!.multiplicity = 1
   h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.execRow[1]!.pc).val))
       = nextPC_val
-  h_input_rd : jal_input.rd = regidx_to_fin rd
+  h_input_rd : jal_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some jal_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
   h_nextPC_option : (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
-  h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
-  h_input_imm : jal_input.imm = imm
+  h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx (eRdLui trace i).ptr
+  h_input_imm : jal_input.imm = c.imm
   h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false
   h_pc_bound : jal_input.PC.toNat < GL_prime - 4
   h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296
 
-/-- Irreducible per-row residuals for the `jalr` archetype — the binders of
-    `construction_jalr_sound` after `(trace) (binding) (i)`, verbatim. -/
-structure RowData_jalr
+/-- Per-op residual bundle for the `jal` archetype: the 3-way `Claim`/`Decode`/`Inputs`
+    split is the single declaration site for every field; `RowData_jal` bundles them. -/
+structure RowData_jal
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  jalr_input : PureSpec.JalrInput
+  toClaim : Claim_jal trace i
+  toDecode : Decode_jal trace i toClaim
+  toInputs : Inputs_jal trace binding i toClaim
+
+def toRowData_jal {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions}
+    (c : Claim_jal trace i) (dec : Decode_jal trace i c)
+    (ia : Inputs_jal trace binding i c) : RowData_jal trace binding i where
+  toClaim := c
+  toDecode := dec
+  toInputs := ia
+
+structure Claim_jalr (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 12
   rs1 : regidx
   rd : regidx
-  misa_val : RegisterType Register.misa
-  mseccfg : RegisterType Register.mseccfg
-  nextPC_val : BitVec 64
+  execRow : List (Interaction.ExecutionBusEntry FGL)
+
+structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_AND
@@ -395,22 +519,28 @@ structure RowData_jalr
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 1
-  execRow : List (Interaction.ExecutionBusEntry FGL)
-  h_exec_len : execRow.length = 2
-  h_e0_mult : execRow[0]!.multiplicity = -1
-  h_e1_mult : execRow[1]!.multiplicity = 1
+  h_exec_len : c.execRow.length = 2
+  h_e0_mult : c.execRow[0]!.multiplicity = -1
+  h_e1_mult : c.execRow[1]!.multiplicity = 1
+
+structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
+  jalr_input : PureSpec.JalrInput
+  misa_val : RegisterType Register.misa
+  mseccfg : RegisterType Register.mseccfg
+  nextPC_val : BitVec 64
   h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (execRow[1]!.pc).val))
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.execRow[1]!.pc).val))
       = nextPC_val
-  h_input_rd : jalr_input.rd = regidx_to_fin rd
+  h_input_rd : jalr_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some jalr_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JALR_pure jalr_input).success = true
   h_nextPC_option : (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
-  h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr
-  h_input_imm : jalr_input.imm = imm
-  h_input_rs1 : read_xreg (regidx_to_fin rs1) (binding i)
+  h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx (eRdLui trace i).ptr
+  h_input_imm : jalr_input.imm = c.imm
+  h_input_rs1 : read_xreg (regidx_to_fin c.rs1) (binding i)
     = EStateM.Result.ok jalr_input.rs1_val (binding i)
   h_cur_privilege : Sail.readReg Register.cur_privilege (binding i)
     = EStateM.Result.ok Privilege.Machine (binding i)
@@ -424,52 +554,69 @@ structure RowData_jalr
   h_pc_bound : jalr_input.PC.toNat < GL_prime - 4
   h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296
 
-/-- Irreducible per-row residuals for the `fence` archetype — the FENCE decode arm.
-
-    FENCE is the FENCE-decode-gap opcode (`ZISK-DEFECT-FENCE-INCOMPLETE`).  It is
-    routed through the OpEnvelope just like `beq` (direct-construct, carrying the
-    `FencePromises` facts + bridge pins as binders), with ONE extra ingredient: the
-    THREE honest-shape facts (`fm = 0`, `rs = x0`, `rd = x0`) that the FENCE defect
-    gate (`Defects.FenceKnownGoodShape`) requires.  These three facts make the
-    threaded `StepNoKnownDefect` obligation — the GENUINE `NoKnownDefect` of the
-    SPECIFIC `OpEnvelope.fence` env this row constructs — SATISFIABLE (see
-    `stepStrong_fence`): for an honest FENCE row the env is the honest env and
-    `NoKnownDefect` is TRUE.  This is NOT the (false) selector-∀ shape, and it is
-    NOT a contradictory `False`-binder: the malicious FENCE shapes are excluded by
-    the honest caller supplying these three pins, exactly as the FENCE defect ledger
-    documents.  Non-vacuous: a real trace with a generic `fm=0,rs1=x0,rd=x0` FENCE
-    row supplies all binders and proves the `NoKnownDefect` obligation. -/
-structure RowData_fence
+/-- Per-op residual bundle for the `jalr` archetype: the 3-way `Claim`/`Decode`/`Inputs`
+    split is the single declaration site for every field; `RowData_jalr` bundles them. -/
+structure RowData_jalr
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  fence_input : PureSpec.FenceInput
+  toClaim : Claim_jalr trace i
+  toDecode : Decode_jalr trace i toClaim
+  toInputs : Inputs_jalr trace binding i toClaim
+
+def toRowData_jalr {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions}
+    (c : Claim_jalr trace i) (dec : Decode_jalr trace i c)
+    (ia : Inputs_jalr trace binding i c) : RowData_jalr trace binding i where
+  toClaim := c
+  toDecode := dec
+  toInputs := ia
+
+structure Claim_fence (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   fm : BitVec 4
   fenceP : BitVec 4
   fenceS : BitVec 4
   rs : regidx
   rd : regidx
   exec_row : List (Interaction.ExecutionBusEntry FGL)
-  -- Decode pins (the two facts the FENCE `aeneasBridgeTrust` consumes).
+
+structure Decode_fence (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_fence trace i) : Type where
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
       i.val = 0
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_FLAG
-  -- FENCE `FencePromises` residuals (the six structural binders).
+  h_exec_len : c.exec_row.length = 2
+  h_e0_mult : c.exec_row[0]!.multiplicity = -1
+  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+  h_fm_zero : c.fm = 0#4
+  h_rs_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rs
+  h_rd_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rd
+
+structure Inputs_fence (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_fence trace i) : Type where
+  fence_input : PureSpec.FenceInput
   h_input_pc : (binding i).regs.get? Register.PC = .some fence_input.PC
   h_input_priv :
     (binding i).regs.get? Register.cur_privilege = .some Privilege.Machine
-  h_exec_len : exec_row.length = 2
-  h_e0_mult : exec_row[0]!.multiplicity = -1
-  h_e1_mult : exec_row[1]!.multiplicity = 1
   h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
       = (PureSpec.execute_FENCE_pure fence_input).nextPC
-  -- Honest-shape facts: the modeled (ZisK-accepted) generic FENCE subset.
-  -- These make the threaded `NoKnownDefect` obligation SATISFIABLE (not vacuous).
-  h_fm_zero : fm = 0#4
-  h_rs_x0 : ZiskFv.Compliance.Defects.IsX0Reg rs
-  h_rd_x0 : ZiskFv.Compliance.Defects.IsX0Reg rd
 
+/-- Per-op residual bundle for the `fence` archetype: the 3-way `Claim`/`Decode`/`Inputs`
+    split is the single declaration site for every field; `RowData_fence` bundles them. -/
+structure RowData_fence
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+  toClaim : Claim_fence trace i
+  toDecode : Decode_fence trace i toClaim
+  toInputs : Inputs_fence trace binding i toClaim
+
+def toRowData_fence {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions}
+    (c : Claim_fence trace i) (dec : Decode_fence trace i c)
+    (ia : Inputs_fence trace binding i c) : RowData_fence trace binding i where
+  toClaim := c
+  toDecode := dec
+  toInputs := ia
 
 end ZiskFv.Compliance

@@ -72,18 +72,18 @@ theorem stepStrong_mul
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MUL
-          (d.r2, d.r1, d.rd,
+          (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd,
            { result_part := VectorHalf.Low
-             signed_rs1 := d.srs1
-             signed_rs2 := d.srs2 }))) (binding i)
+             signed_rs1 := d.toClaim.srs1
+             signed_rs2 := d.toClaim.srs2 }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
+          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := mulEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
-    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
-      d.h_jmp_offset1, d.h_jmp_offset2⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+      d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -105,18 +105,18 @@ theorem stepStrong_mulh
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MUL
-          (d.r2, d.r1, d.rd,
+          (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Signed
              signed_rs2 := .Signed }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
+          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := mulhEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
-    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
-      d.h_jmp_offset1, d.h_jmp_offset2⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+      d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -131,18 +131,18 @@ theorem stepStrong_mulhsu
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MUL
-          (d.r2, d.r1, d.rd,
+          (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd,
            { result_part := VectorHalf.High
              signed_rs1 := .Signed
              signed_rs2 := .Unsigned }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
+          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := mulhsuEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
-    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
-      d.h_jmp_offset1, d.h_jmp_offset2⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+      d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -172,15 +172,15 @@ theorem stepStrong_div
     (h_known : Defects.NoKnownDefect (divEnvOf trace binding i d)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIV (d.r2, d.r1, d.rd, false))) (binding i)
+      LeanRV64D.Functions.execute (instruction.DIV (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
+          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := divEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
-    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
-      d.h_jmp_offset1, d.h_jmp_offset2⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+      d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -195,15 +195,15 @@ theorem stepStrong_rem
     (h_known : Defects.NoKnownDefect (remEnvOf trace binding i d)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REM (d.r2, d.r1, d.rd, false))) (binding i)
+      LeanRV64D.Functions.execute (instruction.REM (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
+          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := remEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
-    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
-      d.h_jmp_offset1, d.h_jmp_offset2⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+      d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -219,15 +219,15 @@ theorem stepStrong_divw
     (h_known : Defects.NoKnownDefect (divwEnvOf trace binding i d)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.DIVW (d.r2, d.r1, d.rd, false))) (binding i)
+      LeanRV64D.Functions.execute (instruction.DIVW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
+          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := divwEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
-    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
-      d.h_jmp_offset1, d.h_jmp_offset2⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+      d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -240,15 +240,15 @@ theorem stepStrong_remw
     (h_known : Defects.NoKnownDefect (remwEnvOf trace binding i d)) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REMW (d.r2, d.r1, d.rd, false))) (binding i)
+      LeanRV64D.Functions.execute (instruction.REMW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.bus.exec_row, [d.bus.e0, d.bus.e1, d.bus.e2]⟩ (binding i) := by
+          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := remwEnvOf trace binding i d
   have h_bridge : env.aeneasBridgeTrust :=
-    ⟨d.h_main_active, d.h_main_op, d.h_m32, d.h_set_pc, d.h_store_pc,
-      d.h_jmp_offset1, d.h_jmp_offset2⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
+      d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -272,12 +272,12 @@ theorem stepStrong_fence
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i)
     (h_known : Defects.NoKnownDefect (fenceEnvOf trace binding i d)) :
-    execute_instruction (instruction.FENCE (d.fm, d.fenceP, d.fenceS, d.rs, d.rd)) (binding i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.exec_row, []⟩ (binding i) := by
+    execute_instruction (instruction.FENCE (d.toClaim.fm, d.toClaim.fenceP, d.toClaim.fenceS, d.toClaim.rs, d.toClaim.rd)) (binding i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨d.toClaim.exec_row, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := fenceEnvOf trace binding i d
-  have h_bridge : env.aeneasBridgeTrust := ⟨d.h_main_active, d.h_main_op⟩
+  have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.1
 

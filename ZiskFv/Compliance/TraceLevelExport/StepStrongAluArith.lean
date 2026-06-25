@@ -82,39 +82,39 @@ theorem stepStrong_sub
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SUB))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SUB))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_sub_provided
-      trace i d.h_main_active d.h_main_op
+      trace i d.toDecode.h_main_active d.toDecode.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -124,24 +124,24 @@ theorem stepStrong_sub
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.sub_input.r1_val d.sub_input.r2_val d.sub_input.rd d.sub_input.PC
-      (PureSpec.execute_RTYPE_sub_pure d.sub_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.sub_input.r1_val d.toInputs.sub_input.r2_val d.toInputs.sub_input.rd d.toInputs.sub_input.PC
+      (PureSpec.execute_RTYPE_sub_pure d.toInputs.sub_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -152,7 +152,7 @@ theorem stepStrong_sub
       ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_SUB : FGL) := by
@@ -164,7 +164,7 @@ theorem stepStrong_sub
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_SUB, ZiskFv.Trusted.OP_SUB] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_SUB (by
@@ -179,19 +179,19 @@ theorem stepStrong_sub
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     allByteMatchesOfStaticOut64_local h_out
   have h_input_r1_row :
-      d.sub_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.sub_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.sub_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sub_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have h_input_r2_row :
-      d.sub_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+      d.toInputs.sub_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
-        m providerInput i.val (regidx_to_fin d.r2) d.sub_input.r2_val
-        h_matches h_m32_zero d.h_b_lo_t d.h_b_hi_t h_match d.h_input_r2
+        m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sub_input.r2_val
+        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sub d.sub_input d.r1 d.r2 d.rd zeroValidBinary bus pins
+    OpEnvelope.sub d.toInputs.sub_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_input_r2_row h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
@@ -218,39 +218,39 @@ theorem stepStrong_and
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.AND))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.AND))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
-      trace i d.h_main_active (Or.inl d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -260,24 +260,24 @@ theorem stepStrong_and
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.and_input.r1_val d.and_input.r2_val d.and_input.rd d.and_input.PC
-      (PureSpec.execute_RTYPE_and_pure d.and_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.and_input.r1_val d.toInputs.and_input.r2_val d.toInputs.and_input.rd d.toInputs.and_input.PC
+      (PureSpec.execute_RTYPE_and_pure d.toInputs.and_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -288,7 +288,7 @@ theorem stepStrong_and
       ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_AND : FGL) := by
@@ -300,7 +300,7 @@ theorem stepStrong_and
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_AND, ZiskFv.Trusted.OP_AND] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_AND (by
@@ -315,19 +315,19 @@ theorem stepStrong_and
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
     allByteMatchesOfStaticOut64_local h_out
   have h_input_r1_row :
-      d.and_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.and_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.and_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.and_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have h_input_r2_row :
-      d.and_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+      d.toInputs.and_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
-        m providerInput i.val (regidx_to_fin d.r2) d.and_input.r2_val
-        h_matches h_m32_zero d.h_b_lo_t d.h_b_hi_t h_match d.h_input_r2
+        m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.and_input.r2_val
+        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.and d.and_input d.r1 d.r2 d.rd zeroValidBinary bus pins
+    OpEnvelope.and d.toInputs.and_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_input_r2_row h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
@@ -354,39 +354,39 @@ theorem stepStrong_or
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.OR))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.OR))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
-      trace i d.h_main_active (Or.inr (Or.inl d.h_main_op))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -396,24 +396,24 @@ theorem stepStrong_or
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.or_input.r1_val d.or_input.r2_val d.or_input.rd d.or_input.PC
-      (PureSpec.execute_RTYPE_or_pure d.or_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.or_input.r1_val d.toInputs.or_input.r2_val d.toInputs.or_input.rd d.toInputs.or_input.PC
+      (PureSpec.execute_RTYPE_or_pure d.toInputs.or_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -424,7 +424,7 @@ theorem stepStrong_or
       ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_OR : FGL) := by
@@ -436,7 +436,7 @@ theorem stepStrong_or
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_OR, ZiskFv.Trusted.OP_OR] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_OR (by
@@ -451,19 +451,19 @@ theorem stepStrong_or
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_OR :=
     allByteMatchesOfStaticOut64_local h_out
   have h_input_r1_row :
-      d.or_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.or_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.or_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.or_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have h_input_r2_row :
-      d.or_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+      d.toInputs.or_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
-        m providerInput i.val (regidx_to_fin d.r2) d.or_input.r2_val
-        h_matches h_m32_zero d.h_b_lo_t d.h_b_hi_t h_match d.h_input_r2
+        m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.or_input.r2_val
+        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.or d.or_input d.r1 d.r2 d.rd zeroValidBinary bus pins
+    OpEnvelope.or d.toInputs.or_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_input_r2_row h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
@@ -490,39 +490,39 @@ theorem stepStrong_xor
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.XOR))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.XOR))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
-      trace i d.h_main_active (Or.inr (Or.inr d.h_main_op))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inr d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -532,24 +532,24 @@ theorem stepStrong_xor
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.xor_input.r1_val d.xor_input.r2_val d.xor_input.rd d.xor_input.PC
-      (PureSpec.execute_RTYPE_xor_pure d.xor_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.xor_input.r1_val d.toInputs.xor_input.r2_val d.toInputs.xor_input.rd d.toInputs.xor_input.PC
+      (PureSpec.execute_RTYPE_xor_pure d.toInputs.xor_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -565,7 +565,7 @@ theorem stepStrong_xor
     simpa [h_component] using h_table_spec providerRow h_provider_row
   rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
   obtain ⟨h_row_spec, h_static⟩ := h_component_spec
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_XOR : FGL) := by
@@ -577,7 +577,7 @@ theorem stepStrong_xor
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_XOR, ZiskFv.Trusted.OP_XOR] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨_, h_bop_row, h_bop_or_sext⟩ :=
     ZiskFv.AirsClean.Binary.static_table_logic_mode_pins_of_emit
       providerInput h_row_spec h_static ZiskFv.Airs.Tables.BinaryTable.OP_XOR
@@ -588,19 +588,19 @@ theorem stepStrong_xor
     ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
       providerInput h_facts ZiskFv.Airs.Tables.BinaryTable.OP_XOR h_bop_row h_bop_or_sext
   have h_input_r1_row :
-      d.xor_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.xor_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.xor_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.xor_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have h_input_r2_row :
-      d.xor_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+      d.toInputs.xor_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
-        m providerInput i.val (regidx_to_fin d.r2) d.xor_input.r2_val
-        h_matches h_m32_zero d.h_b_lo_t d.h_b_hi_t h_match d.h_input_r2
+        m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.xor_input.r2_val
+        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.xor d.xor_input d.r1 d.r2 d.rd zeroValidBinary bus pins
+    OpEnvelope.xor d.toInputs.xor_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_input_r2_row h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
@@ -627,39 +627,39 @@ theorem stepStrong_slt
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLT))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SLT))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_compare_provided
-      trace i d.h_main_active (Or.inl d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -669,24 +669,24 @@ theorem stepStrong_slt
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.slt_input.r1_val d.slt_input.r2_val d.slt_input.rd d.slt_input.PC
-      (PureSpec.execute_RTYPE_slt_pure d.slt_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.slt_input.r1_val d.toInputs.slt_input.r2_val d.toInputs.slt_input.rd d.toInputs.slt_input.PC
+      (PureSpec.execute_RTYPE_slt_pure d.toInputs.slt_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -697,7 +697,7 @@ theorem stepStrong_slt
       ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_LT : FGL) := by
@@ -709,7 +709,7 @@ theorem stepStrong_slt
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_LT, ZiskFv.Trusted.OP_LT] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_LT (by
@@ -724,19 +724,19 @@ theorem stepStrong_slt
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LT :=
     allByteMatchesOfStaticOut64_local h_out
   have h_input_r1_row :
-      d.slt_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.slt_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.slt_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slt_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have h_input_r2_row :
-      d.slt_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+      d.toInputs.slt_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
-        m providerInput i.val (regidx_to_fin d.r2) d.slt_input.r2_val
-        h_matches h_m32_zero d.h_b_lo_t d.h_b_hi_t h_match d.h_input_r2
+        m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.slt_input.r2_val
+        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.slt d.slt_input d.r1 d.r2 d.rd zeroValidBinary bus pins
+    OpEnvelope.slt d.toInputs.slt_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_input_r2_row h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
@@ -763,39 +763,39 @@ theorem stepStrong_sltu
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLTU))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SLTU))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_compare_provided
-      trace i d.h_main_active (Or.inr d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inr d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -805,24 +805,24 @@ theorem stepStrong_sltu
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.sltu_input.r1_val d.sltu_input.r2_val d.sltu_input.rd d.sltu_input.PC
-      (PureSpec.execute_RTYPE_sltu_pure d.sltu_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.sltu_input.r1_val d.toInputs.sltu_input.r2_val d.toInputs.sltu_input.rd d.toInputs.sltu_input.PC
+      (PureSpec.execute_RTYPE_sltu_pure d.toInputs.sltu_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -833,7 +833,7 @@ theorem stepStrong_sltu
       ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_LTU : FGL) := by
@@ -845,7 +845,7 @@ theorem stepStrong_sltu
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_LTU, ZiskFv.Trusted.OP_LTU] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_LTU (by
@@ -860,19 +860,19 @@ theorem stepStrong_sltu
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LTU :=
     allByteMatchesOfStaticOut64_local h_out
   have h_input_r1_row :
-      d.sltu_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.sltu_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.sltu_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sltu_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have h_input_r2_row :
-      d.sltu_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+      d.toInputs.sltu_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
-        m providerInput i.val (regidx_to_fin d.r2) d.sltu_input.r2_val
-        h_matches h_m32_zero d.h_b_lo_t d.h_b_hi_t h_match d.h_input_r2
+        m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sltu_input.r2_val
+        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sltu d.sltu_input d.r1 d.r2 d.rd zeroValidBinary bus pins
+    OpEnvelope.sltu d.toInputs.sltu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_input_r2_row h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
@@ -898,39 +898,39 @@ theorem stepStrong_andi
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ANDI))) (binding i)
+        (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.ANDI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
-      trace i d.h_main_active (Or.inl d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -940,24 +940,24 @@ theorem stepStrong_andi
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
-      state d.andi_input.r1_val d.andi_input.imm d.andi_input.rd d.andi_input.PC
-      (PureSpec.execute_ITYPE_andi_pure d.andi_input).nextPC
-      d.r1 d.rd d.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_imm_eq := d.h_input_imm,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.andi_input.r1_val d.toInputs.andi_input.imm d.toInputs.andi_input.rd d.toInputs.andi_input.PC
+      (PureSpec.execute_ITYPE_andi_pure d.toInputs.andi_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_imm_eq := d.toInputs.h_input_imm,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -968,7 +968,7 @@ theorem stepStrong_andi
       ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_AND : FGL) := by
@@ -980,7 +980,7 @@ theorem stepStrong_andi
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_AND, ZiskFv.Trusted.OP_AND] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_AND (by
@@ -995,22 +995,22 @@ theorem stepStrong_andi
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
     allByteMatchesOfStaticOut64_local h_out
   have h_input_r1_row :
-      d.andi_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.andi_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.andi_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.andi_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have h_input_imm_row :
-      BitVec.signExtend 64 d.andi_input.imm
+      BitVec.signExtend 64 d.toInputs.andi_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
-        m providerInput i.val d.andi_input.imm h_matches h_m32_zero h_match
-        d.h_andi_subset
+        m providerInput i.val d.toInputs.andi_input.imm h_matches h_m32_zero h_match
+        d.toInputs.h_andi_subset
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.andi d.andi_input d.r1 d.rd d.imm zeroValidBinary bus pins
+    OpEnvelope.andi d.toInputs.andi_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_input_r1_row h_input_imm_row d.h_andi_subset h_lane_rd promises
+      h_input_r1_row h_input_imm_row d.toInputs.h_andi_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_imm_row⟩
@@ -1033,39 +1033,39 @@ theorem stepStrong_ori
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ORI))) (binding i)
+        (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.ORI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
-      trace i d.h_main_active (Or.inr (Or.inl d.h_main_op))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1075,24 +1075,24 @@ theorem stepStrong_ori
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
-      state d.ori_input.r1_val d.ori_input.imm d.ori_input.rd d.ori_input.PC
-      (PureSpec.execute_ITYPE_ori_pure d.ori_input).nextPC
-      d.r1 d.rd d.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_imm_eq := d.h_input_imm,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.ori_input.r1_val d.toInputs.ori_input.imm d.toInputs.ori_input.rd d.toInputs.ori_input.PC
+      (PureSpec.execute_ITYPE_ori_pure d.toInputs.ori_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_imm_eq := d.toInputs.h_input_imm,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -1103,7 +1103,7 @@ theorem stepStrong_ori
       ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_OR : FGL) := by
@@ -1115,7 +1115,7 @@ theorem stepStrong_ori
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_OR, ZiskFv.Trusted.OP_OR] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_OR (by
@@ -1130,22 +1130,22 @@ theorem stepStrong_ori
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_OR :=
     allByteMatchesOfStaticOut64_local h_out
   have h_input_r1_row :
-      d.ori_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.ori_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.ori_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.ori_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have h_input_imm_row :
-      BitVec.signExtend 64 d.ori_input.imm
+      BitVec.signExtend 64 d.toInputs.ori_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
-        m providerInput i.val d.ori_input.imm h_matches h_m32_zero h_match
-        d.h_ori_subset
+        m providerInput i.val d.toInputs.ori_input.imm h_matches h_m32_zero h_match
+        d.toInputs.h_ori_subset
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.ori d.ori_input d.r1 d.rd d.imm zeroValidBinary bus pins
+    OpEnvelope.ori d.toInputs.ori_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_input_r1_row h_input_imm_row d.h_ori_subset h_lane_rd promises
+      h_input_r1_row h_input_imm_row d.toInputs.h_ori_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_imm_row⟩
@@ -1168,39 +1168,39 @@ theorem stepStrong_xori
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.XORI))) (binding i)
+        (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.XORI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_logic_provided
-      trace i d.h_main_active (Or.inr (Or.inr d.h_main_op))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inr d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1210,24 +1210,24 @@ theorem stepStrong_xori
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
-      state d.xori_input.r1_val d.xori_input.imm d.xori_input.rd d.xori_input.PC
-      (PureSpec.execute_ITYPE_xori_pure d.xori_input).nextPC
-      d.r1 d.rd d.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_imm_eq := d.h_input_imm,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.xori_input.r1_val d.toInputs.xori_input.imm d.toInputs.xori_input.rd d.toInputs.xori_input.PC
+      (PureSpec.execute_ITYPE_xori_pure d.toInputs.xori_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_imm_eq := d.toInputs.h_input_imm,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -1240,7 +1240,7 @@ theorem stepStrong_xori
     simpa [h_component] using h_table_spec providerRow h_provider_row
   rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
   obtain ⟨h_row_spec, h_static⟩ := h_component_spec
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_XOR : FGL) := by
@@ -1252,7 +1252,7 @@ theorem stepStrong_xori
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_XOR, ZiskFv.Trusted.OP_XOR] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨_, h_bop_row, h_bop_or_sext⟩ :=
     ZiskFv.AirsClean.Binary.static_table_logic_mode_pins_of_emit
       providerInput h_row_spec h_static ZiskFv.Airs.Tables.BinaryTable.OP_XOR
@@ -1263,22 +1263,22 @@ theorem stepStrong_xori
     ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
       providerInput h_facts ZiskFv.Airs.Tables.BinaryTable.OP_XOR h_bop_row h_bop_or_sext
   have h_input_r1_row :
-      d.xori_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.xori_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.xori_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.xori_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have h_input_imm_row :
-      BitVec.signExtend 64 d.xori_input.imm
+      BitVec.signExtend 64 d.toInputs.xori_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
-        m providerInput i.val d.xori_input.imm h_matches h_m32_zero h_match
-        d.h_xori_subset
+        m providerInput i.val d.toInputs.xori_input.imm h_matches h_m32_zero h_match
+        d.toInputs.h_xori_subset
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.xori d.xori_input d.r1 d.rd d.imm zeroValidBinary bus pins
+    OpEnvelope.xori d.toInputs.xori_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_input_r1_row h_input_imm_row d.h_xori_subset h_lane_rd promises
+      h_input_r1_row h_input_imm_row d.toInputs.h_xori_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_imm_row⟩
@@ -1301,39 +1301,39 @@ theorem stepStrong_slti
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTI))) (binding i)
+        (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.SLTI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_compare_provided
-      trace i d.h_main_active (Or.inl d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1343,24 +1343,24 @@ theorem stepStrong_slti
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
-      state d.slti_input.r1_val d.slti_input.imm d.slti_input.rd d.slti_input.PC
-      (PureSpec.execute_ITYPE_slti_pure d.slti_input).nextPC
-      d.r1 d.rd d.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_imm_eq := d.h_input_imm,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.slti_input.r1_val d.toInputs.slti_input.imm d.toInputs.slti_input.rd d.toInputs.slti_input.PC
+      (PureSpec.execute_ITYPE_slti_pure d.toInputs.slti_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_imm_eq := d.toInputs.h_input_imm,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -1371,7 +1371,7 @@ theorem stepStrong_slti
       ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_LT : FGL) := by
@@ -1383,7 +1383,7 @@ theorem stepStrong_slti
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_LT, ZiskFv.Trusted.OP_LT] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_LT (by
@@ -1398,15 +1398,15 @@ theorem stepStrong_slti
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LT :=
     allByteMatchesOfStaticOut64_local h_out
   have h_input_r1_row :
-      d.slti_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.slti_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.slti_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slti_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.slti d.slti_input d.r1 d.rd d.imm zeroValidBinary bus pins
+    OpEnvelope.slti d.toInputs.slti_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_m32_zero h_input_r1_row d.h_slti_subset h_lane_rd promises
+      h_m32_zero h_input_r1_row d.toInputs.h_slti_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_m32_zero, h_input_r1_row⟩
@@ -1429,39 +1429,39 @@ theorem stepStrong_sltiu
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.SLTIU))) (binding i)
+        (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.SLTIU))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_compare_provided
-      trace i d.h_main_active (Or.inr d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inr d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1471,24 +1471,24 @@ theorem stepStrong_sltiu
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
-      state d.sltiu_input.r1_val d.sltiu_input.imm d.sltiu_input.rd d.sltiu_input.PC
-      (PureSpec.execute_ITYPE_sltiu_pure d.sltiu_input).nextPC
-      d.r1 d.rd d.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_imm_eq := d.h_input_imm,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.sltiu_input.r1_val d.toInputs.sltiu_input.imm d.toInputs.sltiu_input.rd d.toInputs.sltiu_input.PC
+      (PureSpec.execute_ITYPE_sltiu_pure d.toInputs.sltiu_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_imm_eq := d.toInputs.h_input_imm,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -1499,7 +1499,7 @@ theorem stepStrong_sltiu
       ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
         (ZiskFv.Airs.Tables.BinaryTable.OP_LTU : FGL) := by
@@ -1511,7 +1511,7 @@ theorem stepStrong_sltiu
       h_match_op.2.1
     rw [← h_op_match]
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_LTU, ZiskFv.Trusted.OP_LTU] using
-      d.h_main_op
+      d.toDecode.h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_LTU (by
@@ -1526,15 +1526,15 @@ theorem stepStrong_sltiu
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LTU :=
     allByteMatchesOfStaticOut64_local h_out
   have h_input_r1_row :
-      d.sltiu_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+      d.toInputs.sltiu_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-        m providerInput i.val (regidx_to_fin d.r1) d.sltiu_input.r1_val
-        h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sltiu_input.r1_val
+        h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sltiu d.sltiu_input d.r1 d.rd d.imm zeroValidBinary bus pins
+    OpEnvelope.sltiu d.toInputs.sltiu_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_m32_zero h_input_r1_row d.h_sltiu_subset h_lane_rd promises
+      h_m32_zero h_input_r1_row d.toInputs.h_sltiu_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_m32_zero, h_input_r1_row⟩
@@ -1558,39 +1558,39 @@ theorem stepStrong_sll
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SLL))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SLL))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inl d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1600,40 +1600,40 @@ theorem stepStrong_sll
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.sll_input.r1_val d.sll_input.r2_val d.sll_input.rd d.sll_input.PC
-      (PureSpec.execute_RTYPE_sll_pure d.sll_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.sll_input.r1_val d.toInputs.sll_input.r2_val d.toInputs.sll_input.rd d.toInputs.sll_input.PC
+      (PureSpec.execute_RTYPE_sll_pure d.toInputs.sll_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))
+      (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.sll_input.r1_val
-      h_m32_zero d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sll_input.r1_val
+      h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.r2) d.sll_input.r2_val
-      h_m32_zero d.h_b_lo_t d.h_b_hi_t d.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sll_input.r2_val
+      h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sll d.sll_input d.r1 d.r2 d.rd providerTable providerRow bus
+    OpEnvelope.sll d.toInputs.sll_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -1657,39 +1657,39 @@ theorem stepStrong_srl
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRL))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SRL))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inr (Or.inl d.h_main_op))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1699,40 +1699,40 @@ theorem stepStrong_srl
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.srl_input.r1_val d.srl_input.r2_val d.srl_input.rd d.srl_input.PC
-      (PureSpec.execute_RTYPE_srl_pure d.srl_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.srl_input.r1_val d.toInputs.srl_input.r2_val d.toInputs.srl_input.rd d.toInputs.srl_input.PC
+      (PureSpec.execute_RTYPE_srl_pure d.toInputs.srl_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))
+      ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.srl_input.r1_val
-      h_m32_zero d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srl_input.r1_val
+      h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.r2) d.srl_input.r2_val
-      h_m32_zero d.h_b_lo_t d.h_b_hi_t d.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srl_input.r2_val
+      h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.srl d.srl_input d.r1 d.r2 d.rd providerTable providerRow bus
+    OpEnvelope.srl d.toInputs.srl_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -1756,39 +1756,39 @@ theorem stepStrong_sra
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.SRA))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SRA))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inr (Or.inr (Or.inl d.h_main_op)))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op)))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1798,40 +1798,40 @@ theorem stepStrong_sra
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.sra_input.r1_val d.sra_input.r2_val d.sra_input.rd d.sra_input.PC
-      (PureSpec.execute_RTYPE_sra_pure d.sra_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.sra_input.r1_val d.toInputs.sra_input.r2_val d.toInputs.sra_input.rd d.toInputs.sra_input.PC
+      (PureSpec.execute_RTYPE_sra_pure d.toInputs.sra_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))
+      ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.sra_input.r1_val
-      h_m32_zero d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sra_input.r1_val
+      h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.r2) d.sra_input.r2_val
-      h_m32_zero d.h_b_lo_t d.h_b_hi_t d.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sra_input.r2_val
+      h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sra d.sra_input d.r1 d.r2 d.rd providerTable providerRow bus
+    OpEnvelope.sra d.toInputs.sra_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -1851,39 +1851,39 @@ theorem stepStrong_slli
       (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slli .. => True | _ => False)) :
-    execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SLLI)) (binding i)
+    execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SLLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inl d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1893,44 +1893,44 @@ theorem stepStrong_slli
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
-      state d.slli_input.r1_val d.slli_input.shamt d.slli_input.rd d.slli_input.PC
-      (PureSpec.execute_SHIFTIOP_slli_pure d.slli_input).nextPC
-      d.r1 d.rd d.shamt bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_shamt_eq := d.h_input_shamt,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.slli_input.r1_val d.toInputs.slli_input.shamt d.toInputs.slli_input.rd d.toInputs.slli_input.PC
+      (PureSpec.execute_SHIFTIOP_slli_pure d.toInputs.slli_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.shamt bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_shamt_eq := d.toInputs.h_input_shamt,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))
+      (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.slli_input.r1_val
-      h_m32_zero d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slli_input.r1_val
+      h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :
-      d.slli_input.shamt.toNat =
+      d.toInputs.slli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow)) := by
-    rw [d.h_input_shamt]
-    exact shift_imm_shift_pin_row_of_facts m _ i.val d.shamt
-      d.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    rw [d.toInputs.h_input_shamt]
+    exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
+      d.toDecode.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.slli d.slli_input d.r1 d.rd d.shamt providerTable providerRow bus
+    OpEnvelope.slli d.toInputs.slli_input d.toClaim.r1 d.toClaim.rd d.toClaim.shamt providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -1950,39 +1950,39 @@ theorem stepStrong_srli
       (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srli .. => True | _ => False)) :
-    execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRLI)) (binding i)
+    execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SRLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inr (Or.inl d.h_main_op))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1992,44 +1992,44 @@ theorem stepStrong_srli
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
-      state d.srli_input.r1_val d.srli_input.shamt d.srli_input.rd d.srli_input.PC
-      (PureSpec.execute_SHIFTIOP_srli_pure d.srli_input).nextPC
-      d.r1 d.rd d.shamt bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_shamt_eq := d.h_input_shamt,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.srli_input.r1_val d.toInputs.srli_input.shamt d.toInputs.srli_input.rd d.toInputs.srli_input.PC
+      (PureSpec.execute_SHIFTIOP_srli_pure d.toInputs.srli_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.shamt bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_shamt_eq := d.toInputs.h_input_shamt,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))
+      ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.srli_input.r1_val
-      h_m32_zero d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srli_input.r1_val
+      h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :
-      d.srli_input.shamt.toNat =
+      d.toInputs.srli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow)) := by
-    rw [d.h_input_shamt]
-    exact shift_imm_shift_pin_row_of_facts m _ i.val d.shamt
-      d.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    rw [d.toInputs.h_input_shamt]
+    exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
+      d.toDecode.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.srli d.srli_input d.r1 d.rd d.shamt providerTable providerRow bus
+    OpEnvelope.srli d.toInputs.srli_input d.toClaim.r1 d.toClaim.rd d.toClaim.shamt providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -2049,39 +2049,39 @@ theorem stepStrong_srai
       (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srai .. => True | _ => False)) :
-    execute_instruction (instruction.SHIFTIOP (d.shamt, d.r1, d.rd, sop.SRAI)) (binding i)
+    execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SRAI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inr (Or.inr (Or.inl d.h_main_op)))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op)))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2091,44 +2091,44 @@ theorem stepStrong_srai
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
-      state d.srai_input.r1_val d.srai_input.shamt d.srai_input.rd d.srai_input.PC
-      (PureSpec.execute_SHIFTIOP_srai_pure d.srai_input).nextPC
-      d.r1 d.rd d.shamt bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_shamt_eq := d.h_input_shamt,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.srai_input.r1_val d.toInputs.srai_input.shamt d.toInputs.srai_input.rd d.toInputs.srai_input.PC
+      (PureSpec.execute_SHIFTIOP_srai_pure d.toInputs.srai_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.shamt bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_shamt_eq := d.toInputs.h_input_shamt,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))
+      ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.srai_input.r1_val
-      h_m32_zero d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srai_input.r1_val
+      h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :
-      d.srai_input.shamt.toNat =
+      d.toInputs.srai_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow)) := by
-    rw [d.h_input_shamt]
-    exact shift_imm_shift_pin_row_of_facts m _ i.val d.shamt
-      d.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    rw [d.toInputs.h_input_shamt]
+    exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
+      d.toDecode.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.srai d.srai_input d.r1 d.rd d.shamt providerTable providerRow bus
+    OpEnvelope.srai d.toInputs.srai_input d.toClaim.r1 d.toClaim.rd d.toClaim.shamt providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -2154,39 +2154,39 @@ theorem stepStrong_subw
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SUBW))) (binding i)
+        (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SUBW))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_w_provided
-      trace i d.h_main_active (Or.inr d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inr d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB_W :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2201,7 +2201,7 @@ theorem stepStrong_subw
   obtain ⟨h_core, h_facts⟩ :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_one : m.m32 i.val = 1 := d.h_m32
+  have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have ha0 : (providerInput.aBytes.free_in_a_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.1
@@ -2215,12 +2215,12 @@ theorem stepStrong_subw
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.2.1.1.1
   have h_input_r1_extract :
-      (Sail.BitVec.extractLsb d.subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+      (Sail.BitVec.extractLsb d.toInputs.subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowA32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
-        m providerInput i.val (regidx_to_fin d.r1) d.subw_input.r1_val
-        ha0 ha1 ha2 ha3 h_m32_one d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.subw_input.r1_val
+        ha0 ha1 ha2 ha3 h_m32_one d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have hb0 : (providerInput.bBytes.free_in_b_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.2.1
@@ -2234,33 +2234,33 @@ theorem stepStrong_subw
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.2.1.1.2.1
   have h_input_r2_extract :
-      (Sail.BitVec.extractLsb d.subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+      (Sail.BitVec.extractLsb d.toInputs.subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowB32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowB32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
-        m providerInput i.val (regidx_to_fin d.r2) d.subw_input.r2_val
-        hb0 hb1 hb2 hb3 h_m32_one d.h_b_lo_t d.h_b_hi_t h_match d.h_input_r2
+        m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.subw_input.r2_val
+        hb0 hb1 hb2 hb3 h_m32_one d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.subw_input.r1_val d.subw_input.r2_val d.subw_input.rd d.subw_input.PC
-      (PureSpec.execute_RTYPE_subw_pure d.subw_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.subw_input.r1_val d.toInputs.subw_input.r2_val d.toInputs.subw_input.rd d.toInputs.subw_input.PC
+      (PureSpec.execute_RTYPE_subw_pure d.toInputs.subw_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.subw d.subw_input d.r1 d.r2 d.rd zeroValidBinary bus pins
+    OpEnvelope.subw d.toInputs.subw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
       h_input_r1_extract h_input_r2_extract h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
@@ -2284,39 +2284,39 @@ theorem stepStrong_addw
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.ADDW))) (binding i)
+        (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.ADDW))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_w_provided
-      trace i d.h_main_active (Or.inl d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2331,7 +2331,7 @@ theorem stepStrong_addw
   obtain ⟨h_core, h_facts⟩ :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_one : m.m32 i.val = 1 := d.h_m32
+  have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have ha0 : (providerInput.aBytes.free_in_a_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.1
@@ -2345,12 +2345,12 @@ theorem stepStrong_addw
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.2.1.1.1
   have h_input_r1_extract :
-      (Sail.BitVec.extractLsb d.addw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+      (Sail.BitVec.extractLsb d.toInputs.addw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowA32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
-        m providerInput i.val (regidx_to_fin d.r1) d.addw_input.r1_val
-        ha0 ha1 ha2 ha3 h_m32_one d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addw_input.r1_val
+        ha0 ha1 ha2 ha3 h_m32_one d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   have hb0 : (providerInput.bBytes.free_in_b_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.2.1
@@ -2364,33 +2364,33 @@ theorem stepStrong_addw
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.2.1.1.2.1
   have h_input_r2_extract :
-      (Sail.BitVec.extractLsb d.addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
+      (Sail.BitVec.extractLsb d.toInputs.addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowB32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowB32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
-        m providerInput i.val (regidx_to_fin d.r2) d.addw_input.r2_val
-        hb0 hb1 hb2 hb3 h_m32_one d.h_b_lo_t d.h_b_hi_t h_match d.h_input_r2
+        m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.addw_input.r2_val
+        hb0 hb1 hb2 hb3 h_m32_one d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.addw_input.r1_val d.addw_input.r2_val d.addw_input.rd d.addw_input.PC
-      (PureSpec.execute_RTYPE_addw_pure d.addw_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.addw_input.r1_val d.toInputs.addw_input.r2_val d.toInputs.addw_input.rd d.toInputs.addw_input.PC
+      (PureSpec.execute_RTYPE_addw_pure d.toInputs.addw_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.addw d.addw_input d.r1 d.r2 d.rd zeroValidBinary bus pins
+    OpEnvelope.addw d.toInputs.addw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
       h_input_r1_extract h_input_r2_extract h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
@@ -2414,39 +2414,39 @@ theorem stepStrong_addiw
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ADDIW (d.imm, d.r1, d.rd))) (binding i)
+        (instruction.ADDIW (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_w_provided
-      trace i d.h_main_active (Or.inl d.h_main_op)
+      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2461,7 +2461,7 @@ theorem stepStrong_addiw
   obtain ⟨h_core, h_facts⟩ :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_one : m.m32 i.val = 1 := d.h_m32
+  have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have ha0 : (providerInput.aBytes.free_in_a_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.1
@@ -2475,34 +2475,34 @@ theorem stepStrong_addiw
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.2.1.1.1
   have h_input_r1_extract :
-      (Sail.BitVec.extractLsb d.addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+      (Sail.BitVec.extractLsb d.toInputs.addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowA32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
-        m providerInput i.val (regidx_to_fin d.r1) d.addiw_input.r1_val
-        ha0 ha1 ha2 ha3 h_m32_one d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+        m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addiw_input.r1_val
+        ha0 ha1 ha2 ha3 h_m32_one d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
-      state d.addiw_input.r1_val d.addiw_input.imm d.addiw_input.rd d.addiw_input.PC
-      (PureSpec.execute_ITYPE_addiw_pure d.addiw_input).nextPC
-      d.r1 d.rd d.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_imm_eq := d.h_input_imm,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.addiw_input.r1_val d.toInputs.addiw_input.imm d.toInputs.addiw_input.rd d.toInputs.addiw_input.PC
+      (PureSpec.execute_ITYPE_addiw_pure d.toInputs.addiw_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_imm_eq := d.toInputs.h_input_imm,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.addiw d.addiw_input d.r1 d.rd d.imm zeroValidBinary bus pins
-      d.h_addiw_subset providerTable providerRow h_component h_table_spec h_provider_row
+    OpEnvelope.addiw d.toInputs.addiw_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
+      d.toInputs.h_addiw_subset providerTable providerRow h_component h_table_spec h_provider_row
       h_match h_input_r1_extract h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := h_input_r1_extract
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -2530,39 +2530,39 @@ theorem stepStrong_sllw
       (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sllw .. => True | _ => False)) :
-    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SLLW)) (binding i)
+    execute_instruction (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SLLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op))))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2572,44 +2572,44 @@ theorem stepStrong_sllw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.sllw_input.r1_val d.sllw_input.r2_val d.sllw_input.rd d.sllw_input.PC
-      (PureSpec.execute_RTYPE_sllw_pure d.sllw_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.sllw_input.r1_val d.toInputs.sllw_input.r2_val d.toInputs.sllw_input.rd d.toInputs.sllw_input.PC
+      (PureSpec.execute_RTYPE_sllw_pure d.toInputs.sllw_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_one : m.m32 i.val = 1 := d.h_m32
+  have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
       (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op])))))
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op])))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.sllw_input.r1_val
-      h_m32_one d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sllw_input.r1_val
+      h_m32_one d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.r2) d.sllw_input.r2_val
-      d.h_b_lo_t d.h_b_hi_t d.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sllw_input.r2_val
+      d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sllw d.sllw_input d.r1 d.r2 d.rd providerTable providerRow bus
-      d.h_input_r1 d.h_input_r2 d.h_input_rd d.h_input_pc d.h_exec_len d.h_e0_mult
-      d.h_e1_mult d.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
-      (by rfl) d.h_rd_idx pins h_component h_table_spec h_provider_row h_match
+    OpEnvelope.sllw d.toInputs.sllw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
+      d.toInputs.h_input_r1 d.toInputs.h_input_r2 d.toInputs.h_input_rd d.toInputs.h_input_pc d.toDecode.h_exec_len d.toDecode.h_e0_mult
+      d.toDecode.h_e1_mult d.toInputs.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+      (by rfl) d.toInputs.h_rd_idx pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
@@ -2628,39 +2628,39 @@ theorem stepStrong_srlw
       (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srlw .. => True | _ => False)) :
-    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRLW)) (binding i)
+    execute_instruction (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SRLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op)))))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2670,44 +2670,44 @@ theorem stepStrong_srlw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.srlw_input.r1_val d.srlw_input.r2_val d.srlw_input.rd d.srlw_input.PC
-      (PureSpec.execute_RTYPE_srlw_pure d.srlw_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.srlw_input.r1_val d.toInputs.srlw_input.r2_val d.toInputs.srlw_input.rd d.toInputs.srlw_input.PC
+      (PureSpec.execute_RTYPE_srlw_pure d.toInputs.srlw_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_one : m.m32 i.val = 1 := d.h_m32
+  have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.srlw_input.r1_val
-      h_m32_one d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srlw_input.r1_val
+      h_m32_one d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.r2) d.srlw_input.r2_val
-      d.h_b_lo_t d.h_b_hi_t d.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srlw_input.r2_val
+      d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.srlw d.srlw_input d.r1 d.r2 d.rd providerTable providerRow bus
-      d.h_input_r1 d.h_input_r2 d.h_input_rd d.h_input_pc d.h_exec_len d.h_e0_mult
-      d.h_e1_mult d.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
-      (by rfl) d.h_rd_idx pins h_component h_table_spec h_provider_row h_match
+    OpEnvelope.srlw d.toInputs.srlw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
+      d.toInputs.h_input_r1 d.toInputs.h_input_r2 d.toInputs.h_input_rd d.toInputs.h_input_pc d.toDecode.h_exec_len d.toDecode.h_e0_mult
+      d.toDecode.h_e1_mult d.toInputs.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+      (by rfl) d.toInputs.h_rd_idx pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
@@ -2726,40 +2726,40 @@ theorem stepStrong_sraw
       (state := binding i)
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraw .. => True | _ => False)) :
-    execute_instruction (instruction.RTYPEW (d.r2, d.r1, d.rd, ropw.SRAW)) (binding i)
+    execute_instruction (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SRAW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active
-      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.h_main_op)))))
+      trace i d.toDecode.h_main_active
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.toDecode.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2769,44 +2769,44 @@ theorem stepStrong_sraw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.sraw_input.r1_val d.sraw_input.r2_val d.sraw_input.rd d.sraw_input.PC
-      (PureSpec.execute_RTYPE_sraw_pure d.sraw_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.sraw_input.r1_val d.toInputs.sraw_input.r2_val d.toInputs.sraw_input.rd d.toInputs.sraw_input.PC
+      (PureSpec.execute_RTYPE_sraw_pure d.toInputs.sraw_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
-  have h_m32_one : m.m32 i.val = 1 := d.h_m32
+  have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.sraw_input.r1_val
-      h_m32_one d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sraw_input.r1_val
+      h_m32_one d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.r2) d.sraw_input.r2_val
-      d.h_b_lo_t d.h_b_hi_t d.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sraw_input.r2_val
+      d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sraw d.sraw_input d.r1 d.r2 d.rd providerTable providerRow bus
-      d.h_input_r1 d.h_input_r2 d.h_input_rd d.h_input_pc d.h_exec_len d.h_e0_mult
-      d.h_e1_mult d.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
-      (by rfl) d.h_rd_idx pins h_component h_table_spec h_provider_row h_match
+    OpEnvelope.sraw d.toInputs.sraw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
+      d.toInputs.h_input_r1 d.toInputs.h_input_r2 d.toInputs.h_input_rd d.toInputs.h_input_pc d.toDecode.h_exec_len d.toDecode.h_e0_mult
+      d.toDecode.h_e1_mult d.toInputs.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+      (by rfl) d.toInputs.h_rd_idx pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
@@ -2826,39 +2826,39 @@ theorem stepStrong_slliw
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .slliw .. => True | _ => False)) :
     execute_instruction
-      (instruction.SHIFTIWOP (d.slliw_input.shamt, d.r1, d.rd, sopw.SLLIW)) (binding i)
+      (instruction.SHIFTIWOP (d.toClaim.slliw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SLLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op))))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2868,38 +2868,38 @@ theorem stepStrong_slliw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
-      state d.slliw_input.r1_val d.slliw_input.rd d.slliw_input.PC
-      (PureSpec.execute_SHIFTIWOP_slliw_pure d.slliw_input).nextPC
-      d.r1 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toClaim.slliw_input.r1_val d.toClaim.slliw_input.rd d.toClaim.slliw_input.PC
+      (PureSpec.execute_SHIFTIWOP_slliw_pure d.toClaim.slliw_input).nextPC
+      d.toClaim.r1 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
       (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op])))))
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op])))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.slliw_input.r1_val
-      d.h_m32 d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.slliw_input.r1_val
+      d.toDecode.h_m32 d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.slliw_input.shamt
-      d.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.slliw_input.shamt
+      d.toInputs.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.slliw d.slliw_input d.r1 d.rd providerTable providerRow bus
+    OpEnvelope.slliw d.toClaim.slliw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -2920,39 +2920,39 @@ theorem stepStrong_srliw
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .srliw .. => True | _ => False)) :
     execute_instruction
-      (instruction.SHIFTIWOP (d.srliw_input.shamt, d.r1, d.rd, sopw.SRLIW)) (binding i)
+      (instruction.SHIFTIWOP (d.toClaim.srliw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.h_main_op)))))
+      trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2962,38 +2962,38 @@ theorem stepStrong_srliw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
-      state d.srliw_input.r1_val d.srliw_input.rd d.srliw_input.PC
-      (PureSpec.execute_SHIFTIWOP_srliw_pure d.srliw_input).nextPC
-      d.r1 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toClaim.srliw_input.r1_val d.toClaim.srliw_input.rd d.toClaim.srliw_input.PC
+      (PureSpec.execute_SHIFTIWOP_srliw_pure d.toClaim.srliw_input).nextPC
+      d.toClaim.r1 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.srliw_input.r1_val
-      d.h_m32 d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.srliw_input.r1_val
+      d.toDecode.h_m32 d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.srliw_input.shamt
-      d.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.srliw_input.shamt
+      d.toInputs.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.srliw d.srliw_input d.r1 d.rd providerTable providerRow bus
+    OpEnvelope.srliw d.toClaim.srliw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -3014,40 +3014,40 @@ theorem stepStrong_sraiw
       (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
       (r := i.val) (fun env => match env with | .sraiw .. => True | _ => False)) :
     execute_instruction
-      (instruction.SHIFTIWOP (d.sraiw_input.shamt, d.r1, d.rd, sopw.SRAIW)) (binding i)
+      (instruction.SHIFTIWOP (d.toClaim.sraiw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRAIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
-      trace i d.h_main_active
-      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.h_main_op)))))
+      trace i d.toDecode.h_main_active
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.toDecode.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -3057,38 +3057,38 @@ theorem stepStrong_sraiw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
-      state d.sraiw_input.r1_val d.sraiw_input.rd d.sraiw_input.PC
-      (PureSpec.execute_SHIFTIWOP_sraiw_pure d.sraiw_input).nextPC
-      d.r1 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toClaim.sraiw_input.r1_val d.toClaim.sraiw_input.rd d.toClaim.sraiw_input.PC
+      (PureSpec.execute_SHIFTIWOP_sraiw_pure d.toClaim.sraiw_input).nextPC
+      d.toClaim.r1 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
+      rd_idx := d.toInputs.h_rd_idx }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
   have h_op_is_shift :=
     shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.r1) d.sraiw_input.r1_val
-      d.h_m32 d.h_a_lo_t d.h_a_hi_t d.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.sraiw_input.r1_val
+      d.toDecode.h_m32 d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.sraiw_input.shamt
-      d.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.sraiw_input.shamt
+      d.toInputs.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sraiw d.sraiw_input d.r1 d.rd providerTable providerRow bus
+    OpEnvelope.sraiw d.toClaim.sraiw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -3118,38 +3118,38 @@ theorem stepStrong_add
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.RTYPE (d.r2, d.r1, d.rd, rop.ADD))) (binding i)
+        (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.ADD))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
     main_request_add_provided
-      trace i d.h_main_active d.h_main_op
+      trace i d.toDecode.h_main_active d.toDecode.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -3159,25 +3159,25 @@ theorem stepStrong_add
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
-      state d.add_input.r1_val d.add_input.r2_val d.add_input.rd d.add_input.PC
-      (PureSpec.execute_RTYPE_add_pure d.add_input).nextPC
-      d.r1 d.r2 d.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_r2_eq := d.h_input_r2,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.add_input.r1_val d.toInputs.add_input.r2_val d.toInputs.add_input.rd d.toInputs.add_input.PC
+      (PureSpec.execute_RTYPE_add_pure d.toInputs.add_input).nextPC
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_r2_eq := d.toInputs.h_input_r2,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
+      rd_idx := d.toInputs.h_rd_idx }
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   rcases h_disj with h_lookup | h_binaryadd
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_lookup
@@ -3202,7 +3202,7 @@ theorem stepStrong_add
         h_match_op.2.1
       rw [← h_op_match]
       simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD, ZiskFv.Trusted.OP_ADD] using
-        d.h_main_op
+        d.toDecode.h_main_op
     obtain ⟨h_row_m32, h_bop, _⟩ :=
       ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
         providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_ADD (by
@@ -3217,19 +3217,19 @@ theorem stepStrong_add
           providerInput ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
       allByteMatchesOfStaticOut64_local h_out
     have h_input_r1_row :
-        d.add_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+        d.toInputs.add_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
         ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-          m providerInput i.val (regidx_to_fin d.r1) d.add_input.r1_val
-          h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+          m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.add_input.r1_val
+          h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
     have h_input_r2_row :
-        d.add_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+        d.toInputs.add_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
         ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
-          m providerInput i.val (regidx_to_fin d.r2) d.add_input.r2_val
-          h_matches h_m32_zero d.h_b_lo_t d.h_b_hi_t h_match d.h_input_r2
+          m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.add_input.r2_val
+          h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
     let env : OpEnvelope state m i.val :=
-      OpEnvelope.add_via_binary d.add_input d.r1 d.r2 d.rd bus pins
+      OpEnvelope.add_via_binary d.toInputs.add_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
         h_input_r1_row h_input_r2_row h_lane_rd promises
     have h_bridge : env.aeneasBridgeTrust := by
@@ -3242,13 +3242,13 @@ theorem stepStrong_add
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
     let env : OpEnvelope state m i.val :=
-      OpEnvelope.add_via_binaryadd d.add_input d.r1 d.r2 d.rd bus pins
+      OpEnvelope.add_via_binaryadd d.toInputs.add_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
-        h_add_subset d.h_a_lo_t d.h_a_hi_t d.h_b_lo_t d.h_b_hi_t h_m32_zero
+        h_add_subset d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_m32_zero
         h_lane_rd promises
     have h_bridge : env.aeneasBridgeTrust := by
       show _ ∧ _ ∧ _ ∧ _ ∧ _
-      exact ⟨d.h_a_lo_t, d.h_a_hi_t, d.h_b_lo_t, d.h_b_hi_t, h_m32_zero⟩
+      exact ⟨d.toInputs.h_a_lo_t, d.toInputs.h_a_hi_t, d.toInputs.h_b_lo_t, d.toInputs.h_b_hi_t, h_m32_zero⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
     have h_known : Defects.NoKnownDefect env :=
       h_known_arm env trivial
@@ -3270,38 +3270,38 @@ theorem stepStrong_addi
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
-        (instruction.ITYPE (d.imm, d.r1, d.rd, iop.ADDI))) (binding i)
+        (instruction.ITYPE (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, iop.ADDI))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace binding i d.execRow).exec_row,
-           [ (busSub trace binding i d.execRow).e0
-           , (busSub trace binding i d.execRow).e1
-           , (busSub trace binding i d.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i d.toClaim.execRow).exec_row,
+           [ (busSub trace i d.toClaim.execRow).e0
+           , (busSub trace i d.toClaim.execRow).e1
+           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i d.execRow
+  let bus := busSub trace i d.toClaim.execRow
   obtain ⟨h_add_subset, h_disj⟩ :=
     main_request_add_provided
-      trace i d.h_main_active d.h_main_op
+      trace i d.toDecode.h_main_active d.toDecode.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
-    ⟨d.h_main_active, d.h_main_op⟩
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
       simpa [mainRowWithRomSub, m,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
     rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.h_store_pc
+    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -3311,26 +3311,26 @@ theorem stepStrong_addi
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
-      state d.addi_input.r1_val d.addi_input.imm d.addi_input.rd d.addi_input.PC
-      (PureSpec.execute_ITYPE_addi_pure d.addi_input).nextPC
-      d.r1 d.rd d.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.h_input_r1,
-      input_imm_eq := d.h_input_imm,
-      input_rd_eq := d.h_input_rd,
-      input_pc_eq := d.h_input_pc,
-      exec_len := d.h_exec_len,
-      e0_mult := d.h_e0_mult,
-      e1_mult := d.h_e1_mult,
-      nextPC_matches := d.h_nextPC_matches,
+      state d.toInputs.addi_input.r1_val d.toInputs.addi_input.imm d.toInputs.addi_input.rd d.toInputs.addi_input.PC
+      (PureSpec.execute_ITYPE_addi_pure d.toInputs.addi_input).nextPC
+      d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus.exec_row bus.e0 bus.e1 bus.e2 :=
+    { input_r1_eq := d.toInputs.h_input_r1,
+      input_imm_eq := d.toInputs.h_input_imm,
+      input_rd_eq := d.toInputs.h_input_rd,
+      input_pc_eq := d.toInputs.h_input_pc,
+      exec_len := d.toDecode.h_exec_len,
+      e0_mult := d.toDecode.h_e0_mult,
+      e1_mult := d.toDecode.h_e1_mult,
+      nextPC_matches := d.toInputs.h_nextPC_matches,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.h_rd_idx }
-  have h_m32_zero : m.m32 i.val = 0 := d.h_m32
-  have h_set_pc_zero : m.set_pc i.val = 0 := d.h_set_pc
+      rd_idx := d.toInputs.h_rd_idx }
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
+  have h_set_pc_zero : m.set_pc i.val = 0 := d.toDecode.h_set_pc
   rcases h_disj with h_lookup | h_binaryadd
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_lookup
@@ -3355,7 +3355,7 @@ theorem stepStrong_addi
         h_match_op.2.1
       rw [← h_op_match]
       simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD, ZiskFv.Trusted.OP_ADD] using
-        d.h_main_op
+        d.toDecode.h_main_op
     obtain ⟨h_row_m32, h_bop, _⟩ :=
       ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
         providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_ADD (by
@@ -3370,22 +3370,22 @@ theorem stepStrong_addi
           providerInput ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
       allByteMatchesOfStaticOut64_local h_out
     have h_input_r1_row :
-        d.addi_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+        d.toInputs.addi_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
         ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
-          m providerInput i.val (regidx_to_fin d.r1) d.addi_input.r1_val
-          h_matches h_m32_zero d.h_a_lo_t d.h_a_hi_t h_match d.h_input_r1
+          m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addi_input.r1_val
+          h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
     have h_input_imm_row :
-        BitVec.signExtend 64 d.addi_input.imm
+        BitVec.signExtend 64 d.toInputs.addi_input.imm
           = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
         ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
-          m providerInput i.val d.addi_input.imm h_matches h_m32_zero h_match
-          d.h_addi_subset
+          m providerInput i.val d.toInputs.addi_input.imm h_matches h_m32_zero h_match
+          d.toInputs.h_addi_subset
     let env : OpEnvelope state m i.val :=
-      OpEnvelope.addi_via_binary d.addi_input d.r1 d.rd d.imm bus pins
+      OpEnvelope.addi_via_binary d.toInputs.addi_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
-        d.h_addi_subset h_input_r1_row h_input_imm_row h_lane_rd promises
+        d.toInputs.h_addi_subset h_input_r1_row h_input_imm_row h_lane_rd promises
     have h_bridge : env.aeneasBridgeTrust := by
       show _ ∧ _
       exact ⟨h_input_r1_row, h_input_imm_row⟩
@@ -3396,13 +3396,13 @@ theorem stepStrong_addi
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
     let env : OpEnvelope state m i.val :=
-      OpEnvelope.addi_via_binaryadd d.addi_input d.r1 d.rd d.imm bus pins
+      OpEnvelope.addi_via_binaryadd d.toInputs.addi_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
-        h_add_subset d.h_addi_subset d.h_a_lo_t d.h_a_hi_t h_m32_zero h_set_pc_zero
+        h_add_subset d.toInputs.h_addi_subset d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_m32_zero h_set_pc_zero
         h_lane_rd promises
     have h_bridge : env.aeneasBridgeTrust := by
       show _ ∧ _ ∧ _ ∧ _
-      exact ⟨d.h_a_lo_t, d.h_a_hi_t, h_m32_zero, h_set_pc_zero⟩
+      exact ⟨d.toInputs.h_a_lo_t, d.toInputs.h_a_hi_t, h_m32_zero, h_set_pc_zero⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
     have h_known : Defects.NoKnownDefect env :=
       h_known_arm env trivial

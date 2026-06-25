@@ -362,25 +362,25 @@ theorem construction_sll_sound_claimed_dead
             (regidx_to_fin r2)))
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC)
     (h_rd_idx :
       sll_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   -- abbreviations
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -391,9 +391,9 @@ theorem construction_sll_sound_claimed_dead
     ⟨h_main_active, h_main_op⟩
   -- (a) lane-rd, derived from store_pc = 0 (no record consumed)
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -405,9 +405,9 @@ theorem construction_sll_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -528,25 +528,25 @@ theorem construction_srl_sound_claimed_dead
             (regidx_to_fin r2)))
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_RTYPE_srl_pure srl_input).nextPC)
     (h_rd_idx :
       srl_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRL)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   -- abbreviations
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -557,9 +557,9 @@ theorem construction_srl_sound_claimed_dead
     ⟨h_main_active, h_main_op⟩
   -- (a) lane-rd, derived from store_pc = 0 (no record consumed)
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -571,9 +571,9 @@ theorem construction_srl_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -694,25 +694,25 @@ theorem construction_sra_sound_claimed_dead
             (regidx_to_fin r2)))
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC)
     (h_rd_idx :
       sra_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   -- abbreviations
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   -- (a) op-bus provider match, derived from `trace.channels_balanced`
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
@@ -723,9 +723,9 @@ theorem construction_sra_sound_claimed_dead
     ⟨h_main_active, h_main_op⟩
   -- (a) lane-rd, derived from store_pc = 0 (no record consumed)
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -737,9 +737,9 @@ theorem construction_sra_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -847,24 +847,24 @@ theorem construction_slli_sound_claimed_dead
         shamt_b_lo shamt)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC)
     (h_rd_idx :
       slli_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -872,9 +872,9 @@ theorem construction_slli_sound_claimed_dead
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -886,9 +886,9 @@ theorem construction_slli_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -993,24 +993,24 @@ theorem construction_srli_sound_claimed_dead
         shamt_b_lo shamt)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC)
     (h_rd_idx :
       srli_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRLI)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1018,9 +1018,9 @@ theorem construction_srli_sound_claimed_dead
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1032,9 +1032,9 @@ theorem construction_srli_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1139,24 +1139,24 @@ theorem construction_srai_sound_claimed_dead
         shamt_b_lo shamt)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC)
     (h_rd_idx :
       srai_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRAI)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1164,9 +1164,9 @@ theorem construction_srai_sound_claimed_dead
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1178,9 +1178,9 @@ theorem construction_srai_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1462,25 +1462,25 @@ theorem construction_sllw_sound_claimed_dead
             (regidx_to_fin r2)))
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_RTYPE_sllw_pure sllw_input).nextPC)
     (h_rd_idx :
       sllw_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SLLW)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   -- abbreviations
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   -- (a) op-bus provider match, derived from `trace.channels_balanced`. SLLW = 4th
   -- disjunct of the shared shift Layer-A wrapper.
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
@@ -1492,9 +1492,9 @@ theorem construction_sllw_sound_claimed_dead
     ⟨h_main_active, h_main_op⟩
   -- (a) lane-rd, derived from store_pc = 0 (no record consumed)
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1506,9 +1506,9 @@ theorem construction_sllw_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1612,24 +1612,24 @@ theorem construction_srlw_sound_claimed_dead
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_RTYPE_srlw_pure srlw_input).nextPC)
     (h_rd_idx :
       srlw_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRLW)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1637,9 +1637,9 @@ theorem construction_srlw_sound_claimed_dead
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1651,9 +1651,9 @@ theorem construction_srlw_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1752,24 +1752,24 @@ theorem construction_sraw_sound_claimed_dead
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_RTYPE_sraw_pure sraw_input).nextPC)
     (h_rd_idx :
       sraw_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1778,9 +1778,9 @@ theorem construction_sraw_sound_claimed_dead
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1792,9 +1792,9 @@ theorem construction_sraw_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1897,25 +1897,25 @@ theorem construction_slliw_sound_claimed_dead
         shamt_w_b_lo slliw_input.shamt)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC)
     (h_rd_idx :
       slliw_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction
       (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1923,9 +1923,9 @@ theorem construction_slliw_sound_claimed_dead
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -1937,9 +1937,9 @@ theorem construction_slliw_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2024,25 +2024,25 @@ theorem construction_srliw_sound_claimed_dead
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         shamt_w_b_lo srliw_input.shamt)
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC)
     (h_rd_idx :
       srliw_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction
       (instruction.SHIFTIWOP (srliw_input.shamt, r1, rd, sopw.SRLIW)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2050,9 +2050,9 @@ theorem construction_srliw_sound_claimed_dead
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2064,9 +2064,9 @@ theorem construction_srliw_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2151,25 +2151,25 @@ theorem construction_sraiw_sound_claimed_dead
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         shamt_w_b_lo sraiw_input.shamt)
     (execRow : List (Interaction.ExecutionBusEntry FGL))
-    (h_exec_len : (busSub trace binding i execRow).exec_row.length = 2)
-    (h_e0_mult : (busSub trace binding i execRow).exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : (busSub trace binding i execRow).exec_row[1]!.multiplicity = 1)
+    (h_exec_len : (busSub trace i execRow).exec_row.length = 2)
+    (h_e0_mult : (busSub trace i execRow).exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : (busSub trace i execRow).exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸
-          (BitVec.ofNat 64 ((busSub trace binding i execRow).exec_row[1]!.pc).val))
+          (BitVec.ofNat 64 ((busSub trace i execRow).exec_row[1]!.pc).val))
         = (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC)
     (h_rd_idx :
       sraiw_input.rd =
-        Transpiler.wrap_to_regidx (busSub trace binding i execRow).e2.ptr) :
+        Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr) :
     execute_instruction
       (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) (binding i)
-      = (bus_effect (busSub trace binding i execRow).exec_row
-          [ (busSub trace binding i execRow).e0
-          , (busSub trace binding i execRow).e1
-          , (busSub trace binding i execRow).e2 ] (binding i)).2 := by
+      = (bus_effect (busSub trace i execRow).exec_row
+          [ (busSub trace i execRow).e0
+          , (busSub trace i execRow).e1
+          , (busSub trace i execRow).e2 ] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace binding i execRow
+  let bus := busSub trace i execRow
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2178,9 +2178,9 @@ theorem construction_sraiw_sound_claimed_dead
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
     ⟨h_main_active, h_main_op⟩
   have h_core_store_pc :
-      (mainRowWithRomSub trace binding i).core.store_pc = 0 := by
+      (mainRowWithRomSub trace i).core.store_pc = 0 := by
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
@@ -2192,9 +2192,9 @@ theorem construction_sraiw_sound_claimed_dead
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     have h :=
       ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace binding i) h_core_store_pc
+        (mainRowWithRomSub trace i) h_core_store_pc
     have h_row :
-        (mainRowWithRomSub trace binding i).core =
+        (mainRowWithRomSub trace i).core =
           ZiskFv.AirsClean.Main.rowAt m i.val := by
       have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
         trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩

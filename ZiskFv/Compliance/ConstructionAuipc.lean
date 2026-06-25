@@ -122,7 +122,7 @@ theorem construction_auipc_sound_claimed_dead
     -- (b) rd-write entry ↔ register-index alignment
     (h_rd_idx :
       auipc_input.rd =
-        Transpiler.wrap_to_regidx (eRdLui trace binding i).ptr)
+        Transpiler.wrap_to_regidx (eRdLui trace i).ptr)
     -- (b) RANGE pins
     (h_no_wrap : auipc_input.PC.toNat
       + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
@@ -131,10 +131,10 @@ theorem construction_auipc_sound_claimed_dead
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) (binding i)
-      = (bus_effect execRow [eRdLui trace binding i] (binding i)).2 := by
+      = (bus_effect execRow [eRdLui trace i] (binding i)).2 := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let e_rd := eRdLui trace binding i
+  let e_rd := eRdLui trace i
   -- (a) Main per-row Spec ⇒ the AUIPC Main constraint subset.
   have h_spec := mainSpec_at trace binding i
   have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m i.val :=
@@ -159,14 +159,14 @@ theorem construction_auipc_sound_claimed_dead
       h_auipc_subset
   -- (a) `StorePcMemoryWitness` from the real Clean Main `c` message row.
   have h_row_core :
-      (mainRowWithRomLui trace binding i).core =
+      (mainRowWithRomLui trace i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
     have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
       trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
     simpa [mainRowWithRomLui, m,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
   let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m i.val e_rd :=
-    { row := mainRowWithRomLui trace binding i
+    { row := mainRowWithRomLui trace i
       row_eq := h_row_core
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   -- (a) the rd-write MemBus shape (`rd_mult`, `rd_as`) is `rfl`; the pure-spec
