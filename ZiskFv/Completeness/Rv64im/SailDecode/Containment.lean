@@ -656,7 +656,7 @@ theorem sail_register_word_alu_executable_contained_in :
 
 theorem sail_m_extension_executable_contained_in :
     ∀ state raw inst,
-      Rv64imEnabledSailState state →
+      IsaExtensionsEnabled state →
       SailDecodesToIn state raw inst →
       SailEncodesToIn state inst raw →
       SailMExtensionInstruction inst →
@@ -1227,7 +1227,7 @@ theorem sail_rv64im_executable_contained_in_supported_decode_pilot :
 
 theorem sail_rv64im_executable_contained_in_supported_decode_in :
     ∀ state raw,
-      Rv64imEnabledSailState state →
+      IsaExtensionsEnabled state →
       SailRv64imExecutableRawIn state raw →
       Rv64imShapes.SupportedDecodeShape raw := by
   intro state raw h_state h_sail

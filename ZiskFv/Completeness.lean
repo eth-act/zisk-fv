@@ -63,7 +63,7 @@ decoder/encoder (`LeanRV64D.Functions.ext_decode` / `encdec_forwards`).
 
 * `state` / `raw` — a Sail machine state (the decoder consults extension state)
   and the 32-bit word.
-* premise `Rv64imEnabledSailState state` — `state` has `M` enabled, `Zmmul`
+* premise `IsaExtensionsEnabled state` — `state` has `M` enabled, `Zmmul`
   disabled.
 * premise `SailRv64imExecutableRawIn state raw` — `raw` round-trips through Sail
   to one of the eleven enumerated RV64IM instruction classes.
@@ -77,7 +77,7 @@ validating the Sail spec itself against the reference emulator).
 Caveat: `SupportedDecodeShape` is a hand-written predicate (`Rv64im/Shapes.lean`),
 NOT ZisK's decoder — this says nothing about ZisK. -/
 theorem sail_executable_within_supported_decode_shape :
-    ∀ state raw, Rv64imEnabledSailState state →
+    ∀ state raw, IsaExtensionsEnabled state →
       SailRv64imExecutableRawIn state raw → SupportedDecodeShape raw :=
   sail_rv64im_executable_contained_in_supported_decode_in
 
@@ -159,7 +159,7 @@ state z` unconditionally.
 * `z` — the ZisK surface (the abstract predicates).
 * `assumptions` — the per-stage coverage facts about `z` (the plan items). -/
 theorem skeletal_root_completeness
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (z : ZiskSurface) (assumptions : z.CoverageAssumptions) :
     EventualCompleteness state z := by
   intro raw h_sail h_not_gap
