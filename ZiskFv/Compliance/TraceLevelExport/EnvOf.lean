@@ -53,14 +53,14 @@ noncomputable def fenceEnvOf
     (d : RowData_fence trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.fence d.fence_input d.fm d.fenceP d.fenceS d.rs d.rd d.exec_row
-    ⟨d.h_main_active, d.h_main_op⟩
-    { input_pc_eq := d.h_input_pc
-      input_priv_eq := d.h_input_priv
-      exec_len := d.h_exec_len
-      e0_mult := d.h_e0_mult
-      e1_mult := d.h_e1_mult
-      nextPC_matches := d.h_nextPC_matches }
+  OpEnvelope.fence d.toInputs.fence_input d.toClaim.fm d.toClaim.fenceP d.toClaim.fenceS d.toClaim.rs d.toClaim.rd d.toClaim.exec_row
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
+    { input_pc_eq := d.toInputs.h_input_pc
+      input_priv_eq := d.toInputs.h_input_priv
+      exec_len := d.toDecode.h_exec_len
+      e0_mult := d.toDecode.h_e0_mult
+      e1_mult := d.toDecode.h_e1_mult
+      nextPC_matches := d.toInputs.h_nextPC_matches }
 
 /-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Both the
     `StepNoKnownDefect` mul obligation AND `stepStrong_mul` reference THIS env, so
@@ -72,10 +72,10 @@ noncomputable def mulEnvOf
     (d : RowData_mul trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.mul d.mul_input d.r1 d.r2 d.rd d.srs1 d.srs2 d.bus d.v d.r_a
-    ⟨d.h_main_active, d.h_main_op⟩
-    d.h_match_primary d.promises d.arith_mem d.bounds d.h_row_constraints
-    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges d.h_rs1_value d.h_rs2_value
+  OpEnvelope.mul d.toInputs.mul_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.srs1 d.toClaim.srs2 d.toClaim.bus d.toInputs.v d.toInputs.r_a
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
+    d.toInputs.h_match_primary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
+    d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
 
 /-- **Satisfiability / non-vacuity witness for the threaded MUL obligation.**
 
@@ -96,7 +96,7 @@ theorem mul_noKnownDefect_of_rowData
   cases id with
   | arithMulSignedWitnessSoundness =>
       simpa [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, mulEnvOf]
-        using d.h_not_forge
+        using d.toInputs.h_not_forge
   | arithDivDynamicWitnessSoundness =>
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulEnvOf]
   | fenceIncomplete =>
@@ -110,11 +110,11 @@ noncomputable def mulhEnvOf
     (d : RowData_mulh trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.mulh d.mulh_input d.r1 d.r2 d.rd d.bus d.v d.r_a
-    ⟨d.h_main_active, d.h_main_op⟩
-    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_row_constraints
-    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges d.h_rs1_value d.h_rs2_value
-    d.h_sign_a d.h_sign_b
+  OpEnvelope.mulh d.toInputs.mulh_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
+    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
+    d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
+    d.toInputs.h_sign_a d.toInputs.h_sign_b
 
 /-- The `OpEnvelope.mulhsu` env CONSTRUCTED from a `RowData_mulhsu`.  Only ONE
     sign-range residual `h_sign_a` (op2 unsigned, table-pinned `nb = 0`). -/
@@ -123,11 +123,11 @@ noncomputable def mulhsuEnvOf
     (d : RowData_mulhsu trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.mulhsu d.mulhsu_input d.r1 d.r2 d.rd d.bus d.v d.r_a
-    ⟨d.h_main_active, d.h_main_op⟩
-    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_row_constraints
-    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges d.h_rs1_value d.h_rs2_value
-    d.h_sign_a
+  OpEnvelope.mulhsu d.toInputs.mulhsu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a
+    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
+    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
+    d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
+    d.toInputs.h_sign_a
 
 /-- **Non-vacuity / satisfiability witness for the threaded MULH obligation.**
     For an honest MULH row, `h_not_forge` rules out the two exceptional shapes the
@@ -141,7 +141,7 @@ theorem mulh_noKnownDefect_of_rowData
   cases id with
   | arithMulSignedWitnessSoundness =>
       simpa [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, mulhEnvOf]
-        using d.h_not_forge
+        using d.toInputs.h_not_forge
   | arithDivDynamicWitnessSoundness =>
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulhEnvOf]
   | fenceIncomplete =>
@@ -157,7 +157,7 @@ theorem mulhsu_noKnownDefect_of_rowData
   cases id with
   | arithMulSignedWitnessSoundness =>
       simpa [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, mulhsuEnvOf]
-        using d.h_not_forge
+        using d.toInputs.h_not_forge
   | arithDivDynamicWitnessSoundness =>
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulhsuEnvOf]
   | fenceIncomplete =>
@@ -174,11 +174,11 @@ noncomputable def divEnvOf
     (d : RowData_div trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.div d.div_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
-    d.h_match_primary d.promises d.arith_mem d.bounds d.h_row_constraints d.h_boundary
-    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
-    d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin
-    d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
+  OpEnvelope.div d.toInputs.div_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
+    d.toInputs.h_match_primary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints d.toInputs.h_boundary
+    d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
+    d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin
+    d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
 
 /-- The `OpEnvelope.rem` env CONSTRUCTED from a `RowData_rem` (secondary lane). -/
 noncomputable def remEnvOf
@@ -186,11 +186,11 @@ noncomputable def remEnvOf
     (d : RowData_rem trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.rem d.rem_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
-    d.h_match_secondary d.promises d.arith_mem d.bounds d.h_row_constraints
-    d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
-    d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin
-    d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
+  OpEnvelope.rem d.toInputs.rem_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
+    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
+    d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
+    d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin
+    d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
 
 /-- The `OpEnvelope.divw` env CONSTRUCTED from a `RowData_divw` (W-mode primary). -/
 noncomputable def divwEnvOf
@@ -198,12 +198,12 @@ noncomputable def divwEnvOf
     (d : RowData_divw trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.divw d.divw_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
-    d.h_match_primary d.promises d.arith_mem d.bounds
-    d.h_row_constraints d.h_boundary d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
-    d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin d.h_m32_v d.h_div_v
-    d.h_a23 d.h_b23 d.h_d23 d.h_c23 d.h_byte_lo d.h_sext_choice
-    d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
+  OpEnvelope.divw d.toInputs.divw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
+    d.toInputs.h_match_primary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds
+    d.toInputs.h_row_constraints d.toInputs.h_boundary d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
+    d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin d.toInputs.h_m32_v d.toInputs.h_div_v
+    d.toInputs.h_a23 d.toInputs.h_b23 d.toInputs.h_d23 d.toInputs.h_c23 d.toInputs.h_byte_lo d.toInputs.h_sext_choice
+    d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
 
 /-- The `OpEnvelope.remw` env CONSTRUCTED from a `RowData_remw` (W-mode secondary). -/
 noncomputable def remwEnvOf
@@ -211,12 +211,12 @@ noncomputable def remwEnvOf
     (d : RowData_remw trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.remw d.remw_input d.r1 d.r2 d.rd d.bus d.v d.r_a d.pins
-    d.h_match_secondary d.promises d.arith_mem d.bounds
-    d.h_row_constraints d.arith_table d.arith_chunk_ranges d.arith_carry_ranges
-    d.h_na_bool d.h_nb_bool d.h_nr_bool d.h_np_xor d.h_nr_pin d.h_m32_v d.h_div_v
-    d.h_a23 d.h_b23 d.h_d23 d.h_c23 d.h_byte_lo d.h_sext_choice
-    d.h_rs1_value d.h_rs2_value d.h_r_le d.h_r_sign
+  OpEnvelope.remw d.toInputs.remw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
+    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds
+    d.toInputs.h_row_constraints d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
+    d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin d.toInputs.h_m32_v d.toInputs.h_div_v
+    d.toInputs.h_a23 d.toInputs.h_b23 d.toInputs.h_d23 d.toInputs.h_c23 d.toInputs.h_byte_lo d.toInputs.h_sext_choice
+    d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
 
 /-- **Non-vacuity / satisfiability witness for the threaded DIV obligation.**
 
@@ -239,7 +239,7 @@ theorem div_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, divEnvOf]
   | arithDivDynamicWitnessSoundness =>
       simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
-        Defects.signedRemainderInt, divEnvOf] using d.h_not_forge
+        Defects.signedRemainderInt, divEnvOf] using d.toInputs.h_not_forge
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, divEnvOf]
 
@@ -257,7 +257,7 @@ theorem rem_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
         Defects.signedRemainderInt, remEnvOf]
       intro _ h_eq
-      exact d.h_not_forge h_eq
+      exact d.toInputs.h_not_forge h_eq
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, remEnvOf]
 
@@ -273,7 +273,7 @@ theorem divw_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, divwEnvOf]
   | arithDivDynamicWitnessSoundness =>
       simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, divwEnvOf]
-        using d.h_not_forge
+        using d.toInputs.h_not_forge
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, divwEnvOf]
 
@@ -289,7 +289,7 @@ theorem remw_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.MaliciousSignedMulWitnessShape, remwEnvOf]
   | arithDivDynamicWitnessSoundness =>
       simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, remwEnvOf]
-        using d.h_not_forge
+        using d.toInputs.h_not_forge
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, remwEnvOf]
 
