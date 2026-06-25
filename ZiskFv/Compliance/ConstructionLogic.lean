@@ -88,7 +88,7 @@ set_option maxHeartbeats 2000000
     rd arithmetic, the MemBus `m0..m2` shape, `h_lane_rd`, and the lane→Sail
     binding facts. -/
 theorem construction_or_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (or_input : PureSpec.OrInput)
@@ -283,7 +283,7 @@ theorem construction_or_sound_claimed_dead
     `byte_chain_discharge_logic_of_static_row` (mirroring `EquivCore/Xor.lean`),
     NOT the `_op_lt_16` + `_64` pair. -/
 theorem construction_xor_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (xor_input : PureSpec.XorInput)

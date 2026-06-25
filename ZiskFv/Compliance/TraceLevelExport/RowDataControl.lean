@@ -44,7 +44,7 @@ set_option maxHeartbeats 8000000
 /-- Irreducible per-row residuals for the `beq` archetype — the binders of
     `construction_beq_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_beq
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   beq_input : PureSpec.BeqInput
   imm : BitVec 13
   r1 : regidx
@@ -90,7 +90,7 @@ structure RowData_beq
 /-- Irreducible per-row residuals for the `bne` archetype — the binders of
     `construction_bne_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bne
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   bne_input : PureSpec.BneInput
   imm : BitVec 13
   r1 : regidx
@@ -136,7 +136,7 @@ structure RowData_bne
 /-- Irreducible per-row residuals for the `blt` archetype — the binders of
     `construction_blt_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_blt
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   blt_input : PureSpec.BltInput
   imm : BitVec 13
   r1 : regidx
@@ -182,7 +182,7 @@ structure RowData_blt
 /-- Irreducible per-row residuals for the `bge` archetype — the binders of
     `construction_bge_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bge
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   bge_input : PureSpec.BgeInput
   imm : BitVec 13
   r1 : regidx
@@ -228,7 +228,7 @@ structure RowData_bge
 /-- Irreducible per-row residuals for the `bltu` archetype — the binders of
     `construction_bltu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bltu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   bltu_input : PureSpec.BltuInput
   imm : BitVec 13
   r1 : regidx
@@ -274,7 +274,7 @@ structure RowData_bltu
 /-- Irreducible per-row residuals for the `bgeu` archetype — the binders of
     `construction_bgeu_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_bgeu
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   bgeu_input : PureSpec.BgeuInput
   imm : BitVec 13
   r1 : regidx
@@ -320,7 +320,7 @@ structure RowData_bgeu
 /-- Irreducible per-row residuals for the `jal` archetype — the binders of
     `construction_jal_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_jal
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   jal_input : PureSpec.JalInput
   imm : BitVec 21
   rd : regidx
@@ -369,7 +369,7 @@ structure RowData_jal
 /-- Irreducible per-row residuals for the `jalr` archetype — the binders of
     `construction_jalr_sound` after `(trace) (binding) (i)`, verbatim. -/
 structure RowData_jalr
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   jalr_input : PureSpec.JalrInput
   imm : BitVec 12
   rs1 : regidx
@@ -440,7 +440,7 @@ structure RowData_jalr
     documents.  Non-vacuous: a real trace with a generic `fm=0,rs1=x0,rd=x0` FENCE
     row supplies all binders and proves the `NoKnownDefect` obligation. -/
 structure RowData_fence
-    (trace : AcceptedZiskTrace) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
   fence_input : PureSpec.FenceInput
   fm : BitVec 4
   fenceP : BitVec 4

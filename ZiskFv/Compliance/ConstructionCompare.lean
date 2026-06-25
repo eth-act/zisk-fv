@@ -80,7 +80,7 @@ set_option maxHeartbeats 2000000
     rd arithmetic (incl. the signed-compare polarity, inside `equiv_SLT`), the
     MemBus `m0..m2` shape, `h_lane_rd`, and the lane→Sail binding facts. -/
 theorem construction_slt_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (slt_input : PureSpec.SltInput)
@@ -275,7 +275,7 @@ theorem construction_slt_sound_claimed_dead
     same `_op_lt_16` + `_64` route applies; the unsigned-compare polarity lives
     inside `equiv_SLTU`. -/
 theorem construction_sltu_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sltu_input : PureSpec.SltuInput)

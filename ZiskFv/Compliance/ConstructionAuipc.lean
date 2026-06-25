@@ -77,7 +77,7 @@ set_option maxHeartbeats 2000000
     AUIPC constraint subset, the `StorePcMemoryWitness`, the rd-write MemBus
     shape, the pure-spec `nextPC_eq`, and the circuit-internal rd arithmetic. -/
 theorem construction_auipc_sound_claimed_dead
-    (trace : AcceptedZiskTrace)
+    (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (auipc_input : PureSpec.AuipcInput)
