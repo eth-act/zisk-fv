@@ -146,6 +146,47 @@ def ArithDivDynamicWitnessShape
           = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs
   | _ => False
 
+/-! ### Row-data forms of the three defect shapes
+
+The four predicates below state the SAME conditions as the `OpEnvelope`-based
+shapes above (`MaliciousSignedMulWitnessShape`, `ArithDivDynamicWitnessShape`,
+`FenceKnownGoodShape`), re-expressed directly over the arith witness / claim
+fields that live in the `Inputs_<op>` / `Claim_<op>` row data.  This lets the
+threaded `StepNoKnownDefect` obligation read the defect condition off the row
+data without the `OpEnvelope` detour.  The faithfulness of the re-expression is
+the content of the bridge lemmas `signedMulForge_iff_shape` /
+`divRemForge_iff_shape` / `divRemForgeW_iff_shape` / `fenceKnownGood_iff_shape`
+in `ZiskFv.Compliance.TraceLevelExport.EnvOf`, each proved by `Iff.rfl`. -/
+
+/-- Row-data form of the malicious signed-MUL forge shape (ops 179/180/181):
+    the two exceptional product-sign witnesses the shared ArithTable admits.
+    Same condition as the `.mul`/`.mulh`/`.mulhsu` arms of
+    `MaliciousSignedMulWitnessShape`. -/
+def SignedMulForge (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ) : Prop :=
+  (v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+  ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)
+
+/-- Row-data form of the signed DIV/REM 64-bit remainder-bound false positive
+    (`divisor ≠ 0 ∧ |remainder| = |divisor|` on the nonzero-divisor path).
+    Same condition as the `.div`/`.rem` arms of `ArithDivDynamicWitnessShape`. -/
+def DivRemForge (op2 : BitVec 64)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : Prop :=
+  op2.toInt ≠ 0 ∧ (signedRemainderInt v r_a).natAbs = op2.toInt.natAbs
+
+/-- W-mode (DIVW/REMW) analogue of `DivRemForge`: the 32-bit
+    `|r₃₂| = |op2₃₂|` false positive on the nonzero-divisor path.  Same
+    condition as the `.divw`/`.remw` arms of `ArithDivDynamicWitnessShape`. -/
+def DivRemForgeW (op2 : BitVec 64)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : Prop :=
+  Sail.BitVec.extractLsb op2 31 0 ≠ 0#32
+    ∧ (signedRemainderIntW v r_a).natAbs = (Sail.BitVec.extractLsb op2 31 0).toInt.natAbs
+
+/-- Row-data form of ZisK's currently accepted known-good FENCE subset
+    (`fm = 0 ∧ rs1 = x0 ∧ rd = x0`).  Same condition as the `.fence` arm of
+    `FenceKnownGoodShape`. -/
+def FenceKnownGood (fm : BitVec 4) (rs rd : regidx) : Prop :=
+  fm = 0#4 ∧ IsX0Reg rs ∧ IsX0Reg rd
+
 /-- `Blocks id env` means defect `id` excludes this envelope from the
     defect-qualified compliance theorem. -/
 def Blocks (id : DefectId) (env : OpEnvelope state m r_main) : Prop :=
