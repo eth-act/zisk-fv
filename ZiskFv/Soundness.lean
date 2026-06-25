@@ -36,7 +36,7 @@ theorem root_soundness
     (sailTrace : SailTrace ziskTrace)
     (rowData : ∀ i : Fin ziskTrace.numInstructions, StrongRowConstructionData ziskTrace sailTrace i)
     (h_known_bugs : ∀ i : Fin ziskTrace.numInstructions, StepNoKnownDefect ziskTrace sailTrace i (rowData i)) :
-    ∀ i : Fin ziskTrace.numInstructions, StepComplianceStrong ziskTrace sailTrace i (rowData i) :=
-  fun i => stepComplianceStrong_of_rowData ziskTrace sailTrace i (rowData i) (h_known_bugs i)
+    ∀ i : Fin ziskTrace.numInstructions, StepFaithful ziskTrace sailTrace i (rowData i) :=
+  fun i => stepFaithful_of_evidence ziskTrace sailTrace i (rowData i) (h_known_bugs i)
 
 end ZiskFv.Compliance

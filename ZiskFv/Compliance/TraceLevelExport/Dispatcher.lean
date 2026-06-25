@@ -385,7 +385,7 @@ def StepNoKnownDefect
 /-- The strengthened per-step conclusion: the channel-balance
     (`state_effect_via_channels`) form — the OLD global theorem's per-arm
     conclusion — keyed on the row archetype. -/
-def StepComplianceStrong
+def StepFaithful
     (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace) (i : Fin ziskTrace.numInstructions) :
     StrongRowConstructionData ziskTrace sailTrace i → Prop
   | .sub d =>
@@ -866,11 +866,11 @@ def StepComplianceStrong
     straight to the corresponding `stepStrong_<op>`, which feeds it to
     `zisk_riscv_compliant_program_bus`.  For the direct-lift arms (which never call
     the old theorem) the obligation is `True` and is ignored. -/
-theorem stepComplianceStrong_of_rowData
+theorem stepFaithful_of_evidence
     (ziskTrace : AcceptedZiskTrace) (sailTrace : SailTrace ziskTrace) (i : Fin ziskTrace.numInstructions)
     (d : StrongRowConstructionData ziskTrace sailTrace i)
     (h_known : StepNoKnownDefect ziskTrace sailTrace i d) :
-    StepComplianceStrong ziskTrace sailTrace i d := by
+    StepFaithful ziskTrace sailTrace i d := by
   cases d with
   | sub d => exact stepStrong_sub ziskTrace sailTrace i d h_known
   | and d => exact stepStrong_and ziskTrace sailTrace i d h_known

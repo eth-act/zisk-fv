@@ -89,7 +89,7 @@ global theorem produces:
 ## Threaded defect-exclusion hypothesis (`h_known_bugs`)
 
 The `h_known_bugs` premise is the per-row defect-exclusion obligation
-(`StepNoKnownDefect`).  It is threaded — via `stepComplianceStrong_of_rowData` —
+(`StepNoKnownDefect`).  It is threaded — via `stepFaithful_of_evidence` —
 to each OpEnvelope-route `stepStrong_<op>`, which feeds it to the old global
 theorem in place of an internally-proved `NoKnownDefect`.  It takes three shapes
 across the 63 arms, all SATISFIABLE for an honest row (so this export is NOT
