@@ -34,7 +34,16 @@ pins those decodes — Sail's `encdec`/`currentlyEnabled` guards for the M opcod
 would need to be checked; the conjunct is kept conservatively for now.
 
 Named generically (`IsaExtensionsEnabled`, not `Rv64imEnabled…`) to future-proof
-for enabling further extensions (e.g. Zicclsm) without renaming. -/
+for enabling further extensions (e.g. Zicclsm) without renaming.
+
+NOTE: this predicate takes the whole `SailState` even though it logically depends
+only on a couple of CSR bits. That is inherited from the Sail model + the
+Sail→Lean extraction: `SailState` (`PreSail.SequentialState …`) is monolithic and
+`currentlyEnabled` is a generated function over the full state. Our wrapper layer
+sits on top of those generated functions, so it cannot slim the state without
+either patching/forking the extraction (which would move the trust anchor) or
+proving a separate "only these CSR bits matter" projection lemma. It is whole-state
+for fidelity to the extracted API, not because it needs all of it. -/
 def IsaExtensionsEnabled (state : SailState) : Prop :=
   LeanRV64D.Functions.currentlyEnabled extension.Ext_M state =
     EStateM.Result.ok true state ∧
