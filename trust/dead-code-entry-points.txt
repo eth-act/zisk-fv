@@ -10,9 +10,10 @@
 ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 #
 # Group 1b: the P5 trace-level export theorem (#61). The env-constructed
-# channel-balance export over the 56 strengthened archetypes. Reaches
-# StrongRowConstructionData / RowData_<op> / StepFaithful /
-# stepFaithful_of_evidence / stepStrong_<op> / zeroValidBinary.
+# channel-balance export over the 63 strengthened archetypes. Reaches
+# ZiskStep / RowDecode / InputsAgree / RowData_<op> / StepNoKnownDefect /
+# StepFaithful / stepFaithful_of_evidence / stepStrong_<op> /
+# noKnownDefect_of_shapes / zeroValidBinary.
 ZiskFv.Compliance.root_soundness
 #
 # Group 2: the 63 canonical `equiv_<OP>` theorems (one per RV64IM

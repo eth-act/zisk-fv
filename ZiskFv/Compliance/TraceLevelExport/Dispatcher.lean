@@ -52,96 +52,10 @@ set_option maxHeartbeats 8000000
 
 /-! ## Strong sum + dispatcher + top-level strengthened export -/
 
-/-- A per-row classification carrying the honest residual binders for ALL 63 RV64IM
-    arms, each strengthened to the channel-balance / env-constructed form.  Three
-    routes feed the identical channel-balance proposition: the 22 op-bus ALU arms via
-    the env-constructed route; the control-flow / U-type / store / load /
-    M-ext-unsigned arms via the direct-lift route; and the 7 signed-M arms
-    (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW) plus FENCE via the env-constructed route with
-    a GENUINE per-row `NoKnownDefect` obligation whose defect predicate is narrowed to
-    the exact forge witness (so honest rows are never excluded).  No arm is omitted —
-    the export is 63/63 on the OpEnvelope route. -/
 
-inductive StrongRowConstructionData
-    (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) where
-  | sub (d : RowData_sub ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | and (d : RowData_and ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | or (d : RowData_or ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | xor (d : RowData_xor ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | slt (d : RowData_slt ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sltu (d : RowData_sltu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | andi (d : RowData_andi ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | ori (d : RowData_ori ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | xori (d : RowData_xori ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | slti (d : RowData_slti ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sltiu (d : RowData_sltiu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sll (d : RowData_sll ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | srl (d : RowData_srl ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sra (d : RowData_sra ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | slli (d : RowData_slli ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | srli (d : RowData_srli ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | srai (d : RowData_srai ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | add (d : RowData_add ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | addi (d : RowData_addi ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | subw (d : RowData_subw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | addw (d : RowData_addw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | addiw (d : RowData_addiw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sllw (d : RowData_sllw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | srlw (d : RowData_srlw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sraw (d : RowData_sraw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | slliw (d : RowData_slliw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | srliw (d : RowData_srliw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sraiw (d : RowData_sraiw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | mul (d : RowData_mul ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | mulh (d : RowData_mulh ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | mulhsu (d : RowData_mulhsu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | mulw (d : RowData_mulw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | mulhu (d : RowData_mulhu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | div (d : RowData_div ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | rem (d : RowData_rem ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | divw (d : RowData_divw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | remw (d : RowData_remw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | divu (d : RowData_divu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | divuw (d : RowData_divuw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | remu (d : RowData_remu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | remuw (d : RowData_remuw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | beq (d : RowData_beq ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | bne (d : RowData_bne ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | blt (d : RowData_blt ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | bge (d : RowData_bge ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | bltu (d : RowData_bltu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | bgeu (d : RowData_bgeu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | lui (d : RowData_lui ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | auipc (d : RowData_auipc ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | jal (d : RowData_jal ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | jalr (d : RowData_jalr ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sb (d : RowData_sb ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sh (d : RowData_sh ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sw (d : RowData_sw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | sd (d : RowData_sd ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | ld (d : RowData_ld ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | lbu (d : RowData_lbu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | lhu (d : RowData_lhu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | lwu (d : RowData_lwu ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | lb (d : RowData_lb ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | lh (d : RowData_lh ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | lw (d : RowData_lw ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-  | fence (d : RowData_fence ziskTrace sailTrace i) : StrongRowConstructionData ziskTrace sailTrace i
-
-/-- Per-row defect-exclusion obligation supplied to (and threaded into) the
-    strengthened ziskTrace-level export.  For each OpEnvelope-route arm it is the
-    `EnvNoKnownDefectFor` fact restricted to that arm's `OpEnvelope` constructor;
-    for the direct-lift arms (which never invoke `zisk_riscv_compliant_program_bus`)
-    it is `True`.  See `EnvNoKnownDefectFor` for the non-vacuity / generalization
-    rationale.
-
-    The `fence` arm is the EXCEPTION to the `EnvNoKnownDefectFor` selector-∀ shape:
-    that shape (`∀ env, sel env → NoKnownDefect env`) is FALSE for FENCE (a
-    malicious `fm≠0` FENCE matches the `.fence` selector but is NOT `NoKnownDefect`),
-    so the fence arm instead asks for the GENUINE `NoKnownDefect` of the SPECIFIC
-    honest `OpEnvelope.fence` env built from the row's honest-shape pins.  That
-    obligation is SATISFIABLE for an honest FENCE row (see `RowData_fence` /
-    `stepStrong_fence`). -/
+/-- The ZisK side of one trace step: which RV64IM op the row decoded to,
+    together with that op's `Claim_<op>` (decoded operand / destination
+    indices + committed bus row).  One constructor per RV64IM archetype. -/
 
 inductive ZiskStep (ziskTrace : AcceptedZiskTrace numInstructions) (i : Fin ziskTrace.numInstructions) where
   | sub (c : Claim_sub ziskTrace i) : ZiskStep ziskTrace i
@@ -340,325 +254,35 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : Sai
   | .lw c => Inputs_lw ziskTrace sailTrace i c
   | .fence c => Inputs_fence ziskTrace sailTrace i c
 
-def toFull (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
-    (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
-    (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs) :
-    StrongRowConstructionData ziskTrace sailTrace i :=
-  match zs, rd, ia with
-  | .sub c, rd, ia => .sub (toRowData_sub c rd ia)
-  | .and c, rd, ia => .and (toRowData_and c rd ia)
-  | .or c, rd, ia => .or (toRowData_or c rd ia)
-  | .xor c, rd, ia => .xor (toRowData_xor c rd ia)
-  | .slt c, rd, ia => .slt (toRowData_slt c rd ia)
-  | .sltu c, rd, ia => .sltu (toRowData_sltu c rd ia)
-  | .andi c, rd, ia => .andi (toRowData_andi c rd ia)
-  | .ori c, rd, ia => .ori (toRowData_ori c rd ia)
-  | .xori c, rd, ia => .xori (toRowData_xori c rd ia)
-  | .slti c, rd, ia => .slti (toRowData_slti c rd ia)
-  | .sltiu c, rd, ia => .sltiu (toRowData_sltiu c rd ia)
-  | .sll c, rd, ia => .sll (toRowData_sll c rd ia)
-  | .srl c, rd, ia => .srl (toRowData_srl c rd ia)
-  | .sra c, rd, ia => .sra (toRowData_sra c rd ia)
-  | .slli c, rd, ia => .slli (toRowData_slli c rd ia)
-  | .srli c, rd, ia => .srli (toRowData_srli c rd ia)
-  | .srai c, rd, ia => .srai (toRowData_srai c rd ia)
-  | .add c, rd, ia => .add (toRowData_add c rd ia)
-  | .addi c, rd, ia => .addi (toRowData_addi c rd ia)
-  | .subw c, rd, ia => .subw (toRowData_subw c rd ia)
-  | .addw c, rd, ia => .addw (toRowData_addw c rd ia)
-  | .addiw c, rd, ia => .addiw (toRowData_addiw c rd ia)
-  | .sllw c, rd, ia => .sllw (toRowData_sllw c rd ia)
-  | .srlw c, rd, ia => .srlw (toRowData_srlw c rd ia)
-  | .sraw c, rd, ia => .sraw (toRowData_sraw c rd ia)
-  | .slliw c, rd, ia => .slliw (toRowData_slliw c rd ia)
-  | .srliw c, rd, ia => .srliw (toRowData_srliw c rd ia)
-  | .sraiw c, rd, ia => .sraiw (toRowData_sraiw c rd ia)
-  | .mul c, rd, ia => .mul (toRowData_mul c rd ia)
-  | .mulh c, rd, ia => .mulh (toRowData_mulh c rd ia)
-  | .mulhsu c, rd, ia => .mulhsu (toRowData_mulhsu c rd ia)
-  | .mulw c, rd, ia => .mulw (toRowData_mulw c rd ia)
-  | .mulhu c, rd, ia => .mulhu (toRowData_mulhu c rd ia)
-  | .div c, rd, ia => .div (toRowData_div c rd ia)
-  | .rem c, rd, ia => .rem (toRowData_rem c rd ia)
-  | .divw c, rd, ia => .divw (toRowData_divw c rd ia)
-  | .remw c, rd, ia => .remw (toRowData_remw c rd ia)
-  | .divu c, rd, ia => .divu (toRowData_divu c rd ia)
-  | .divuw c, rd, ia => .divuw (toRowData_divuw c rd ia)
-  | .remu c, rd, ia => .remu (toRowData_remu c rd ia)
-  | .remuw c, rd, ia => .remuw (toRowData_remuw c rd ia)
-  | .beq c, rd, ia => .beq (toRowData_beq c rd ia)
-  | .bne c, rd, ia => .bne (toRowData_bne c rd ia)
-  | .blt c, rd, ia => .blt (toRowData_blt c rd ia)
-  | .bge c, rd, ia => .bge (toRowData_bge c rd ia)
-  | .bltu c, rd, ia => .bltu (toRowData_bltu c rd ia)
-  | .bgeu c, rd, ia => .bgeu (toRowData_bgeu c rd ia)
-  | .lui c, rd, ia => .lui (toRowData_lui c rd ia)
-  | .auipc c, rd, ia => .auipc (toRowData_auipc c rd ia)
-  | .jal c, rd, ia => .jal (toRowData_jal c rd ia)
-  | .jalr c, rd, ia => .jalr (toRowData_jalr c rd ia)
-  | .sb c, rd, ia => .sb (toRowData_sb c rd ia)
-  | .sh c, rd, ia => .sh (toRowData_sh c rd ia)
-  | .sw c, rd, ia => .sw (toRowData_sw c rd ia)
-  | .sd c, rd, ia => .sd (toRowData_sd c rd ia)
-  | .ld c, rd, ia => .ld (toRowData_ld c rd ia)
-  | .lbu c, rd, ia => .lbu (toRowData_lbu c rd ia)
-  | .lhu c, rd, ia => .lhu (toRowData_lhu c rd ia)
-  | .lwu c, rd, ia => .lwu (toRowData_lwu c rd ia)
-  | .lb c, rd, ia => .lb (toRowData_lb c rd ia)
-  | .lh c, rd, ia => .lh (toRowData_lh c rd ia)
-  | .lw c, rd, ia => .lw (toRowData_lw c rd ia)
-  | .fence c, rd, ia => .fence (toRowData_fence c rd ia)
 
-def StepNoKnownDefectOn
-    (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
-    StrongRowConstructionData ziskTrace sailTrace i → Prop
-  | .sub _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sub .. => True | _ => False)
-  | .and _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .and .. => True | _ => False)
-  | .or _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .or .. => True | _ => False)
-  | .xor _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .xor .. => True | _ => False)
-  | .slt _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .slt .. => True | _ => False)
-  | .sltu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sltu .. => True | _ => False)
-  | .andi _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .andi .. => True | _ => False)
-  | .ori _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .ori .. => True | _ => False)
-  | .xori _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .xori .. => True | _ => False)
-  | .slti _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .slti .. => True | _ => False)
-  | .sltiu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sltiu .. => True | _ => False)
-  | .sll _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sll .. => True | _ => False)
-  | .srl _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .srl .. => True | _ => False)
-  | .sra _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sra .. => True | _ => False)
-  | .slli _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .slli .. => True | _ => False)
-  | .srli _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .srli .. => True | _ => False)
-  | .srai _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .srai .. => True | _ => False)
-  | .add _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val)
-      (fun env => match env with | .add_via_binary .. => True | .add_via_binaryadd .. => True | _ => False)
-  | .addi _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val)
-      (fun env => match env with | .addi_via_binary .. => True | .addi_via_binaryadd .. => True | _ => False)
-  | .subw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .subw .. => True | _ => False)
-  | .addw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .addw .. => True | _ => False)
-  | .addiw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .addiw .. => True | _ => False)
-  | .sllw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sllw .. => True | _ => False)
-  | .srlw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .srlw .. => True | _ => False)
-  | .sraw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sraw .. => True | _ => False)
-  | .slliw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .slliw .. => True | _ => False)
-  | .srliw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .srliw .. => True | _ => False)
-  | .sraiw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sraiw .. => True | _ => False)
-  | .jalr _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .jalr .. => True | _ => False)
-  | .beq _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .beq .. => True | _ => False)
-  | .bne _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .bne .. => True | _ => False)
-  | .blt _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .blt .. => True | _ => False)
-  | .bge _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .bge .. => True | _ => False)
-  | .bltu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .bltu .. => True | _ => False)
-  | .bgeu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .bgeu .. => True | _ => False)
-  | .mul d => Defects.NoKnownDefect (mulEnvOf ziskTrace sailTrace i d)
-  | .mulh d => Defects.NoKnownDefect (mulhEnvOf ziskTrace sailTrace i d)
-  | .mulhsu d => Defects.NoKnownDefect (mulhsuEnvOf ziskTrace sailTrace i d)
-  -- Signed DIV/REM/DIVW/REMW: the GENUINE `NoKnownDefect` of the SPECIFIC env,
-  -- NOT the (false) selector-∀ shape.  Satisfiable for an honest signed row
-  -- (`|r| ≠ |op2|`); see `RowData_div` / `stepStrong_div`.
-  | .div d => Defects.NoKnownDefect (divEnvOf ziskTrace sailTrace i d)
-  | .rem d => Defects.NoKnownDefect (remEnvOf ziskTrace sailTrace i d)
-  | .divw d => Defects.NoKnownDefect (divwEnvOf ziskTrace sailTrace i d)
-  | .remw d => Defects.NoKnownDefect (remwEnvOf ziskTrace sailTrace i d)
-  | .mulw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .mulw .. => True | _ => False)
-  | .mulhu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .mulhu .. => True | _ => False)
-  | .divu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .divu .. => True | _ => False)
-  | .divuw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .divuw .. => True | _ => False)
-  | .remu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .remu .. => True | _ => False)
-  | .remuw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .remuw .. => True | _ => False)
-  | .lui _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .lui .. => True | _ => False)
-  | .auipc _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .auipc .. => True | _ => False)
-  | .jal _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .jal .. => True | _ => False)
-  | .sb _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sb .. => True | _ => False)
-  | .sh _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sh .. => True | _ => False)
-  | .sw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sw .. => True | _ => False)
-  | .sd _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .sd .. => True | _ => False)
-  | .ld _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .ld .. => True | _ => False)
-  | .lbu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .lbu .. => True | _ => False)
-  | .lhu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .lhu .. => True | _ => False)
-  | .lwu _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val) (fun env => match env with | .lwu .. => True | _ => False)
-  | .lb _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val)
-      (fun env => match env with | .lb_via_static_match .. => True | _ => False)
-  | .lh _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val)
-      (fun env => match env with | .lh_via_static_match .. => True | _ => False)
-  | .lw _ => EnvNoKnownDefectFor
-      (state := sailTrace i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable)
-      (r := i.val)
-      (fun env => match env with | .lw_via_static_match .. => True | _ => False)
-  -- FENCE: the GENUINE `NoKnownDefect` of the SPECIFIC honest env, NOT the
-  -- (false) selector-∀ shape.  Satisfiable for an honest FENCE row.
-  | .fence d => Defects.NoKnownDefect (fenceEnvOf ziskTrace sailTrace i d)
 
-/-- The strengthened per-step conclusion: the channel-balance
-    (`state_effect_via_channels`) form — the OLD global theorem's per-arm
-    conclusion — keyed on the row archetype. -/
+/-- Per-row known-defect exclusion obligation, stated DIRECTLY over the row data
+    (no `OpEnvelope` detour).
 
+    The 8 defect-capable arms carry the genuine forge exclusion, read off the
+    arith witness / claim fields that live in `ia` (the `inputsAgree` half) or in
+    the matched `ZiskStep` claim payload:
+      * MUL / MULH / MULHSU → `¬ SignedMulForge` of the ArithMul sign witnesses;
+      * DIV / REM → `¬ DivRemForge` of the 64-bit remainder/divisor magnitudes;
+      * DIVW / REMW → `¬ DivRemForgeW` of the 32-bit remainder/divisor magnitudes;
+      * FENCE → `FenceKnownGood` of the claim's `fm` / `rs` / `rd`.
+    Each is DEFINITIONALLY the same proposition as the corresponding `<op>EnvOf`
+    `OpEnvelope` defect shape (the `Iff.rfl` bridge lemmas in `EnvOf`), so the
+    re-expression off `OpEnvelope` carries no change of meaning.  Every other
+    (non-defect) arm carries no defect obligation (`True`). -/
 def StepNoKnownDefect (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
-    (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs) : Prop :=
-  StepNoKnownDefectOn ziskTrace sailTrace i (toFull ziskTrace sailTrace i zs rd ia)
+    (ia : InputsAgree ziskTrace sailTrace i zs) : Prop :=
+  match zs, ia with
+  | .mul _, ia => ¬ Defects.SignedMulForge ia.v ia.r_a
+  | .mulh _, ia => ¬ Defects.SignedMulForge ia.v ia.r_a
+  | .mulhsu _, ia => ¬ Defects.SignedMulForge ia.v ia.r_a
+  | .div _, ia => ¬ Defects.DivRemForge ia.div_input.r2_val ia.v ia.r_a
+  | .rem _, ia => ¬ Defects.DivRemForge ia.rem_input.r2_val ia.v ia.r_a
+  | .divw _, ia => ¬ Defects.DivRemForgeW ia.divw_input.r2_val ia.v ia.r_a
+  | .remw _, ia => ¬ Defects.DivRemForgeW ia.remw_input.r2_val ia.v ia.r_a
+  | .fence c, _ => Defects.FenceKnownGood c.fm c.rs c.rd
+  | _, _ => True
 
 def StepFaithful
     (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
@@ -1136,16 +760,18 @@ def StepFaithful
 /-- Per-row dispatch to the matching strengthened step theorem.
 
     The `h_known` parameter carries the per-row defect-exclusion obligation
-    (`StepNoKnownDefect`).  For the 22 OpEnvelope-route arms it is the
-    `EnvNoKnownDefectFor` fact for that arm's constructor; the dispatcher hands it
-    straight to the corresponding `stepStrong_<op>`, which feeds it to
-    `zisk_riscv_compliant_program_bus`.  For the direct-lift arms (which never call
-    the old theorem) the obligation is `True` and is ignored. -/
+    (`StepNoKnownDefect`), stated directly over the row data.  For the 8
+    defect-capable arms it is the row-data forge-negation / FENCE-known-good
+    fact; the dispatcher hands it straight to the corresponding `stepStrong_<op>`,
+    which assembles `NoKnownDefect (<op>EnvOf …)` from it (via
+    `noKnownDefect_of_shapes`) and feeds that to
+    `zisk_riscv_compliant_program_bus`.  For every other (non-defect) arm the
+    obligation is `True` and is ignored — the arm builds its own `NoKnownDefect`. -/
 
 theorem stepFaithful_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
-    (h_known : StepNoKnownDefect ziskTrace sailTrace i zs rd ia) :
+    (h_known : StepNoKnownDefect ziskTrace sailTrace i zs ia) :
     StepFaithful ziskTrace sailTrace i zs := by
   cases zs with
   | sub c => exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia) h_known

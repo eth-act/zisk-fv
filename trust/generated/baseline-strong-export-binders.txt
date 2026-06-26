@@ -4,5 +4,5 @@
 3 :: ziskStep :: (i : Fin numInstructions) → ZiskFv.Compliance.ZiskStep ziskTrace i
 4 :: rowDecodes :: (i : Fin numInstructions) → ZiskFv.Compliance.RowDecode ziskTrace i (ziskStep i)
 5 :: inputsAgree :: (i : Fin numInstructions) → ZiskFv.Compliance.InputsAgree ziskTrace sailTrace i (ziskStep i)
-6 :: hAvoidKnownBugs :: ∀ (i : Fin numInstructions), ZiskFv.Compliance.StepNoKnownDefect ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i)
+6 :: hAvoidKnownBugs :: ∀ (i : Fin numInstructions), ZiskFv.Compliance.StepNoKnownDefect ziskTrace sailTrace i (ziskStep i) (inputsAgree i)
 7 :: i :: Fin numInstructions

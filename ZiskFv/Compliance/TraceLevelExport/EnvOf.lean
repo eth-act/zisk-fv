@@ -293,5 +293,64 @@ theorem remw_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, remwEnvOf]
 
+/-! ### Bridge lemmas: row-data forge predicates ≡ OpEnvelope defect shapes
+
+Each bridge is `Iff.rfl`: the row-data predicate (over the `Inputs_<op>` arith
+witness / `Claim_<op>` fields) and the `OpEnvelope`-based defect shape at the
+corresponding `<op>EnvOf` env are DEFINITIONALLY the same proposition.  These are
+the faithfulness audit for the `StepNoKnownDefect` re-expression (plan step B):
+they witness that lifting the three known-defect conditions off `OpEnvelope`
+onto the row data changed no meaning — the `Iff.rfl` proofs would fail if the
+re-expressed predicate were even slightly weaker or stronger than the original
+`OpEnvelope` shape. -/
+
+theorem signedMulForge_iff_mulShape
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (d : RowData_mul trace binding i) :
+    Defects.SignedMulForge d.toInputs.v d.toInputs.r_a
+      ↔ Defects.MaliciousSignedMulWitnessShape (mulEnvOf trace binding i d) := Iff.rfl
+
+theorem signedMulForge_iff_mulhShape
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (d : RowData_mulh trace binding i) :
+    Defects.SignedMulForge d.toInputs.v d.toInputs.r_a
+      ↔ Defects.MaliciousSignedMulWitnessShape (mulhEnvOf trace binding i d) := Iff.rfl
+
+theorem signedMulForge_iff_mulhsuShape
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (d : RowData_mulhsu trace binding i) :
+    Defects.SignedMulForge d.toInputs.v d.toInputs.r_a
+      ↔ Defects.MaliciousSignedMulWitnessShape (mulhsuEnvOf trace binding i d) := Iff.rfl
+
+theorem divRemForge_iff_divShape
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (d : RowData_div trace binding i) :
+    Defects.DivRemForge d.toInputs.div_input.r2_val d.toInputs.v d.toInputs.r_a
+      ↔ Defects.ArithDivDynamicWitnessShape (divEnvOf trace binding i d) := Iff.rfl
+
+theorem divRemForge_iff_remShape
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (d : RowData_rem trace binding i) :
+    Defects.DivRemForge d.toInputs.rem_input.r2_val d.toInputs.v d.toInputs.r_a
+      ↔ Defects.ArithDivDynamicWitnessShape (remEnvOf trace binding i d) := Iff.rfl
+
+theorem divRemForgeW_iff_divwShape
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (d : RowData_divw trace binding i) :
+    Defects.DivRemForgeW d.toInputs.divw_input.r2_val d.toInputs.v d.toInputs.r_a
+      ↔ Defects.ArithDivDynamicWitnessShape (divwEnvOf trace binding i d) := Iff.rfl
+
+theorem divRemForgeW_iff_remwShape
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (d : RowData_remw trace binding i) :
+    Defects.DivRemForgeW d.toInputs.remw_input.r2_val d.toInputs.v d.toInputs.r_a
+      ↔ Defects.ArithDivDynamicWitnessShape (remwEnvOf trace binding i d) := Iff.rfl
+
+theorem fenceKnownGood_iff_fenceShape
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (d : RowData_fence trace binding i) :
+    Defects.FenceKnownGood d.toClaim.fm d.toClaim.rs d.toClaim.rd
+      ↔ Defects.FenceKnownGoodShape (fenceEnvOf trace binding i d) := Iff.rfl
+
 
 end ZiskFv.Compliance

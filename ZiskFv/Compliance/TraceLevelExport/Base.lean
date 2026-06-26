@@ -47,47 +47,34 @@ set_option maxHeartbeats 8000000
 noncomputable def zeroValidBinary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL := by
   constructor <;> exact fun _ => 0
 
-/-- `EnvNoKnownDefectFor sel` is the defect-exclusion fact for *every* `OpEnvelope`
-    in the family carved out by the selector `sel`: every such env is outside all
-    known-defect regions.  An OpEnvelope-route `stepStrong_<op>` proof instantiates
-    this with the specific env it constructs (`sel` selecting exactly that arm's
-    `OpEnvelope` constructor), feeding the result to
-    `zisk_riscv_compliant_program_bus` instead of re-proving `NoKnownDefect`.
+/-- `NoKnownDefect env` is exactly the conjunction of its three per-defect
+    components: the env is outside the signed-MUL forge shape, outside the
+    DIV/REM forge shape, and inside the FENCE known-good shape.  This is the
+    `∀ id, ¬ Blocks id env` unfolding, packaged so every OpEnvelope-route
+    `stepStrong_<op>` proof can assemble `NoKnownDefect` from the three facts of
+    the specific env it constructs.
 
-    For the non-defect OpEnvelope-route arms the selected constructor is never a
-    defect constructor, so this is TRIVIALLY satisfiable (proved by `cases`/`simp`
-    on the defect predicates) — the threaded hypothesis is non-vacuous.  The 7
-    signed-M arms and FENCE do NOT use this selector-∀ shape (it would be FALSE for
-    them — a malicious env matches the selector but is not `NoKnownDefect`); they
-    instead ask `StepNoKnownDefect` for the GENUINE `NoKnownDefect (<op>EnvOf …)` of
-    the SPECIFIC honest env they construct, satisfiable for any honest row because
-    the defect predicates are narrowed to the exact forge witnesses (see
-    `StepNoKnownDefect`). -/
-def EnvNoKnownDefectFor
+    * Non-defect arms discharge all three definitionally: the MUL and DIV/REM
+      shapes are `False` (`fun h => h`) and the FENCE shape is `True`
+      (`trivial`).
+    * A defect arm (the 7 signed-M arms + FENCE) supplies its threaded
+      row-data forge-negation in the one matching slot (`¬ SignedMulForge` /
+      `¬ DivRemForge` / `FenceKnownGood`, definitionally equal to the
+      corresponding `Shape` of the `<op>EnvOf` env via the bridge lemmas in
+      `EnvOf`) and discharges the other two definitionally. -/
+theorem noKnownDefect_of_shapes
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r : ℕ}
-    (sel : OpEnvelope state m r → Prop) : Prop :=
-  ∀ env : OpEnvelope state m r, sel env → Defects.NoKnownDefect env
-
-/-- The defect-constructor selector for an OpEnvelope-route arm is non-defect: every
-    `OpEnvelope` it selects is `NoKnownDefect`.  This is the trivial discharge used
-    to satisfy the threaded `StepNoKnownDefect` obligation for the 22 current
-    non-defect arms (non-vacuous: the selected env exists and the fact is TRUE). -/
-theorem envNoKnownDefectFor_of_nondefect
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r : ℕ}
-    (sel : OpEnvelope state m r → Prop)
-    (h : ∀ env, sel env →
-      ¬ Defects.MaliciousSignedMulWitnessShape env ∧
-      ¬ Defects.ArithDivDynamicWitnessShape env ∧
-      Defects.FenceKnownGoodShape env) :
-    EnvNoKnownDefectFor sel := by
-  intro env hsel id
-  obtain ⟨h1, h2, h3⟩ := h env hsel
+    (env : OpEnvelope state m r)
+    (h_mul : ¬ Defects.MaliciousSignedMulWitnessShape env)
+    (h_div : ¬ Defects.ArithDivDynamicWitnessShape env)
+    (h_fence : Defects.FenceKnownGoodShape env) :
+    Defects.NoKnownDefect env := by
+  intro id
   cases id with
-  | arithMulSignedWitnessSoundness => exact h1
-  | arithDivDynamicWitnessSoundness => exact h2
-  | fenceIncomplete => simpa [Defects.Blocks] using h3
+  | arithMulSignedWitnessSoundness => exact h_mul
+  | arithDivDynamicWitnessSoundness => exact h_div
+  | fenceIncomplete => exact not_not_intro h_fence
 
 /-- Build a `MainRowProvenance m r` from the FIVE Main-row mode/control pins
     (`op`, `is_external_op`, `m32`, `set_pc`, `store_pc`) that the LUI/AUIPC/JAL

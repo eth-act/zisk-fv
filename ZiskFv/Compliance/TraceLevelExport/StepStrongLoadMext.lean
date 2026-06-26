@@ -66,10 +66,7 @@ records are real `Valid_Mem`/`Valid_BinaryExtension` rows. -/
 theorem stepStrong_ld
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_ld trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .ld .. => True | _ => False)) :
+    (_h_known : True) :
     execute_instruction (instruction.LOAD
         (d.toClaim.ld_input.imm, regidx.Regidx d.toClaim.ld_input.r1, regidx.Regidx d.toClaim.ld_input.rd, false, 8))
         (binding i)
@@ -137,17 +134,14 @@ theorem stepStrong_ld
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
-  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.1
 
 /-- Strengthened `lbu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lbu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lbu trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .lbu .. => True | _ => False)) :
+    (_h_known : True) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lbu_input.imm, regidx.Regidx d.toClaim.lbu_input.r1, regidx.Regidx d.toClaim.lbu_input.rd, true, 1))
         (binding i)
@@ -215,17 +209,14 @@ theorem stepStrong_lbu
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
-  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `lhu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lhu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lhu trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .lhu .. => True | _ => False)) :
+    (_h_known : True) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lhu_input.imm, regidx.Regidx d.toClaim.lhu_input.r1, regidx.Regidx d.toClaim.lhu_input.rd, true, 2))
         (binding i)
@@ -293,17 +284,14 @@ theorem stepStrong_lhu
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
-  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `lwu` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lwu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lwu trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .lwu .. => True | _ => False)) :
+    (_h_known : True) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lwu_input.imm, regidx.Regidx d.toClaim.lwu_input.r1, regidx.Regidx d.toClaim.lwu_input.rd, true, 4))
         (binding i)
@@ -371,17 +359,14 @@ theorem stepStrong_lwu
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
-  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `lb` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lb
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lb trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .lb_via_static_match .. => True | _ => False)) :
+    (_h_known : True) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lb_input.imm, regidx.Regidx d.toClaim.lb_input.r1, regidx.Regidx d.toClaim.lb_input.rd, false, 1))
         (binding i)
@@ -450,17 +435,14 @@ theorem stepStrong_lb
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
-  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
 /-- Strengthened `lh` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lh trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .lh_via_static_match .. => True | _ => False)) :
+    (_h_known : True) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lh_input.imm, regidx.Regidx d.toClaim.lh_input.r1, regidx.Regidx d.toClaim.lh_input.rd, false, 2))
         (binding i)
@@ -529,17 +511,14 @@ theorem stepStrong_lh
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
-  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
 /-- Strengthened `lw` step (channel-balance form), via the OpEnvelope route. -/
 theorem stepStrong_lw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lw trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .lw_via_static_match .. => True | _ => False)) :
+    (_h_known : True) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lw_input.imm, regidx.Regidx d.toClaim.lw_input.r1, regidx.Regidx d.toClaim.lw_input.rd, false, 4))
         (binding i)
@@ -608,7 +587,7 @@ theorem stepStrong_lw
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
-  have h_known : Defects.NoKnownDefect env := h_known_arm env trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
 /-! ## Strengthened M-ext-unsigned arms (MULW/MULHU/DIVU/DIVUW/REMU/REMUW)
@@ -638,14 +617,11 @@ the real `busSub` row.  These are strictly stronger than the corresponding
     conjunct.  The lookup-witness structures are BUILT from `mulwArow_fullSpec` via
     the `*_of_fullSpec` / `*_of_spec` builders; `aeneasBridgeTrust` is flat decode
     pins carried as `RowData_mulw` residuals (`m32 = 1` for W-mode); `NoKnownDefect`
-    comes from the threaded `h_known_arm`.  Non-vacuous (real provider FullSpec). -/
+    comes from the locally-assembled `NoKnownDefect`.  Non-vacuous (real provider FullSpec). -/
 theorem stepStrong_mulw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulw trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .mulw .. => True | _ => False)) :
+    (_h_known : True) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.MULW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd))) (binding i)
@@ -728,7 +704,7 @@ theorem stepStrong_mulw
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    h_known_arm env trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `mulhu` step (channel-balance form), via the OpEnvelope route:
@@ -740,7 +716,7 @@ theorem stepStrong_mulw
     `ArithMulSignedCarryRangeWitness`) are BUILT from the trace's `FullSpec`
     (`mulhuArow_fullSpec`) via the `*_of_fullSpec` / `*_of_spec` builders;
     `aeneasBridgeTrust` is flat decode pins carried as `RowData_mulhu` residuals;
-    `NoKnownDefect` comes from the threaded `h_known_arm`.
+    `NoKnownDefect` comes from the locally-assembled `NoKnownDefect`.
 
     Non-vacuous: the envelope's witnesses are the REAL provider row's FullSpec
     projections derived from `trace.channels_balanced` / `trace.spec_holds`, not a fabricated
@@ -748,10 +724,7 @@ theorem stepStrong_mulw
 theorem stepStrong_mulhu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulhu trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .mulhu .. => True | _ => False)) :
+    (_h_known : True) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
@@ -843,7 +816,7 @@ theorem stepStrong_mulhu
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    h_known_arm env trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `divu` step (channel-balance form), via the OpEnvelope route:
@@ -855,15 +828,12 @@ theorem stepStrong_mulhu
     `arithDiv_fullSpec_of_arithMul_fullSpec` view bridge + the ArithDiv
     `*_of_fullSpec` / `*_of_spec` builders; `remainder_bound` is the explicit
     residual carried by `RowData_divu`; `aeneasBridgeTrust` is flat decode pins;
-    `NoKnownDefect` comes from the threaded `h_known_arm`.  Non-vacuous (real
+    `NoKnownDefect` comes from the locally-assembled `NoKnownDefect`.  Non-vacuous (real
     provider FullSpec; the witnesses' substance is the balance-derived facts). -/
 theorem stepStrong_divu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divu trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .divu .. => True | _ => False)) :
+    (_h_known : True) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
@@ -956,7 +926,7 @@ theorem stepStrong_divu
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    h_known_arm env trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   -- DIVU is the dedicated `exec_eq_divu` conjunct (10th), not `exec_eq_remaining`.
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.1
 
@@ -968,10 +938,7 @@ theorem stepStrong_divu
 theorem stepStrong_divuw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divuw trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .divuw .. => True | _ => False)) :
+    (_h_known : True) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
@@ -1060,7 +1027,7 @@ theorem stepStrong_divuw
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    h_known_arm env trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `remu` step (channel-balance form), via the OpEnvelope route:
@@ -1071,10 +1038,7 @@ theorem stepStrong_divuw
 theorem stepStrong_remu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remu trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .remu .. => True | _ => False)) :
+    (_h_known : True) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
@@ -1163,7 +1127,7 @@ theorem stepStrong_remu
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    h_known_arm env trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `remuw` step (channel-balance form), via the OpEnvelope route:
@@ -1173,10 +1137,7 @@ theorem stepStrong_remu
 theorem stepStrong_remuw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remuw trace binding i)
-    (h_known_arm : EnvNoKnownDefectFor
-      (state := binding i)
-      (m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-      (r := i.val) (fun env => match env with | .remuw .. => True | _ => False)) :
+    (_h_known : True) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
@@ -1265,7 +1226,7 @@ theorem stepStrong_remuw
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    h_known_arm env trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 
